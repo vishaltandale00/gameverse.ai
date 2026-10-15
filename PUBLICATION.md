@@ -1,6 +1,6 @@
 # Repository publication preparation
 
-Date: 2026-10-15 · Status: publication approved; initial commit and remote publication in progress.
+Date: 2026-10-15 · Status: planning baseline published and verified in a private repository.
 
 ## Intended publication
 
@@ -26,13 +26,19 @@ No application package, ROM, executable game, save, recording, credential file o
 - [x] Inspect existing textual logs/patch and scan intended text for credential-like values and local/private content. No credential value was identified; the retained temporary audit path is provenance, not a portable prerequisite.
 - [x] Verify local Markdown links, JSON parsing and whitespace: 26 intended text files, 16 Markdown documents, 5 JSON files and 57 local links checked successfully.
 - [x] Settle GitHub owner/name, visibility and initial publication scope: private `vishaltandale00/gameverse.ai`, approved by the user on 2026-10-15.
-- [ ] Review and commit the explicit included file set; exclude local state and generated/third-party artifacts.
-- [ ] Create/push the approved repository; verify remote URL, visibility, branch and commit.
+- [x] Review and commit the 26-file included set; exclude local state and generated/third-party artifacts.
+- [x] Create/push the approved repository; verify remote URL, private visibility, main branch and commit. Compare every published file's path, mode and content hash with the local baseline.
 
 There is no app test/build command to execute yet. Checks on these files validate the planning baseline, not product behavior.
 
-## Publication execution
+## Publication receipt
 
-Once destination and scope are settled, create an initial commit from the reviewed file set, create or verify the chosen remote, and push that commit. Check for an existing destination before creation; do not overwrite unrelated history. Verify the pushed file tree and repository visibility, then replace this pending status with the observed URL/commit and any remaining issues.
+- Repository: [vishaltandale00/gameverse.ai](https://github.com/vishaltandale00/gameverse.ai).
+- Verified visibility: private; default branch: `main`.
+- Initial baseline commit: `5ac86a78d989105c411cdfee2d3b52cf1b7b8fba`.
+- Initial baseline tree: `abfeb3add47d957c4e367b7388645ae7657dafe6`.
+- Verification: all 26 published files matched local paths, modes and Git content hashes. This receipt and the P0 completion status are recorded in a subsequent documentation commit.
+
+There is still no runnable game, game deployment or selected repository license. T1–T3 remain unimplemented; the published baseline contains their contracts and acceptance gates.
 
 Keep P0/T1/T2/T3 as local task specs unless issue creation is requested. Creating separate Codex implementation chats is a separate action from documenting these tasks.

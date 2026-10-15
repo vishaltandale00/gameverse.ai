@@ -6,7 +6,7 @@ These are task specifications ready to become issues or separate implementation 
 
 | Task | Deliverable | Dependencies | Status |
 | --- | --- | --- | --- |
-| P0 — Publish the planning baseline | Reviewable repository with README, contracts, task specs and research provenance | Approved private destination and reviewed contents | Publication in progress |
+| P0 — Publish the planning baseline | Reviewable repository with README, contracts, task specs and research provenance | Approved private destination and reviewed contents | Published privately; receipt in PUBLICATION.md |
 | T1 — Play the base game and enter subgames | A usable browser journey with persistent profile, playable home and independently registered games | Base/subgame contracts; choose minimal home presentation and target browser | Specified; unimplemented |
 | T2 — Integrate complete FireRed as a subgame | Reproducible FireRed artifact, browser adapter and retained play/save/campaign evidence | Subgame contract; toolchain and runtime feasibility | Specified; unimplemented |
 | T3 — Create and improve games through conversation | Durable requests, builder, verified updates, forks/mashups and recovery | Host/coordinator interfaces; a real target game; T2 for FireRed scenarios | Specified; unimplemented |
