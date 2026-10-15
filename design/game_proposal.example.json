@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "status": "illustrative_not_built",
+  "proposal_id": "basketball-pokemon-example",
+  "proposal_revision": 1,
+  "candidate_kind": "mashup",
+  "game_id": "basketball-pokemon-example",
+  "lineage": [
+    {
+      "game_id": "firered",
+      "version_id": "pinned-accepted-version",
+      "reuse": "creature roster semantics"
+    },
+    {
+      "game_id": "basketball",
+      "version_id": "pinned-accepted-version",
+      "reuse": "possession and scoring loop"
+    }
+  ],
+  "core_loop": {
+    "cycle": [
+      "gain possession",
+      "move/pass/shoot with roster abilities",
+      "defend or regain possession",
+      "score",
+      "resolve match and persist result",
+      "start next match"
+    ],
+    "success": "finish match and return to a playable state",
+    "failure": "lose match without trapping player or corrupting progress",
+    "persistent_progress": [
+      "roster",
+      "match results"
+    ],
+    "player_actions": [
+      "move",
+      "pass",
+      "shoot",
+      "defend",
+      "use creature ability",
+      "feedback",
+      "exit"
+    ]
+  },
+  "acceptance_scenarios": [
+    {
+      "id": "possession-score",
+      "preconditions": [
+        "player controls ball",
+        "match active"
+      ],
+      "actions": [
+        "move",
+        "pass",
+        "shoot"
+      ],
+      "assertions": [
+        "valid shot can score",
+        "score updates once",
+        "possession resumes"
+      ]
+    },
+    {
+      "id": "creature-mechanic",
+      "preconditions": [
+        "roster contains creature with declared ability"
+      ],
+      "actions": [
+        "use ability during possession"
+      ],
+      "assertions": [
+        "declared ability changes play behavior",
+        "cooldown/cost follows proposal",
+        "ordinary controls remain usable"
+      ]
+    },
+    {
+      "id": "finish-and-replay",
+      "preconditions": [
+        "match can reach its end condition"
+      ],
+      "actions": [
+        "finish match",
+        "start next match"
+      ],
+      "assertions": [
+        "result persists",
+        "another match starts",
+        "feedback action works in both states"
+      ]
+    },
+    {
+      "id": "save-and-return",
+      "preconditions": [
+        "recognized roster/progress exists"
+      ],
+      "actions": [
+        "save",
+        "exit to shell",
+        "reload"
+      ],
+      "assertions": [
+        "recognized progress preserved",
+        "controller mappings restored",
+        "core loop playable"
+      ]
+    }
+  ],
+  "verification_policy": {
+    "freeze_proposal_before_build": true,
+    "allow_silent_assertion_weakening": false,
+    "required_checks": [
+      "boot",
+      "input",
+      "core_loop",
+      "requested_behavior",
+      "save_reload",
+      "feedback"
+    ]
+  },
+  "progress_adapter": {
+    "status": "required_if_importing",
+    "source": "firered party semantics",
+    "target": "basketball roster schema",
+    "parent_save_mutation_allowed": false,
+    "transfer_preview_required": true
+  },
+  "update_policy": {
+    "same_game_id_required": true,
+    "backward_save_compatibility_required": true,
+    "apply": "checkpoint_reload_at_verified_safe_boundary",
+    "rollback": "prior_artifact_and_compatible_checkpoint",
+    "preserve_newer_save_on_rollback": true
+  }
+}

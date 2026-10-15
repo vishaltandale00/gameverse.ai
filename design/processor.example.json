@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "config_version": "poc-policy-v1",
+  "platform": "desktop-macos-first",
+  "module_ids": ["city", "basketball", "creature_rpg"],
+  "input": {"feedback_action": "feedback_record", "default_pad_button": "right_stick_click", "default_keyboard_key": "F8", "recording_mode": "toggle", "pause_during_recording": true, "max_recording_seconds": 30},
+  "transcription": {"adapter": "whisper_cpp", "model_ref": "local-stt-model", "input_device": "system_default", "retain_audio_after_success": false},
+  "processor": {"mode": "hybrid", "ruleset_ref": "supported-intents-v1", "planner_adapter": "configured_endpoint", "credential_ref": "gameverse-planner", "code_candidates_enabled": false, "developer_adapter_ref": null},
+  "policy": {"scope_default": "captured_active_module", "content_acceptance": "trial_then_accept", "state_auto_apply": false, "confirmation_grace_seconds": 5, "max_attempts": 3, "max_job_seconds": 600, "max_mutating_workers": 1, "stale_base_action": "revalidate_or_expire", "revert_mode": "restore_checkpoint", "queue_order": "fifo_with_manual_priority"},
+  "operations": {
+    "city": {"set_time": {"allowed": ["day", "night"]}, "set_npc_count": {"min": 0, "max": 30}, "spawn_prop": {"catalog_ref": "city-props-v1", "max_per_request": 5}, "relocate_player": {"anchors": ["plaza", "court_entrance", "creature_entrance"]}},
+    "basketball": {"set_match_seconds": {"min": 30, "max": 300}, "set_ai_speed_multiplier": {"min": 0.5, "max": 1.5}, "set_turbo_seconds": {"min": 1, "max": 10}},
+    "creature_rpg": {"set_encounter_rate": {"min": 0.0, "max": 0.3}, "set_capture_multiplier": {"min": 0.5, "max": 2.0}, "set_creature_palette": {"catalog_ref": "creature-palettes-v1"}}
+  }
+}

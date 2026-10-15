@@ -1,0 +1,52 @@
+  refs: events/trainers/items/shops all resolve
+  flags: 20 gates, all settable
+  warps: no tile carries two warps
+  items: 87 obtainable
+  HMs: 5 field moves, all obtainable; 55 machines
+  fly: 11 destinations, all landable
+  font: 90 glyphs, every displayable string renders
+  globals: 171 G.* definitions, none shadowed
+  animations: 55 kinds, 160 moves named individually, all 165 resolve
+  contracts: songs, sfx, backgrounds, evolutions, actions, stones, rarities and growth curves all resolve
+  TMs: 50/50 findable
+  items: 10 item kinds, all declared on both sides
+  followers: 151 species resolve to a follower sheet
+  sprites: 71 overworld sprites, all resolvable
+  portraits: 49 trainer portraits, all mapped
+  moves: 35 distinct effect kinds, all handled
+  events: 76 events dry-run on a blank and a finished save
+  placement: every drawn person stands on a tile a person could stand on
+  interactables: nothing talkable is hidden underneath something else talkable
+  currency: coins and money can both be earned, and the smallest coin purchase covers a spin
+  evolution: all 72 declared evolutions actually change the species when triggered
+  sheet frames: 75 overworld sheets sliced at FireRed's own frame size, 5 of them wider than 16px — richboy draws art FireRed itself never placed, so there is no table to check it against
+  progression: every map, badge and HM reachable from an empty save (36 rounds, walking each map tile by tile)
+  duplicates: no move, item, trainer or map is declared twice
+  wiring: all 128 G.* functions are referenced by something
+  shop fit: every shop list fits the screen width and scrolls past the bottom
+  crossing: from every entrance, every exit of that map can be reached
+  sealed: none of the 453 places a warp drops you lands on top of somebody
+  battle callbacks: every battle hands control back through onEnd
+  dungeon exits: every warp out of a cave, tower, lab or hideout is drawn
+  two-way: all 361 places you can stand have a way back to PALLET
+  events: all 76 can be started by something in the world
+  town map: all 42 places report themselves correctly
+  field moves: all 5 can say why they are unavailable
+  doors: every walkable door tile plays its opening
+  indoor exits: no warp puts a wall where the door should be
+  bridges: nobody is standing on the only way to anywhere
+  badges: all 8 match the leader, gym, city and art they name
+  sight lines: every trainer who declares no line of sight keeps to it
+  quiz: all 4 of BLAINE's quizmasters answer to a wrong answer
+  surfing: every facing draws only its own frames, so the rider never turns on the spot
+  field moves: all 4 obstacle HMs run to completion when you are allowed to use them
+  item kinds: all 10 declared kinds have a branch in the bag
+  tm compat: canLearnTm agrees with the tables across 151 species x 55 machines (3154 pairs teachable)
+  encounters: every wild table has ground that rolls it, and no tile claims two materials
+  dex: 151/151 species obtainable by a player
+  world: 138/138 maps reachable from pallet
+  typings: all 151 species match their Red/Blue types exactly
+  scene fuzz: 22 scenes x 3 runs x 240 frames of random input, no crashes
+loaded 42 scripts | art: 182 | glyphs: 89 | maps: 138 | species: 151 | moves: 165
+  warn: DIFFICULTY — hallofchampions 'champ_red' fields Lv80, but that is first reachable on 8 badge(s) — expect no more than Lv76
+  ERROR: CACHE: index.html's cache token is stale (614e5c53, should be 188126dc) — players would keep running the old code. Run: node tools/bump_cache.js

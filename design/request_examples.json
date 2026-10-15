@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "illustrative_only": true,
+  "requests": [
+    {"request_id": "example-city-1", "player_id": "example-player", "module_id": "city", "base_definition_id": "example-city-v1", "context_snapshot_id": "example-context-city", "audio_ref": "example-recording-city.wav", "transcript": "Set it to daytime", "processor_config_version": "poc-policy-v1"},
+    {"request_id": "example-basketball-1", "player_id": "example-player", "module_id": "basketball", "base_definition_id": "example-basketball-v1", "context_snapshot_id": "example-context-court", "audio_ref": "example-recording-court.wav", "transcript": "Make the defenders slower", "processor_config_version": "poc-policy-v1"},
+    {"request_id": "example-creature-1", "player_id": "example-player", "module_id": "creature_rpg", "base_definition_id": "example-creature-v1", "context_snapshot_id": "example-context-route", "audio_ref": "example-recording-route.wav", "transcript": "Fewer random encounters", "processor_config_version": "poc-policy-v1"}
+  ],
+  "proposals": [
+    {"request_id": "example-city-1", "target_module_id": "city", "expected_base_definition_id": "example-city-v1", "summary": "Set the city clock to daytime", "path": "state", "operations": [{"op": "set_time", "value": "day"}], "activation_boundary": "paused_checkpoint", "save_compatibility": "unchanged", "required_checks": ["operation_catalog", "module_scope", "base_version"]},
+    {"request_id": "example-basketball-1", "target_module_id": "basketball", "expected_base_definition_id": "example-basketball-v1", "summary": "Reduce defender speed to 80 percent for future rounds", "path": "content", "operations": [{"op": "set_ai_speed_multiplier", "value": 0.8}], "activation_boundary": "round_restart", "save_compatibility": "unchanged", "required_checks": ["operation_catalog", "module_scope", "base_version", "complete_round", "copied_save_trial"]},
+    {"request_id": "example-creature-1", "target_module_id": "creature_rpg", "expected_base_definition_id": "example-creature-v1", "summary": "Use a 5 percent encounter chance per eligible step", "path": "content", "operations": [{"op": "set_encounter_rate", "value": 0.05}], "activation_boundary": "outside_battle", "save_compatibility": "unchanged", "required_checks": ["operation_catalog", "module_scope", "base_version", "collection_preserved", "copied_save_trial"]}
+  ]
+}

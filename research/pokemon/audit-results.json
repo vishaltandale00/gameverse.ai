@@ -1,0 +1,88 @@
+{
+  "audit_date": "2026-10-14",
+  "checkouts": {
+    "pokefirered": {
+      "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+      "root_license_files": []
+    },
+    "red-web": {
+      "commit": "ee2a8ccb007192a90ea88a173199f4ccd85dca60",
+      "root_license_files": []
+    },
+    "claude-red": {
+      "commit": "5aedbfe00b1b204fc604ad963509c74b65f704b0",
+      "root_license_files": []
+    },
+    "kanto": {
+      "commit": "9a37d4fc32e72c5e582edbb98edf89beb6ad8510",
+      "root_license_files": []
+    }
+  },
+  "forest_probe": {
+    "status": "source_data_checks_passed",
+    "interpretation": "wild encounters only; FireRed table; +3 levels as a provisional strength increase",
+    "changed_slots": 12,
+    "old_level_range": [
+      3,
+      6
+    ],
+    "new_level_range": [
+      6,
+      9
+    ],
+    "non_target_encounters_unchanged": true,
+    "species_and_encounter_rate_unchanged": true,
+    "rom_built": false,
+    "in_game_tested": false,
+    "git_apply_check_passed": true
+  },
+  "checks": {
+    "red_web_advertised_tests": {
+      "exit_code": 0,
+      "log": "red_web_advertised_tests.log"
+    },
+    "kanto_validator": {
+      "exit_code": 1,
+      "log": "kanto_validator.log"
+    },
+    "claude_red_battle_fuzz": {
+      "command": "node tools/fuzzbattle.js 10",
+      "exit_code": 0,
+      "battles": 10,
+      "results": {
+        "lose": 4,
+        "win": 5,
+        "run": 1
+      },
+      "stuck": 0,
+      "reported_errors": 0,
+      "note": "one unseeded sample, not a full campaign or hardware test"
+    },
+    "claude_red_target_interactions": {
+      "command": "node tools/talkfuzz.js '^(ViridianForest|CeruleanGym|RocketHideoutB[1-4]F)$' --flags=all",
+      "exit_code": 0,
+      "maps": 6,
+      "scripted_maps": 3,
+      "interactions": 47,
+      "hangs": 0,
+      "reported_errors": 0,
+      "note": "headless shim with advanced flags and strong party, not early-game quest reachability"
+    },
+    "firered_build": {
+      "status": "failed",
+      "reason": "missing built host tools, agbcc and ARM assembler/preprocessor",
+      "rom_produced": false,
+      "log": "firered-build-tail.log"
+    },
+    "browser": {
+      "status": "not_executed",
+      "reason": "Chrome DevTools endpoint at 127.0.0.1:9222 unavailable"
+    },
+    "claude_red_headless_render": {
+      "map": "ViridianForest",
+      "frames": 10,
+      "status": "rendered_and_visually_inspected",
+      "real_browser": false
+    }
+  }
+}

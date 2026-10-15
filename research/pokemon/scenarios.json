@@ -1,0 +1,80 @@
+{
+  "status": "research_and_acceptance_design",
+  "baseline_repo": "https://github.com/pret/pokefirered",
+  "baseline_commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "scenarios": [
+    {
+      "id": "forest_strength",
+      "request": "the pokemon in viridian forest are too weak make them stronger",
+      "kind": "regional_encounter_change",
+      "provisional_interpretation": "increase the 12 FireRed wild-encounter slots by 3 levels, keep species, encounter rate, trainers, LeafGreen and all other areas unchanged",
+      "source_paths": [
+        "src/data/wild_encounters.json",
+        "src/data/wild_encounters.json.txt",
+        "data/maps/ViridianForest/scripts.inc"
+      ],
+      "observed_result": "scoped patch generated, data invariants passed, git apply --check passed; no ROM or in-game test",
+      "required_runtime_checks": [
+        "sample actual encounters in Viridian Forest and compare species/level ranges",
+        "leave forest and confirm neighboring encounters unaffected",
+        "load baseline save, save in candidate, reload, revert to baseline checkpoint",
+        "capture another controller feedback request after swap"
+      ]
+    },
+    {
+      "id": "electric_quest",
+      "request": "I don't know how to beat misty's starmie, give me a quest to find a strong electric type. pikachu isn't cutting it",
+      "kind": "generated_side_quest",
+      "provisional_interpretation": "add an optional Cerulean-area quest accessible before Misty, reward a non-Pikachu electric Pokemon with a useful electric move; keep Misty and existing campaign intact",
+      "source_paths": [
+        "data/maps/CeruleanCity/map.json",
+        "data/maps/CeruleanCity/scripts.inc",
+        "data/maps/CeruleanCity_Gym/scripts.inc",
+        "src/data/trainer_parties.h",
+        "include/constants/flags.h",
+        "include/constants/vars.h"
+      ],
+      "source_observations": {
+        "misty_staryu_level": 18,
+        "misty_starmie_level": 21,
+        "misty_starmie_moves": [
+          "SWIFT",
+          "RECOVER",
+          "RAPID_SPIN",
+          "WATER_PULSE"
+        ]
+      },
+      "observed_result": "source integration points inspected; quest not implemented",
+      "required_runtime_checks": [
+        "quest starts and completes from an authentic pre-Misty save without Surf/Cut or later badges",
+        "reward is obtainable without trapping player and is not duplicated after reload/repeated interaction",
+        "party-full behavior sends reward to PC or explicitly defers grant",
+        "intended electric strategy is demonstrably useful against the unchanged Starmie in a defined fixture, not guaranteed to win with any input",
+        "quest states and reward survive save/reload; original badge/TM progression remains intact"
+      ]
+    },
+    {
+      "id": "rocket_infiltration",
+      "request": "I want to infiltrate team rocket",
+      "kind": "generated_story_mechanic",
+      "provisional_interpretation": "offer a first undercover/infiltration mission with a cover identity, a local access rule and an objective, then rejoin the original story; expand through feedback",
+      "source_paths": [
+        "data/maps/RocketHideout_B1F/scripts.inc",
+        "data/maps/RocketHideout_B4F/scripts.inc",
+        "data/maps/CeladonCity_GameCorner/scripts.inc",
+        "include/constants/flags.h",
+        "include/constants/vars.h",
+        "src/save.c"
+      ],
+      "observed_result": "Rocket scripts and persistent progression primitives inspected; mission not implemented",
+      "required_runtime_checks": [
+        "mission has a reachable start condition from the actual player state; early-game requests must not strand player behind late-game gates",
+        "cover state changes local interaction/access behavior, not merely dialogue",
+        "detection/failure has an escape or retry route",
+        "save/load preserves cover/objective state",
+        "original Rocket storyline and access remain reachable; no pre-existing flags are reused accidentally",
+        "revert restores baseline and its own save checkpoint"
+      ]
+    }
+  ]
+}

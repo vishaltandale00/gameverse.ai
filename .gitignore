@@ -1,0 +1,38 @@
+# Local tools, credentials and personal configuration
+.DS_Store
+.claude/
+.codex/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencies and generated outputs
+node_modules/
+vendor/
+.venv/
+__pycache__/
+dist/
+build/
+coverage/
+artifacts/
+
+# Local game, worker and capture data
+.gameverse/
+local-data/
+recordings/
+saves/
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.gba
+*.gb
+*.gbc
+*.sav
+*.state
+
+# Retained textual research logs are intentional provenance.

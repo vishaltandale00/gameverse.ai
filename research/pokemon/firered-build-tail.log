@@ -1,0 +1,25 @@
+bash: tools/scaninc/scaninc: No such file or directory
+tools/scaninc/scaninc -M build/firered/src/bag.d -I include -I tools/agbcc/include src/bag.c
+bash: tools/scaninc/scaninc: No such file or directory
+tools/scaninc/scaninc -M build/firered/src/agb_flash_mx.d -I include -I tools/agbcc/include src/agb_flash_mx.c
+bash: tools/scaninc/scaninc: No such file or directory
+tools/scaninc/scaninc -M build/firered/src/agb_flash_le.d -I include -I tools/agbcc/include src/agb_flash_le.c
+bash: tools/scaninc/scaninc: No such file or directory
+tools/scaninc/scaninc -M build/firered/src/agb_flash_1m.d -I include -I tools/agbcc/include src/agb_flash_1m.c
+bash: tools/scaninc/scaninc: No such file or directory
+tools/scaninc/scaninc -M build/firered/src/agb_flash.d -I include -I tools/agbcc/include src/agb_flash.c
+bash: tools/scaninc/scaninc: No such file or directory
+tools/scaninc/scaninc -M build/firered/src/AgbRfu_LinkManager.d -I include -I tools/agbcc/include src/AgbRfu_LinkManager.c
+bash: tools/scaninc/scaninc: No such file or directory
+bash: tools/scaninc/scaninc: No such file or directory
+tools/ramscrgen/ramscrgen .bss sym_bss.txt ENGLISH > build/firered/sym_bss.ld
+tools/agbcc/bin/agbcc <flags> -o build/firered/src/AgbRfu_LinkManager.o src/AgbRfu_LinkManager.c
+bash: tools/ramscrgen/ramscrgen: No such file or directory
+make: *** [build/firered/sym_bss.ld] Error 127
+make: *** Deleting file `build/firered/sym_bss.ld'
+make: *** Waiting for unfinished jobs....
+bash: tools/preproc/preproc: No such file or directory
+bash: arm-none-eabi-cpp: command not found
+bash: tools/agbcc/bin/agbcc: No such file or directory
+bash: arm-none-eabi-as: command not found
+make: *** [build/firered/src/AgbRfu_LinkManager.o] Error 127
