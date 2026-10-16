@@ -15,7 +15,7 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
     <div class="neighborhood-destination"><span class="neighborhood-kicker">PLAY IN THE NEIGHBORHOOD</span><strong>Pokémon FireRed</strong><span class="neighborhood-directions">Alder Arcade · across Alder Street</span><span class="neighborhood-distance"></span></div>
     <div class="neighborhood-entry" hidden><span class="neighborhood-kicker">ALDER ARCADE</span><strong>Pokémon FireRed</strong><p>Continue your adventure. Your place in the city will wait.</p><button class="neighborhood-enter" type="button">Enter FireRed <kbd>E</kbd></button><p class="neighborhood-entry-message" role="status" aria-live="polite"></p></div>
     <div class="neighborhood-location"><span class="neighborhood-location-dot"></span><div><strong>ALDER STREET</strong><span>Original neighborhood · exploration prototype</span></div></div>
-    <div class="neighborhood-controls"><span class="neighborhood-key-hints"><kbd>W A S D</kbd> Walk · <kbd>Shift</kbd> Run · drag to look</span><span class="neighborhood-pad-hints" hidden>Left stick · move &nbsp; Right stick · look &nbsp; LB · run &nbsp; A · enter &nbsp; Start · menu</span><button type="button" class="neighborhood-capture">Capture mouse</button><button type="button" class="neighborhood-pause">Pause <kbd>Esc</kbd></button></div>
+    <div class="neighborhood-controls"><span class="neighborhood-key-hints"><kbd>W A S D</kbd> Walk · <kbd>Shift</kbd> Run · drag to look</span><span class="neighborhood-pad-hints" hidden>Left stick · move &nbsp; Right stick · look &nbsp; LB · run &nbsp; A · enter &nbsp; Start · menu &nbsp; R3 · voice</span><button type="button" class="neighborhood-capture">Capture mouse</button><button type="button" class="neighborhood-pause">Pause <kbd>Esc</kbd></button></div>
     <div class="neighborhood-overlay"><div><p class="neighborhood-kicker">A LITTLE WORLD OF YOUR OWN</p><h2>Opening Gameverse…</h2><p class="neighborhood-message">Building the streets, light and sky.</p><button type="button" class="neighborhood-resume" hidden>Keep exploring →</button></div></div>`;
   const query = s => container.querySelector(s), overlay = query('.neighborhood-overlay'), message = query('.neighborhood-message');
   const returnButton = query('.neighborhood-return'), resumeButton = query('.neighborhood-resume');
@@ -68,7 +68,7 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
     catch { query('.neighborhood-capture').textContent = 'Drag to look'; renderer.domElement.focus(); }
   }, { signal: abort.signal });
   window.addEventListener('keydown', event => {
-    if (suspended || disposed || document.querySelector('dialog[open]')) return;
+    if (suspended || disposed || document.querySelector('dialog[open]:not(#voice-dialog)')) return;
     if (event.code === 'Escape' && !event.repeat) { event.preventDefault(); pause(!paused); }
     if (event.code === 'KeyE' && !event.repeat && !event.target.closest?.('button, input')) { event.preventDefault(); enterFireRed(); }
   }, { signal: abort.signal });

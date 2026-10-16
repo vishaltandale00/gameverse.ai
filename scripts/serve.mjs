@@ -2,19 +2,25 @@ import http from 'node:http';
 import { readFile, realpath } from 'node:fs/promises';
 import { resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadEnvFile } from 'node:process';
 import { root, runtimeDirectory, runtimeIdentity } from './runtime.mjs';
 import { gameCatalog } from './catalog.mjs';
+import { createVoiceApi } from './voice-api.mjs';
+import { attachVoiceStream, realtimeTranscriptionProviders } from './voice-stream.mjs';
 
 const appRoot = fileURLToPath(root);
+try { loadEnvFile(fileURLToPath(new URL('.env', root))); } catch (error) { if (error.code !== 'ENOENT') throw error; }
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.wasm': 'application/wasm', '.gba': 'application/octet-stream' };
 const runtime = await runtimeIdentity();
+const handleVoice = createVoiceApi({ liveProviders: realtimeTranscriptionProviders });
 const server = http.createServer(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");
   try {
-    if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end(); return; }
     const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    if (await handleVoice(req, res, path)) return;
+    if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end(); return; }
     if (path === '/runtime/identity.json') {
       res.setHeader('Content-Type', mime['.json']); res.end(JSON.stringify(runtime)); return;
     }
@@ -39,4 +45,5 @@ const server = http.createServer(async (req, res) => {
   } catch (error) { res.writeHead(error.code === 'ENOENT' ? 404 : 500).end('Resource unavailable'); }
 });
 const port = Number(process.env.PORT || 4173);
+attachVoiceStream(server);
 server.listen(port, '127.0.0.1', () => console.log(`Gameverse: http://127.0.0.1:${port}`));
