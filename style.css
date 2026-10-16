@@ -808,10 +808,11 @@ footer {
 .neighborhood-canvas { position:absolute; inset:0; }
 .neighborhood-canvas canvas { display:block; width:100%; height:100%; outline:none; touch-action:none; cursor:grab; }
 .neighborhood-canvas canvas:active { cursor:grabbing; }
-.neighborhood-heading { position:absolute; top:34px; left:38px; pointer-events:none; text-shadow:0 2px 18px #18262680; }
+.neighborhood-heading { position:absolute; top:34px; left:38px; pointer-events:none; isolation:isolate; text-shadow:0 1px 4px #12231ee6; }
+.neighborhood-heading::before { content:""; position:absolute; inset:-16px -28px -12px -18px; z-index:-1; border-radius:12px; background:linear-gradient(100deg,#142820b8,#14282070 70%,transparent); }
 .neighborhood-kicker { font:10px 'Courier New',monospace; letter-spacing:2px; }
 .neighborhood-heading h1 { font:36px/1.05 Georgia,serif; letter-spacing:-1px; margin:11px 0 0; }
-.neighborhood-heading h1 span { display:block; font:12px Arial,sans-serif; letter-spacing:.1px; margin-top:10px; opacity:.84; }
+.neighborhood-heading h1 span { color:#f0f1e8; display:block; font:12px Arial,sans-serif; letter-spacing:.1px; margin-top:10px; opacity:.84; }
 .neighborhood-input-status { font-size:10px; opacity:.8; margin-top:12px; }
 #neighborhood button { color:#fff9e9; border:1px solid #ffffff40; background:#22322b8c; backdrop-filter:blur(10px); font-size:12px; font-weight:400; }
 #neighborhood button:hover { background:#263c32dc; }

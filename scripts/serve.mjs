@@ -35,7 +35,7 @@ const server = http.createServer(async (req, res) => {
     else if (path === '/runtime/three/LICENSE') file = new URL('node_modules/three/LICENSE', root);
     else if (['/', '/v0', '/v0/', '/v1', '/v1/'].includes(path)) file = new URL('index.html', root);
     else if (/^\/games\/configs\/gameverse-v[01]\.json$/.test(path)) file = new URL(path.slice(1), root);
-    else if (path === '/style.css' || /^\/src\/[a-z-]+\.js$/.test(path)) file = new URL(path.slice(1), root);
+    else if (path === '/style.css' || path === '/src/neighborhood-certified.generated.js' || /^\/src\/[a-z-]+\.js$/.test(path)) file = new URL(path.slice(1), root);
     else { res.writeHead(404).end('Not found'); return; }
     const actual = await realpath(file);
     if (!actual.startsWith(resolve(appRoot) + sep)) throw Error('Path outside workspace');

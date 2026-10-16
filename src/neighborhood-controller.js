@@ -1,4 +1,5 @@
-import { WALK_SPEED, RUN_SPEED, SPAWN, clamp, angleDelta, cameraRelativeInput, moveWithCollision, cameraDistance } from './neighborhood-math.js';
+import { WALK_SPEED, RUN_SPEED, SPAWN, clamp, angleDelta, cameraRelativeInput, moveWithCollision, cameraDistance, smoothCameraDistance } from './neighborhood-math.js';
+import { certifyCameraPose, safetyObservations } from './neighborhood-safety.js';
 import { StandardGamepadInput } from './gamepad.js';
 
 export class NeighborhoodController {
@@ -8,7 +9,7 @@ export class NeighborhoodController {
     this.gamepadState = this.gamepadInput.sample([]);
     const pose = initialPose || SPAWN;
     this.position = { x: pose.x, z: pose.z }; this.yaw = pose.yaw; this.pitch = pose.pitch;
-    this.keys = new Set(); this.velocity = { x: 0, z: 0 }; this.distance = 6.2; this.actualDistance = 6.2;
+    this.keys = new Set(); this.velocity = { x: 0, z: 0 }; this.distance = 5.2; this.actualDistance = 5.2; this.targetHeight = null;
     this.speed = 0; this.paused = false; this.dragging = false; this.disposed = false; this.heading = 1.1;
     this.abort = new AbortController(); const options = { signal: this.abort.signal };
     const movement = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight'];
@@ -87,19 +88,38 @@ export class NeighborhoodController {
     const root = this.world.avatar.root, ground = this.world.heightAt(next.x, next.z);
     root.position.set(next.x, ground, next.z); root.rotation.y = this.heading;
     this.world.avatar.animate(dt, this.speed, running && this.speed > WALK_SPEED);
-    const target = { x: next.x, y: ground + 1.4, z: next.z };
+    this.updateCamera(dt);
+  }
+  updateCamera(dt = 0) {
+    const next = this.position, ground = this.world.heightAt(next.x, next.z), root = this.world.avatar.root;
+    // Smooth automatic curb-height changes without lagging horizontal movement
+    // (a trailing target could enter the wall the player just walked around).
+    const targetY = ground + 1.32;
+    this.targetHeight = this.targetHeight === null ? targetY : this.targetHeight + (targetY - this.targetHeight) * (1 - Math.exp(-dt * 14));
+    const target = { x: next.x, y: this.targetHeight, z: next.z };
     const boom = { x: Math.sin(this.yaw) * Math.cos(this.pitch), y: Math.sin(this.pitch), z: Math.cos(this.yaw) * Math.cos(this.pitch) };
-    let safeDistance = cameraDistance(target, boom, this.distance, this.world.colliders);
+    // Cover the near-plane corners even in a very wide browser viewport.
+    const halfHeight = (this.camera.near || 0.08) * Math.tan((this.camera.fov || 55) * Math.PI / 360);
+    const clearance = Math.max(0.25, Math.hypot(halfHeight, halfHeight * (this.camera.aspect || 1)) + 0.06);
+    let safeDistance = cameraDistance(target, boom, this.distance, this.world.cameraColliders || this.world.colliders, clearance);
     // Keep the near plane above paving even at the lowest pitch.
     if (boom.y < 0) safeDistance = Math.min(safeDistance, (target.y - 0.45) / -boom.y);
-    this.actualDistance = safeDistance < this.actualDistance ? safeDistance : Math.min(safeDistance, this.actualDistance + dt * 5);
-    this.camera.position.set(target.x + boom.x * this.actualDistance, target.y + boom.y * this.actualDistance, target.z + boom.z * this.actualDistance);
-    this.camera.lookAt(target.x, target.y, target.z); root.visible = this.actualDistance > 0.85;
+    this.actualDistance = smoothCameraDistance(this.actualDistance, safeDistance, dt);
+    // Guard the final products/sums after smoothing, then use precisely the
+    // certified XYZ and target; no subsequent floating interpolation can bypass it.
+    const proposed = { x: target.x + boom.x * this.actualDistance, y: target.y + boom.y * this.actualDistance, z: target.z + boom.z * this.actualDistance };
+    const certified = certifyCameraPose(target, proposed, this.world.cameraColliders || this.world.colliders, clearance);
+    this.camera.position.set(certified.position.x, certified.position.y, certified.position.z);
+    this.camera.lookAt(certified.target.x, certified.target.y, certified.target.z);
+    this.cameraTarget = certified.target;
+    this.actualDistance = Math.hypot(certified.position.x - certified.target.x, certified.position.y - certified.target.y, certified.position.z - certified.target.z);
+    root.visible = this.actualDistance > 0.85;
   }
   pose() { return { ...this.position, yaw: this.yaw, pitch: this.pitch }; }
   observe() {
     return { ...this.pose(), speed: this.speed, paused: this.paused, disposed: this.disposed,
       camera: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z, distance: this.actualDistance, desiredDistance: this.distance },
+      safety: safetyObservations(), cameraTarget: { ...this.cameraTarget },
       heldKeys: [...this.keys], pointerLocked: document.pointerLockElement === this.canvas,
       gamepad: { connected: this.gamepadState.connected, index: this.gamepadState.index, id: this.gamepadState.id,
         armed: this.gamepadState.armed, move: { ...this.gamepadState.move }, look: { ...this.gamepadState.look }, buttons: [...this.gamepadState.buttons] } };
