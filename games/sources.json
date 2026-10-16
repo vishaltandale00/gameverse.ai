@@ -2,23 +2,9 @@
   "schemaVersion": 1,
   "initialGames": [
     "firered",
-    "mzm-emerald-encounters-v1",
     "mzm-emerald-wilds-v2"
   ],
   "games": {
-    "mzm-emerald-encounters-v1": {
-      "kind": "gba",
-      "name": "Metroid \u00d7 Emerald",
-      "subtitle": "Zero Mission campaign \u00b7 native three-Pok\u00e9mon encounters",
-      "repository": "https://github.com/metroidret/mzm.git",
-      "commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
-      "directory": "local/decomps/mzm",
-      "artifact": "mzm_us.gba",
-      "baselineSha1": "5de8536afe1f0078ee6fe1089f890e8c7aa0a6e8",
-      "sourceKind": "Native GBA composition from pinned decompiled source",
-      "gameCode": "BMXE",
-      "buildRecipe": "tools/gba_mashup/recipes/mzm-emerald-encounters-v1.json"
-    },
     "firered": {
       "name": "Pok\u00e9mon FireRed",
       "repository": "https://github.com/pret/pokefirered.git",

@@ -14,11 +14,6 @@
       "adapter": "gameverse-gba-worker/0.1.0"
     },
     {
-      "id": "mzm-emerald-encounters-v1",
-      "catalogId": "mzm-emerald-encounters-v1",
-      "adapter": "gameverse-gba-worker/0.1.0"
-    },
-    {
       "id": "mzm-emerald-wilds-v2",
       "catalogId": "mzm-emerald-wilds-v2",
       "adapter": "gameverse-gba-worker/0.1.0"
