@@ -1,0 +1,87 @@
+{
+  "schema": "gameverse.ir.application-verification/0.1",
+  "recorded_utc": "2026-10-16T09:31:53.386541+00:00",
+  "source_commit": "6b60a3792e27d81c9a9d9842e6b348f22ac68919",
+  "working_tree_source_hashes": {
+    "scripts/ir-api.mjs": "1a27903d58d9c86c99cf2a53a78cb653762d2422a0b3812a45d9a85bc9bf3bfc",
+    "scripts/catalog.mjs": "3622a57c06b7bb6f0b3f8e4aaea205f8e39487ef3e7a099b34a4054ddc42eff2",
+    "scripts/serve.mjs": "db9e9442f3abf57e69bd86ec401317e53d43620c3186f29515678377cf7d0c80",
+    "src/ir-workshop-model.js": "33cf783c1cef800795c91e1bb0025f5adc2309cd57fc2e32d7f42f9b9c027a61",
+    "src/ir-workshop.js": "ba571aee12374db49e8046f011ceb157de79e6c68662be3f6c77a78245f32abe",
+    "src/workshop.js": "44d3cef8ad54936cf67bf45801e31906b8b0995caefe46c73df0f8dd0b02a97b",
+    "src/main.js": "e965ae6ff353402ccfbf9469f7df151970a944aa4088507dace9b081930217d4",
+    "index.html": "a9bd37248e8dbbcf60359e335754b0c683934c3c48671a96629b9f232d89d6aa",
+    "workshop.css": "9adf213567796f2ea2ad6e2e9a155f047bc850e290567f0142ce2908d1a0e1a8",
+    "games/configs/gameverse-v0.json": "5cf2367c43facb48cc8faa59e19140d35bdb7866c5c0c559ef79851997c59150",
+    "OPERATIONS.md": "f90c6d06200ecf66abbd126c9e2ec2eedd4df803062ba7b1ef7fae8a47f507d3",
+    "FRONTEND_WORKSHOP.md": "f983f63824b230a6e06e2d07cf1137bf226561acfecf72721db37cb9ac013e41",
+    "README.md": "bf71d35bf50ce94ddc113f889ca4f890b86d46daf628629c79c1006de0fcfbf7",
+    "tests/ir-workshop.test.js": "73d1a26722149ae491ff667e690523f5b7d16b482955dbef68c52e201b8b743e",
+    "tests/application.test.js": "450eda117a3054660cd64228cd2db72f4e666052c47b67dec0e0673460f6c982"
+  },
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "node": "v24.14.0"
+  },
+  "checks": [
+    {
+      "kind": "affected_contracts",
+      "command": "node --test tests/application.test.js tests/identity.test.js tests/workshop.test.js tests/ir-workshop.test.js tests/shell-input.test.js",
+      "outcome": "pass",
+      "tests": 27,
+      "wall_s": 0.052111792
+    },
+    {
+      "kind": "upstream_voice_socket_contracts",
+      "command": "node --test tests/voice-api.test.js tests/voice-stream.test.js",
+      "outcome": "pass",
+      "tests": 10,
+      "wall_s": 0.0893,
+      "provider_calls": "mocked",
+      "sandbox_note": "Initial listen attempts hit sandbox EPERM; rerun granted loopback access."
+    },
+    {
+      "kind": "clean_shell_build",
+      "command": "npm run build",
+      "outcome": "pass",
+      "wall_s": 0.0379,
+      "cache": "OS filesystem cache not instrumented; existing dependencies installed",
+      "includes_roms": false
+    },
+    {
+      "kind": "static_html_and_entry_syntax",
+      "outcome": "pass",
+      "checks": [
+        "HTML nesting",
+        "unique IDs",
+        "no unresolved entry-point merge markers",
+        "node syntax: server/main/IR API/IR UI"
+      ]
+    },
+    {
+      "kind": "actual_local_http_routes",
+      "outcome": "pass",
+      "wall_s": 0.141072708,
+      "scope": [
+        "Workshop HTML/JS/CSS",
+        "voice module",
+        "generated neighborhood geometry",
+        "both application configs",
+        "real compiler catalog:21 packages,3 movement/1 combat/2 progression selectors",
+        "retained accepted native run status",
+        "actual PNG and MP4",
+        "verified ready IR Play catalog"
+      ],
+      "browser_gameplay": false,
+      "temporary_server_stopped": true
+    }
+  ],
+  "native_integration_receipt": "research/ir-workshop/integration-qualification.json",
+  "native_qualification_reused": true,
+  "scope_limits": [
+    "Current source pins are static/application verification only; native receipt pins its earlier application integration revision before minor UI robustness/messages.",
+    "No new browser gameplay, visual performance campaign, Lean execution or paid model request.",
+    "No comparable before-feature application generation/build benchmark; CI and queue measurements unavailable."
+  ],
+  "timing_nesting": "Prior compiler/native costs are nested in prior application integration total; current HTTP/read checks do not execute gameplay or generation."
+}

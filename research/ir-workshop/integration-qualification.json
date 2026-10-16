@@ -1,0 +1,64 @@
+{
+  "outcome": "passed_real_ir_application_integration",
+  "run_id": "eb84cf3e-031a-4837-98a7-7ae0525487fd",
+  "source_pins": {
+    "scripts/ir-api.mjs": "1a27903d58d9c86c99cf2a53a78cb653762d2422a0b3812a45d9a85bc9bf3bfc",
+    "scripts/catalog.mjs": "3622a57c06b7bb6f0b3f8e4aaea205f8e39487ef3e7a099b34a4054ddc42eff2",
+    "src/ir-workshop-model.js": "33cf783c1cef800795c91e1bb0025f5adc2309cd57fc2e32d7f42f9b9c027a61",
+    "src/ir-workshop.js": "b9561a33a0aebac6018a8c23d71f23478ed60f23b2c25e6b92d6616b7abb3acb"
+  },
+  "selections": {
+    "movement": "movement.hybrid-sonic-mzm",
+    "combat": "combat.mzm-impact",
+    "progression": "progression.minish-skills"
+  },
+  "request_schema": "gameverse.ir.generation-request/0.1",
+  "build": "pass",
+  "native_qa": {
+    "outcome": "pass",
+    "receipt": "/Users/shishirtandale/Projects/gameverse.ai/local-data/ir-runs/eb84cf3e-031a-4837-98a7-7ae0525487fd/output/native/route-receipt.json",
+    "wall_s": 0.468587208,
+    "final": {
+      "ticks": 417,
+      "player_x": 256832,
+      "player_y": 32768,
+      "shot_count": 16,
+      "kills": 3,
+      "pickup_taken": 1,
+      "gate_open": 1,
+      "won": 1,
+      "player_hp": 12,
+      "ability_mask": 1
+    },
+    "error": null
+  },
+  "rom_sha256": "6fef885452079c8db98baee860947e0ce1ac36f665171ef70bff99efe16dea7b",
+  "registration": {
+    "outcome": "registered",
+    "game_id": "ir-workshop",
+    "artifact_sha256": "6fef885452079c8db98baee860947e0ce1ac36f665171ef70bff99efe16dea7b",
+    "play_url": "/v0?view=play&game=ir-workshop"
+  },
+  "verified_catalog_ready": true,
+  "artifacts": {
+    "rom": "/api/ir/runs/eb84cf3e-031a-4837-98a7-7ae0525487fd/artifacts/rom",
+    "composition": "/api/ir/runs/eb84cf3e-031a-4837-98a7-7ae0525487fd/artifacts/composition.json",
+    "build_receipt": "/api/ir/runs/eb84cf3e-031a-4837-98a7-7ae0525487fd/artifacts/build-receipt.json",
+    "request": "/api/ir/runs/eb84cf3e-031a-4837-98a7-7ae0525487fd/artifacts/request.json",
+    "submission": "/api/ir/runs/eb84cf3e-031a-4837-98a7-7ae0525487fd/artifacts/submission.json",
+    "qualification": "/api/ir/runs/eb84cf3e-031a-4837-98a7-7ae0525487fd/artifacts/route-receipt.json",
+    "video": "/api/ir/runs/eb84cf3e-031a-4837-98a7-7ae0525487fd/artifacts/video.mp4",
+    "screenshots": [
+      "/api/ir/runs/eb84cf3e-031a-4837-98a7-7ae0525487fd/artifacts/screenshot-0.png",
+      "/api/ir/runs/eb84cf3e-031a-4837-98a7-7ae0525487fd/artifacts/screenshot-1.png",
+      "/api/ir/runs/eb84cf3e-031a-4837-98a7-7ae0525487fd/artifacts/screenshot-2.png",
+      "/api/ir/runs/eb84cf3e-031a-4837-98a7-7ae0525487fd/artifacts/screenshot-3.png",
+      "/api/ir/runs/eb84cf3e-031a-4837-98a7-7ae0525487fd/artifacts/screenshot-4.png",
+      "/api/ir/runs/eb84cf3e-031a-4837-98a7-7ae0525487fd/artifacts/screenshot-5.png"
+    ]
+  },
+  "compiler_wall_s": 0.590956084,
+  "application_total_wall_s": 0.8608881669999999,
+  "queue_s": null,
+  "scope": "Real application submission→compiler-generated L2→clean GBA→native connected-route QA→explicit registration→verified Play catalog. No browser gameplay test. Existing source-game and browser progress remain separate."
+}

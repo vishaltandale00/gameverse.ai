@@ -3,6 +3,7 @@ import { digest, progressKey, validateCheckpoint, validateCartridge, KEY_BITS, p
 import { GbaAdapter } from './adapter.js';
 import { loadApplicationConfig, configuredGames, validateGameBinding } from './application.js';
 import { sampleStandardGamepad } from './gamepad.js';
+import { VoiceInput } from './voice-input.js';
 
 const $ = selector => document.querySelector(selector);
 const avatars = ['🦊', '🐸', '🤖', '👾'];
@@ -10,10 +11,91 @@ let avatar = avatars[0], profile, profiles = [], games = [], runtime, session, a
 let keyboard = new Set(), inputMask = -1, padArmed = false, padPrevious = [], lastPadAction = 0;
 let neighborhoodOpen = false, neighborhoodPose, neighborhood, neighborhoodLaunch = 0, neighborhoodEntryPending = false;
 let worldProfilePending = false, shellPadDevice = null, shellPadIndex = null;
+let voiceClock, voiceNoticeTimer;
 const timings = [];
 window.__gameverseTimings = timings;
 const escapeHtml = text => String(text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const voice = new VoiceInput({
+  canStart: () => !busy && !neighborhoodEntryPending && !document.hidden && document.hasFocus()
+    && !$('dialog[open]') && (session?.state === 'playing' || (neighborhoodOpen && neighborhood?.observe().state === 'playing') || (!session && !neighborhoodOpen && !!application)),
+  captureContext: () => session ? {
+    role: 'subgame', gameId: session.game.id, identity: { ...session.identity }, progressRevision: session.head.revision,
+    environment: { id: application.id, version: application.version }, capturedAt: new Date().toISOString(),
+  } : {
+    role: 'base', gameId: application.id, version: application.version, profileId: profile?.id || null,
+    configuration: application.base, pose: neighborhood?.observe() || null, capturedAt: new Date().toISOString(),
+  },
+  // Voice capture is independent of gameplay; only the mic owns R3/B while open.
+  pause: async () => () => {},
+  changed: view => {
+    const dialog = $('#voice-dialog');
+    const restoreFocus = () => {
+      if ($('dialog[open]:not(#voice-dialog)')) return;
+      const target = session ? $('#screen canvas') : neighborhoodOpen ? $('#neighborhood canvas') : document.body;
+      if (target) { target.tabIndex = -1; target.focus({ preventScroll: true }); }
+    };
+    if (view.background) {
+      if (dialog.open) { dialog.close(); restoreFocus(); }
+      $('#voice-button').classList.toggle('voice-pending', ['transcribing', 'processing'].includes(view.state));
+      if (view.state === 'received') voiceNotice('Voice request saved. Game changes aren’t connected yet.');
+      if (view.state === 'error') voiceNotice(view.message);
+      clearInterval(voiceClock); return;
+    }
+    $('#voice-button').classList.remove('voice-pending');
+    clearInterval(voiceClock); dialog.dataset.state = view.state;
+    $('#voice-time').hidden = view.state !== 'recording';
+    if (view.state === 'recording') {
+      const started = view.startedAt || Date.now();
+      const updateClock = () => {
+        const seconds = Math.floor((Date.now() - started) / 1000);
+        $('#voice-time').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+      };
+      updateClock(); voiceClock = setInterval(updateClock, 1000);
+    }
+    if (view.state === 'idle') {
+      dialog.close(); restoreFocus();
+      if (view.warning) notice(view.warning);
+      else if (view.cancelled) voiceNotice('Voice input cancelled.');
+      return;
+    }
+    if (!dialog.open) { notice(''); $('#voice-transcript').textContent = ''; dialog.show(); restoreFocus(); }
+    const labels = { opening: 'Opening microphone…', recording: 'Listening…', transcribing: 'Transcribing…', processing: 'Sending your request…', received: 'Request received.', error: 'Voice input needs attention.', cancelling: 'Cancelling…' };
+    $('#voice-title').textContent = labels[view.state];
+    $('#voice-message').textContent = view.message || ({
+      opening: 'Allow microphone access when your browser asks.',
+      recording: `Speak your request. Words appear as you talk. Up to ${view.maxSeconds / 60} minutes.`,
+      transcribing: 'Finishing your transcript…',
+      processing: 'Saving your request…',
+      received: 'Saved on this computer. Game changes aren’t connected yet.',
+      cancelling: 'Discarding this input…',
+    }[view.state] || '');
+    if (view.context) $('#voice-target').textContent = `${session?.game.name || application.title} / Voice feedback`;
+    if (view.text !== undefined) $('#voice-transcript').textContent = view.text;
+    $('#voice-transcript').hidden = !$('#voice-transcript').textContent;
+    $('#voice-stop').hidden = view.state !== 'recording';
+    $('#voice-stop').textContent = `Send request · ${voice.config.recordButton === 11 ? 'R3' : `Button ${voice.config.recordButton}`}`;
+    $('#voice-cancel').disabled = view.state === 'cancelling';
+    $('#voice-cancel').textContent = view.state === 'received' ? 'Cancel transcript · B' : 'Cancel · B';
+    $('#voice-done').hidden = !['received', 'error'].includes(view.state);
+    $('#voice-done').textContent = `Return to game · ${voice.config.recordButton === 11 ? 'R3' : `Button ${voice.config.recordButton}`}`;
+
+  },
+});
+$('#voice-button').onclick = () => voice.toggle();
+$('#voice-stop').onclick = () => voice.stop();
+$('#voice-cancel').onclick = () => void voice.cancel();
+$('#voice-done').onclick = () => void voice.close();
+$('#voice-dialog').addEventListener('cancel', event => { event.preventDefault(); void voice.cancel(); });
+voice.configure().then(config => {
+  const label = config.recordButton === 11 ? 'R3' : `Button ${config.recordButton}`;
+  $('#voice-button kbd').textContent = label;
+  $('#voice-button').setAttribute('aria-label', `Give voice feedback — ${label}`);
+}).catch(() => {});
 function notice(message) { $('#notice').textContent = message; }
+function voiceNotice(message) {
+  clearTimeout(voiceNoticeTimer); notice(message);
+  voiceNoticeTimer = setTimeout(() => { if ($('#notice').textContent === message) notice(''); }, 5000);
+}
 async function timed(operation, context, work) {
   const start = performance.now(); let outcome = 'passed';
   try { return await work(); } catch (error) { outcome = 'failed'; throw error; }
@@ -42,13 +124,14 @@ async function renderGames() {
   for (const game of games) {
     let head;
     if (profile && game.ready) head = await storage.get(progressKey(identityFor(game)));
-    const card = document.createElement('article'); card.className = `game-card ${game.id}`;
+    const card = document.createElement('article'); card.className = `game-card ${game.id}`; card.id = `game-${game.id}`;
     card.innerHTML = `<div class="game-art"><div class="art-label"><span>GAME BOY ADVANCE</span><span>${game.id === 'firered' ? '01' : '02'} / GBA</span></div>${game.id === 'firered'
       ? '<div class="pixel-sun"></div><div class="land land-back"></div><div class="land land-front"></div><div class="tree tree-one"></div><div class="tree tree-two"></div><div class="art-title">FIRE<span>RED</span></div><span class="art-caption">A whole world awaits.</span>'
+      : game.id === 'ir-workshop' ? '<div class="ir-art-orbit"></div><div class="ir-art-rule rule-one"></div><div class="ir-art-rule rule-two"></div><div class="art-title ir-art-title">RULES<span>REASSEMBLED</span></div><span class="art-caption">A new cartridge. Familiar mechanics.</span>'
       : game.id === 'sonic-metroid-movement-v1' ? '<div class="sonic-sun"></div><div class="sonic-hill hill-back"></div><div class="sonic-hill hill-front"></div><div class="sonic-loop"></div><div class="sonic-ring"></div><div class="art-title sonic-title">SONIC<small>×</small><span>METROID</span></div><span class="art-caption">A familiar world. A different leap.</span>'
       : game.id === 'mzm-emerald-wilds-v2' ? '<div class="wilds-moon"></div><div class="wilds-canopy canopy-back"></div><div class="wilds-canopy canopy-front"></div><div class="wilds-route"></div><div class="wilds-seed">✦</div><div class="art-title wilds-title">METROID<small>×</small><span>EMERALD</span><em>WILDS</em></div><span class="art-caption">Something familiar lives in the unknown.</span>'
       : game.id === 'mzm-emerald-encounters-v1' ? '<div class="encounter-planet"></div><div class="encounter-ridge ridge-back"></div><div class="encounter-ridge ridge-front"></div><div class="encounter-orbit"></div><div class="encounter-core">✳</div><div class="art-title encounter-title">METROID<small>×</small><span>EMERALD</span></div><span class="art-caption">A familiar world. A tactical encounter.</span>'
-      : '<div class="cloud cloud-one"></div><div class="cloud cloud-two"></div><div class="coin coin-one"></div><div class="coin coin-two"></div><div class="pipe pipe-one"></div><div class="pipe pipe-two"></div><div class="art-title">SUPER<br>MARIO<span>ADVANCE 4</span></div><span class="art-caption">One more adventure.</span>'}</div><div class="card-info"><div class="card-top"><span class="eyebrow">${game.id === 'firered' ? 'EXPLORE · COLLECT · BATTLE' : game.id === 'mzm-emerald-wilds-v2' ? 'EXPLORE · DISCOVER · BATTLE' : game.id === 'mzm-emerald-encounters-v1' ? 'EXPLORE · ENCOUNTER · ADAPT' : 'RUN · JUMP · DISCOVER'}</span><span class="game-state ${game.ready ? 'ready' : ''}">${game.ready ? (game.compositionPlan ? 'IR ASSEMBLED' : 'SOURCE BUILT') : 'BUILD PENDING'}</span></div><h3>${escapeHtml(game.name)}</h3><p class="game-subtitle">${game.subtitle ? escapeHtml(game.subtitle) : 'The Kanto adventure, from the beginning.'}</p><div class="card-bottom"><p>${head ? `Last saved ${new Date(head.savedAt).toLocaleString()}` : game.ready ? 'A fresh adventure is waiting.' : escapeHtml(game.reason)}</p><button data-game="${game.id}" ${game.ready ? '' : 'disabled'}>${head ? 'Continue' : 'Play'} <span>↗</span></button></div>${game.ready ? '<p class="qualification">Development build · campaign qualification pending</p>' : ''}${game.playNotes ? `<p class="native-encounter-controls">${escapeHtml(game.playNotes)}</p>` : ''}${game.id === 'mzm-emerald-wilds-v2' ? '<p class="native-encounter-controls">Touch a wild Pokémon to encounter · D-pad + A: choose · B: party / moves · Select in battle: retreat</p><p class="qualification">Party persists in checkpoints; vanilla cartridge saves do not retain it.</p>' : game.id === 'mzm-emerald-encounters-v1' ? '<p class="native-encounter-controls">Select: encounter · D-pad + A: choose · B: party / moves · Select in battle: retreat</p>' : ''}</div>`;
+      : '<div class="cloud cloud-one"></div><div class="cloud cloud-two"></div><div class="coin coin-one"></div><div class="coin coin-two"></div><div class="pipe pipe-one"></div><div class="pipe pipe-two"></div><div class="art-title">SUPER<br>MARIO<span>ADVANCE 4</span></div><span class="art-caption">One more adventure.</span>'}</div><div class="card-info"><div class="card-top"><span class="eyebrow">${game.id === 'firered' ? 'EXPLORE · COLLECT · BATTLE' : game.id === 'mzm-emerald-wilds-v2' ? 'EXPLORE · DISCOVER · BATTLE' : game.id === 'mzm-emerald-encounters-v1' ? 'EXPLORE · ENCOUNTER · ADAPT' : 'RUN · JUMP · DISCOVER'}</span><span class="game-state ${game.ready ? 'ready' : ''}">${game.ready ? (game.compositionPlan ? 'IR ASSEMBLED' : 'SOURCE BUILT') : 'BUILD PENDING'}</span></div><h3>${escapeHtml(game.name)}</h3><p class="game-subtitle">${game.subtitle ? escapeHtml(game.subtitle) : 'The Kanto adventure, from the beginning.'}</p><div class="card-bottom"><p>${head ? `Last saved ${new Date(head.savedAt).toLocaleString()}` : game.ready ? 'A fresh adventure is waiting.' : escapeHtml(game.reason)}</p><button data-game="${game.id}" ${game.ready ? '' : 'disabled'}>${head ? 'Continue' : 'Play'} <span>↗</span></button></div>${game.ready ? `<p class="qualification">${escapeHtml(game.qualificationScope || 'Development build · campaign qualification pending')}</p>` : ''}${game.playNotes ? `<p class="native-encounter-controls">${escapeHtml(game.playNotes)}</p>` : ''}${game.id === 'mzm-emerald-wilds-v2' ? '<p class="native-encounter-controls">Touch a wild Pokémon to encounter · D-pad + A: choose · B: party / moves · Select in battle: retreat</p><p class="qualification">Party persists in checkpoints; vanilla cartridge saves do not retain it.</p>' : game.id === 'mzm-emerald-encounters-v1' ? '<p class="native-encounter-controls">Select: encounter · D-pad + A: choose · B: party / moves · Select in battle: retreat</p>' : ''}</div>`;
     card.querySelector('[data-game]').onclick = () => startGame(game).catch(handleError);
     $('#games').append(card);
   }
@@ -287,6 +370,7 @@ $('#world-reload').onclick = async () => {
 $('#reload-application').onclick = () => location.reload();
 $('#profile-button').onclick = showProfile;
 $('#refresh-games').onclick = () => refreshGames().catch(handleError);
+window.addEventListener('gameverse-build-registered', () => refreshGames().catch(handleError));
 $('#avatars').innerHTML = avatars.map((value, index) => `<button type="button" aria-label="${['Fox', 'Frog', 'Robot', 'Alien'][index]} avatar" aria-pressed="${index === 0}">${value}</button>`).join('');
 $('#avatars').onclick = event => { const button = event.target.closest('button'); if (!button) return; avatar = button.textContent; for (const choice of $('#avatars').children) choice.setAttribute('aria-pressed', String(choice === button)); };
 $('#profile-form').onsubmit = async event => {
@@ -324,7 +408,11 @@ $('#force-return').onclick = async () => {
   await leaveSession({ message: 'Returned without a new checkpoint. Only previously confirmed progress is available.' }); notice('Returned without a new checkpoint. Only previously confirmed progress is available.');
 };
 $('#session-dialog').addEventListener('cancel', event => { event.preventDefault(); if (!$('#resume-button').hidden) $('#resume-button').click(); });
-$('#feedback-button').onclick = () => { $('#session-message').textContent = 'The improvement harness is not connected in this slice. No request was queued.'; };
+$('#feedback-button').onclick = async () => {
+  if (session?.state !== 'paused' || $('#resume-button').hidden) return;
+  await $('#resume-button').onclick();
+  if (session?.state === 'playing') voice.toggle();
+};
 $('#battery-fallback').onclick = async () => {
   if (busy || !session) return;
   const { game, origin } = session;
@@ -340,18 +428,19 @@ $('#download-save').onclick = async () => {
   } catch (error) { handleError(error); }
 };
 window.addEventListener('keydown', event => {
+  if ($('#voice-dialog').open && event.code === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); void voice.cancel(); return; }
   if (event.repeat && (event.code === 'Enter' || event.code === 'Space')) event.preventDefault();
   if (event.code === 'Escape' && session?.state === 'playing') { event.preventDefault(); openMenu(); return; }
   if (session?.state !== 'playing' || !KEY_BITS[event.code]) return;
   event.preventDefault(); if (!event.repeat) keyboard.add(event.code);
 });
 window.addEventListener('keyup', event => keyboard.delete(event.code));
-window.addEventListener('blur', () => { clearInput(); openMenu(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { clearInput(); openMenu(); } });
-window.addEventListener('gamepaddisconnected', () => { clearInput(); openMenu(); });
+window.addEventListener('blur', () => { if (voice.capturing) void voice.cancel(); clearInput(); openMenu(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { if (voice.capturing) void voice.cancel(); clearInput(); openMenu(); } });
+window.addEventListener('gamepaddisconnected', () => { if (voice.capturing) void voice.cancel(); clearInput(); openMenu(); });
 window.addEventListener('beforeunload', event => { if (session) { event.preventDefault(); event.returnValue = ''; } });
 function focusDirection(direction) {
-  const scope = $('dialog[open]') || $('#home');
+  const scope = $('dialog[open]:not(#voice-dialog)') || $('#home');
   const candidates = [...scope.querySelectorAll('button:not(:disabled), input, a')].filter(el => el.getClientRects().length);
   const active = document.activeElement;
   if (!candidates.includes(active)) { candidates[0]?.focus(); return; }
@@ -365,6 +454,7 @@ function focusDirection(direction) {
   if (Number.isFinite(ranked[0]?.score)) ranked[0].el.focus();
 }
 function pollInput(now) {
+  const voiceOwnsB = voice.poll(navigator.getGamepads?.() || [], !document.hidden && document.hasFocus() && !busy);
   // A controller must not activate a focused button in an inactive browser tab.
   // Saving/loading also suspend menu actions; held buttons must be released afterward.
   if (document.hidden || !document.hasFocus() || busy) {
@@ -372,7 +462,7 @@ function pollInput(now) {
     padArmed = false; padPrevious = []; requestAnimationFrame(pollInput); return;
   }
   // The world owns keyboard/mouse focus; do not navigate or activate hidden shell controls.
-  if (neighborhoodOpen && !$('dialog[open]')) { padArmed = false; padPrevious = []; requestAnimationFrame(pollInput); return; }
+  if (neighborhoodOpen && !$('dialog[open]:not(#voice-dialog)')) { padArmed = false; padPrevious = []; requestAnimationFrame(pollInput); return; }
   const pads = [...(navigator.getGamepads?.() || [])];
   const sampled = sampleStandardGamepad(pads, shellPadIndex);
   const pad = pads.find(p => p?.connected && p.index === sampled.index && p.mapping === 'standard');
@@ -382,7 +472,7 @@ function pollInput(now) {
     clearInput(); padPrevious = []; shellPadDevice = device; shellPadIndex = sampled.index;
     if (lostActiveDevice) openMenu();
   }
-  const mask = padMask(pad);
+  const mask = padMask(pad) & (voiceOwnsB ? ~2 : ~0);
   const buttons = pad ? pad.buttons.map(b => b.pressed) : [];
   const neutral = sampled.neutral;
   if (pad && neutral) padArmed = true;
@@ -392,7 +482,7 @@ function pollInput(now) {
       // Start/Back remain GBA Start/Select. Y is the Gameverse host menu.
       if (pressed(3) || pressed(16) || (buttons[6] && buttons[7])) { openMenu(); padArmed = false; }
     } else {
-      const dialog = $('dialog[open]');
+      const dialog = $('dialog[open]:not(#voice-dialog)');
       if (dialog && (pressed(1) || (dialog.id === 'world-menu' && pressed(9)))) {
         if (dialog.id === 'session-dialog') {
           if (!$('#resume-button').hidden && !$('#resume-button').disabled) $('#resume-button').click();

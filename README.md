@@ -2,15 +2,13 @@
 
 A single-player browser environment for playing games and developing them through conversation, using a controller.
 
-**Status:** this development branch combines Vishal's source-built FireRed player with a 33-game research catalog, an interactive game-space map, a mashup workspace, partial ontologies and GBA bot tools. Normal **Play** now also supports **Metroid × Emerald**: the full Zero Mission campaign with native Pokémon encounters, built from pinned decompiled source. Its bounded encounter/attack/party/return check passed; full campaign qualification remains open. Research entries do not automatically become playable cartridges.
+**Status:** this branch combines Vishal's neighborhood, FireRed player and voice feedback with a 33-game research catalog, component Workshop and native GBA bot tools. The Workshop now selects concrete recovered executable movement, combat and progression packages, builds a new GBA ROM through L1/L2 IR, runs native qualification and explicitly registers successful candidates in normal **Play**. The current generated world is a bounded connected game slice with authored runtime/presentation; it is not a recovered full campaign. Research catalog entries alone are not playable components.
 
 Run `npm ci --ignore-scripts`, `npm run source:setup -- firered`, `npm run game:build -- firered`, then `npm run dev`. Open [local Gameverse](http://127.0.0.1:4173). See [development setup and evidence](DEVELOPMENT.md) for toolchain prerequisites, controls, timings and remaining issue #3 gates.
 
 ## GBA research and playtesting
 
-Mashup requests target source-built GBA games, played through the browser emulator
-and exercised through the native ROM harness. The earlier abstract JavaScript and
-grid-game generators have been removed because they did not fulfill that goal.
+Executable Workshop requests target new GBA cartridges assembled through the automatic behavior-IR compiler, played by the existing browser emulator and qualified with the native ROM harness. Older source/native-host recipes remain a separate path. See [generation, QA, bots and model operations](OPERATIONS.md) for setup, credentials, actual commands and current limits.
 
 - [Native GBA assembly](tools/gba_mashup/README.md): component/source lookup, reviewed composition recipe, actual source extraction and cartridge build.
 - [Real GBA bot and recordings](tools/gba_playtest/README.md): bounded source-aware exploration, native combat, d1/LLM policies, screenshots and MP4 evidence.
@@ -23,6 +21,7 @@ grid-game generators have been removed because they did not fulfill that goal.
 
 | Document | Purpose |
 | --- | --- |
+| [Operator runbook](OPERATIONS.md) | IR generation, native QA, bots, decisions/LLMs/embeddings, credentials and evidence |
 | [Game Space and Workshop](FRONTEND_WORKSHOP.md) | Catalog, embeddings, mashup requests, interface verification and performance |
 | [Development](DEVELOPMENT.md) | Runnable slice 1, editable-source setup, evidence and qualification gaps |
 | [PRD](PRD.md) | Product scope, acceptance requirements and open decisions |

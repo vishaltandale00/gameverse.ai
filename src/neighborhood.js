@@ -3,7 +3,7 @@ import { createNeighborhoodWorld } from './neighborhood-world.js';
 import { NeighborhoodController } from './neighborhood-controller.js';
 import { FIRE_RED_ENTRANCE } from './neighborhood-math.js';
 
-const VERSION = 'alder-neighborhood-prototype-1';
+const VERSION = 'alder-neighborhood-certified-safety-3';
 
 export async function openNeighborhood(container, onMenu, initialPose, onEnterFireRed, configuration = {}) {
   const started = performance.now(), abort = new AbortController();
@@ -15,7 +15,7 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
     <div class="neighborhood-destination"><span class="neighborhood-kicker">PLAY IN THE NEIGHBORHOOD</span><strong>Pokémon FireRed</strong><span class="neighborhood-directions">Alder Arcade · across Alder Street</span><span class="neighborhood-distance"></span></div>
     <div class="neighborhood-entry" hidden><span class="neighborhood-kicker">ALDER ARCADE</span><strong>Pokémon FireRed</strong><p>Continue your adventure. Your place in the city will wait.</p><button class="neighborhood-enter" type="button">Enter FireRed <kbd>E</kbd></button><p class="neighborhood-entry-message" role="status" aria-live="polite"></p></div>
     <div class="neighborhood-location"><span class="neighborhood-location-dot"></span><div><strong>ALDER STREET</strong><span>Original neighborhood · exploration prototype</span></div></div>
-    <div class="neighborhood-controls"><span class="neighborhood-key-hints"><kbd>W A S D</kbd> Walk · <kbd>Shift</kbd> Run · drag to look</span><span class="neighborhood-pad-hints" hidden>Left stick · move &nbsp; Right stick · look &nbsp; LB · run &nbsp; A · enter &nbsp; Start · menu</span><button type="button" class="neighborhood-capture">Capture mouse</button><button type="button" class="neighborhood-pause">Pause <kbd>Esc</kbd></button></div>
+    <div class="neighborhood-controls"><span class="neighborhood-key-hints"><kbd>W A S D</kbd> Walk · <kbd>Shift</kbd> Run · drag to look</span><span class="neighborhood-pad-hints" hidden>Left stick · move &nbsp; Right stick · look &nbsp; LB · run &nbsp; A · enter &nbsp; Start · menu &nbsp; R3 · voice</span><button type="button" class="neighborhood-capture">Capture mouse</button><button type="button" class="neighborhood-pause">Pause <kbd>Esc</kbd></button></div>
     <div class="neighborhood-overlay"><div><p class="neighborhood-kicker">A LITTLE WORLD OF YOUR OWN</p><h2>Opening Gameverse…</h2><p class="neighborhood-message">Building the streets, light and sky.</p><button type="button" class="neighborhood-resume" hidden>Keep exploring →</button></div></div>`;
   const query = s => container.querySelector(s), overlay = query('.neighborhood-overlay'), message = query('.neighborhood-message');
   const returnButton = query('.neighborhood-return'), resumeButton = query('.neighborhood-resume');
@@ -68,7 +68,7 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
     catch { query('.neighborhood-capture').textContent = 'Drag to look'; renderer.domElement.focus(); }
   }, { signal: abort.signal });
   window.addEventListener('keydown', event => {
-    if (suspended || disposed || document.querySelector('dialog[open]')) return;
+    if (suspended || disposed || document.querySelector('dialog[open]:not(#voice-dialog)')) return;
     if (event.code === 'Escape' && !event.repeat) { event.preventDefault(); pause(!paused); }
     if (event.code === 'KeyE' && !event.repeat && !event.target.closest?.('button, input')) { event.preventDefault(); enterFireRed(); }
   }, { signal: abort.signal });
@@ -80,13 +80,14 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
       triangles: renderer?.info.render.triangles ?? null, colliderCount: world?.colliders.length ?? 0,
       entrance: { ...FIRE_RED_ENTRANCE, distance: entranceDistance(), available: !suspended && !paused && entranceDistance() <= FIRE_RED_ENTRANCE.radius } }; },
     colliders() { return world?.colliders.map(box => ({ ...box })) || []; },
+    cameraColliders() { return world?.cameraColliders.map(box => ({ ...box })) || []; },
   });
   // Read-only developer observations; no mutation or gameplay controls are exposed.
   window.__gameverseNeighborhood = diagnostics;
   try {
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.06;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.04;
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
     const canvas = renderer.domElement; canvas.tabIndex = 0; canvas.setAttribute('aria-label', 'Gameverse, Alder District. WASD or left stick to walk, Shift or LB to run, drag or right stick to look, E or A at the arcade, Escape or Start for menu.');
     query('.neighborhood-canvas').append(canvas);
@@ -101,9 +102,13 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
       const { width, height } = container.getBoundingClientRect();
       if (width <= 0 || height <= 0) return;
       renderer.setSize(Math.max(1, width), Math.max(1, height), false); camera.aspect = width / Math.max(1, height); camera.updateProjectionMatrix();
-      if (paused && !suspended && !failed) renderer.render(world.scene, camera);
+      try {
+        controller.updateCamera(0); // Aspect changes can enlarge near-plane clearance.
+        if (paused && !suspended && !failed) renderer.render(world.scene, camera);
+      } catch (error) { fail(error); }
     }
     observer = new ResizeObserver(resize); observer.observe(container); resize();
+    if (failed) return { dispose, suspend, resume, observe: diagnostics.read };
     renderer.render(world.scene, camera); renderedFrames++; firstRenderMs = performance.now() - started;
     overlay.hidden = true; canvas.focus({ preventScroll: true }); lastTime = performance.now();
     function animate(now) {
@@ -112,7 +117,7 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
       const elapsed = now - lastTime; lastTime = now;
       if (paused || document.hidden) return;
       const dt = Math.min(elapsed / 1000, 0.05);
-      controller.update(dt);
+      try { controller.update(dt); } catch (error) { fail(error); return; }
       if (paused || suspended) return;
       renderer.render(world.scene, camera); renderedFrames++; activeMs += elapsed;
       sampleMs += elapsed; sampleFrames++;

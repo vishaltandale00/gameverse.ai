@@ -19,8 +19,8 @@ function fixture() {
   const context = { pads: [pad()], clicks: 0, menuOpens: 0, inputs: [], focused: true, busy: false, dialog: null, resumes: 0, closes: 0,
     neighborhoodOpen: false, padArmed: false, padPrevious: [], keyboard: new Set(), inputMask: -1,
     shellPadDevice: null, shellPadIndex: null, lastPadAction: 0, session: undefined,
-    padMask, sampleStandardGamepad, requestAnimationFrame() {}, focusDirection() {},
-    $: selector => selector === 'dialog[open]' ? context.dialog : context.elements[selector] || status,
+    voice: { poll() {} }, padMask, sampleStandardGamepad, requestAnimationFrame() {}, focusDirection() {},
+    $: selector => selector.startsWith('dialog[open]') ? context.dialog : context.elements[selector] || status,
   };
   context.elements = {
     '#resume-button': { hidden: false, disabled: false, click() { context.resumes++; context.session.state = 'playing'; context.dialog = null; } },
