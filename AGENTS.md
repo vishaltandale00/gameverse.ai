@@ -24,3 +24,17 @@
 - Shared contracts cover the adapter capabilities, versioned inputs/submissions and observable run results. Game-specific discovery and play-session policies belong to the game configuration/implementation; loop algorithms and their resource policies belong to the loop configuration.
 - Keep performance reporting compatible across the two workstreams without prescribing Shishir's internal algorithm or adding a mandatory central orchestration system.
 - Start parallel integration from `contracts/PARALLEL_DEVELOPMENT.md`; consult the other `contracts/`, `TASKS.md` and `plans/BASE_GAME.md` for planning context. Follow later explicit user decisions when older drafts disagree. Do not turn unresolved design questions into implemented requirements.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live in GitHub Issues for `vishaltandale00/gameverse.ai`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the five default triage labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
