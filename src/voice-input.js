@@ -4,9 +4,9 @@ import { LiveTranscription } from './live-transcription.js';
 // The host supplies pause/resume and target capture; this module owns microphone
 // lifetime, asynchronous cancellation and the audio -> transcript -> receipt flow.
 export class VoiceInput {
-  constructor({ captureContext, pause, changed, canStart = () => true, fetchImpl = (...args) => fetch(...args),
+  constructor({ captureContext, pause, changed, canStart = () => true, transcriptOnly = false, fetchImpl = (...args) => fetch(...args),
     getUserMedia = options => navigator.mediaDevices.getUserMedia(options), createStream = options => new LiveTranscription(options) }) {
-    Object.assign(this, { captureContext, pause, changed, canStart, fetchImpl, getUserMedia, createStream });
+    Object.assign(this, { captureContext, pause, changed, canStart, transcriptOnly, fetchImpl, getUserMedia, createStream });
     this.pad = new StandardGamepadInput(); this.config = { recordButton: 11, maxSeconds: 120, maxBytes: 10 * 1024 * 1024 };
     this.state = 'idle'; this.run = null;
   }
@@ -73,13 +73,19 @@ export class VoiceInput {
   stop() {
     const run = this.run;
     if (!run || this.state !== 'recording') return;
-    run.background = true; clearTimeout(run.timer); this.emit('transcribing'); void this.transcribe(run);
+    run.background = !this.transcriptOnly; clearTimeout(run.timer); this.emit('transcribing'); void this.transcribe(run);
   }
   async transcribe(run) {
     try {
       const transcript = await run.live.stop();
       if (this.run !== run) return;
       if (typeof transcript.text !== 'string' || !transcript.text.trim() || transcript.text.length > 32000) throw Error('No valid speech transcript was received. Try again.');
+      if (this.transcriptOnly) {
+        // Field dictation returns a draft to its owner, never an improvement request.
+        this.release(run); this.run = null; this.state = 'idle';
+        this.changed({ state: 'received', background: false, text: transcript.text });
+        return;
+      }
       this.emit('processing', { text: transcript.text });
       run.submitting = true;
       const receipt = await this.request('/api/voice/requests', {
@@ -105,7 +111,7 @@ export class VoiceInput {
     if (this.run !== run) return;
     this.emit('error', { message: error.name === 'NotAllowedError' ? 'Microphone permission was denied. Allow the microphone in your browser, then try again.' : error.message });
     this.release(run);
-    if (run.background) { this.run = null; this.state = 'idle'; }
+    if (run.background || this.transcriptOnly) { this.run = null; this.state = 'idle'; }
   }
   async cancel() {
     const run = this.run;

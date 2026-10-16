@@ -4,6 +4,7 @@ import { GbaAdapter } from './adapter.js';
 import { loadApplicationConfig, configuredGames, validateGameBinding } from './application.js';
 import { sampleStandardGamepad } from './gamepad.js';
 import { VoiceInput } from './voice-input.js';
+import { createProfileNameEntry } from './profile-name.js';
 
 const $ = selector => document.querySelector(selector);
 const avatars = ['🦊', '🐸', '🤖', '👾'];
@@ -91,6 +92,10 @@ voice.configure().then(config => {
   $('#voice-button kbd').textContent = label;
   $('#voice-button').setAttribute('aria-label', `Give voice feedback — ${label}`);
 }).catch(() => {});
+const nameEntry = createProfileNameEntry({
+  canStart: () => !busy && !document.hidden && document.hasFocus() && !voice.capturing,
+  onTransition: clearInput,
+});
 function notice(message) { $('#notice').textContent = message; }
 function voiceNotice(message) {
   clearTimeout(voiceNoticeTimer); notice(message);
@@ -137,6 +142,7 @@ function identityFor(game) {
 }
 function clearInput() { keyboard.clear(); inputMask = -1; padArmed = false; session?.adapter?.input(0); }
 function showProfile() {
+  if (voice.capturing) void voice.cancel();
   $('#existing-profiles').replaceChildren();
   for (const existing of profiles) {
     const button = document.createElement('button'); button.className = 'existing-profile'; button.textContent = `${existing.avatar} ${existing.name} →`;
@@ -149,7 +155,7 @@ function showProfile() {
     };
     $('#existing-profiles').append(button);
   }
-  clearInput(); $('#profile-dialog').returnValue = ''; $('#profile-dialog').showModal();
+  clearInput(); $('#profile-dialog').returnValue = ''; $('#profile-dialog').showModal(); nameEntry.reset();
 }
 async function startGame(game, mode = 'snapshot', origin = 'collection') {
   if (busy || session || neighborhoodOpen) return;
@@ -369,7 +375,8 @@ $('#refresh-games').onclick = () => refreshGames().catch(handleError);
 $('#avatars').innerHTML = avatars.map((value, index) => `<button type="button" aria-label="${['Fox', 'Frog', 'Robot', 'Alien'][index]} avatar" aria-pressed="${index === 0}">${value}</button>`).join('');
 $('#avatars').onclick = event => { const button = event.target.closest('button'); if (!button) return; avatar = button.textContent; for (const choice of $('#avatars').children) choice.setAttribute('aria-pressed', String(choice === button)); };
 $('#profile-form').onsubmit = async event => {
-  event.preventDefault(); const name = $('#character-name').value.trim(); if (!name || busy) return;
+  event.preventDefault(); if (busy) return;
+  const name = nameEntry.confirm(avatar); if (!name) return;
   busy = true;
   let release, selected = false;
   try {
@@ -381,13 +388,6 @@ $('#profile-form').onsubmit = async event => {
   } catch (error) { handleError(error); } finally { await release?.(); busy = false; if (selected) $('#profile-dialog').close('selected'); }
 };
 for (const button of document.querySelectorAll('[data-close]')) button.onclick = () => { $(`#${button.dataset.close}`).close(); clearInput(); };
-$('#show-letters').onclick = () => { $('#letters').hidden = !$('#letters').hidden; };
-for (const letter of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890←') {
-  const button = document.createElement('button'); button.type = 'button'; button.textContent = letter === ' ' ? '␣' : letter;
-  button.setAttribute('aria-label', letter === '←' ? 'Backspace' : letter === ' ' ? 'Space' : letter);
-  button.onclick = () => { const field = $('#character-name'); field.value = letter === '←' ? field.value.slice(0, -1) : (field.value + letter).slice(0, 24); };
-  $('#letters').append(button);
-}
 $('#menu-button').onclick = openMenu;
 $('#resume-button').onclick = async () => {
   if (busy || !session) return;
@@ -430,9 +430,13 @@ window.addEventListener('keydown', event => {
   event.preventDefault(); if (!event.repeat) keyboard.add(event.code);
 });
 window.addEventListener('keyup', event => keyboard.delete(event.code));
-window.addEventListener('blur', () => { if (voice.capturing) void voice.cancel(); clearInput(); openMenu(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { if (voice.capturing) void voice.cancel(); clearInput(); openMenu(); } });
-window.addEventListener('gamepaddisconnected', () => { if (voice.capturing) void voice.cancel(); clearInput(); openMenu(); });
+function cancelCapture() {
+  if (voice.capturing) void voice.cancel();
+  if (nameEntry.voice.active) void nameEntry.voice.cancel();
+}
+window.addEventListener('blur', () => { cancelCapture(); clearInput(); openMenu(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelCapture(); clearInput(); openMenu(); } });
+window.addEventListener('gamepaddisconnected', () => { cancelCapture(); clearInput(); openMenu(); });
 window.addEventListener('beforeunload', event => { if (session) { event.preventDefault(); event.returnValue = ''; } });
 function focusDirection(direction) {
   const scope = $('dialog[open]:not(#voice-dialog)') || $('#home');
@@ -449,7 +453,9 @@ function focusDirection(direction) {
   if (Number.isFinite(ranked[0]?.score)) ranked[0].el.focus();
 }
 function pollInput(now) {
-  const voiceOwnsB = voice.poll(navigator.getGamepads?.() || [], !document.hidden && document.hasFocus() && !busy);
+  const padsForVoice = navigator.getGamepads?.() || [], voiceEnabled = !document.hidden && document.hasFocus() && !busy;
+  const nameOwnsB = nameEntry.voice.poll(padsForVoice, voiceEnabled && $('#profile-dialog').open);
+  const voiceOwnsB = voice.poll(padsForVoice, voiceEnabled) || nameOwnsB;
   // A controller must not activate a focused button in an inactive browser tab.
   // Saving/loading also suspend menu actions; held buttons must be released afterward.
   if (document.hidden || !document.hasFocus() || busy) {
@@ -478,12 +484,12 @@ function pollInput(now) {
       if (pressed(3) || pressed(16) || (buttons[6] && buttons[7])) { openMenu(); padArmed = false; }
     } else {
       const dialog = $('dialog[open]:not(#voice-dialog)');
-      if (dialog && (pressed(1) || (dialog.id === 'world-menu' && pressed(9)))) {
+      if (dialog && ((!voiceOwnsB && pressed(1)) || (dialog.id === 'world-menu' && pressed(9)))) {
         if (dialog.id === 'session-dialog') {
           if (!$('#resume-button').hidden && !$('#resume-button').disabled) $('#resume-button').click();
         } else if (dialog.id === 'world-menu') {
           if (!$('#world-resume').disabled) $('#world-resume').click();
-        } else dialog.close('cancel');
+        } else if (dialog.id !== 'profile-dialog' || !nameEntry.back()) dialog.close('cancel');
         clearInput(); lastPadAction = now;
       } else if (pressed(0)) { document.activeElement?.click(); lastPadAction = now; padArmed = false; }
       else if ((mask & 240) && now - lastPadAction > 180) { focusDirection(mask & 64 ? 'up' : mask & 128 ? 'down' : mask & 32 ? 'left' : 'right'); lastPadAction = now; }
