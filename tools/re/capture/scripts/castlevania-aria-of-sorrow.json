@@ -1,0 +1,3 @@
+{"comment":"Gameplay: title START -> New Game, A through the Mina/Genya intro dialogue; Soma is controllable from ~4800; run right with jumps/attacks into the Castle Corridor.",
+ "phases":[{"name":"gameplay","frames":8000,"play_starts_frame":4800,
+ "repeat":[{"from_frame":180,"until_frame":700,"template":"menu_mash"},{"from_frame":700,"until_frame":4800,"template":"a_mash"},{"from_frame":4800,"template":"move_side"}]}]}

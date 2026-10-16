@@ -1,0 +1,564 @@
+schema_version: 0
+id: prince-of-persia-the-sands-of-time
+game:
+  title: 'Prince of Persia: The Sands of Time'
+  platform: gba
+  game_code: BPYE
+  rom_sha1: 3f379cd2e598ca69ba68649c81cf425ed284ae27
+  evidence_basis:
+  - ghidra_function
+  - static_signature
+  - capture_telemetry
+  - derived
+  sources:
+  - kind: ghidra_export
+    ref: local/re/experiments/20261016-corpus-decompile/shard-b/prince-of-persia-the-sands-of-time/functions.jsonl;
+      SHA256 afd2801b2a23ff75b1e5b87cdc86a1181d4a1afc1b6d6181e8e962b03bcdcc85; run20261016T005524-478941; capture-observed
+      ROM call targets only; no automatic analysis, odd-pointer discovery, matching source build or return repair.
+  - kind: rom_instruction_verification
+    ref: Direct Thumb disassembly with GNU arm-none-eabi-objdump2.47 of the indexed ROM, SHA1 3f379cd2e598ca69ba68649c81cf425ed284ae27.
+      Exact instruction ranges, ROM-range hashes, PC-literal values/hashes and disassembly hashes in local/scratch/rom_pipeline_audit/mining-v2/evidence_manifest.json
+      (SHA256 4ebc9fb668b1b2d9cda42f4c94e25a1441709ac0472be0ceb8db331e363d1fd6). No ROM bytes or raw code copied
+      into this ontology.
+  - kind: extraction_run
+    ref: Codex GPT-6-family agent, exact serving model ID unavailable; brief v2. Instruction acquisition recorded
+      from 2026-10-16T05:10:39.391167+00:00; writing/review completed 2026-10-16T05:20:49+00:00. Work was explicitly
+      paused/resumed for another user task, so uninterrupted active wall time and provider queue/inference are unavailable.
+      Read unrepaired shard-b pseudo-C for9 selected entries, direct Thumb disassembly and literal-pool words, fresh
+      capture summaries where cited; no source decomp/game recall or additional provider API call used.
+conventions:
+  coverage_scope: PARTIAL instruction-grounded engine/data operators. Entity roles, combat, progression, player
+    movement, economy, assets and story are not comprehensively recovered. Component count is not completeness.
+    No player skill or strategy is claimed.
+  state_types: u8/u16/u32 mean instruction access widths, ptr32 means a 32-bit address. Semantic paths containing
+    offsets identify unknown layouts, not reverse-engineered actor names. Caller-owned memory validity and table
+    extents remain preconditions.
+  units: Offsets, record strides and allocation counts use bytes or raw scalar counts. No raw number is converted
+    to pixels, seconds or player-physics units without evidence.
+  proof_scope: Consequential loads/stores, shifts, comparisons and return instructions were read directly from ROM
+    disassembly. Decompiler types, return signatures and IO-direction hints remain untrusted where not confirmed.
+    Literal-pool data printed by objdump is not treated as executed instructions.
+  inference_scope: Names such as record, pool and mask describe operations, not known gameplay meaning. Potential
+    reuse follows from the operator algebra; no gameplay trajectory or successful composition has been tested.
+components:
+- id: independent_threshold_increments
+  facet: mechanics
+  label: Increment two bytes only while each is below its threshold
+  summary: The helper increments object+0x84 when its unsigned byte value is below 16 and independently increments+0x85
+    when below 10. Values already at or above a threshold are left unchanged, so this is directional threshold-limited
+    growth rather than a clamp that repairs arbitrary out-of-range states; actor and resource meanings are unknown.
+  instantiates:
+  - concept: mechanics.state.independent_threshold_increment
+  reads:
+  - object.offset_84:u8
+  - object.offset_85:u8
+  writes:
+  - object.offset_84:u8
+  - object.offset_85:u8
+  invariants:
+  - For initial0..16, the first field stays within 0..16; for initial0..10, the second stays within 0..10.
+  - Initial values above 16 or 10 are preserved, not reduced.
+  - Each field changes by at most1 per call; no time unit is established.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x08016270
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/prince-of-persia-the-sands-of-time/functions.jsonl:56;
+      pseudo-C SHA256 d414a7a7b17efd6762104f98c3b58d5d496500c9efa18db0e0c470e46a9daf90; semantics checked against
+      ROM instructions, not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x08016270..0x8016290
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 e7e3e84399667aaba05df3c7b5fc7fa1453ae36951c40c24de0affa39ffaae9a; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x08016270.asm.txt
+      SHA256 0075e8299e68e02aa523f0bdd0dd9057ce8d0bc6dc6bf1848880a7fdaedc725d; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    threshold_offset_84:
+      value: 16
+      unit: raw byte-count units
+      native_value: 16
+      native_unit: raw byte-count units
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x08016270..0x8016290
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 e7e3e84399667aaba05df3c7b5fc7fa1453ae36951c40c24de0affa39ffaae9a; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x08016270.asm.txt
+          SHA256 0075e8299e68e02aa523f0bdd0dd9057ce8d0bc6dc6bf1848880a7fdaedc725d; PC-relative literal words separately
+          recorded in the evidence manifest.
+    threshold_offset_85:
+      value: 10
+      unit: raw byte-count units
+      native_value: 10
+      native_unit: raw byte-count units
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x08016270..0x8016290
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 e7e3e84399667aaba05df3c7b5fc7fa1453ae36951c40c24de0affa39ffaae9a; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x08016270.asm.txt
+          SHA256 0075e8299e68e02aa523f0bdd0dd9057ce8d0bc6dc6bf1848880a7fdaedc725d; PC-relative literal words separately
+          recorded in the evidence manifest.
+    per_call_increment:
+      value: 1
+      unit: raw byte-count unit
+      native_value: 1
+      native_unit: raw byte-count unit
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x08016270..0x8016290
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 e7e3e84399667aaba05df3c7b5fc7fa1453ae36951c40c24de0affa39ffaae9a; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x08016270.asm.txt
+          SHA256 0075e8299e68e02aa523f0bdd0dd9057ce8d0bc6dc6bf1848880a7fdaedc725d; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: conditional_mask_queries
+  facet: mechanics
+  label: Conditionally remap a mask and query one or two context bitfields
+  summary: Three verified leaf helpers use a mode halfword at object+0x7e and a global context pointer at 0x03001270.
+    If mode=0 or(mask&0xf0)=0, the mask is unchanged; otherwise the full32-bit mask shifts right1 when(mask&0xa0)!=0
+    and left1 otherwise, then intersects context+4. Entry 0x08016434 returns whether that intersection is zero,
+    while 0x08016480 additionally intersects context+6; no gameplay interpretation of the mode or context bits is
+    established.
+  instantiates:
+  - concept: mechanics.data.mode_conditioned_mask_query
+  reads:
+  - object.offset_7e:u16
+  - arg.mask:u32
+  - global[0x03001270]:ptr32
+  - context.offset_4:u16
+  - context.offset_6:u16
+  writes:
+  - return.filtered_mask:u32
+  - return.zero_predicate:u1
+  invariants:
+  - The bypass condition is mode=0 OR no 0xf0 bits, not both.
+  - On the remap path, any 0xa0 bit selects right shift for the entire mask.
+  - Left shift uses32-bit register truncation; do not reinterpret it as a per-direction lookup table.
+  - The extra+6 intersection is specific to entry 0x08016480.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x080163f8
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/prince-of-persia-the-sands-of-time/functions.jsonl:59;
+      pseudo-C SHA256 d797c576e2d53b46966962f825c4e92d99ba9d66d5b37c31693cc1beb50eae24; semantics checked against
+      ROM instructions, not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x080163f8..0x801642e
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 a8743e4bd34d214d0de8de87290bdfde7ad5ce04b52c39e4336be8841ccca83c; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x080163f8.asm.txt
+      SHA256 0db924f499a8d2881b5e5344a960209aabcd2ba823ec6b01aee560677d293a04; PC-relative literal words separately
+      recorded in the evidence manifest.
+  - kind: ghidra_function
+    ref: ghidra:0x08016434
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/prince-of-persia-the-sands-of-time/functions.jsonl:60;
+      pseudo-C SHA256 290c5a53ecfddb3f56f87e5f4b307dfc273ee6097bcee94567213c2cec01aa11; semantics checked against
+      ROM instructions, not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x08016434..0x801647c
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 c0ffd52b1fa1cbec0e6fe222bb4a94468ade5da5d605389b15a4150e8395bed7; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x08016434.asm.txt
+      SHA256 75c361a72dadb62b4cb385527d6d5f3025bc149d3d879edbce5f69bd7f339e81; PC-relative literal words separately
+      recorded in the evidence manifest.
+  - kind: ghidra_function
+    ref: ghidra:0x08016480
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/prince-of-persia-the-sands-of-time/functions.jsonl:61;
+      pseudo-C SHA256 3033ca7d085b6eae4450f8722064019feeef59ffb38726edabc9972d287ae32b; semantics checked against
+      ROM instructions, not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x08016480..0x80164c2
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 740009e54d723c16f2951a0b4c222defc830a81ba91d9fe33e84b9fedfa41bff; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x08016480.asm.txt
+      SHA256 ae26f8a09d178f47cc6d6560fc71b530c528c04bd71a6f0a368b0fc614f46ab0; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    remap_gate_mask:
+      value: 240
+      unit: bit mask
+      native_value: 240
+      native_unit: bit mask
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x080163f8..0x801642e
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 a8743e4bd34d214d0de8de87290bdfde7ad5ce04b52c39e4336be8841ccca83c; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x080163f8.asm.txt
+          SHA256 0db924f499a8d2881b5e5344a960209aabcd2ba823ec6b01aee560677d293a04; PC-relative literal words separately
+          recorded in the evidence manifest.
+    right_shift_test_mask:
+      value: 160
+      unit: bit mask
+      native_value: 160
+      native_unit: bit mask
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x080163f8..0x801642e
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 a8743e4bd34d214d0de8de87290bdfde7ad5ce04b52c39e4336be8841ccca83c; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x080163f8.asm.txt
+          SHA256 0db924f499a8d2881b5e5344a960209aabcd2ba823ec6b01aee560677d293a04; PC-relative literal words separately
+          recorded in the evidence manifest.
+    shift_distance:
+      value: 1
+      unit: bits
+      native_value: 1
+      native_unit: bits
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x080163f8..0x801642e
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 a8743e4bd34d214d0de8de87290bdfde7ad5ce04b52c39e4336be8841ccca83c; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x080163f8.asm.txt
+          SHA256 0db924f499a8d2881b5e5344a960209aabcd2ba823ec6b01aee560677d293a04; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: wrapped_index_bitmap_read
+  facet: mechanics
+  label: Query a bit using an8-bit byte index
+  summary: The helper computes byteIndex=(input>>3)&255, loads one byte from global context+0xc2+byteIndex and returns
+    the selected bit. Its explicit shift-count arithmetic reduces to input&7, so higher input bits beyond bit10
+    do not affect the result; the logical query aliases modulo2048, but the actual allocated bitset size remains
+    unverified.
+  instantiates:
+  - concept: mechanics.flags.wrapped_index_byte_bitset_query
+  reads:
+  - arg.index:u32
+  - global[0x03000fc0]:ptr32
+  - context.offset_c2_plus_byte_index:u8
+  writes:
+  - return:u1
+  invariants:
+  - Return is 0 or 1.
+  - Inputs differing only in bits11..31 select the same byte and bit.
+  - Caller must provide readable storage;8-bit indexing does not prove a256-byte allocation.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x0806b2d8
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/prince-of-persia-the-sands-of-time/functions.jsonl:98;
+      pseudo-C SHA256 752eb77f207f1b8a70f5b9a5a234fac81e01d41111b1b0b134c695670afdd742; semantics checked against
+      ROM instructions, not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x0806b2d8..0x806b2fa
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 c04085df733ce85b127f2e195c67df433455c08b5d26a96b37c8dfc12c722550; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x0806b2d8.asm.txt
+      SHA256 ec086b87ba7eb555cef8cf5ca813b2a1069b80a868dccd60b9a31b23d65a24f0; PC-relative literal words separately
+      recorded in the evidence manifest.
+  - kind: derived
+    ref: ((i - 8*((i>>3)&255)) &255) == (i&7); byte index retains bits3..10, giving index alias period2048.
+    confidence: 0.95
+    inputs:
+    - ghidra:0x0806b2d8
+    - rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x0806b2d8..0x0806b2fa
+  params:
+    byte_index_width:
+      value: 8
+      unit: bits
+      native_value: 8
+      native_unit: bits
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x0806b2d8..0x806b2fa
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 c04085df733ce85b127f2e195c67df433455c08b5d26a96b37c8dfc12c722550; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x0806b2d8.asm.txt
+          SHA256 ec086b87ba7eb555cef8cf5ca813b2a1069b80a868dccd60b9a31b23d65a24f0; PC-relative literal words separately
+          recorded in the evidence manifest.
+    logical_alias_period:
+      value: 2048
+      unit: bit indexes
+      native_value: 2048
+      native_unit: bit indexes
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x0806b2d8..0x806b2fa
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 c04085df733ce85b127f2e195c67df433455c08b5d26a96b37c8dfc12c722550; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x0806b2d8.asm.txt
+          SHA256 ec086b87ba7eb555cef8cf5ca813b2a1069b80a868dccd60b9a31b23d65a24f0; PC-relative literal words separately
+          recorded in the evidence manifest.
+    bank_offset:
+      value: 194
+      unit: bytes
+      native_value: 194
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x0806b2d8..0x806b2fa
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 c04085df733ce85b127f2e195c67df433455c08b5d26a96b37c8dfc12c722550; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x0806b2d8.asm.txt
+          SHA256 ec086b87ba7eb555cef8cf5ca813b2a1069b80a868dccd60b9a31b23d65a24f0; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: three_sentinels_and_zero
+  facet: mechanics
+  label: Initialize three bytes to255 and a fourth to0
+  summary: The helper follows the pointer stored at 0x03000fc0 and writes255 to offsets 0x72,0x73 and 0x74, then0
+    to+0x75. These may be sentinels and a count/flag, but that interpretation is not proven; only the four byte
+    values and offsets are established.
+  instantiates:
+  - concept: mechanics.state.three_byte_sentinel_initialization
+  reads:
+  - global[0x03000fc0]:ptr32
+  writes:
+  - context.offset_72:u8
+  - context.offset_73:u8
+  - context.offset_74:u8
+  - context.offset_75:u8
+  invariants:
+  - Only the four listed bytes are modified.
+  - 255 is a raw byte value here; invalid/unused meanings remain unknown.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x0806b614
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/prince-of-persia-the-sands-of-time/functions.jsonl:104;
+      pseudo-C SHA256 5f83bd24d8663556e4c8602d279f27817c6c81748968d81c9ac56ff425c24e31; semantics checked against
+      ROM instructions, not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x0806b614..0x806b638
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 34b75fc576de59ab86d4593da46a237e748f3abea5a14f70ed913392d49ec96b; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x0806b614.asm.txt
+      SHA256 192be3ecebceab6af2e4c29471533b0453453e7765ed0ac8426e57c55283f012; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    three_byte_value:
+      value: 255
+      unit: raw byte value
+      native_value: 255
+      native_unit: raw byte value
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x0806b614..0x806b638
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 34b75fc576de59ab86d4593da46a237e748f3abea5a14f70ed913392d49ec96b; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x0806b614.asm.txt
+          SHA256 192be3ecebceab6af2e4c29471533b0453453e7765ed0ac8426e57c55283f012; PC-relative literal words separately
+          recorded in the evidence manifest.
+    fourth_byte_value:
+      value: 0
+      unit: raw byte value
+      native_value: 0
+      native_unit: raw byte value
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x0806b614..0x806b638
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 34b75fc576de59ab86d4593da46a237e748f3abea5a14f70ed913392d49ec96b; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x0806b614.asm.txt
+          SHA256 192be3ecebceab6af2e4c29471533b0453453e7765ed0ac8426e57c55283f012; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: affine_background_identity_setup
+  facet: rendering
+  label: Reset BG2 and BG3 affine state to identity
+  summary: Instructions use halfword writes to zero both affine reference origins and off-diagonal coefficients
+    while setting PA and PD to 256 for BG2 and BG3. This gives the native8.8 identity coefficient1.0, but a setup
+    routine alone does not show that an affine layer is enabled or visibly used in the captured phases.
+  instantiates:
+  - concept: rendering.background.affine_identity_setup
+  reads: []
+  writes:
+  - io.BG2.origin:u32[2]
+  - io.BG3.origin:u32[2]
+  - io.BG2.matrix:u16[4]
+  - io.BG3.matrix:u16[4]
+  invariants:
+  - Origins and off-diagonal coefficients become0; PA/PD become 0x100.
+  - This routine does not itself enable background display bits.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x0808e64c
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/prince-of-persia-the-sands-of-time/functions.jsonl:413;
+      pseudo-C SHA256 9147fd62ee70b1b55271861ff02aac673f460e54964b6f37591b547dc3a2bc4a; semantics checked against
+      ROM instructions, not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x0808e64c..0x808e696
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 91472c4b8b0d2abd7b9567a8cad4853afe838b5096f2e4f920a0fd17e46ce57f; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x0808e64c.asm.txt
+      SHA256 f0d5cb0dff65611a9aa171b5853a45fefb4cdfc524ce77064403950090c490f2; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    identity_coefficient:
+      value: 1.0
+      unit: scale ratio
+      native_value: 256
+      native_unit: GBA affine8.8 coefficient
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x0808e64c..0x808e696
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 91472c4b8b0d2abd7b9567a8cad4853afe838b5096f2e4f920a0fd17e46ce57f; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x0808e64c.asm.txt
+          SHA256 f0d5cb0dff65611a9aa171b5853a45fefb4cdfc524ce77064403950090c490f2; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: background_scroll_dma_setup
+  facet: rendering
+  label: Configure DMA0 with a structure-owned source and BG1 scroll destination
+  summary: The helper first disables DMA0 control, loads the source pointer from structure+0x18, targets 0x04000014
+    and writes combined control/count 0xa2600001. The retained capture separately records HBlank DMA0 to that BG-scroll
+    destination; this corroborates hardware use but does not identify the owning scene, camera model or table-generation
+    rule.
+  instantiates:
+  - concept: rendering.raster.structure_sourced_scroll_dma
+  reads:
+  - object.offset_18:ptr32
+  writes:
+  - io.DMA0.control:u16
+  - io.DMA0.source:ptr32
+  - io.DMA0.destination:ptr32
+  - io.DMA0.count_control:u32
+  invariants:
+  - The DMA-disable store precedes source/destination/control reconfiguration.
+  - Caller must provide a valid suitably sized source table; this helper contains no source extent check.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x0807ab60
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/prince-of-persia-the-sands-of-time/functions.jsonl:194;
+      pseudo-C SHA256 5c271e905a1cadad73ed6ed8883ac87f9012288c170b3451d98350a0f4813144; semantics checked against
+      ROM instructions, not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x0807ab60..0x807ab76
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 4979ce5812d105bc6ce0fdcf364920d469bf70ff3818cd7af8263081b3220f24; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x0807ab60.asm.txt
+      SHA256 fcde262d752951cd466be0ca55f117889b2b98f55117758736d776d8d22a67b8; PC-relative literal words separately
+      recorded in the evidence manifest.
+  - kind: capture_telemetry
+    ref: local/captures-experiments/20261016-current-scripts/prince-of-persia-the-sands-of-time/summary.json#/derived/hblank_dma_targets
+    confidence: 0.9
+    note: Capture run20261016T004328-0e248f; summary SHA256 5502ccacc82315b401441b052bf9086a5c146c597bbc45318f7e357bbc65cbb1;
+      observed HBlank DMA0 destination0x04000014; phase-limited evidence, no ownership attribution.
+  params:
+    dma_word:
+      value: '0xa2600001'
+      unit: raw control/count word
+      native_value: '0xa2600001'
+      native_unit: raw control/count word
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x0807ab60..0x807ab76
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 4979ce5812d105bc6ce0fdcf364920d469bf70ff3818cd7af8263081b3220f24; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x0807ab60.asm.txt
+          SHA256 fcde262d752951cd466be0ca55f117889b2b98f55117758736d776d8d22a67b8; PC-relative literal words separately
+          recorded in the evidence manifest.
+    destination:
+      value: '0x04000014'
+      unit: GBA register address
+      native_value: '0x04000014'
+      native_unit: GBA register address
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x0807ab60..0x807ab76
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 4979ce5812d105bc6ce0fdcf364920d469bf70ff3818cd7af8263081b3220f24; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x0807ab60.asm.txt
+          SHA256 fcde262d752951cd466be0ca55f117889b2b98f55117758736d776d8d22a67b8; PC-relative literal words separately
+          recorded in the evidence manifest.
+    source_pointer_offset:
+      value: 24
+      unit: bytes
+      native_value: 24
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x0807ab60..0x807ab76
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 4979ce5812d105bc6ce0fdcf364920d469bf70ff3818cd7af8263081b3220f24; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x0807ab60.asm.txt
+          SHA256 fcde262d752951cd466be0ca55f117889b2b98f55117758736d776d8d22a67b8; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: selected_field_record_gather
+  facet: mechanics
+  label: Copy selected object fields into a36-byte indexed record
+  summary: A destination pointer from object+0x0c and raw index select a36-byte record. Instructions gather eight32-bit
+    words from source offsets 0x10,0x14,0x48,0x4c,0x58,0x5c,0x60,0x64 and two16-bit values from 0x68,0x6a into consecutive
+    destination fields; no history-buffer, rewind or persistence role is established by this helper.
+  instantiates:
+  - concept: mechanics.data.selected_field_record_gather
+  reads:
+  - object.offset_0c:ptr32
+  - arg.index:u32
+  - object.fields_10_14_48_4c_58_5c_60_64:u32[]
+  - object.fields_68_6a:u16[]
+  writes:
+  - record[index].words_0_to_7:u32[]
+  - record[index].halfwords_20_22:u16[]
+  invariants:
+  - For nonoverlapping valid source/destination, the listed fields are copied without unit conversion.
+  - No index bound or allocation capacity is checked.
+  - Loads and stores are interleaved; do not claim an atomic snapshot under overlap or concurrency.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x080021d4
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/prince-of-persia-the-sands-of-time/functions.jsonl:20;
+      pseudo-C SHA256 d2cdb16fbec8268a9c9c40a63944a269348653e7531b03881c8801477715c14f; semantics checked against
+      ROM instructions, not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x080021d4..0x800220e
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 28948860cff006950d4aeb131c10cc726dbbe285235ee142b0227715f4d51942; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x080021d4.asm.txt
+      SHA256 8e8acfe576ba45d11ebc5048a938c21d6079f86bd839754a34b710b40dfc777a; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    record_stride:
+      value: 36
+      unit: bytes
+      native_value: 36
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x080021d4..0x800220e
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 28948860cff006950d4aeb131c10cc726dbbe285235ee142b0227715f4d51942; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x080021d4.asm.txt
+          SHA256 8e8acfe576ba45d11ebc5048a938c21d6079f86bd839754a34b710b40dfc777a; PC-relative literal words separately
+          recorded in the evidence manifest.
+    word_count:
+      value: 8
+      unit: 32-bit words
+      native_value: 8
+      native_unit: 32-bit words
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x080021d4..0x800220e
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 28948860cff006950d4aeb131c10cc726dbbe285235ee142b0227715f4d51942; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x080021d4.asm.txt
+          SHA256 8e8acfe576ba45d11ebc5048a938c21d6079f86bd839754a34b710b40dfc777a; PC-relative literal words separately
+          recorded in the evidence manifest.
+    halfword_count:
+      value: 2
+      unit: 16-bit halfwords
+      native_value: 2
+      native_unit: 16-bit halfwords
+      evidence:
+      - kind: static_signature
+        ref: rom:3f379cd2e598ca69ba68649c81cf425ed284ae27:0x080021d4..0x800220e
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 28948860cff006950d4aeb131c10cc726dbbe285235ee142b0227715f4d51942; local/scratch/rom_pipeline_audit/mining-v2/prince-of-persia-the-sands-of-time/0x080021d4.asm.txt
+          SHA256 8e8acfe576ba45d11ebc5048a938c21d6079f86bd839754a34b710b40dfc777a; PC-relative literal words separately
+          recorded in the evidence manifest.
+proposed_concepts:
+- id: mechanics.state.independent_threshold_increment
+  label: Independent threshold increment
+  definition: Independently increment fields below fixed thresholds while preserving values already at or above
+    them.
+- id: mechanics.data.mode_conditioned_mask_query
+  label: Mode conditioned mask query
+  definition: Remap a bitmask under an explicit mode gate, then evaluate intersection or its zero predicate.
+- id: mechanics.flags.wrapped_index_byte_bitset_query
+  label: Wrapped index byte bitset query
+  definition: Read a bit from a byte bank after truncating the byte index to a fixed width.
+- id: mechanics.state.three_byte_sentinel_initialization
+  label: Three byte sentinel initialization
+  definition: Initialize three state bytes to a shared sentinel value and one separate byte to zero.
+- id: rendering.background.affine_identity_setup
+  label: Affine identity setup
+  definition: Reset affine origins and matrix coefficients to a hardware identity transform.
+- id: rendering.raster.structure_sourced_scroll_dma
+  label: Structure sourced scroll dma
+  definition: Configure a scanline-scroll transfer from a source pointer owned by a caller structure.
+- id: mechanics.data.selected_field_record_gather
+  label: Selected field record gather
+  definition: Gather selected object fields into a fixed-width indexed record.
+open_questions:
+- Identify callers, actual object/entity ownership, valid index ranges, memory extents and update cadence before
+  binding these operators to player or enemy behavior.
+- Extract combat, resource meanings, AI, traversal, story, assets and progression from further source/disassembly
+  and controlled trajectories; do not substitute model recall.
+- These exports cover observed call targets only. Unknown indirect branches, ABI recovery and unexecuted ROM regions
+  limit discovery completeness.
+- The thresholded bytes at+0x84/+0x85 must not be labeled health, sand, stamina, animation timers or physics without
+  caller/trajectory evidence.
+- The three mask helpers may relate to controls, but orientation, input semantics and update cadence are unproven.
+- 'Field gathering does not prove rewind/history behavior despite the title: establish write-index lifecycle and
+  a matching restoration reader first.'
+- No affine BG use was measured in the retained phases even though the identity setup routine exists; routine existence
+  and captured use are distinct.

@@ -1,0 +1,976 @@
+schema_version: 0
+id: mario-and-luigi-superstar-saga
+game:
+  title: 'Mario & Luigi: Superstar Saga'
+  platform: gba
+  game_code: A88E
+  rom_sha1: 7c303cdde5061ee329296948060b875cb50ba410
+  evidence_basis:
+  - decomp_source
+  - capture_telemetry
+  - capture_frame
+  - derived
+  sources:
+  - kind: decomp
+    ref: https://github.com/jellees/mlss @ b03634c2c700a3ae78f39e576cc88a45c3a724fd; README target SHA1 matches
+      indexed USA ROM; local rebuild not performed; recovered C is largely frontend/process code.
+  - kind: excluded_alternative
+    ref: https://github.com/nstearns96/MLSuperstarSaga @ baae10311925d1f498ff0ad3c43a748b453be239; README and main.asm
+      inspected only. Advertised SHA1 82c80dd02181dbc91d9eca45b898d2f2a7e36a23 differs from corpus; main.asm is
+      startup only and hexdump.zip was not mined. No game-semantic evidence imported.
+  - kind: captures
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/summary.json; run20261016T004328-0e248f;
+      SHA256 2f838ffe2bc14a4a2d5d0a88af465250c7910823372e69ba20bc85bec382be3c; harness0.1.0, libmgba0.10.5 HLE BIOS;
+      attract3600, frontend5400, gameplay8000 cold-boot frames; gameplay5300 annotation unverified; script hashes
+      and expanded inputs retained by run.
+  - kind: extraction_run
+    ref: Codex GPT-6-family agent, exact serving model identifier unavailable; brief v1; reading stage start/total
+      wall not instrumented; timed synthesis/writing stage 2026-10-16T04:46:06Z to 2026-10-16T04:48:45+00:00. Read
+      mlss README, include/common.h, include/buffer_io_reg.h, src/process.c/.h, src/title_screen.c/.h (selected
+      functions), src/option_screens.c/.h, src/game_boy_player_logo.c, initial asm/text08000000.s bytes (not decoded);
+      alternative README/main.asm; capture summary and all three phase.json files; visually inspected nine keyframes.
+      No additional provider API request or provider secret was used. Review/validation completed 2026-10-16T04:49:15+00:00.
+conventions:
+  coverage_scope: PARTIAL extraction. Strong frontend, engine lifecycle and captured hardware evidence; playable
+    movement, battle mechanics, enemy AI, economy, progression and most narrative are not recovered. Counts are
+    not completeness scores.
+  capture_scope: All capture references in this document use the explicit experiment directory, not the older local/captures
+    run. Aggregate observations mix independent cold boots and scripted startup. Outcome ok means harness completion,
+    not validated player control.
+  frontend_units: COMPProcess presentation coordinates divide by256 when written to Sprite positions. Per-callback
+    increments are update ticks; hardware-frame cadence and seconds conversion are not independently established.
+    No player physics constants are proposed.
+  state_types: Frontend/menu selections are small signed integer indexes; process priority is u8; Process.frames
+    is u32; input fields are u16 masks. Read/write paths are semantic aliases introduced by this extraction, not
+    claims of recovered engine variable names.
+  option_semantics: Names easy sleep/rumble/auto are recovered definitions, while actual sleep mechanisms and peripheral
+    hardware effects remain unknown.
+  inference_policy: Components explicitly labeled inferred strategy/skill describe rule-derived frontend affordances
+    only. They are neither optimized policies nor empirically playtested skills.
+components:
+- id: priority_process_scheduler
+  facet: mechanics
+  label: Priority-ordered engine process scheduling
+  summary: 'Implementation component, not a combat rule: process_add inserts a process in an ascending-priority
+    linked list, placing it after existing equal priorities. process_execute_all calls enabled nonwaiting process
+    callbacks and increments their local update counter; repeated execution and signed executeMax branches exist,
+    but their gameplay use is unknown.'
+  instantiates:
+  - concept: mechanics.engine.priority_callback_scheduler
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/process.c:process_add;process_execute_all
+    confidence: 0.88
+  - kind: decomp_source
+    ref: mlss:include/common.h:Process;GameState
+    confidence: 0.88
+  reads:
+  - engine.process.priority
+  - engine.process.enabled
+  - engine.process.wait
+  - engine.process.executeMax
+  writes:
+  - engine.process.links
+  - engine.process.frames
+  - engine.current_process
+  invariants:
+  - A newly added process starts enabled, waiting, executeMax=1, executeCounter=0, frames=0.
+  - This extraction does not equate one scheduler update with one hardware video frame.
+- id: protected_priority_pause
+  facet: mechanics
+  label: Selective process suspension
+  summary: process_disable_all suspends processes except priorities 0 and 255. process_enable_all enables every
+    listed process and marks each waiting, allowing engine service callbacks to remain distinct from paused activity;
+    which gameplay systems use the protected priorities is not established.
+  instantiates:
+  - concept: mechanics.engine.protected_priority_pause
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/process.c:process_disable_all;process_enable_all
+    confidence: 0.88
+  reads:
+  - engine.process.priority
+  writes:
+  - engine.process.enabled
+  - engine.process.wait
+  relations:
+  - type: modulates
+    target: priority_process_scheduler
+  params:
+    protected_priorities:
+      value:
+      - 0
+      - 255
+      unit: priority codes
+      evidence:
+      - kind: decomp_source
+        ref: mlss:src/process.c:process_disable_all
+        confidence: 0.88
+- id: safe_process_unlink
+  facet: mechanics
+  label: Process removal repairs active iteration links
+  summary: process_remove repairs neighboring linked-list pointers and adjusts currentProcess or nextProcess when
+    the removed object is being visited. Storage is freed only when the FREE flag is set; this is a lifecycle primitive
+    rather than proof of a save or gameplay rollback mechanism.
+  instantiates:
+  - concept: mechanics.engine.iteration_safe_process_removal
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/process.c:process_remove
+    confidence: 0.88
+  - kind: decomp_source
+    ref: mlss:src/process.h:PROCESS_REMOVE_FLAGS_FREE
+    confidence: 0.88
+  reads:
+  - engine.process.previous
+  - engine.process.next
+  - engine.remove_flags
+  writes:
+  - engine.process.links
+  - engine.current_process
+  - engine.next_process
+  - engine.process_count
+  invariants:
+  - FREE flag controls storage release.
+  relations:
+  - type: part_of
+    target: priority_process_scheduler
+- id: publisher_logo_sequence
+  facet: frontend
+  label: Stateful publisher-logo presentation
+  summary: comp_init constructs Mario, Luigi and AlphaDream logo sprites and a drawing subprocess. comp_update advances
+    an authored fall, shake, hold and brightness sequence before creating the title process; A/B/START are tested
+    in the AlphaDream presentation states rather than universally in every logo state.
+  instantiates:
+  - concept: frontend.boot.publisher_logos
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/title_screen.c:comp_init;comp_update
+    confidence: 0.88
+  reads:
+  - frontend.logo.state
+  - input.field_2A
+  writes:
+  - frontend.logo.state
+  - frontend.title_process
+  relations:
+  - type: requires
+    target: priority_process_scheduler
+- id: game_boy_player_probe
+  facet: frontend
+  label: Logo-phase peripheral signal detection
+  summary: gbpl_update reads active-low D-pad hardware, computes newly asserted directions and detects a narrow
+    all-directions timing pattern during the logo process. Two qualifying events with a nonzero previous timestamp
+    and spacing under four process-counter ticks set a capability flag later used by the rumble option; physical
+    Game Boy Player compatibility was not tested.
+  instantiates:
+  - concept: frontend.hardware.logo_phase_peripheral_probe
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/game_boy_player_logo.c:gbpl_init;gbpl_update
+    confidence: 0.88
+  reads:
+  - input.hardware.dpad
+  - frontend.probe.previous_dpad
+  - engine.process.frames
+  writes:
+  - system.peripheral_flag
+  invariants:
+  - The prior qualifying timestamp must be nonzero.
+  params:
+    max_spacing_exclusive:
+      value: 4
+      unit: process-counter ticks
+      evidence:
+      - kind: decomp_source
+        ref: mlss:src/game_boy_player_logo.c:gbpl_update
+        confidence: 0.88
+- id: title_state_machine
+  facet: frontend
+  label: Suitcase-based title-state machine
+  summary: The recovered title has fade-in, title-animation, press-start-show, press-start-wait, suitcase-opens,
+    game-select and fade-out states. Individual suitcase and logo items advance their own substates, keeping presentation
+    completion distinct from accepting a menu choice.
+  instantiates:
+  - concept: frontend.flow.mode_state_machine
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/title_screen.h:TitleScreenStates;TitleScreenItems
+    confidence: 0.88
+  - kind: decomp_source
+    ref: mlss:src/title_screen.c:open_update
+    confidence: 0.88
+  reads:
+  - frontend.title.state
+  - frontend.title.item_states
+  writes:
+  - frontend.title.state
+  - frontend.title.item_states
+  relations:
+  - type: requires
+    target: priority_process_scheduler
+- id: conditional_title_skip
+  facet: frontend
+  label: Conditioned title-animation skip
+  summary: During title animation, A/B/SELECT/START trigger skipping only when skipSuitcaseAnim is true and a skip
+    is not already underway. The transition fades, reconstructs the title state and resumes through fade-in; this
+    is not evidence that all story scenes can be skipped.
+  instantiates:
+  - concept: frontend.intro.condition_gated_skip
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/title_screen.c:open_update:TS_STATE_TITLE_ANIMATION
+    confidence: 0.88
+  reads:
+  - frontend.title.skip_allowed
+  - frontend.title.skipping
+  - input.field_2A
+  writes:
+  - frontend.title.skipping
+  - frontend.title.brightness
+  - frontend.title.state
+  invariants:
+  - Skip input is gated by skipSuitcaseAnim.
+  relations:
+  - type: part_of
+    target: title_state_machine
+- id: title_press_start
+  facet: frontend
+  label: Title waits for A or START
+  summary: The title visibly presents a start prompt. In its press-start-wait state, A or START starts a suitcase/menu
+    transition and queues sound effect 96; unrelated input does not take this branch.
+  instantiates:
+  - concept: frontend.title.press_start_menu
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/title_screen.c:open_update:TS_STATE_PRESS_START_WAIT
+    confidence: 0.88
+  - kind: capture_frame
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/attract/keyframes/f001255.png
+    confidence: 0.9
+  reads:
+  - frontend.title.state
+  - input.field_2A
+  writes:
+  - frontend.title.state
+  - frontend.title.suitcase_substate
+  relations:
+  - type: part_of
+    target: title_state_machine
+- id: three_way_game_selector
+  facet: ui_hud
+  label: Cyclic three-entry game selector
+  summary: The recovered menu distinguishes Mario & Luigi, Mario Bros. and options. UP/DOWN wrap the selected index
+    across 0..2, while A/START has priority over navigation in the same update; the bean pointer moves to y=92+20*selection.
+  instantiates:
+  - concept: ui_hud.menu.cyclic_list_selection
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/title_screen.c:open_update:TS_STATE_GAME_SELECT
+    confidence: 0.88
+  - kind: decomp_source
+    ref: mlss:src/title_screen.h:TitleScreenSprites
+    confidence: 0.88
+  reads:
+  - input.field_2A
+  - input.field_2E
+  - frontend.menu.selection
+  writes:
+  - frontend.menu.selection
+  - frontend.menu.pointer_y
+  invariants:
+  - Selection wraps into 0..2.
+  - A/START is tested before directional navigation.
+  params:
+    entry_count:
+      value: 3
+      unit: entries
+      evidence:
+      - kind: decomp_source
+        ref: mlss:src/title_screen.c:open_update:TS_STATE_GAME_SELECT
+        confidence: 0.88
+    pointer_row_spacing:
+      value: 20
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: mlss:src/title_screen.c:open_update:TS_STATE_GAME_SELECT
+        confidence: 0.88
+- id: menu_dispatch
+  facet: frontend
+  label: Fade-boundary dispatch to game, bundled mode or options
+  summary: After a 16-count fade-out, the selected route creates the LOAD process for Mario & Luigi, calls the bundled
+    Mario Bros. entry, or creates OPTN. The title removes its drawing process, stops DMA0 and releases its own process
+    before dispatch; downstream game-load/save semantics remain unknown.
+  instantiates:
+  - concept: frontend.menu.multimode_dispatch
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/title_screen.c:open_update:TS_STATE_FADE_OUT
+    confidence: 0.88
+  reads:
+  - frontend.menu.selection
+  - frontend.title.brightness
+  writes:
+  - frontend.active_process
+  - hardware.dma0.enabled
+  relations:
+  - type: requires
+    target: three_way_game_selector
+  - type: part_of
+    target: title_state_machine
+- id: options_input_gates
+  facet: ui_hud
+  label: Options interaction is gated during modal animation
+  summary: optn_update refuses normal selection processing while the window animates, while a cooldown is active,
+    or when A is asserted in that state. Otherwise UP/DOWN wrap across three rows and B attempts persistence; the
+    source exposes different input fields for navigation and direct actions without fully recovering their repeat
+    semantics.
+  instantiates:
+  - concept: ui_hud.input.modal_animation_gate
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/option_screens.c:optn_update:OPTS_STATE_SELECT_OPTION
+    confidence: 0.88
+  reads:
+  - frontend.options.window_scale
+  - frontend.options.cooldown
+  - input.field_2A
+  - input.field_2E
+  writes:
+  - frontend.options.selection
+  - frontend.options.state
+  invariants:
+  - Window animation and positive cooldown gate normal option processing.
+- id: option_feature_bits
+  facet: frontend
+  label: Three persistent feature-option bits
+  summary: The recovered option definitions label bits as easy sleep, rumble and auto feature. Directional input
+    changes staged bits; rumble is editable only when the peripheral flag equals one. The actual sleep trigger and
+    timeout behavior is not recovered, so these labels establish stored configuration rather than implementation
+    of sleeping.
+  instantiates:
+  - concept: frontend.options.capability_gated_flags
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/option_screens.h:OPTION_FLAGS_*
+    confidence: 0.88
+  - kind: decomp_source
+    ref: mlss:src/option_screens.c:optn_update;try_save_options
+    confidence: 0.88
+  reads:
+  - system.peripheral_flag
+  - frontend.options.bits
+  - input.field_2A
+  writes:
+  - frontend.options.bits
+  invariants:
+  - Rumble changes require field_888_1==1.
+  params:
+    bit_positions:
+      value:
+      - 0
+      - 1
+      - 2
+      unit: bit indexes
+      evidence:
+      - kind: decomp_source
+        ref: mlss:src/option_screens.h:OPTION_FLAGS_SHIFT_*
+        confidence: 0.88
+- id: option_confirmation_modal
+  facet: frontend
+  label: Feature-enable confirmation and animated return
+  summary: Enabling each labeled feature enters its own confirmation state. A acknowledges only after the window
+    animation reaches zero; rumble acknowledgment additionally sets the runtime flag and a 16-update cooldown. This
+    establishes acknowledgement ordering, not the human meaning of every confirmation text.
+  instantiates:
+  - concept: frontend.options.enable_confirmation
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/option_screens.c:optn_update:OPTS_STATE_EASY_SLEEP_CONFIRMATION;OPTS_STATE_RUMBLE_FEATURE_CONFIRMATION;OPTS_STATE_AUTO_SLEEP_CONFIRMATION
+    confidence: 0.88
+  reads:
+  - frontend.options.state
+  - frontend.options.window_scale
+  - input.field_2A
+  writes:
+  - frontend.options.state
+  - frontend.options.cooldown
+  relations:
+  - type: modulates
+    target: options_input_gates
+  params:
+    rumble_ack_cooldown:
+      value: 16
+      unit: option-update ticks
+      evidence:
+      - kind: decomp_source
+        ref: mlss:src/option_screens.c:optn_update:OPTS_STATE_RUMBLE_FEATURE_CONFIRMATION
+        confidence: 0.88
+- id: option_persistence_attempt
+  facet: frontend
+  label: Staged option persistence with explicit return value
+  summary: try_save_options copies staged bits into runtime fields and an EEPROM-related structure before invoking
+    sub_812454C. On B in the selection state, its boolean result chooses leave or save-error state. No power-loss
+    atomicity, record checksum or complete save format is established by the recovered wrapper.
+  instantiates:
+  - concept: frontend.save.result_checked_option_write
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/option_screens.c:try_save_options;optn_update
+    confidence: 0.88
+  reads:
+  - frontend.options.bits
+  writes:
+  - system.option_flags
+  - save.option_bits
+  - frontend.options.state
+  invariants:
+  - Runtime option fields are assigned before the low-level writer returns.
+  relations:
+  - type: requires
+    target: option_feature_bits
+- id: option_save_error
+  facet: frontend
+  label: Failed settings save receives a separate acknowledgement state
+  summary: A failed option-write result enters a save-error state rather than the success transition. After modal
+    opening finishes, the error screen leaves after 240 countdown updates or A/B/START; this is a settings error
+    path and does not establish safe campaign-save recovery.
+  instantiates:
+  - concept: frontend.save.timed_error_acknowledgement
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/option_screens.c:optn_update:OPTS_STATE_SAVE_ERROR;OPTS_STATE_SAVE_ERROR_CONFIRMATION
+    confidence: 0.88
+  reads:
+  - frontend.options.state
+  - input.field_2A
+  - frontend.options.window_scale
+  writes:
+  - frontend.options.error_countdown
+  - frontend.options.state
+  relations:
+  - type: part_of
+    target: option_persistence_attempt
+  params:
+    error_countdown:
+      value: 240
+      unit: option-update ticks
+      evidence:
+      - kind: decomp_source
+        ref: mlss:src/option_screens.c:optn_update:OPTS_STATE_SAVE_ERROR_CONFIRMATION
+        confidence: 0.88
+- id: scripted_logo_ballistics
+  facet: movement_physics
+  label: Presentation-only fixed-point falling and rebound
+  summary: comp_update applies explicit velocity and acceleration to the startup Mario/Luigi sprites and background
+    offset, with a fixed rebound velocity after the landing threshold. Sprite coordinates are rendered by division
+    by 256. These are authored logo-animation dynamics, not playable-character gravity, jump strength or collision
+    behavior.
+  instantiates:
+  - concept: movement_physics.presentation.scripted_ballistic_motion
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/title_screen.c:comp_init;comp_update
+    confidence: 0.88
+  reads:
+  - frontend.logo.position
+  - frontend.logo.velocity
+  - frontend.logo.acceleration
+  writes:
+  - frontend.logo.position
+  - frontend.logo.velocity
+  invariants:
+  - The conversion applies only to COMPProcess presentation coordinates.
+  params:
+    presentation_acceleration:
+      value: 0.45703125
+      unit: px/logo-update^2
+      evidence:
+      - kind: decomp_source
+        ref: mlss:src/title_screen.c:comp_init;comp_update
+        confidence: 0.88
+      native_value: 117
+      native_unit: 1/256 px/logo-update^2
+- id: mode0_mode1_tile_layers
+  facet: rendering
+  label: Measured tile-mode presentation and scenes
+  summary: The retained three-phase run records display modes 0 and 1, layered backgrounds and OBJ sprites. No bitmap-mode
+    usage was observed in this run, which does not exclude bitmap techniques elsewhere in the game.
+  instantiates:
+  - concept: rendering.background.tile_layer_stack
+  evidence:
+  - kind: capture_telemetry
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/summary.json#/derived/video_modes_frames
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/phase.json#/video
+    confidence: 0.9
+  params:
+    observed_modes:
+      value:
+      - 0
+      - 1
+      unit: GBA mode codes
+      evidence:
+      - kind: capture_telemetry
+        ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/summary.json#/derived/video_modes_frames
+        confidence: 0.9
+- id: title_affine_background
+  facet: rendering
+  label: Title lettering uses an affine background transform
+  summary: open_update builds a BG affine matrix for the title lettering and writes BG2 transform registers. The
+    no-input attract phase records 55 frames with a transformed affine background, while later phases contain affine-capable
+    layers without the same transformed-frame signal.
+  instantiates:
+  - concept: rendering.background.affine_rotscale
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/title_screen.c:open_update:TS_ITEM_ML_LOGO
+    confidence: 0.88
+  - kind: capture_telemetry
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/attract/phase.json#/video/affine_bg_transformed_frames
+    confidence: 0.9
+  reads:
+  - frontend.title.logo_scale
+  - frontend.title.logo_position
+  writes:
+  - hardware.bg2.affine_matrix
+- id: affine_sprite_presentation
+  facet: rendering
+  label: Affine sprites are present in the measured front end
+  summary: The title code animates logo sprite scales and the harness records affine OBJ use, with a peak count
+    of six. This is an observed presentation technique rather than proof that battle sprites use affine transforms.
+  instantiates:
+  - concept: rendering.sprite.affine_rotscale
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/title_screen.c:open_update:TS_ITEM_SS_TEXT;TS_ITEM_LICENSE_TEXT
+    confidence: 0.88
+  - kind: capture_telemetry
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/summary.json#/derived/max_affine_sprites
+    confidence: 0.9
+  params:
+    observed_peak_affine_objects:
+      value: 6
+      unit: OBJ entries
+      evidence:
+      - kind: capture_telemetry
+        ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/summary.json#/derived/max_affine_sprites
+        confidence: 0.9
+- id: scanline_background_scroll
+  facet: rendering
+  label: HBlank DMA0 drives per-line background scrolling
+  summary: sub_8056224 constructs a scanline-value table and configures DMA0 to the BG1 horizontal-scroll register
+    at 0x04000014. Attract telemetry records this destination and 3181 frames with at least 32 rewritten visible
+    lines, giving a source-plus-measurement link for the front-end effect.
+  instantiates:
+  - concept: rendering.raster.hblank_dma_scroll_distortion
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/title_screen.c:sub_8056224
+    confidence: 0.88
+  - kind: capture_telemetry
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/attract/phase.json#/raster/dma_configs
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/attract/phase.json#/raster/groups/bg_scroll
+    confidence: 0.9
+  reads:
+  - frontend.scanline_accumulators
+  - frontend.scanline_bounds
+  writes:
+  - hardware.dma0
+  - hardware.bg1.horizontal_scroll
+  invariants:
+  - The cited observed DMA destination is BG1HOFS, not an affine-matrix register.
+- id: window_shape_dma
+  facet: rendering
+  label: HBlank window-shape transitions
+  summary: The frontend phase records HBlank DMA3 transfers to 0x04000040 using 32-bit width and one-unit count,
+    with alternating source tables. A directly inspected keyframe shows a circular reveal. The transfer evidence
+    supports a window-boundary effect but the exact geometric table generator has not been recovered.
+  instantiates:
+  - concept: rendering.raster.window_shape_per_scanline
+  evidence:
+  - kind: capture_telemetry
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/frontend/phase.json#/raster/dma_configs
+    confidence: 0.9
+  - kind: capture_frame
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/frontend/keyframes/f001053_scene.png
+    confidence: 0.9
+  reads:
+  - render.transition.scanline_window_table
+  writes:
+  - hardware.window_bounds
+  - hardware.dma3
+- id: brightness_fade
+  facet: rendering
+  label: State transitions use hardware brightness coefficients
+  summary: Title and options transitions update buffered BLDY while switching states. The observed run records brighten
+    effects; frontend counters typically traverse 16 brightness steps, but their duration in hardware frames has
+    not been independently aligned to the callback cadence.
+  instantiates:
+  - concept: rendering.blending.brightness_fade
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/title_screen.c:comp_update;open_update
+    confidence: 0.88
+  - kind: decomp_source
+    ref: mlss:src/option_screens.c:optn_update
+    confidence: 0.88
+  - kind: capture_telemetry
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/summary.json#/derived/flags/brightness_fade
+    confidence: 0.9
+  reads:
+  - frontend.brightness
+  writes:
+  - hardware.buffered_bldy
+  params:
+    full_brightness_coefficient:
+      value: 16
+      unit: BLDY coefficient units
+      evidence:
+      - kind: decomp_source
+        ref: mlss:src/title_screen.c:open_update
+        confidence: 0.88
+- id: alpha_blend_measurement
+  facet: rendering
+  label: Alpha blending is observed during entered scenes
+  summary: The frontend and gameplay-named cold-boot phases record 1025 and 1021 frames respectively in alpha-blend
+    configuration. The exact actors or surfaces affected are not identified; this component records the hardware
+    capability used in those scenes.
+  instantiates:
+  - concept: rendering.blending.alpha_layer_transparency
+  evidence:
+  - kind: capture_telemetry
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/frontend/phase.json#/video/blend_frames
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/phase.json#/video/blend_frames
+    confidence: 0.9
+  reads:
+  - hardware.bldcnt
+  - hardware.bldalpha
+  writes:
+  - render.composited_pixels
+- id: buffered_hardware_registers
+  facet: rendering
+  label: EWRAM shadow registers separate state updates from hardware access
+  summary: buffer_io_reg.h defines register shadows at 0x02000000 plus hardware register offsets, and the recovered
+    frontend functions update these aliases. This is an engine boundary useful for tracing presentation state; the
+    complete flush routine and its scheduling are not established here.
+  instantiates:
+  - concept: rendering.registers.ewram_shadow_registers
+  evidence:
+  - kind: decomp_source
+    ref: mlss:include/buffer_io_reg.h:BUFFER_REG_BASE;BUFFER_REG_ADDR_*
+    confidence: 0.88
+  - kind: decomp_source
+    ref: mlss:src/title_screen.c:comp_update;open_update
+    confidence: 0.88
+  reads:
+  - frontend.render_state
+  writes:
+  - engine.io_shadow
+  params:
+    shadow_base:
+      value: '0x02000000'
+      unit: GBA address
+      evidence:
+      - kind: decomp_source
+        ref: mlss:include/buffer_io_reg.h:BUFFER_REG_BASE
+        confidence: 0.88
+- id: frontend_tile_asset_loading
+  facet: rendering
+  label: Explicit frontend resource uploads and temporary buffers
+  summary: comp_init obtains temporary RAM, invokes an opaque data-expansion callback, then CpuFastSet uploads character
+    data and maps to selected BG VRAM regions. It also creates named sprite resources. Compression format, file-to-ROM
+    resource mapping and asset reuse compatibility are not inferred from these calls.
+  instantiates:
+  - concept: rendering.assets.expanded_resource_vram_upload
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/title_screen.c:comp_init
+    confidence: 0.88
+  - kind: decomp_source
+    ref: mlss:src/game_boy_player_logo.c:gbpl_init
+    confidence: 0.88
+  reads:
+  - rom.frontend.resource_pointers
+  writes:
+  - ram.frontend.asset_staging
+  - hardware.vram
+  invariants:
+  - Opaque callbacks do not establish the input asset compression format.
+- id: hybrid_sound_hardware
+  facet: audio
+  label: Measured DirectSound and PSG coexistence
+  summary: The retained run reports active DirectSound A and B, the timer-derived FIFO rate 15768 Hz, and triggers
+    on PSG channels 1 through 4. These are emulator hardware observations; the WAV output is resampled to 16 kHz
+    mono and must not be confused with the native FIFO rate or a complete instrument inventory.
+  instantiates:
+  - concept: audio.hardware.pcm_psg_coexistence
+  evidence:
+  - kind: capture_telemetry
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/summary.json#/derived/sound
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/phase.json#/sound
+    confidence: 0.9
+  params:
+    observed_fifo_rate:
+      value: 15768
+      unit: Hz
+      evidence:
+      - kind: capture_telemetry
+        ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/summary.json#/derived/sound/directsound_rates_hz
+        confidence: 0.9
+- id: menu_sound_feedback
+  facet: audio
+  label: Distinct navigation and confirmation sound events
+  summary: The recovered title and options handlers call sound effect 95 for row changes and 96 for confirmation.
+    This establishes event-to-resource dispatch without identifying the waveform, composition or audio-engine family.
+  instantiates:
+  - concept: audio.ui.navigation_confirmation_cues
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/title_screen.c:open_update:TS_STATE_GAME_SELECT
+    confidence: 0.88
+  - kind: decomp_source
+    ref: mlss:src/option_screens.c:optn_update
+    confidence: 0.88
+  reads:
+  - frontend.menu.action
+  writes:
+  - audio.queued_effect
+  params:
+    navigation_effect_id:
+      value: 95
+      unit: resource id
+      evidence:
+      - kind: decomp_source
+        ref: mlss:src/title_screen.c:open_update
+        confidence: 0.88
+    confirm_effect_id:
+      value: 96
+      unit: resource id
+      evidence:
+      - kind: decomp_source
+        ref: mlss:src/title_screen.c:open_update
+        confidence: 0.88
+- id: three_quarter_room_projection
+  facet: projection
+  label: Oblique room art with visible floor depth
+  summary: Inspected opening-room frames show a floor plane, upright characters and architectural surfaces with
+    vertical depth cues. This supports a three-quarter visual projection; it does not establish coordinate axes,
+    collision shapes, stair traversal or a 3D simulation.
+  instantiates:
+  - concept: projection.top_down.three_quarter_view
+  evidence:
+  - kind: capture_frame
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f005249_scene.png
+    confidence: 0.9
+  - kind: capture_frame
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f006663.png
+    confidence: 0.9
+- id: opening_scene_staging
+  facet: narrative_delivery
+  label: Authored opening-room staging
+  summary: The new capture moves from a masked transition into a furnished room with characters, stairs and a doorway.
+    Different inspected frames show a character at different room positions, but no counterfactual input replay
+    was performed, so whether this is directly player-controlled motion or scripted movement remains unresolved.
+  instantiates:
+  - concept: narrative_delivery.presentation.scene_based_character_staging
+  evidence:
+  - kind: capture_frame
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f004565_scene.png
+    confidence: 0.9
+  - kind: capture_frame
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f005249_scene.png
+    confidence: 0.9
+  - kind: capture_frame
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f006663.png
+    confidence: 0.9
+  invariants:
+  - The phase name gameplay and declared start frame are script annotations, not proof of control.
+- id: interior_pixel_style
+  facet: setting
+  label: Bright outlined pixel-art interiors
+  summary: The inspected room uses saturated yellows and pinks, outlined small characters, patterned floors and
+    decorative furnishings. This is a local visual-style observation, not an assessment of the complete setting,
+    plot or asset licensing.
+  instantiates:
+  - concept: setting.style.bright_outlined_pixel_interior
+  evidence:
+  - kind: capture_frame
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f006153_scene.png
+    confidence: 0.9
+  - kind: capture_frame
+    ref: local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f007893.png
+    confidence: 0.9
+- id: animated_menu_preview
+  facet: ui_hud
+  label: Menu choice previews transition through disappear and appear states
+  summary: Changing selection starts disappearance of the suitcase preview. Once the preview animation completion
+    flag is set, the handler selects the next preview animation and returns it to idle; menu preview state and selected
+    route are distinct.
+  instantiates:
+  - concept: ui_hud.menu.animated_selection_preview
+  evidence:
+  - kind: decomp_source
+    ref: mlss:src/title_screen.c:open_update:TS_STATE_GAME_SELECT;suitcaseVisualState switch
+    confidence: 0.88
+  reads:
+  - frontend.menu.selection
+  - frontend.preview.animation_finished
+  writes:
+  - frontend.preview.state
+  - frontend.preview.animation
+  relations:
+  - type: modulates
+    target: three_way_game_selector
+- id: inferred_menu_route_strategy
+  facet: ui_hud
+  label: 'Inferred strategy: choose the shorter cyclic menu route'
+  summary: 'Inference from the source only: with three cyclic entries and an observed current selection, a user
+    can reach either other entry with one appropriately directed UP or DOWN action. This is a menu-navigation affordance,
+    not a measured combat or exploration strategy and not evidence that the capture executed this policy.'
+  instantiates:
+  - concept: ui_hud.strategy.shortest_cyclic_menu_route
+  evidence:
+  - kind: derived
+    ref: Choose shorter direction on the recovered three-entry cycle.
+    confidence: 0.7
+    inputs:
+    - mlss:src/title_screen.c:open_update:TS_STATE_GAME_SELECT
+  reads:
+  - frontend.menu.selection
+  - user.desired_menu_entry
+  writes:
+  - user.planned_direction
+  invariants:
+  - Inference only; no successful execution or latency benefit was measured.
+  relations:
+  - type: requires
+    target: three_way_game_selector
+- id: inferred_state_aware_input_skill
+  facet: ui_hud
+  label: 'Inferred skill: recognize when the front end accepts input'
+  summary: 'Inference from explicit input gates: a user can wait for the correct title or confirmation state before
+    sending a selection action, reducing the chance an action is ignored by an animation gate. No user study or
+    timing-reliability experiment was performed; this is an inferred interaction skill, with unknown gameplay transfer.'
+  instantiates:
+  - concept: ui_hud.skill.state_aware_action_timing
+  evidence:
+  - kind: derived
+    ref: Combine title skip/start gates with options animation gates.
+    confidence: 0.65
+    inputs:
+    - mlss:src/title_screen.c:open_update
+    - mlss:src/option_screens.c:optn_update
+  reads:
+  - frontend.title.state
+  - frontend.options.state
+  - frontend.options.window_scale
+  writes:
+  - user.planned_action_timing
+  invariants:
+  - Inference only; physical timing windows and performance improvement are unmeasured.
+  relations:
+  - type: requires
+    target: options_input_gates
+  - type: requires
+    target: title_press_start
+proposed_concepts:
+- id: mechanics.engine.priority_callback_scheduler
+  label: Priority callback scheduler
+  definition: An engine schedules stateful callbacks in priority order, with explicit enable and wait gates.
+- id: mechanics.engine.protected_priority_pause
+  label: Protected priority pause
+  definition: A global pause gate preserves designated service-priority callbacks while disabling other processes.
+- id: mechanics.engine.iteration_safe_process_removal
+  label: Iteration safe process removal
+  definition: Callback objects can remove themselves without leaving the scheduler pointing at the removed object.
+- id: frontend.hardware.logo_phase_peripheral_probe
+  label: Logo phase peripheral probe
+  definition: Startup presentation samples an input timing signature to enable a peripheral-specific feature.
+- id: frontend.intro.condition_gated_skip
+  label: Condition gated skip
+  definition: Presentation skipping is accepted only in an explicit permissive state.
+- id: ui_hud.menu.cyclic_list_selection
+  label: Cyclic list selection
+  definition: Directional navigation wraps through a finite menu list.
+- id: frontend.menu.multimode_dispatch
+  label: Multimode dispatch
+  definition: One launcher selects among separate games or settings after a presentation transition.
+- id: ui_hud.input.modal_animation_gate
+  label: Modal animation gate
+  definition: Normal menu actions are blocked while a modal transition or cooldown is active.
+- id: frontend.options.capability_gated_flags
+  label: Capability gated flags
+  definition: Some persistent settings are editable only when a detected capability is present.
+- id: frontend.options.enable_confirmation
+  label: Enable confirmation
+  definition: Turning on a feature passes through an explicit acknowledgment state.
+- id: frontend.save.result_checked_option_write
+  label: Result checked option write
+  definition: A front-end settings write branches on an explicit success result.
+- id: frontend.save.timed_error_acknowledgement
+  label: Timed error acknowledgement
+  definition: A failed persistence operation displays a dedicated dismissible error state.
+- id: movement_physics.presentation.scripted_ballistic_motion
+  label: Scripted ballistic motion
+  definition: A presentation actor follows velocity-and-acceleration animation independent of the playable locomotion
+    system.
+- id: rendering.registers.ewram_shadow_registers
+  label: Ewram shadow registers
+  definition: Rendering code updates a RAM shadow of hardware display or sound registers before a later commit.
+- id: rendering.assets.expanded_resource_vram_upload
+  label: Expanded resource vram upload
+  definition: An engine stages expanded resources in RAM and uploads tile or map data into VRAM.
+- id: setting.style.bright_outlined_pixel_interior
+  label: Bright outlined pixel interior
+  definition: Interior scene art uses saturated colors, strong outlines and readable tiled decoration.
+- id: ui_hud.menu.animated_selection_preview
+  label: Animated selection preview
+  definition: Selecting a menu item changes a visual preview through an animation transition.
+- id: ui_hud.strategy.shortest_cyclic_menu_route
+  label: Shortest cyclic menu route
+  definition: A user exploits wraparound to minimize navigation actions in a finite cyclic menu.
+- id: ui_hud.skill.state_aware_action_timing
+  label: State aware action timing
+  definition: A user times interaction to states in which the interface accepts the intended action.
+- id: audio.hardware.pcm_psg_coexistence
+  label: PCM and PSG hardware coexistence
+  definition: A measured capture uses PCM FIFOs and hardware PSG tone/noise channels together, without establishing
+    sequencer architecture.
+- id: audio.ui.navigation_confirmation_cues
+  label: Navigation and confirmation cues
+  definition: Menu navigation and confirmation events dispatch distinct sound resources.
+- id: narrative_delivery.presentation.scene_based_character_staging
+  label: Scene-based character staging
+  definition: Presentation places characters within a decorated environmental scene; control and scripting remain
+    independently qualified.
+open_questions:
+- Which actor is controllable in the opening room, and which movement is scripted? Reproduce exact inputs with isolated
+  counterfactual action traces before declaring the gameplay phase successful.
+- Recover dual-character control bindings, jump/hammer rules, field ability cooperation, turn order, action-command
+  timing, damage formulas and counterattack logic from actual code or controlled captures; none are established
+  by this partial document.
+- Enemy AI, item effects, equipment, experience/level progression, economy, encounter transitions and full save-game
+  structure remain unmined.
+- The recovered C includes NONMATCHING alternatives and reverse-engineer names. No byte-identical rebuild was performed;
+  source-to-ROM identity is README-supported rather than locally verified.
+- Alternative MLSuperstarSaga SHA1 differs from this corpus and is startup/hexdump material. Establish region/revision
+  identity before using its addresses.
+- The startup animation acceleration is not an avatar gravity estimate; player speed, acceleration, collision units,
+  jump arcs and timing windows remain unknown.
+- The new run records thousands of game_error log entries despite overall outcome ok (6478 frontend;7311 gameplay).
+  Determine whether these reflect harmless unmapped IO or execution defects before gameplay qualification.
+- No Ghidra export exists for this game. Source files named asm/text08000000.s mostly contain byte arrays; byte
+  presence is not semantic decompilation.
+- Audio engine identity, music semantics, instrument mapping and asset-to-ROM offsets remain unresolved. No WAV
+  listening or content-level asset extraction was performed.
+- AI/camera/economy/progression facets are intentionally absent rather than filled from game recall. Captures cover
+  an opening room, not the campaign.

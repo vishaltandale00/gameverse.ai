@@ -1,0 +1,98 @@
+{
+  "comment": "Navigation candidate: naming START then A after cursor transition; A-only introduction advance continues through early top-down movement to clear dialogue. Final1200 frames use top-down movement without rapid A. No play_starts_frame assertion; review retained captures.",
+  "phases": [
+    {
+      "name": "frontend",
+      "events": [
+        {
+          "frame": 180,
+          "keys": [
+            "START"
+          ],
+          "hold": 6
+        },
+        {
+          "frame": 300,
+          "keys": [
+            "START"
+          ],
+          "hold": 6
+        }
+      ],
+      "repeat": {
+        "from_frame": 420,
+        "period_frames": 60,
+        "events": [
+          {
+            "offset": 0,
+            "keys": [
+              "A"
+            ],
+            "hold": 6
+          }
+        ]
+      }
+    },
+    {
+      "name": "gameplay",
+      "frames": 14400,
+      "events": [
+        {
+          "frame": 180,
+          "keys": [
+            "START"
+          ],
+          "hold": 6
+        },
+        {
+          "frame": 300,
+          "keys": [
+            "START"
+          ],
+          "hold": 6
+        },
+        {
+          "frame": 2760,
+          "keys": [
+            "START"
+          ],
+          "hold": 6
+        },
+        {
+          "frame": 3960,
+          "keys": [
+            "START"
+          ],
+          "hold": 6
+        },
+        {
+          "frame": 5160,
+          "keys": [
+            "START"
+          ],
+          "hold": 6
+        }
+      ],
+      "repeat": [
+        {
+          "from_frame": 420,
+          "until_frame": 13200,
+          "period_frames": 60,
+          "events": [
+            {
+              "offset": 0,
+              "keys": [
+                "A"
+              ],
+              "hold": 6
+            }
+          ]
+        },
+        {
+          "from_frame": 7800,
+          "template": "move_topdown"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+{"comment":"Gameplay: title START -> New Game, A through the intro cutscenes (~2.5 min), 'Mission Start' at ~9360; side-scrolling play (run/jump/shoot) from ~9480. Stops before the game-over at ~12800.",
+ "phases":[{"name":"gameplay","frames":12600,"play_starts_frame":9480,
+ "repeat":[{"from_frame":180,"until_frame":800,"template":"menu_mash"},{"from_frame":800,"until_frame":9500,"template":"a_mash"},{"from_frame":9500,"template":"move_side"}]}]}

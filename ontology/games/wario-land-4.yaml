@@ -1,0 +1,1379 @@
+schema_version: 0
+id: wario-land-4
+game:
+  title: Wario Land 4
+  platform: gba
+  game_code: AWAE
+  rom_sha1: b9fe05a8080e124b67bce6a623234ee3b518a2c1
+  evidence_basis:
+  - decomp_source
+  - capture_telemetry
+  - capture_frame
+  sources:
+  - kind: decomp
+    ref: https://github.com/lilDavid/warioland4 @ abb7800a8d8fa6d7f7f003627893e06bc2879329; mixed C and assembly;
+      ROM build identity not independently rebuilt.
+  - kind: rom_header
+    ref: local/re/roms.json id=wario-land-4; game code AWAE; matched SHA1 in capture summary.
+  - kind: capture
+    ref: local/captures/wario-land-4/summary.json run_id=20261015T234415-8f46cf; source=d431b8183f1001722d7bc9a326da28088930c344
+      dirty; harness=0.1.0 tree_sha1=c7b44c806b6e; libmgba=0.10.5; default.json; observed control flow has limited
+      phase coverage.
+  - kind: extraction_run
+    ref: Codex/GPT subagent (exact model revision unavailable), brief v1; authoring stage 2026-10-16T04:37:36.951538Z
+      to 2026-10-16T04:40:59.583139+00:00; preceding research wall time unavailable; no model-provider call or game
+      build performed. Read C files main, game_screen, game_screen_gfx, demo_input, autosave, sprite_collision excerpts,
+      sprite_util excerpts, screen_shake, transparency, hud, voice_set excerpts, sram, sram_misc; sprite_ai keyzer/vortex/rock/coins/treasure/spear_mask
+      excerpts; assembly disasm_wario/scrolled-register portion of disasm_scrolling/disasm_score timer and score
+      functions/sprite_ai disasm_switch handler; include wario/types/global_data/score/fixed_point; two images and
+      capture summary.
+conventions:
+  position_units: include/types.h sets PIXEL_SIZE=4, BLOCK_SIZE_PIXELS=16; one pixel = four subpixels and one block
+    = 64 subpixels. Direct sprite-position steps are converted accordingly. Actor velocity integration units were
+    not fully traced; no gravity/jump impulse conversion is asserted.
+  time_units: FRAME_RATE=60 and DELTA_TIME=1 in source. CONVERT_SECONDS multiplies by 60, but escape countdown display
+    decrements every 64 eligible updates; do not identify displayed countdown seconds with real seconds. Capture
+    reports 9000 frames as 150.689 emulated seconds, showing the hardware timing distinction.
+  score_units: 'include/score.h SCORE_RATIO=10: native stored score is one tenth of displayed points. Saved high
+    score/total clamp at 999990 displayed points; runtime stage accumulator is only proved to have a lower clamp,
+    not the same upper clamp.'
+  typed_state: reads/writes use source symbols with explicit source or interpreted types. Names such as world.scatter_coins
+    describe extracted semantic state rather than original symbols. Unknown source fields retain their unknown names.
+  strategy_and_skill: Player tactics described as inference are predictions from reachable rules, not measured strategies
+    or validated skill requirements. No mashup proposal was generated.
+components:
+- id: mode_flow
+  facet: frontend
+  label: Explicit game-mode routing
+  summary: The main loop dispatches cutscenes, file selection, stage selection, gameplay, pause, shop, minigames,
+    demo and credits. Stage selection enters a minigame for stage IDs 6, 12, 18 and 24, while exit types select
+    different return sequences.
+  instantiates:
+  - concept: frontend.flow.mode_state_machine
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/main.c:AgbMain
+    confidence: 0.94
+  reads:
+  - gMainGameMode:s16 enum
+  - gSubGameMode:s16
+  - gStageExitType:u8
+  - gCurrentStageID:u8
+  writes:
+  - gMainGameMode:s16 enum
+  - gSubGameMode:s16
+  invariants:
+  - Gameplay and recorded demos share GameScreenSubroutine.
+- id: recorded_demo
+  facet: frontend
+  label: Run-length recorded-input demo
+  summary: Playback replaces held and newly pressed buttons using recorded masks and durations. Real held input
+    or an exhausted/sentinel sequence injects Start to end the playback, so a visible gameplay image alone does
+    not establish human control.
+  instantiates:
+  - concept: frontend.attract.input_playback_demo
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/demo_input.c:DemoInputPlayback
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/demo_input.c:DemoInputRecord
+    confidence: 0.94
+  reads:
+  - gDemoInputs[]:u16 button mask
+  - gDemoInputLengths[]:u16 frames
+  - gDemoSequenceIndex:u16
+  - gButtonsHeld:u16
+  writes:
+  - gButtonsHeld:u16
+  - gButtonsPressed:u16
+  - gDemoSequenceIndex:u16
+  - gDemoButtonPressTimer:u16
+  invariants:
+  - Pressed buttons are rising edges of the previous and current playback masks.
+  relations:
+  - type: part_of
+    target: mode_flow
+- id: verified_save
+  facet: frontend
+  label: Two save files and checked SRAM writes
+  summary: The save interface offers two selected files and implements bytewise write verification with at most
+    three attempts. SRAM helper tables assign distinct ranges to the two files; verified bytes do not establish
+    higher-level atomic recovery or checksum guarantees.
+  instantiates:
+  - concept: frontend.save.verified_sram_write
+  - concept: frontend.menu.file_select_slots
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sram.c:SramWriteChecked
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sram_misc.c:sUnk_80953EC
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:include/global_data.h:SaveFile
+    confidence: 0.94
+  reads:
+  - save.source_bytes:byte[]
+  - gSelectedSaveFile:u8 enum
+  writes:
+  - save.sram_bytes:byte[]
+  invariants:
+  - A matching write stops retries; failure returns the mismatching address.
+  params:
+    write_attempts:
+      value: 3
+      unit: attempts
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/sram.c:SramWriteChecked
+        confidence: 0.94
+    save_slots:
+      value: 2
+      unit: slots
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:include/global_data.h:SaveFile
+        confidence: 0.94
+- id: soft_reset
+  facet: frontend
+  label: Guarded button-chord soft reset
+  summary: A+B+Start+Select routes to the soft-reset game mode when reset is enabled. The handler ignores the chord
+    during an already active soft reset or when the disable flag is set.
+  instantiates:
+  - concept: frontend.soft_reset.button_combo
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/main.c:CheckSoftReset
+    confidence: 0.94
+  reads:
+  - gButtonsHeld:u16 mask
+  - gDisableSoftReset:u8 bool
+  - gMainGameMode:s16
+  writes:
+  - gMainGameMode:s16
+  invariants:
+  - A disabled reset flag prevents this transition.
+- id: pause
+  facet: ui_hud
+  label: Conditional Start pause routing
+  summary: Start can request the pause mode only when the player pause timer and an additional actor status byte
+    permit it. Boss-related states may route to BossPause instead; pause can return to gameplay, leave a stage,
+    or soft reset.
+  instantiates:
+  - concept: ui_hud.menu.pause_menu_hub
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/game_screen.c:GameScreenSubroutine
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/main.c:AgbMain
+    confidence: 0.94
+  reads:
+  - gButtonsPressed:u16 mask
+  - gWarioPauseTimer:u16 frames
+  - gWarioData.unk_02:u8
+  - gTimerState:u8
+  writes:
+  - gPauseFlag:s8
+  - gSubGameMode:s16
+  - gMainGameMode:s16
+  invariants:
+  - Normal movement and collision run only after the pause timer expires in the active gameplay submode.
+- id: initial_health
+  facet: mechanics
+  label: Context and difficulty-dependent starting health
+  summary: Ordinary super-hard stages initialize current health to one. Golden-passage or boss contexts instead
+    initialize eight on normal difficulty and four otherwise; that branch precedes the ordinary super-hard branch.
+  instantiates:
+  - concept: mechanics.health.difficulty_initial_pool
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/game_screen.c:GameScreenInitWario
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:include/wario.h:MAX_HEARTS
+    confidence: 0.94
+  reads:
+  - gDifficulty:u8 enum
+  - gCurrentPassage:u8 enum
+  - gCurrentStageNumber:u8
+  - gHasTemporarySave:u8 bool
+  writes:
+  - gHeartMeter.current:u8
+  invariants:
+  - Initialization is skipped for a temporary-save restore.
+  params:
+    maximum_hearts:
+      value: 8
+      unit: hearts
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:include/wario.h:MAX_HEARTS
+        confidence: 0.94
+    boss_or_golden_start:
+      value: 8
+      unit: hearts
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/game_screen.c:GameScreenInitWario
+        confidence: 0.94
+      variants:
+      - when: difficulty != normal and context is boss or golden passage
+        value: 4
+        unit: hearts
+    ordinary_super_hard_start:
+      value: 1
+      unit: heart
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/game_screen.c:GameScreenInitWario
+        confidence: 0.94
+- id: health_hud
+  facet: ui_hud
+  label: Eight-heart health and recovery gauges
+  summary: Separate graphics tables represent zero through eight hearts, a flashing one-heart state, and a second
+    gauge with eight fill increments. The inspected gameplay frame visibly shows the heart row; the exact refill-to-heart
+    conversion timing remains unverified.
+  instantiates:
+  - concept: ui_hud.resource.health_meter
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/hud.c:sHeartMeterGfx
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/hud.c:sHeartGaugeGfx
+    confidence: 0.94
+- id: collection_hud
+  facet: ui_hud
+  label: Jewel quadrants and CD status artwork
+  summary: The HUD source defines full and partial variants for four jewel quadrants and a CD icon. These are authored
+    display assets associated with collection state; their complete update policy has not been traced.
+  instantiates:
+  - concept: ui_hud.collection.goal_status_icons
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/hud.c:sJewelPieceIconNEGfx
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/hud.c:sCDIconGfx
+    confidence: 0.94
+- id: reaction_dispatch
+  facet: mechanics
+  label: Mutually exclusive reaction control regimes
+  summary: The controller indexes pose and request tables by the current reaction byte, then invokes additional
+    reaction-specific handlers. Collision entry also dispatches on reaction, so a transformed form changes more
+    than the avatar graphics.
+  instantiates:
+  - concept: mechanics.state.reaction_dispatch
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:asm/disasm_wario.s:WarioProcessControls
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:asm/disasm_wario.s:WarioProcessCollision
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:include/wario.h:WarioReaction
+    confidence: 0.94
+  reads:
+  - gWarioData.reaction:u8 enum
+  - gWarioData.pose:u8
+  - gWarioData.xPosition:u16 subpx
+  - gWarioData.yPosition:u16 subpx
+  writes:
+  - gWarioData.pose:u8
+  - gPreviousXPosition:u16 subpx
+  - gPreviousYPosition:u16 subpx
+  invariants:
+  - A single reaction selects each table entry; reaction-specific jump and collision semantics must not be assumed
+    interchangeable.
+  params:
+    reaction_regimes:
+      value: 12
+      unit: regimes
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:include/wario.h:WarioReaction
+        confidence: 0.94
+- id: contact_transform
+  facet: mechanics
+  label: Collision-triggered form changes
+  summary: Contact helpers request flaming, fat, zombie, snowman, puffy, bouncy, bat, frozen, flat and mask reactions.
+    The shared macro checks WarioCheckReaction before changing the reaction and requesting pose zero; eligibility
+    and recovery details are outside this extraction.
+  instantiates:
+  - concept: mechanics.state.reaction_dispatch
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sprite_collision.c:SpriteCollisionTransformWario
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_collision.c:SpriteCollisionTransformWarioFlaming
+    confidence: 0.94
+  reads:
+  - gWarioData.reaction:u8 enum
+  - reaction.request:u8 enum
+  writes:
+  - gWarioData.reaction:u8 enum
+  - gWarioData.pose:u8
+  invariants:
+  - The macro writes a form only when WarioCheckReaction returns false.
+  relations:
+  - type: modulates
+    target: reaction_dispatch
+- id: movement_collision
+  facet: movement_physics
+  label: Motion history drives collision direction
+  summary: The collision wrapper compares current and previous X/Y positions to construct horizontal and vertical
+    movement-direction flags. It then invokes reaction-indexed handlers; enumerated normal poses include jumping,
+    rolling, crouching, swimming-related alternatives and ladders, without establishing their numeric acceleration
+    values.
+  instantiates:
+  - concept: mechanics.state.reaction_dispatch
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:asm/disasm_wario.s:WarioProcessCollision
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:include/wario.h:WarioPoseNormal
+    confidence: 0.94
+  reads:
+  - gWarioData.xPosition:u16 subpx
+  - gWarioData.yPosition:u16 subpx
+  - gPreviousXPosition:u16 subpx
+  - gPreviousYPosition:u16 subpx
+  - gWarioData.reaction:u8
+  writes:
+  - gUnk_3001918:collision scratch struct
+  invariants:
+  - This wrapper dispatches collision according to the current reaction.
+  relations:
+  - type: requires
+    target: reaction_dispatch
+- id: contact_damage
+  facet: mechanics
+  label: Damage-pose immunity gate
+  summary: Left and right damage helpers ignore contacts while damageTimer is positive. Otherwise they set a direction
+    and request the taking-damage pose; the excerpt does not establish heart decrement amount or invulnerability
+    duration.
+  instantiates:
+  - concept: mechanics.combat.contact_damage
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sprite_collision.c:SpriteCollisionTakeDamageLeft
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_collision.c:SpriteCollisionTakeDamageRight
+    confidence: 0.94
+  reads:
+  - gWarioData.damageTimer:u8 frames
+  writes:
+  - gWarioData.horizontalDirection:u16 mask
+  - gWarioData.pose:u8
+  invariants:
+  - These helpers do not request a damage pose during a positive damage timer.
+- id: carry_rock
+  facet: mechanics
+  label: Carryable rock state machine
+  summary: A rock can enter directional lifting and carried poses, with distinct helpers that position it relative
+    to the actor. Carried initialization suppresses immediate actor collision and clears a death-related flag; ground
+    pound selects a directional bump according to relative X.
+  instantiates:
+  - concept: mechanics.interaction.carryable_world_object
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/rock.c:RockCarriedRightInit
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/rock.c:SpriteRock
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/rock.c:RockGroundPounded
+    confidence: 0.94
+  reads:
+  - gCurrentSprite.pose:u8
+  - gCurrentSprite.xPosition:u16 subpx
+  - gWarioData.xPosition:u16 subpx
+  writes:
+  - gCurrentSprite.pose:u8
+  - gCurrentSprite.disableWarioCollisionTimer:u8
+  - gCurrentSprite.status:u16 flags
+  invariants:
+  - Only the corresponding pose branch invokes each lifting/carried helper.
+- id: throw_rock
+  facet: mechanics
+  label: Directional soft and hard throws
+  summary: The rock dispatches separate left/right and upward soft/hard projectile handlers. Hard throws store directional
+    continuation bits in the high nibble of health, allowing a later collision pose to choose its next motion routine.
+  instantiates:
+  - concept: mechanics.combat.thrown_projectile
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/rock.c:SpriteRock
+    confidence: 0.94
+  reads:
+  - gCurrentSprite.pose:u8
+  - gCurrentSprite.health:u8 packed flags
+  writes:
+  - gCurrentSprite.pose:u8
+  - gCurrentSprite.health:u8 packed flags
+  - gCurrentSprite.work2:u8
+  invariants:
+  - Low-nibble health state and high-nibble throw flags have different meanings.
+  relations:
+  - type: requires
+    target: carry_rock
+    note: Carried-object interaction precedes a player throw; launch input timing not traced.
+- id: escape_switch
+  facet: mechanics
+  label: Return switch starts the escape phase
+  summary: The switch handler records persistent activation, sets gSwitchPressed and gTimerState to one, and changes
+    the escape switch state. It resets the shared timer counter, spawns secondary effects and stops current music;
+    the initial timer values are not established here.
+  instantiates:
+  - concept: mechanics.world.switch_activates_return_goal
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:asm/sprite_ai/disasm_switch.s:func_802B694
+    confidence: 0.94
+  reads:
+  - gCurrentRoom:u8
+  - gCurrentSprite.roomSlot:u8
+  writes:
+  - gSwitchPressed:u8 bool
+  - gTimerState:u8 enum
+  - gSwitchStates[4]:u8
+  - gUnk_3000BEC:s32 updates
+  - gPersistentSpriteData[][]:u8
+  invariants:
+  - Activation is remembered in room persistent state.
+  relations:
+  - type: modulates
+    target: return_vortex
+  - type: modulates
+    target: timeout_drain
+- id: return_vortex
+  facet: mechanics
+  label: Switch-gated return portal
+  summary: The vortex initially shrinks and becomes noninteractive; gSwitchPressed triggers an expansion phase before
+    its idle state permits actor collision. The finish callback disables control, starts a stage-clear presentation
+    and calls AutosaveStageClear.
+  instantiates:
+  - concept: mechanics.world.switch_activates_return_goal
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/vortex.c:SpriteVortex
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/vortex.c:VortexFinishStage
+    confidence: 0.94
+  reads:
+  - gSwitchPressed:u8 bool
+  - gCurrentSprite.pose:u8
+  - gCurrentSprite.work2:u8 scale
+  writes:
+  - gCurrentSprite.disableWarioCollisionTimer:u8
+  - gCurrentSprite.pose:u8
+  - gDisableWario:u8 bool
+  - gWarioPauseTimer:u16 frames
+  invariants:
+  - The active idle branch releases actor-collision suppression; finish saves the stage collection.
+  relations:
+  - type: gated_by
+    target: escape_switch
+  - type: requires
+    target: stage_clear_banking
+- id: escape_countdown
+  facet: mechanics
+  label: Eligibility-gated deadline counter
+  summary: The escape updater advances only in active gameplay submode two, timer states zero through three and
+    with no actor pause timer. When timer state is one, a 64-update cadence decrements decimal time digits; reaching
+    zero changes timer state or enters failure depending on the remaining stage score.
+  instantiates:
+  - concept: mechanics.goal.timed_escape
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:asm/disasm_score.s:func_8075988
+    confidence: 0.94
+  reads:
+  - gSubGameMode:s16
+  - gTimerState:u8 enum
+  - gWarioPauseTimer:u16 frames
+  - gHeartMeter.current:u8
+  - gStageScore:s32 native score
+  writes:
+  - gUnk_3000BEC:s32 eligible updates
+  - gUnk_3000BF0:decimal countdown digits
+  - gTimerState:u8 enum
+  invariants:
+  - An actor pause suspends this updater.
+  - Displayed countdown cadence is not the FRAME_RATE macro.
+  params:
+    displayed_second_updates:
+      value: 64
+      unit: eligible gameplay updates/displayed second
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:asm/disasm_score.s:func_8075988
+        confidence: 0.94
+  relations:
+  - type: gated_by
+    target: escape_switch
+  - type: modulates
+    target: timeout_drain
+- id: timeout_drain
+  facet: economy
+  label: Timeout spends score before terminal failure
+  summary: In post-countdown states above one, the updater subtracts one native score unit every eight eligible
+    gameplay updates and emits a loss effect. A zero stage score changes timer state to four and starts the failure
+    presentation; route planning and preserving a score reserve are inferred player strategies, not directly observed
+    skill measurements.
+  instantiates:
+  - concept: economy.drain.post_timeout_score
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:asm/disasm_score.s:func_8075988
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:include/score.h:SCORE_RATIO
+    confidence: 0.94
+  reads:
+  - gTimerState:u8 enum
+  - gStageScore:s32 native score
+  - gUnk_3000BEC:s32 updates
+  writes:
+  - gStageScore:s32 native score
+  - gTimerState:u8 enum
+  - gWarioPauseTimer:u16 frames
+  invariants:
+  - Score cannot become negative through ScoreGivePoints.
+  params:
+    drain_amount:
+      value: 10
+      unit: displayed points/event
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:asm/disasm_score.s:func_8075988
+        confidence: 0.94
+      native_value: 1
+      native_unit: native score unit
+    drain_interval:
+      value: 8
+      unit: eligible gameplay updates
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:asm/disasm_score.s:func_8075988
+        confidence: 0.94
+  relations:
+  - type: requires
+    target: escape_countdown
+- id: exit_token
+  facet: progression
+  label: Exit-associated token persists beyond its sprite
+  summary: Collecting Keyzer removes its sprite, marks the room slot despawned and sets gCollectedKeyzer. Reinitializing
+    an already collected token suppresses respawn; stage-clear banking copies this flag into the persistent collection,
+    while the exact stage-selection door predicate remains untraced.
+  instantiates:
+  - concept: progression.collectible.persistent_exit_key
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/keyzer.c:KeyzerCollect
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/keyzer.c:KeyzerInit
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/autosave.c:AutosaveStageClear
+    confidence: 0.94
+  reads:
+  - gCollectedKeyzer:u8 bool
+  - gCurrentRoom:u8
+  - gCurrentSprite.roomSlot:u8
+  writes:
+  - gCollectedKeyzer:u8 bool
+  - gPersistentSpriteData[][]:u8
+  - gCurrentSprite.status:u16
+  invariants:
+  - An already collected token is not recreated by KeyzerInit.
+- id: jewel_boss_gate
+  facet: progression
+  label: Complete stage jewels announce boss-door opening
+  summary: Four directional jewel-piece flags are banked on stage clear. If a run flag has the special value two,
+    the routine counts fully completed stage jewels and sets the boss-door presentation flag when all four ordinary
+    stages, or the single entry/golden stage, are complete.
+  instantiates:
+  - concept: progression.gating.collect_all_tokens
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/autosave.c:AutosaveStageClear
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:include/global_data.h:NORMAL_STAGE_COUNT
+    confidence: 0.94
+  reads:
+  - gCollectedNEJewelPiece:u8
+  - gCollectedSEJewelPiece:u8
+  - gCollectedSWJewelPiece:u8
+  - gCollectedNWJewelPiece:u8
+  - gCurrentCollection[][]:ItemCollection
+  writes:
+  - gCurrentCollection[][]:ItemCollection
+  invariants:
+  - All four quadrant flags must be present for a stage to count as a completed jewel.
+  - The checked flag requests a boss-door-opening sequence; the full door-collision predicate has not been inspected.
+  params:
+    quadrants_per_jewel:
+      value: 4
+      unit: pieces/jewel
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/autosave.c:AutosaveStageClear
+        confidence: 0.94
+    ordinary_stages:
+      value: 4
+      unit: stages/passage
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:include/global_data.h:NORMAL_STAGE_COUNT
+        confidence: 0.94
+  relations:
+  - type: requires
+    target: stage_clear_banking
+- id: final_passage_gate
+  facet: progression
+  label: Four completed passage bosses unlock the final passage
+  summary: Boss clear banks the collected boss rewards and boss-defeated state. Defeating all four central passage
+    bosses changes the current passage to Golden.
+  instantiates:
+  - concept: progression.gating.event_locked_doors
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/autosave.c:AutosaveBossClear
+    confidence: 0.94
+  reads:
+  - gCollectedKeyzer:u8 bool
+  - gCurrentCollection[][]:ItemCollection
+  writes:
+  - gCurrentCollection[][]:ItemCollection
+  - gCurrentPassage:u8 enum
+  - gCurrentStageNumber:u8
+  invariants:
+  - The final-passage transition requires the conjunction of four boss-defeated flags.
+  params:
+    required_passage_bosses:
+      value: 4
+      unit: boss flags
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/autosave.c:AutosaveBossClear
+        confidence: 0.94
+- id: completion_difficulty
+  facet: progression
+  label: All final treasures unlock super-hard from hard
+  summary: Final-boss saving checks all twelve final treasure flags. A hard-difficulty clear with the complete treasure
+    set changes the title style and clear message to announce super-hard; other combinations produce all-treasure
+    or try-again messages.
+  instantiates:
+  - concept: progression.difficulty.completion_unlock
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/autosave.c:AutosaveFinalBoss
+    confidence: 0.94
+  reads:
+  - gHasGoldenDivaChest1..12:u8 bool
+  - gDifficulty:u8 enum
+  - gTitleScreenStyle:u8 enum
+  writes:
+  - gTitleScreenStyle:u8 enum
+  - gClearMessage:u8 enum
+  - gCurrentCollection[][]:ItemCollection
+  invariants:
+  - The unlock requires hard difficulty and the complete twelve-flag conjunction.
+  params:
+    treasure_flags:
+      value: 12
+      unit: flags
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/autosave.c:AutosaveFinalBoss
+        confidence: 0.94
+- id: pickup_values
+  facet: economy
+  label: Discrete score pickups
+  summary: Coins award 10, 50, 100, 500 or 1000 displayed points according to sprite ID. A diamond uses the 1000-point
+    reward and remembers collection in room persistence, whereas small hearts feed a separate gauge.
+  instantiates:
+  - concept: economy.source.timed_pickup_drop
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/coins.c:CoinCollect
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/coins.c:DiamondCollect
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:include/score.h:SCORE_RATIO
+    confidence: 0.94
+  reads:
+  - gCurrentSprite.globalID:u8
+  - gWarioData.reaction:u8
+  writes:
+  - gStageScore:s32 native score
+  - gCurrentSprite.status:u16
+  - gPersistentSpriteData[][]:u8
+  invariants:
+  - Collection removes the visible collectible sprite.
+  tables:
+    pickup_points:
+      columns:
+      - pickup
+      - displayed_points
+      - native_score_units
+      rows:
+      - - ordinary coin
+        - 10
+        - 1
+      - - 50-point coin
+        - 50
+        - 5
+      - - 100-point coin
+        - 100
+        - 10
+      - - 500-point coin
+        - 500
+        - 50
+      - - 1000-point coin or diamond
+        - 1000
+        - 100
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/sprite_ai/coins.c:CoinCollect
+        confidence: 0.94
+- id: damage_scatter
+  facet: economy
+  label: Enemy-specific recoverable score scatter
+  summary: A damaging enemy identity chooses a requested score loss from 100 to 500 displayed points. ScoreGiveOrDropCoins
+    emits coins at the actor position and subtracts at most the available stage score; recovery opportunities follow
+    from the scattered pickups rather than an inferred fixed loss.
+  instantiates:
+  - concept: economy.drain.recoverable_scatter
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sprite_collision.c:SpriteCollisionMakeWarioDropCoins
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:asm/disasm_score.s:ScoreGiveOrDropCoins
+    confidence: 0.94
+  reads:
+  - gSpriteData[].globalID:u8
+  - gStageScore:s32 native score
+  - gWarioData.xPosition:u16 subpx
+  - gWarioData.yPosition:u16 subpx
+  writes:
+  - gStageScore:s32 native score
+  - world.scatter_coins:Sprite[]
+  invariants:
+  - Actual deducted score is min(requested loss, available stage score).
+  tables:
+    example_damage_losses:
+      columns:
+      - enemy sprite
+      - displayed_points
+      - native_loss_magnitude
+      rows:
+      - - yellow spear mask
+        - 100
+        - 10
+      - - blue spear mask
+        - 200
+        - 20
+      - - red spear mask
+        - 400
+        - 40
+      - - magma
+        - 300
+        - 30
+      - - moguramen
+        - 500
+        - 50
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/sprite_collision.c:SpriteCollisionMakeWarioDropCoins
+        confidence: 0.94
+- id: health_pickups
+  facet: economy
+  label: Queued heart refill with caps
+  summary: A full refill adds eight queued hearts, then clamps the queue so current plus filling cannot exceed eight.
+    Little-heart pickups instead add one queued auxiliary gauge unit only while current plus filling remains below
+    its eight-unit maximum; the conversion routine has not been decoded.
+  instantiates:
+  - concept: economy.resource.capped_pool
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/treasure.c:SpriteHeartRefill
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/coins.c:CoinCollect
+    confidence: 0.94
+  reads:
+  - gHeartMeter.current:u8
+  - gHeartMeter.filling:u8
+  - gHeartGauge.current:u8
+  - gHeartGauge.filling:u8
+  writes:
+  - gHeartMeter.filling:u8
+  - gHeartGauge.filling:u8
+  invariants:
+  - Full refill leaves current health plus queued refill at or below eight.
+  params:
+    heart_capacity:
+      value: 8
+      unit: hearts
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:include/wario.h:MAX_HEARTS
+        confidence: 0.94
+    auxiliary_capacity:
+      value: 8
+      unit: gauge units
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:include/wario.h:HEART_GAUGE_MAX
+        confidence: 0.94
+- id: stage_clear_banking
+  facet: economy
+  label: Bank collections and health bonus on successful exit
+  summary: Stage clear adds stage score plus fifty displayed points per remaining or queued heart to the total.
+    The heart contribution is capped at eight, and saved high score and total score are capped at 999990 points;
+    protecting health for the clear bonus is an inferred scoring strategy.
+  instantiates:
+  - concept: economy.converter.remaining_health_bonus
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/autosave.c:AutosaveStageClear
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:include/score.h:MAX_SCORE
+    confidence: 0.94
+  reads:
+  - gStageScore:s32 native score
+  - gTotalScore:s32 native score
+  - gHeartMeter.current:u8
+  - gHeartMeter.filling:u8
+  - gHighScoreTable[][]:s32
+  writes:
+  - gTotalScore:s32 native score
+  - gHighScoreTable[][]:s32
+  - gNewHighScore:u8 bool
+  - gCurrentCollection[][]:ItemCollection
+  - gSaveFlag:u8 bool
+  invariants:
+  - The effective remaining-heart count is at most eight.
+  - The stored high score changes only when the new banked score is greater.
+  params:
+    bonus_per_heart:
+      value: 50
+      unit: displayed points/heart
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/autosave.c:AutosaveStageClear
+        confidence: 0.94
+      native_value: 5
+      native_unit: native score units/heart
+    saved_score_cap:
+      value: 999990
+      unit: displayed points
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:include/score.h:MAX_SCORE
+        confidence: 0.94
+      native_value: 99999
+      native_unit: native score units
+- id: treasure_boxes
+  facet: economy
+  label: Persistent attack-opened reward container
+  summary: Opening a treasure box changes its room-persistent pose and starts a thirteen-frame transition. Completion
+    emits a 500-point coin plus the relevant treasure child in its specific handler; already collected treasures
+    are suppressed and the empty container disappears after its timer.
+  instantiates:
+  - concept: economy.source.item_container
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/treasure.c:BoxStartOpening
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/treasure.c:BoxFinishOpening
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/treasure.c:SpriteBoxJewelPieceNE
+    confidence: 0.94
+  reads:
+  - gCurrentSprite.pose:u8
+  - gCollectedNEJewelPiece:u8
+  - gPersistentSpriteData[][]:u8
+  writes:
+  - gCurrentSprite.pose:u8
+  - gCurrentSprite.work0:u8 frames
+  - gPersistentSpriteData[][]:u8
+  - world.child_sprites:Sprite[]
+  invariants:
+  - Persistent opened/collected state prevents duplicate treasure recreation.
+  params:
+    opening_timer:
+      value: 13
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/sprite_ai/treasure.c:BoxStartOpening
+        confidence: 0.94
+    empty_box_timer:
+      value: 50
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/sprite_ai/treasure.c:BoxFinishOpening
+        confidence: 0.94
+- id: spear_patrol
+  facet: ai
+  label: Terrain-probed directional patrol
+  summary: Yellow spear-mask movement samples support and adjacent terrain before selecting falling, turning or
+    walking. Its walking helper uses three native subpixels per update normally and one or two for specific terrain-code
+    values; mapping these codes to named slope types remains unverified.
+  instantiates:
+  - concept: ai.enemy.patrol_detect_pursue
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/spear_mask.c:SpearMaskWalkYellow
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_util.c:func_8026374
+    confidence: 0.94
+  reads:
+  - gCurrentSprite.status:u16 direction flags
+  - gUnk_3000A50:u8 terrain code
+  - gUnk_3000A51:u8 terrain result
+  writes:
+  - gCurrentSprite.pose:u8
+  - gCurrentSprite.xPosition:u16 subpx
+  invariants:
+  - Position changes in the current facing direction.
+  params:
+    walk_speed:
+      value: 0.75
+      unit: px/update
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/sprite_util.c:func_8026374
+        confidence: 0.94
+      native_value: 3
+      native_unit: subpx/update
+      variants:
+      - when: terrain code is 2 or 3
+        value: 0.5
+        unit: px/update
+      - when: terrain code is 4 or 5
+        value: 0.25
+        unit: px/update
+- id: spear_chase
+  facet: ai
+  label: Facing and proximity-gated red-enemy chase
+  summary: A red spear mask in idle begins a chase when the actor lies within a forward-facing horizontal neighborhood
+    and a narrow vertical band. A twenty-four-frame preparation precedes chasing, whose helper increases the normal
+    movement step from 0.75 to 1 pixel per update; baiting or avoiding that range is a strategy inferred from the
+    state machine.
+  instantiates:
+  - concept: ai.enemy.patrol_detect_pursue
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/spear_mask.c:SpearMaskWalkBlueOrRed
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/spear_mask.c:SpearMaskStartChasing
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/spear_mask.c:SpearMaskStartChase
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_util.c:SpriteUtilWaitCheckWarioNearbyLeftRight
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_util.c:func_80263E0
+    confidence: 0.94
+  reads:
+  - gWarioData.xPosition:u16 subpx
+  - gWarioData.yPosition:u16 subpx
+  - gCurrentSprite.globalID:u8
+  - gCurrentSprite.pose:u8
+  - gCurrentSprite.status:u16
+  - gCurrentSprite.work1:u8 cooldown
+  writes:
+  - gCurrentSprite.pose:u8
+  - gCurrentSprite.work0:u8 frames
+  - gCurrentSprite.xPosition:u16 subpx
+  invariants:
+  - Detection requires matching the direction the enemy faces.
+  - Distance thresholds are strict inequalities.
+  params:
+    max_horizontal_distance:
+      value: 100
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/sprite_ai/spear_mask.c:SpearMaskWalkBlueOrRed
+        confidence: 0.94
+      native_value: 400
+      native_unit: subpx
+    max_vertical_distance:
+      value: 31.75
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/sprite_ai/spear_mask.c:SpearMaskWalkBlueOrRed
+        confidence: 0.94
+      native_value: 127
+      native_unit: subpx
+    windup:
+      value: 24
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/sprite_ai/spear_mask.c:SpearMaskStartChasing
+        confidence: 0.94
+    chase_speed:
+      value: 1
+      unit: px/update
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/sprite_util.c:func_80263E0
+        confidence: 0.94
+      native_value: 4
+      native_unit: subpx/update
+      variants:
+      - when: terrain code is 2 or 3
+        value: 0.75
+        unit: px/update
+      - when: terrain code is 4 or 5
+        value: 0.5
+        unit: px/update
+  relations:
+  - type: modulates
+    target: spear_patrol
+    condition: red enemy begins chasing
+- id: boss_timed_intro
+  facet: mechanics
+  label: Boss timer and presentation initialization
+  summary: Boss initiation requests standing, pauses actor control for two hundred frames and activates timer state
+    one. It resets the shared timer counter and chooses final-boss or regular-boss music by passage; this establishes
+    initialization, not a boss damage or attack model.
+  instantiates:
+  - concept: mechanics.goal.time_limit
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sprite_util.c:SpriteUtilStartBossTimer
+    confidence: 0.94
+  reads:
+  - gCurrentPassage:u8 enum
+  writes:
+  - gWarioData.pose:u8
+  - gWarioPauseTimer:u16 frames
+  - gTimerState:u8
+  - gUnk_3000BEC:s32 updates
+  invariants:
+  - The pause timer delays ordinary actor controls during the intro.
+  params:
+    actor_pause:
+      value: 200
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/sprite_util.c:SpriteUtilStartBossTimer
+        confidence: 0.94
+- id: screen_shake
+  facet: camera
+  label: Duration-prioritized screen shake
+  summary: A nonzero request replaces an axis only if its duration exceeds the remaining duration. Updates insert
+    zero-offset frames and alternating offsets, reducing the magnitude near the end; the amplitude field behaves
+    as a flag/sign input rather than an arbitrary pixel multiplier in this implementation.
+  instantiates:
+  - concept: camera.effect.screen_shake
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/screen_shake.c:ScreenShakeRequestY
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/screen_shake.c:ScreenShakeUpdateY
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/screen_shake.c:ScreenShakeUpdateX
+    confidence: 0.94
+  reads:
+  - gScreenShakeX:ScreenShakeParameters
+  - gScreenShakeY:ScreenShakeParameters
+  writes:
+  - gScreenShakeX:ScreenShakeParameters
+  - gScreenShakeY:ScreenShakeParameters
+  - camera.shake_offset:s32 px
+  invariants:
+  - A shorter request cannot restart an active longer shake.
+- id: layer_scroll
+  facet: camera
+  label: Subpixel layer scroll converted to hardware offsets
+  summary: The scroll routine divides layer positions by four before masking offsets to nine bits and adding shake.
+    BG3 receives half the vertical shake while other layers use the full offset; the complete camera follow/clamp
+    policy is not established by this register-preparation routine.
+  instantiates:
+  - concept: camera.parallax.layer_ratio_scroll
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:asm/disasm_scrolling.s:func_806C828
+    confidence: 0.94
+  reads:
+  - gBg1XPosition:u16 subpx
+  - gBg1YPosition:u16 subpx
+  - background.layer_positions:u16 subpx
+  - camera.shake_offset:s32 px
+  writes:
+  - gBackgroundScroll:BackgroundScroll
+  invariants:
+  - World subpixels are converted to pixels before writing buffered scroll offsets.
+  relations:
+  - type: requires
+    target: screen_shake
+- id: side_projection
+  facet: projection
+  label: Planar side-view sprite presentation
+  summary: Actor rendering subtracts camera X/Y from world X/Y, converts to pixels and adds OAM-piece offsets. The
+    inspected platform scene shows side-on rooms, horizontal platforms and vertical traversal; no perspective depth
+    calculation appears in this draw path.
+  instantiates:
+  - concept: projection.side_view.orthographic_2d
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/game_screen_gfx.c:GameScreenDrawWario
+    confidence: 0.94
+  - kind: capture_frame
+    ref: capture:frontend:keyframes/f005374_scene.png
+    confidence: 0.98
+    note: Viewed directly; platform gameplay and heart/score HUD visible.
+- id: vblank_streaming
+  facet: rendering
+  label: Buffered sprites and animation tiles transferred during VBlank
+  summary: The gameplay VBlank callback copies OAM with DMA3, streams up to two actor graphics blocks, copies actor
+    palettes and uploads health/gauge tiles. This is a concrete asset-to-display path; asset semantic labels and
+    complete palette inventories remain unextracted.
+  instantiates:
+  - concept: rendering.transfer.vblank_obj_dma
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/game_screen.c:func_801BEA8
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/game_screen.c:func_801BC0C
+    confidence: 0.94
+- id: affine_vortex
+  facet: rendering
+  label: Rotating and scaling multipart vortex sprite
+  summary: A vortex creates child sprite parts and updates four affine coefficients from sine, cosine and inverse
+    scale. Scale and angle are presentation state, while the portal collision gate is handled separately by pose.
+  instantiates:
+  - concept: rendering.sprite.affine_rotscale
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/vortex.c:SpriteVortex
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:include/fixed_point.h:ANGLE_2PI
+    confidence: 0.94
+  params:
+    angle_cycle:
+      value: 256
+      unit: native angle units/turn
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:include/fixed_point.h:ANGLE_2PI
+        confidence: 0.94
+  relations:
+  - type: part_of
+    target: return_vortex
+- id: local_transparency
+  facet: rendering
+  label: Tile and water-driven alpha targets
+  summary: Tile metadata under the actor selects a target alpha from a small table or default, then the current
+    alpha moves by one step toward it. A water-related variant also selects sounds when its alpha target changes;
+    these are material/context responses, not evidence of global per-scanline effects.
+  instantiates:
+  - concept: rendering.blending.alpha_layer_transparency
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/transparency.c:TransparencyProcessTiles
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/transparency.c:TransparencyProcessWater
+    confidence: 0.94
+  params:
+    alpha_step:
+      value: 1
+      unit: coefficient/update
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/transparency.c:TransparencyProcessTiles
+        confidence: 0.94
+- id: captured_video_modes
+  facet: rendering
+  label: Measured boot/front-end display mode changes
+  summary: The retained 9000-frame capture recorded mode zero for 7664 frames, mode one for 480, and mode four for
+    806. Affine background/object, alpha blend, brightness and window flags were observed, but these phase-aggregated
+    measurements do not prove each effect occurs during active gameplay.
+  instantiates:
+  - concept: rendering.pipeline.multimode_display
+  evidence:
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.video_modes_frames and derived.flags
+    confidence: 0.97
+- id: mixed_audio
+  facet: audio
+  label: Measured PCM and PSG activity
+  summary: The capture records both DirectSound channels with a reported 13379 Hz timer rate and PSG activity on
+    channels one, two and four. These are capture-observed channel statistics rather than a claim about every composition
+    or gameplay state.
+  instantiates:
+  - concept: audio.engine.sample_psg_sequencer
+  evidence:
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.sound
+    confidence: 0.97
+- id: context_audio
+  facet: audio
+  label: Underwater variants of pickup feedback
+  summary: Coin and diamond collection choose different sound IDs when the reaction equals water. Keyzer has the
+    same context branch, making state-dependent auditory feedback explicit without inferring its exact acoustic
+    processing.
+  instantiates:
+  - concept: audio.sfx.contextual_action_sfx
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/coins.c:CoinCollect
+    confidence: 0.94
+  - kind: decomp_source
+    ref: warioland4:src/sprite_ai/keyzer.c:KeyzerCollect
+    confidence: 0.94
+- id: voice_barks
+  facet: audio
+  label: Random event voice sets protect current speech
+  summary: A voice event chooses an entry using MinigameRandom modulo the selected set size. Most voice sets return
+    early while the voice player is active; hurry-up is excluded from that protection and may interrupt.
+  instantiates:
+  - concept: audio.voice.random_noninterrupting_barks
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/voice_set.c:VoiceSetPlay
+    confidence: 0.94
+  params:
+    treasure_variants:
+      value: 18
+      unit: samples
+      evidence:
+      - kind: decomp_source
+        ref: warioland4:src/voice_set.c:sVoiceSet_Wario_Treasure
+        confidence: 0.94
+- id: intro_vignette
+  facet: narrative_delivery
+  label: A staged visual prologue before playable platforming
+  summary: The viewed attract frame depicts a small dark cat, crescent moon and masonry silhouette, without a gameplay
+    HUD. Main mode routing identifies a cutscene subsystem separate from demos and active play; the complete plot
+    and scene ordering were not established.
+  instantiates:
+  - concept: narrative_delivery.cutscene.in_engine_cutscene
+  evidence:
+  - kind: decomp_source
+    ref: warioland4:src/main.c:AgbMain
+    confidence: 0.94
+  - kind: capture_frame
+    ref: capture:attract:keyframes/f000270.png
+    confidence: 0.98
+    note: Viewed directly; existing local model gameplay label is incorrect for this frame.
+- id: visual_setting
+  facet: setting
+  label: Moonlit masonry and colorful treasure-platform spaces
+  summary: The inspected intro depicts moonlit dark masonry, while the inspected gameplay scene uses saturated purple
+    and green stone platforms, a door-like object and colorful characters. This records visible environmental motifs,
+    without inferring named locations, factions or story causality.
+  instantiates:
+  - concept: setting.environment.masonry_treasure_spaces
+  evidence:
+  - kind: capture_frame
+    ref: capture:attract:keyframes/f000270.png
+    confidence: 0.95
+  - kind: capture_frame
+    ref: capture:frontend:keyframes/f005374_scene.png
+    confidence: 0.95
+proposed_concepts:
+- id: mechanics.state.reaction_dispatch
+  label: Reaction-specific control dispatch
+  definition: A mutually exclusive reaction state selects control and collision handlers and legal action poses.
+- id: mechanics.interaction.carryable_world_object
+  label: Carryable world object
+  definition: A world entity can transition through lifting, carried, thrown, and collision response states.
+- id: mechanics.world.switch_activates_return_goal
+  label: Switch activates return goal
+  definition: A world switch changes a previously unavailable return endpoint into a usable completion goal.
+- id: mechanics.health.difficulty_initial_pool
+  label: Difficulty-dependent initial health
+  definition: Initial health depends on difficulty and encounter context rather than a permanent capacity upgrade.
+- id: progression.collectible.persistent_exit_key
+  label: Persistent run exit token
+  definition: A collected exit-related token is remembered independently of the visible entity, including across
+    room reloads.
+- id: progression.difficulty.completion_unlock
+  label: Completion-conditioned difficulty unlock
+  definition: An additional difficulty option is unlocked only when completion predicates hold.
+- id: economy.drain.post_timeout_score
+  label: Post-timeout score drain
+  definition: A deadline transitions into repeated score loss; exhausting that reserve triggers failure.
+- id: economy.converter.remaining_health_bonus
+  label: Remaining health converted into score
+  definition: Successful completion awards a bounded amount of score per remaining health unit.
+- id: frontend.save.verified_sram_write
+  label: Verified SRAM write
+  definition: Save bytes are written to SRAM and compared with source bytes, with a bounded retry count.
+- id: ui_hud.resource.health_meter
+  label: Health and auxiliary recovery meters
+  definition: Discrete visual meters expose current health and an auxiliary recovery collection state.
+- id: ui_hud.collection.goal_status_icons
+  label: Goal collection status icons
+  definition: HUD icons show possession of discrete progression collectibles.
+- id: rendering.transfer.vblank_obj_dma
+  label: VBlank object graphics streaming
+  definition: A VBlank callback transfers buffered object attributes, animation tiles, and palettes into display
+    memory.
+- id: rendering.pipeline.multimode_display
+  label: Phase-dependent display mode pipeline
+  definition: Different phases use distinct hardware display modes, rather than one permanent rendering mode.
+- id: audio.voice.random_noninterrupting_barks
+  label: Noninterrupting sampled voice variation
+  definition: An event selects a voice sample from a set while respecting an already playing voice channel.
+- id: setting.environment.masonry_treasure_spaces
+  label: Masonry and treasure spaces
+  definition: A visual setting uses constructed stone interiors and collectible-rich exploration spaces.
+open_questions:
+- Trace normal-form jump, roll, dash, carrying and swim handler bodies and velocity integration before publishing
+  gravity, impulses, charge windows or collision extents for the actor. Header pose names alone do not establish
+  their rules.
+- Resolve initial per-stage/difficulty escape time tables and complete timer-state transitions. Check 64-update
+  countdown and 8-update drain in emulator with scripted controlled input.
+- Trace Keyzer stage-door predicates separately from vortex switch gating; do not conflate collecting the token
+  with immediate exit eligibility.
+- Confirm the commercial ROM matches this exact decomp version through build or symbol mapping; source commit was
+  pinned but rebuilding was outside this bounded extraction.
+- Capture coverage is short and phase labels include intros and potential demos; no claim that 9000 captured frames
+  cover every stage, boss or transformed form. Existing Qwen labels misclassified the directly inspected cat-intro
+  frame.
+- Trace health-gauge conversion, damage amount and invulnerability duration rather than infer them from pickup names.
+- Map enemy type damage values, transformations and progression gates to input-tested player skills; current strategy
+  notes are inference only.
+- Extract remaining entities, bosses, room graph, tile collision tables, authored narrative, audio sequencing and
+  asset inventories. Only two keyframes were viewed, no audio was listened to, and no complete game-wide taxonomy
+  is claimed.
+- Compare this GPT extraction with a same-source local-model extraction before drawing conclusions about model quality;
+  no comparable before/after extraction latency baseline exists.

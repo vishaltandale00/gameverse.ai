@@ -1,0 +1,363 @@
+{
+ "comment": "Default capture script. Frames are emulated frames (GBA runs at ~59.73 fps). Per-ROM overrides live in <id>.json; they replace phases by name and may add templates. 'play_starts_frame' marks, by visual check of keyframes, the frame where player-controlled play begins.",
+ "templates": {
+  "move_side": {
+   "comment": "side-view platformer/action: run right with jumps, attack, turn back",
+   "period_frames": 480,
+   "events": [
+    {
+     "offset": 0,
+     "keys": [
+      "RIGHT"
+     ],
+     "hold": 130
+    },
+    {
+     "offset": 40,
+     "keys": [
+      "A"
+     ],
+     "hold": 20
+    },
+    {
+     "offset": 100,
+     "keys": [
+      "B"
+     ],
+     "hold": 6
+    },
+    {
+     "offset": 150,
+     "keys": [
+      "A"
+     ],
+     "hold": 15
+    },
+    {
+     "offset": 190,
+     "keys": [
+      "B"
+     ],
+     "hold": 6
+    },
+    {
+     "offset": 220,
+     "keys": [
+      "LEFT"
+     ],
+     "hold": 60
+    },
+    {
+     "offset": 300,
+     "keys": [
+      "B"
+     ],
+     "hold": 6
+    },
+    {
+     "offset": 330,
+     "keys": [
+      "RIGHT"
+     ],
+     "hold": 120
+    },
+    {
+     "offset": 360,
+     "keys": [
+      "A"
+     ],
+     "hold": 25
+    },
+    {
+     "offset": 430,
+     "keys": [
+      "B"
+     ],
+     "hold": 6
+    }
+   ]
+  },
+  "move_topdown": {
+   "comment": "top-down/RPG field: walk a loop, interact (A) and cancel (B)",
+   "period_frames": 480,
+   "events": [
+    {
+     "offset": 0,
+     "keys": [
+      "RIGHT"
+     ],
+     "hold": 60
+    },
+    {
+     "offset": 70,
+     "keys": [
+      "DOWN"
+     ],
+     "hold": 60
+    },
+    {
+     "offset": 140,
+     "keys": [
+      "LEFT"
+     ],
+     "hold": 60
+    },
+    {
+     "offset": 210,
+     "keys": [
+      "UP"
+     ],
+     "hold": 60
+    },
+    {
+     "offset": 280,
+     "keys": [
+      "A"
+     ],
+     "hold": 6
+    },
+    {
+     "offset": 310,
+     "keys": [
+      "B"
+     ],
+     "hold": 6
+    },
+    {
+     "offset": 340,
+     "keys": [
+      "UP"
+     ],
+     "hold": 50
+    },
+    {
+     "offset": 400,
+     "keys": [
+      "RIGHT"
+     ],
+     "hold": 50
+    },
+    {
+     "offset": 460,
+     "keys": [
+      "B"
+     ],
+     "hold": 6
+    }
+   ]
+  },
+  "move_racing": {
+   "comment": "racing: hold accelerate (A) with short steering taps",
+   "period_frames": 480,
+   "events": [
+    {
+     "offset": 0,
+     "keys": [
+      "A"
+     ],
+     "hold": 480
+    },
+    {
+     "offset": 150,
+     "keys": [
+      "RIGHT"
+     ],
+     "hold": 10
+    },
+    {
+     "offset": 330,
+     "keys": [
+      "LEFT"
+     ],
+     "hold": 10
+    }
+   ]
+  },
+  "move_fighter": {
+   "comment": "fighting: approach, punch/kick, back off",
+   "period_frames": 240,
+   "events": [
+    {
+     "offset": 0,
+     "keys": [
+      "RIGHT"
+     ],
+     "hold": 40
+    },
+    {
+     "offset": 45,
+     "keys": [
+      "A"
+     ],
+     "hold": 6
+    },
+    {
+     "offset": 60,
+     "keys": [
+      "B"
+     ],
+     "hold": 6
+    },
+    {
+     "offset": 75,
+     "keys": [
+      "A"
+     ],
+     "hold": 6
+    },
+    {
+     "offset": 90,
+     "keys": [
+      "DOWN",
+      "B"
+     ],
+     "hold": 10
+    },
+    {
+     "offset": 120,
+     "keys": [
+      "UP"
+     ],
+     "hold": 10
+    },
+    {
+     "offset": 150,
+     "keys": [
+      "LEFT"
+     ],
+     "hold": 30
+    },
+    {
+     "offset": 200,
+     "keys": [
+      "A",
+      "B"
+     ],
+     "hold": 6
+    }
+   ]
+  },
+  "menu_mash": {
+   "comment": "generic front-end advance: START then A",
+   "period_frames": 120,
+   "events": [
+    {
+     "offset": 0,
+     "keys": [
+      "START"
+     ],
+     "hold": 6
+    },
+    {
+     "offset": 60,
+     "keys": [
+      "A"
+     ],
+     "hold": 6
+    }
+   ]
+  },
+  "a_mash": {
+   "comment": "advance text/menus with A only",
+   "period_frames": 40,
+   "events": [
+    {
+     "offset": 0,
+     "keys": [
+      "A"
+     ],
+     "hold": 6
+    }
+   ]
+  },
+  "move_north": {
+   "comment": "top-down exploration biased north/forward, no A (avoids repeated NPC dialogue)",
+   "period_frames": 360,
+   "events": [
+    {
+     "offset": 0,
+     "keys": [
+      "UP"
+     ],
+     "hold": 100
+    },
+    {
+     "offset": 110,
+     "keys": [
+      "RIGHT"
+     ],
+     "hold": 40
+    },
+    {
+     "offset": 160,
+     "keys": [
+      "UP"
+     ],
+     "hold": 100
+    },
+    {
+     "offset": 270,
+     "keys": [
+      "LEFT"
+     ],
+     "hold": 40
+    },
+    {
+     "offset": 320,
+     "keys": [
+      "B"
+     ],
+     "hold": 6
+    }
+   ]
+  }
+ },
+ "phases": [
+  {
+   "name": "attract",
+   "frames": 3600,
+   "events": []
+  },
+  {
+   "name": "frontend",
+   "frames": 5400,
+   "events": [],
+   "repeat": {
+    "from_frame": 180,
+    "period_frames": 180,
+    "events": [
+     {
+      "offset": 0,
+      "keys": [
+       "START"
+      ],
+      "hold": 6
+     },
+     {
+      "offset": 90,
+      "keys": [
+       "A"
+      ],
+      "hold": 6
+     }
+    ]
+   }
+  },
+  {
+   "name": "gameplay",
+   "frames": 5400,
+   "events": [],
+   "repeat": [
+    {
+     "from_frame": 180,
+     "until_frame": 2400,
+     "template": "menu_mash"
+    },
+    {
+     "from_frame": 2400,
+     "template": "move_side"
+    }
+   ]
+  }
+ ]
+}

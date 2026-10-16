@@ -1,0 +1,3 @@
+{"comment":"Gameplay: language/EA/PSA, title START, name entry (START accepts), then A only (START backs out of menus): Quick Race -> Circuit -> Ford Focus; race starts ~2900; hold A and steer.",
+ "phases":[{"name":"gameplay","frames":6000,"play_starts_frame":2900,
+ "repeat":[{"from_frame":180,"until_frame":2000,"template":"menu_mash"},{"from_frame":2040,"until_frame":3000,"period_frames":60,"events":[{"offset":0,"keys":["A"],"hold":6}]},{"from_frame":3000,"template":"move_racing"}]}]}

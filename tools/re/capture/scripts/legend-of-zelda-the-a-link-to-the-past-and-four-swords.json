@@ -1,0 +1,136 @@
+{
+ "comment": "Gameplay: cart file select -> enter name 'A' (A, START=END, A) -> choose ALttP -> title START; the new-game prologue and Zelda's message are unskippable (~2 min); Link is controllable in his house from ~12000.",
+ "phases": [
+  {
+   "name": "gameplay",
+   "frames": 15000,
+   "events": [
+    {
+     "frame": 660,
+     "keys": [
+      "A"
+     ]
+    },
+    {
+     "frame": 720,
+     "keys": [
+      "START"
+     ]
+    },
+    {
+     "frame": 780,
+     "keys": [
+      "A"
+     ]
+    },
+    {
+     "frame": 900,
+     "keys": [
+      "A"
+     ]
+    },
+    {
+     "frame": 960,
+     "keys": [
+      "A"
+     ]
+    },
+    {
+     "frame": 1500,
+     "keys": [
+      "START"
+     ]
+    },
+    {
+     "frame": 2200,
+     "keys": [
+      "START"
+     ]
+    },
+    {
+     "frame": 2220,
+     "keys": [
+      "A"
+     ]
+    },
+    {
+     "frame": 2240,
+     "keys": [
+      "START"
+     ]
+    },
+    {
+     "frame": 2260,
+     "keys": [
+      "A"
+     ]
+    },
+    {
+     "frame": 2280,
+     "keys": [
+      "START"
+     ]
+    },
+    {
+     "frame": 2300,
+     "keys": [
+      "A"
+     ]
+    },
+    {
+     "frame": 2320,
+     "keys": [
+      "START"
+     ]
+    },
+    {
+     "frame": 2340,
+     "keys": [
+      "A"
+     ]
+    },
+    {
+     "frame": 2360,
+     "keys": [
+      "START"
+     ]
+    },
+    {
+     "frame": 2380,
+     "keys": [
+      "A"
+     ]
+    },
+    {
+     "frame": 2400,
+     "keys": [
+      "START"
+     ]
+    },
+    {
+     "frame": 2420,
+     "keys": [
+      "A"
+     ]
+    }
+   ],
+   "repeat": [
+    {
+     "from_frame": 180,
+     "until_frame": 500,
+     "template": "menu_mash"
+    },
+    {
+     "from_frame": 2460,
+     "until_frame": 11900,
+     "template": "a_mash"
+    },
+    {
+     "from_frame": 11900,
+     "template": "move_topdown"
+    }
+   ],
+   "play_starts_frame": 12000
+  }
+ ]
+}

@@ -1,0 +1,4197 @@
+schema_version: 0
+id: pokemon-mystery-dungeon-red-rescue-team
+game:
+  title: 'Pokemon Mystery Dungeon: Red Rescue Team'
+  platform: gba
+  game_code: B24E
+  rom_sha1: 9f4cfc5b5f4859d17169a485462e977c7aac2b89
+  year: 2005
+  developer: Chunsoft
+  derived_genres:
+  - roguelike
+  - dungeon_crawler
+  - monster_collecting_rpg
+  evidence_basis:
+  - decomp_source
+  - capture_telemetry
+  - capture_frame
+  - derived
+  - llm_knowledge
+  sources:
+  - kind: decomp
+    ref: https://github.com/pret/pmd-red @ 013475aa04f5be3191e5527c186d9bfceae7cae0 (matching decomp of pmd_red.gba
+      B24E; no license file per local/decomps/survey.json; local/decomps/pmd-red; symbols/pmd_red.sym present, not used)
+  - kind: rom_header
+    ref: local/re/roms.json id=pokemon-mystery-dungeon-red-rescue-team (header title POKE DUNGEON, maker 01, version
+      0, 32 MiB)
+  - kind: captures
+    ref: local/captures/pokemon-mystery-dungeon-red-rescue-team run 20261015T234415-8f46cf (harness 0.1.0, libmgba
+      0.10.5 HLE BIOS, source commit d431b81 dirty tree; attract 3600 frames idle, frontend 5400 frames START/A every
+      90 frames); 128 keyframes, telemetry, WAVs. No gameplay inside a dungeon was captured.
+  - kind: ghidra
+    ref: local/re/pokemon-mystery-dungeon-red-rescue-team/functions.jsonl absent; not used
+  - kind: extraction_run
+    ref: 'claude-opus-5-5, brief v1, 2026-10-16T03:56:00Z-2026-10-16T04:15:30Z (~20 min wall), ~30 decomp files read
+      directly (dungeon_generation, dungeon_engine, dungeon_turn_effects, dungeon_config, dungeon_random, run_dungeon,
+      main_loops, dungeon_wind, dungeon_wild_mon_spawn, dungeon_monster_house, dungeon_logic, dungeon_map_access, dungeon_damage,
+      dungeon_exit, data/dungeon/*.json/.inc) plus ~120 more opened by 4 parallel read-only sub-agents (AI, items/economy,
+      missions/progression, frontend/rendering/audio); 13 capture keyframes viewed'
+conventions:
+  units_convention: 'Dungeon space is a 56x32 grid of 24x24 px tiles; an entity''s pixel position is (tile*24+12,
+    tile*24+16) in 1/256 px (24.8 fixed). Time inside dungeons is turn-based: a "turn" is one normal-speed (stage
+    1) action = 4 of the 24 fractional ticks in gSpeedTurns; all status durations, belly drain, respawn timers and
+    turn limits count these turns, not frames, even where the source names them "frames". Walk animation takes 24
+    frames per tile at 60 fps (12 on Fast). Probabilities written as % are DungeonRandInt(100) < p; recruit rolls
+    are per-mille (rand(1000)); spawn tables use weights out of 10000. DungeonRandRange(lo, hi) is half-open [lo,
+    hi). Belly and some multipliers are s48.16 fixed point (65536 = 1.0); damage multipliers are s24.8. Floor parameters
+    come from 28-byte FloorProperties records in data/dungeon/<Dungeon>/main_data.inc (350 records), decoded with
+    the field order of include/structs/str_dungeon.h:FloorProperties.'
+  shared_pokemon_concepts: 'Types (17 + none), the type chart, physical/special split by type, stat stages and moves
+    are shared Pokemon-franchise concepts. They are proposed here with general definitions (mechanics.pokemon.*);
+    the main-series battle engine itself is left to the Emerald decomposition. This game combines dual types through
+    a 4x4 effectiveness table rather than multiplying; its chart was not cross-checked against Emerald.'
+components:
+- id: game_mode_flow
+  facet: frontend
+  label: Ground-dungeon dispatcher driven by script return codes
+  summary: 'After boot, GameLoop_Async runs four demo ground scripts (warning, logo, intro, title), then the main menu;
+    New Game / Continue enter RunGameMode_Async, which alternates between the ground (town/overworld script engine)
+    and dungeons. The ground engine returns codes selecting the friend-areas map, the world map, or a dungeon variant;
+    the dungeon returns a result (won, lost, quicksaved, fainted awaiting rescue) that becomes the next ground start
+    mode and picks the return script. Before most dungeons the game auto-saves.'
+  instantiates:
+  - concept: frontend.flow.mode_state_machine
+  - concept: frontend.flow.hub_and_expedition_loop
+  reads:
+  - ground.return_code
+  - dungeon.result
+  writes:
+  - frontend.start_mode
+  - save.*
+  params:
+    mode_switch_music_fade:
+      value: 16
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/main_loops.c:RunGameMode_Async
+        confidence: 0.85
+  relations:
+  - type: requires
+    target: save_and_quicksave
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/main_loops.c:GameLoop_Async
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/main_loops.c:RunGameMode_Async
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/ground_main.c:xxx_script_related_8098468_Async
+    confidence: 0.8
+- id: boot_and_title
+  facet: frontend
+  label: Warning, logo, attract intro and randomised title screen
+  summary: 'Boot plays ground maps in sequence: health-and-safety warning (held until input in the capture), The Pokemon
+    Company logo, an in-engine intro scene at the Pelipper post office with sprites over the BG, then the title (logo
+    over a sunset; one of 3 backgrounds picked at random) which fades in over 32 frames. Any of A/B/Select/Start/L/R
+    cancels a demo with a 30-frame music fade. The main menu offers New Game or Continue, Adventure Log, Friend Rescue,
+    Trade Items, Wonder Mail and Delete Save.'
+  instantiates:
+  - concept: frontend.title.attract_demo
+    weight: 0.5
+  - concept: frontend.boot.publisher_logos
+  - concept: frontend.menu.main_menu
+  reads:
+  - input.buttons
+  - save.exists
+  writes:
+  - frontend.mode
+  params:
+    title_fade:
+      value: 32
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/main_loops.c:GameLoop_Async
+        confidence: 0.85
+    title_backgrounds:
+      value: 3
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/main_loops.c:LoadTitleScreen
+        confidence: 0.85
+    demo_cancel_fade:
+      value: 30
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/ground_main.c:xxx_script_related_8098468_Async
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: game_mode_flow
+  evidence:
+  - kind: capture_frame
+    ref: capture:attract:frames 0-3540 (warning screen persists for the whole idle phase)
+    confidence: 0.9
+  - kind: capture_frame
+    ref: capture:frontend:f000394 (The Pokemon Company logo), f000863-f001909 (Pelipper post office intro), f002015-f002616
+      (title fade-in)
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: capture:attract:wav rms 0 (silent while warning waits for input)
+    confidence: 0.8
+  - kind: decomp_source
+    ref: pmd-red:src/data/main_menu2.h
+    confidence: 0.75
+- id: personality_quiz
+  facet: frontend
+  label: Personality quiz as character creation (nature to starter species)
+  summary: 'A new game opens with a questionnaire: 8 questions drawn from a pool of 55, each from a different category
+    (13 natures x 4 plus 3 misc), each answer adding 1-4 points to one or more natures, then a gender question. The
+    highest-scoring nature (ties broken by a random walk start) selects the player species from a 13x2 nature-gender
+    table; the player then picks a partner from 10 starters, excluding any sharing a type with the player. The capture
+    shows the quiz on full-screen colour-changing zigzag backdrops with Yes/No and multi-choice menus.'
+  instantiates:
+  - concept: frontend.new_game.questionnaire_character_creation
+  - concept: narrative_delivery.framing.player_avatar_identity
+    weight: 0.4
+  reads:
+  - input.menu_choice
+  - rng.global
+  writes:
+  - player.species
+  - player.nature
+  - player.gender
+  - partner.species
+  params:
+    questions_asked:
+      value: 8
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/personality_test.h:MAX_ASKED_QUESTIONS
+        confidence: 0.95
+    question_pool:
+      value: 55
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/personality_test.h:NUM_QUIZ_QUESTIONS
+        confidence: 0.95
+    natures:
+      value: 13
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/personality_test.h:NUM_PERSONALITIES
+        confidence: 0.95
+    partner_candidates:
+      value: 10
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/personality_test.h:NUM_PARTNERS
+        confidence: 0.95
+  tables:
+    nature_to_starter:
+      description: gStarters[nature][gender] (src/data/personality_test1.h).
+      columns:
+      - nature
+      - male
+      - female
+      rows:
+      - [Hardy, Charmander, Pikachu]
+      - [Docile, Bulbasaur, Chikorita]
+      - [Brave, Machop, Charmander]
+      - [Jolly, Squirtle, Totodile]
+      - [Impish, Pikachu, Cubone]
+      - [Naive, Totodile, Eevee]
+      - [Timid, Cyndaquil, Mudkip]
+      - [Hasty, Torchic, Skitty]
+      - [Sassy, Treecko, Torchic]
+      - [Calm, Mudkip, Bulbasaur]
+      - [Relaxed, Psyduck, Squirtle]
+      - [Lonely, Cubone, Psyduck]
+      - [Quirky, Meowth, Treecko]
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/data/personality_test1.h:gStarters
+        confidence: 0.85
+  invariants:
+  - The partner never shares a type with the player species.
+  - No two asked questions come from the same nature category.
+  relations:
+  - type: part_of
+    target: game_mode_flow
+  - type: modulates
+    target: team_leader_and_party
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/personality_test1.c
+    confidence: 0.75
+  - kind: decomp_source
+    ref: pmd-red:src/personality_test2.c:GetValidPartners
+    confidence: 0.75
+  - kind: capture_frame
+    ref: capture:frontend:f004330, f004803, f005189, f005376 (quiz questions over zigzag backdrops, Yes/No menu)
+    confidence: 0.9
+- id: save_and_quicksave
+  facet: frontend
+  label: Duplicated flash save plus consumable in-dungeon quicksave
+  summary: 'Saves go to 128 KiB FLASH1M: the 22,484-byte main save is written twice (primary and backup, checksum
+    and magic) with per-sector verify-and-retry. In a dungeon the player can quicksave: the 18 KiB dungeon state is
+    serialised to sector 16 and a status record marks it present; resuming marks it consumed, so a reset after resuming
+    without re-saving counts the outing as a defeat (all money and items lost). The game also auto-saves before entering
+    most dungeons.'
+  instantiates:
+  - concept: frontend.save.redundant_slot_backup
+  - concept: frontend.save.suspend_save_consumed_on_load
+  reads:
+  - save.*
+  - dungeon.state
+  writes:
+  - flash.sectors
+  params:
+    flash_size:
+      value: 131072
+      unit: bytes (32 x 4 KiB sectors)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/flash.c:ReadFlashData
+        confidence: 0.85
+    main_save_size:
+      value: 22484
+      unit: bytes
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/save.h:UnkStruct_sub_8011DAC
+        confidence: 0.85
+    quicksave_size:
+      value: 18432
+      unit: bytes
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/run_dungeon.c:RunDungeon_Async (ReadDungeonState 0x4800)
+        confidence: 0.9
+  invariants:
+  - A quicksave can be resumed once; afterwards the status record reads consumed.
+  relations:
+  - type: modulates
+    target: faint_and_item_loss
+    note: reset-after-resume penalty
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/save.c:WriteSavetoPak
+    confidence: 0.8
+  - kind: decomp_source
+    ref: pmd-red:src/quick_save_write.c:WriteQuickSave
+    confidence: 0.8
+  - kind: decomp_source
+    ref: pmd-red:src/main_loops.c:LoadAndRunQuickSaveDungeon_Async
+    confidence: 0.9
+- id: dungeon_tile_renderer
+  facet: rendering
+  label: Mode-0 dungeon renderer with 24 px metatiles streamed into BG3
+  summary: 'Gameplay runs in video mode 0 throughout. The dungeon map is drawn on BG3 from 24x24 px metatiles (3x3
+    hardware tiles) of the floor''s tileset, streaming edge rows/columns as the camera moves and redrawing fully on
+    jumps over 7 px; BG0 carries text windows, the HUD row and the floor map, BG1 window backgrounds and translucent
+    overlays, BG2 the rotate-mode grid. Pokemon are multi-part OBJ animations with terrain-dependent shadows; weather
+    tints the palette via per-weather 256-entry colour ramps stepping 10 per channel per frame.'
+  instantiates:
+  - concept: rendering.background.tile_layer_stack
+  - concept: rendering.background.metatile_streaming
+  - concept: rendering.palette.runtime_palette_effects
+    weight: 0.4
+  reads:
+  - map.tiles[*]
+  - camera.pixel
+  - weather.current
+  writes:
+  - io.bg3hofs
+  - io.bg3vofs
+  - vram.bg3_map
+  - oam.*
+  - palram.*
+  params:
+    metatile_size:
+      value: 24
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/structs/str_position.h:X_POS_TO_PIXELPOS
+        confidence: 0.95
+    video_mode:
+      value: 0
+      evidence:
+      - kind: capture_telemetry
+        ref: 'capture:attract+frontend:video_modes_frames mode0=8982'
+        confidence: 0.9
+    max_visible_sprites:
+      value: 16
+      unit: OBJ in frontend capture (19 active)
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:frontend:max_obj_visible 16, max_obj_active 19
+        confidence: 0.8
+    full_redraw_threshold:
+      value: 7
+      unit: px camera jump
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_tilemap.c:UpdateCamera
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: top_down_tile_projection
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_vram.c:sub_803E490
+    confidence: 0.75
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_tilemap.c:UpdateCamera
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/weather.c:sub_807E698
+    confidence: 0.75
+  - kind: capture_telemetry
+    ref: capture:frontend:affine_bg_frames 0, obj_affine_frames 0, mosaic_frames 0
+    confidence: 0.85
+- id: window_hdma_vision
+  facet: rendering
+  label: Per-scanline WIN0H/WIN1H via HBlank DMA for text-box shapes and darkness vision
+  summary: 'Every VBlank, DMA0 is armed in HBlank-repeat mode to copy a WIN0H/WIN1H pair per scanline from a double-buffered
+    160-line table. WIN0 shapes the text windows; WIN1 draws dungeon darkness: in dark corridors a precomputed circle
+    around the leader (small or large by floor visibility range), in rooms a rounded rectangle matching the room
+    bounds, with the outside dimmed via BG1 translucency (constant 8/8 alpha in dungeons). Fully lit floors skip WIN1.'
+  instantiates:
+  - concept: rendering.raster.window_shape_per_scanline
+  - concept: rendering.lighting.window_mask_vision_radius
+  - concept: rendering.blending.alpha_layer_transparency
+    weight: 0.5
+  reads:
+  - floor_props.visibility_range
+  - leader.room
+  - camera.pixel
+  - ui.windows
+  writes:
+  - io.win0h
+  - io.win1h
+  - io.bldcnt
+  - io.bldalpha
+  params:
+    lines_per_frame:
+      value: 160
+      unit: scanlines (2 halfwords each)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/cpu.c:VBlank_CB
+        confidence: 0.9
+      - kind: capture_telemetry
+        ref: capture:frontend:raster.window hdma_max_lines 160, hdma_frames 5372/5400; hblank_dma_targets ch0->0x04000040
+        confidence: 0.95
+    dungeon_alpha:
+      value: 8/8
+      unit: EVA/EVB
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/run_dungeon.c:RunDungeon_Async (gUnknown_2026E4E = 2056)
+        confidence: 0.9
+    visibility_levels:
+      value: 3
+      unit: 0 lit, 1 small circle, 2 larger circle (2-bit field)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_tilemap.c:sub_803F27C
+        confidence: 0.8
+      - kind: derived
+        ref: tallied FloorProperties.visibilityRange (0:205, 1:42, 2:103 floors)
+        inputs:
+        - pmd-red:data/dungeon/*/main_data.inc
+        confidence: 0.8
+  relations:
+  - type: modulates
+    target: dungeon_tile_renderer
+  - type: modulates
+    target: enemy_chase_and_wander_ai
+    note: same visibility range feeds AI sight in corridors
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/cpu.c:VBlank_CB
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/window_buffer.c:CopyWindowBgBuffer
+    confidence: 0.8
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_tilemap.c:sub_803F7BC
+    confidence: 0.75
+  - kind: capture_telemetry
+    ref: capture:frontend:blend_frames alpha 5397/5400; windows true; summary flags hdma_window_shape true
+    confidence: 0.9
+- id: ground_mode_renderer
+  facet: rendering
+  label: Overworld (ground) maps from chunked BG data with scripted actors
+  summary: 'Town and cutscene maps (229 ground maps, 677 ground files) are drawn from BMA/BPC chunk data in 2x2 or
+    3x3 tile chunks with optional wrap-around, with up to 24 scripted actors, 16 objects and 16 effects as sprites.
+    The capture shows the Pelipper post office intro and title screen in mode 0 with alpha blending on.'
+  instantiates:
+  - concept: rendering.background.tile_layer_stack
+  - concept: rendering.background.metatile_streaming
+    weight: 0.5
+  reads:
+  - ground.map
+  - ground.camera
+  writes:
+  - vram.*
+  - oam.*
+  params:
+    ground_maps:
+      value: 229
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/ground_map.h:MAP_COUNT
+        confidence: 0.8
+    max_actors:
+      value: 24
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/ground_lives.c
+        confidence: 0.8
+  relations:
+  - type: part_of
+    target: ground_script_engine
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/ground_bg.c
+    confidence: 0.7
+  - kind: capture_frame
+    ref: capture:frontend:f001013, f001223 (post office scene with sprites)
+    confidence: 0.85
+- id: leader_lock_camera
+  facet: camera
+  label: Hard-locked leader camera on the tile grid
+  summary: 'The dungeon camera has no easing: each frame it centres the target (normally the leader) at screen (120,
+    96) from its pixel position, so it moves in lockstep with the 24-frame walk interpolation. A vertical shake offset
+    is applied for quakes; the camera may be pointed at other monsters for messages and wind warnings. Visible area
+    is about +-6 x +-5 tiles.'
+  instantiates:
+  - concept: camera.follow.hard_lock_center
+  reads:
+  - leader.pixel_pos
+  - camera.target
+  writes:
+  - camera.pixel
+  params:
+    anchor:
+      value: 120x96
+      unit: px from top-left
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_tilemap.c:UpdateCamera
+        confidence: 0.85
+    visible_tiles:
+      value: '+-6 x, +-5 y'
+      unit: tiles
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_tilemap.c:sub_803F428
+        confidence: 0.8
+  relations:
+  - type: requires
+    target: top_down_tile_projection
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_tilemap.c:UpdateCamera
+    confidence: 0.85
+- id: top_down_tile_projection
+  facet: projection
+  label: Top-down (slightly oblique) tile grid
+  summary: 'Both dungeon and town use a top-down view with sprites drawn in a slight three-quarter perspective; dungeon
+    logic is a pure 2D grid of 24 px tiles (56x32), entity pixel position = tile x 24 + (12, 16).'
+  instantiates:
+  - concept: projection.top_down.three_quarter_view
+  params:
+    entity_pixel_offset:
+      value: (12, 16)
+      unit: px within tile
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/structs/str_position.h:X_POS_TO_PIXELPOS
+        confidence: 0.9
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:include/structs/str_position.h
+    confidence: 0.9
+  - kind: capture_frame
+    ref: capture:frontend:f001223 (top-down room with oblique sprites)
+    confidence: 0.8
+- id: walk_animation_and_dash
+  facet: movement_physics
+  label: 24-frame tile-to-tile walk interpolation, fast option and dash skip
+  summary: 'Logic is discrete, but each tile step is animated at 1 px/frame, 24 frames per tile (12 with the Fast dungeon
+    speed option); all monsters that moved in a turn animate together, and fast monsters that moved 2-4 tiles compress
+    their steps into the same 24 frames. Holding B while moving dashes: the walk animation is skipped until something
+    interesting happens.'
+  instantiates:
+  - concept: movement_physics.grid.interpolated_tile_animation
+  reads:
+  - input.buttons.held.b
+  - options.dungeon_speed
+  writes:
+  - entities[*].pixel_pos
+  params:
+    walk_speed:
+      value: 1
+      unit: px/frame
+      native_value: 256
+      native_unit: 1/256 px per frame
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_pos_data.c:gUnknown_80F4D44
+        confidence: 0.85
+    frames_per_tile:
+      value: 24
+      unit: frames (0.4 s)
+      variants:
+      - when: options.dungeon_speed=fast
+        value: 12
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_entity_movement.c:sub_8075050
+        confidence: 0.85
+    max_tiles_per_turn_animated:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_entity_movement.c:sub_8074FB0
+        confidence: 0.75
+  relations:
+  - type: part_of
+    target: grid_step_movement
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_entity_movement.c:sub_8075050
+    confidence: 0.85
+- id: dungeon_hud_and_controls
+  facet: ui_hud
+  label: One-row status HUD and button-chord dungeon controls
+  summary: 'The top BG0 row shows floor (B#F, or #F for up-stairs dungeons), level and HP with a bar up to 12 tiles
+    (8 HP per tile); it flashes at <=25% HP and with an empty belly (belly itself is not shown). Controls: A attack/talk,
+    L+A set move, A+B rest, B tap menu, B+dpad dash, R hold diagonal-only, R tap/Start turn in place, L+R throw set
+    item, L+B message log, Select full-floor map. 30 s idle opens a menu.'
+  instantiates:
+  - concept: ui_hud.hud.resource_counters
+  - concept: ui_hud.input.chorded_turn_commands
+  reads:
+  - leader.hp
+  - leader.max_hp
+  - leader.level
+  - dungeon.floor
+  - input.buttons
+  writes:
+  - ui.hud
+  - leader.action
+  params:
+    hp_bar_max_tiles:
+      value: 12
+      unit: tiles (8 HP per tile)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_tilemap.c:sub_803FB74
+        confidence: 0.85
+    low_hp_flash:
+      value: 25
+      unit: '% max HP, 16-frame period'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_tilemap.c:sub_803FB74
+        confidence: 0.85
+    idle_menu:
+      value: 1799
+      unit: frames (~30 s)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_main.c:DungeonHandlePlayerInput
+        confidence: 0.8
+    dpad_repeat:
+      value: first repeat 48 frames, then every 5
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/input.c:UpdateInput
+        confidence: 0.85
+  relations:
+  - type: requires
+    target: fractional_turn_speed_scheduler
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_main.c:DungeonHandlePlayerInput
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_tilemap.c:sub_803FB74
+    confidence: 0.85
+- id: message_log_and_map
+  facet: ui_hud
+  label: Popup combat log, message history and explored-floor map overlay
+  summary: 'Every action prints to a popup log (11 px lines, closes 240 frames after the last line) stored in a 20-entry
+    history. The floor map is drawn over the play view at 4 px per tile from visited/revealed tiles (Luminous Orb reveals
+    all) with a blinking leader dot; Select shows it full-screen and A toggles monster dots. The in-dungeon menu holds
+    Moves, Items, Team (tactics, IQ), Others (options, quicksave/give up, log, mission objectives) and Ground.'
+  instantiates:
+  - concept: ui_hud.feedback.scrolling_combat_log
+  - concept: ui_hud.hud.minimap
+  - concept: ui_hud.menu.in_turn_command_menu
+  - concept: ui_hud.menu.pause_map_screen
+    weight: 0.4
+  reads:
+  - dungeon.messages
+  - map.tiles[*].visibility
+  writes:
+  - ui.message_log
+  - ui.map_overlay
+  params:
+    log_entries:
+      value: 20
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/structs/str_dungeon.h:MESSAGE_LOG_STRINGS_COUNT
+        confidence: 0.85
+    popup_hold:
+      value: 240
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_message.c:xxx_draw_string_80524F0
+        confidence: 0.8
+    map_scale:
+      value: 4
+      unit: px per tile
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_map.c:FlashLeaderIcon
+        confidence: 0.8
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_message_log.c
+    confidence: 0.75
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_map.c
+    confidence: 0.75
+- id: ground_script_engine
+  facet: narrative_delivery
+  label: Cooperative-thread script VM for town, story and cutscenes
+  summary: 'All town scenes, story events, boot demos and boss intros run on a ground script VM: fixed 16-byte commands
+    over 247 opcodes (messages, portraits, walking, camera pans, music, conditional jumps on script variables), executed
+    by cooperatively scheduled actor threads synchronised by 129 locks. Dungeon boss cutscenes use separate per-boss
+    routines.'
+  instantiates:
+  - concept: narrative_delivery.cutscene.in_engine_cutscene
+  - concept: narrative_delivery.structure.predetermined_story
+  - concept: narrative_delivery.engine.bytecode_script_vm
+  reads:
+  - script_vars.*
+  - input.buttons
+  writes:
+  - script_vars.*
+  - ground.actors[*]
+  params:
+    opcodes:
+      value: 247
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/script_cmd.h:ScriptOpID
+        confidence: 0.9
+    command_size:
+      value: 16
+      unit: bytes
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/structs/str_ground_script.h:ScriptCommand
+        confidence: 0.9
+    script_locks:
+      value: 129
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/ground_script.c:SCRIPT_LOCKS_ARR_COUNT
+        confidence: 0.85
+  relations:
+  - type: modulates
+    target: story_scenario_flags
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/ground_script.c:ExecuteScriptCommand
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:include/data_script.h
+    confidence: 0.75
+- id: portrait_dialogue
+  facet: narrative_delivery
+  label: Typewriter dialogue with emotion portraits
+  summary: 'Dialogue prints 1 character per frame in 3-line boxes (A/B to finish, hold B to auto-advance) beside a
+    speaker portrait chosen from up to 13 emotion faces per species (normal, happy, pained, angry, worried, sad, crying,
+    shouting, determined, surprised, ...).'
+  instantiates:
+  - concept: narrative_delivery.dialogue.portrait_emotion_dialogue
+  - concept: narrative_delivery.dialogue.typewriter_dialogue
+    weight: 0.7
+  reads:
+  - script.message
+  - species.portraits
+  writes:
+  - ui.textbox
+  params:
+    text_speed:
+      value: 1
+      unit: char/frame
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/string_format.c:CreateMenuDialogueBoxAndPortrait
+        confidence: 0.8
+    portrait_slots:
+      value: 13
+      unit: per species
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/structs/str_mon_portrait.h:PortraitGfx
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: ground_script_engine
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:include/constants/emotions.h
+    confidence: 0.85
+  - kind: capture_frame
+    ref: capture:frontend:f003062, f002942 (text on black), f004330 (textbox with choice menu)
+    confidence: 0.8
+- id: pokemon_world_setting
+  facet: setting
+  label: Pokemon-only world plagued by natural disasters; human turned Pokemon
+  summary: 'The player is a human who wakes up as a Pokemon in a world populated only by Pokemon, where natural disasters
+    are opening mystery dungeons. With a partner they form a rescue team in a town hub (Pelipper post office, Kangaskhan,
+    Kecleon, Wigglytuff, Makuhita dojo) and take jobs; the story escalates to a falling meteor stopped with Rayquaza.
+    Tone is warm and friendship-centred.'
+  instantiates:
+  - concept: setting.theme.creature_world_fantasy
+  - concept: setting.framing.transformed_human_protagonist
+  evidence:
+  - kind: llm_knowledge
+    ref: plot and setting summary
+    confidence: 0.6
+  - kind: capture_frame
+    ref: capture:frontend:f003062 ("portal that leads to the world of Pokemon"), f002792 (Charmander, Bulbasaur, Pelipper)
+    confidence: 0.8
+- id: m4a_sound_engine
+  facet: audio
+  label: MP2K/m4a sequencer at 18,157 Hz with priority-overridden dungeon music
+  summary: 'Sound uses the standard m4a engine: 5 DirectSound channels at 18,157 Hz plus PSG, 8 players (BGM 12 tracks,
+    fanfares, 6 SE players), 128 BGM ids, 19 fanfares, 639 sound effects. Each floor plays gDungeonMusic[bgMusic]
+    (76 entries); boss, thief alarm, monster house and Kecleon shop songs override it in priority order with a 30-frame
+    fade; run end plays a fail or complete jingle.'
+  instantiates:
+  - concept: audio.engine.sample_psg_sequencer
+  - concept: audio.music.state_driven_music
+  reads:
+  - dungeon.floor_props.bg_music
+  - dungeon.boss_active
+  - dungeon.stole_from_kecleon
+  - dungeon.monster_house_triggered
+  writes:
+  - audio.bgm
+  params:
+    mix_rate:
+      value: 18157
+      unit: Hz
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/m4a.c:m4aSoundInit
+        confidence: 0.9
+      - kind: capture_telemetry
+        ref: capture:frontend:directsound_rates_hz 18157 (10734 frames)
+        confidence: 0.95
+    directsound_channels:
+      value: 5
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/m4a.c:m4aSoundInit
+        confidence: 0.85
+    psg_channels_used:
+      value:
+      - 1
+      - 2
+      - 3
+      - 4
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:frontend:psg_channels_triggered
+        confidence: 0.9
+    music_fade:
+      value: 30
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_music.c:UpdateDungeonMusic
+        confidence: 0.85
+  relations:
+  - type: modulates
+    target: wild_respawn_and_monster_house
+    note: monster house theme on trigger
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/m4a.c:m4aSoundInit
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_config.c:gDungeonMusic
+    confidence: 0.95
+  - kind: capture_telemetry
+    ref: capture:frontend:wav rms 2647 (music audible after input)
+    confidence: 0.8
+- id: floor_grid_room_layout
+  facet: progression
+  label: Grid-of-cells room placement for procedural dungeon floors
+  summary: 'Each floor is a 56x32-tile map divided into a gridSizeX x gridSizeY lattice of cells (random 2..8 x 2..7,
+    rejected until <=6x4, else 4x4; layout presets force 4 x 2-3 for small/medium floors and invalidate the right half
+    or quarter of the grid). AssignRooms marks roomDensity+rand(0..2) cells as rooms (or exactly |roomDensity| when
+    negative) by shuffling a bit array with 64 random swaps; the rest become 1x1 hallway anchors. Each room is a random
+    rectangle inside its cell with a 2-tile margin, width >=5, height >=4, odd dimensions preferred and aspect ratio
+    clamped to 2/3..3/2. Rooms are flagged 80% for a secondary structure (when the budget allows) or for imperfections
+    if the floor allows them.'
+  instantiates:
+  - concept: progression.level_generation.grid_cell_rooms_and_corridors
+  - concept: progression.level_generation.procedural_floor
+  reads:
+  - floor_props.layout
+  - floor_props.room_density
+  - floor_props.room_flags
+  - floor_props.secondary_structures_budget
+  - rng.dungeon
+  writes:
+  - map.tiles[*].terrain
+  - map.tiles[*].room_index
+  - gen.grid[*][*]
+  params:
+    map_size:
+      value: 56x32
+      unit: tiles
+      native_value: DUNGEON_MAX_SIZE_X=56, DUNGEON_MAX_SIZE_Y=32
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/structs/str_dungeon.h:DUNGEON_MAX_SIZE_X
+        confidence: 0.95
+    map_size_px:
+      value: 1344x768
+      unit: px
+      evidence:
+      - kind: derived
+        ref: 56x32 tiles times 24 px per tile
+        inputs:
+        - pmd-red:include/structs/str_dungeon.h:DUNGEON_MAX_SIZE_X
+        - pmd-red:include/structs/str_position.h:X_POS_TO_PIXELPOS
+        confidence: 0.9
+    grid_size_draw:
+      value: x in [2,8], y in [2,7]
+      unit: cells (DungeonRandRange is half-open)
+      variants:
+      - when: layout=LARGE_0x8
+        value: x in [2,4], y in [2,3]
+      - when: layout=SMALL or MEDIUM
+        value: x=4, y in [2,3]
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:GenerateFloor
+        confidence: 0.95
+    grid_size_cap:
+      value: 6x4
+      unit: cells (32 redraws, then default 4x4)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:GenerateFloor
+        confidence: 0.95
+    min_cell_extent:
+      value: 8
+      unit: tiles per cell per axis (else that axis collapses to 1 cell)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:GenerateFloor
+        confidence: 0.9
+    extra_rooms_variance:
+      value: 0..2
+      unit: rooms added to roomDensity when positive
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:AssignRooms
+        confidence: 0.95
+    room_density_range:
+      value: 4..20
+      unit: rooms (across all 350 floor records; mode 6)
+      evidence:
+      - kind: derived
+        ref: tallied FloorProperties.roomDensity over data/dungeon/*/main_data.inc (28-byte records)
+        inputs:
+        - pmd-red:include/structs/str_dungeon.h:FloorProperties
+        - pmd-red:data/dungeon/*/main_data.inc
+        confidence: 0.85
+    max_rooms:
+      value: 32
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/structs/map.h:MAX_ROOM_COUNT
+        confidence: 0.9
+    min_room_size:
+      value: 5x4
+      unit: tiles
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:CreateRoomsAndAnchors
+        confidence: 0.95
+    room_aspect_clamp:
+      value: 0.667..1.5
+      unit: width/height
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:CreateRoomsAndAnchors
+        confidence: 0.95
+    secondary_structure_flag_chance:
+      value: 80
+      unit: '%'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/dungeon_generation.h:GENERATION_CONSTANT_SECONDARY_STRUCTURE_FLAG_CHANCE
+        confidence: 0.95
+    room_imperfection_chance:
+      value: 40
+      unit: '% of flagged rooms (60% no-imperfection constant)'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/dungeon_generation.h:GENERATION_CONSTANT_NO_IMPERFECTIONS_CHANCE
+        confidence: 0.9
+  invariants:
+  - At least 2 rooms are assigned; if the shuffle yields fewer, cells are re-flagged at 60% until one succeeds (up
+    to 200 passes).
+  - An odd-width grid never places a room at (middle column, row 1).
+  - Rooms never touch the map edge (2-tile margin inside each cell).
+  relations:
+  - type: part_of
+    target: floor_generation_pipeline
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:GenerateStandardFloor
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:GetGridPositions
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:InitDungeonGrid
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:AssignRooms
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:CreateRoomsAndAnchors
+    confidence: 0.95
+- id: hallway_connectivity
+  facet: progression
+  label: Momentum random-walk cell connections, L-shaped hallways and connectivity repair
+  summary: 'From a random start cell, a walker makes floorConnectivity steps: each step keeps its heading with 50%
+    probability, otherwise picks a random cardinal, rotating counter-clockwise off the grid border, and links the two
+    cells. Unless the floor allows dead ends, hallway-anchor cells with exactly one link get an extra link, repeated
+    until stable. Each link becomes a hallway from a random interior point (or the anchor tile) that runs straight to
+    the cell boundary, jogs perpendicular, then continues, stopping early when it meets open floor. Linked rooms merge
+    into one larger room with ~9.75% chance (two 5% rolls). EnsureConnectedGrid then links any unconnected room to a
+    connected neighbour or deletes it; finally numExtraHallways random walks tunnel out of rooms in strides of 3-5
+    tiles, turning left/right at random and refusing to create 2x2 open squares.'
+  instantiates:
+  - concept: progression.level_generation.random_walk_corridor_links
+  - concept: progression.level_generation.grid_cell_rooms_and_corridors
+    weight: 0.5
+  reads:
+  - gen.grid[*][*]
+  - floor_props.floor_connectivity
+  - floor_props.allow_dead_ends
+  - floor_props.num_extra_hallways
+  - rng.dungeon
+  writes:
+  - gen.grid[*][*].connected_*
+  - map.tiles[*].terrain
+  - map.tiles[*].room_index
+  params:
+    keep_heading_chance:
+      value: 50
+      unit: '%'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:AssignGridCellConnections
+        confidence: 0.95
+    floor_connectivity_range:
+      value: 10..50
+      unit: walk steps (mode 20)
+      evidence:
+      - kind: derived
+        ref: tallied FloorProperties.floorConnectivity over all floor records
+        inputs:
+        - pmd-red:data/dungeon/*/main_data.inc
+        confidence: 0.85
+    merge_rooms_chance:
+      value: 5
+      unit: '% per room (about 9.75% per linked pair)'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/dungeon_generation.h:GENERATION_CONSTANT_MERGE_ROOMS_CHANCE
+        confidence: 0.95
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:CreateGridCellConnections
+        confidence: 0.85
+    extra_hallway_stride:
+      value: 3..5
+      unit: tiles before a random 90-degree turn
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:GenerateExtraHallways
+        confidence: 0.9
+    num_extra_hallways_range:
+      value: 0..50
+      unit: walks per floor (mode 15)
+      evidence:
+      - kind: derived
+        ref: tallied FloorProperties.numExtraHallways over all floor records
+        inputs:
+        - pmd-red:data/dungeon/*/main_data.inc
+        confidence: 0.85
+    allow_dead_ends_share:
+      value: 0.37
+      unit: fraction of floors with allowDeadEnds=1 (128/350)
+      evidence:
+      - kind: derived
+        ref: tallied FloorProperties.allowDeadEnds
+        inputs:
+        - pmd-red:data/dungeon/*/main_data.inc
+        confidence: 0.85
+  invariants:
+  - Every valid room ends up connected to the cell graph or is removed (EnsureConnectedGrid).
+  - Hallways are at most one bend per segment pair (two parallel runs plus one perpendicular jog at the cell boundary).
+  - Extra hallways never carve a 2x2 open square and stop at open terrain, map borders or impassable walls.
+  relations:
+  - type: part_of
+    target: floor_generation_pipeline
+  - type: requires
+    target: floor_grid_room_layout
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:AssignGridCellConnections
+    confidence: 0.95
+    note: decomp comment documents a validity-check bug (always checks the right-hand cell) that makes generation
+      occasionally inconsistent for the same seed
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:CreateHallway
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:EnsureConnectedGrid
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:GenerateExtraHallways
+    confidence: 0.9
+- id: special_rooms_generation
+  facet: progression
+  label: Monster house, Kecleon shop, maze and secondary-structure room variants
+  summary: 'After connectivity, the generator may convert one eligible room (valid, connected, unmerged, no other feature)
+    into a Kecleon shop (needs >=5x4, interior with 1-tile margin, never on rescue floors or with a monster house)
+    or a monster house (chance per floor; skipped if a shop exists or an outlaw mission forbids it); maze rooms are
+    rolled but a dead attempts<0 check means they never generate in vanilla. Rooms flagged for secondary structures
+    pick one of six variants (none, maze/plus/dot, checkerboard, central pool, island with items and a warp tile,
+    divider line) of water/lava, spending from a per-floor budget. Imperfections grow walls inward from corners.'
+  instantiates:
+  - concept: progression.level_generation.special_room_roll
+  - concept: progression.level_generation.room_template_variants
+  reads:
+  - floor_props.kecleon_shop_chance
+  - floor_props.monster_house_chance
+  - floor_props.maze_room_chance
+  - floor_props.secondary_structures_budget
+  - floor_props.kecleon_shop_layout
+  - mission.kind
+  writes:
+  - map.tiles[*].terrain_flags.shop
+  - map.tiles[*].terrain_flags.in_monster_house
+  - map.tiles[*].terrain
+  - dungeon.monster_house_room
+  params:
+    monster_house_chance_values:
+      value:
+      - 0
+      - 5
+      - 7
+      - 8
+      - 10
+      - 20
+      unit: '% per floor (215/350 floors have 0; mode of non-zero is 7)'
+      evidence:
+      - kind: derived
+        ref: tallied FloorProperties.monsterHouseChance
+        inputs:
+        - pmd-red:data/dungeon/*/main_data.inc
+        confidence: 0.85
+    kecleon_shop_chance_values:
+      value:
+      - 0
+      - 5
+      - 6
+      - 7
+      - 8
+      - 10
+      unit: '% per floor (326/350 floors have 0)'
+      evidence:
+      - kind: derived
+        ref: tallied FloorProperties.kecleonShopChance
+        inputs:
+        - pmd-red:data/dungeon/*/main_data.inc
+        confidence: 0.85
+    secondary_structure_variants:
+      value: 6
+      unit: variants (incl. none)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:GenerateSecondaryStructure
+        confidence: 0.95
+    secondary_structures_budget_values:
+      value:
+      - 0
+      - 10
+      unit: structures per floor (316/350 floors have 0)
+      evidence:
+      - kind: derived
+        ref: tallied FloorProperties.secondaryStructuresBudget
+        inputs:
+        - pmd-red:data/dungeon/*/main_data.inc
+        confidence: 0.85
+    kecleon_shop_item_chance:
+      value: 57
+      unit: '% per shop tile (100% at two side-middle cells of the 3x3 pattern)'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:sKecleonShopItemSpawnChances
+        confidence: 0.8
+        note: table is indexed [kecleonShopLayout][y][x] and every layout row read was identical
+  invariants:
+  - At most one Kecleon shop and one monster house per floor, and never both from the random roll.
+  - A room with a secondary structure, monster house or merge is not reused for another feature.
+  relations:
+  - type: part_of
+    target: floor_generation_pipeline
+  - type: requires
+    target: hallway_connectivity
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:GenerateKecleonShop
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:GenerateMonsterHouse
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:GenerateMazeRoom
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:GenerateSecondaryStructures
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:GenerateRoomImperfections
+    confidence: 0.85
+- id: floor_layout_presets
+  facet: progression
+  label: Per-floor layout archetypes and FloorProperties parameter record
+  summary: 'Every floor of every dungeon is a 28-byte FloorProperties record (layout, room density, tileset, music,
+    weather, connectivity, enemy/item/trap/buried-item densities, shop/monster-house/maze chances, dead-end flag,
+    secondary-structure budget, extra hallways, lake density, visibility range, money cap, Kecleon shop layout). The
+    layout byte selects a generator: standard large/medium/small grids, outer ring (6x4 with hallway border), crossroads,
+    line, cross, beetle, outer rooms, one-room monster house, two rooms with monster house. 350 floor records ship;
+    large (91), small (107) and medium (104) dominate.'
+  instantiates:
+  - concept: progression.level_generation.parameterized_floor_profile
+  - concept: progression.level_generation.layout_archetypes
+  reads:
+  - dungeon.id
+  - dungeon.floor
+  writes:
+  - dungeon.floor_props
+  params:
+    floor_record_size:
+      value: 28
+      unit: bytes
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/structs/str_dungeon.h:FloorProperties
+        confidence: 0.9
+    layout_archetypes:
+      value: 12
+      unit: used layout ids (16 slots, 4 unused)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/dungeon_generation.h:FloorLayout
+        confidence: 0.95
+    floor_records:
+      value: 350
+      evidence:
+      - kind: derived
+        ref: counted 28-byte .byte rows in data/dungeon/*/main_data.inc
+        inputs:
+        - pmd-red:data/dungeon/*/main_data.inc
+        confidence: 0.85
+  tables:
+    layout_usage:
+      description: Count of floor records per layout id (derived from main_data.inc).
+      columns:
+      - layout_id
+      - name
+      - floors
+      rows:
+      - [0, LARGE, 91]
+      - [1, SMALL, 107]
+      - [2, ONE_ROOM_MONSTER_HOUSE, 4]
+      - [3, OUTER_RING, 2]
+      - [4, CROSSROADS, 8]
+      - [6, LINE, 3]
+      - [7, CROSS, 3]
+      - [8, LARGE_0x8, 5]
+      - [9, BEETLE, 13]
+      - [11, MEDIUM, 104]
+      - [13, UNUSED_0xD (falls to LARGE via modulo/default), 7]
+      - [15, UNUSED_0xF (falls to LARGE via default), 3]
+      evidence:
+      - kind: derived
+        ref: tallied FloorProperties.layout
+        inputs:
+        - pmd-red:data/dungeon/*/main_data.inc
+        - pmd-red:include/dungeon_generation.h:FloorLayout
+        confidence: 0.8
+    tiny_woods_floor1:
+      description: Example record (Tiny Woods 1F) decoded with the FloorProperties field order.
+      columns:
+      - field
+      - value
+      rows:
+      - [layout, SMALL]
+      - [roomDensity, 5]
+      - [floorConnectivity, 15]
+      - [enemyDensity, 4]
+      - [itemDensity, 2]
+      - [trapDensity, 0]
+      - [numExtraHallways, 5]
+      - [visibilityRange, 0]
+      - [moneyUpperBound, 1]
+      evidence:
+      - kind: derived
+        ref: decoded data/dungeon/TinyWoods/main_data.inc row 1 with include/structs/str_dungeon.h:FloorProperties
+        inputs:
+        - pmd-red:data/dungeon/TinyWoods/main_data.inc
+        confidence: 0.8
+  relations:
+  - type: part_of
+    target: floor_generation_pipeline
+  - type: modulates
+    target: floor_grid_room_layout
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:include/structs/str_dungeon.h:FloorProperties
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:GenerateOuterRingFloor
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:GenerateFloor
+    confidence: 0.95
+- id: spawn_placement
+  facet: progression
+  label: Stairs, item, trap, enemy and player spawn placement on generated floors
+  summary: 'Spawns are flags on candidate tiles filtered by rule: stairs on a random open room tile that is not shop,
+    junction, enemy or special; items itemDensity+-2 (min 1) on room tiles outside shops/monster houses; buried items
+    in walls; monster-house items/traps 50/50 on 50-80% of its tiles (min 6, cap 7); traps rand[density/2, density)
+    capped at 56 on item-free room tiles; enemies rand[density/2, density) (min 1) on room tiles not holding stairs,
+    items or the player; player last on a free room tile. Selection shuffles the candidate list and takes consecutive
+    entries from a random start, wrapping around. On rescue floors the stairs room becomes a monster house.'
+  instantiates:
+  - concept: progression.level_generation.rule_filtered_spawn_placement
+  reads:
+  - floor_props.item_density
+  - floor_props.buried_item_density
+  - floor_props.trap_density
+  - floor_props.enemy_density
+  - map.tiles[*]
+  writes:
+  - map.tiles[*].spawn_flags
+  - dungeon.stairs_pos
+  - dungeon.player_spawn
+  params:
+    item_count_jitter:
+      value: '[itemDensity-2, itemDensity+2)'
+      unit: items (min 1 when density > 0)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:SpawnNonEnemies
+        confidence: 0.95
+    trap_cap:
+      value: 56
+      unit: traps per floor
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:SpawnNonEnemies
+        confidence: 0.95
+    monster_house_items_traps:
+      value: '[50%, 80%) of MH tiles, min 6, max 7'
+      unit: objects
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:SpawnNonEnemies
+        confidence: 0.95
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gMonsterHouseMaxItemsTraps
+        confidence: 0.95
+    enemy_count:
+      value: '[enemyDensity/2, enemyDensity)'
+      unit: enemies at floor start (min 1; density stored unsigned so negative "exact" values read as large)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:SpawnEnemies
+        confidence: 0.95
+    enemy_density_values:
+      value: 3..7
+      unit: per floor (mode 5; 20 records hold 255)
+      evidence:
+      - kind: derived
+        ref: tallied FloorProperties.enemyDensity
+        inputs:
+        - pmd-red:data/dungeon/*/main_data.inc
+        confidence: 0.85
+    forced_monster_house_enemies:
+      value: '[70%, 80%) of MH tiles, capped at 18 (12*3/2), or 4 (3*3/2) if itemless'
+      unit: enemies
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:SpawnEnemies
+        confidence: 0.9
+    money_stack_cap:
+      value: moneyUpperBound x 40
+      unit: Poke per stack
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/structs/str_dungeon.h:FloorProperties (moneyUpperBound comment)
+        confidence: 0.7
+  invariants:
+  - Stairs, items, traps, enemies and the player never spawn in hallways, junction tiles or Kecleon shop tiles (shop
+    items are placed separately).
+  - A tile holds at most one spawn class after ResolveInvalidSpawns.
+  relations:
+  - type: part_of
+    target: floor_generation_pipeline
+  - type: requires
+    target: special_rooms_generation
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:SpawnNonEnemies
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:SpawnEnemies
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:ShuffleSpawnPositions
+    confidence: 0.8
+- id: floor_generation_pipeline
+  facet: progression
+  label: Retry-and-fallback floor generator with stairs reachability validation
+  summary: 'GenerateFloor wraps the layout generators in nested retries: up to 10 layout attempts (rejected unless
+    >=2 rooms and >=30 room tiles; secondary-structure budget zeroed after the first try), then junction marking,
+    water/lava rivers and lakes, spawns, and a BFS-style check that every walkable tile can reach the stairs; up to
+    10 spawn attempts. Any exhausted loop falls back to a one-room monster house floor, which always succeeds. The
+    dungeon RNG is a 32-bit LCG (x*1566083941+1, upper 16 bits) seeded from a 23-bit per-dungeon preseed, so a floor
+    is reproducible from (dungeon, floor, seed); rescue missions pass that seed to the rescuer.'
+  instantiates:
+  - concept: progression.level_generation.generate_validate_retry
+  - concept: progression.level_generation.seeded_reproducible_generation
+  - concept: progression.level_generation.procedural_floor
+  reads:
+  - dungeon.floor_props
+  - dungeon.prng_preseed
+  - dungeon.fixed_room_number
+  writes:
+  - map.*
+  - dungeon.stairs_pos
+  - dungeon.player_spawn
+  - rng.dungeon
+  params:
+    layout_attempts:
+      value: 10
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:GenerateFloor
+        confidence: 0.95
+    spawn_attempts:
+      value: 10
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:GenerateFloor
+        confidence: 0.95
+    min_rooms:
+      value: 2
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:GenerateFloor
+        confidence: 0.95
+    min_room_tiles:
+      value: 30
+      unit: tiles
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_generation.c:GenerateFloor
+        confidence: 0.9
+        note: the function's header comment says 20 but the code tests >= 30
+    rng_lcg_multiplier:
+      value: 1566083941
+      unit: x(n+1) = a*x(n) + 1 mod 2^32, output bits 16..31
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_random.c:DungeonRand16Bit
+        confidence: 0.95
+    preseed_bits:
+      value: 23
+      unit: bits (forced odd)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_random.c:SetDungeonRNGPreseed23Bit
+        confidence: 0.9
+      - kind: decomp_source
+        ref: pmd-red:src/run_dungeon.c:RunDungeon_Async
+        confidence: 0.85
+  invariants:
+  - Every generated floor has a player spawn and stairs reachable from every walkable tile (StairsAlwaysReachable),
+    except fixed-room floors which skip the check.
+  - Generation never fails outright; the final fallback is a one-room monster house.
+  - DungeonRandRange(low, high) is half-open [low, high).
+  relations:
+  - type: part_of
+    target: dungeon_floor_descent
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:GenerateFloor
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:StairsAlwaysReachable
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:FinalizeJunctions
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:GenerateSecondaryTerrainFormations
+    confidence: 0.6
+    note: matching build keeps this as inline asm; summary from the header comment and the NONMATCHING C variant
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_random.c:DungeonRandRange
+    confidence: 0.95
+- id: fixed_rooms_and_boss_floors
+  facet: progression
+  label: Authored fixed rooms embedded in or replacing procedural floors
+  summary: 'A floor whose fixedRoomNumber is non-zero loads a pre-authored room from the fixedmap archive. Floor-wide
+    fixed rooms (legendary/boss arenas such as Skarmory on Mt. Steel, Groudon in Magma Cavern Pit, Rayquaza on Sky
+    Tower Summit, and the maze bosses) replace generation entirely and skip the stairs check; smaller fixed rooms are
+    placed inside a grid sized so each cell fits the room plus 4 tiles. A zero-size entry falls back to a one-room
+    monster house.'
+  instantiates:
+  - concept: progression.level_generation.authored_room_injection
+  - concept: progression.structure.boss_floor
+  reads:
+  - floor_props.fixed_room_number
+  - files.fixedmap
+  writes:
+  - map.*
+  params:
+    fixed_room_ids:
+      value: 74
+      unit: enum lines matching FIXED_ROOM (approximate count incl. NONE and markers)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/fixed_rooms.h:FixedRoomID
+        confidence: 0.6
+    floors_with_fixed_room:
+      value: 12
+      unit: of 350 floor records
+      evidence:
+      - kind: derived
+        ref: tallied FloorProperties.fixedRoomNumber != 0
+        inputs:
+        - pmd-red:data/dungeon/*/main_data.inc
+        confidence: 0.8
+  relations:
+  - type: variant_of
+    target: floor_generation_pipeline
+    note: same entry point, authored instead of procedural
+  - type: requires
+    target: boss_and_legendary_encounters
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_generation.c:ProcessFixedRoom
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:include/constants/fixed_rooms.h:FixedRoomID
+    confidence: 0.9
+- id: fractional_turn_speed_scheduler
+  facet: mechanics
+  label: 24-tick fractional turn scheduler with speed stages
+  summary: 'Dungeon time advances in fractional ticks 0..23. Each Pokemon''s speed stage (species base, usually 1,
+    plus active speed-up counters minus speed-down counters, -1 for paralysis, +1 for Ice types in snow, +1 for an
+    angry Kecleon, clamped 0..4) indexes gSpeedTurns, which says on which ticks it may act: stage 0 acts 3 times per
+    24 ticks, stage 1 (normal) 6, stage 2 12, stage 3 18, stage 4 every tick. Per tick the order is: wild respawn and
+    Plus/Minus refresh (on normal-speed ticks), leader (player input), team members (up to 3 AI iterations each, then
+    blocked followers re-run nearest-first), then wild Pokemon, then once-per-normal-turn effects. A "turn" in all
+    other timers is one normal-speed action (4 ticks).'
+  instantiates:
+  - concept: mechanics.turn.speed_scheduled_turns
+  - concept: mechanics.turn.player_paced_roguelike_turns
+  reads:
+  - entities[*].speed_up_counters
+  - entities[*].speed_down_counters
+  - entities[*].status.paralysis
+  - species.movement_speed
+  - weather.current
+  - dungeon.fractional_turn
+  writes:
+  - dungeon.fractional_turn
+  - entities[*].speed_stage
+  params:
+    ticks_per_cycle:
+      value: 24
+      unit: fractional ticks (6 normal turns)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_engine.c:RunFractionalTurn_Async
+        confidence: 0.95
+    actions_per_cycle_by_stage:
+      value:
+      - 3
+      - 6
+      - 12
+      - 18
+      - 24
+      unit: actions per 24 ticks for speed stage 0..4 (0.5x, 1x, 2x, 3x, 4x)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_engine.c:gSpeedTurns
+        confidence: 0.95
+    max_speed_stage:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/structs/dungeon_entity.h:MAX_SPEED_STAGE
+        confidence: 0.95
+    speed_counters:
+      value: 5
+      unit: independent up and down counters (each worth one stage)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/structs/dungeon_entity.h:NUM_SPEED_COUNTERS
+        confidence: 0.9
+    speed_up_duration:
+      value: 8..10
+      unit: turns
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gSpeedRaiseTurnRange
+        confidence: 0.85
+    speed_down_duration:
+      value: 6..8
+      unit: turns
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gSpeedLowerTurnRange
+        confidence: 0.85
+    team_ai_iterations_per_tick:
+      value: 3
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_engine.c:sub_8044574_Async
+        confidence: 0.8
+  invariants:
+  - Nothing moves until the leader acts; the world is paused on player input (no real-time clock in dungeons).
+  - A speed-stage change during the leader's action resets the fractional tick to 0 and lets the leader act again.
+  - Population limits are 4 team + 16 wild = 20 active Pokemon.
+  relations:
+  - type: modulates
+    target: ally_follow_and_tactics_ai
+  - type: modulates
+    target: enemy_chase_and_wander_ai
+  - type: part_of
+    target: dungeon_floor_descent
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_engine.c:RunLeaderTurn_Async
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_engine.c:sub_8044820_Async
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_logic.c:CalcSpeedStage
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:include/structs/str_dungeon.h:DUNGEON_MAX_WILD_POKEMON
+    confidence: 0.95
+- id: grid_step_movement
+  facet: movement_physics
+  label: 8-direction tile stepping with no corner cutting and terrain-crossing classes
+  summary: 'Pokemon occupy one 24x24 px tile and move one tile per action in 8 directions. Each tile caches walkable-neighbour
+    bitmasks for four crossing classes (regular, liquid, crevice/chasm, wall); a diagonal step is only legal if both
+    orthogonal neighbours are non-wall, so walls cannot be corner-cut. Species set the base class (e.g. water types
+    cross water, ghosts walls); the Mobile status or Mobile Scarf grants walls, All-Terrain Hiker grants liquids and
+    chasms, Super Mobile grants walls orthogonally only. Occupied tiles block movement (allies swap with the leader).'
+  instantiates:
+  - concept: movement_physics.grid.eight_direction_tile_step
+  - concept: movement_physics.grid.no_corner_cutting
+  - concept: movement_physics.grid.terrain_crossing_classes
+  reads:
+  - input.dpad
+  - map.tiles[*].walkable_neighbor_flags
+  - species.crossable_terrain
+  - entities[*].held_item
+  - entities[*].iq_skills
+  writes:
+  - entities[*].pos
+  - entities[*].facing
+  params:
+    tile_size:
+      value: 24
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/structs/str_position.h:X_POS_TO_PIXELPOS
+        confidence: 0.95
+    directions:
+      value: 8
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_logic.c:CanMoveInDirection
+        confidence: 0.95
+    crossing_classes:
+      value: 4
+      unit: regular, liquid, crevice, wall
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/structs/map.h:CrossableTerrain
+        confidence: 0.95
+    tiles_per_action:
+      value: 1
+      unit: tile per normal-speed action
+      evidence:
+      - kind: derived
+        ref: CanMoveInDirection tests only the adjacent tile; one action per scheduler slot
+        inputs:
+        - pmd-red:src/dungeon_logic.c:CanMoveInDirection
+        - pmd-red:src/dungeon_engine.c:gSpeedTurns
+        confidence: 0.85
+  invariants:
+  - A diagonal step requires both orthogonal neighbours to be open (or liquid for the liquid class).
+  - Impassable walls (map border, key doors) block every class; the wall class is cut off near the map edge.
+  - Boss-fight fixed rooms disable the Mobile/All-Terrain/Super Mobile overrides.
+  relations:
+  - type: requires
+    target: top_down_tile_projection
+  - type: modulates
+    target: enemy_chase_and_wander_ai
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_logic.c:CanMoveInDirection
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_map_access.c:sub_8049BB0
+    confidence: 0.9
+    note: computes the four walkable-neighbour masks with the diagonal both-sides-open rule
+  - kind: decomp_source
+    ref: pmd-red:include/structs/map.h:Tile
+    confidence: 0.95
+- id: belly_hunger_clock
+  facet: mechanics
+  label: Leader belly that drains per turn and starves HP when empty
+  summary: 'Only the team leader''s belly drains: 0.1 per turn times a multiplier picked from a 20-entry table by an
+    index starting at 10 (x1), shifted by held items/IQ (Tight Belt -> index 0 = no drain; Stamina Band and Energy
+    Saver -1 each = x0.75/x0.5; Diet Ribbon, Heal Ribbon, Munch Belt +1 each = x2/x4/x8), plus 1-4 extra per turn after
+    using linked moves. Messages fire when crossing 20 and 10. At 0 belly the leader takes 1 HP per turn, natural HP
+    regen stops, escalating warnings play, and fainting this way is "fainted from hunger". Food raises belly up to max
+    belly (default 100); eating at full raises max belly, up to 200.'
+  instantiates:
+  - concept: mechanics.survival.hunger_clock
+  - concept: economy.resource.capped_pool
+    weight: 0.5
+  reads:
+  - leader.belly
+  - leader.max_belly
+  - leader.held_item
+  - leader.iq_skills
+  - leader.used_linked_moves_counter
+  writes:
+  - leader.belly
+  - leader.hp
+  - leader.belly_empty
+  - dungeon.empty_belly_alert
+  params:
+    base_drain:
+      value: 0.1
+      unit: belly per leader turn (1 point per 10 turns)
+      native_value: 6554
+      native_unit: s48.16 fraction (6554/65536)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_turn_effects.c:DoEndOfTurnEffects_Async
+        confidence: 0.95
+    drain_multiplier_table:
+      value: [0, 0, 0, 0, 0, 0, 0.1, 0.25, 0.5, 0.75, 1, 2, 4, 8, 16, 32, 64, 128, 128, 128]
+      unit: multiplier by index (default index 10)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gBellyGoDownValues
+        confidence: 0.95
+    linked_move_extra_drain:
+      value: [1, 1, 1, 2, 4]
+      unit: belly per turn by number of linked moves used (0..4; only applied when >1)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gLinkedMovesBellyGoDownValues
+        confidence: 0.9
+    default_belly:
+      value: 100
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_mon_spawn.c (entInfo->belly = IntToFixedPoint(100))
+        confidence: 0.85
+    max_belly_ceiling:
+      value: 200
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/move_orb_effects_2.c:sub_8078B5C
+        confidence: 0.85
+    warning_thresholds:
+      value: [20, 10]
+      unit: belly
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_turn_effects.c:DoEndOfTurnEffects_Async
+        confidence: 0.95
+    starvation_damage:
+      value: 1
+      unit: HP per turn at belly 0
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_turn_effects.c:DoEndOfTurnEffects_Async
+        confidence: 0.95
+    turns_from_full_to_empty:
+      value: 1000
+      unit: turns at default multiplier
+      evidence:
+      - kind: derived
+        ref: 100 belly / 0.1 per turn
+        inputs:
+        - pmd-red:src/dungeon_turn_effects.c:DoEndOfTurnEffects_Async
+        - pmd-red:src/dungeon_config.c:gBellyGoDownValues
+        confidence: 0.85
+  invariants:
+  - Belly is clamped at 0 and never exceeds max belly; max belly never exceeds 200.
+  - Non-leader allies do not drain belly, but a non-leader with 0 belly deals only 1 damage per hit and does not
+    move on its own.
+  relations:
+  - type: modulates
+    target: natural_hp_regen
+    condition: belly == 0 stops regen
+  - type: requires
+    target: items_and_inventory
+    note: food is the only belly source
+  - type: modulates
+    target: dungeon_damage_formula
+    condition: non-leader attacker with belly 0 deals 1 damage
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_turn_effects.c:DoEndOfTurnEffects_Async
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_config.c:gBellyGoDownValues
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_damage.c:CalcDamage
+    confidence: 0.9
+- id: natural_hp_regen
+  facet: mechanics
+  label: Accumulator-based HP regeneration for team members
+  summary: 'Each turn a team member that is not starving or poisoned adds its max HP to an accumulator and gains 1
+    HP for every regenSpeed units in it, where regenSpeed is a per-species value adjusted by Heal Ribbon (-100), Wish
+    (-220) and Rain Dish in rain (-150), clamped 30..500. Higher max HP therefore heals proportionally faster; wild
+    Pokemon do not regenerate. The same tick decrements every status timer and recomputes speed when a speed counter
+    expires.'
+  instantiates:
+  - concept: mechanics.health.passive_regeneration
+  reads:
+  - entities[*].max_hp
+  - entities[*].belly_empty
+  - entities[*].status.poison
+  - species.regen_speed
+  writes:
+  - entities[*].hp
+  - entities[*].regen_accumulator
+  - entities[*].status.*.turns
+  params:
+    regen_speed_clamp:
+      value: 30..500
+      unit: accumulator units per HP (lower is faster)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_turn_effects.c:TickStatusAndHealthRegen
+        confidence: 0.95
+    heal_ribbon_modifier:
+      value: -100
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gHealRibbonRegenValue
+        confidence: 0.95
+    wish_modifier:
+      value: -220
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gWishRegenValue
+        confidence: 0.95
+  invariants:
+  - HP never exceeds max HP; wild Pokemon have regen speed 0 (no regen).
+  relations:
+  - type: part_of
+    target: fractional_turn_speed_scheduler
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_turn_effects.c:TickStatusAndHealthRegen
+    confidence: 0.95
+- id: dungeon_damage_formula
+  facet: mechanics
+  label: Mystery Dungeon damage formula (atk-def quadratic, level term, no crits for wild)
+  summary: 'Damage uses physical/special split by move type. A = (Atk + movePower) x stage multiplier (21 stages,
+    0.25x..2x) + held-item boosts; D = Def x stage multiplier. base = (A - D)/8 + 2/3 x level for team members (wild:
+    unboosted Atk/3). raw = clamp(0.05 x base^2 + 2 x base - D + 10, 1, 999), then x type effectiveness (two-type
+    product via a 4x4 combine table), x0.5 under Reflect/Light Screen, x1.5 on a crit, x move/weather modifiers, x a
+    random 0.875..1.125. Only team members crit (base move odds, +40 Scope Lens/Patsy Band, 40 with Type-Advantage
+    Master on super-effective). Thrown items and seeds use fixed damage.'
+  instantiates:
+  - concept: mechanics.combat.stat_difference_damage_formula
+  - concept: mechanics.pokemon.elemental_type_chart
+    weight: 0.6
+  - concept: mechanics.pokemon.stat_stage_multipliers
+    weight: 0.6
+  reads:
+  - attacker.atk
+  - attacker.sp_atk
+  - attacker.level
+  - attacker.offensive_stages
+  - target.def
+  - target.sp_def
+  - target.defensive_stages
+  - target.types
+  - move.power
+  - move.type
+  - rng.dungeon
+  writes:
+  - target.hp
+  params:
+    damage_cap:
+      value: 999
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_damage.c:CalcDamage
+        confidence: 0.85
+    quadratic_coefficient:
+      value: 0.05
+      native_value: '0xCCC'
+      native_unit: s48.16 fraction
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_damage.c:CalcDamage
+        confidence: 0.85
+    level_term:
+      value: 0.667
+      unit: x attacker level (team only)
+      native_value: '0xAAAA'
+      native_unit: s48.16 fraction
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_damage.c:CalcDamage
+        confidence: 0.85
+    random_spread:
+      value: 0.875..1.125
+      native_value: (0xE000 + rand(0x4000)) / 0x10000
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_damage.c:CalcDamage
+        confidence: 0.8
+    crit_multiplier:
+      value: 1.5
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_damage.c:CalcDamage (gUnknown_8106F14 = 0x18000)
+        confidence: 0.85
+    stat_stages:
+      value: 21
+      unit: stages 0..20, neutral 10
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gAtkStatStageMultipliers
+        confidence: 0.95
+    held_item_boosts:
+      value: Power/Special Band +12, Def Scarf/Zinc Band +8, Munch Belt +8 to both attacks
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_damage.c:CalcDamage (gPowerBandBoost etc.)
+        confidence: 0.8
+  invariants:
+  - Every connecting hit deals at least 1 damage.
+  - Wild attackers never crit unless forced by Focus Energy.
+  relations:
+  - type: modulates
+    target: recruitment_roll
+    note: a recruit roll follows a defeating blow by the team
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_damage.c:CalcDamage
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_config.c:gTypeEffectivenessChart
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_config.c:gEffectivenessChart
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_config.c:gDefStatStageMultipliers
+    confidence: 0.95
+- id: status_conditions
+  facet: mechanics
+  label: Turn-counted status conditions and residual damage
+  summary: 'Statuses live in exclusive classes (sleep, burn/poison, frozen/wrap/ingrain, cringe/paralysis, reflect,
+    curse, leech seed, sure-shot, invisible, blinker, muzzled), each with a turn counter decremented every turn. Many
+    durations are drawn from configured ranges (sleep 3-7, confusion 6-12, paralysis 1-2, freeze 3-5); burn and poison
+    last until cured. Residual damage uses countdown periods: burn 5 HP every 20 turns, poison 4 every 10, bad poison
+    6 every 2, wrap 6 and constriction 5 every 2, curse 1/4 max HP every 10. Status gates action: sleep/frozen/petrified
+    skip the turn; confusion randomises facing; blinker restricts attacks to the facing tile.'
+  instantiates:
+  - concept: mechanics.status.turn_counted_status_effects
+  reads:
+  - entities[*].status.*
+  writes:
+  - entities[*].status.*
+  - entities[*].hp
+  tables:
+    status_durations:
+      description: Turn ranges [min, max]; 127 means until cured.
+      columns:
+      - status
+      - turns
+      rows:
+      - [sleep, 3-7]
+      - [confusion, 6-12]
+      - [paralysis, 1-2]
+      - [freeze, 3-5]
+      - [cringe, '1']
+      - [burn, until cured (127)]
+      - [poison, until cured (127)]
+      - [reflect / light screen, 10-12]
+      - [safeguard, 15-20]
+      - [petrified (leader), 20-30]
+      - [decoy, 20-50]
+      - [invisible, 10-20]
+      - [perish song, '3']
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gSleepTurnRange
+        confidence: 0.95
+    residual_damage:
+      description: Residual damage amount and repeat period in turns.
+      columns:
+      - status
+      - damage
+      - period_turns
+      rows:
+      - [burn, 5, 20]
+      - [poison, 4, 10]
+      - [bad poison, 6, 2]
+      - [constriction, 5, 2]
+      - [wrapped, 6, 2]
+      - [curse, maxHP/4, 10]
+      - [leech seed, 10, 2]
+      - [hail/sandstorm, 5, 10]
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gBurnDmgCountdown
+        confidence: 0.95
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_turn_effects.c:DoEndOfTurnEffects_Async
+        confidence: 0.95
+  relations:
+  - type: part_of
+    target: fractional_turn_speed_scheduler
+  - type: modulates
+    target: monster_ai_pipeline
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_turn_effects.c:TickStatusAndHealthRegen
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_config.c:gConfusionTurnRange
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_logic.c:CannotAttack
+    confidence: 0.9
+- id: dungeon_weather
+  facet: mechanics
+  label: Floor weather with periodic chip damage and weather-scaled effects
+  summary: 'Floors declare one of 8 weathers (clear, sunny, sandstorm, cloudy, rain, hail, fog, snow) or random;
+    moves and abilities can override it for 20 turns. A 10-turn damage counter deals 5 HP to non-Ice Pokemon in hail
+    and to non-Ground/Rock/Steel Pokemon in sandstorm. Weather changes Castform''s form and Weather Ball''s type, scales
+    Synthesis/Moonlight/Morning Sun healing (50 clear, 80 sun, 1 in fog/snow), and snow raises Ice types'' speed stage.'
+  instantiates:
+  - concept: mechanics.environment.weather_states
+  reads:
+  - floor_props.weather
+  - weather.override_turns
+  writes:
+  - weather.current
+  - weather.damage_counter
+  - entities[*].hp
+  params:
+    weather_states:
+      value: 8
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/weather.h:WeatherID
+        confidence: 0.95
+    damage_period:
+      value: 10
+      unit: turns
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/weather.c:sub_807EAA0 (counter reloads to 9)
+        confidence: 0.85
+    chip_damage:
+      value: 5
+      unit: HP
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gHailSandstormDmgValue
+        confidence: 0.95
+    move_weather_duration:
+      value: 20
+      unit: turns
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gMoveWeatherDuration
+        confidence: 0.85
+    floors_with_weather:
+      value: 21
+      unit: of 350 floor records
+      evidence:
+      - kind: derived
+        ref: tallied FloorProperties.weather != 0
+        inputs:
+        - pmd-red:data/dungeon/*/main_data.inc
+        confidence: 0.75
+  relations:
+  - type: modulates
+    target: dungeon_damage_formula
+  - type: modulates
+    target: fractional_turn_speed_scheduler
+    condition: Ice types in snow
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/weather.c:GetApparentWeather
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_turn_effects.c:DoEndOfTurnEffects_Async
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_config.c:gSynthesisHealValueByWeather
+    confidence: 0.95
+- id: floor_turn_limit_wind
+  facet: mechanics
+  label: Per-floor turn limit enforced by an escalating "wind" ejection
+  summary: 'Each floor starts a counter at the dungeon''s turn limit (1000 or 2000 for most dungeons, 600-800 for
+    peaks). It decrements once per leader turn; warnings "Something''s stirring" (<250 left), "Something''s approaching"
+    (<150) and "It''s getting closer" (<50) play with screen effects, and at 0 the team is blown out of the dungeon,
+    a failed exit. Generating the next floor resets the counter.'
+  instantiates:
+  - concept: mechanics.pressure.turn_limit_ejection
+  reads:
+  - dungeon.wind_turns
+  - dungeon.id
+  writes:
+  - dungeon.wind_turns
+  - dungeon.wind_phase
+  - dungeon.exit_reason
+  params:
+    turn_limit_values:
+      value:
+        '2000': 50 dungeons
+        '1000': 39 dungeons
+        '800': 5 dungeons
+        '600': 2 dungeons
+        '500': 1 dungeon
+        '100': 1 dungeon
+      unit: turns per floor
+      evidence:
+      - kind: derived
+        ref: tallied turnLimit in data/dungeon/dungeon_data.json (98 entries)
+        inputs:
+        - pmd-red:data/dungeon/dungeon_data.json
+        confidence: 0.85
+    warning_thresholds:
+      value: [250, 150, 50, 0]
+      unit: turns remaining
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_wind.c:UpdateWindTurns
+        confidence: 0.95
+  invariants:
+  - Running out of turns ends the run as a failure (DUNGEON_EXIT_BLOWN_OUT_UNSEEN_FORCE < 550).
+  - The counter is reset to the dungeon's turn limit after every floor generation.
+  relations:
+  - type: requires
+    target: faint_and_item_loss
+  - type: part_of
+    target: dungeon_floor_descent
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_wind.c:UpdateWindTurns
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/run_dungeon.c:RunDungeon_Async
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_info.c:GetTurnLimit
+    confidence: 0.95
+- id: faint_and_item_loss
+  facet: mechanics
+  label: Run failure rule - leader faint loses money, held items and half the bag
+  summary: 'A run fails if the leader faints (or a client or required partner is lost), the wind ejects the team,
+    or the player gives up; 50 exit reasons below 550 are failures and 5 at or above are successes. On a plain failure
+    the town restart removes each bag item with 50% chance, all held items of team members and all carried money;
+    other abnormal returns (e.g. a consumed quicksave) wipe the whole bag. If rescue is allowed the run is instead
+    suspended: the dungeon location and 23-bit seed are quicksaved so a friend can rescue the team via mail or password,
+    after which the run continues. A thief who faints has every item turned into a Plain Seed.'
+  instantiates:
+  - concept: mechanics.failure.partial_inventory_loss_on_defeat
+  - concept: mechanics.failure.rescuable_defeat
+  reads:
+  - dungeon.exit_reason
+  - dungeon.rescues_allowed
+  - team_inventory.items
+  - team_inventory.money
+  writes:
+  - team_inventory.items
+  - team_inventory.money
+  - team[*].held_item
+  - save.quicksave
+  - rescue.pending_request
+  params:
+    bag_item_loss_chance:
+      value: 50
+      unit: '% per bag slot'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/main_loops.c:RemoveMoneyAndRandomItems
+        confidence: 0.95
+    money_kept_on_defeat:
+      value: 0
+      unit: Poke
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/main_loops.c:RemoveMoneyAndRandomItems
+        confidence: 0.95
+    held_items_kept_on_defeat:
+      value: 0
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/main_loops.c:RemoveMoneyAndRandomItems
+        confidence: 0.95
+    exit_reason_success_threshold:
+      value: 550
+      unit: exit reason id (>= is success)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/dungeon_exit.h:DUNGEON_EXIT_REASON_SUCCESS
+        confidence: 0.95
+    failure_reasons:
+      value: 50
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/dungeon_exit.h:DungeonExitReason
+        confidence: 0.9
+  invariants:
+  - Items in Kangaskhan storage and money in the bank are never lost on defeat.
+  - Experience, levels, IQ and recruited friends survive a failure (only inventory is penalised).
+  relations:
+  - type: modulates
+    target: friend_rescue_mail
+    note: rescuable failures defer the penalty until rescue or giving up
+  - type: modulates
+    target: storage_and_bank
+    note: makes banking and storage the safe store
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/main_loops.c:RemoveMoneyAndRandomItems
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/main_loops.c:RemoveAllMoneyAndItems
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/run_dungeon.c:RunDungeon_Async
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_exit.c:IsUnsuccessfulDungeonExit
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pmd-red:src/run_dungeon.c:TryForcedLoss_Async
+    confidence: 0.9
+  - kind: llm_knowledge
+    ref: levels and recruits are retained after a failed expedition
+    confidence: 0.5
+- id: wild_respawn_and_monster_house
+  facet: mechanics
+  label: Periodic wild respawns and ambush monster houses
+  summary: 'Every 36 turns a new wild Pokemon spawns (species and level from the floor table) unless the floor already
+    holds the cap (10 on floors without a monster house, 4 otherwise; the config names are swapped); after stealing
+    from a Kecleon shop a Kecleon spawns every 5 turns with no cap. Wild Pokemon placed at generation sleep until a
+    team member is adjacent (Racket Band wakes the whole room, Sneak Scarf prevents waking). Entering a monster house
+    the first time drops 8-11 extra Pokemon from above onto free tiles within 4 tiles of the intruder.'
+  instantiates:
+  - concept: mechanics.spawning.timed_wild_respawn
+  - concept: mechanics.spawning.ambush_room
+  reads:
+  - dungeon.wild_spawn_timer
+  - dungeon.monster_house_room
+  - dungeon.stole_from_kecleon
+  - floor.monster_table
+  writes:
+  - wild_pokemon[*]
+  - dungeon.monster_house_triggered
+  params:
+    respawn_interval:
+      value: 36
+      unit: turns (named "frames" in source; ticked once per normal turn)
+      variants:
+      - when: stole_from_kecleon
+        value: 5
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gWildSpawnIntervalFrames
+        confidence: 0.9
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_wild_mon_spawn.c:TrySpawnWildMonster
+        confidence: 0.9
+    wild_cap_no_monster_house:
+      value: 10
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_wild_mon_spawn.c:TrySpawnWildMonster
+        confidence: 0.8
+    wild_cap_with_monster_house:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_wild_mon_spawn.c:TrySpawnWildMonster
+        confidence: 0.8
+    monster_house_drop_count:
+      value: 8..11
+      unit: Pokemon (DungeonRandRange(8, 12), half-open)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_monster_house.c:TriggerMonsterHouse_Async
+        confidence: 0.9
+    monster_house_drop_radius:
+      value: 4
+      unit: tiles (9x9 box clipped to the room)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_monster_house.c:TriggerMonsterHouse_Async
+        confidence: 0.9
+    species_weight_scale:
+      value: 10000
+      unit: per-floor monster table weights
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:data/dungeon/TinyWoods/pokemon_found.json
+        confidence: 0.8
+  relations:
+  - type: requires
+    target: special_rooms_generation
+  - type: modulates
+    target: recruitment_roll
+    note: more wild Pokemon, more recruit chances
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_wild_mon_spawn.c:TrySpawnWildMonster
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_monster_house.c:TryWakeSleepingWildPokemon
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_monster_house.c:TriggerMonsterHouse_Async
+    confidence: 0.9
+- id: monster_ai_pipeline
+  facet: ai
+  label: Per-turn monster decision pipeline (item, then move, then movement)
+  summary: 'RunMonsterAI is the shared brain for allies and wild Pokemon. Each turn: blocking statuses (sleep, freeze,
+    petrify, paralysis-class) pass the turn; blinker, cross-eyed and confusion randomise movement; otherwise the monster
+    considers using an item (AIDecideUseItem), then picks a move or regular attack (ChooseAIMove), then moves (AIMovement).
+    The Dedicated Traveler IQ skill flips this to movement first. Per-monster AI state is an objective (chase target,
+    chase remembered target, roam, leave room, run away, stand still, take item), a target entity and position, and
+    the target''s last 4 positions.'
+  instantiates:
+  - concept: ai.framework.priority_decision_pipeline
+  - concept: ai.framework.objective_state_per_entity
+  reads:
+  - entities[*].status.*
+  - entities[*].tactic
+  - entities[*].iq_skills
+  - entities[*].ai_target
+  writes:
+  - entities[*].action
+  - entities[*].ai_target
+  params:
+    ai_objectives:
+      value: 7
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/structs/dungeon_entity.h:AIObjective
+        confidence: 0.9
+    remembered_positions:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/structs/dungeon_entity.h:NUM_PREV_POS
+        confidence: 0.9
+    confused_skip_attack_chance:
+      value: 70
+      unit: '%'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gAIConfusedAttackChance
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: fractional_turn_speed_scheduler
+  - type: modulates
+    target: status_conditions
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_ai.c:RunMonsterAI
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/status_checks.c:HasStatusThatPreventsActing
+    confidence: 0.8
+- id: enemy_chase_and_wander_ai
+  facet: ai
+  label: Nearest-visible-target chase with remembered positions and room-exit wandering
+  summary: 'Wild Pokemon (always tactic "Go after foes") target the nearest visible team member by Chebyshev distance:
+    visible means inside the same room (plus 1-tile border) or within 2 tiles in corridors. Lost targets are chased
+    to their last remembered positions. With no target, a monster in a room walks toward a random room exit (up to
+    10 picks); in a corridor it keeps going straight and picks a random non-reversing branch at T/+ junctions. Steps
+    head directly toward the target with +-45 degree detours (+-90 while fleeing); blocked monsters wait. Wild Pokemon
+    start asleep and never take stairs.'
+  instantiates:
+  - concept: ai.enemy.greedy_chase_nearest_visible
+  - concept: ai.navigation.room_exit_wander
+  - concept: ai.perception.room_or_radius_visibility
+  reads:
+  - entities[*].pos
+  - map.rooms[*].bounds
+  - map.room_exits
+  - floor_props.visibility_range
+  writes:
+  - self.ai_target
+  - self.pos
+  - self.facing
+  params:
+    corridor_sight_radius:
+      value: 2
+      unit: tiles (Chebyshev) for targeting
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_range.c:IsPositionInSight
+        confidence: 0.85
+    room_sight_border:
+      value: 1
+      unit: tiles beyond room bounds
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_range.c:IsPositionActuallyInSight
+        confidence: 0.75
+    detour_angles:
+      value: '+-45 deg (+-90 when fleeing)'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_ai_movement.c:DecideMovement
+        confidence: 0.85
+    room_exit_picks:
+      value: 10
+      unit: random tries
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_ai_movement.c:Wander
+        confidence: 0.9
+    wall_crosser_track_window:
+      value: 5
+      unit: tiles per axis (wall-walkers track through walls)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_ai_movement.c:ChooseTargetPosition
+        confidence: 0.85
+    random_movement_chance:
+      value: 0..70
+      unit: '% per dungeon that a spawned wild Pokemon moves randomly'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_wild_mon_spawn.c:TrySpawnWildMonster
+        confidence: 0.85
+      - kind: derived
+        ref: tallied randomMovementChance in data/dungeon/dungeon_data.json
+        inputs:
+        - pmd-red:data/dungeon/dungeon_data.json
+        confidence: 0.8
+  invariants:
+  - No pathfinding; movement is one greedy step per turn with small angular detours.
+  - Enemies never use stairs.
+  relations:
+  - type: part_of
+    target: monster_ai_pipeline
+  - type: requires
+    target: grid_step_movement
+  - type: variant_of
+    target: ai.enemy.patrol_detect_pursue
+    note: wander-until-visible then pursue, without patrol routes
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_ai_movement.c:ChooseTargetPosition
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_ai_movement.c:Wander
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_ai_movement.c:DecideMovement
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_logic.c:IsAtJunction
+    confidence: 0.85
+- id: ally_follow_and_tactics_ai
+  facet: ai
+  label: Partner AI with player-selectable tactics and follow-the-leader
+  summary: 'Non-leader team members run the same pipeline but their target selection depends on a tactic chosen from
+    the team menu: Let''s go together (follow the leader, fight only what is in reach), Go after foes (hunt nearest
+    foe, else follow), Go the other way (hunt, never follow), Avoid the first hit (hold at 2 tiles), Avoid trouble
+    (flee at <=50% HP), Be patient (stop at <=50% HP), Keep your distance (never attack), Wait there, Get away (always
+    flee). Tactics unlock by level. Followers blocked by allies are re-run nearest-to-leader first so the column moves
+    together; allies with 0 belly stop acting.'
+  instantiates:
+  - concept: ai.companion.selectable_tactics
+  - concept: ai.companion.follow_leader
+  reads:
+  - leader.pos
+  - self.tactic
+  - self.hp
+  - self.level
+  - self.belly
+  writes:
+  - self.ai_target
+  - self.action
+  params:
+    tactics:
+      value: 12
+      unit: ids (9 obtainable)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/tactic.h:TacticID
+        confidence: 0.9
+    flee_hp_threshold:
+      value: 50
+      unit: '% max HP (Avoid trouble; Run Away ability <50%)'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_logic.c:ShouldMonsterRunAway
+        confidence: 0.9
+    keep_away_distance:
+      value: 2
+      unit: tiles (Avoid the first hit)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_ai_movement.c:DecideMovement
+        confidence: 0.9
+    follow_rerun_passes:
+      value: 3
+      unit: passes ordered by leader distance buckets 0, 1, 2+
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_engine.c:sub_8044574_Async
+        confidence: 0.85
+  tables:
+    tactic_unlock_levels:
+      description: Level at which each tactic becomes selectable.
+      columns:
+      - tactic
+      - level
+      rows:
+      - [Let's go together, 1]
+      - [Go after foes, 1]
+      - [Avoid the first hit, 1]
+      - [Wait there, 15]
+      - [Keep your distance, 20]
+      - [Go the other way, 25]
+      - [Get away, 10]
+      - [Avoid trouble, 35]
+      - [Be patient, 40]
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_data.c:gReqTacticLvls
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: monster_ai_pipeline
+  - type: modulates
+    target: team_leader_and_party
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_ai_leader.c:TargetLeader
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/pokemon_3.c:TacticsTargetLeader
+    confidence: 0.8
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_ai_movement.c:AIMovement
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/strings.c:gTacticsNames
+    confidence: 0.8
+- id: ai_move_selection
+  facet: ai
+  label: Weighted random move choice with IQ-skill filters and targeting conditions
+  summary: 'ChooseAIMove sums per-move AI weights (from move data) plus a regular-attack weight that falls as more
+    moves are usable (100 with none, 20/30/40/50 with 1-4), rolls one, and re-verifies a target exists for its range
+    class (adjacent, frontal, room, 2 ahead, line of 10, whole floor, self). Moves can carry an AI condition (random
+    %, target HP <=25%, has status, asleep, ghost). IQ skills reshape the choice: PP Checker drops empty/linked-empty
+    moves, Status Checker skips pointless status moves, Weak-Type Picker turns the roll into an argmax on type effectiveness,
+    Exp. Go-Getter/Efficiency Expert reweight targets, Exclusive Move-User removes the regular attack.'
+  instantiates:
+  - concept: ai.combat.weighted_action_selection
+  reads:
+  - self.moves[*].pp
+  - move_data.ai_weight
+  - move_data.range
+  - move_data.ai_condition
+  - self.iq_skills
+  - targets[*]
+  writes:
+  - self.chosen_move
+  - self.facing
+  params:
+    regular_attack_weights:
+      value:
+      - 100
+      - 20
+      - 30
+      - 40
+      - 50
+      unit: weight by number of usable moves 0..4
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gAiRegularAttackWeights
+        confidence: 0.95
+    line_range:
+      value: 10
+      unit: tiles
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/dungeon_ai_attack.h:RANGED_ATTACK_RANGE
+        confidence: 0.9
+    low_hp_condition:
+      value: 25
+      unit: '% max HP'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_logic.c:MonsterHasQuarterHp
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: monster_ai_pipeline
+  - type: modulates
+    target: dungeon_damage_formula
+  - type: modulates
+    target: iq_skill_system
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_ai_attack.c:ChooseAIMove
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_ai_attack.c:AIConsiderMove
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_ai_attack.c:WeightMove
+    confidence: 0.8
+- id: ai_item_use
+  facet: ai
+  label: Probability-table item use and throwing by AI
+  summary: 'With the Item Master IQ skill (wild Pokemon get it from level 16) monsters roll per-item use probabilities:
+    berries only at <=25% HP (100% if adjacent to an enemy, else 50%), apples when belly <10, status seeds at 80% when
+    adjacent to a foe, thrown spikes/rocks at 70% when an enemy is aligned within 10 tiles. Non-leader allies only use
+    their held item; wild Pokemon also pick up items they stand on and may use orbs.'
+  instantiates:
+  - concept: ai.items.situational_item_use
+  reads:
+  - self.held_item
+  - self.hp
+  - self.belly
+  - targets[*]
+  writes:
+  - self.action
+  - self.held_item
+  params:
+    item_master_min_wild_level:
+      value: 16
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gIqItemMasterMinWildLevel
+        confidence: 0.9
+    throw_use_chance:
+      value: 70
+      unit: '%'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_ai_item_weight.c:GetAIUseItemProbability
+        confidence: 0.85
+    arc_throw_range:
+      value: 10
+      unit: tiles (Chebyshev)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_ai_items.c:GetPossibleAIArcItemTargets
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: monster_ai_pipeline
+  - type: requires
+    target: items_and_inventory
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_ai_items.c:AIDecideUseItem
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_ai_item_weight.c:GetAIUseItemProbability
+    confidence: 0.85
+- id: flee_behaviour
+  facet: ai
+  label: Flee to the farthest room exit
+  summary: 'A monster runs away when terrified (e.g. Stench, 3 turns), at low HP under the Run Away ability or Avoid
+    trouble tactic, or always under Get away. In a room it heads for the exit farthest from the nearest visible enemy
+    whose first step does not close distance; on an exit tile it steps into the corridor; otherwise it moves to the
+    point mirrored away from the enemy. Fleeing monsters cannot attack, use or pick up items.'
+  instantiates:
+  - concept: ai.enemy.flee_from_threat
+  reads:
+  - self.hp
+  - self.terrified_turns
+  - self.tactic
+  - map.room_exits
+  - enemies_visible[*].pos
+  writes:
+  - self.ai_target
+  - self.pos
+  params:
+    terrified_turns_stench:
+      value: 3
+      unit: turns
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gStenchTerrifiedTurnsNo
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: monster_ai_pipeline
+  - type: modulates
+    target: ally_follow_and_tactics_ai
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_ai_movement.c:AvoidEnemies
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_logic.c:ShouldMonsterRunAway
+    confidence: 0.9
+- id: iq_skill_system
+  facet: mechanics
+  label: IQ points unlocking passive skills (gummi-fed)
+  summary: 'Each team Pokemon has IQ (1..999) raised mainly by eating Gummis (+7 for a matching type, +1..4 otherwise).
+    23 IQ skills unlock at point thresholds (e.g. Item Catcher 1, Status Checker 25, Trap Avoider 140, Energy Saver
+    250, All-Terrain Hiker 400, Super Mobile 990) and can be toggled. Most change AI behaviour of allies (target choice,
+    hazard avoidance, item use); some change rules (Energy Saver halves belly drain index, Quick Dodger, Type-Advantage
+    Master crits). Wild Pokemon get a fixed set.'
+  instantiates:
+  - concept: mechanics.progression_stat.skill_unlock_by_points
+  reads:
+  - entities[*].iq
+  - entities[*].iq_skill_menu_flags
+  writes:
+  - entities[*].iq_skills
+  params:
+    iq_skills:
+      value: 23
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/iq_skill.h:IQSkillID
+        confidence: 0.9
+    iq_range:
+      value: 1..999
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_item_action.c:HandleGummiItemAction
+        confidence: 0.8
+    matching_gummi_iq:
+      value: 7
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_data.c:gTypeGummiIQBoost
+        confidence: 0.85
+  tables:
+    iq_thresholds:
+      description: IQ points required per skill (subset).
+      columns:
+      - skill
+      - iq
+      rows:
+      - [Item Catcher, 1]
+      - [Course Checker, 1]
+      - [Item Master, 1]
+      - [PP Checker, 2]
+      - [Efficiency Expert, 10]
+      - [Status Checker, 25]
+      - [Nontraitor, 40]
+      - [Self-Curer, 70]
+      - [Quick Dodger, 100]
+      - [Type-Advantage Master, 105]
+      - [Weak-Type Picker, 125]
+      - [Trap Avoider, 140]
+      - [Nonsleeper, 160]
+      - [Exp. Go-Getter, 200]
+      - [Energy Saver, 250]
+      - [Lava Evader, 300]
+      - [All-Terrain Hiker, 400]
+      - [Sure-Hit Attacker, 500]
+      - [Trap Seer, 600]
+      - [House Avoider, 800]
+      - [Super Mobile, 990]
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_data.c:gReqIQSkillPts
+        confidence: 0.9
+  relations:
+  - type: modulates
+    target: ai_move_selection
+  - type: modulates
+    target: grid_step_movement
+  - type: requires
+    target: items_and_inventory
+    note: gummis
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/pokemon_3.c:HasIQForSkill
+    confidence: 0.8
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_logic.c:LoadIQSkills
+    confidence: 0.8
+- id: items_and_inventory
+  facet: mechanics
+  label: 20-slot shared team bag, held items, stacking throwables and sticky items
+  summary: 'The team shares one 20-slot bag; each Pokemon also has one held-item slot whose passive effect applies
+    while held (bands, scarves, ribbons). Only thrown items (sticks, spikes, rocks) stack, up to 99. Poke picked up
+    converts straight to money. Items can be sticky (unusable, cleared on returning to town). Categories: thrown
+    (line projectiles or arcing rocks), food (belly), berries/seeds (heal, status, level, damage), vitamins (+3 stat),
+    gummis (IQ), orbs (cast a move once), TMs (become a reusable Used TM), held gear. Some dungeons cap or forbid
+    carried items on entry.'
+  instantiates:
+  - concept: mechanics.inventory.shared_slot_bag
+  - concept: mechanics.inventory.held_item_passive
+  - concept: mechanics.items.consumable_effect_categories
+  reads:
+  - team_inventory.items
+  - team[*].held_item
+  - dungeon.max_items_allowed
+  writes:
+  - team_inventory.items
+  - team[*].held_item
+  - team_inventory.money
+  params:
+    bag_slots:
+      value: 20
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/item.h:INVENTORY_SIZE
+        confidence: 0.95
+    item_ids:
+      value: 240
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/item.h:NUMBER_OF_ITEM_IDS
+        confidence: 0.95
+    throwable_stack_cap:
+      value: 99
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_items.c:TryLeaderItemPickUp_Async
+        confidence: 0.9
+    max_items_allowed_on_entry:
+      value: 20
+      unit: items (3 in Meteor Cave, 0 in Purity Forest)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/run_dungeon.c:EnforceMaxItemsAndMoney
+        confidence: 0.85
+      - kind: derived
+        ref: maxItemsAllowed values in data/dungeon/dungeon_data.json
+        inputs:
+        - pmd-red:data/dungeon/dungeon_data.json
+        confidence: 0.85
+    item_spawn_weight_scale:
+      value: 10000
+      unit: category then item cumulative weights per floor table
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/items.c:GetRandomItemForSet
+        confidence: 0.8
+  tables:
+    representative_items:
+      description: Item effects (dungeon_config/dungeon_item_action) and buy/sell prices (data/item/item_data.json).
+      columns:
+      - item
+      - category
+      - effect
+      - buy
+      - sell
+      rows:
+      - [Stick, thrown line, projectile power 1; spawns 6-10, 2, 1]
+      - [Iron Thorn, thrown line, power 5, 4, 2]
+      - [Gravelerock, thrown arc, 20 fixed damage, 10, 5]
+      - [Apple, food, +50 belly (+5 max if full), 25, 1]
+      - [Big Apple, food, +100 belly (+10 max if full), 50, 1]
+      - [Huge Apple, food, fill belly and +10 max, 100, 50]
+      - [Grimy Food, food, +30 belly plus a random ailment, 5, 1]
+      - [Oran Berry, berry, heal 100 HP, 50, 25]
+      - [Sitrus Berry, berry, heal 100 HP and +2 max HP, 4000, 100]
+      - [Blast Seed, seed, 45 damage eaten / 20 thrown, 30, 15]
+      - [Joy Seed, seed, +1 level, 3000, 1000]
+      - [Protein, vitamin, Atk +3, 5000, 5]
+      - [Max Elixir, other, restore all PP, 250, 100]
+      - [Escape Orb, orb, leave dungeon with items (fails for thieves), 300, 150]
+      - [Power Band, held, Atk +12, null, null]
+      - [Trap Scarf, held, never trigger traps, 5000, 1500]
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gOranBerryHealValue
+        confidence: 0.9
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_item_action.c:sub_80479B8
+        confidence: 0.75
+      - kind: decomp_source
+        ref: pmd-red:data/item/item_data.json
+        confidence: 0.8
+  invariants:
+  - Sticky held items give no passive effect (HasHeldItem ignores them).
+  - Poke never occupies a bag slot.
+  relations:
+  - type: modulates
+    target: belly_hunger_clock
+  - type: modulates
+    target: dungeon_damage_formula
+  - type: requires
+    target: spawn_placement
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:include/structs/str_items.h:TeamInventory
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/items.c:AddItemToInventory
+    confidence: 0.8
+  - kind: decomp_source
+    ref: pmd-red:src/items.c:ClearAllItems_8091FB4
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_item_action.c:HandleGummiItemAction
+    confidence: 0.8
+- id: thrown_projectiles
+  facet: mechanics
+  label: Straight-line and arcing thrown items
+  summary: 'Line throwables fly along one of 8 directions up to 10 tiles and hit the first Pokemon (90% hit chance;
+    Whiff Specs/Lock-on Specs/Dodge Scarf override); arcing rocks (Gravelerock, Geo Pebble) fly over obstacles to a
+    target within 10 tiles for fixed damage. Long Toss/Pierce raise range to 99 and pass through targets. Pokemon with
+    free hands may catch thrown items. L+R throws the set item.'
+  instantiates:
+  - concept: mechanics.combat.thrown_projectile
+  reads:
+  - thrower.facing
+  - thrower.held_item
+  - map.tiles[*]
+  writes:
+  - target.hp
+  - target.held_item
+  - team_inventory.items
+  params:
+    throw_range:
+      value: 10
+      unit: tiles (99 with Long Toss/Pierce)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_action_handler.c:sub_80671A0
+        confidence: 0.8
+    hit_chance:
+      value: 90
+      unit: '%'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gProjectileHitChance
+        confidence: 0.95
+    rock_damage:
+      value: Gravelerock 20, Geo Pebble 15
+      unit: HP
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gGravelerockThrownDmgValue
+        confidence: 0.95
+  relations:
+  - type: part_of
+    target: items_and_inventory
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_projectile_throw.c
+    confidence: 0.6
+    note: file located; throw logic summarised from subagent reads of dungeon_action_handler.c and dungeon_config.c
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_config.c:gStickPPValue
+    confidence: 0.9
+- id: trap_system
+  facet: mechanics
+  label: Hidden floor traps with 20 effects
+  summary: 'Traps spawn hidden (Wonder Tiles visible) on room tiles from a per-floor weighted table. A team member
+    stepping on a hidden trap triggers it 85% of the time and reveals it; visible traps always trigger. Effects span
+    damage (Chestnut 10, Spiked Tile 20, explosions), status (sleep, confusion, poison, slow), inventory attacks (Sticky,
+    Grimy 30% per food, Trip knocks off held item), PP/move sabotage (PP-Zero, Seal), displacement (Warp, Gust, Pitfall
+    drops to the next floor with 5 damage), and spawning (Summon 2-4 Pokemon, Pokemon Trap turns room items into Pokemon).
+    Trap Scarf prevents triggers; Trap Seer reveals on step; Trap Avoider makes AI avoid visible traps.'
+  instantiates:
+  - concept: mechanics.hazard.hidden_trap_tiles
+  reads:
+  - map.tiles[*].object
+  - entities[*].held_item
+  - floor.trap_table
+  writes:
+  - entities[*].hp
+  - entities[*].status.*
+  - team_inventory.items
+  - map.traps[*].visible
+  params:
+    trap_types:
+      value: 20
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/trap.h
+        confidence: 0.9
+    hidden_trigger_chance:
+      value: 85
+      unit: '% (15% "trap failed to work")'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/trap.c:TryTriggerTrap
+        confidence: 0.8
+    trap_density_values:
+      value: 0..10
+      unit: per floor (mostly 3, 4 or 8)
+      evidence:
+      - kind: derived
+        ref: tallied FloorProperties.trapDensity
+        inputs:
+        - pmd-red:data/dungeon/*/main_data.inc
+        confidence: 0.85
+    summon_count:
+      value: 2..4
+      unit: Pokemon
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/trap.c:HandleSummonTrap
+        confidence: 0.85
+  tables:
+    traps:
+      description: Trap ids and effects (include/constants/trap.h, src/trap.c).
+      columns:
+      - id
+      - name
+      - effect
+      rows:
+      - [0, Trip Trap, knocks held item to an adjacent tile]
+      - [1, Mud Trap, one random attack/defense stat -1 stage]
+      - [2, Sticky Trap, makes a random item sticky]
+      - [3, Grimy Trap, each food item 30% to become Grimy Food]
+      - [4, Summon Trap, spawns 2-4 wild Pokemon; trap removed]
+      - [5, Pitfall Trap, leader falls to next floor with 5 damage]
+      - [6, Warp Trap, random warp]
+      - [7, Gust Trap, blown away in a random direction]
+      - [8, Spin Trap, confusion]
+      - [9, Slumber Trap, sleep 3-7 turns]
+      - [10, Slow Trap, speed -1]
+      - [11, Seal Trap, seals one move]
+      - [12, Poison Trap, poison]
+      - [13, Selfdestruct Trap, small explosion]
+      - [14, Explosion Trap, large explosion]
+      - [15, PP-Zero Trap, one move's PP to 0]
+      - [16, Chestnut Trap, 10 damage]
+      - [17, Wonder Tile, reset stat stages; always visible]
+      - [18, Pokemon Trap, room items become wild Pokemon]
+      - [19, Spiked Tile, 20 damage]
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/trap.c:TryTriggerTrap
+        confidence: 0.85
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gSpikeTrapDmgValue
+        confidence: 0.95
+  relations:
+  - type: requires
+    target: spawn_placement
+  - type: modulates
+    target: items_and_inventory
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/trap.c:TryTriggerTrap
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/expose_trap.c:ExposeTrap
+    confidence: 0.75
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_main.c:CheckLeaderTile
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:data/dungeon/trap_data.json
+    confidence: 0.8
+- id: kecleon_shop_and_theft
+  facet: economy
+  label: In-dungeon Kecleon shop with pay-on-exit and thief state
+  summary: 'Shop rooms hold priced merchandise (flag IN_SHOP). Picking items up adds to a running bill; leaving the
+    shop tiles prompts payment, and items dropped on shop tiles can be sold. Walking off with unpaid goods sets the
+    thief state for the floor: all Kecleon turn hostile (+1 speed), a Kecleon spawns every 5 turns with no cap, Pokemon
+    Traps spawn Kecleon, Escape Orbs fail, the leader cannot be changed, and fainting turns every item into a Plain
+    Seed. Successfully leaving as a thief increments a thieving counter.'
+  instantiates:
+  - concept: economy.shop.in_world_shop_room
+  - concept: mechanics.crime.theft_escalation
+  reads:
+  - map.tiles[*].terrain_flags.shop
+  - items[*].flags.in_shop
+  - team_inventory.money
+  writes:
+  - team_inventory.money
+  - dungeon.stole_from_kecleon
+  - shopkeepers[*].aggressive
+  params:
+    thief_respawn_interval:
+      value: 5
+      unit: turns
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gKecleonSpawnIntervalFrames
+        confidence: 0.9
+    thief_kecleon_speed_bonus:
+      value: 1
+      unit: speed stage
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_logic.c:CalcSpeedStage
+        confidence: 0.95
+    shop_kecleon_level:
+      value: 90
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:data/dungeon/TinyWoods/pokemon_found.json
+        confidence: 0.7
+  relations:
+  - type: requires
+    target: special_rooms_generation
+  - type: modulates
+    target: wild_respawn_and_monster_house
+    condition: thief state active
+  - type: modulates
+    target: faint_and_item_loss
+    condition: thief faints
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_kecleon_shop.c
+    confidence: 0.6
+    note: shop billing summarised from subagent read
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_wild_mon_spawn.c:TrySpawnWildMonster
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/run_dungeon.c:RunDungeon_Async (IncrementThievingSuccesses)
+    confidence: 0.85
+- id: money_and_shops
+  facet: economy
+  label: Poke currency, town shops and service prices
+  summary: 'Money (Poke) is capped at 99,999 carried. Sources are floor piles (value from a 100-entry table, capped
+    per floor at moneyUpperBound x 40), mission rewards and selling. Sinks are the Kecleon brothers'' town shop (8 item
+    slots and 4 wares slots, restocked from story-stage item sets), Gulpin''s move-linking (150 Poke), Wigglytuff''s
+    friend areas (100 to 9,500 Poke) and in-dungeon Kecleon shops. Defeat zeroes carried money.'
+  instantiates:
+  - concept: economy.currency.capped_wallet
+  - concept: economy.shop.town_shop_restock
+  - concept: economy.trade.fixed_price_shop
+    weight: 0.6
+  reads:
+  - team_inventory.money
+  - story.stage
+  writes:
+  - team_inventory.money
+  - town_shop.stock
+  params:
+    money_cap:
+      value: 99999
+      unit: Poke
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/item.h:MAX_TEAM_MONEY
+        confidence: 0.95
+    town_shop_slots:
+      value: 8 items + 4 wares
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/item.h:MAX_KECLEON_ITEM_SHOP_ITEMS
+        confidence: 0.9
+    move_link_price:
+      value: 150
+      unit: Poke
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/gulpin_shop_801FB50.c:sub_801FC40
+        confidence: 0.85
+    money_pile_value_range:
+      value: 4..20000
+      unit: Poke (100-entry table)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_data.c:gUnknown_810A3F0
+        confidence: 0.8
+  relations:
+  - type: modulates
+    target: friend_areas
+  - type: requires
+    target: faint_and_item_loss
+    note: carried money at risk
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/items.c:AddToTeamMoney
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/kecleon_bros1.c
+    confidence: 0.6
+  - kind: decomp_source
+    ref: pmd-red:src/items.c:GetActualBuyPrice
+    confidence: 0.85
+- id: storage_and_bank
+  facet: economy
+  label: Kangaskhan storage and Persian bank as defeat-proof stores
+  summary: 'Kangaskhan storage keeps up to 999 of each of the 240 item ids (not Poke or Used TMs) and Felicity Bank
+    holds up to 9,999,999 Poke with no interest. Neither is exposed to dungeon defeat, so they are the safe side of
+    a carry-versus-store trade-off: items and money must be withdrawn into the 20-slot bag / 99,999 wallet before an
+    expedition to be usable.'
+  instantiates:
+  - concept: economy.storage.safe_stash
+  reads:
+  - team_inventory.storage
+  - team_inventory.savings
+  writes:
+  - team_inventory.storage
+  - team_inventory.savings
+  - team_inventory.money
+  params:
+    storage_per_item_cap:
+      value: 999
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/items.c:MoveToStorage
+        confidence: 0.9
+    bank_cap:
+      value: 9999999
+      unit: Poke
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/item.h:MAX_TEAM_SAVINGS
+        confidence: 0.95
+  invariants:
+  - Withdrawals are capped so carried money never exceeds 99,999.
+  relations:
+  - type: modulates
+    target: faint_and_item_loss
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/felicity_bank.c
+    confidence: 0.6
+  - kind: decomp_source
+    ref: pmd-red:src/kecleon_bros4.c:sub_801ADA0
+    confidence: 0.7
+    note: storage deposit limit check (shared helper)
+- id: dungeon_floor_descent
+  facet: progression
+  label: Multi-floor mystery dungeons with stairs and per-dungeon rule sets
+  summary: 'An expedition is a linear sequence of freshly generated floors (3 to 99); stepping on the stairs and confirming
+    generates the next floor and resets the turn limit, and clearing the last floor ends the run as a success. 98
+    dungeon entries carry rule flags: stairs up or down, recruiting enabled, rescues allowed, max items carried, max
+    party size, keep money, level reset to 1 (Wish Cave, Joyous Tower, Purity Forest), checkpoint, auto-save before
+    entry, required HMs and turn limit. A taken job on a floor adds its client or target to that floor.'
+  instantiates:
+  - concept: progression.structure.linear_floor_descent
+  - concept: progression.level_generation.procedural_floor
+    weight: 0.5
+  reads:
+  - dungeon.id
+  - dungeon.floor
+  - dungeon_data[*]
+  writes:
+  - dungeon.floor
+  - dungeon.exit_reason
+  params:
+    dungeon_entries:
+      value: 98
+      unit: records (63 regular dungeon ids plus mazes and specials)
+      evidence:
+      - kind: derived
+        ref: counted entries in data/dungeon/dungeon_data.json
+        inputs:
+        - pmd-red:data/dungeon/dungeon_data.json
+        confidence: 0.85
+    floors_per_dungeon:
+      value: 3..99
+      unit: floors
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_info.c:GetDungeonFloorCount
+        confidence: 0.8
+    max_party_members:
+      value: 3
+      unit: Pokemon (4 on legendary peaks, 1 in Meteor Cave and Purity Forest)
+      evidence:
+      - kind: derived
+        ref: maxPartyMembers values in data/dungeon/dungeon_data.json
+        inputs:
+        - pmd-red:data/dungeon/dungeon_data.json
+        confidence: 0.75
+  tables:
+    sample_dungeons:
+      description: Floors and rules for representative dungeons (dungeon_data.json and floor counts).
+      columns:
+      - dungeon
+      - floors
+      - recruit
+      - rescues_allowed
+      - party
+      - turn_limit
+      - notes
+      rows:
+      - [Tiny Woods, 3, false, -1, 3, 1000, first dungeon]
+      - [Mt. Steel, 9, true, 10, 3, 1000, Skarmory boss floor]
+      - [Magma Cavern, 23, true, 10, 3, 2000, checkpoint]
+      - [Sky Tower, 25, true, 10, 3, 2000, stairs up]
+      - [Meteor Cave, 20, true, -1, 1, 2000, max 3 items]
+      - [Wish Cave, 99, true, 30, 3, 2000, 'level reset to 1, money lost']
+      - [Purity Forest, 99, false, 30, 1, 2000, 'level 1, no items allowed']
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:data/dungeon/dungeon_data.json
+        confidence: 0.8
+  relations:
+  - type: requires
+    target: floor_generation_pipeline
+  - type: gated_by
+    target: story_scenario_flags
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/run_dungeon.c:RunDungeon_Async
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_info.c:IsLevelResetDungeon
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_main.c:CheckLeaderTile
+    confidence: 0.85
+- id: team_leader_and_party
+  facet: mechanics
+  label: Player-controlled leader with up to three AI partners (body-size budget)
+  summary: 'The player controls the leader; up to 3 other team members follow under AI. Team size is limited to 4
+    members and a body-size budget of 6 (large species take more slots), and per dungeon to maxPartyMembers. Only the
+    leader drains belly; the leader fainting ends the run, while a partner fainting just removes it (unless it is a
+    client or required partner, which forces a loss). Leader switching unlocks late in the story and is barred in some
+    dungeons and while a thief.'
+  instantiates:
+  - concept: mechanics.party.leader_plus_ai_companions
+  reads:
+  - team[*]
+  - species.body_size
+  - dungeon.leader_can_switch
+  writes:
+  - team[*]
+  - dungeon.leader
+  params:
+    max_team_members:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/global.h:MAX_TEAM_MEMBERS
+        confidence: 0.95
+    max_team_body_size:
+      value: 6
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/global.h:MAX_TEAM_BODY_SIZE
+        confidence: 0.85
+  invariants:
+  - The floor ends (run fails) immediately when the leader is gone (IsFloorOver).
+  relations:
+  - type: requires
+    target: ally_follow_and_tactics_ai
+  - type: gated_by
+    target: story_scenario_flags
+    condition: leader switching
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_engine.c:IsFloorOver
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_mon_recruit.c:TryRecruitMonster
+    confidence: 0.8
+- id: recruitment_roll
+  facet: progression
+  label: Defeat-to-recruit roll gated by friend-area ownership
+  summary: 'When a team member defeats a wild Pokemon from an adjacent tile in a dungeon that allows recruiting, the
+    game rolls rand(1000) < species recruit rate + 100 (Friend Bow) + a level bonus (0 below level 30, rising to 240
+    at 90+). The species'' friend area must already be owned and the team must have a free member slot and body-size
+    room; legendaries can join once. A recruit joins immediately at its current level with IQ 1, and is stored in its
+    friend area when not on the team.'
+  instantiates:
+  - concept: progression.collection.defeat_to_recruit
+  reads:
+  - target.species
+  - species.recruit_rate
+  - attacker.level
+  - attacker.held_item
+  - friend_areas.owned
+  - team[*]
+  writes:
+  - recruited_pokemon[*]
+  - team[*]
+  params:
+    roll_scale:
+      value: 1000
+      unit: per-mille
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_mon_recruit.c:TryRecruitMonster
+        confidence: 0.85
+    friend_bow_bonus:
+      value: 100
+      unit: per-mille (+10 percentage points)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gFriendBowRecruitRateUpValue
+        confidence: 0.95
+    level_bonus:
+      value:
+        lv0_29: 0
+        lv30_39: 50
+        lv40_49: 75
+        lv50_59: 100
+        lv60_69: 125
+        lv70_79: 150
+        lv80_89: 175
+        lv90_100: 240
+      unit: per-mille
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_config.c:gRecruitRateByLevel
+        confidence: 0.95
+    never_rate:
+      value: -999
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_mon_recruit.c:TryRecruitMonster
+        confidence: 0.85
+  tables:
+    sample_recruit_rates:
+      description: Species base recruit rate in per-mille (data/monster/monster_data.json).
+      columns:
+      - species
+      - recruit_rate
+      rows:
+      - [Bulbasaur, 125]
+      - [Caterpie, 102]
+      - [Magikarp, 92]
+      - [Pikachu, -190]
+      - [Articuno, 300]
+      - [Mew, 9]
+      - [Gyarados, -999]
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:data/monster/monster_data.json
+        confidence: 0.8
+  invariants:
+  - No recruit is possible without owning the species' friend area (except flagged species).
+  - The job client cannot be recruited.
+  relations:
+  - type: gated_by
+    target: friend_areas
+  - type: requires
+    target: dungeon_damage_formula
+  - type: modulates
+    target: team_leader_and_party
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_mon_recruit.c:TryRecruitMonster
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_mon_recruit.c:MonsterJoinSequence_Async
+    confidence: 0.8
+- id: friend_areas
+  facet: progression
+  label: Purchasable friend areas as recruitment licences and roster storage
+  summary: 'The 57 friend areas each house a fixed set of species and act as both licence and box: a species can only
+    be recruited once its area is owned, and recruits rest there. Areas are bought from Wigglytuff (19 during the story,
+    26 post-game, 100 to 9,500 Poke), granted by Wonder Mail rewards (4) or by legendary requests (8). Area capacity
+    limits how many can be kept; when full, one must be released.'
+  instantiates:
+  - concept: progression.collection.purchasable_roster_capacity
+  reads:
+  - friend_areas.owned
+  - team_inventory.money
+  writes:
+  - friend_areas.owned
+  - team_inventory.money
+  - recruited_pokemon[*]
+  params:
+    friend_areas:
+      value: 57
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/friend_area.h:FRIEND_AREA_COUNT
+        confidence: 0.9
+    price_range:
+      value: 100..9500
+      unit: Poke
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_data.c:gFriendAreaSettings
+        confidence: 0.85
+  relations:
+  - type: requires
+    target: money_and_shops
+  - type: gated_by
+    target: story_scenario_flags
+    condition: post-game areas
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_data.c:gFriendAreaSettings
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_misc.c:sub_8068BDC
+    confidence: 0.85
+    note: on return, new recruits are moved to friend areas with a release prompt when over capacity
+- id: leveling_and_evolution
+  facet: progression
+  label: Shared full exp per KO, levels to 100, story-gated evolution
+  summary: 'Defeating a wild Pokemon gives every team member on the floor the full exp (not split): yield + yield x
+    (level-1)/10, x1.5 or x0.5 by modifiers, minimum 1, total capped at 9,999,999. Levels run to 100 using per-species
+    level tables that add HP and Atk/SpAtk/Def/SpDef. Some dungeons reset levels to 1 for the visit. Evolution happens
+    only at Luminous Cave after the story unlocks it, requiring level/IQ/item conditions and an owned, non-full friend
+    area for the evolved form.'
+  instantiates:
+  - concept: progression.character.exp_levels
+  - concept: progression.character.conditional_evolution
+  reads:
+  - target.exp_yield
+  - target.level
+  - team[*].exp
+  - story.flags.evolutions_unlocked
+  writes:
+  - team[*].exp
+  - team[*].level
+  - team[*].stats
+  - team[*].species
+  params:
+    max_level:
+      value: 100
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_leveling.c:AddExpPoints
+        confidence: 0.9
+    exp_cap:
+      value: 9999999
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/dungeon_leveling.c:AddExpPoints
+        confidence: 0.9
+    kill_exp_formula:
+      value: yield + yield*(L-1)/10
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/pokemon.c:CalculateEXPGain
+        confidence: 0.85
+    stat_caps:
+      value: 255 per attack/defense stat, 999 max HP
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/run_dungeon.c:sub_8043FD0
+        confidence: 0.85
+  relations:
+  - type: gated_by
+    target: story_scenario_flags
+    condition: evolution
+  - type: requires
+    target: friend_areas
+    condition: evolution
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_leveling.c:AddExpPoints
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/pokemon_evolution.c:SetMonEvolveStatus
+    confidence: 0.75
+- id: rescue_job_board
+  facet: progression
+  label: Procedurally generated rescue jobs from a board and mailbox
+  summary: 'Pelipper''s board regenerates 5-8 jobs each day (plus story jobs) and the mailbox up to 4. A job picks
+    an unlocked dungeon, a floor in its back half, a type (rescue client 2/8, rescue target 2/8, escort 2/8, find item
+    1/8, deliver item 1/8), client/target species, item and reward. Difficulty comes from a per-floor table (+2 for
+    escort) and maps to rank E..S/star; rewards are money ((rank+1) x 100 on the board, x200 by mail), items, or a
+    friend area. Up to 8 jobs can be taken; on the job floor the target appears and talking to it completes the job
+    and offers to leave the dungeon.'
+  instantiates:
+  - concept: progression.missions.procedural_job_board
+  reads:
+  - dungeons.unlocked
+  - mission_difficulty_table
+  - rescue_rank
+  writes:
+  - job_slots[*]
+  - team_inventory.money
+  - rescue_rank.points
+  params:
+    accepted_job_slots:
+      value: 8
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/mailbox.h:MAX_ACCEPTED_JOBS
+        confidence: 0.95
+    mailbox_slots:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/mailbox.h:NUM_MAILBOX_SLOTS
+        confidence: 0.95
+    board_jobs:
+      value: 5..8
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/code_80958E8.c:GeneratePelipperJobs
+        confidence: 0.8
+    job_floor_range:
+      value: '[floorCount/2, floorCount)'
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/code_80958E8.c:GenerateMailJobDungeonInfo
+        confidence: 0.85
+    money_reward:
+      value: (rank+1) x 100
+      unit: Poke (x200 for mailbox jobs)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/code_803C1B4.c:sub_803C21C
+        confidence: 0.9
+    rank_points_by_difficulty:
+      value: [1, 5, 10, 20, 40, 60, 80, 100, 150, 200, 300, 500, 700, 1000, 1500, 2000]
+      unit: points for difficulty 0..15
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/data/pokemon_mail_pre.h:gUnknown_80E80A0
+        confidence: 0.85
+  relations:
+  - type: requires
+    target: dungeon_floor_descent
+  - type: modulates
+    target: rescue_rank
+  - type: gated_by
+    target: story_scenario_flags
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/code_80958E8.c:GenerateMailJobInfo
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/code_803C1B4.c:sub_803C1B4
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_jobs.c
+    confidence: 0.7
+  - kind: decomp_source
+    ref: pmd-red:src/mission_reward.c
+    confidence: 0.75
+  - kind: decomp_source
+    ref: pmd-red:src/code_80958E8.c:sub_8096BD0
+    confidence: 0.8
+    note: on a lost run, jobs in the in-progress/done states are reset
+- id: rescue_rank
+  facet: progression
+  label: Rescue team rank from cumulative job points
+  summary: 'Job rewards add rank points; rank is the first threshold above the total: Normal (<50), Bronze, Silver,
+    Gold, Platinum, Diamond, Lucario (>=15000). Rank mostly signals status: at Normal rank escort jobs are not offered,
+    and Lucario rank unlocks a news item; no storage or shop perks were found.'
+  instantiates:
+  - concept: progression.meta.reputation_rank
+  reads:
+  - rescue_rank.points
+  writes:
+  - rescue_rank.rank
+  tables:
+    ranks:
+      description: Rank lower bounds in points.
+      columns:
+      - rank
+      - points_from
+      rows:
+      - [Normal, 0]
+      - [Bronze, 50]
+      - [Silver, 500]
+      - [Gold, 1500]
+      - [Platinum, 3000]
+      - [Diamond, 7500]
+      - [Lucario, 15000]
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/rescue_team_info.c:sRescueRankMaxPoints
+        confidence: 0.95
+  relations:
+  - type: requires
+    target: rescue_job_board
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/rescue_team_info.c:GetRescueTeamRank
+    confidence: 0.9
+- id: wonder_mail_passwords
+  facet: progression
+  label: Wonder Mail 24-character job passwords
+  summary: 'A job can be shared as a 24-character password over a 32-symbol alphabet (5 bits each = 120 bits): byte
+    0 is an additive checksum over the other 14 bytes, the payload packs mail type, mission type, client, target, item,
+    reward, friend area, a 24-bit dungeon seed, dungeon and floor (93 bits), and character positions are shuffled by
+    a fixed 24-entry permutation (no encryption). Decoded mail is validated (legal dungeon and floor, allowed species,
+    no thrown items, friend-area rewards only above rank E) and becomes a mailbox job with a reproducible floor.'
+  instantiates:
+  - concept: progression.sharing.password_encoded_content
+  reads:
+  - input.password_text
+  writes:
+  - mailbox[*]
+  params:
+    password_length:
+      value: 24
+      unit: characters
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/code_803D0D8.c:DecodeWonderMailPassword
+        confidence: 0.85
+    alphabet_size:
+      value: 32
+      unit: symbols (5 bits each)
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/data/code_803D0D8.h:sUnknown_80F42D0
+        confidence: 0.8
+    payload_bits:
+      value: 93
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/code_80958E8.c:WriteWonderMailBits
+        confidence: 0.85
+    seed_bits:
+      value: 24
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:src/code_80958E8.c:GenerateMailJobInfo
+        confidence: 0.85
+  invariants:
+  - A password is accepted only if its checksum matches and every field passes ValidateWonderMail.
+  relations:
+  - type: variant_of
+    target: rescue_job_board
+    note: same job record, externally supplied
+  - type: requires
+    target: floor_generation_pipeline
+    note: the embedded seed regenerates the same floor
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/code_803D0D8.c:DecodeWonderMailPassword
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/code_80958E8.c:ValidateWonderMail
+    confidence: 0.8
+- id: friend_rescue_mail
+  facet: progression
+  label: Asynchronous friend rescue via SOS / A-OK / Thank-You passwords or link
+  summary: 'When a team faints in a dungeon that allows rescues, the run is suspended and an SOS mail (dungeon, floor,
+    seed, leader species, ids, player name, rescues left) is created and exported as a 54-character password or over
+    link. Another player imports it, enters the same seeded dungeon as "out on rescue" with their own team, and on
+    reaching the floor sends back an A-OK mail; importing it revives the original team where it fell. A Thank-You mail
+    can carry a reward item back. Each failed rescue decrements rescuesAllowed (10 or 30 per dungeon).'
+  instantiates:
+  - concept: progression.sharing.asynchronous_player_rescue
+  - concept: progression.sharing.password_encoded_content
+    weight: 0.5
+  reads:
+  - dungeon.rescues_allowed
+  - dungeon.prng_preseed
+  - input.password_text
+  writes:
+  - sos_mail[*]
+  - save.quicksave
+  - team.status
+  params:
+    rescue_password_length:
+      value: 54
+      unit: characters
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/wonder_mail.h:PASSWORD_BUFFER_SIZE
+        confidence: 0.9
+    rescues_allowed:
+      value: 10
+      unit: attempts (30 in Wish Cave, Mt. Faraway, Purity Forest; -1 = not rescuable)
+      evidence:
+      - kind: derived
+        ref: rescuesAllowed values in data/dungeon/dungeon_data.json
+        inputs:
+        - pmd-red:data/dungeon/dungeon_data.json
+        confidence: 0.85
+  relations:
+  - type: requires
+    target: faint_and_item_loss
+  - type: requires
+    target: floor_generation_pipeline
+    note: the rescuer replays the same seed
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/run_dungeon.c:RunDungeon_Async
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/main_loops.c:LoadAndRunQuickSaveDungeon_Async
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pmd-red:src/code_803D0D8.c:sub_803D204
+    confidence: 0.75
+  - kind: decomp_source
+    ref: pmd-red:src/friend_rescue.c
+    confidence: 0.6
+- id: story_scenario_flags
+  facet: progression
+  label: Scenario-stage flags gating jobs, recruiting, evolution and dungeons
+  summary: 'Progress is a main-scenario (stage, sub-stage) pair plus sub-scenarios in script variables; CheckQuest
+    derives gates from it: job board after (4,3), recruiting after (5,0), post-game after stage 17, evolution after
+    (18,2), leader change after (18,3). Legendary encounters and new dungeons open on further stages or sub-scenarios;
+    dungeon clears are recorded per dungeon and the return map and script are chosen from the run result.'
+  instantiates:
+  - concept: progression.world.persistent_world_flags
+  - concept: progression.structure.global_progress_level
+  reads:
+  - script_vars.scenario_main
+  - script_vars.scenario_sub
+  writes:
+  - script_vars.*
+  - script_vars.dungeon_clear_list
+  params:
+    script_vars:
+      value: 82
+      evidence:
+      - kind: decomp_source
+        ref: pmd-red:include/constants/event_flag.h:SCRIPT_VARS_COUNT
+        confidence: 0.85
+  relations:
+  - type: modulates
+    target: dungeon_floor_descent
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:src/event_flag.c
+    confidence: 0.6
+    note: CheckQuest thresholds per delegated read
+  - kind: decomp_source
+    ref: pmd-red:src/ground_main.c:xxx_script_related_8098468_Async
+    confidence: 0.75
+- id: boss_and_legendary_encounters
+  facet: progression
+  label: Boss floors and legendary encounters at dungeon ends
+  summary: 'Story dungeons end on fixed-room boss floors (Skarmory, Team Meanies, Zapdos, Moltres, Articuno, Groudon,
+    Rayquaza, Mewtwo, Jirachi, etc.) entered through dedicated cutscene routines; defeating them advances the story,
+    and post-game legendaries become recruitable once each.'
+  instantiates:
+  - concept: progression.structure.boss_floor
+  reads:
+  - dungeon.fixed_room_number
+  writes:
+  - script_vars.*
+  relations:
+  - type: requires
+    target: fixed_rooms_and_boss_floors
+  - type: modulates
+    target: story_scenario_flags
+  evidence:
+  - kind: decomp_source
+    ref: pmd-red:include/constants/fixed_rooms.h:FixedRoomID
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pmd-red:src/dungeon_cutscene_groudon.c
+    confidence: 0.5
+    note: one of ~30 per-boss cutscene files located by name, not read
+proposed_concepts:
+- id: mechanics.pokemon.elemental_type_chart
+  label: Elemental type chart
+  definition: Every creature and attack has one or more elemental types; a fixed attacker-type by defender-type table
+    scales damage (immune, resisted, neutral, super effective), combined across a defender's types.
+  aliases:
+  - type effectiveness
+  seed_source: 'gdp: Rock-Paper-Scissors'
+- id: mechanics.pokemon.stat_stage_multipliers
+  label: Stat stage multipliers
+  definition: Temporary buffs and debuffs move a stat along a bounded ladder of discrete stages, each mapped to a fixed
+    multiplier applied in damage or accuracy calculations.
+- id: mechanics.combat.stat_difference_damage_formula
+  label: Stat-difference damage formula
+  definition: Damage is computed from attacker power plus move power minus defender defense, shaped by a nonlinear
+    curve and a level term, clamped to a minimum of 1, then scaled by type, crits and a random spread.
+- id: mechanics.turn.player_paced_roguelike_turns
+  label: Player-paced roguelike turns
+  definition: The world advances only when the player acts; every entity then takes its queued action, so one player
+    step equals one world turn.
+  seed_source: 'igdb genre: Turn-based (unverified)'
+- id: mechanics.turn.speed_scheduled_turns
+  label: Speed-scheduled turns
+  definition: Entities act on a fixed fractional-tick schedule indexed by a discrete speed stage, so faster entities
+    get proportionally more actions per player turn.
+  is_a:
+  - mechanics.turn.player_paced_roguelike_turns
+- id: mechanics.survival.hunger_clock
+  label: Hunger clock
+  definition: A food resource drains steadily per turn or time; at zero it causes ongoing health loss or blocks recovery,
+    forcing the player to find or carry food.
+  aliases:
+  - belly
+  - food clock
+- id: mechanics.health.passive_regeneration
+  label: Passive health regeneration
+  definition: Health recovers automatically over time or turns at a rate that can depend on max health, items or
+    conditions, and stops under specified states.
+- id: mechanics.status.turn_counted_status_effects
+  label: Turn-counted status effects
+  definition: Conditions such as sleep, poison or confusion carry their own turn counters, alter what the affected
+    entity can do, and may deal periodic damage until they expire or are cured.
+- id: mechanics.environment.weather_states
+  label: Weather states
+  definition: A level-wide weather value that periodically damages some entities and modifies attacks, abilities and
+    healing; it can be changed by actions for a limited time.
+- id: mechanics.pressure.turn_limit_ejection
+  label: Turn-limit ejection
+  definition: Each level allows a fixed number of turns; escalating warnings precede forced removal of the player
+    when the count runs out.
+  seed_source: 'gdp: Time Limits'
+- id: mechanics.failure.partial_inventory_loss_on_defeat
+  label: Partial inventory loss on defeat
+  definition: A failed expedition returns the player to the hub but destroys carried money and a random share of
+    carried items, while character progression is kept.
+  seed_source: 'gdp: Penalties'
+- id: mechanics.failure.rescuable_defeat
+  label: Rescuable defeat
+  definition: Instead of resolving immediately, a defeat can be suspended so that another player (or a later action)
+    rescues the party and the run resumes where it fell.
+- id: mechanics.spawning.timed_wild_respawn
+  label: Timed wild respawn
+  definition: New enemies appear at intervals during a level up to a population cap, punishing lingering.
+- id: mechanics.spawning.ambush_room
+  label: Ambush room
+  definition: A room that looks normal or holds loot and, when first entered, spawns a large group of enemies around
+    the intruder.
+  aliases:
+  - monster house
+- id: mechanics.inventory.shared_slot_bag
+  label: Shared slot bag
+  definition: The party carries items in one fixed-size slot list shared by all members; full slots block pickups.
+  seed_source: 'gdp: Inventories'
+- id: mechanics.inventory.held_item_passive
+  label: Held-item passive
+  definition: Each character can hold one item whose passive effect applies only while held.
+- id: mechanics.items.consumable_effect_categories
+  label: Consumable effect categories
+  definition: Consumables grouped into families (food, healing, status, stat boosters, throwables, one-shot spells)
+    sharing use rules within each family.
+- id: mechanics.combat.thrown_projectile
+  label: Thrown projectile item
+  definition: A consumable thrown in a direction or at a target, travelling a limited distance and dealing damage
+    or applying an effect to the first entity hit or the target square.
+- id: mechanics.hazard.hidden_trap_tiles
+  label: Hidden trap tiles
+  definition: Floor tiles conceal traps with varied effects that trigger, sometimes probabilistically, when stepped
+    on and become visible once triggered or revealed.
+  seed_source: 'gdp: Traps'
+- id: mechanics.crime.theft_escalation
+  label: Theft escalation
+  definition: Leaving a shop without paying is allowed but switches the level into a hostile state (stronger pursuing
+    guards, more spawns, blocked escapes) until the player leaves or wins.
+- id: mechanics.party.leader_plus_ai_companions
+  label: Leader with AI companions
+  definition: The player directly controls one leader while a small party of companions acts under AI; losing the
+    leader ends the attempt.
+  seed_source: 'gdp: Companions'
+- id: mechanics.progression_stat.skill_unlock_by_points
+  label: Skill unlock by points
+  definition: A per-character points total raised by consumables or play unlocks passive skills at fixed thresholds;
+    unlocked skills can be toggled.
+- id: movement_physics.grid.eight_direction_tile_step
+  label: Eight-direction tile step
+  definition: Characters occupy single grid cells and move exactly one cell per action in one of eight directions.
+  seed_source: 'vgdl: GridPhysics'
+- id: movement_physics.grid.no_corner_cutting
+  label: No corner cutting
+  definition: A diagonal grid move is allowed only when both orthogonally adjacent cells are passable.
+  is_a:
+  - movement_physics.grid.eight_direction_tile_step
+- id: movement_physics.grid.terrain_crossing_classes
+  label: Terrain crossing classes
+  definition: Each mover has a crossing class (ground, liquid, chasm, wall) that determines which terrain types it
+    can enter; items or skills can upgrade the class.
+- id: movement_physics.grid.interpolated_tile_animation
+  label: Interpolated tile animation
+  definition: Discrete grid moves are shown as smooth pixel interpolation over a fixed number of frames per cell, with
+    options to speed up or skip the animation.
+- id: ai.framework.priority_decision_pipeline
+  label: Priority decision pipeline
+  definition: Each turn an agent tries actions in a fixed priority order (status gate, item use, attack, movement),
+    taking the first that applies.
+  seed_source: 'game_ai_taxonomy: Decision tree'
+- id: ai.framework.objective_state_per_entity
+  label: Per-entity objective state
+  definition: Each agent stores a current objective (chase, roam, flee, take item) with a target and remembered target
+    positions, recomputed every turn.
+- id: ai.enemy.greedy_chase_nearest_visible
+  label: Greedy chase of nearest visible target
+  definition: Agent picks the nearest visible hostile and steps directly toward it each turn with small detours, without
+    global pathfinding, falling back to last-seen positions.
+  seed_source: VGDL Chaser
+- id: ai.navigation.room_exit_wander
+  label: Room-exit wandering
+  definition: With no target, an agent walks to a random exit of its current room and follows corridors, choosing
+    random branches at junctions.
+- id: ai.perception.room_or_radius_visibility
+  label: Room-or-radius visibility
+  definition: Visibility is the whole current room when inside a room, otherwise a small radius around the viewer.
+- id: ai.companion.follow_leader
+  label: Follow the leader
+  definition: Companion agents move toward the player-controlled leader when no enemy is engaged, re-ordered so the
+    nearest move first.
+- id: ai.companion.selectable_tactics
+  label: Selectable companion tactics
+  definition: The player sets each companion's behaviour policy from a list (follow, hunt, keep distance, wait, flee),
+    changing its target selection and movement.
+  is_a:
+  - ai.companion.follow_leader
+- id: ai.combat.weighted_action_selection
+  label: Weighted action selection
+  definition: An agent chooses among available attacks by weighted random roll, filtered by targeting validity and
+    skill-based heuristics such as type advantage.
+- id: ai.items.situational_item_use
+  label: Situational item use
+  definition: Agents use or throw items with per-item probabilities conditioned on health, hunger, status and enemy
+    adjacency.
+- id: ai.enemy.flee_from_threat
+  label: Flee from threat
+  definition: Under fear or low health an agent moves away from the nearest threat, preferring exits that increase
+    distance, and stops attacking.
+- id: camera.follow.hard_lock_center
+  label: Hard-locked centre follow
+  definition: The camera is fixed to the target's position every frame at a constant screen offset, with no lag or
+    dead zone.
+- id: rendering.background.metatile_streaming
+  label: Metatile streaming
+  definition: A large map is stored as metatiles (blocks of hardware tiles) and only the rows and columns entering
+    the view are written to the hardware tilemap as the camera moves.
+- id: rendering.lighting.window_mask_vision_radius
+  label: Window-mask vision radius
+  definition: Darkness or limited vision drawn by reshaping hardware windows per scanline (circle in corridors, room
+    rectangle in rooms) and dimming outside it with blending.
+  is_a:
+  - rendering.raster.window_shape_per_scanline
+- id: economy.currency.capped_wallet
+  label: Capped wallet
+  definition: Carried currency has a hard maximum and is exposed to loss; excess must be stored elsewhere.
+  is_a:
+  - economy.resource.capped_pool
+- id: economy.shop.in_world_shop_room
+  label: In-world shop room
+  definition: Merchandise lies on the floor of a room in a level; picking it up adds to a bill settled with the shopkeeper
+    on leaving, and the player can sell by dropping items.
+- id: economy.shop.town_shop_restock
+  label: Restocking hub shop
+  definition: A hub vendor whose stock is regenerated periodically from weighted item sets that change with story
+    progress.
+  is_a:
+  - economy.trade.fixed_price_shop
+- id: economy.storage.safe_stash
+  label: Safe stash
+  definition: A hub storage for items or money that is immune to expedition loss, creating a carry-versus-store trade-off.
+- id: frontend.flow.hub_and_expedition_loop
+  label: Hub and expedition loop
+  definition: Play alternates between a safe hub (shops, jobs, story) and expeditions into separate levels whose result
+    (success, failure, suspended) determines the hub state on return.
+- id: frontend.menu.main_menu
+  label: Main menu
+  definition: Front-end menu after the title listing new game or continue plus auxiliary functions (logs, link features,
+    passwords, delete save).
+- id: frontend.new_game.questionnaire_character_creation
+  label: Questionnaire character creation
+  definition: A new game asks personality questions whose scored answers determine the player's character (class,
+    species or traits) instead of direct selection.
+- id: frontend.save.suspend_save_consumed_on_load
+  label: Consumable suspend save
+  definition: Mid-level suspend that can be resumed exactly once; quitting after resuming without re-saving counts
+    as a failure.
+  seed_source: 'gdp: Save Files'
+- id: narrative_delivery.dialogue.portrait_emotion_dialogue
+  label: Portrait emotion dialogue
+  definition: Dialogue boxes paired with a speaker portrait selected from a set of emotion variants per character.
+  is_a:
+  - narrative_delivery.dialogue.typewriter_dialogue
+- id: narrative_delivery.engine.bytecode_script_vm
+  label: Bytecode script VM
+  definition: Story and scene logic runs as data-driven bytecode on cooperative actor threads (move, talk, camera,
+    music, flag-conditional jumps) rather than hard-coded routines.
+- id: narrative_delivery.framing.player_avatar_identity
+  label: Player avatar identity framing
+  definition: The story frames the avatar as the player themself (e.g. derived from the player's answers), making
+    character creation part of the narrative.
+- id: progression.level_generation.procedural_floor
+  label: Procedural floor
+  definition: Each level (floor) is generated anew from parameters and a seed when entered, so layout, items and enemies
+    differ between visits.
+  seed_source: 'gdp: Procedurally Generated Game Worlds'
+- id: progression.level_generation.grid_cell_rooms_and_corridors
+  label: Grid-cell rooms and corridors
+  definition: The map is divided into a lattice of cells; selected cells receive rectangular rooms, the rest corridor
+    anchors, and adjacent cells are joined by corridors.
+  is_a:
+  - progression.level_generation.procedural_floor
+- id: progression.level_generation.random_walk_corridor_links
+  label: Random-walk corridor links
+  definition: Which cells are connected is decided by a random walk over the cell lattice (with momentum and dead-end
+    repair) before corridors are carved.
+  is_a:
+  - progression.level_generation.grid_cell_rooms_and_corridors
+- id: progression.level_generation.special_room_roll
+  label: Special room roll
+  definition: After layout, one eligible room may be converted by a per-level chance into a special room (shop, ambush,
+    maze).
+- id: progression.level_generation.room_template_variants
+  label: Room template variants
+  definition: Rooms are decorated from a small set of procedural templates (pools, islands, dividers, checkerboards)
+    using secondary terrain under a per-level budget.
+- id: progression.level_generation.parameterized_floor_profile
+  label: Parameterized floor profile
+  definition: Each level of a dungeon is described by a compact record of generator parameters (layout type, densities,
+    chances, music, visibility) that designers tune per floor.
+- id: progression.level_generation.layout_archetypes
+  label: Layout archetypes
+  definition: The generator supports several named whole-level shapes (standard grid, ring, cross, line, single room)
+    selected per level.
+- id: progression.level_generation.rule_filtered_spawn_placement
+  label: Rule-filtered spawn placement
+  definition: Exits, items, traps, enemies and the player are placed on tiles that pass per-class filters (room tiles,
+    not junctions, not shops), drawn from a shuffled candidate list.
+- id: progression.level_generation.generate_validate_retry
+  label: Generate-validate-retry
+  definition: Generation retries a bounded number of times until validity checks pass (room counts, exit reachability)
+    and falls back to a trivially valid layout.
+- id: progression.level_generation.seeded_reproducible_generation
+  label: Seeded reproducible generation
+  definition: Levels are generated from a stored seed so the same level can be regenerated exactly, enabling sharing
+    or rescue by another player.
+- id: progression.level_generation.authored_room_injection
+  label: Authored room injection
+  definition: Hand-authored rooms or whole floors (boss arenas) are inserted into or replace procedural generation.
+- id: progression.structure.linear_floor_descent
+  label: Linear floor descent
+  definition: An expedition is an ordered stack of floors joined by one exit each; reaching the last floor completes
+    it.
+- id: progression.structure.boss_floor
+  label: Boss floor
+  definition: A dedicated final floor or arena where a scripted boss encounter concludes a dungeon.
+  seed_source: 'gdp: Boss Monsters'
+- id: progression.collection.defeat_to_recruit
+  label: Defeat to recruit
+  definition: Defeated enemies may join the player's roster by a chance roll modified by items and level, subject
+    to licence and capacity rules.
+- id: progression.collection.purchasable_roster_capacity
+  label: Purchasable roster capacity
+  definition: Roster space for groups of recruitable characters is bought or earned; a group's space must be owned
+    before its members can be recruited.
+- id: progression.character.exp_levels
+  label: Experience levels
+  definition: Defeating enemies grants experience points that raise a character's level and stats along per-character
+    growth tables.
+- id: progression.character.conditional_evolution
+  label: Conditional evolution
+  definition: A character transforms into a stronger form when level, item or other conditions are met, possibly
+    gated by story progress.
+- id: progression.missions.procedural_job_board
+  label: Procedural job board
+  definition: A hub board offers generated missions (rescue, escort, fetch, deliver) bound to a level and floor, with
+    difficulty-scaled rewards.
+  seed_source: 'gdp: Quests'
+- id: progression.meta.reputation_rank
+  label: Reputation rank
+  definition: Points from completed missions accumulate into named ranks that signal progress and may gate mission
+    types.
+- id: progression.sharing.password_encoded_content
+  label: Password-encoded content
+  definition: Game content (missions, rescue requests) serialised to a checksummed text password that players exchange
+    outside the game.
+  seed_source: 'gdp: Password Save Files'
+- id: progression.sharing.asynchronous_player_rescue
+  label: Asynchronous player rescue
+  definition: A defeated player exports a rescue request; another player replays the same seeded level and returns
+    a token that revives the first player's party.
+- id: setting.theme.creature_world_fantasy
+  label: Creature-world fantasy
+  definition: A world populated entirely by talking creature species living in towns, with no human society on screen.
+- id: setting.framing.transformed_human_protagonist
+  label: Transformed human protagonist
+  definition: The protagonist is a human who has become one of the world's creatures and seeks the reason.
+- id: ui_hud.feedback.scrolling_combat_log
+  label: Scrolling combat log
+  definition: Every action and result is narrated as text lines in a popup log with a reviewable history.
+- id: ui_hud.input.chorded_turn_commands
+  label: Chorded turn commands
+  definition: A small button set maps many turn actions through held-button chords (attack, rest, dash, diagonal lock,
+    turn in place, throw).
+- id: ui_hud.menu.in_turn_command_menu
+  label: In-turn command menu
+  definition: A menu opened during a turn exposes moves, items, team orders and options; choosing an action consumes
+    the turn.
+open_questions:
+- No in-dungeon capture exists (the default script only reached the personality quiz); darkness window shapes, HUD
+  layout, walk timing and dungeon music should be confirmed with a scripted dungeon capture.
+- GenerateSecondaryTerrainFormations (rivers/lakes) is still inline asm in the matching build; lake/river parameters
+  were not extracted.
+- The minimum-room-tile check is 30 in code but 20 in the function's header comment; code value used.
+- 'Wild respawn cap: TrySpawnWildMonster applies gMaxWildMonsInMonsterHouse (10) when monsterHouseRoom == 0xFF (no
+  monster house) and gMaxWildMonsInRoom (4) otherwise; the config names look swapped, behaviour recorded as coded.'
+- enemyDensity is stored unsigned, so the 20 floor records holding 255 were meant as negative "exact" counts; actual
+  spawn counts for those floors (e.g. Meteor Cave) were not traced.
+- The in-story team limit (3 vs 4) depends on a requireHm/post-game flag in BufferDungeonRequirementsText; not confirmed.
+- Item spawn category/item tables (data/dungeon/dungeon_item_data.json, 178 tables) and trap tables (148) were summarised,
+  not tabulated per floor.
+- Per-species regen speed, movement speed, crossable terrain and exp curves live in data/monster/monster_data.json
+  and were not tabulated.
+- Per-move AI weights and ranges (move data) were not tabulated.
+- Exact Kecleon shop billing state machine and hostile-Kecleon stats were not traced.
+- The Keep-your-distance turn-around code appears unreachable for partners and Get-away flees only wild Pokemon (source
+  reading by a delegated agent); not verified at runtime.
+- Whether Emerald's type chart and stat-stage tables are identical to this game's was not checked; link the mechanics.pokemon.*
+  concepts once pokemon-emerald-version.yaml exists.
+- Ground-mode (town) walking speed and the world map dungeon selection UI were not traced.
+- Story content (scripts) was not read beyond CheckQuest stage thresholds; setting summary is llm_knowledge.

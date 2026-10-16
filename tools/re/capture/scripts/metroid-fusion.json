@@ -1,0 +1,4 @@
+{"comment":"Gameplay: title START -> file A -> Start; A through the long unskippable story intro and the Navigation briefing (~5 min); Samus is controllable in the docking bay from ~18000, runs left into the station with jumps/shots.",
+ "phases":[{"name":"gameplay","frames":21000,"play_starts_frame":18100,
+ "events":[{"frame":18100,"keys":["LEFT"],"hold":240},{"frame":18160,"keys":["A"],"hold":20},{"frame":18260,"keys":["B"],"hold":6}],
+ "repeat":[{"from_frame":180,"until_frame":700,"template":"menu_mash"},{"from_frame":700,"until_frame":18000,"template":"a_mash"},{"from_frame":18400,"template":"move_side"}]}]}

@@ -1,0 +1,456 @@
+{
+  "schema_version": 1,
+  "recorded_utc": "2026-10-16T05:32:29.747798+00:00",
+  "machine": "macOS-27.0.1-arm64-arm-64bit",
+  "scope": "bounded development qualification; no full ROM completion, broad model-quality or latency benchmark",
+  "decisions": {
+    "d1-text-1": {
+      "run_id": "20261016-d1-decisions-text-pilot-1",
+      "status": "success",
+      "provider": "d1",
+      "model": "ramblerun/Decision-AI",
+      "client": {
+        "source_commit": "d431b8183f1001722d7bc9a326da28088930c344",
+        "client_version": "1",
+        "client_sha256": "76385f64e2c5da5230b7af2d324d61446debda78caf7cb12a3ac232e24108688",
+        "python": "3.9.6",
+        "platform": "macOS-27.0.1-arm64-arm-64bit"
+      },
+      "answers": [
+        {
+          "name": "runtime_observed",
+          "type": "predicate",
+          "probability": 0.017986209962091555
+        },
+        {
+          "name": "evidence_kind",
+          "type": "choice",
+          "confidence": 0.9542131420917853,
+          "choice": "source",
+          "probabilities": [
+            {
+              "value": "source",
+              "probability": 0.9542131420917853
+            },
+            {
+              "value": "runtime",
+              "probability": 0.008787999220987353
+            },
+            {
+              "value": "uncertain",
+              "probability": 0.03699885868722737
+            }
+          ]
+        },
+        {
+          "name": "execution_evidence",
+          "type": "score",
+          "confidence": 0.9771960908680084,
+          "score": 0.026555527602601412,
+          "probabilities": [
+            {
+              "value": 0,
+              "probability": 0.9771960908680084,
+              "label": "static_only"
+            },
+            {
+              "value": 1,
+              "probability": 0.019052290661381647,
+              "label": "visual"
+            },
+            {
+              "value": 2,
+              "probability": 0.003751618470609882,
+              "label": "traced"
+            }
+          ]
+        }
+      ],
+      "timing": {
+        "total_wall_s": 0.089128,
+        "request_wall_s": 0.088767,
+        "queue_s": null
+      },
+      "usage": {
+        "input_tokens": 160,
+        "output_tokens": 0
+      },
+      "request_sha256": "25bad1704944bfca57238c85a8f5fec39746657f677ae82a365a8cf6c6e3a3ee"
+    },
+    "d1-gameplay-1": {
+      "run_id": "20261016-d1-decisions-gameplay-pilot-1",
+      "status": "success",
+      "provider": "d1",
+      "model": "ramblerun/Decision-AI",
+      "client": {
+        "source_commit": "d431b8183f1001722d7bc9a326da28088930c344",
+        "client_version": "1",
+        "client_sha256": "76385f64e2c5da5230b7af2d324d61446debda78caf7cb12a3ac232e24108688",
+        "python": "3.9.6",
+        "platform": "macOS-27.0.1-arm64-arm-64bit"
+      },
+      "answers": [
+        {
+          "name": "gameplay",
+          "type": "predicate",
+          "probability": 0.9241418199787566
+        },
+        {
+          "name": "segment",
+          "type": "choice",
+          "confidence": 0.7550149420238859,
+          "choice": "gameplay",
+          "probabilities": [
+            {
+              "value": "gameplay",
+              "probability": 0.7550149420238859
+            },
+            {
+              "value": "battle_or_tactics",
+              "probability": 0.011464296340061207
+            },
+            {
+              "value": "menu_or_title",
+              "probability": 0.021418125292124373
+            },
+            {
+              "value": "story_or_dialogue",
+              "probability": 0.040014325992788195
+            },
+            {
+              "value": "logo_or_transition",
+              "probability": 0.013828581033708065
+            },
+            {
+              "value": "uncertain",
+              "probability": 0.1582597293174324
+            }
+          ]
+        },
+        {
+          "name": "visible_mechanics_evidence",
+          "type": "score",
+          "confidence": 0.5740969929676946,
+          "score": 1.496401413819124,
+          "probabilities": [
+            {
+              "value": 0,
+              "probability": 0.0776955791485706,
+              "label": "none"
+            },
+            {
+              "value": 1,
+              "probability": 0.3482074278837349,
+              "label": "limited"
+            },
+            {
+              "value": 2,
+              "probability": 0.5740969929676946,
+              "label": "rich"
+            }
+          ]
+        }
+      ],
+      "timing": {
+        "total_wall_s": 0.050036,
+        "request_wall_s": 0.04979,
+        "queue_s": null
+      },
+      "usage": {
+        "input_tokens": 326,
+        "output_tokens": 0
+      },
+      "request_sha256": "79632bd48d652b86165f88e109d42b1d79ab119f8888717a4f366e51eccfee28"
+    },
+    "openai-text-funded-1": {
+      "run_id": "20261016-openai-decisions-text-funded-pilot-1",
+      "status": "success",
+      "provider": "openai",
+      "model": "gpt-6-luna",
+      "client": {
+        "source_commit": "d431b8183f1001722d7bc9a326da28088930c344",
+        "client_version": "1",
+        "client_sha256": "6945709ea3093af112d2c98886071838720565a0e41835e261cfcb8783b2c020",
+        "python": "3.9.6",
+        "platform": "macOS-27.0.1-arm64-arm-64bit"
+      },
+      "answers": [
+        {
+          "name": "runtime_observed",
+          "type": "predicate",
+          "probability": 0.93
+        },
+        {
+          "name": "evidence_kind",
+          "type": "choice",
+          "confidence": 1.0,
+          "choice": "source",
+          "probabilities": [
+            {
+              "value": "source",
+              "probability": 1.0
+            },
+            {
+              "value": "runtime",
+              "probability": 0.0
+            },
+            {
+              "value": "uncertain",
+              "probability": 0.0
+            }
+          ]
+        },
+        {
+          "name": "execution_evidence",
+          "type": "score",
+          "confidence": 0.99,
+          "score": 0.01,
+          "probabilities": [
+            {
+              "value": 0,
+              "probability": 0.99,
+              "label": "static_only"
+            },
+            {
+              "value": 1,
+              "probability": 0.01,
+              "label": "visual"
+            },
+            {
+              "value": 2,
+              "probability": 0.0,
+              "label": "traced"
+            }
+          ]
+        }
+      ],
+      "timing": {
+        "total_wall_s": 0.564941,
+        "request_wall_s": 0.564591,
+        "queue_s": null
+      },
+      "usage": {
+        "input_tokens": 452,
+        "output_tokens": 0,
+        "total_tokens": 452,
+        "input_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "request_sha256": "25bad1704944bfca57238c85a8f5fec39746657f677ae82a365a8cf6c6e3a3ee"
+    },
+    "openai-gameplay-funded-1": {
+      "run_id": "20261016-openai-decisions-gameplay-funded-pilot-1",
+      "status": "success",
+      "provider": "openai",
+      "model": "gpt-6-luna",
+      "client": {
+        "source_commit": "d431b8183f1001722d7bc9a326da28088930c344",
+        "client_version": "1",
+        "client_sha256": "6945709ea3093af112d2c98886071838720565a0e41835e261cfcb8783b2c020",
+        "python": "3.9.6",
+        "platform": "macOS-27.0.1-arm64-arm-64bit"
+      },
+      "answers": [
+        {
+          "name": "gameplay",
+          "type": "predicate",
+          "probability": 0.94
+        },
+        {
+          "name": "segment",
+          "type": "choice",
+          "confidence": 0.94,
+          "choice": "gameplay",
+          "probabilities": [
+            {
+              "value": "gameplay",
+              "probability": 0.95
+            },
+            {
+              "value": "battle_or_tactics",
+              "probability": 0.04
+            },
+            {
+              "value": "menu_or_title",
+              "probability": 0.0
+            },
+            {
+              "value": "story_or_dialogue",
+              "probability": 0.0
+            },
+            {
+              "value": "logo_or_transition",
+              "probability": 0.0
+            },
+            {
+              "value": "uncertain",
+              "probability": 0.01
+            }
+          ]
+        },
+        {
+          "name": "visible_mechanics_evidence",
+          "type": "score",
+          "confidence": 0.6,
+          "score": 1.23,
+          "probabilities": [
+            {
+              "value": 0,
+              "probability": 0.02,
+              "label": "none"
+            },
+            {
+              "value": 1,
+              "probability": 0.73,
+              "label": "limited"
+            },
+            {
+              "value": 2,
+              "probability": 0.25,
+              "label": "rich"
+            }
+          ]
+        }
+      ],
+      "timing": {
+        "total_wall_s": 0.215942,
+        "request_wall_s": 0.215627,
+        "queue_s": null
+      },
+      "usage": {
+        "input_tokens": 599,
+        "output_tokens": 0,
+        "total_tokens": 599,
+        "input_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "request_sha256": "79632bd48d652b86165f88e109d42b1d79ab119f8888717a4f366e51eccfee28"
+    }
+  },
+  "decision_quality_control": {
+    "fixture": "text has source function/address but no execution observation",
+    "d1_runtime_observed_probability": 0.017986209962091555,
+    "openai_runtime_observed_probability": 0.93,
+    "finding": "OpenAI predicate contradicts supplied evidence and its own source-choice/static-score answers; transport success is not semantic qualification"
+  },
+  "generation_attempt": {
+    "attempt_id": "20261016T053022Z-fd85857a",
+    "status": "success",
+    "source": {
+      "source_commit": "d431b8183f1001722d7bc9a326da28088930c344",
+      "client_version": "1",
+      "client_sha256": "6945709ea3093af112d2c98886071838720565a0e41835e261cfcb8783b2c020",
+      "python": "3.9.6",
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "attempt_code_sha256": "61fa99da49cffc0ed10eab50455c9ddf8f9a964b2733226e5ff247a6f5c2d37d"
+    },
+    "generator": {
+      "provider": "local",
+      "model": "ramblerun/Multimodal-AI",
+      "requests": 1,
+      "retries": 0,
+      "max_tokens": 1800,
+      "timeout_s": 30.0,
+      "endpoint": "http://rrh-llm-1:4000/v1/chat/completions",
+      "enable_thinking": false,
+      "usage": {
+        "completion_tokens": 569,
+        "prompt_tokens": 799,
+        "total_tokens": 1368
+      },
+      "provider_request_id": null,
+      "prompt_sha256": "be398a15cb72898f28129232cfecf4dc2c32cea7d48ec7fceb1bd23f30c36cc4",
+      "response_content_sha256": "cc1803ff8993c1b71a62d4995dc36727c9e792b4ba229a23e64185a70a219498"
+    },
+    "attempts": 1,
+    "repairs": 0,
+    "playtest_policy": "frontier",
+    "playtest_limits": {
+      "max_steps": 80,
+      "max_frames": 4800,
+      "max_seconds": 10,
+      "max_decisions": 20,
+      "max_escalations": 0,
+      "max_action_frames": 120,
+      "model_timeout_s": 20,
+      "stationary_threshold": 3,
+      "confidence_threshold": 0.65,
+      "margin_threshold": 0.2
+    },
+    "timing": {
+      "total_wall_s": 4.578014,
+      "generation_s": 4.527665,
+      "validation_s": 0.003314,
+      "playthrough_s": 0.029373,
+      "queue_s": null,
+      "build_s": null
+    },
+    "candidate_sha256": "3612e64f54d54412548f84318992434803bdc5ed74bb2ca841ebec0ac3d79b2a",
+    "playthrough": {
+      "run_id": "ec0a2b2eae3f499988eac34c436e28ef",
+      "status": "success",
+      "reason": "objective_observed",
+      "steps": 9,
+      "frames": 9,
+      "barrier_candidates": [],
+      "objective_checks": {
+        "required_gate_id": "ability-gate",
+        "required_key_id": "field-key",
+        "key_collected_before_goal": true,
+        "gate_opened_before_goal": true,
+        "goal_observed": true,
+        "basis": "actual adapter observations, not model claims; first manifest door is required"
+      }
+    },
+    "limitations": [
+      "Reference grid game, not ROM reconstruction or GBA game generation",
+      "Mechanic templates adapt design analogies; source rules are not automatically compiled",
+      "Observed playthrough establishes this candidate's behavior only; source-game claims remain separately qualified"
+    ]
+  },
+  "native_rom_smoke": {
+    "schema_version": 1,
+    "runs": [
+      {
+        "game_id": "metroid-zero-mission",
+        "rom_sha256": "fc94f65380b65b870a30b9b04b39cca1dc63d6e46a4a373d3904adc0912ebc37",
+        "frames_advanced": 120,
+        "replay_same_image": true,
+        "rom_unchanged": true,
+        "state_key_weak_visual_only": true,
+        "wall_s": 0.154476
+      },
+      {
+        "game_id": "pokemon-emerald-version",
+        "rom_sha256": "a9dec84dfe7f62ab2220bafaef7479da0929d066ece16a6885f6226db19085af",
+        "frames_advanced": 120,
+        "replay_same_image": true,
+        "rom_unchanged": true,
+        "state_key_weak_visual_only": true,
+        "wall_s": 0.050911
+      }
+    ],
+    "native_sha256": "49eb9036eff4f1e66e2f031f95dd74b80c7ec7e43a7ffe612ff3a428a41840b8",
+    "scope": "native session real ROM load,input,observation,checkpoint replay smoke; no gameplay progress claim"
+  },
+  "unavailable": {
+    "queue_s": "not exposed",
+    "cost_usd": "billing not reported",
+    "model_revision": "unresolved aliases"
+  },
+  "notes": [
+    "All stages are nested within their total wall times.",
+    "Template and local LLM attempts generate data-only reference-grid games, not GBA ROMs.",
+    "Exact source component blocks remain in local attempt snapshots; canonical records are in ontology/games/."
+  ]
+}

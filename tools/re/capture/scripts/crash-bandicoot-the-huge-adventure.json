@@ -1,0 +1,17 @@
+{
+  "comment": "Override: two START presses to leave the title, then A every 60 frames. This advances text and menus such as save slots and naming screens that the default START/A alternation keeps cancelling or reopening.",
+  "phases": [
+    {
+      "name": "frontend",
+      "events": [
+        {"frame": 180, "keys": ["START"], "hold": 6},
+        {"frame": 300, "keys": ["START"], "hold": 6}
+      ],
+      "repeat": {
+        "from_frame": 420,
+        "period_frames": 60,
+        "events": [{"offset": 0, "keys": ["A"], "hold": 6}]
+      }
+    }
+  ]
+}

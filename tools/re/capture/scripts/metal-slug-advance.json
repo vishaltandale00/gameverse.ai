@@ -1,0 +1,3 @@
+{"comment":"Gameplay: title START -> file 1 (Normal) -> Walter -> training/beach intro -> Base Camp -> Mission -> Yes; Mission 1 (jungle) is played from ~2100 with run/jump/shoot; after a mission failure the A mash picks Continue.",
+ "phases":[{"name":"gameplay","frames":5400,"play_starts_frame":2100,
+ "repeat":[{"from_frame":180,"until_frame":2000,"template":"menu_mash"},{"from_frame":2000,"until_frame":2200,"template":"a_mash"},{"from_frame":2200,"template":"move_side"}]}]}

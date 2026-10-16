@@ -1,0 +1,398 @@
+<title>GBA Game Space</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: companion to "The Composable Game": a working instrument panel. Map + inspector up top,
+   then axes, mashup seeds and the ontology, each a full-width band of the same 1200px column. */
+:root{
+  --bg:#eef0f2; --card:#ffffff; --fg:#1b1f24; --muted:#5b6470; --line:#cfd5db; --grid:#e3e7eb;
+  --accent:#0f766e; --accent-soft:rgba(15,118,110,.14);
+  --jump:#c2620a; --jump-soft:rgba(194,98,10,.16);
+  --warn:#b42318; --warn-soft:rgba(180,35,24,.10);
+  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a; --c4:#eda100; --c5:#e87ba4; --c6:#008300; --c7:#6250d6; --c8:#e34948;
+  --display:'Instrument Serif',Georgia,'Times New Roman',serif;
+  --body:'IBM Plex Sans','Helvetica Neue',Arial,sans-serif;
+  --mono:'IBM Plex Mono','SFMono-Regular',Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1316; --card:#171c21; --fg:#e6e9ec; --muted:#9aa4ae; --line:#2a3238; --grid:#1c2329;
+  --accent:#2dd4bf; --accent-soft:rgba(45,212,191,.16); --jump:#fbbf24; --jump-soft:rgba(251,191,36,.16);
+  --warn:#f87171; --warn-soft:rgba(248,113,113,.14);
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#008300; --c7:#9085e9; --c8:#e66767;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1316; --card:#171c21; --fg:#e6e9ec; --muted:#9aa4ae; --line:#2a3238; --grid:#1c2329;
+  --accent:#2dd4bf; --accent-soft:rgba(45,212,191,.16); --jump:#fbbf24; --jump-soft:rgba(251,191,36,.16);
+  --warn:#f87171; --warn-soft:rgba(248,113,113,.14);
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#008300; --c7:#9085e9; --c8:#e66767;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 80px}
+.wrap{max-width:1200px;margin-inline:auto}
+h1,h2,h3{font-family:var(--display);font-weight:400;line-height:1.05;margin:0;text-wrap:balance}
+h1{font-size:clamp(40px,6vw,64px)}
+h2{font-size:clamp(28px,3.4vw,36px)}
+h3{font-size:22px}
+p{margin:0}
+.lede{max-width:68ch;color:var(--muted)}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--mono)}
+header{padding-block:48px 24px;display:grid;gap:14px}
+.stats{display:flex;flex-wrap:wrap;gap:8px 28px;font-family:var(--mono);font-size:13px;color:var(--muted)}
+.stats b{color:var(--fg);font-weight:500;font-variant-numeric:tabular-nums}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+nav a{font-family:var(--mono);font-size:12.5px;color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 12px;background:var(--card)}
+nav a:hover,nav a:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+section{margin-top:56px;display:grid;gap:16px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:6px;min-width:0}
+.panel-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.panel-body{padding:16px;min-width:0}
+.note{font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.5}
+label.ctl{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+select,button{font:inherit;font-family:var(--mono);font-size:12.5px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:4px 8px}
+button{cursor:pointer}
+select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.chip{display:inline-block;font-family:var(--mono);font-size:11.5px;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.warn{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
+.chip.ok{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+
+/* map */
+.mapgrid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px}
+@media (max-width:900px){.mapgrid{grid-template-columns:1fr}}
+#map{width:100%;height:auto;display:block}
+#map .pt{cursor:pointer;transition:transform .7s cubic-bezier(.2,.8,.2,1)}
+#map .pt circle{stroke:var(--card);stroke-width:2}
+#map .pt text{font-family:var(--body);font-size:11px;fill:var(--muted);paint-order:stroke;stroke:var(--card);stroke-width:3px;stroke-linejoin:round}
+#map .pt.sel circle{stroke:var(--fg);stroke-width:2.5}
+#map .pt.sel text,#map .pt:hover text{fill:var(--fg);font-weight:600}
+#map .pt.dim{opacity:.25}
+#map .pt.low circle{stroke-dasharray:3 2;stroke:var(--warn)}
+#map .link{stroke:var(--accent);stroke-width:1.5;opacity:.55}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px}
+.legend span{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.agree{font-family:var(--mono);font-size:12.5px}
+.agree b{font-weight:500}
+.inspector{display:grid;gap:14px;align-content:start}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:13px}
+.kv dt{font-family:var(--mono);font-size:11.5px;color:var(--muted);padding-top:2px}
+.kv dd{margin:0;min-width:0}
+.nbrs{display:grid;gap:4px;font-size:13px}
+.nbrs div{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px}
+.nbrs .v{font-family:var(--mono);font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-family:var(--body);font-size:13px}
+
+/* matrix */
+.mtx-wrap{overflow-x:auto}
+#mtx text{font-family:var(--mono);font-size:10.5px;fill:var(--muted)}
+#mtx rect.cell{stroke:var(--card);stroke-width:2}
+.axisbox{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.axisbox .panel{padding:12px 14px;display:grid;gap:6px}
+.axisbox .n{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+
+/* seeds */
+.seeds{display:grid;gap:10px}
+.seed{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:16px;padding:14px 16px;align-items:center}
+@media (max-width:760px){.seed{grid-template-columns:1fr}}
+.seed .pair{font-family:var(--display);font-size:22px;line-height:1.15}
+.seed .pair em{font-style:italic;color:var(--muted);font-size:18px}
+.zbars{display:grid;gap:3px}
+.zrow{display:grid;grid-template-columns:150px minmax(0,1fr) 44px;gap:8px;align-items:center;font-size:12px}
+.zrow .nm{font-family:var(--mono);font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.zrow .val{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.ztrack{position:relative;height:10px;background:var(--grid);border-radius:2px}
+.ztrack::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted);opacity:.6}
+.zfill{position:absolute;top:0;bottom:0;border-radius:2px}
+
+/* ontology */
+.ogrid-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:center}
+tr.clickable{cursor:pointer}
+tr.clickable:hover td{background:var(--accent-soft)}
+.comps{display:grid;gap:10px}
+.comp{padding:12px 14px;display:grid;gap:6px}
+.comp .top{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}
+.comp .lab{font-weight:600}
+.comp .sum{color:var(--fg);font-size:13.5px;max-width:90ch}
+.params{display:flex;flex-wrap:wrap;gap:6px}
+.params span{font-family:var(--mono);font-size:11.5px;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:1px 6px}
+.shared{display:grid;gap:4px;font-size:13px;max-height:420px;overflow:auto}
+.shared div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;border-bottom:1px solid var(--grid);padding:3px 0}
+.shared .c{font-family:var(--mono);font-size:11.5px;overflow-wrap:anywhere}
+.cols2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px}
+@media (max-width:900px){.cols2{grid-template-columns:1fr}}
+.tip{position:fixed;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:4px;padding:8px 10px;font-size:12.5px;box-shadow:0 4px 18px rgba(0,0,0,.12);max-width:280px;z-index:20}
+.caveats{display:grid;gap:8px;font-size:13.5px;max-width:90ch}
+.caveats li{margin-bottom:4px}
+@media (prefers-reduced-motion:reduce){#map .pt{transition:none}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Gameverse · ontology step 1 · GBA reference corpus</div>
+  <h1>GBA Game Space</h1>
+  <p class="lede">Each game is a point in many views at once: how it looks, sounds and renders, what its front end does, and how a model describes its mechanics, progression and setting. Views that keep agreeing collapse into one axis. Views that disagree are independent axes, and pairs that are close on some axes and far on others are mashup seeds.</p>
+  <div class="stats" id="stats"></div>
+  <nav><a href="#map-sec">Map</a><a href="#axes">Axes</a><a href="#seeds">Mashup seeds</a><a href="#ontology">Ontology</a><a href="#method">Method and caveats</a></nav>
+</header>
+
+<section id="map-sec">
+  <div class="mapgrid">
+    <div class="panel">
+      <div class="panel-head">
+        <label class="ctl" for="posView">Position by <select id="posView"></select></label>
+        <label class="ctl" for="colView">Colour by clusters of <select id="colView"></select></label>
+        <button id="lblBtn" class="on" type="button">Labels</button>
+        <span class="agree" id="agree"></span>
+      </div>
+      <div class="panel-body">
+        <svg id="map" viewBox="0 0 800 540" role="img" aria-label="Games laid out by similarity in the selected view"></svg>
+        <div class="legend" id="legend"></div>
+        <p class="note" id="mapnote" style="margin-top:8px"></p>
+      </div>
+    </div>
+    <aside class="panel inspector" id="inspector" aria-live="polite"></aside>
+  </div>
+</section>
+
+<section id="axes">
+  <div class="eyebrow">How many axes does game space have?</div>
+  <h2>Views that agree become one axis</h2>
+  <p class="lede" id="axeslede"></p>
+  <div class="panel"><div class="panel-body mtx-wrap"><svg id="mtx" role="img" aria-label="Rank correlation between every pair of views"></svg></div></div>
+  <div class="axisbox" id="axisbox"></div>
+</section>
+
+<section id="seeds">
+  <div class="eyebrow">Close on some axes, far on others</div>
+  <h2>Mashup seeds</h2>
+  <p class="lede">Ranked by complementarity: the pair must be close on at least two axis groups and far on at least two. Bars show each axis group's standardized distance. Teal is closer than a typical pair, amber is farther. Near-duplicates (same engine) and unrelated games both score low.</p>
+  <div class="seeds" id="seedlist"></div>
+</section>
+
+<section id="ontology">
+  <div class="eyebrow">Grounded in decompiled source</div>
+  <h2>Ontology decompositions</h2>
+  <p class="lede" id="ontolede"></p>
+  <div class="panel"><div class="panel-body ogrid-wrap"><table id="ogrid"></table></div></div>
+  <div class="cols2">
+    <div class="panel">
+      <div class="panel-head"><label class="ctl" for="ogame">Game <select id="ogame"></select></label><label class="ctl" for="ofacet">Facet <select id="ofacet"></select></label></div>
+      <div class="panel-body comps" id="comps"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><span class="eyebrow">Concepts shared across games</span></div>
+      <div class="panel-body shared" id="shared"></div>
+    </div>
+  </div>
+</section>
+
+<section id="method">
+  <div class="eyebrow">Read before trusting a cluster</div>
+  <h2>Method and caveats</h2>
+  <div class="panel"><div class="panel-body"><ul class="caveats" id="caveats"></ul></div></div>
+</section>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(async function(){
+const D = await (await fetch('data.json')).json();
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const G = Object.fromEntries(D.games.map(g => [g.id, g]));
+const ids = D.games.map(g => g.id);
+const views = Object.keys(D.views);
+const VI = Object.fromEntries(D.cross_view.views.map((v, i) => [v, i]));
+const facetOf = v => v.startsWith('text:') ? v.slice(5) : v;
+const store = {get(k, d){try{return localStorage.getItem(k) ?? d}catch(e){return d}}, set(k, v){try{localStorage.setItem(k, v)}catch(e){}}};
+
+// header stats
+const decomposed = Object.keys(D.ontology).length;
+$('#stats').innerHTML = [
+  ['games', ids.length], ['views', views.length],
+  ['effective axes', D.cross_view.effective_axes_participation_ratio],
+  ['axis groups', D.axis_groups.length], ['decomposed', decomposed],
+  ['concepts', D.concept_total]].map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join('');
+
+// ---------- map ----------
+const sel = {pos: store.get('pos', 'visual_style'), col: store.get('col', 'text:mechanics'), game: store.get('game', 'metroid-zero-mission'), labels: true};
+if (!D.views[sel.pos]) sel.pos = views[0];
+if (!D.views[sel.col]) sel.col = views[0];
+if (!G[sel.game]) sel.game = ids[0];
+for (const s of ['#posView', '#colView']) $(s).innerHTML = views.map(v => `<option value="${v}">${esc(D.views[v].label)}</option>`).join('');
+$('#posView').value = sel.pos; $('#colView').value = sel.col;
+const svg = $('#map'), W = 800, H = 540, PAD = 48;
+const ns = 'http://www.w3.org/2000/svg';
+const linkG = document.createElementNS(ns, 'g'); svg.appendChild(linkG);
+const pts = {};
+for (const id of ids) {
+  const g = document.createElementNS(ns, 'g'); g.setAttribute('class', 'pt' + (G[id].low_coverage ? ' low' : ''));
+  g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button'); g.setAttribute('aria-label', G[id].name);
+  g.innerHTML = `<circle r="7"></circle><text x="10" y="4">${esc(G[id].name)}</text>`;
+  g.addEventListener('click', () => select(id));
+  g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(id); } });
+  g.addEventListener('mouseenter', e => showTip(e, id)); g.addEventListener('mouseleave', hideTip);
+  svg.appendChild(g); pts[id] = g;
+}
+const cvar = k => `var(--c${((k - 1) % 8) + 1})`;
+function layout(){
+  const xy = D.views[sel.pos].xy, xs = ids.map(i => xy[i][0]), ys = ids.map(i => xy[i][1]);
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const s = Math.min((W - 2 * PAD - 120) / ((x1 - x0) || 1), (H - 2 * PAD) / ((y1 - y0) || 1));
+  const ox = (W - 120 - s * (x1 - x0)) / 2, oy = (H - s * (y1 - y0)) / 2;
+  const P = {};
+  for (const id of ids) {
+    P[id] = [ox + s * (xy[id][0] - x0), oy + s * (y1 - xy[id][1])];
+    pts[id].style.transform = `translate(${P[id][0]}px,${P[id][1]}px)`;
+  }
+  const cl = D.views[sel.col].clusters;
+  for (const id of ids) pts[id].querySelector('circle').style.fill = cvar(cl[id]);
+  // neighbour links for the selected game in the positioning view
+  linkG.innerHTML = (D.views[sel.pos].neighbors[sel.game] || []).map(n =>
+    `<line class="link" x1="${P[sel.game][0]}" y1="${P[sel.game][1]}" x2="${P[n][0]}" y2="${P[n][1]}"></line>`).join('');
+  for (const id of ids) pts[id].classList.toggle('sel', id === sel.game);
+  svg.classList.toggle('nolabels', !sel.labels);
+  for (const id of ids) pts[id].querySelector('text').style.display = sel.labels || id === sel.game ? '' : 'none';
+  // legend lists each cluster's members so colour never carries identity alone
+  const groups = {};
+  for (const id of ids) (groups[cl[id]] ||= []).push(G[id].name);
+  $('#legend').innerHTML = Object.entries(groups).sort((a, b) => a[0] - b[0]).map(([k, m]) =>
+    `<span data-k="${k}" title="${esc(m.join(', '))}"><i style="background:${cvar(+k)}"></i>${m.length} · ${esc(m.slice(0, 3).join(', '))}${m.length > 3 ? '…' : ''}</span>`).join('');
+  $('#legend').querySelectorAll('span').forEach(s => {
+    s.addEventListener('mouseenter', () => { for (const id of ids) pts[id].classList.toggle('dim', cl[id] != s.dataset.k); });
+    s.addEventListener('mouseleave', () => { for (const id of ids) pts[id].classList.remove('dim'); });
+  });
+  const ari = D.cross_view.ari[VI[sel.pos]][VI[sel.col]], rho = D.cross_view.spearman[VI[sel.pos]][VI[sel.col]];
+  $('#agree').innerHTML = sel.pos === sel.col ? `<b>${D.views[sel.pos].k}</b> clusters · silhouette <b>${D.views[sel.pos].silhouette}</b>`
+    : `cluster agreement ARI <b>${ari.toFixed(2)}</b> · distance rank-corr ρ <b>${rho.toFixed(2)}</b>`;
+  const low = Object.keys(D.low_coverage[sel.pos] || {});
+  $('#mapnote').textContent = (D.views[sel.pos].provenance || '') + (low.length ? ` · dashed red outline: under 8 gameplay frames (${low.map(i => G[i].name).join(', ')}); placed but excluded from axis statistics.` : '');
+  store.set('pos', sel.pos); store.set('col', sel.col);
+}
+function select(id){ sel.game = id; store.set('game', id); layout(); inspect(); }
+$('#posView').onchange = e => { sel.pos = e.target.value; layout(); inspect(); };
+$('#colView').onchange = e => { sel.col = e.target.value; layout(); inspect(); };
+$('#lblBtn').onclick = e => { sel.labels = !sel.labels; e.target.classList.toggle('on', sel.labels); layout(); };
+
+const tip = $('#tip');
+function showTip(e, id){
+  const g = G[id], v = D.views[sel.pos];
+  tip.innerHTML = `<b>${esc(g.title)}</b><div class="note">${g.game_code} · cluster ${D.views[sel.col].clusters[id]} in ${esc(facetOf(sel.col))}</div><div style="margin-top:4px">Nearest: ${v.neighbors[id].map(n => esc(G[n].name)).join(', ')}</div>`;
+  tip.hidden = false; const r = e.target.getBoundingClientRect();
+  tip.style.left = Math.min(innerWidth - 300, r.right + 8) + 'px'; tip.style.top = (r.top - 10) + 'px';
+}
+function hideTip(){ tip.hidden = true; }
+
+function inspect(){
+  const g = G[sel.game], o = D.ontology[sel.game];
+  const modes = Object.entries(g.video_modes).map(([m, n]) => `mode ${m}`).join(', ');
+  const nb = views.map(v => `<div><span class="v" title="${esc(D.views[v].label)}">${esc(facetOf(v))}</span><span>${D.views[v].neighbors[sel.game].map(n => esc(G[n].name)).join(' · ')}</span></div>`).join('');
+  const screens = Object.entries(g.screens).slice(0, 5).map(([k, n]) => `${k.replace(/_/g, ' ')} ${n}`).join(' · ');
+  $('#inspector').innerHTML = `
+    <div class="panel-head"><h3>${esc(g.title)}</h3></div>
+    <div class="panel-body" style="display:grid;gap:14px">
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <span class="chip">${g.game_code}</span>
+        ${o ? `<span class="chip ok">decomposed · ${o.components.length} components</span>` : '<span class="chip">not decomposed yet</span>'}
+        ${g.low_coverage ? `<span class="chip warn">${g.gameplay_frames} gameplay frames</span>` : `<span class="chip">${g.gameplay_frames} gameplay frames</span>`}
+      </div>
+      <dl class="kv">
+        <dt>video</dt><dd>${modes} · up to ${g.max_sprites} sprites</dd>
+        <dt>raster</dt><dd>${g.hblank_dma.length ? esc(g.hblank_dma.join('; ')) : 'no HBlank DMA'}</dd>
+        <dt>effects</dt><dd>${esc(g.flags.filter(f => !['directsound', 'psg', 'any_raster'].includes(f)).join(', ').replace(/_/g, ' ') || 'none')}</dd>
+        <dt>sound</dt><dd>${g.flags.includes('directsound') ? 'DirectSound' : ''}${g.flags.includes('psg') ? ' + PSG' : ''} · ${g.mix_rate_hz} Hz</dd>
+        <dt>screens</dt><dd>${esc(screens)}</dd>
+      </dl>
+      ${o ? `<button class="linkbtn" type="button" id="toOnto">Browse its ${o.components.length} components</button>` : ''}
+      <div><div class="eyebrow" style="margin-bottom:6px">Nearest neighbours by view</div><div class="nbrs">${nb}</div></div>
+    </div>`;
+  const b = $('#toOnto'); if (b) b.onclick = () => { $('#ogame').value = sel.game; renderComps(); $('#ontology').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'}); };
+}
+
+// ---------- axes matrix ----------
+(function(){
+  const groups = D.axis_groups, order = groups.flat(), n = order.length, cell = 26, left = 190, top = 150;
+  const C = D.cross_view.spearman;
+  const m = $('#mtx'); m.setAttribute('viewBox', `0 0 ${left + n * cell + 10} ${top + n * cell + 10}`);
+  m.style.minWidth = '640px'; m.style.width = '100%';
+  let h = '';
+  const color = r => r >= 0 ? `rgba(15,118,110,${Math.min(1, r) * .95 + .05})` : `rgba(194,98,10,${Math.min(1, -r) * .95 + .05})`;
+  order.forEach((a, i) => {
+    h += `<text x="${left - 8}" y="${top + i * cell + cell / 2 + 4}" text-anchor="end">${esc(facetOf(a))}</text>`;
+    h += `<text transform="translate(${left + i * cell + cell / 2 + 4},${top - 8}) rotate(-55)">${esc(facetOf(a))}</text>`;
+    order.forEach((b, j) => {
+      const r = C[VI[a]][VI[b]];
+      h += `<rect class="cell" x="${left + j * cell}" y="${top + i * cell}" width="${cell}" height="${cell}" fill="${i === j ? 'var(--grid)' : color(r)}"><title>${a} × ${b}: ρ = ${r.toFixed(2)}</title></rect>`;
+    });
+  });
+  let k = 0;  // outline each axis group block
+  for (const grp of groups) { h += `<rect x="${left + k * cell}" y="${top + k * cell}" width="${grp.length * cell}" height="${grp.length * cell}" fill="none" stroke="var(--fg)" stroke-width="1.5"></rect>`; k += grp.length; }
+  m.innerHTML = h;
+  $('#axeslede').textContent = `Every cell is the rank correlation between two views' game-to-game distances (teal = they agree, amber = they disagree). Views whose average correlation exceeds 0.4 merge into one axis group (outlined). ${D.axis_groups.length} groups emerge from ${views.length} views; the eigenvalue participation ratio puts the effective number of independent axes at ${D.cross_view.effective_axes_participation_ratio}. The paper started with four.`;
+  $('#axisbox').innerHTML = groups.map((g, i) => `<div class="panel"><span class="n">axis ${i + 1}</span><span>${g.map(v => esc(D.views[v].label)).join('<br>')}</span></div>`).join('');
+})();
+
+// ---------- seeds ----------
+(function(){
+  const gl = D.axis_groups.map(g => g.length > 1 ? `${facetOf(g[0])} +${g.length - 1}` : facetOf(g[0]));
+  $('#seedlist').innerHTML = D.seeds.slice(0, 16).map(s => {
+    const rows = s.z_by_axis.map((z, k) => {
+      if (z === null) return `<div class="zrow"><span class="nm">${esc(gl[k])}</span><span class="ztrack"></span><span class="val">n/a</span></div>`;
+      const w = Math.min(50, Math.abs(z) * 20);
+      const st = z < 0 ? `right:50%;width:${w}%;background:var(--accent)` : `left:50%;width:${w}%;background:var(--jump)`;
+      return `<div class="zrow"><span class="nm" title="${esc(D.axis_groups[k].join(', '))}">${esc(gl[k])}</span><span class="ztrack"><span class="zfill" style="${st}"></span></span><span class="val">${z > 0 ? '+' : ''}${z.toFixed(1)}</span></div>`;
+    }).join('');
+    return `<div class="panel seed"><div><div class="pair">${esc(G[s.a].name)} <em>×</em> ${esc(G[s.b].name)}</div><div class="note" style="margin-top:6px">complementarity ${s.score.toFixed(2)}</div></div><div class="zbars">${rows}</div></div>`;
+  }).join('');
+})();
+
+// ---------- ontology ----------
+const facets = ['mechanics', 'movement_physics', 'ai', 'camera', 'projection', 'rendering', 'ui_hud', 'progression', 'economy', 'narrative_delivery', 'setting', 'frontend', 'audio'];
+(function(){
+  const og = Object.keys(D.ontology);
+  const max = Math.max(...og.flatMap(g => Object.values(D.ontology[g].facet_counts)));
+  let h = `<thead><tr><th>Game</th>${facets.map(f => `<th style="text-align:center">${f.replace(/_/g, ' ')}</th>`).join('')}<th>total</th></tr></thead><tbody>`;
+  for (const g of og) {
+    const fc = D.ontology[g].facet_counts;
+    h += `<tr class="clickable" data-g="${g}"><td>${esc(G[g].name)}</td>${facets.map(f => { const n = fc[f] || 0; return `<td class="n" style="background:rgba(15,118,110,${n ? .08 + .5 * n / max : 0})">${n || ''}</td>`; }).join('')}<td class="n">${D.ontology[g].components.length}</td></tr>`;
+  }
+  $('#ogrid').innerHTML = h + '</tbody>';
+  $('#ogrid').querySelectorAll('tr.clickable').forEach(tr => tr.onclick = () => { $('#ogame').value = tr.dataset.g; renderComps(); });
+  $('#ontolede').textContent = `${og.length} of ${ids.length} games are decomposed from community decompilations so far, ${og.reduce((a, g) => a + D.ontology[g].components.length, 0)} components in all. Mechanics carry real parameters from source (gravity, speeds, timers, formulas). ${D.shared_concepts.length} concepts are already reused across two or more games; that reuse is what makes cross-game sampling possible.`;
+  $('#ogame').innerHTML = og.map(g => `<option value="${g}">${esc(G[g].name)}</option>`).join('');
+  $('#ogame').value = og.includes(sel.game) ? sel.game : og[0];
+  $('#ofacet').innerHTML = ['all', ...facets].map(f => `<option value="${f}">${f.replace(/_/g, ' ')}</option>`).join('');
+  $('#ofacet').value = 'movement_physics';
+  $('#ogame').onchange = renderComps; $('#ofacet').onchange = renderComps;
+  $('#shared').innerHTML = D.shared_concepts.map(([c, gs]) => `<div><span class="c">${esc(c)}</span><span class="chip" title="${esc(gs.map(g => G[g].name).join(', '))}">${gs.length} games</span></div>`).join('');
+})();
+function renderComps(){
+  const o = D.ontology[$('#ogame').value], f = $('#ofacet').value;
+  const cs = o.components.filter(c => f === 'all' || c.facet === f);
+  $('#comps').innerHTML = cs.length ? cs.map(c => `<div class="panel comp">
+      <div class="top"><span class="lab">${esc(c.label)}</span><span class="chip">${c.facet.replace(/_/g, ' ')}</span>${c.evidence.map(e => `<span class="chip${e === 'llm_knowledge' ? ' warn' : ''}">${e.replace(/_/g, ' ')}</span>`).join('')}</div>
+      <div class="sum">${esc(c.summary)}</div>
+      ${Object.keys(c.params).length ? `<div class="params">${Object.entries(c.params).map(([k, v]) => `<span>${esc(k)} = ${esc(v)}</span>`).join('')}</div>` : ''}
+      ${c.relations.length ? `<div class="note">${c.relations.map(esc).join(' · ')}</div>` : ''}
+    </div>`).join('') : '<p class="note">No components in this facet.</p>';
+}
+
+// ---------- caveats ----------
+$('#caveats').innerHTML = [
+  'The 13 “model profile” views are name-free descriptions written by a local LLM from memory. They are a baseline, and they contain mistakes (e.g. it invented vehicle segments for Zero Mission). They will be replaced by text built from the decompositions as those land.',
+  'Visual style uses only keyframes the d1 decision model scored as gameplay (P ≥ 0.6, 34/34 correct on a hand-labelled sample), weighted by that probability. Games with fewer than 8 such frames are drawn with a dashed outline and excluded from axis statistics until per-game input scripts reach real play.',
+  'Audio embeddings separate games well (39% same-game top-1 among 66 clips, chance 1.5%) but text-to-audio labels are coarse. Treat audio clusters as timbre, not genre.',
+  'Rendering telemetry is coarse: most GBA games use the same tile-mode feature set, so that view mostly separates bitmap/3D renderers and heavy raster users from the rest.',
+  'The effective axis count is an upper bound: noisy views look independent of everything. Split-half reliability per view (next step) will correct for that.',
+  'Embedding vectors are mean-centred per view before measuring distance, clusters use Ward linkage with at least two games per cluster, and 2-D layouts are classical MDS of each view’s distances.',
+].map(t => `<li>${esc(t)}</li>`).join('');
+
+layout(); inspect(); renderComps();
+})();
+</script>

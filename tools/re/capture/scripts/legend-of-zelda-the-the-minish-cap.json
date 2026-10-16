@@ -1,0 +1,3 @@
+{"comment":"Gameplay: title -> file 1 -> name 'A' (default mash types A, START=END) -> stained-glass prologue and Zelda/Smith dialogue (A); Link is controllable in his bedroom from ~7350.",
+ "phases":[{"name":"gameplay","frames":10000,"play_starts_frame":7400,
+ "repeat":[{"from_frame":180,"until_frame":1500,"template":"menu_mash"},{"from_frame":1500,"until_frame":7400,"template":"a_mash"},{"from_frame":7400,"template":"move_topdown"}]}]}

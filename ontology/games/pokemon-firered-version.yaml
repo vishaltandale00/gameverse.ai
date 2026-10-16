@@ -1,0 +1,1264 @@
+schema_version: 0
+id: pokemon-firered-version
+game:
+  title: Pokémon FireRed Version
+  platform: gba
+  game_code: BPRE
+  rom_sha1: dd5945db9b930750cb39d00c84da8571feebf417
+  evidence_basis:
+  - decomp_source
+  - capture_telemetry
+  - capture_frame
+  sources:
+  - kind: decomp
+    ref: https://github.com/pret/pokefirered @ 037335f4c725d7c9aecdac87066f2002b4bd7e14; firered_rev1.sha1 matches
+      the local indexed ROM SHA1. Actual matching build not run.
+  - kind: capture
+    ref: local/captures/pokemon-firered-version run 20261015T234415-8f46cf; harness 0.1.0, libmgba 0.10.5 HLE BIOS;
+      9000 total frames; 6.656 s prior capture wall. Two phases only; not whole-game qualification.
+  - kind: extraction_run
+    ref: 'Codex/GPT, exact runtime model unavailable; brief v1; source reading began before first recorded clock
+      observation 2026-10-16T04:42:28Z; completed 2026-10-16T04:46:13.502040+00:00. Three variants extracted together
+      from independently inspected pokeruby and pokefirered trees. Total extraction/queue/token cost unavailable;
+      no provider calls. Source files read or inspected by symbol/excerpt: include/constants/global.h, include/random.h,
+      src/battle_ai_script_commands.c, src/battle_main.c, src/data/wild_encounters.json, src/field_camera.c, src/field_player_avatar.c,
+      src/help_system.c, src/main.c, src/new_menu_helpers.c, src/overworld.c, src/party_menu.c, src/pokemon.c, src/random.c,
+      src/save.c, src/script.c, src/sound.c, src/start_menu.c, src/title_screen.c, src/vs_seeker.c, src/wild_encounter.c;
+      applicable hash file/README, capture summary and one inspected presenter keyframe.'
+conventions:
+  scope: Partial evidence-backed variant extraction; core modules share Gen-3 abstractions but each citation points
+    to this game source tree. Emerald relations mean implementation variants, not proof of identical complete behavior.
+    Untouched facets and deeper subsystems remain explicit questions.
+  units: Source-native update counts, points and indices are retained. Integer division order is preserved; no uniform
+    RNG assumption or exact probability calibration. Hardware audio Hz differs from export WAV rate.
+  version: Local ROM revision 1 and hash match the source repository hash file; preprocessor-specific branches beyond
+    those explicitly inspected are not assumed identical.
+  inference: Strategy implications are marked inference and do not measure player skill or prove optimal play.
+components:
+- id: main_loop_and_callbacks
+  facet: frontend
+  label: Key-sampling frame loop with reset guard
+  summary: AgbMain reads keys, checks the A+B+Start+Select chord unless soft reset is disabled, coordinates link
+    processing, updates play time/map music and waits for VBlank. This Rev1-supported source initializes RFU, GPU
+    managers and a heap and disables help at boot; reset also stops RFU.
+  instantiates:
+  - concept: frontend.flow.mode_state_machine
+  - concept: frontend.soft_reset.button_combo
+  reads:
+  - input.raw_held:u16
+  - runtime.soft_reset_disabled:bool
+  - link.queues
+  writes:
+  - runtime.callbacks
+  - runtime.frame_state
+  invariants:
+  - Reset uses raw held keys rather than L=A remapped keys.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/main.c:AgbMain
+    confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/main_loop_and_callbacks
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: input_controls
+  facet: ui_hud
+  label: Physical, edge and repeated keys with L=A remapping
+  summary: ReadKeys derives new keys before applying L=A to held/new fields. The source explicitly records that
+    repeat compares raw input with the remapped previous held keys and never remaps newAndRepeatedKeys, so L=A repeat
+    has a known discrepancy. Watched-key masks latch new presses for waiting callers.
+  instantiates:
+  - concept: ui_hud.input.context_button_mapping
+  reads:
+  - input.hardware:u16
+  - input.previous_held:u16
+  - settings.button_mode:u8
+  writes:
+  - input.new:u16
+  - input.held:u16
+  - input.repeat:u16
+  - input.watched_pressed:bool
+  invariants:
+  - L=A affects held/new keys but not the repeat field.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/main.c:ReadKeys
+    confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/input_controls
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: rng_lcg
+  facet: mechanics
+  label: Global high-word LCG also advances at VBlank
+  summary: Random updates a 32-bit state using multiplier 1103515245 and increment 24691, returning the upper 16
+    bits. The inspected VBlank path calls Random in addition to event-specific callers; frame timing therefore affects
+    future battle/encounter outcomes. No claim of uniform event probabilities or replay determinism follows from
+    the recurrence alone.
+  instantiates:
+  - concept: mechanics.randomness.lcg_prng
+  reads:
+  - rng.state:u32
+  writes:
+  - rng.state:u32
+  - query.random:u16
+  invariants:
+  - Return is the high 16 bits after state advance.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/random.c:Random
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:src/main.c:VBlankIntr
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:include/random.h:ISO_RANDOMIZE1
+    confidence: 0.9
+  params:
+    multiplier:
+      value: 1103515245
+      unit: u32 multiplier
+      native_value: 1103515245
+      native_unit: u32 multiplier
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:include/random.h:ISO_RANDOMIZE1
+        confidence: 0.9
+    increment:
+      value: 24691
+      unit: u32 increment
+      native_value: 24691
+      native_unit: u32 increment
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:include/random.h:ISO_RANDOMIZE1
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/rng_lcg
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: script_engine
+  facet: mechanics
+  label: Yielding bytecode and native-function script context
+  summary: RunScriptCommand switches stopped/native/bytecode modes. Bytecode dispatch runs until a handler requests
+    a yield, the script pointer becomes null or the opcode lies beyond the command table. Native mode resumes bytecode
+    when the callback reports completion. The source comments document removal of an initial redundant stopped-mode
+    check relative to Ruby/Emerald.
+  instantiates:
+  - concept: narrative_delivery.engine.bytecode_script_vm
+  - concept: progression.world.persistent_world_flags
+    weight: 0.6
+  reads:
+  - script.mode:u8
+  - script.pc:pointer
+  - script.command_table
+  - script.native_callback
+  writes:
+  - script.pc:pointer
+  - script.mode:u8
+  - script.return_stack
+  invariants:
+  - A yielding command stops the current dispatch loop.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/script.c:RunScriptCommand
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:src/script.c:ScriptCall
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:src/script.c:ScriptReturn
+    confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/script_engine
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: flash_save_system
+  facet: frontend
+  label: Rotating checksummed sector save slots
+  summary: A full save increments its counter, rotates the starting sector modulo 14 and writes 14 chunks. Each
+    chunk is placed into one of two physical slot sets selected by saveCounter%2, with ID, signature, counter and
+    checksum in its footer. If damaged sectors are reported, the writer restores its prior counter/start index.
+    This is source architecture, not a tested power-loss recovery campaign.
+  instantiates:
+  - concept: frontend.save.checksummed_flash_record
+    weight: 0.5
+  - concept: frontend.save.redundant_slot_backup
+  - concept: frontend.save.save_anywhere
+  reads:
+  - save.blocks
+  - save.counter:u32
+  - save.first_sector:u16
+  writes:
+  - flash.sectors
+  - save.counter:u32
+  - save.first_sector:u16
+  invariants:
+  - Each written chunk includes a checksum and shared save counter.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/save.c:WriteSaveSectorOrSlot
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:src/save.c:HandleWriteSector
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:src/save.c:CalculateChecksum
+    confidence: 0.9
+  params:
+    chunks_per_slot:
+      value: 14
+      unit: sectors
+      native_value: 14
+      native_unit: sectors
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/save.c:WriteSaveSectorOrSlot
+        confidence: 0.9
+    physical_slots:
+      value: 2
+      unit: slots
+      native_value: 2
+      native_unit: slots
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/save.c:HandleWriteSector
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/flash_save_system
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: whiteout_respawn
+  facet: frontend
+  label: Defeat heals and warps with badge/level-dependent money loss
+  summary: ComputeWhiteOutMoneyLoss multiplies highest party level by 4 and a badge-count-indexed multiplier [2,4,6,9,12,16,20,25,30],
+    capped at current money. DoWhiteOut removes that amount, heals the party, resets state and warps to the whiteout
+    respawn point. This differs materially from Ruby/Emerald half-wallet rules.
+  instantiates:
+  - concept: frontend.game_over.respawn_at_checkpoint_with_penalty
+  reads:
+  - economy.money:u32
+  - party.hp:u16[]
+  - party.highest_level:u8
+  - progress.badges:bool[8]
+  writes:
+  - economy.money:u32
+  - party.hp:u16[]
+  - world.warp_destination
+  invariants:
+  - The wallet cannot become negative in the inspected penalty path.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/overworld.c:DoWhiteOut
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:src/overworld.c:ComputeWhiteOutMoneyLoss
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:src/overworld.c:sWhiteOutMoneyLossMultipliers
+    confidence: 0.9
+  params:
+    highest_level_multiplier:
+      value: 4
+      unit: money/level/multiplier
+      native_value: 4
+      native_unit: money/level/multiplier
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/overworld.c:ComputeWhiteOutMoneyLoss
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/whiteout_respawn
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: grid_step_locomotion
+  facet: movement_physics
+  label: Turn-first grid movement and gated B-running
+  summary: The movement classifier distinguishes idle, turn-in-place and moving from input direction and current
+    movement state. Moving tests collisions before dispatch; surfing uses a fast step and held B requests running
+    only after FLAG_SYS_B_DASH and a terrain permission check. Rock stairs select slow running/walking variants.
+  instantiates:
+  - concept: movement_physics.grid.interpolated_tile_animation
+    weight: 0.6
+  - concept: movement_physics.grid.four_direction_tile_step
+  - concept: movement_physics.speed.hold_to_run
+    weight: 0.6
+  reads:
+  - input.direction:u8
+  - input.held:u16
+  - avatar.running_state:u8
+  - world.terrain
+  - progress.running_shoes:bool
+  writes:
+  - avatar.movement_action:u8
+  - avatar.running_state:u8
+  - avatar.flags:u16
+  invariants:
+  - A blocked destination prevents the normal movement branch.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/field_player_avatar.c:CheckMovementInputNotOnBike
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:src/field_player_avatar.c:PlayerNotOnBikeMoving
+    confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/grid_step_locomotion
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: forced_movement_tiles
+  facet: movement_physics
+  label: Terrain-selected movement overrides
+  summary: The forced-movement dispatch maps terrain predicates to slip, forced cardinal walking, currents, slides,
+    waterfall and mat actions. The inspected FRLG table explicitly includes four spin-direction predicates. These
+    are source-supported modes; exact speeds, stopping distances and puzzle timing remain to be extracted.
+  instantiates:
+  - concept: movement_physics.surface.ice_slide_until_blocked
+  - concept: movement_physics.surface.conveyor_push
+  reads:
+  - world.metatile_behavior:u8
+  - avatar.flags:u16
+  writes:
+  - avatar.forced_direction:u8
+  - avatar.movement_action:u8
+  invariants:
+  - Dispatch depends on the terrain behavior and avatar control flags.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/field_player_avatar.c:sForcedMovementFuncs
+    confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/forced_movement_tiles
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: player_locked_tile_camera
+  facet: camera
+  label: Per-pixel camera movement with metatile streaming
+  summary: CameraUpdate runs an optional callback, accumulates movement offsets modulo 16 and moves/redraws map
+    slices when a cell boundary is crossed. It updates object events and global camera-pixel offsets alongside tilemap
+    streaming. Those Ruby rotating-gate/berry callback calls are commented out in this source.
+  instantiates:
+  - concept: camera.follow.player_centered_tile_camera
+  reads:
+  - camera.speed:vec2i
+  - camera.offset:vec2i
+  writes:
+  - camera.offset:vec2i
+  - world.visible_cells
+  - entities.screen_positions
+  invariants:
+  - Cell offsets wrap at the 16-pixel boundary.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/field_camera.c:CameraUpdate
+    confidence: 0.9
+  params:
+    cell_extent:
+      value: 16
+      unit: px
+      native_value: 16
+      native_unit: px
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/field_camera.c:CameraUpdate
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/player_locked_tile_camera
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: metatile_map_renderer
+  facet: rendering
+  label: Two-layer metatiles distributed over hardware background planes
+  summary: DrawMetatile writes four bottom and four top tile entries per metatile, choosing target background buffers
+    by layer type and inserting transparent entries where needed. The inspected split case differs in exact buffer
+    numbering between Ruby and FRLG; only the compositional behavior is shared here. Source-specific buffer references
+    remain in citations.
+  instantiates:
+  - concept: rendering.background.metatile_occlusion_layers
+  - concept: rendering.background.metatile_streaming
+  - concept: rendering.tiles.animated_tile_swap
+  - concept: rendering.background.tile_layer_stack
+    weight: 0.5
+  reads:
+  - world.metatile_tiles:u16[8]
+  - world.layer_type:u8
+  writes:
+  - gpu.bg_tilemap_buffers
+  invariants:
+  - A metatile supplies four bottom and four top tile entries.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/field_camera.c:DrawMetatile
+    confidence: 0.9
+  params:
+    tile_entries_per_metatile:
+      value: 8
+      unit: entries
+      native_value: 8
+      native_unit: entries
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/field_camera.c:DrawMetatile
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/metatile_map_renderer
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: stat_calculation
+  facet: mechanics
+  label: Integer IV/EV/level/nature statistic calculation
+  summary: For ordinary species maxHP is floor((2*baseHP+IV+floor(EV/4))*level/100)+level+10; Shedinja instead gets
+    1. Other stats add 5 before a nature modifier. Current HP adjusts by the change in maxHP when nonzero, rather
+    than unconditionally refilling. The source records an HP underflow edge behind an optional BUGFIX guard, which
+    is not assumed enabled for a matching cartridge build.
+  instantiates:
+  - concept: mechanics.progression.stat_formula_iv_ev
+  reads:
+  - creature.species:u16
+  - creature.iv:u8[6]
+  - creature.ev:u8[6]
+  - creature.level:u8
+  - creature.nature:u8
+  - creature.hp:u16
+  writes:
+  - creature.stats:u16[6]
+  - creature.max_hp:u16
+  - creature.hp:u16
+  invariants:
+  - EV division by 4 occurs before multiplying by level.
+  - A previously fainted established creature is not automatically revived by this helper.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/pokemon.c:CalculateMonStats
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:src/pokemon.c:CALC_STAT
+    confidence: 0.9
+  params:
+    ev_divisor:
+      value: 4
+      unit: EV/stat term
+      native_value: 4
+      native_unit: EV/stat term
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/pokemon.c:CALC_STAT
+        confidence: 0.9
+    level_divisor:
+      value: 100
+      unit: level normalization
+      native_value: 100
+      native_unit: level normalization
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/pokemon.c:CALC_STAT
+        confidence: 0.9
+    ordinary_hp_constant:
+      value: 10
+      unit: HP
+      native_value: 10
+      native_unit: HP
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/pokemon.c:CalculateMonStats
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/stat_calculation
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: turn_order
+  facet: mechanics
+  label: Move priority before adjusted speed and item effects
+  summary: 'GetWhoStrikesFirst compares move-priority brackets, then adjusted speed; equal speed within equal priority
+    uses Random()&1. Weather abilities double speed, the third badge can multiply player speed by 110/100 outside
+    link battles, Macho Brace halves it and paralysis divides by four. A Quick Claw trigger sets adjusted speed
+    to UINT_MAX but still does not cross a higher move-priority bracket. Inference: speed control and priority are
+    distinct tactical operators, not measured player skills.'
+  instantiates:
+  - concept: mechanics.combat.speed_priority_turn_order
+  reads:
+  - battle.moves.priority:s8[]
+  - battle.speed:u16[]
+  - battle.speed_stage:u8[]
+  - battle.weather:u16
+  - battle.status:u32[]
+  - battle.held_items:u16[]
+  - progress.badge3:bool
+  - rng.state:u32
+  writes:
+  - battle.order_comparison:u8
+  - rng.state:u32
+  invariants:
+  - Quick Claw affects speed comparison within the priority logic; it does not universally override move priority.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/battle_main.c:GetWhoStrikesFirst
+    confidence: 0.9
+  params:
+    paralysis_speed_divisor:
+      value: 4
+      unit: divisor
+      native_value: 4
+      native_unit: divisor
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/battle_main.c:GetWhoStrikesFirst
+        confidence: 0.9
+    weather_speed_multiplier:
+      value: 2
+      unit: multiplier
+      native_value: 2
+      native_unit: multiplier
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/battle_main.c:GetWhoStrikesFirst
+        confidence: 0.9
+    badge_speed_percent:
+      value: 110
+      unit: percent
+      native_value: 110
+      native_unit: percent
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/battle_main.c:GetWhoStrikesFirst
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/turn_order
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: trainer_ai_move_scoring
+  facet: ai
+  label: Flag-selected move-score scripts and random best-score choice
+  summary: Setup initializes each move to score 100, zeros unusable moves and samples simulated damage factors as
+    100-(Random()%16). Active AI-flag modules process all move indices; selection chooses among maximum-scoring
+    candidates using RNG, with explicit flee/watch exceptions. FRLG routes scripted wild, legendary and tower cases
+    through distinct module flags.
+  instantiates:
+  - concept: ai.decision.utility_scoring_scripts
+  reads:
+  - battle.valid_moves:bitmask
+  - trainer.ai_flags:u32
+  - battle.format:u32
+  - rng.state:u32
+  writes:
+  - ai.move_scores:s8[4]
+  - ai.simulated_damage_percent:u8[4]
+  - ai.selected_action:u8
+  invariants:
+  - Selection is restricted to the maximum-scoring candidate set after enabled scripts run.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/battle_ai_script_commands.c:BattleAI_SetupAIData
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:src/battle_ai_script_commands.c:BattleAI_ChooseMoveOrAction
+    confidence: 0.9
+  params:
+    initial_score:
+      value: 100
+      unit: score
+      native_value: 100
+      native_unit: score
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/battle_ai_script_commands.c:BattleAI_SetupAIData
+        confidence: 0.9
+    simulation_percent_min:
+      value: 85
+      unit: percent
+      native_value: 85
+      native_unit: percent
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/battle_ai_script_commands.c:BattleAI_SetupAIData
+        confidence: 0.9
+    simulation_percent_max:
+      value: 100
+      unit: percent
+      native_value: 100
+      native_unit: percent
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/battle_ai_script_commands.c:BattleAI_SetupAIData
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/trainer_ai_move_scoring
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: evolution_rules
+  facet: progression
+  label: Rule-table evolution with mode and held-item checks
+  summary: GetEvolutionTargetSpecies scans species evolution methods for normal, trade or item-use modes, checking
+    level, friendship, stats, beauty and personality conditions. The prevent-evolve hold effect blocks real evolution
+    but permits item-check mode. Day/night friendship branches are deliberately inactive in FRLG; comments explain
+    removal of RTC-based evolution.
+  instantiates:
+  - concept: progression.character.conditional_evolution
+  reads:
+  - creature.species:u16
+  - creature.level:u8
+  - creature.friendship:u8
+  - creature.held_item:u16
+  - evolution.mode:u8
+  - creature.personality:u32
+  writes:
+  - query.evolution_target:u16
+  - creature.held_item:u16
+  invariants:
+  - Mode-specific evolution rules do not imply every listed method is available in every game.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/pokemon.c:GetEvolutionTargetSpecies
+    confidence: 0.9
+  params:
+    friendship_threshold:
+      value: 220
+      unit: friendship
+      native_value: 220
+      native_unit: friendship
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/pokemon.c:GetEvolutionTargetSpecies
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/evolution_rules
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: inventory_and_storage
+  facet: economy
+  label: Version-specific bag pocket capacities
+  summary: Constants allocate separate item, key-item, ball, TM/HM and berry pockets. FRLG uses 42/30/13/58/43 slots
+    and 30 PC-item slots; these differ from Ruby. These are storage capacities, not catalogues or a claim that all
+    items are currently unlocked.
+  instantiates:
+  - concept: economy.inventory.categorized_pockets
+  - concept: economy.inventory.creature_storage_boxes
+  reads:
+  - inventory.pocket_arrays
+  writes:
+  - inventory.pocket_slots
+  invariants:
+  - Pocket capacities differ by category and game.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:include/constants/global.h:BAG_ITEMS_COUNT
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:include/constants/global.h:BAG_TMHM_COUNT
+    confidence: 0.9
+  params:
+    bag_items_count:
+      value: 42
+      unit: slots
+      native_value: 42
+      native_unit: slots
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:include/constants/global.h:BAG_ITEMS_COUNT
+        confidence: 0.9
+    bag_keyitems_count:
+      value: 30
+      unit: slots
+      native_value: 30
+      native_unit: slots
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:include/constants/global.h:BAG_KEYITEMS_COUNT
+        confidence: 0.9
+    bag_pokeballs_count:
+      value: 13
+      unit: slots
+      native_value: 13
+      native_unit: slots
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:include/constants/global.h:BAG_POKEBALLS_COUNT
+        confidence: 0.9
+    bag_tmhm_count:
+      value: 58
+      unit: slots
+      native_value: 58
+      native_unit: slots
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:include/constants/global.h:BAG_TMHM_COUNT
+        confidence: 0.9
+    bag_berries_count:
+      value: 43
+      unit: slots
+      native_value: 43
+      native_unit: slots
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:include/constants/global.h:BAG_BERRIES_COUNT
+        confidence: 0.9
+    pc_items_count:
+      value: 30
+      unit: slots
+      native_value: 30
+      native_unit: slots
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:include/constants/global.h:PC_ITEMS_COUNT
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/inventory_and_storage
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: party_and_move_capacity
+  facet: mechanics
+  label: Six-creature party and four move slots
+  summary: Independent local constants set party size to six and a creature move-set size to four. This is the bounded
+    state layout used by party and AI systems; it is not evidence that every battle places all six creatures on
+    screen or permits four simultaneous active combatants.
+  instantiates:
+  - concept: mechanics.party.bounded_roster_and_moves
+  reads:
+  - party.members
+  - creature.moves
+  writes:
+  - party.member_slots
+  - creature.move_slots
+  invariants:
+  - Party capacity and active battle format are distinct quantities.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:include/constants/global.h:PARTY_SIZE
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:include/constants/global.h:MAX_MON_MOVES
+    confidence: 0.9
+  params:
+    party_size:
+      value: 6
+      unit: creatures
+      native_value: 6
+      native_unit: creatures
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:include/constants/global.h:PARTY_SIZE
+        confidence: 0.9
+    move_slots:
+      value: 4
+      unit: moves/creature
+      native_value: 4
+      native_unit: moves/creature
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:include/constants/global.h:MAX_MON_MOVES
+        confidence: 0.9
+- id: wild_encounter_tables
+  facet: mechanics
+  label: Weighted encounter slots and actual FireRed starter-route data
+  summary: The source selects a land slot by Random()%total against cumulative thresholds; its data specifies twelve
+    weights [20,20,10,10,10,10,5,5,4,4,1,1]. sRoute1_FireRed has encounter-rate parameter 21 and the explicit per-slot
+    species/levels in the table. This rate parameter is not a direct percent chance per player step; the runtime
+    tests terrain transitions and encounter-rate logic first.
+  instantiates:
+  - concept: mechanics.encounter.slot_weighted_encounter_table
+  - concept: mechanics.encounter.random_step_encounter
+  - concept: mechanics.encounter.roaming_encounter
+    weight: 0.5
+  reads:
+  - world.map_id:u16
+  - world.terrain
+  - world.previous_terrain
+  - rng.state:u32
+  - encounter.table
+  writes:
+  - battle.wild_species:u16
+  - battle.wild_level:u8
+  - rng.state:u32
+  invariants:
+  - Species weights are conditional on an encounter being generated.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/wild_encounter.c:ChooseWildMonIndex_Land
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:src/wild_encounter.c:StandardWildEncounter
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:src/data/wild_encounters.json:gWildMonHeaders
+    confidence: 0.9
+  params:
+    land_slots:
+      value: 12
+      unit: slots
+      native_value: 12
+      native_unit: slots
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/data/wild_encounters.json:gWildMonHeaders
+        confidence: 0.9
+    starter_route_rate_parameter:
+      value: 21
+      unit: native encounter-rate parameter
+      native_value: 21
+      native_unit: native encounter-rate parameter
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/data/wild_encounters.json:gWildMonHeaders
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/wild_encounter_tables
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+  tables:
+    starter_route:
+      description: Independently read sRoute1_FireRed data. Weights are source slot weights, not complete per-step
+        probabilities.
+      columns:
+      - slot
+      - weight
+      - species
+      - min_level
+      - max_level
+      rows:
+      - - 0
+        - 20
+        - SPECIES_PIDGEY
+        - 3
+        - 3
+      - - 1
+        - 20
+        - SPECIES_RATTATA
+        - 3
+        - 3
+      - - 2
+        - 10
+        - SPECIES_PIDGEY
+        - 3
+        - 3
+      - - 3
+        - 10
+        - SPECIES_RATTATA
+        - 3
+        - 3
+      - - 4
+        - 10
+        - SPECIES_PIDGEY
+        - 2
+        - 2
+      - - 5
+        - 10
+        - SPECIES_RATTATA
+        - 2
+        - 2
+      - - 6
+        - 5
+        - SPECIES_PIDGEY
+        - 3
+        - 3
+      - - 7
+        - 5
+        - SPECIES_RATTATA
+        - 3
+        - 3
+      - - 8
+        - 4
+        - SPECIES_PIDGEY
+        - 4
+        - 4
+      - - 9
+        - 4
+        - SPECIES_RATTATA
+        - 4
+        - 4
+      - - 10
+        - 1
+        - SPECIES_PIDGEY
+        - 5
+        - 5
+      - - 11
+        - 1
+        - SPECIES_RATTATA
+        - 4
+        - 4
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/data/wild_encounters.json:gWildMonHeaders
+        confidence: 0.9
+- id: start_menu_hub
+  facet: ui_hud
+  label: Progress-gated start-menu destinations
+  summary: The ordinary field menu adds Pokédex and Pokémon only after their system flags, plus Bag, Player, Save,
+    Options and Exit. The inspected normal-field list has no PokéNav destination. Safari/link routines construct
+    other lists, so the menu depends on session context.
+  instantiates:
+  - concept: ui_hud.menu.pause_menu_hub
+  reads:
+  - progress.system_flags
+  - session.mode
+  writes:
+  - ui.start_menu_actions:u8[]
+  invariants:
+  - Menu action availability follows both context and progress.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/start_menu.c:SetUpStartMenu_NormalField
+    confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/start_menu_hub
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: measured_video_modes
+  facet: rendering
+  label: Mode-0/1 frontend video with phase-limited evidence
+  summary: The existing 9000-frame attract/frontend capture recorded mode 0 and mode 1, alpha/brightness effects,
+    sprites and hardware windows. Counts are capture observations and do not show how often these techniques occur
+    across a complete playthrough. Bitmap modes were not observed in this run; absence in this frontend sample is
+    not absence from the entire ROM.
+  instantiates:
+  - concept: rendering.telemetry.phase_video_mode_distribution
+  reads:
+  - capture.gpu_register_samples
+  writes:
+  - query.video_mode_counts
+  invariants:
+  - Measurements cover the two baseline phases only.
+  evidence:
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.video_modes_frames and derived.flags
+    confidence: 0.9
+  params:
+    mode_0_frames:
+      value: 5307
+      unit: frames
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:summary.json:derived.video_modes_frames.0
+        confidence: 0.9
+    mode_1_frames:
+      value: 3669
+      unit: frames
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:summary.json:derived.video_modes_frames.1
+        confidence: 0.9
+- id: measured_raster_targets
+  facet: rendering
+  label: Observed per-line brightness DMA writes
+  summary: The baseline capture identifies HBlank DMA target ch0->0x04000054 (blend). This distinguishes brightness-register
+    modulation from per-line affine geometry. CPU palette-raster activity was also flagged; attribution to individual
+    scenes needs telemetry/keyframe alignment.
+  instantiates:
+  - concept: rendering.telemetry.phase_raster_register_targets
+  reads:
+  - capture.dma_configs
+  - capture.raster_samples
+  writes:
+  - query.raster_targets
+  invariants:
+  - A target register constrains the effect mechanism but not its artistic purpose.
+  evidence:
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.hblank_dma_targets and derived.flags
+    confidence: 0.85
+- id: m4a_sound_engine
+  facet: audio
+  label: m4a software mixer and observed dual-DirectSound rate
+  summary: AgbMain initializes m4a and the VBlank path runs m4aSoundMain. Baseline telemetry records DirectSound
+    FIFO-rate observations at 13379 Hz; this is the hardware delivery rate in the capture, not the 16 kHz WAV export
+    rate. The source/capture establish engine technology without assigning musical genre from model recall.
+  instantiates:
+  - concept: audio.engine.sample_psg_sequencer
+  reads:
+  - audio.engine_state
+  writes:
+  - audio.pcm_fifo
+  invariants:
+  - Capture WAV export sample rate is separate from hardware mixer delivery rate.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/main.c:AgbMain
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:src/main.c:VBlankIntr
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.sound.directsound_rates_hz
+    confidence: 0.9
+  params:
+    observed_rate:
+      value: 13379
+      unit: Hz
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:summary.json:derived.sound.directsound_rates_hz
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/m4a_sound_engine
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: map_music_and_fanfares
+  facet: audio
+  label: Map-music queue waits for stop and fanfare completion
+  summary: MapMusicMain handles current/next music and restart/fade-in states. Transition states 6 and 7 wait for
+    both BGM stopped and inactive fanfare before starting the next map track, so the queue preserves a temporary
+    jingle rather than immediately overwriting it. Explicit parameters for every map theme were not inventoried
+    here.
+  instantiates:
+  - concept: audio.music.room_based_tracks
+  - concept: audio.music.jingle_interrupt_queue
+  - concept: audio.music.state_driven_music
+    weight: 0.5
+  reads:
+  - audio.map_music_state:u8
+  - audio.next_song:u16
+  - audio.fanfare_active:bool
+  writes:
+  - audio.current_song:u16
+  - audio.map_music_state:u8
+  invariants:
+  - Queued next-song transition waits for the fanfare task to finish.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/sound.c:MapMusicMain
+    confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/map_music_and_fanfares
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: intro_host_staging
+  facet: narrative_delivery
+  label: Introductory human presenter and text-panel staging
+  summary: The directly inspected frontend frame shows a front-facing human sprite in a light coat on a simple platform/background.
+    The presenter gestures on a pale green backdrop; this exact frame does not contain story text. Only visible
+    staging is asserted; model captions sometimes misname presenters, and the full plot was not read.
+  instantiates:
+  - concept: narrative_delivery.presentation.character_host_intro
+  reads:
+  - frontend.intro_scene
+  writes:
+  - ui.presenter_sprite
+  - ui.dialogue_stage
+  invariants:
+  - A presenter frame is not evidence of interactive gameplay.
+  evidence:
+  - kind: capture_frame
+    ref: capture:frontend:frame 1293 keyframe f001293_scene.png inspected
+    confidence: 0.95
+- id: trainer_rematches_vs_seeker
+  facet: progression
+  label: Two 100-step counters for rematch device state
+  summary: UpdateVsSeekerStepCounter increases the low-byte bag counter while the device is owned, capped at 100.
+    When the charging flag is set, it independently increments the high-byte counter; reaching 100 clears charging,
+    resets that counter and clears rematch-ready states. The actual nearby-trainer response odds and rematch-team
+    tiers remain open.
+  instantiates:
+  - concept: progression.replay.step_charged_rematch_device
+  reads:
+  - inventory.vs_seeker:bool
+  - progress.vs_seeker_charging:bool
+  - progress.rematch_counter:u16
+  writes:
+  - progress.rematch_counter:u16
+  - progress.vs_seeker_charging:bool
+  - trainer.rematch_ready_flags
+  invariants:
+  - Bag and charging counters occupy different bytes and have distinct reset behavior.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/vs_seeker.c:UpdateVsSeekerStepCounter
+    confidence: 0.9
+  params:
+    counter_cap:
+      value: 100
+      unit: steps
+      native_value: 100
+      native_unit: steps
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/vs_seeker.c:UpdateVsSeekerStepCounter
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/trainer_rematches_match_call
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: field_move_badge_gate
+  facet: progression
+  label: Field move requires corresponding badge and context
+  summary: The party-menu field-move action rejects HM-range field moves through Waterfall when FLAG_BADGE01_GET+fieldMove
+    is absent. Otherwise it invokes the move-specific setup callback and continues only if that context test succeeds.
+    Thus move ownership, badge permission and local terrain/event conditions are separate requirements; exact route
+    solvability is not extracted.
+  instantiates:
+  - concept: progression.gating.typed_lock_and_key
+  - concept: progression.travel.unlockable_fast_travel_points
+    weight: 0.4
+  reads:
+  - creature.known_moves:u16[]
+  - progress.badges:bool[8]
+  - world.field_context
+  writes:
+  - ui.failure_message
+  - runtime.field_move_action
+  invariants:
+  - Passing the badge test does not bypass the per-move setup callback.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/party_menu.c:CursorCB_FieldMove
+    confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/hm_field_move_gating
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: context_help
+  facet: ui_hud
+  label: Context-sensitive help with replay suppression
+  summary: SetHelpContext preserves a battle context when opening bag/party/information subcontexts. HelpSystem_Enable
+    refuses to enable during quest-log playback and otherwise enables R-toggle support. This is interface assistance
+    behavior; it does not establish that the player has mastered a skill.
+  instantiates:
+  - concept: ui_hud.help.context_and_session_sensitive
+  reads:
+  - ui.help_context:u8
+  - session.quest_log_playback:bool
+  writes:
+  - ui.help_context:u8
+  - ui.help_enabled:bool
+  invariants:
+  - Help enable is suppressed during quest-log playback.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/help_system.c:SetHelpContext
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:src/help_system.c:HelpSystem_Enable
+    confidence: 0.9
+- id: title_version_mascot
+  facet: frontend
+  label: Version-specific title mascot selection
+  summary: Compile-time TITLE_SPECIES selects Charizard for FIRERED. This is an explicitly verified presentation
+    variant; it does not imply that every gameplay species table or route differs between the two versions.
+  instantiates:
+  - concept: frontend.title.version_mascot
+  reads:
+  - build.game_version
+  writes:
+  - frontend.title_species:u16
+  invariants:
+  - The compiled title species depends on the FIRERED/LEAFGREEN definition.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/title_screen.c:TITLE_SPECIES
+    confidence: 0.9
+  params:
+    title_species:
+      value: SPECIES_CHARIZARD
+      unit: species constant
+      native_value: SPECIES_CHARIZARD
+      native_unit: species constant
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/title_screen.c:TITLE_SPECIES
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/title_screen
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+- id: dialogue_text_printer
+  facet: narrative_delivery
+  label: Text speed controls in-game printer delays
+  summary: GetTextSpeedSetting maps slow/mid/fast options to delays 8/4/1 and resets an out-of-range option to middle.
+    These are source-native delay values; printer scheduling and button fast-forward behavior require reading the
+    full text engine before converting to exact characters per second.
+  instantiates:
+  - concept: narrative_delivery.dialogue.typewriter_dialogue
+  reads:
+  - settings.text_speed:u8
+  writes:
+  - settings.text_speed:u8
+  - ui.text_delay:u8
+  invariants:
+  - An invalid option is repaired to middle speed.
+  evidence:
+  - kind: decomp_source
+    ref: pokefirered:src/new_menu_helpers.c:GetTextSpeedSetting
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokefirered:src/new_menu_helpers.c:sTextSpeedFrameDelays
+    confidence: 0.9
+  params:
+    slow_delay:
+      value: 8
+      unit: native delay
+      native_value: 8
+      native_unit: native delay
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/new_menu_helpers.c:sTextSpeedFrameDelays
+        confidence: 0.9
+    mid_delay:
+      value: 4
+      unit: native delay
+      native_value: 4
+      native_unit: native delay
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/new_menu_helpers.c:sTextSpeedFrameDelays
+        confidence: 0.9
+    fast_delay:
+      value: 1
+      unit: native delay
+      native_value: 1
+      native_unit: native delay
+      evidence:
+      - kind: decomp_source
+        ref: pokefirered:src/new_menu_helpers.c:sTextSpeedFrameDelays
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: pokemon-emerald-version/dialogue_text_printer
+    note: Compared as a Gen-3 implementation variant; source for this game was inspected independently. No claim
+      of byte-identical behavior.
+proposed_concepts:
+- id: progression.replay.step_charged_rematch_device
+  label: Two 100-step counters for rematch device state
+  definition: A rematch device maintains capped walking counters and clears temporary trainer readiness when its
+    state interval expires.
+- id: ui_hud.help.context_and_session_sensitive
+  label: Context-sensitive help with replay suppression
+  definition: Help content and activation depend on current activity context and replay/session state.
+- id: frontend.title.version_mascot
+  label: Version-specific title mascot selection
+  definition: A game-version build flag selects a different character or creature for the title presentation.
+open_questions:
+- Complete battle damage/capture/status/type/ability/held-item mechanisms and per-move timings from this game source;
+  Emerald values were intentionally not copied as if reverified.
+- Extract actual evolution species tables, full encounters, trainers, items and authored quest/gate graphs, including
+  version-exclusive differences beyond the sampled starter route and title.
+- Map sprites/tiles/palettes/audio into an asset dependency inventory; the presenter screenshot does not describe
+  the whole visual style or setting.
+- Read narrative scripts, dialogue and story conditions. Current extraction only records visible introductory staging;
+  full setting/plot/factions are unestablished.
+- Run gameplay-directed recaptures and label temporal/control evidence; model screen classifiers can confuse intros
+  with gameplay. Existing baseline captures are frontend-heavy and do not establish interactive exploration.
+- Extract collision/elevation, ledges, bikes/water movement, NPC perception/AI, economy prices/rewards and full
+  resource-flow dependencies; partial modules here are not a complete game ontology.
+- Record exact source-build configuration and perform matching build/runtime probes before treating source semantics
+  as ROM-verified. No build benchmark, complete campaign, player-skill measurements, GPT-versus-Claude quality estimate
+  or source-asset reuse entitlement was established.

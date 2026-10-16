@@ -1,0 +1,21 @@
+{
+ "comment": "Gameplay: Atari/credits, new game slot 'A', unskippable FMV intro (~2.5 min) whose last caption waits for START; Tanner on foot in Miami (software-3D bitmap mode) from ~9100; walk forward with turns.",
+ "phases": [
+  {
+   "name": "gameplay",
+   "frames": 11500,
+   "play_starts_frame": 9100,
+   "repeat": [
+    {
+     "from_frame": 180,
+     "until_frame": 9060,
+     "template": "menu_mash"
+    },
+    {
+     "from_frame": 9100,
+     "template": "move_north"
+    }
+   ]
+  }
+ ]
+}

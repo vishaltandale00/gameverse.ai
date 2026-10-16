@@ -1,0 +1,113 @@
+{
+  "reference_version": 1,
+  "reviewed_at": "2026-10-16T05:06:10.062776+00:00",
+  "scope": "Platform reference facts for interpreting evidence, not evidence that a given game uses a facility. Community primary technical documentation; not a Nintendo specification.",
+  "facts": [
+    {
+      "id": "gba.display.mode_selector",
+      "register": "DISPCNT",
+      "mask": 7,
+      "ref": "https://gbadev.net/gbadoc/graphics.html#video-modes"
+    },
+    {
+      "id": "gba.display.tile_modes",
+      "modes": {
+        "0": {
+          "text_backgrounds": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "affine_backgrounds": []
+        },
+        "1": {
+          "text_backgrounds": [
+            0,
+            1
+          ],
+          "affine_backgrounds": [
+            2
+          ]
+        },
+        "2": {
+          "text_backgrounds": [],
+          "affine_backgrounds": [
+            2,
+            3
+          ]
+        }
+      },
+      "ref": "https://gbadev.net/gbadoc/graphics.html"
+    },
+    {
+      "id": "gba.display.bitmap_modes",
+      "modes": {
+        "3": {
+          "width": 240,
+          "height": 160,
+          "bpp": 16,
+          "bytes_per_image": 76800,
+          "page_flipping": false
+        },
+        "4": {
+          "width": 240,
+          "height": 160,
+          "bpp": 8,
+          "bytes_per_image": 38400,
+          "page_flipping": true,
+          "pixels": "background palette indices"
+        },
+        "5": {
+          "width": 160,
+          "height": 128,
+          "bpp": 16,
+          "bytes_per_image": 40960,
+          "page_flipping": true
+        }
+      },
+      "ref": "https://gbadev.net/tonc/bitmaps.html#the-gba-bitmap-modes"
+    },
+    {
+      "id": "gba.memory.working_regions",
+      "regions": [
+        {
+          "name": "EWRAM",
+          "start": "0x02000000",
+          "bytes": 262144
+        },
+        {
+          "name": "IWRAM",
+          "start": "0x03000000",
+          "bytes": 32768
+        },
+        {
+          "name": "VRAM",
+          "start": "0x06000000",
+          "bytes": 98304
+        },
+        {
+          "name": "palette",
+          "start": "0x05000000",
+          "bytes": 1024
+        }
+      ],
+      "ref": "https://github.com/gbadev-org/gbadoc/blob/main/content/overview.md"
+    }
+  ],
+  "inferences_for_mining": [
+    "Interpret DISPCNT mode traces as scoped rendering evidence, not gameplay genre.",
+    "Decode bitmap candidates using observed mode, palette and frame dimensions; filenames alone are insufficient.",
+    "RAM code may be copied or overlaid; ROM-address function discovery does not identify all runtime RAM routines."
+  ],
+  "documentation_cautions": [
+    "GBATEK monolithic page could not be fetched through the web tool because it exceeded the content limit.",
+    "The gbadoc graphics page has a suspicious mode5 page-select bit3 statement and mode4 direct-color wording inconsistent with its own paletted description. These claims were not adopted.",
+    "Its bitmap sprite-count statement was not adopted; validate OBJ limits/storage against a stronger register-level source before using them as extraction constraints."
+  ],
+  "not_established": [
+    "Every individual game hardware capability",
+    "Palette/tile/animation relationships for asset candidates",
+    "Full timing, DMA, audio or save-device contracts"
+  ]
+}

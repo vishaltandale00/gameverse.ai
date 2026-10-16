@@ -1,0 +1,3 @@
+{"comment":"Gameplay: New Game -> slot -> name 'AAA' -> intro dialogue (A); top-down on foot in Portland/Chinatown from ~1950; walk loop with actions (no START, which pauses).",
+ "phases":[{"name":"gameplay","frames":5400,"play_starts_frame":1950,
+ "repeat":[{"from_frame":180,"until_frame":1780,"template":"menu_mash"},{"from_frame":1800,"until_frame":1950,"template":"a_mash"},{"from_frame":1960,"template":"move_topdown"}]}]}

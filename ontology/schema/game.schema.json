@@ -1,0 +1,420 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gameverse.ai/ontology/schema/game.schema.json",
+  "title": "Game decomposition",
+  "description": "One game decomposed into components that instantiate shared ontology concepts. Source of truth is ontology/games/<id>.yaml.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "id",
+    "game",
+    "components"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 0
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "game": {
+      "type": "object",
+      "required": [
+        "title",
+        "platform",
+        "game_code",
+        "rom_sha1"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "platform": {
+          "const": "gba"
+        },
+        "game_code": {
+          "type": "string"
+        },
+        "rom_sha1": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "year": {
+          "type": "integer"
+        },
+        "developer": {
+          "type": "string"
+        },
+        "derived_genres": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Computed from components, not authored as a decomposition axis."
+        },
+        "evidence_basis": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "decomp_source",
+              "ghidra_function",
+              "capture_telemetry",
+              "capture_frame",
+              "static_signature",
+              "derived",
+              "llm_knowledge",
+              "human"
+            ]
+          },
+          "description": "Evidence kinds actually consulted for this decomposition."
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "kind",
+              "ref"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string"
+              },
+              "ref": {
+                "type": "string",
+                "description": "Repo URL + commit, harness run ID, Ghidra run ID, etc."
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/component"
+      }
+    },
+    "proposed_concepts": {
+      "type": "array",
+      "description": "New concepts this game needed that are not in the concept vocabulary yet; merged later.",
+      "items": {
+        "$ref": "#/$defs/concept"
+      }
+    },
+    "open_questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "conventions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Game-wide conventions needed to read params, e.g. units_convention for fixed-point positions/velocities."
+    }
+  },
+  "$defs": {
+    "concept_id": {
+      "type": "string",
+      "pattern": "^(mechanics|movement_physics|ai|camera|projection|rendering|ui_hud|progression|economy|narrative_delivery|setting|frontend|audio)(\\.[a-z0-9_]+)+$"
+    },
+    "concept": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "definition"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/concept_id"
+        },
+        "label": {
+          "type": "string"
+        },
+        "definition": {
+          "type": "string"
+        },
+        "is_a": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/concept_id"
+          }
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "seed_source": {
+          "type": "string"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": [
+        "kind",
+        "ref",
+        "confidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "decomp_source",
+            "ghidra_function",
+            "capture_telemetry",
+            "capture_frame",
+            "static_signature",
+            "derived",
+            "llm_knowledge",
+            "human"
+          ]
+        },
+        "ref": {
+          "type": "string",
+          "description": "e.g. 'mzm:src/samus.c:SamusApplyXAcceleration', 'ghidra:0x080123AD', 'capture:attract:frames 120-480 DISPCNT mode1 + HBlank DMA->BG2PA' For derived: the method, e.g. 'simulated SamusUpdateVelocityPosition with gravity+jump_velocity_normal'."
+        },
+        "note": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "For kind=derived: the evidence refs or params the value was computed from."
+        }
+      }
+    },
+    "param": {
+      "type": "object",
+      "required": [
+        "value"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "value": {},
+        "unit": {
+          "type": "string",
+          "description": "e.g. 'subpixels/frame^2', 'frames', 'px', 'fixed 8.8 px/frame'"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        },
+        "native_value": {
+          "description": "Value in the game's own units before conversion."
+        },
+        "native_unit": {
+          "type": "string"
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "when",
+              "value"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "when": {
+                "type": "string",
+                "description": "Condition, e.g. 'difficulty=hard', 'in_liquid', 'equipment.high_jump'"
+              },
+              "value": {},
+              "unit": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "component": {
+      "type": "object",
+      "required": [
+        "id",
+        "facet",
+        "label",
+        "summary",
+        "instantiates",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "description": "Unique within the game; globally <game-id>/<id>."
+        },
+        "facet": {
+          "enum": [
+            "mechanics",
+            "movement_physics",
+            "ai",
+            "camera",
+            "projection",
+            "rendering",
+            "ui_hud",
+            "progression",
+            "economy",
+            "narrative_delivery",
+            "setting",
+            "frontend",
+            "audio"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string",
+          "description": "2-4 sentences, specific to this game."
+        },
+        "instantiates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "concept"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "concept": {
+                "$ref": "#/$defs/concept_id"
+              },
+              "weight": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 1
+              }
+            }
+          },
+          "description": "Concepts from any facet; the component's own facet is its primary home, cross-facet concepts are allowed."
+        },
+        "reads": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Typed state paths, e.g. 'input.buttons', 'player.velocity.x', 'world.flags.ability.*'"
+        },
+        "writes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/param"
+          }
+        },
+        "invariants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "relations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "type",
+              "target"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "enum": [
+                  "part_of",
+                  "modulates",
+                  "requires",
+                  "gated_by",
+                  "conflicts_with",
+                  "variant_of",
+                  "instantiates"
+                ]
+              },
+              "target": {
+                "type": "string",
+                "description": "Component id in this game, '<game-id>/<component-id>', or a concept id."
+              },
+              "note": {
+                "type": "string"
+              },
+              "condition": {
+                "type": "string",
+                "description": "When the relation holds, e.g. 'outside liquid'."
+              }
+            }
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        },
+        "tables": {
+          "type": "object",
+          "description": "Per-entity data tables (enemy stats, item effects, drop odds).",
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "columns",
+              "rows"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "columns": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "rows": {
+                "type": "array",
+                "items": {
+                  "type": "array"
+                }
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/evidence"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

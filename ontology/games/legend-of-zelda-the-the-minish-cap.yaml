@@ -1,0 +1,4070 @@
+schema_version: 0
+id: legend-of-zelda-the-the-minish-cap
+game:
+  title: 'The Legend of Zelda: The Minish Cap'
+  platform: gba
+  game_code: BZME
+  rom_sha1: b4bd50e4131b027c334547b4524e2dbbd4227130
+  year: 2005
+  developer: Capcom / Flagship (published by Nintendo)
+  derived_genres:
+  - action_adventure
+  - top_down_adventure
+  evidence_basis:
+  - decomp_source
+  - capture_telemetry
+  - capture_frame
+  - derived
+  - llm_knowledge
+  sources:
+  - kind: decomp
+    ref: https://github.com/zeldaret/tmc @ 6fb6dfb4a7efbe24d0fd1dda5097af6131faacde (local/decomps/tmc; USA target
+      sha1 b4bd50e4...; no NONMATCH/ASM_FUNC in src/, ~6.2k lines hand ASM in asm/src; binary data blobs such as
+      gCollisionMtx.bin not extracted; progress % not computed - no build map)
+  - kind: rom_header
+    ref: local/re/roms.json id=legend-of-zelda-the-the-minish-cap (header GBAZELDA MC, maker 01, version 0, 16 MiB)
+  - kind: captures
+    ref: local/captures/legend-of-zelda-the-the-minish-cap run 20261015T234415-8f46cf (attract 3600 + frontend 5400
+      frames, mGBA 0.10.5 HLE BIOS, harness 0.1.0, source commit d431b81 dirty tree)
+  - kind: extraction_run
+    ref: claude-opus-5-5, brief v1, 2026-10-16T03:56:00Z-2026-10-16T04:12:34Z, ~140 decomp files opened or grepped (lead + 3 parallel
+      research subagents) plus 2 capture phases and 12 keyframes
+conventions:
+  units_convention: 'Positions x/y/z are Q16.16 px (z negative = above ground). Entity speed is s16 Q8.8 px/frame
+    (0x100 = 1 px/frame) applied along one of 32 directions (0 = north, 8 = east, 0x80 bit = not moving) via a 256-step
+    Q8.8 sine table, so diagonals are normalised. zVelocity is Q16.16 px/frame and GravityUpdate subtracts a Q16.16
+    gravity per frame (Q_8_8(32) = 0.125 px/frame^2). Tiles are 16x16 px; collision data is per 8x8 quarter or per-pixel
+    shape. Health is 8 units per heart. Timers are frames at ~59.73 fps. Params are converted to px and frames, with
+    native values noted.'
+  enemy_speed_column: enemy_stats speed values are definition speed / 256 (px/frame).
+components:
+- id: game_mode_flow
+  facet: frontend
+  label: Top-level task state machine with soft reset and sleep mode
+  summary: 'AgbMain runs one task handler per frame (TITLE, FILE_SELECT, GAME, GAMEOVER, STAFFROLL, DEBUG), then
+    the message, fade and audio updates. The GAME task has its own transition/init/main/exit states and main
+    sub-states (init room, change room, update, change area, Minish portal, barrel update, subtask). Pause menus,
+    the kinstone menu, world-event reveals, map hints and fast travel run as subtasks inside GAME. Holding A+B+Select+Start
+    soft-resets. The pause menu also offers sleep mode (GBA Stop), woken with L+R+Select.'
+  instantiates:
+  - concept: frontend.flow.mode_state_machine
+  - concept: frontend.soft_reset.button_combo
+  reads:
+  - input.buttons.held
+  - main.task
+  writes:
+  - main.task
+  - game.state
+  - game.substate
+  params:
+    soft_reset_keys:
+      value: A+B+Select+Start
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/main.c:SoftResetKeysPressed
+        confidence: 0.95
+    top_level_tasks:
+      value:
+      - title
+      - file_select
+      - game
+      - gameover
+      - staffroll
+      - debug
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/main.c:sTaskHandlers
+        confidence: 0.95
+    subtasks:
+      value: 11
+      unit: subtask ids (exit, pause menu, map hint, kinstone menu, aux cutscene, portal cutscene, figurine menu,
+        world event, fast travel, local map hint, ...)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/subtask.h
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: save_system
+    note: game-over and staffroll end in save prompts
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/main.c:AgbMain
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:include/game.h (GameTask states and GameMain substates)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/main.c:SetSleepMode
+    confidence: 0.85
+- id: logos_and_title
+  facet: frontend
+  label: Nintendo/Capcom logos, zooming-sword title and idle loop back to logos (no attract demo)
+  summary: 'Boot shows the Nintendo and Capcom logos (120-frame timer or key press). The USA title fades in the title
+    BGM, zooms the Picori sword on an affine layer for 15 frames, holds 40 frames, then spawns the logo object for
+    a 300-frame intro before showing a blinking PRESS START. A or Start (after fades) goes to file select. After 3600
+    idle frames (60 s) the sequence returns to the logos; the retail game has no gameplay attract demo (demo.c is a
+    kiosk scenario picker compiled only into the USA demo build). The 60 s attract capture stayed on the title.'
+  instantiates:
+  - concept: frontend.boot.publisher_logos
+  - concept: frontend.title.idle_loop_to_logos
+  reads:
+  - input.buttons.pressed
+  - title.timer
+  writes:
+  - main.task
+  - title.state
+  params:
+    logo_timer:
+      value: 120
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/title.c:HandleNintendoCapcomLogos
+        confidence: 0.95
+    title_intro_hold:
+      value: 300
+      unit: frames (360 JP/EU)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/title.c:HandleTitlescreenAnimationIntro
+        confidence: 0.95
+    title_idle_timeout:
+      value: 3600
+      unit: frames (60 s), then back to logos
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/title.c:HandleTitlescreen (timer = 3600) / GetAdvanceState
+        confidence: 0.9
+  invariants:
+  - Retail builds never play recorded gameplay on the title; idle only restarts the intro.
+  relations:
+  - type: part_of
+    target: game_mode_flow
+  - type: requires
+    target: affine_title_and_sprites
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/title.c:HandleTitlescreen
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/demo.c:DemoTask (DEMO_USA only)
+    confidence: 0.85
+  - kind: capture_frame
+    ref: capture:attract:keyframes f000078_scene (Nintendo/Capcom logos), f000290_scene (sword), f003543 (title)
+    confidence: 0.95
+- id: file_select_and_naming
+  facet: frontend
+  label: Three-slot file select with copy/erase, options and 6-character name entry
+  summary: File select lists 3 slots; empty slots open name entry, valid slots open a view with Start / Copy / Erase,
+    R opens options (message speed, brightness). Name entry is a 13x6 character grid with page switching on L/R, B
+    as backspace and Start jumping to END; names are up to 6 characters and cannot be empty. New files start with
+    3 hearts. The capture shows the name grid and a "Saving file..." dialog when the slot is created.
+  instantiates:
+  - concept: frontend.menu.file_select_slots
+  - concept: frontend.menu.name_entry_grid
+  reads:
+  - save.header
+  - save.files[*].valid
+  - input.buttons.pressed
+  writes:
+  - save.files[*]
+  - save.header.name
+  params:
+    save_slots:
+      value: 3
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/main.h:NUM_SAVE_SLOTS
+        confidence: 0.95
+    name_length:
+      value: 6
+      unit: characters
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/save.h:FILENAME_LENGTH
+        confidence: 0.95
+    file_operations:
+      value:
+      - start
+      - copy
+      - erase
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/fileselect.c:sub_08050C54
+        confidence: 0.85
+    message_speeds:
+      value:
+      - 5
+      - 3
+      - 1
+      unit: frames per character (slow/normal/fast; default normal)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/message.c:TextDispUpdate
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: game_mode_flow
+  - type: requires
+    target: save_system
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/fileselect.c:sub_08050940
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/fileselect.c:ResetSaveFile
+    confidence: 0.9
+  - kind: capture_frame
+    ref: capture:frontend:keyframes f000670 (ENTER A NAME grid), f000820_scene (Saving file dialog)
+    confidence: 0.95
+- id: save_system
+  facet: frontend
+  label: Anywhere-save to mirrored, checksummed EEPROM records
+  summary: 'The player can save from the pause menu at any time (and at game over / after credits); loading resumes
+    at the last recorded room-entry status. Saves go to 8 KiB EEPROM: a header plus three 0x500-byte slots, each written
+    twice (primary and mirror at +0x1000) with status words (valid / untouched / deleted) and a two-part checksum;
+    reads fall back to the mirror. Saving is a staged state machine that fades master volume out by 8 per frame,
+    waits 8 frames, writes, then fades volume back in.'
+  instantiates:
+  - concept: frontend.save.save_anywhere
+  - concept: frontend.save.redundant_slot_backup
+  reads:
+  - save.*
+  writes:
+  - eeprom.slots[3]
+  - eeprom.header
+  params:
+    save_media_bytes:
+      value: 8192
+      unit: bytes EEPROM (64 Kbit)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/eeprom.c:gEEPROMConfig8k
+        confidence: 0.9
+    save_file_bytes:
+      value: 1204
+      unit: bytes (0x4B4) per slot
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/save.h:SaveFile
+        confidence: 0.9
+    copies_per_record:
+      value: 2
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/save.c:DataDoubleWriteWithStatus
+        confidence: 0.9
+  invariants:
+  - A record is accepted only if its checksum pair sums to 0x10000; otherwise the mirror is tried, then the slot
+    reads as empty.
+  relations:
+  - type: part_of
+    target: game_mode_flow
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/save.c:HandleSave
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/save.c:CalculateChecksum
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/save.c:gSaveFileEEPROMAddresses
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/menu/pauseMenu.c:sub_080A59C8 (save popup)
+    confidence: 0.8
+- id: game_over_continue
+  facet: frontend
+  label: Game over with save prompt, continue at last entrance with 3 hearts
+  summary: When health reaches 0 (and no bottled fairy auto-revives), the game-over task fades in, raises the GAME
+    OVER text, asks whether to save, then offers Continue or Quit. Continue reloads from the saved room status with
+    health set to 24 units (3 hearts); Quit soft-resets.
+  instantiates:
+  - concept: frontend.game_over.continue_from_save
+  reads:
+  - player.health
+  - inventory.bottles
+  writes:
+  - player.health
+  - main.task
+  params:
+    respawn_health:
+      value: 24
+      unit: health units (3 hearts)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/gameOverTask.c:GameOver_Init
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: game_mode_flow
+  - type: modulates
+    target: health_and_damage
+    note: a bottled fairy pre-empts game over
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/gameOverTask.c:GameOver_Update
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/player.c:sub_08071D04 (fairy revive)
+    confidence: 0.85
+- id: top_down_projection
+  facet: projection
+  label: Top-down 3/4 view with a z-height axis and two floor layers
+  summary: 'The world is a top-down grid of 16x16 px tiles (rooms up to 64 tiles wide) viewed at a slight 3/4 angle.
+    Entities have a separate z coordinate (negative = up) used for jumps, falling objects and shadows; hit tests
+    include a z half-depth. Each room has a bottom and a top collision layer, and entities carry a collision layer
+    (1, 2 or 3 = both) switched by stairs/ladder/bridge tiles, giving multi-level rooms without 3D.'
+  instantiates:
+  - concept: projection.top_down.three_quarter_view
+  - concept: projection.top_down.z_height_layering
+  params:
+    tile_size:
+      value: 16
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/entity.h:TILE
+        confidence: 0.95
+    room_max_width_tiles:
+      value: 64
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/entity.h:TILE_LOCAL (6-bit x/y tile index)
+        confidence: 0.9
+    screen:
+      value: 240x160
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/scroll.c:Scroll1 (0xf0 width, DISPLAY_HEIGHT)
+        confidence: 0.95
+    collision_layers:
+      value: 2
+      unit: floor layers (bottom/top), entity layer mask 1/2/3
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/entity.h:CollisionLayer
+        confidence: 0.9
+  evidence:
+  - kind: decomp_source
+    ref: tmc:include/entity.h:Entity (x/y/z Q16.16)
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/collision.c:IsColliding (z half-depth)
+    confidence: 0.85
+  - kind: capture_frame
+    ref: capture:frontend:keyframes f004503, f005344_scene (Link's house area)
+    confidence: 0.9
+- id: follow_camera
+  facet: camera
+  label: Centred follow camera clamped to room bounds with capped speed and screen shake
+  summary: Each frame the camera moves toward the target (normally Link) so that the target sits at screen (120,
+    80), with no dead zone, by at most scrollSpeed px per axis (4 by default; scripts and boss rooms set 1-2), and
+    clamped to the room rectangle. Screen shake adds offsets up to +-3 px from a 6x8 table, advancing every 2 frames.
+    Camera targets can be retargeted to objects (Minish form, cutscenes, world-event reveals).
+  instantiates:
+  - concept: camera.follow.region_bounded_scroll
+  - concept: camera.effect.screen_shake
+    weight: 0.5
+  reads:
+  - camera.target.position
+  - room.bounds
+  writes:
+  - camera.scroll.x
+  - camera.scroll.y
+  params:
+    anchor:
+      value: 120,80
+      unit: px (screen centre)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/scroll.c:Scroll1 (target - 0x78 / - 0x50)
+        confidence: 0.95
+    scroll_speed_cap:
+      value: 4
+      unit: px/frame per axis
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/scroll.c:Scroll0 (scrollSpeed = 4)
+        confidence: 0.95
+    shake_max_offset:
+      value: 3
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: tmc:asm/src/script.s:gShakeOffsets
+        confidence: 0.8
+  invariants:
+  - scroll_x stays within [origin_x, origin_x + width - 240] and scroll_y within [origin_y, origin_y + height - 160].
+  relations:
+  - type: requires
+    target: top_down_projection
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/scroll.c:Scroll1
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/scroll.c:UpdateScreenShake
+    confidence: 0.85
+- id: room_transitions
+  facet: camera
+  label: Room-edge slide scrolling, door warps and typed fades
+  summary: 'Walking off a room edge either follows a border warp record or, within an area, slides the camera to the
+    neighbour room at 4 px/frame (40 frames vertically, 60 horizontally) while nudging Link 0.375 or 0.25 px/frame
+    so he ends inside. Doors, stairs and area rectangles use warp records (border, area-rect with 4 shapes, and
+    variants) that pick a fade: default, black, white, mosaic cut or iris; durations are 256/speed frames (e.g. 16
+    frames at speed 16, 64 at speed 4). Spawn types include normal, drop-in, step-forward, stair exit and Minish
+    variants.'
+  instantiates:
+  - concept: camera.transition.edge_slide_scroll
+  - concept: rendering.blending.brightness_fade
+    weight: 0.3
+  reads:
+  - player.position
+  - room.transitions
+  writes:
+  - camera.scroll
+  - player.position
+  - world.area
+  - world.room
+  params:
+    slide_speed:
+      value: 4
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/scroll.c:Scroll2Sub2
+        confidence: 0.95
+    slide_frames_vertical:
+      value: 40
+      unit: frames (160 px)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/scroll.c:Scroll2Sub2 (unk_18 == 0x28)
+        confidence: 0.95
+    slide_frames_horizontal:
+      value: 60
+      unit: frames (240 px)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/scroll.c:Scroll2Sub2 (unk_18 == 0x3c)
+        confidence: 0.95
+    player_nudge:
+      value: 0.375 vertical / 0.25 horizontal
+      unit: px/frame during slide (15 px total)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/scroll.c:Scroll2Sub2
+        confidence: 0.95
+    default_fade_frames:
+      value: 16
+      unit: frames (256/speed with speed 16)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/fade.c:SetFade / tmc:src/gameUtils.c:CheckRoomExit
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: follow_camera
+  - type: requires
+    target: overworld_structure
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/scroll.c:Scroll2Sub2
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:include/transitions.h:Transition
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/scroll.c:IsPosInTransitionRect
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/gameUtils.c:CheckRoomExit
+    confidence: 0.85
+- id: bg_layer_stack
+  facet: rendering
+  label: Mode-0 tilemap rooms on two collision layers with OBJ actors
+  summary: 'Gameplay runs in Mode 0 with up to four text BGs: two map layers (LAYER_BOTTOM/LAYER_TOP) carry
+    collision-bearing 16x16 metatiles, the others hold the HUD/text window and per-room decorative or parallax
+    backdrops installed by background managers. Actors are OBJ sprites (up to 62 visible in the frontend capture).
+    Map edits at runtime (kinstone world events, bombed walls, opened chests) rewrite tile types in place.'
+  instantiates:
+  - concept: rendering.background.tile_layer_stack
+  reads:
+  - room.tilemaps
+  - camera.scroll
+  writes:
+  - io.bgcnt[0..3]
+  - io.dispcnt
+  - oam.*
+  params:
+    gameplay_video_mode:
+      value: 0
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:frontend:frames 4120-5400 DISPCNT 0x1740 (mode 0, BG0-2 + OBJ)
+        confidence: 0.85
+    max_obj_visible_observed:
+      value: 62
+      unit: sprites (frontend phase, file select/intro/early gameplay)
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:frontend:max_obj_visible
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: top_down_projection
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/interrupts.c:DispCtrlSet
+    confidence: 0.8
+  - kind: decomp_source
+    ref: tmc:src/interrupts.c:UpdateDisplayControls
+    confidence: 0.8
+  - kind: decomp_source
+    ref: tmc:src/kinstone.c:sub_0801876C (SetTileType on LAYER_BOTTOM/LAYER_TOP)
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: capture:frontend:frames 4120-5400 video mode 0
+    confidence: 0.85
+- id: hblank_raster_effects
+  facet: rendering
+  label: HBlank-DMA window and affine raster effects (iris wipes, dark-room light circle, barrel, heat shimmer)
+  summary: 'A shared helper fills a per-scanline buffer and arms DMA0 (HBlank start, dest reload) to stream it into
+    a register each line. Uses found: WIN0H per line for circular iris fades and the Minish-portal close-up, and a
+    light circle centred on Link in dark rooms (radius eased in 4 px steps with a sine wobble); BG2PA..BG2PD-style
+    affine parameters per line for the Deepwood Shrine rolling-barrel interior; BG3HOFS per line for steam overlays,
+    light rays and Vaati''s appearing effect; BG3CNT per line in one pause screen; a rotating white-triangle polygon
+    window. The captured front end did not exercise any of them (no HBlank DMA recorded).'
+  instantiates:
+  - concept: rendering.raster.window_shape_per_scanline
+  - concept: rendering.raster.hblank_dma_scroll_distortion
+  - concept: rendering.raster.per_scanline_affine
+  reads:
+  - fade.iris_center
+  - fade.iris_size
+  - player.position
+  - area.light_level
+  writes:
+  - io.win0h
+  - io.bg2pa
+  - io.bg3hofs
+  - io.bg3cnt
+  - io.winin
+  - io.winout
+  params:
+    hdma_window_targets:
+      value:
+      - WIN0H (iris fade, portal close-up, dark-room light, triangle effect)
+      - BG2PA (rolling barrel, 8 halfwords/line)
+      - BG3HOFS (steam overlay, light rays, Vaati appearing)
+      - BG3CNT (pause menu screen 6)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/common.c:sub_0801E1EC (SetVBlankDMA -> REG_ADDR_WIN0H, HBlank repeat)
+        confidence: 0.95
+      - kind: decomp_source
+        ref: tmc:src/manager/rollingBarrelManager.c:RollingBarrelManager_Main (REG_ADDR_BG2PA)
+        confidence: 0.95
+      - kind: decomp_source
+        ref: tmc:src/manager/steamOverlayManager.c (REG_ADDR_BG3HOFS)
+        confidence: 0.9
+      - kind: decomp_source
+        ref: tmc:src/manager/lightRayManager.c (REG_ADDR_BG3HOFS)
+        confidence: 0.9
+    dark_room_min_light_radius:
+      value: 17
+      unit: px (radius floor 0x11, eased by 4 px/step)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/manager/lightManager.c (uVar3 floor 0x11, +-4 steps)
+        confidence: 0.75
+  relations:
+  - type: modulates
+    target: bg_layer_stack
+  - type: part_of
+    target: room_transitions
+    note: iris wipes
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/common.c:sub_0801E160
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/fade.c (sub_0801E1EC iris calls)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/object/minishPortalCloseup.c (sub_0801E1EC)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/object/whiteTriangleEffect.c (sub_0801E49C)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/manager/lightManager.c (sub_0801E160 at player screen pos)
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: capture:attract+frontend:hblank_dma_targets [] (front end only)
+    confidence: 0.9
+- id: affine_title_and_sprites
+  facet: rendering
+  label: Mode-1 affine title zoom and affine BG set pieces
+  summary: The title switches to Mode 1 and draws the Picori sword on affine BG2 (256-colour, 512x256 wrap) with
+    BLDALPHA 9/9 between BG0 and BG1; the sword zooms out from a scale ratio of 0x10 to 0x100 in 0x10 steps (15
+    frames) via BgAffineSet, centred at (120, 72). In play, affine hardware appears in set pieces (rolling barrel)
+    rather than routine actors; no affine OBJs were seen in the captured front end.
+  instantiates:
+  - concept: rendering.background.affine_rotscale
+  - concept: rendering.blending.alpha_layer_transparency
+    weight: 0.5
+  reads:
+  - title.sword_scale
+  writes:
+  - io.bg2pa
+  - io.bg2pb
+  - io.bg2pc
+  - io.bg2pd
+  - io.bg2x
+  - io.bg2y
+  - io.bldalpha
+  params:
+    zoom_frames:
+      value: 15
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/title.c:HandleTitlescreenAnimationIntro (+0x10 per frame to 0x100)
+        confidence: 0.95
+      - kind: capture_telemetry
+        ref: capture:attract:affine_bg_transformed_frames 15 (frames 232-264 mode 1, BG2PA 0x0010 at start)
+        confidence: 0.95
+    title_blend:
+      value: 9/9
+      unit: EVA/EVB (of 16)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/title.c:HandleTitlescreen (BLDALPHA_BLEND(9, 9))
+        confidence: 0.9
+      - kind: capture_telemetry
+        ref: capture:attract:frame 232 BLDCNT 0x0241 BLDALPHA 0x0909
+        confidence: 0.95
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/title.c:UpdateSwordBgAffineData
+    confidence: 0.95
+  - kind: capture_telemetry
+    ref: capture:attract:frames 232-3600 DISPCNT 0x1741 (mode 1)
+    confidence: 0.95
+  - kind: capture_frame
+    ref: capture:attract:keyframes f000290_scene (sword), f003543 (title logo)
+    confidence: 0.9
+- id: blend_light_and_overlays
+  facet: rendering
+  label: Alpha overlays, light levels and screen fades
+  summary: Outdoor and dungeon atmospherics are layered BGs with alpha blending (Hyrule Field cloud shadows, Cave of
+    Flames steam, Mount Crenel weather), room light levels lerped toward a target in steps of 4 (of 256), and a fade
+    controller offering black/white fades and iris wipes. The intro story uses alpha blending plus WIN0 to frame
+    stained-glass panels.
+  instantiates:
+  - concept: rendering.blending.alpha_layer_transparency
+  - concept: rendering.blending.brightness_fade
+  - concept: rendering.palette.runtime_palette_effects
+    weight: 0.5
+  reads:
+  - room.light_level_target
+  - fade.type
+  writes:
+  - io.bldcnt
+  - io.bldalpha
+  - io.bldy
+  - area.light_level
+  params:
+    light_lerp_step:
+      value: 4
+      unit: light units per update (range 0-256)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/manager/lightManager.c:LerpLightLevel
+        confidence: 0.8
+  relations:
+  - type: modulates
+    target: bg_layer_stack
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/manager/cloudOverlayManager.c
+    confidence: 0.7
+    note: file brief only
+  - kind: decomp_source
+    ref: tmc:src/manager/weatherChangeManager.c
+    confidence: 0.6
+    note: file brief only
+  - kind: decomp_source
+    ref: tmc:src/manager/lightManager.c:LerpLightLevel
+    confidence: 0.85
+  - kind: capture_telemetry
+    ref: capture:frontend:frames 1347-4102 BLDCNT 0x2244 + WIN0 (0x00f0,0x0060) during story intro
+    confidence: 0.85
+- id: scale_parallax_backgrounds
+  facet: camera
+  label: Scale-selling parallax on Minish paths and rafters
+  summary: 'When Link is Minish-sized on dedicated "Minish path" rooms, background managers rebuild BG1/BG3 from wide
+    source maps and scroll them at more than camera speed horizontally (BG3 at 1.125x, BG1 at 1.25x) and at a damped
+    ratio vertically (BG3 at 0.25x around a 48 px anchor), so giant grass blades and clutter sweep past as if close to
+    the lens. Minish rafters use per-layer ratio tables relative to room width/height.'
+  instantiates:
+  - concept: camera.parallax.layer_ratio_scroll
+  - concept: camera.parallax.foreground_overspeed_scale_cue
+  reads:
+  - camera.scroll
+  - room.size
+  writes:
+  - io.bg1hofs
+  - io.bg3hofs
+  - io.bg3vofs
+  params:
+    bg3_x_ratio:
+      value: 1.125
+      unit: x camera scroll
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/manager/horizontalMinishPathBackgroundManager.c:sub_08057F20 (tmp + tmp>>3)
+        confidence: 0.9
+    bg1_x_ratio:
+      value: 1.25
+      unit: x camera scroll
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/manager/horizontalMinishPathBackgroundManager.c:sub_08057F20 (tmp + tmp>>2)
+        confidence: 0.9
+    bg3_y_ratio:
+      value: 0.25
+      unit: x camera scroll (about a 48 px anchor)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/manager/horizontalMinishPathBackgroundManager.c:sub_08057F20
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: follow_camera
+  - type: requires
+    target: minish_shrink
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/manager/horizontalMinishPathBackgroundManager.c:sub_08057F20
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/manager/minishRaftersBackgroundManager.c
+    confidence: 0.7
+- id: sound_engine
+  facet: audio
+  label: MP2K (m4a) sequencer at 15768 Hz with a fade-aware request wrapper
+  summary: 'Audio is Nintendo''s m4a/MP2K library: m4aSoundInit sets 8-bit DAC, 15768 Hz mix, 8 DirectSound channels,
+    master volume 15; the mixer runs from a VCOUNT interrupt at line 80 (the handler is named HBlankIntr) and VSync
+    from VBlank. Game code goes through SoundReq, which encodes commands in the high half-word (stop, fade in/out,
+    tempo, continue) and keeps separate master/BGM/SFX volumes that fade 4/256 per frame. Capture confirms DirectSound
+    A only at 15768 Hz plus PSG channels 1, 2 and 4.'
+  instantiates:
+  - concept: audio.engine.sample_psg_sequencer
+  params:
+    mix_rate:
+      value: 15768
+      unit: Hz
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/gba/m4a.c:m4aSoundInit (SOUND_MODE_FREQ_15768)
+        confidence: 0.95
+      - kind: capture_telemetry
+        ref: capture:attract+frontend:directsound_rates_hz 15768 Hz in 8836 frames
+        confidence: 0.95
+    max_directsound_channels:
+      value: 8
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/gba/m4a.c:m4aSoundInit (8 << SOUND_MODE_MAXCHN_SHIFT)
+        confidence: 0.95
+    psg_channels_used:
+      value:
+      - 1
+      - 2
+      - 4
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:attract+frontend:psg_channels_triggered
+        confidence: 0.9
+    volume_fade_step:
+      value: 4
+      unit: /256 per frame (full fade 64 frames)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/sound.c:fade
+        confidence: 0.9
+    mixer_irq_line:
+      value: 80
+      unit: VCOUNT scanline
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/interrupts.c:EnableVBlankIntr (DISPSTAT VCOUNT 80) / HBlankIntr (m4aSoundMain)
+        confidence: 0.9
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/sound.c:SoundReq
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/sound.c:AudioMain
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/gba/m4a.c:m4aSoundInit
+    confidence: 0.95
+  - kind: capture_telemetry
+    ref: capture:attract+frontend:vcount_irq true, directsound_A true, directsound_B false
+    confidence: 0.9
+- id: music_system
+  facet: audio
+  label: Area-keyed BGM with fight-theme overrides
+  summary: Each area's metadata names a queued BGM; on room load the game only restarts music when the queued track
+    differs from the playing one. Fight managers swap in a room-specified or default fight theme and restore the
+    previous track when the fight is cleared; a late-game story flag forces the fight theme area-wide; boss deaths
+    stop the BGM. About 100 BGM ids exist in the sound table.
+  instantiates:
+  - concept: audio.music.room_based_tracks
+  - concept: audio.music.state_driven_music
+  reads:
+  - area.queued_bgm
+  - room.fight_bgm
+  - world.flags.*
+  writes:
+  - music.current_track
+  params:
+    bgm_ids:
+      value: 100
+      unit: BGM_* enum entries (several unused)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/sound.h (BGM_ entries)
+        confidence: 0.7
+        note: grep count of BGM_ symbols; includes SONG_ command names
+  relations:
+  - type: part_of
+    target: sound_engine
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/gameUtils.c:LoadRoomBgm
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/game.c (gArea.bgm != queued_bgm -> SoundReq)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/manager/fightManager.c:FightManager_WaitForFlag
+    confidence: 0.95
+- id: eight_direction_walk
+  facet: movement_physics
+  label: Instant-start 8-direction walk with normalised diagonals and state speed table
+  summary: 'The D-pad maps to 8 of 32 directions (opposite pairs cancel). Walking has no acceleration: each frame
+    PlayerNormal writes speed directly (1.25 px/frame) and the move is speed x sin/cos of the direction, so diagonals
+    have the same magnitude (0.707 per axis). Facing keeps the current cardinal when it is adjacent to a diagonal
+    input. A per-frame speed modifier (slopes, dust, swamp, beetles) is added then reset, with a 0.125 px/frame floor.
+    State-specific speeds replace the base: shield/bow 0.75, sword charge 0.875, Gust Jar 0.5, burning forced run 3.0,
+    Minish 0.75.'
+  instantiates:
+  - concept: movement_physics.locomotion.instant_eight_way_walk
+  - concept: movement_physics.locomotion.action_speed_penalty
+  reads:
+  - input.dpad
+  - player.state
+  - player.flags.minish
+  - player.speed_modifier
+  writes:
+  - player.position
+  - player.direction
+  - player.facing
+  params:
+    walk_speed:
+      value: 1.25
+      unit: px/frame
+      native_value: 320
+      native_unit: Q8.8 px/frame (kWalkSpeed 0x140)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c:kWalkSpeed
+        confidence: 0.95
+      variants:
+      - when: shield_raised_or_bow_drawn
+        value: 0.75
+        unit: px/frame
+      - when: charging_sword
+        value: 0.875
+        unit: px/frame
+      - when: using_gust_jar
+        value: 0.5
+        unit: px/frame
+      - when: burning
+        value: 3.0
+        unit: px/frame
+      - when: minish
+        value: 0.75
+        unit: px/frame
+      - when: swamp
+        value: 0.3125
+        unit: px/frame
+      - when: dust
+        value: 0.75
+        unit: px/frame
+      - when: slope
+        value: 0.9375
+        unit: px/frame (-0x50)
+    min_speed_with_modifier:
+      value: 0.125
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerUtils.c:UpdatePlayerMovement
+        confidence: 0.9
+    directions:
+      value: 32
+      unit: heading steps (input uses 8)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/entity.h:Direction
+        confidence: 0.95
+    diagonal_axis_factor:
+      value: 0.70703125
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/sineTable.c:gSineTable (entry 32)
+        confidence: 0.95
+  invariants:
+  - Start, stop and turn are instant on normal ground (no momentum outside ice, air and swimming).
+  - Diagonal and cardinal walking cover the same distance per frame.
+  relations:
+  - type: requires
+    target: tile_collision_and_sliding
+  - type: modulates
+    target: minish_shrink
+    note: Minish uses the 0.75 variant
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/player.c:PlayerNormal
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/code_0805EC04.c:gUnk_08109202 (D-pad to direction table)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/physics.c:LinearMoveUpdate
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/physics.c:sub_0806F948 (facing on diagonals)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/player.c:sub_08074244 (slope modifier)
+    confidence: 0.85
+- id: tile_collision_and_sliding
+  facet: movement_physics
+  label: Quarter-tile collision masks, axis wall-sliding and corner nudge
+  summary: 'Each 16x16 tile per layer has a collision byte: values 1-15 are a 4-bit mask of solid 8x8 quarters, larger
+    values select 16x16 per-pixel shape masks (diagonals, half tiles). The player samples 8 probe points around a
+    12x12 hitbox and writes per-side collision bits; a per-direction mask cancels only the blocked axis, so diagonal
+    input slides along walls. Walking straight into a wall edge where only one leading probe is blocked redirects
+    the move 90 degrees toward the open side at 1 px/frame (corner nudge), and cardinal input into a diagonal shape
+    tile rotates the heading 45 degrees. After moving, edge points are pushed pixel by pixel out of shape masks. The
+    shape-mask table is chosen by state (normal, Minish, jumping, carrying, beetle, swimming), which is how small
+    gaps open only to Minish Link.'
+  instantiates:
+  - concept: movement_physics.collision.tile_mask_wall_slide
+  - concept: movement_physics.collision.corner_nudge_assist
+  reads:
+  - world.tiles.collision[layer]
+  - player.hitbox
+  - player.collision_layer
+  - player.state
+  writes:
+  - player.collisions
+  - player.position
+  - player.direction
+  params:
+    player_hitbox:
+      value: 12x12
+      unit: px (half-extents 6, offset y -3)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerHitbox.c:gPlayerHitbox
+        confidence: 0.95
+    corner_nudge_speed:
+      value: 1.0
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: tmc:asm/src/code_08001A7C.s:CalcCollisionDirectionOLD
+        confidence: 0.7
+        note: read from hand-written ASM
+    diagonal_tile_turn:
+      value: 45
+      unit: degrees (direction +-4)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerUtils.c:sub_08079E90 / gUnk_0811C118
+        confidence: 0.85
+    quarter_tile:
+      value: 8
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/movement.c:IsTileCollision
+        confidence: 0.9
+  invariants:
+  - A blocked axis component is zeroed; the free axis continues at its own component speed.
+  - If all four sides report collision (stuck), Link gets 30 i-frames and respawns.
+  relations:
+  - type: part_of
+    target: eight_direction_walk
+  - type: modulates
+    target: minish_shrink
+    note: state-selected shape tables define Minish-only passages
+  evidence:
+  - kind: decomp_source
+    ref: tmc:asm/src/player.s:sub_080085CC
+    confidence: 0.75
+  - kind: decomp_source
+    ref: tmc:asm/src/code_08001A7C.s:LinearMoveDirectionOLD
+    confidence: 0.7
+  - kind: decomp_source
+    ref: tmc:src/playerUtils.c:sub_0807A5B8
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/movement.c:IsTileCollision
+    confidence: 0.9
+- id: surface_and_ice_physics
+  facet: movement_physics
+  label: Per-tile surface actions (ice momentum, conveyors, swamp, slopes)
+  summary: 'Every frame the act tile under Link maps to one of 46 surface types with its own handler. Ice switches
+    to velocity physics: +-10/256 px/frame^2 per axis toward input (diagonals unnormalised), -3/256 friction, +-1.5
+    px/frame cap, and normal-ground movement seeds the velocity so momentum carries onto ice. Conveyors push at 1.25
+    px/frame (not Minish). Swamp slows and sinks Link over up to 240 frames before a 4-unit penalty respawn (dashing
+    is immune). Slopes, dust and attached beetles subtract speed.'
+  instantiates:
+  - concept: movement_physics.surface.ice_momentum
+  - concept: movement_physics.surface.conveyor_push
+  - concept: mechanics.hazard.sinking_floor
+  reads:
+  - world.tiles.act_type
+  - input.dpad
+  - player.velocity
+  writes:
+  - player.velocity
+  - player.speed_modifier
+  - player.position
+  - player.health
+  params:
+    ice_acceleration:
+      value: 0.039
+      unit: px/frame^2 per axis
+      native_value: 10
+      native_unit: Q8.8
+      evidence:
+      - kind: decomp_source
+        ref: tmc:asm/src/player.s:sub_08008942 (ice_velocities)
+        confidence: 0.7
+    ice_friction:
+      value: 0.0117
+      unit: px/frame^2 per axis
+      native_value: 3
+      native_unit: Q8.8
+      evidence:
+      - kind: decomp_source
+        ref: tmc:asm/src/player.s:sub_08008A1A
+        confidence: 0.65
+    ice_speed_cap:
+      value: 1.5
+      unit: px/frame per axis
+      native_value: 384
+      native_unit: Q8.8
+      evidence:
+      - kind: decomp_source
+        ref: tmc:asm/src/player.s:ClampPlayerVelocity
+        confidence: 0.7
+    conveyor_speed:
+      value: 1.25
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c:conveyer_push
+        confidence: 0.9
+    swamp_sink_frames:
+      value: 240
+      unit: frames max (surfaceTimer)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c:SurfaceAction_Swamp
+        confidence: 0.85
+    surface_types:
+      value: 46
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerUtils.c:gSurfaceActions
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: eight_direction_walk
+  - type: modulates
+    target: hazard_falls_and_respawn
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/playerUtils.c:UpdateFloorType
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/player.c:SurfaceAction_Swamp
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:asm/src/player.s:sub_08008AA0
+    confidence: 0.65
+- id: roll_and_dash
+  facet: movement_physics
+  label: R-button roll and Pegasus Boots charge-dash
+  summary: 'Roll (R with a direction) runs a 4-step speed script by animation frame (2.0, +0.125, 3.0, 0 px/frame);
+    big Link is briefly harmless to enemies during it, and on ice it rolls in place. Pegasus Boots charge for ~30
+    frames (walking blocked), then dash at 3.0 px/frame (2.5 as Minish), steering 11.25 degrees per frame toward
+    held input; two consecutive full wall contacts make Link bounce back (1 px/frame, z velocity 2.0, screen shake
+    16). With the Dash Attack skill and a sword the dash carries a sword hitbox. Dashing also crosses swamp safely.'
+  instantiates:
+  - concept: movement_physics.dash.charge_dash
+  - concept: movement_physics.dash.dodge_roll
+  reads:
+  - input.r
+  - input.item_buttons
+  - inventory.pegasus_boots
+  - player.collisions
+  writes:
+  - player.speed
+  - player.direction
+  - player.z_velocity
+  params:
+    roll_speeds:
+      value:
+      - 2.0
+      - 2.125
+      - 3.0
+      - 0
+      unit: px/frame per animation step
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c:PlayerRollUpdate (kWalkSpeedRolling)
+        confidence: 0.85
+    dash_charge:
+      value: 30
+      unit: frames (dash_state 1 -> 0x1E)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/item/itemPegasusBoots.c:sub_08076964
+        confidence: 0.9
+    dash_speed:
+      value: 3.0
+      unit: px/frame
+      native_value: 768
+      native_unit: Q8.8
+      variants:
+      - when: minish
+        value: 2.5
+        unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/item/itemPegasusBoots.c:sub_08076A88
+        confidence: 0.95
+    dash_turn_rate:
+      value: 11.25
+      unit: degrees/frame
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/item/itemPegasusBoots.c:sub_08076A88
+        confidence: 0.85
+    wall_bounce_z_velocity:
+      value: 2.0
+      unit: px/frame (1.5 Minish)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c:PlayerBounceInit
+        confidence: 0.9
+  relations:
+  - type: gated_by
+    target: item_toolkit
+    note: boots are an item; roll is innate
+  - type: modulates
+    target: sword_combat
+    condition: dash attack / roll attack skills learned
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/player.c:PlayerRollInit
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/item/itemPegasusBoots.c:sub_08076A88
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/player.c:PlayerBounceUpdate
+    confidence: 0.85
+- id: rocs_cape_jump
+  facet: movement_physics
+  label: Roc's Cape z-jump with held glide extension
+  summary: 'Top-down jumping is purely on the z axis: the Cape sets z velocity 2.0 px/frame with gravity 0.125 px/frame^2
+    (doubled over layer-transition tiles), clearing pits and low obstacles for ~33 frames and ~17 px of height. Holding
+    the button at the apex re-launches at 2.0 with gravity halved to 0.0625 (a glide). Air control becomes velocity-based:
+    1 px/frame initial in the input direction, +-3/256 per frame within 90 degrees of facing, 6/256 against, capped
+    at 1.5 px/frame with no air friction. Only swords can be used airborne; Down Thrust (skill) adds a 2.5 boost then
+    double gravity.'
+  instantiates:
+  - concept: movement_physics.jump.fixed_impulse_gravity_arc
+  - concept: movement_physics.jump.z_axis_hop
+  - concept: movement_physics.air_control.capped_air_acceleration
+    weight: 0.6
+  reads:
+  - input.item_buttons
+  - inventory.rocs_cape
+  - player.z
+  writes:
+  - player.z
+  - player.z_velocity
+  - player.velocity
+  params:
+    jump_z_velocity:
+      value: 2.0
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/item/itemRocsCape.c:ItemRocsCape
+        confidence: 0.9
+    gravity:
+      value: 0.125
+      unit: px/frame^2
+      native_value: Q_8_8(32)
+      native_unit: Q16.16 per frame
+      variants:
+      - when: glide_phase
+        value: 0.0625
+        unit: px/frame^2
+      - when: over_layer_transition_tile
+        value: 0.25
+        unit: px/frame^2
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c:kGravityRate
+        confidence: 0.95
+    apex_height:
+      value: 17
+      unit: px (16 frames up, ~33 frames airborne)
+      evidence:
+      - kind: derived
+        ref: integrate GravityUpdate with v0=2.0, g=0.125
+        inputs:
+        - jump_z_velocity
+        - gravity
+        confidence: 0.75
+    air_velocity_cap:
+      value: 1.5
+      unit: px/frame per axis
+      evidence:
+      - kind: decomp_source
+        ref: tmc:asm/src/player.s:sub_08008942 (velocities1/velocities3)
+        confidence: 0.65
+  invariants:
+  - While airborne (z != 0) only sword items can be created.
+  relations:
+  - type: gated_by
+    target: item_toolkit
+  - type: conflicts_with
+    target: hazard_falls_and_respawn
+    note: pits only trigger at z == 0
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/player.c:DoJump
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/player.c:sub_080739EC
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:asm/src/code_08003FC4.s:GravityUpdate
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/playerUtils.c:CreateItem (z != 0 -> swords only)
+    confidence: 0.9
+- id: terrain_moves
+  facet: movement_physics
+  label: Ledge hops, push/pull, ladders, holes and swimming
+  summary: 'Pushing against a ledge for 6 frames hops down with z velocity scaled to the drop ((16n-4)/16 px/frame
+    for n tiles) at 1 px/frame forward, invulnerable mid-air. Pushing a block for 6 frames starts a scripted push
+    at 0.5 px/frame (0.25 Minish); pulling moves 0.5 px/frame backward. Ladders force both layers and climb at an
+    animation-driven speed; climbable walls need the Grip Ring. Big Link can drop into holes and hop out by holding
+    a direction for 8 frames. With Flippers Link swims at 0.75 (1.0 with the swim butterfly) with an A burst to 1.5
+    decaying 4/256 per frame, and can dive for 120 frames; without them deep water drowns.'
+  instantiates:
+  - concept: movement_physics.ledge.one_way_ledge_hop
+  - concept: mechanics.puzzle.push_pull_block
+  - concept: movement_physics.medium.swim_with_item
+  reads:
+  - player.collisions
+  - world.tiles.act_type
+  - inventory.flippers
+  - inventory.grip_ring
+  writes:
+  - player.z_velocity
+  - player.position
+  - world.objects.pushable
+  params:
+    ledge_push_frames:
+      value: 6
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerUtils.c:sub_08079550
+        confidence: 0.85
+    ledge_z_velocity:
+      value: (16n - 4)/16
+      unit: px/frame for an n-tile drop (0.75 for 1, 1.75 for 2)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c:PlayerJumpInit
+        confidence: 0.85
+    push_speed:
+      value: 0.5
+      unit: px/frame (0.25 Minish)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c:PlayerPushInit (kPushSpeed)
+        confidence: 0.95
+    swim_speed:
+      value: 0.75
+      unit: px/frame
+      variants:
+      - when: swim_butterfly
+        value: 1.0
+        unit: px/frame
+      - when: a_burst
+        value: 1.5
+        unit: px/frame (decays 4/256 per frame)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerUtils.c:PlayerSwimming
+        confidence: 0.9
+    dive_frames:
+      value: 120
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerUtils.c:ToggleDiving
+        confidence: 0.9
+  relations:
+  - type: gated_by
+    target: item_gated_obstacles
+    note: Flippers, Grip Ring
+  - type: part_of
+    target: eight_direction_walk
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/player.c:PlayerJumpInit
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/player.c:PlayerPushUpdate
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/player.c:SurfaceAction_ClimbWall
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/player.c:PlayerInHoleInit
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/playerUtils.c:PlayerUpdateSwimming
+    confidence: 0.85
+- id: knockback_and_iframes
+  facet: movement_physics
+  label: Matrix-driven knockback slide and signed i-frame counters
+  summary: Contact outcomes (damage, knockback speed and duration, i-frames, confusion) come from a 173x34 collision
+    matrix indexed by attacker hit type and victim hurt type. Knocked-back Link slides at a fixed 2.5 px/frame through
+    the wall-aware mover until the duration expires (cancelled while dashing, holding, jumping, swimming, falling
+    or rolling). I-frames are a signed counter ticking toward zero; pairs with non-zero i-frames skip collision.
+    A front shield block gives 128 frames of contact immunity.
+  instantiates:
+  - concept: movement_physics.feedback.knockback_iframes
+  - concept: mechanics.combat.invulnerability_frames
+  reads:
+  - entity.hit_type
+  - entity.hurt_type
+  - collision_matrix
+  writes:
+  - player.knockback
+  - player.iframes
+  - player.health
+  params:
+    knockback_speed:
+      value: 2.5
+      unit: px/frame
+      native_value: 640
+      native_unit: Q8.8 (0x280)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerUtils.c:sub_080792D8
+        confidence: 0.9
+    collision_matrix_size:
+      value: 173x34
+      unit: hit types x hurt types, 12-byte entries
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/collision.c:ColSettings / gCollisionMtx
+        confidence: 0.9
+    shield_block_iframes:
+      value: 128
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/collision.c:CollisionDefault
+        confidence: 0.8
+  invariants:
+  - Entities with non-zero i-frames are skipped by the collision pass unless flagged otherwise.
+  relations:
+  - type: part_of
+    target: health_and_damage
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/collision.c:CollisionDefault
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:asm/src/intr.s:ram_CollideAll
+    confidence: 0.7
+  - kind: decomp_source
+    ref: tmc:asm/src/code_08001A7C.s:sub_080028E0 (iframe tick)
+    confidence: 0.7
+- id: hazard_falls_and_respawn
+  facet: mechanics
+  label: Pit, water, lava and swamp hazards with breadcrumb respawn
+  summary: 'Falling into a pit costs 2 units (1/4 heart) with 32 i-frames; lava 2 units after a bounce; swamp 4 units;
+    damaging floors 2 units with knockback; drowning costs no health. After a hazard Link respawns on the most recent
+    safe tile from a 16-entry breadcrumb list of ground tiles recorded at z == 0 (or on the lily pad he rode, or
+    the room entry point). Some pits are exits that drop Link into the room below without damage.'
+  instantiates:
+  - concept: mechanics.hazard.pit_respawn_breadcrumb
+  reads:
+  - world.tiles.act_type
+  - player.path_memory[16]
+  writes:
+  - player.health
+  - player.position
+  - player.iframes
+  params:
+    pit_damage:
+      value: 2
+      unit: health units (8 = 1 heart)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c:kFallDamage
+        confidence: 0.95
+    hazard_iframes:
+      value: 32
+      unit: frames after pit/drown respawn
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c:PlayerFallUpdate
+        confidence: 0.85
+    breadcrumb_length:
+      value: 16
+      unit: tiles
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerUtils.c:RespawnPlayer (path_memory)
+        confidence: 0.85
+  tables:
+    hazards:
+      columns:
+      - hazard
+      - damage_units
+      - iframes
+      - note
+      rows:
+      - [pit, 2, 32, respawn at breadcrumb; exit pits drop to next room without damage]
+      - [deep_water_without_flippers, 0, 32, drown animation then respawn]
+      - [lava, 2, 20, bounce then 60-frame sink]
+      - [swamp, 4, 32, sink up to 240 frames; dashing immune]
+      - [damaging_floor, 2, 24, 4-frame knockback]
+      - [launched, 8, 60, scripted launch]
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c (PlayerFallInit, PlayerDrownInit, PlayerLavaInit, SurfaceAction_Swamp, SurfaceAction_16,
+          sub_08072490)
+        confidence: 0.85
+  relations:
+  - type: modulates
+    target: health_and_damage
+  - type: modulates
+    target: minish_shrink
+    note: Minish Link treats puddles as deep water and holes as pits
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/playerUtils.c:RespawnPlayer
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/player.c:SurfaceAction_Pit
+    confidence: 0.85
+- id: minish_shrink
+  facet: mechanics
+  label: Portal-based shrinking to Minish scale with scale-specific rules
+  summary: 'Link shrinks only on Minish portals (stumps, pots, etc.): a manager tracks a 64x64 px area around each
+    portal; Link jumps onto it (z velocity 2.0, approach 1 px/frame), presses R to activate, and an affine-scaled
+    shrink animation sets PL_MINISH (some scripted rays also shrink him). Ezlo must have joined first. Growing back
+    requires standing on a portal again (scale 1152 -> 256 in steps of 32). As Minish Link: hitbox 4x4 (vs 12x12),
+    walk 0.75, dash 2.5, push 0.25 px/frame; only swords (no spin/charge), orbs and pick-up are usable (no bombs,
+    bow, boomerang, shield, Gust Jar, cane, mitts, cape, boots, ocarina, bottles); he cannot lift objects or use
+    small/big keys; puddles drown him and holes act as pits; conveyors ignore him; separate collision-shape tables
+    open Minish-only cracks and Minish doors (where he is hidden while passing). Most full-size enemies cannot see
+    him, while Minish-scale enemies only target him.'
+  instantiates:
+  - concept: mechanics.scale.portal_size_toggle
+  - concept: progression.gating.ability_gating
+    weight: 0.5
+  reads:
+  - player.flags.minish
+  - area.portal_mode
+  - area.portal_position
+  - input.r
+  - world.flags.ezlo_met
+  writes:
+  - player.flags.minish
+  - player.hitbox
+  - player.scale
+  - player.position
+  params:
+    portal_trigger_area:
+      value: 64x64
+      unit: px around the portal
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/manager/minishPortalManager.c:MinishPortalManager_Main
+        confidence: 0.95
+    minish_hitbox:
+      value: 4x4
+      unit: px (half-extent 2)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c:sub_08073C80 (sMinishHitbox)
+        confidence: 0.95
+    normal_hitbox:
+      value: 12x12
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerHitbox.c:gPlayerHitbox
+        confidence: 0.95
+    minish_walk_speed:
+      value: 0.75
+      unit: px/frame (vs 1.25)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c:sub_08073D20
+        confidence: 0.9
+    grow_scale_steps:
+      value: 1152 to 256 by -32
+      unit: affine scale units per frame
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c:sub_08073F4C
+        confidence: 0.8
+    portal_exit_offset:
+      value: 22
+      unit: px from portal in exit direction (180-frame portal timer)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c:sub_080717F8
+        confidence: 0.8
+    interaction_reach_north:
+      value: 18
+      unit: px (14 as Minish)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerUtils.c:gPlayerInteractHitboxOffsetNormal / gPlayerInteractHitboxOffsetMinish
+        confidence: 0.9
+  invariants:
+  - PL_MINISH can only be toggled at a portal (or by scripted shrink rays), never freely.
+  - Portal use requires Minish-or-normal Link idle/walking, no beetles attached, nothing held, and Ezlo met (EZERO_1ST).
+  - While PL_MINISH, CreateItem refuses any item whose isUseableAsMinish is false.
+  - While PL_MINISH, full-size enemies using target selector 1 never acquire Link.
+  relations:
+  - type: gated_by
+    target: story_progress_gate
+    note: Ezlo must have joined
+  - type: modulates
+    target: scale_dependent_targeting
+  - type: modulates
+    target: item_toolkit
+    note: item whitelist shrinks to swords
+  - type: requires
+    target: tile_collision_and_sliding
+  - type: part_of
+    target: overworld_structure
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/manager/minishPortalManager.c:PortalReadyForMinish
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/player.c:PortalShrinkInit
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/player.c:PlayerMinish
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/itemDefinitions.c:gItemDefinitions (isUseableAsMinish)
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/playerUtils.c:CreateItem (PL_MINISH check)
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/player.c:SurfaceAction_MinishDoorFront
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/player.c:SurfaceAction_ShallowWater
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/playerUtils.c:IsTryingToPickupObject
+    confidence: 0.9
+- id: item_toolkit
+  facet: mechanics
+  label: Two-button item loadout with a Zelda tool set
+  summary: 'Two equip slots (A and B) hold any of the activatable items; a new item auto-equips to an empty slot or
+    replaces the item of the same menu category; R is a context action (roll, shrink/grow, talk). Tools: swords (5
+    tiers), bombs (3 at once, 150-frame fuse) and remote bombs, bow and light arrows, boomerang and magic boomerang,
+    shield and mirror shield, lantern, Gust Jar (suction and blow), Cane of Pacci (flip objects/enemies, launch from
+    holes), Mole Mitts (dig), Roc''s Cape, Pegasus Boots, Ocarina of Wind and four bottles. Each item has a
+    Minish-usability bit and a priority; airborne Link may only use swords.'
+  instantiates:
+  - concept: ui_hud.input.two_slot_item_assignment
+  - concept: mechanics.weapon.placed_explosive
+    weight: 0.4
+  - concept: mechanics.weapon.ammo_secondary_weapon
+    weight: 0.4
+  reads:
+  - save.stats.equipped[2]
+  - input.buttons
+  - inventory.*
+  - player.flags.minish
+  writes:
+  - player.active_items[4]
+  - resources.bombs
+  - resources.arrows
+  params:
+    equip_slots:
+      value: 2
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/item.h:EquipSlot
+        confidence: 0.95
+    activatable_item_ids:
+      value: 31
+      unit: item ids 1..0x1F
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerUtils.c:CreateItemIfInputMatches
+        confidence: 0.9
+    max_bombs_on_screen:
+      value: 3
+      unit: (1 for remote bombs)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/item/itemBomb.c:ItemBomb
+        confidence: 0.9
+    bomb_fuse:
+      value: 150
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerItem/playerItemBomb.c:PlayerItemBomb_Init
+        confidence: 0.9
+  invariants:
+  - Bombs need bombCount > 0; each shot of the bow costs one arrow.
+  - Only items with isUseableAsMinish may be created while Minish (swords, orbs, pick-up).
+  relations:
+  - type: gated_by
+    target: item_gated_obstacles
+    note: items are acquired as dungeon rewards and open their obstacle types
+  - type: modulates
+    target: item_vulnerability_ai
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/itemDefinitions.c:gItemDefinitions
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/itemUtils.c:PutItemOnSlot
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/playerUtils.c:UpdateActiveItems
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:include/item.h:Item
+    confidence: 0.95
+- id: sword_combat
+  facet: mechanics
+  label: Sword swings, charge spin and learnable techniques
+  summary: 'Swinging spawns a sword hitbox whose hurt type depends on sword tier and move (swing, spin, roll thrust,
+    charge, down thrust); actual damage comes from the collision matrix. Holding the button charges a spin attack
+    in 80 frames (40 with Fast Spin). Eight scroll techniques are learned from the Blade Brothers and each is a
+    skill bit: Spin Attack, Rock Breaker, Dash Attack, Down Thrust, Roll Attack, Sword Beam (only at full health),
+    Peril Beam (only at <= 1 heart), Great Spin (10 loops, 15 with Long Spin, spiral beam with the Four Sword); plus
+    Fast Spin, Fast Split and Long Spin. Only one beam may exist at a time.'
+  instantiates:
+  - concept: mechanics.weapon.charge_shot
+    weight: 0.6
+  - concept: mechanics.weapon.health_conditional_projectile
+  - concept: progression.skills.learned_technique_flags
+  reads:
+  - inventory.sword_tier
+  - player.skills
+  - player.health
+  - player.max_health
+  - input.buttons.held
+  writes:
+  - player.sword_state
+  - projectiles.sword_beam
+  params:
+    spin_charge_frames:
+      value: 80
+      unit: frames
+      variants:
+      - when: skill.fast_spin
+        value: 40
+        unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/item/itemSword.c:sub_08075580
+        confidence: 0.95
+    great_spin_loops:
+      value: 10
+      unit: animation loops (15 with Long Spin)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/item/itemSword.c:sub_08075738
+        confidence: 0.9
+    peril_beam_threshold:
+      value: 8
+      unit: health units (1 heart)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerUtils.c:GetSwordBeam
+        confidence: 0.95
+    base_swing_damage_field:
+      value: 4
+      unit: damage field before collision-matrix override (8 for down thrust)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerItem/playerItemSword.c:PlayerItemSword_Init
+        confidence: 0.6
+        note: swordDamage has no C writer; matrix values unavailable
+    skills:
+      value: 12
+      unit: skill bits
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/player.h:PlayerSkill
+        confidence: 0.95
+  invariants:
+  - Sword Beam requires health == maxHealth; Peril Beam requires health <= 8.
+  - Minish Link swings a small sword with no spin or charge.
+  relations:
+  - type: requires
+    target: item_toolkit
+  - type: gated_by
+    target: technique_scrolls
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/item/itemSword.c:sub_080754B8
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/playerItem/playerItemSword.c:PlayerItemSword_Action1
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/playerUtils.c:UpdatePlayerSkills
+    confidence: 0.9
+- id: four_sword_clones
+  facet: mechanics
+  label: Four Sword clone splitting on clone tiles
+  summary: After a spin charge is held, standing on a special clone tile and continuing to hold builds a split charge
+    (+6 per frame, +12 with Fast Split, to 800, about 134/67 frames, shown as a 40-segment bar); release spawns
+    copies of Link that mirror his actions, used to push heavy blocks and press multiple switches. Clone count
+    scales with sword tier (0/0/1/2/3 for Smith/Green/Red/Blue/Four Sword). Clones vanish when the charge drains
+    or R is pressed.
+  instantiates:
+  - concept: mechanics.avatar.mirrored_clones
+  reads:
+  - inventory.sword_tier
+  - world.tiles.act_type
+  - player.charge_state
+  writes:
+  - player.clones
+  params:
+    clones_by_sword:
+      value:
+        smith: 0
+        green: 0
+        red: 1
+        blue: 2
+        four_sword: 3
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/player.c:SurfaceAction_CloneTile
+        confidence: 0.9
+    split_charge_target:
+      value: 800
+      unit: charge units (+6/frame, +12 Fast Split)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerUtils.c:sub_08078070
+        confidence: 0.9
+  relations:
+  - type: requires
+    target: sword_combat
+  - type: part_of
+    target: item_gated_obstacles
+    note: clone count gates multi-switch and heavy-block puzzles
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/player.c:SurfaceAction_CloneTile
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/playerUtils.c:sub_08078008
+    confidence: 0.85
+  - kind: llm_knowledge
+    ref: clones copy Link's movements and are used for multi-switch and heavy-block puzzles
+    confidence: 0.5
+- id: health_and_damage
+  facet: mechanics
+  label: Heart health in eighth units, charms and bottled restoratives
+  summary: 'Health is stored as 8 units per heart (start 24 = 3 hearts, max 160 = 20 hearts). Damage to Link is the
+    attacker''s damage value (from the collision matrix; hard-coded cases are 4 for fire, 2 for pits), quartered
+    by Nayru''s charm or halved by Farore''s, minimum 1. Farore and Din charms multiply Link''s outgoing damage by
+    1.5 and 2 for 3600 frames. Bottles hold potions (red: full, blue: 80 units), milk, fairies (32 units; a bottled
+    fairy auto-revives at 0 health with 226 i-frames) and picolytes that bias drop tables for 900 frames.'
+  instantiates:
+  - concept: economy.resource.capped_pool
+  - concept: mechanics.combat.damage_mitigation_equipment
+    weight: 0.5
+  - concept: mechanics.combat.auto_revive_consumable
+  reads:
+  - player.health
+  - player.max_health
+  - player.charm_timer
+  - inventory.bottles[4]
+  writes:
+  - player.health
+  - player.iframes
+  params:
+    units_per_heart:
+      value: 8
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/script.c:ScriptCommand_IncreaseMaxHealth (+8)
+        confidence: 0.95
+    start_health:
+      value: 24
+      unit: units (3 hearts)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerUtils.c:FinalizeSave
+        confidence: 0.95
+    max_health_cap:
+      value: 160
+      unit: units (20 hearts)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/object/linkHoldingItem.c:LinkHoldingItem_Action3
+        confidence: 0.95
+    charm_duration:
+      value: 3600
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerItem/playerItemBottle.c:PlayerItemBottle_UsePotionOrPicolyte
+        confidence: 0.9
+    fairy_heal:
+      value: 32
+      unit: units (4 hearts)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/itemMetaData.c:gItemMetaData (ITEM_FAIRY)
+        confidence: 0.9
+    low_health_threshold:
+      value: maxHealth/4 clamped to 8..24
+      unit: units (beep every 90 frames)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/interrupts.c:HandlePlayerLife
+        confidence: 0.95
+  tables:
+    restoratives:
+      columns:
+      - item
+      - heal_units
+      - note
+      rows:
+      - [heart, 8, pickup]
+      - [fairy, 32, pickup or bottled auto-revive]
+      - [red_potion, 160, full heal]
+      - [blue_potion, 80, '']
+      - [milk, 40, becomes half milk]
+      - [half_milk, 40, '']
+      - [heart_piece_or_container, 160, full heal on pickup]
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerItem/playerItemBottle.c:PlayerItemBottle_UsePotionOrPicolyte
+        confidence: 0.9
+  invariants:
+  - 0 <= health <= maxHealth <= 160.
+  - Damage to Link after charm reduction is at least 1 unit.
+  relations:
+  - type: modulates
+    target: sword_combat
+    note: beams depend on health thresholds
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/collision.c:CalculateDamage
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/gameUtils.c:ModHealth
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/player.c:sub_08071D04
+    confidence: 0.85
+- id: enemy_entity_framework
+  facet: ai
+  label: Six-handler enemy FSM runtime with definition table and home box
+  summary: 'Every enemy kind is a function dispatched each frame through a six-entry handler table (OnTick, OnCollision,
+    OnKnockback, OnDeath, OnConfused, OnGrabbed); OnTick indexes a per-species action array by the entity''s action
+    byte. A shared definition table gives per-form health, base speed, damage/hit type and collision mask. On init each
+    enemy derives a home rectangle from per-species or room-supplied ranges (home = spawn - 4*range px, extent 8*range
+    px); helpers test "inside home box" and "target inside home box" and steer back toward the box centre when
+    outside. Death spawns a DEATH_FX object (which rolls the drop) and increments the save''s enemies-killed counter;
+    bosses flag themselves and stop the BGM instead.'
+  instantiates:
+  - concept: ai.framework.pose_fsm_per_entity
+  - concept: ai.movement.home_territory_leash
+  reads:
+  - enemy.action
+  - enemy.health
+  - enemy.contact_flags
+  - enemy.home_box
+  - player.position
+  writes:
+  - enemy.action
+  - enemy.direction
+  - enemy.health
+  - save.enemies_killed
+  params:
+    handler_slots:
+      value: 6
+      unit: handlers (tick, collision, knockback, death, confused, grabbed)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/enemy.h:GetNextFunction (comment lists slots 0-5)
+        confidence: 0.95
+    enemy_kinds:
+      value: 102
+      unit: enemy ids in gEnemyFunctions (0x00 OCTOROK .. 0x65 TREE_ITEM)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy.c:gEnemyDefinitions
+        confidence: 0.9
+    home_box_extent:
+      value: 8*range
+      unit: px per axis (range bytes per species from gUnk_080D3D94 or room data)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemyUtils.c:sub_0804A720
+        confidence: 0.85
+      - kind: decomp_source
+        ref: tmc:src/code_08049DF4.c:sub_08049FA0
+        confidence: 0.85
+  invariants:
+  - An enemy only acquires a target through one of four target selectors; selector 1 (used by most species) rejects
+    the player while Minish-sized, captured, drowning, falling, climbing or using a portal.
+  - A killed non-boss enemy has its respawn disabled and increments enemies_killed exactly once (gustJarState bit 1
+    guard).
+  relations:
+  - type: requires
+    target: scale_dependent_targeting
+  - type: modulates
+    target: drop_tables
+    note: death FX object performs the drop roll
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/enemy.c:gEnemyDefinitions
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:include/definitions.h:EnemyDefinition
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/enemyUtils.c:EnemyCreateDeathFX
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/enemyUtils.c:sub_0804A720
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/enemy/octorok.c:Octorok (EnemyFunctionHandler)
+    confidence: 0.95
+  tables:
+    enemy_stats:
+      description: 'Base form stats from gEnemyDefinitions / multi-form sub-tables (first form unless noted). health 255
+        = scripted/invulnerable (death handled by AI); speed in 1/256 px/frame (256 = 1 px/frame); hit_type is the
+        damage/interaction class index.'
+      columns:
+      - enemy
+      - health
+      - speed_px_per_frame
+      - hit_type
+      rows:
+      - [octorok, 2, 0.375, 25]
+      - [octorok_type1, 3, 0.375, 25]
+      - [chuchu, 4, 0.125, 92]
+      - [leever, 6, 0.5, 25]
+      - [peahat, 4, 0.5, 112]
+      - [rollobite, 255, 1.0, 34]
+      - [darknut, 12, 0.375, 86]
+      - [darknut_type3, 26, 0.375, 86]
+      - [beetle, 1, 1.0, 75]
+      - [keese, 2, 1.0, 32]
+      - [rock_chuchu, 4, 0.25, 148]
+      - [spiny_chuchu, 4, 0.125, 92]
+      - [moldorm_head, 10, 1.5, 93]
+      - [moldworm, 20, 0.5, 133]
+      - [like_like, 20, 0.25, 140]
+      - [spear_moblin, 8, 1.0, 138]
+      - [rupee_like, 16, 0.375, 142]
+      - [madderpillar_tail, 32, 0.875, 106]
+      - [wall_master, 10, 1.0, 116]
+      - [spiked_beetle, 4, 0.375, 99]
+      - [helmasaur, 4, 1.0, 111]
+      - [tektite, 3, 1.0, 25]
+      - [wizzrobe, 8, 0.75, 12]
+      - [armos, 10, 0.625, 1]
+      - [eyegore, 3, 1.0, 5]
+      - [rope, 4, 0.5, 25]
+      - [acro_bandit, 1, 0.5, 25]
+      - [keaton, 4, 1.0, 33]
+      - [crow, 2, 1.25, 41]
+      - [mulldozer, 6, 0.375, 156]
+      - [spiny_beetle, 4, 1.375, 25]
+      - [gibdo, 20, 0.375, 38]
+      - [golden_octorok, 64, 0.375, 144]
+      - [golden_tektite, 64, 2.25, 144]
+      - [golden_rope, 64, 0.5, 144]
+      - [scissors_beetle, 20, 0.5, 2]
+      - [stalfos, 4, 0.875, 68]
+      - [bow_moblin, 8, 1.0, 138]
+      - [lakitu, 6, 0.5, 67]
+      - [ball_chain_soldier, 16, 0.5, 163]
+      - [ghini, 9, 1.0, 36]
+      - [slime, 2, 0.25, 25]
+      - [gyorg_female, 24, 1.0, 0]
+      - [gyorg_male, 12, 1.0, 27]
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy.c:gEnemyDefinitions and gEnemyDefinition_* sub-tables (USA branch)
+        confidence: 0.9
+      - kind: derived
+        ref: speed column = native speed / 256
+        inputs:
+        - tmc:src/physics.c:LinearMoveUpdate
+        confidence: 0.85
+- id: scale_dependent_targeting
+  facet: ai
+  label: Size-filtered enemy target selection (full-size vs Minish-scale threats)
+  summary: 'Enemies ask for a target through one of four selector functions. Selector 0 accepts the player unless
+    busy/hidden/falling; selector 1 additionally ignores a Minish-sized player; selector 2 accepts the player only
+    while Minish-sized; selector 3 ignores Minish, captured and item-disabled states. Almost every full-size species
+    (Octorok, Darknut, Chuchu, Moblins, Wallmaster, Ghini, Gibdo, Puffstool) uses selector 1, so shrinking makes Link
+    invisible to them, while Minish-scale critters (e.g. the aggressive cucco chick) use selector 2. The same world
+    is therefore populated by two disjoint threat sets keyed on player scale.'
+  instantiates:
+  - concept: ai.perception.scale_filtered_target_selection
+  reads:
+  - player.flags.minish
+  - player.flags.*
+  - player.killed
+  writes:
+  - ai.enemy_target
+  params:
+    selectors:
+      value:
+      - any_available
+      - full_size_only
+      - minish_only
+      - not_minish_not_captured
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy.c:gUnk_080D3BE8
+        confidence: 0.95
+      - kind: decomp_source
+        ref: tmc:src/code_08049DF4.c:sub_08049E4C
+        confidence: 0.95
+      - kind: decomp_source
+        ref: tmc:src/code_08049DF4.c:sub_08049E80
+        confidence: 0.95
+  invariants:
+  - While PL_MINISH is set, any enemy using selector 1 or 3 receives no target and falls back to its idle/wander
+    behaviour.
+  - Distance checks (PlayerInRange) also require the two entities to share a collision layer.
+  relations:
+  - type: requires
+    target: minish_shrink
+  - type: part_of
+    target: enemy_entity_framework
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/code_08049DF4.c:sub_08049DF4
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/code_08049DF4.c:sub_08049F1C (collisionLayer overlap + squared distance)
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/enemy/cuccoChickAggr.c (sub_08049DF4(2))
+    confidence: 0.8
+- id: wander_shooter_ai
+  facet: ai
+  label: Octorok-style pause/walk/turn wanderer that spits when facing the player
+  summary: 'Octoroks alternate a pause (24-80 frames) and a walk of 30/60/60/90 frames in one of four cardinal directions.
+    Turning picks a random cardinal while inside the home box, otherwise heads back toward home (with a +-45 degree
+    jitter 3 times in 4). The aggressive variant has a 1-in-4 chance to turn straight at the player when the player
+    is in its home box; the stationary variant faces the player whenever possible. At the end of a walk, if its
+    facing equals the rounded direction to the player, it spits a rock projectile (variant 0 needs a further 3-in-4
+    roll).'
+  instantiates:
+  - concept: ai.enemy.random_walk_shooter
+  - concept: ai.movement.home_territory_leash
+    weight: 0.5
+  reads:
+  - player.position
+  - enemy.home_box
+  - rng
+  writes:
+  - enemy.direction
+  - projectiles.rock
+  params:
+    walk_durations:
+      value:
+      - 30
+      - 60
+      - 60
+      - 90
+      unit: frames (uniform pick)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/octorok.c:gOctorokWalkDuration
+        confidence: 0.95
+    pause_duration:
+      value: 24-80
+      unit: frames ((Random & 0x38) + 24)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/octorok.c:Octorok_Pause
+        confidence: 0.95
+    walk_speed:
+      value: 0.375
+      unit: px/frame
+      native_value: 96
+      native_unit: 1/256 px/frame
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy.c:gEnemyDefinition_0
+        confidence: 0.9
+    spit_chance_type0:
+      value: 0.75
+      unit: probability when facing player
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/octorok.c:Octorok_Move (gOctorokSpitChanceModifier[0]=1 <= Random&3)
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: enemy_entity_framework
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/enemy/octorok.c:Octorok_Turn
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/enemy/octorok.c:Octorok_ShootNut
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/enemy/octorok.c:Octorok_FacesPlayer
+    confidence: 0.95
+- id: aligned_charge_ai
+  facet: ai
+  label: Rope-style axis-alignment charge
+  summary: Ropes wander inside their home box; once a 60-frame cooldown expires and the target is inside the box,
+    an axis-alignment probe (12 px band, tile-checked line on the shared map layer) returns a cardinal direction
+    and the rope charges along it at 1.625 px/frame (vs 0.5 base) for up to 30 frames. Hitting something resets
+    the cooldown. Ropes can also drop from the ceiling (type 1) with a 24-unit gravity fall.
+  instantiates:
+  - concept: ai.enemy.line_of_sight_charge
+  reads:
+  - player.position
+  - world.tiles.collision
+  - enemy.home_box
+  writes:
+  - enemy.speed
+  - enemy.direction
+  params:
+    charge_speed:
+      value: 1.625
+      unit: px/frame
+      native_value: 416
+      native_unit: 1/256 px/frame (0x1a0)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/rope.c:sub_080314FC
+        confidence: 0.95
+    alignment_band:
+      value: 12
+      unit: px (sub_0804A044 arg)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/rope.c:sub_080314FC (sub_0804A044(..., 0xc))
+        confidence: 0.85
+    post_hit_cooldown:
+      value: 60
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/rope.c:Rope_OnCollision (unk_78 = 0x3c)
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: enemy_entity_framework
+  - type: variant_of
+    target: wander_shooter_ai
+    note: same wander/home-box skeleton, charge replaces the projectile
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/enemy/rope.c:sub_080314FC
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/code_08049DF4.c:sub_0804A044
+    confidence: 0.8
+- id: hopping_pursuer_ai
+  facet: ai
+  label: Chuchu proximity hop-attack and electrified/stateful variants
+  summary: 'Chuchus creep toward the target at 0.125 px/frame, re-aiming every 8 frames. When their timer runs out
+    they hop at the player if within 56 px (horizontal speed 1.5 px/frame, z velocity 2 px/frame, gravity 0.25 px/frame^2),
+    re-arm for 12-15 frames if within 72 px, otherwise sink and re-emerge elsewhere; standing in water also makes
+    them submerge. Variants swap hit types to make the body temporarily unsafe (electrified) or armoured.'
+  instantiates:
+  - concept: ai.enemy.proximity_hop_attack
+  reads:
+  - player.position
+  - world.tiles.act_type
+  writes:
+  - enemy.z
+  - enemy.z_velocity
+  - enemy.hit_type
+  params:
+    hop_trigger_radius:
+      value: 56
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/chuchu.c:sub_0801F12C (PlayerInRange 0x38)
+        confidence: 0.95
+    hop_horizontal_speed:
+      value: 1.5
+      unit: px/frame
+      native_value: 384
+      native_unit: 1/256 px/frame
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/chuchu.c:Chuchu_JumpAtPlayer
+        confidence: 0.95
+    hop_z_velocity:
+      value: 2.0
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/chuchu.c:Chuchu_JumpAtPlayer (Q_16_16(2.0))
+        confidence: 0.95
+    hop_gravity:
+      value: 0.25
+      unit: px/frame^2
+      native_value: Q_8_8(64.0)
+      native_unit: Q16.16 subtracted from zVelocity per frame
+      evidence:
+      - kind: decomp_source
+        ref: tmc:asm/src/code_08003FC4.s:GravityUpdate
+        confidence: 0.85
+    hop_airtime:
+      value: 16
+      unit: frames (apex ~8 px)
+      evidence:
+      - kind: derived
+        ref: integrate GravityUpdate with v0=2.0, g=0.25
+        inputs:
+        - hop_z_velocity
+        - hop_gravity
+        confidence: 0.7
+  relations:
+  - type: part_of
+    target: enemy_entity_framework
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/enemy/chuchu.c:sub_0801F12C
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/enemy/chuchu.c:sub_0801F1B0
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/enemy/chuchu.c:CheckWaterTile
+    confidence: 0.9
+- id: flutter_sleep_ai
+  facet: ai
+  label: Keese random flutter with rest and proximity wake
+  summary: Keese fly in random 32-direction headings (re-chosen each flap animation, or toward home when outside the
+    box) for a random flight budget, then rest 30-75 frames. If the player is more than 112 px away after a 60-frame
+    grace period the keese sleeps and only wakes when the player comes within 112 px.
+  instantiates:
+  - concept: ai.enemy.erratic_flyer
+  reads:
+  - player.position
+  - enemy.home_box
+  writes:
+  - enemy.direction
+  - enemy.action
+  params:
+    flight_durations:
+      value:
+      - 180
+      - 300
+      - 480
+      - 720
+      unit: frames (weighted 2/6/6/2 of 16)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/keese.c:Keese_StartFly (gKeeseFlyDurations)
+        confidence: 0.95
+    rest_durations:
+      value: 30-75
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/keese.c:sub_08021F24 (gKeeseRestDurations)
+        confidence: 0.95
+    wake_radius:
+      value: 112
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/keese.c:Keese_Sleep (EntityWithinDistance 0x70)
+        confidence: 0.95
+  relations:
+  - type: part_of
+    target: enemy_entity_framework
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/enemy/keese.c:Keese_Fly
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/enemy/keese.c:Keese_Sleep
+    confidence: 0.95
+- id: guarded_swordsman_ai
+  facet: ai
+  label: Darknut spacing, guard and counter-slash
+  summary: 'Darknuts close in on the target but, inside 56 px, back away if the path is clear (turning to face),
+    keeping a fighting distance; inside 72 px with the target in front they pick an attack direction and spawn a
+    sword-slash projectile. Their hit type flips between a guarded value and a vulnerable value around attacks, so
+    frontal hits bounce except in post-attack windows; specific contact types (e.g. item stuns) knock them into a
+    stunned state with star FX for a per-variant duration. Variants raise health (12/12/20/26).'
+  instantiates:
+  - concept: ai.enemy.guard_counter_melee
+  - concept: ai.boss.weak_point_window
+    weight: 0.3
+  reads:
+  - player.position
+  - enemy.contact_flags
+  writes:
+  - enemy.hit_type
+  - projectiles.sword_slash
+  params:
+    retreat_radius:
+      value: 56
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/darkNut.c:sub_08020E98 (PlayerInRange 56)
+        confidence: 0.9
+    attack_radius:
+      value: 72
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/darkNut.c:sub_08020F48 (PlayerInRange 0x48)
+        confidence: 0.9
+    guarded_hit_type:
+      value: 86
+      unit: hit-type id (0x56); vulnerable value 81 (0x51)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/darkNut.c:sub_08021010
+        confidence: 0.75
+        note: interpretation of 0x56 vs 0x51 as guarded vs vulnerable inferred from use around attack frames
+  relations:
+  - type: part_of
+    target: enemy_entity_framework
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/enemy/darkNut.c:DarkNut_OnCollision
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/enemy/darkNut.c:sub_08020F48
+    confidence: 0.85
+- id: ambush_grabber_ai
+  facet: ai
+  label: Wallmaster ceiling drop and Like Like engulf/steal
+  summary: 'Two grab enemies. Wallmaster: when armed and a full-size target exists it teleports above the player at
+    z=-128 px with a 90-frame shadow tell, falls 3 px/frame, closes its hand (grab hit type) and if it catches Link
+    carries him up at 2 px/frame and transitions him out (back to the dungeon entrance); a miss re-arms after a
+    per-instance delay x60 frames. Like Like: engulfs the player; each button press adds 1-2 to an escape counter
+    (escape at 25); if a 95-frame timer runs out first it steals the Mirror Shield, else the Shield, else deals 1 unit
+    of damage, and then releases. Release launches
+    Link with z velocity 1.5 and 60 i-frames.'
+  instantiates:
+  - concept: ai.enemy.ambush_grab
+  - concept: mechanics.combat.button_mash_escape
+  - concept: mechanics.combat.equipment_theft
+  reads:
+  - player.position
+  - input.buttons.pressed
+  - inventory.shield
+  writes:
+  - player.position
+  - player.flags.captured
+  - inventory.shield
+  - player.iframes
+  params:
+    wallmaster_drop_height:
+      value: 128
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/wallMaster.c:sub_0802A534 (z = -0x80)
+        confidence: 0.95
+    wallmaster_tell:
+      value: 90
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/wallMaster.c:sub_0802A534
+        confidence: 0.95
+    wallmaster_fall_speed:
+      value: 3
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/wallMaster.c:sub_0802A5B8
+        confidence: 0.95
+    likelike_escape_threshold:
+      value: 25
+      unit: escape counter (+1 or +2 per press)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/likeLike.c:sub_0802805C (subtimer >= 0x19)
+        confidence: 0.95
+    likelike_steal_timer:
+      value: 95
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/likeLike.c:LikeLike_OnCollision (timer = 95 on engulf) / sub_080281A0
+        confidence: 0.9
+    release_iframes:
+      value: 60
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/likeLike.c:LikeLike_ReleasePlayer (iframes = -60)
+        confidence: 0.9
+  invariants:
+  - Like Like steals at most one shield, preferring the Mirror Shield.
+  relations:
+  - type: part_of
+    target: enemy_entity_framework
+  - type: requires
+    target: scale_dependent_targeting
+    note: wallmaster uses the full-size-only selector
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/enemy/wallMaster.c:sub_0802A69C
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/enemy/likeLike.c:sub_0802805C
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/enemy/likeLike.c:LikeLike_ReleasePlayer
+    confidence: 0.95
+- id: wall_follower_ai
+  facet: ai
+  label: Spark wall-hugging circuit
+  summary: Sparks move along walls by turning on collision flags; the head variant turns one way and the tail variant
+    the other, so they trace room obstacles clockwise or counter-clockwise. If no wall is felt for 120 frames they
+    rotate 90 degrees to find one again. They are invulnerable (health 255).
+  instantiates:
+  - concept: ai.enemy.surface_crawler
+  reads:
+  - enemy.collisions
+  writes:
+  - enemy.direction
+  params:
+    wall_search_period:
+      value: 120
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/spark.c:sub_0802B35C
+        confidence: 0.95
+  relations:
+  - type: part_of
+    target: enemy_entity_framework
+  - type: variant_of
+    target: metroid-zero-mission/surface_crawler_ai
+    note: top-down wall following instead of side-view surface crawling
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/enemy/spark.c:sub_0802B35C
+    confidence: 0.95
+- id: item_vulnerability_ai
+  facet: ai
+  label: Item-specific enemy reactions (Gust Jar suction, propeller removal, curl-up)
+  summary: 'OnCollision handlers branch on the attacker''s contact type, giving each tool a distinct effect: Octoroks,
+    Ropes and Keese have a Gust Jar "grabbed" handler with a suction tolerance timer after which they are pulled in
+    and destroyed; Peahats lose their propeller to two specific contact types and become grounded and vulnerable;
+    Rollobites curl up (invulnerable, pushable) and ride out knockback; Business Scrubs only become interactable
+    after being stunned. This makes items act as typed keys against enemies, mirroring the lock-and-key world
+    design.'
+  instantiates:
+  - concept: mechanics.combat.enemy_weakness_mask
+  - concept: mechanics.combat.tool_specific_enemy_reaction
+  reads:
+  - enemy.contact_flags
+  - enemy.gust_jar_state
+  writes:
+  - enemy.action
+  - enemy.health
+  - enemy.hit_type
+  params:
+    gust_jar_tolerance_octorok:
+      value: 60
+      unit: frames of suction before capture
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/octorok.c:sub_0801EB68 (gustJarTolerance = 60)
+        confidence: 0.85
+    peahat_stun_speed:
+      value: 0.5
+      unit: px/frame after propeller loss (30 i-frames)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/peahat.c:Peahat_OnCollision
+        confidence: 0.9
+  relations:
+  - type: requires
+    target: item_toolkit
+  - type: part_of
+    target: enemy_entity_framework
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/enemy/octorok.c:Octorok_OnGrabbed
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/enemy/peahat.c:Peahat_OnCollision
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/enemy/rollobite.c:Rollobite_OnKnockback
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/enemy/businessScrub.c:BusinessScrub_Action2
+    confidence: 0.7
+  - kind: llm_knowledge
+    ref: Gust Jar pulls Peahat propellers off; Business Scrubs are stunned by reflecting their nut with the shield
+    confidence: 0.5
+- id: dungeon_bosses
+  facet: ai
+  label: Element-dungeon bosses with item-specific damage windows and phase health
+  summary: 'Bosses are multi-entity assemblies flagged EM_FLAG_BOSS whose health is often 255 (scripted) with damage
+    routed through specific parts. Big Green Chuchu reacts to contact type 19 at its base (wobble counter, 180-frame
+    window). Big Octorok cycles phases with health 3/1/3/1/3/1/3. Mazaal must be entered while Minish-sized: standing
+    in a 3x3 px region at its head while PL_MINISH triggers a room transition into its body; its macro health crosses
+    thresholds 60 and 30 that persist across those room changes. Gleerok, Gyorg pair and the Vaati forms reuse the
+    multi-part pattern.'
+  instantiates:
+  - concept: ai.boss.multi_part_boss
+  - concept: ai.boss.weak_point_window
+  - concept: ai.boss.scale_shift_interior_boss
+  reads:
+  - boss.health
+  - boss.phase
+  - player.flags.minish
+  - enemy.contact_flags
+  writes:
+  - boss.phase
+  - room.transition
+  - world.flags.boss_killed
+  params:
+    octorok_boss_phase_health:
+      value:
+      - 3
+      - 1
+      - 3
+      - 1
+      - 3
+      - 1
+      - 3
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/octorokBoss.c:OctorokBoss_HealthPerPhase
+        confidence: 0.95
+    mazaal_phase_thresholds:
+      value:
+      - 60
+      - 30
+      unit: macro health at which the fight advances (stored in gRoomTransition.field_0x39)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/mazaalMacro.c:sub_08034FA0
+        confidence: 0.85
+    mazaal_entry_region:
+      value: 3x3
+      unit: px region at head (+13 px y) checked only while Minish
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/mazaalHead.c:sub_08034C00
+        confidence: 0.9
+    chuchu_boss_vulnerable_window:
+      value: 180
+      unit: frames after a base hit (unk_08 = 0xb4)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/chuchuBoss.c:sub_08027AA4
+        confidence: 0.7
+  invariants:
+  - Boss death triggers DEATH_FX once (EM_FLAG_BOSS_KILLED) and stops the BGM.
+  relations:
+  - type: requires
+    target: item_toolkit
+  - type: requires
+    target: minish_shrink
+    condition: Mazaal interior phase
+  - type: part_of
+    target: dungeon_lock_and_key
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/enemy/octorokBoss.c (HealthPerPhase)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/enemy/mazaalHead.c:sub_08034C00
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/enemy/mazaalMacro.c:sub_08034F70
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/enemy/chuchuBoss.c:sub_08027AA4
+    confidence: 0.7
+  - kind: decomp_source
+    ref: tmc:src/enemyUtils.c:EnemyCreateDeathFX (EM_FLAG_BOSS path)
+    confidence: 0.9
+- id: fight_rooms
+  facet: ai
+  label: Monitored ambush fights that seal and resolve via flags
+  summary: A fight manager waits for an optional start flag, spawns the room's enemy list, tags each as monitored,
+    switches to a fight BGM (room override or the default fight theme) and sets an Ezlo hint; when every monitored
+    enemy is dead it sets a completion flag (used by doors/chests) and restores music. A completed fight never
+    reloads.
+  instantiates:
+  - concept: ai.spawn.wave_until_cleared
+  - concept: progression.gating.event_locked_doors
+    weight: 0.5
+  reads:
+  - world.flags.*
+  - enemies[*].alive
+  writes:
+  - world.flags.fight_completed
+  - music.current_track
+  params:
+    monitor_slots_per_helper:
+      value: 7
+      unit: enemies tracked per helper entity
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/manager/fightManager.c:FightManager_LoadFight
+        confidence: 0.85
+  invariants:
+  - The completion flag is set only after all monitored enemies are dead; if it is already set the fight is deleted
+    on room load.
+  relations:
+  - type: part_of
+    target: dungeon_lock_and_key
+  - type: modulates
+    target: music_system
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/manager/fightManager.c:FightManager_Init
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/manager/fightManager.c:FightManager_WaitForFlag
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/manager/fightManager.c:FightManager_WaitForDone
+    confidence: 0.95
+- id: kinstone_fusion
+  facet: progression
+  label: Kinstone fusion - shape-matched halves shared with NPC fusers unlock remote world events
+  summary: 'The player collects kinstone halves (17 bag piece types: 9 gold, 3 red, 2 blue, 3 green shapes; up to
+    18 bag slots, 99 per type) and fuses them with "fusers" (NPCs, some enemies such as Business Scrubs, and
+    objects). Each of 100 fusion ids has a colour, a shape and a world-event id; a fusion succeeds only when the
+    piece the player offers has the same shape as the fuser''s half. Success sets the fused bit, increments
+    fusedCount (all 100 sets didAllFusions), then a world-event subtask loads the remote target room, scrolls the
+    camera to the change for up to 300 frames and optionally drops a map marker. Effects are re-applied on every
+    room load by checking the fused bit (chests appear, tiles are stamped, beanstalks and lily-pad rails spawn,
+    golden enemies appear, etc.).'
+  instantiates:
+  - concept: progression.unlock.distributed_matching_token_fusion
+  - concept: progression.world.persistent_world_flags
+    weight: 0.5
+  - concept: progression.guidance.hint_waypoint
+    weight: 0.3
+  reads:
+  - inventory.kinstone_bag
+  - kinstones.bag.types[18]
+  - kinstones.bag.amounts[18]
+  - kinstones.fuser_offers[128]
+  - kinstones.fuser_progress[128]
+  - kinstones.fused_bits[100]
+  - save.global_progress
+  writes:
+  - kinstones.fused_bits[100]
+  - kinstones.fused_count
+  - kinstones.fuser_offers[128]
+  - kinstones.bag.*
+  - world.tiles.*
+  - world.entities.*
+  - map.markers
+  params:
+    fusion_count:
+      value: 100
+      unit: fusion ids (1..100)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/common.c:CheckKinstoneFused (kinstoneId - 1 >= 100 -> false)
+        confidence: 0.95
+    fusions_by_colour:
+      value:
+        gold: 9
+        red: 24
+        blue: 18
+        green: 49
+      evidence:
+      - kind: derived
+        ref: counted objPalette of gKinstoneWorldEvents[1..100] (USA branch); palette 4/0/1/2 mapped to gold/red/blue/green
+        inputs:
+        - tmc:src/common.c:gKinstoneWorldEvents
+        - tmc:include/item.h:ITEM_KINSTONE_RED/BLUE/GREEN order
+        confidence: 0.75
+        note: palette-to-colour mapping is inferred from item enum order and the gold pieces being unique shapes
+    shapes_per_colour:
+      value:
+        gold: unique per story fusion (shape ids 1-3, 6-9)
+        red: 3
+        blue: 2
+        green: 3
+      evidence:
+      - kind: derived
+        ref: distinct shape ids per palette in gKinstoneWorldEvents
+        inputs:
+        - tmc:src/common.c:gKinstoneWorldEvents
+        confidence: 0.8
+    bag_piece_types:
+      value: 17
+      unit: piece item ids 0x65-0x75
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/common.c:AddKinstoneToBag (kinstoneId - 0x65 < 0x11)
+        confidence: 0.95
+    bag_slots:
+      value: 18
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/common.c:GetIndexInKinstoneBag (i < 0x12)
+        confidence: 0.95
+    max_per_piece_type:
+      value: 99
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/common.c:AddKinstoneToBag
+        confidence: 0.95
+    fuser_slots:
+      value: 128
+      unit: fuser ids (120 fuser data entries in ROM table)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/save.h:KinstoneSave (fuserProgress[128], fuserOffers[128])
+        confidence: 0.95
+      - kind: decomp_source
+        ref: tmc:asm/src/code_08001A7C.s:gUnk_08001DCC (120 pointers)
+        confidence: 0.8
+    shared_random_fusions:
+      value: 18
+      unit: fusion ids drawn at random by fusers whose list says KINSTONE_RANDOM
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/common.c:SharedFusions / GetRandomSharedFusion
+        confidence: 0.95
+    world_event_reveal_timer:
+      value: 300
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/subtask/subtaskWorldEvent.c:Subtask_WorldEvent_Init (transitionTimer = 300)
+        confidence: 0.8
+    world_event_handler_types:
+      value: 29
+      unit: effect types (chest spawn x25, tile stamps, beanstalks x15, entity spawns, lily-pad rails, ...)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/kinstone.h:WorldEventType
+        confidence: 0.9
+      - kind: decomp_source
+        ref: tmc:src/gameData.c:gWorldEvents
+        confidence: 0.8
+    max_kinstone_drops_per_frame:
+      value: 3
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/itemUtils.c:CreateItemDrop (numKinstoneDropsPrevFrame > 3 -> none)
+        confidence: 0.9
+  invariants:
+  - A fusion id is completed at most once; fusers whose offered id was completed elsewhere are marked NEEDS_REPLACEMENT
+    and advance to the next entry of their list.
+  - A fuser offers nothing until the player owns the Kinstone Bag and global_progress >= the fuser's minimum.
+  - 'Fuser mood: each conversation the fuser offers only if Random()%100 < its stability byte.'
+  - Fusion succeeds only if the offered piece's shape equals the fuser half's shape; otherwise the menu rejects
+    it (shield-bounce SFX) with no cost.
+  - Kinstone drops stop entirely once all 100 fusions are done (drop-table modifier).
+  relations:
+  - type: modulates
+    target: overworld_structure
+    note: fusion outcomes open shortcuts, chests, beanstalks to cloud tops and new caves
+  - type: gated_by
+    target: story_progress_gate
+    note: fuser minimum global_progress
+  - type: modulates
+    target: drop_tables
+    condition: all fusions done
+  - type: part_of
+    target: hint_systems
+    note: map marker after reveal
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/common.c:GetFusionToOffer
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/common.c:NotifyFusersOnFusionDone
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/menu/kinstoneMenu.c:KinstoneMenu_Type3_Overlay1 (shape compare)
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/menu/kinstoneMenu.c:KinstoneMenu_Type5_Overlay0 (WriteBit fused, fusedCount)
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/kinstone.c:sub_0801876C
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/subtask/subtaskWorldEvent.c:sub_08054974
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:include/kinstone.h:KinstoneWorldEvent
+    confidence: 0.95
+  tables:
+    world_event_effects:
+      description: How a fused kinstone changes its target room on every load (sub_0801876C); "fused" = fused bit set.
+      columns:
+      - type
+      - condition
+      - effect
+      rows:
+      - [1, fused and global flag clear, spawn entity from list A]
+      - [2, fused, place a small chest tile unless its local flag is set]
+      - [3, fused and item not owned, spawn entity from list B]
+      - [4, not fused, stamp 7x4 blocking tiles (removed once fused)]
+      - [5, fused, stamp 5x5 tile feature]
+      - [6, not fused, stamp 4x3 blocking tiles]
+      - [7, not fused, spawn blocker entity or 4x2 tile stamp]
+      - [8, fused, set one tile to an opened type]
+      - [9, fused, spawn entity and set tile types]
+      - [11, fused, spawn lily-pad entity with rail path]
+      - [15, always, spawn fused or unfused entity variant]
+      - [17, fused, set local flag and spawn entity list]
+      - [24, fused, spawn entity list]
+      - [25, always, spawn entity with type 2 if fused else 0]
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/kinstone.c:sub_0801876C
+        confidence: 0.9
+- id: business_scrub_trades
+  facet: economy
+  label: Business Scrub stun-then-trade shops
+  summary: Business Scrubs are hostile nut-shooters that become merchants after being stunned; each holds one offer
+    from a table (the Bow as a special non-rupee offer, 30 arrows or 10 bombs for 30 rupees, Grip Ring for 40, a kinstone for 100 or 200,
+    a bottle for 20) and some act as kinstone fusers. Purchase checks and deducts rupees.
+  instantiates:
+  - concept: economy.trade.fixed_price_shop
+  - concept: ai.enemy.random_walk_shooter
+    weight: 0.3
+  reads:
+  - resources.rupees
+  writes:
+  - resources.rupees
+  - inventory.*
+  tables:
+    scrub_offers:
+      columns:
+      - item
+      - price_rupees
+      rows:
+      - [bow, special (price field 0xffff)]
+      - [arrows_30, 30]
+      - [bombs_10, 30]
+      - [grip_ring, 40]
+      - [kinstone, 100]
+      - [bottle, 20]
+      - [kinstone_piece_0x75, 100]
+      - [kinstone, 200]
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/enemy/businessScrub.c:gUnk_080CC954
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: kinstone_fusion
+    note: scrubs can be fusers (AddInteractableWhenBigFuser)
+  - type: modulates
+    target: rupee_wallet_economy
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/enemy/businessScrub.c:gUnk_080CC954
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/enemy/businessScrub.c (offer->price <= rupees; ModRupees(-price))
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/enemy/businessScrub.c:BusinessScrub_Action2 (DEKU_SEED_PROJECTILE)
+    confidence: 0.85
+- id: dungeon_lock_and_key
+  facet: progression
+  label: Per-dungeon small keys, big key boss door, map and compass
+  summary: 'Each of seven dungeons has a small-key counter and an item bitfield (map 1, compass 2, big key 4) in the
+    save. Small keys come from chests, ice blocks and drops; using one on a locked door or key block (via the
+    interaction scan, never as Minish) decrements the counter and sets that door''s flag so it stays open. The boss
+    door only checks the big key (never consumed) and sets its own flag. Shutter doors open or close on flags (e.g.
+    fight cleared) and can close behind the player. The map reveals floor layouts; the compass marks unopened chests
+    and the uncleared boss room. Defeating a dungeon boss sets a global LVn_CLEAR flag and yields an element.'
+  instantiates:
+  - concept: progression.gating.consumable_key_lock
+  - concept: progression.gating.event_locked_doors
+  - concept: progression.structure.dungeon_with_boss_key
+  reads:
+  - save.dungeon_keys[16]
+  - save.dungeon_items[16]
+  - world.flags.local.*
+  - player.flags.minish
+  writes:
+  - save.dungeon_keys[16]
+  - save.dungeon_items[16]
+  - world.flags.local.*
+  - world.tiles.*
+  params:
+    dungeons:
+      value:
+      - deepwood_shrine
+      - cave_of_flames
+      - fortress_of_winds
+      - temple_of_droplets
+      - palace_of_winds
+      - dark_hyrule_castle
+      - royal_crypt
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/data/areaMetadata.c:gAreaMetadata (location 24..30 -> dungeon_idx 1..7)
+        confidence: 0.85
+    dungeon_item_bits:
+      value:
+        map: 1
+        compass: 2
+        big_key: 4
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/gameUtils.c:HasDungeonMap / HasDungeonCompass / HasDungeonBigKey
+        confidence: 0.95
+        note: the save.h comment disagrees; code wins
+    max_small_chests_per_room:
+      value: 8
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/room.c:LoadSmallChestTile
+        confidence: 0.85
+    door_open_frames:
+      value: 7
+      unit: frames (slide at 3 px/frame)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/object/lockedDoor.c:LockedDoor_Action8
+        confidence: 0.8
+  invariants:
+  - Small keys are scoped to their dungeon (counter indexed by dungeon_idx) and consumed on use; the opened door is
+    persisted by its flag and never re-locks.
+  - The big key is checked, not consumed.
+  - Keys cannot be used while Minish-sized.
+  relations:
+  - type: requires
+    target: flag_banks
+  - type: part_of
+    target: overworld_structure
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/object/lockedDoor.c:LockedDoor_Init
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/object/bossDoor.c
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/gameUtils.c:ModDungeonKeys
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/common.c:DrawDungeonMap
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/playerItemUtils.c:OpenSmallChest
+    confidence: 0.85
+- id: item_gated_obstacles
+  facet: progression
+  label: Tool-keyed obstacles and the dungeon-item loop
+  summary: Each dungeon awards a tool that is then the key for a family of world obstacles (bombable walls persisted
+    by flags, destructible tiles, Gust Jar webs, Flipper water and lily pads, Grip Ring walls, lightable switches,
+    ice blocks hiding keys, Minish cracks, clone-count switches), so the overworld is revisited as the toolkit grows.
+    Room load callbacks re-apply world state from flags, inventory and wind crests.
+  instantiates:
+  - concept: progression.gating.ability_gating
+  - concept: progression.gating.typed_lock_and_key
+  - concept: progression.structure.backtracking
+  reads:
+  - inventory.*
+  - world.flags.*
+  writes:
+  - world.flags.local.*
+  - world.tiles.*
+  params:
+    persistent_obstacle_kinds:
+      value:
+      - bombable_wall
+      - destructible_tile
+      - small_chest
+      - big_chest
+      - locked_door
+      - ice_block
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/room.h:TileEntityType
+        confidence: 0.85
+      - kind: decomp_source
+        ref: tmc:src/manager/bombableWallManager.c:BombableWallManager_Action1
+        confidence: 0.9
+  relations:
+  - type: requires
+    target: item_toolkit
+  - type: part_of
+    target: dungeon_lock_and_key
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/room.c:LoadDestructibleTile
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/object/lilypadLarge.c (ITEM_FLIPPERS check)
+    confidence: 0.8
+  - kind: decomp_source
+    ref: tmc:src/object/smallIceBlock.c
+    confidence: 0.75
+  - kind: decomp_source
+    ref: tmc:src/roomInit.c:sub_StateChange_CastorWilds_Main
+    confidence: 0.8
+  - kind: llm_knowledge
+    ref: per-dungeon item order (Gust Jar, Cane of Pacci, Mole Mitts, Flippers, Roc's Cape, Lantern)
+    confidence: 0.5
+- id: flag_banks
+  facet: progression
+  label: Banked persistent flags plus volatile room flags and enemy memory
+  summary: 'Flags are encoded with a 2-bit scope (local bank of the current area, global, room) and a 10-bit index.
+    Persistent flags live in 512 bytes (4096 bits) split into a global bank and 13 local banks assigned per area
+    (overworld, town, caves, each dungeon). Room flags (416 bits) are cleared on every room load. A separate 8-room
+    MRU memory keeps up to 32 killed-enemy bits per room so recently cleared rooms stay cleared; it is wiped on
+    game start, so enemies respawn when you travel far enough.'
+  instantiates:
+  - concept: progression.world.persistent_world_flags
+  - concept: progression.world.recent_room_enemy_memory
+  reads:
+  - world.flags.*
+  writes:
+  - world.flags.*
+  - room_memory[8]
+  params:
+    persistent_flag_bits:
+      value: 4096
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/save.h:SaveFile (flags[0x200])
+        confidence: 0.95
+    flag_banks:
+      value: 14
+      unit: global + 13 local banks
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/flags.c:gLocalFlagBanks
+        confidence: 0.9
+    room_flag_bits:
+      value: 416
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/room.h:RoomVars (flags[52])
+        confidence: 0.9
+    enemy_memory_rooms:
+      value: 8
+      unit: rooms x 32 enemy bits
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/code_08049CD4.c:EnemyDisableRespawn
+        confidence: 0.85
+  relations:
+  - type: modulates
+    target: dungeon_lock_and_key
+  - type: modulates
+    target: kinstone_fusion
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/flags.c:CheckFlags
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/code_08049CD4.c:AddCurrentRoom
+    confidence: 0.8
+- id: story_progress_gate
+  facet: progression
+  label: Global progress level and story flags
+  summary: A single global_progress value (1-9) is recomputed from milestone flags (dungeon clears, Vaati's takeover,
+    meeting King Gustaf, the stained-glass event). It gates which fusers offer kinstones, figurine availability,
+    hint tables and NPC states. Other one-time story flags (meeting Ezlo, leaving on the quest) gate portals and
+    enemy population (the main enemy lists load only after the quest starts).
+  instantiates:
+  - concept: progression.structure.global_progress_level
+  reads:
+  - world.flags.global.*
+  writes:
+  - save.global_progress
+  params:
+    progress_levels:
+      value: 9
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/gameUtils.c:UpdateGlobalProgress
+        confidence: 0.9
+  relations:
+  - type: modulates
+    target: kinstone_fusion
+  - type: modulates
+    target: figurine_gacha
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/gameUtils.c:UpdateGlobalProgress
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/room.c:LoadRoom (enemy list gated by TABIDACHI)
+    confidence: 0.85
+- id: overworld_structure
+  facet: progression
+  label: Hub overworld of linked areas with layered dungeons and Minish sub-world
+  summary: The world is a set of areas (up to 64 rooms each) around Hyrule Town - Minish Woods, Hyrule Field, Castor
+    Wilds, Mt Crenel, Veil Falls, Lake Hylia, Cloud Tops, Royal Valley and others - with element dungeons opening
+    off them. A Minish-scale layer of interiors and paths (Minish Village, Minish paths, rafters, holes in walls)
+    overlays the same places and is entered through portals. Areas are tagged overworld/dungeon/has-keys/has-map,
+    and first visits show an area-name banner.
+  instantiates:
+  - concept: progression.structure.interconnected_areas
+  - concept: progression.structure.scale_layered_world
+  reads:
+  - world.area
+  - world.room
+  - save.area_visit_flags
+  writes:
+  - save.area_visit_flags
+  params:
+    max_rooms_per_area:
+      value: 64
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/area.h (MAX_ROOMS)
+        confidence: 0.9
+  relations:
+  - type: requires
+    target: room_transitions
+  evidence:
+  - kind: decomp_source
+    ref: tmc:include/area.h:AreaID
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:include/area.h:AreaFlags
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/gameUtils.c:CheckAreaDiscovery
+    confidence: 0.85
+  - kind: llm_knowledge
+    ref: overall world layout around Hyrule Town
+    confidence: 0.5
+- id: hint_systems
+  facet: progression
+  label: Ezlo hints, map markers and region-triggered advice
+  summary: Ezlo (the talking cap) gives context hints two ways. Region managers freeze Link for 30 frames and show
+    a one-shot hint when he enters a rectangle. Pressing Select picks the latest satisfied milestone from a
+    progression table (43 milestones checked by item owned, kinstone fused or flag) and cycles through 8 hint texts, reshuffling
+    after 8 without immediate repeats. Fusions with a marker icon and map-hint subtasks place markers on the map.
+  instantiates:
+  - concept: progression.guidance.companion_hint
+  - concept: progression.guidance.hint_waypoint
+  reads:
+  - world.flags.*
+  - inventory.*
+  - kinstones.fused_bits
+  writes:
+  - hint.queue
+  params:
+    hints_per_milestone:
+      value: 8
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/kinstone.c:GenerateAreaHint
+        confidence: 0.9
+    milestone_table_entries:
+      value: 43
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/kinstone.c:gUnk_080B3D20
+        confidence: 0.85
+    region_hint_delay:
+      value: 30
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/manager/ezloHintManager.c:EzloHintManager_Action2
+        confidence: 0.85
+  relations:
+  - type: requires
+    target: story_progress_gate
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/kinstone.c:sub_0801855C
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/kinstone.c:ShuffleEzloHints
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/manager/ezloHintManager.c
+    confidence: 0.85
+- id: windcrest_fast_travel
+  facet: progression
+  label: Wind crest activation and Ocarina fast travel
+  summary: Eight wind crests (Mt Crenel, Veil Falls, Cloud Tops, Hyrule Town, Lake Hylia, Castor Wilds, South Hyrule
+    Field, Minish Woods) are stored in the top 8 bits of a save word and lit by touching them. After obtaining the
+    Ocarina of Wind, a fast-travel subtask cycles through lit crests only and warps there; warping is allowed only
+    in overworld areas flagged for it.
+  instantiates:
+  - concept: progression.travel.unlockable_fast_travel_points
+  reads:
+  - save.windcrests
+  - inventory.ocarina
+  - area.flags
+  writes:
+  - save.windcrests
+  - world.area
+  params:
+    crests:
+      value: 8
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/windcrest.h
+        confidence: 0.95
+  relations:
+  - type: requires
+    target: overworld_structure
+  - type: gated_by
+    target: item_toolkit
+    note: Ocarina of Wind
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/object/windcrest.c:Windcrest_Unlock
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/subtask/subtaskFastTravel.c
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/gameUtils.c:AreaAllowsWarp
+    confidence: 0.85
+- id: technique_scrolls
+  facet: progression
+  label: Sword techniques bought from dojo masters
+  summary: Sword techniques are inventory items (one skill bit each) taught by the Blade Brothers in a fixed order
+    (Spin, Rock Breaker, Dash, Down Thrust, Roll, Sword Beam, Peril Beam, Great Spin, then Fast Spin, Fast Split, Long
+    Spin); the pause menu lists 8 technique slots. Skills are recomputed from inventory every frame they matter.
+  instantiates:
+  - concept: progression.skills.learned_technique_flags
+  reads:
+  - inventory.skill_*
+  writes:
+  - player.skills
+  params:
+    techniques:
+      value: 11
+      unit: teachable skills (8 shown in menu + 3 upgrades)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/npc/bladeBrothers.c:gUnk_0811162B
+        confidence: 0.85
+  relations:
+  - type: modulates
+    target: sword_combat
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/npc/bladeBrothers.c:BladeBrothers_LearnSkill
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/playerUtils.c:UpdatePlayerSkills
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/menu/pauseMenu.c:sub_080A5594
+    confidence: 0.8
+- id: rupee_wallet_economy
+  facet: economy
+  label: Rupees, ammo and shells with upgradeable capacities
+  summary: Rupees (values 1/5/20/50/100/200) are capped by a 4-tier wallet (100/300/500/999); bombs by a 4-tier bomb
+    bag (10/30/50/99) and arrows by a 4-tier quiver (30/50/70/99), each upgrade refilling the pool. Mysterious Shells
+    cap at 999. Heart pieces (4 = +1 heart) and containers raise max health and fully heal. HUD counters tick toward
+    the true value one unit per frame and turn yellow at a full wallet.
+  instantiates:
+  - concept: economy.resource.capped_pool
+  - concept: economy.resource.capacity_expansion
+  reads:
+  - resources.*
+  - inventory.wallet_tier
+  - inventory.bomb_bag_tier
+  - inventory.quiver_tier
+  writes:
+  - resources.rupees
+  - resources.bombs
+  - resources.arrows
+  - resources.shells
+  - player.max_health
+  params:
+    wallet_sizes:
+      value:
+      - 100
+      - 300
+      - 500
+      - 999
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/itemUtils.c:gWalletSizes
+        confidence: 0.95
+    bomb_bag_sizes:
+      value:
+      - 10
+      - 30
+      - 50
+      - 99
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/itemUtils.c:gBombBagSizes
+        confidence: 0.95
+    quiver_sizes:
+      value:
+      - 30
+      - 50
+      - 70
+      - 99
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/itemUtils.c:gQuiverSizes
+        confidence: 0.95
+    rupee_values:
+      value:
+      - 1
+      - 5
+      - 20
+      - 50
+      - 100
+      - 200
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/itemUtils.c:gUnk_080FD5A8
+        confidence: 0.9
+    heart_pieces_per_container:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/object/linkHoldingItem.c:LinkHoldingItem_Action3
+        confidence: 0.95
+    shells_cap:
+      value: 999
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/itemUtils.c:ModShells
+        confidence: 0.9
+  invariants:
+  - 0 <= rupees <= wallet size; ammo counts <= current bag/quiver size.
+  relations:
+  - type: part_of
+    target: health_and_damage
+    note: heart pieces and containers
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/gameUtils.c:ModRupees
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/itemUtils.c:GiveItem
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/ui.c:DrawRupees
+    confidence: 0.85
+- id: drop_tables
+  facet: economy
+  label: Weighted 16-slot drop tables with need-aware boosts and picolyte bias
+  summary: 'Drops sum a source table (per-enemy, per-area, per-object) with modifiers into 16 integer weights (none,
+    rupees, hearts, fairy, bombs, arrows, shells, three kinstone colours, beetle) and roll Random() % sum from a random
+    start slot. Need-aware boosts add +5 hearts at <= 1 heart, +3 bombs or +3 arrows when empty, +1 five-rupee at
+    <= 10 rupees; modifiers of -999 remove shells after all figurines and kinstones after all fusions. A rolled item
+    the player cannot use (bombs without a bag, arrows without a bow, shells before the Earth Element, kinstones
+    without the bag) becomes nothing. Picolyte bottles add large weights to one category for 900 frames.'
+  instantiates:
+  - concept: economy.source.enemy_drop_table
+  - concept: economy.source.need_aware_drop_substitution
+  reads:
+  - player.health
+  - resources.*
+  - inventory.*
+  - save.stats.has_all_figurines
+  - kinstones.did_all_fusions
+  - player.picolyte_timer
+  writes:
+  - world.items.dropped
+  params:
+    weight_slots:
+      value: 16
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/droptables.h:Droptable
+        confidence: 0.95
+    low_health_heart_boost:
+      value: 5
+      unit: weight added when health <= 8 units
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/itemUtils.c:CreateRandomItemDrop
+        confidence: 0.95
+    empty_ammo_boost:
+      value: 3
+      unit: weight added to bombs/arrows when count is 0
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/itemUtils.c:CreateRandomItemDrop
+        confidence: 0.95
+    picolyte_duration:
+      value: 900
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/playerItem/playerItemBottle.c:PlayerItemBottle_UsePotionOrPicolyte
+        confidence: 0.9
+  tables:
+    sample_enemy_table_6:
+      description: gEnemyDroptables[6] (Octorok, ChuChu, Keese); weights out of sum 105
+      columns:
+      - slot
+      - weight
+      rows:
+      - [none, 73]
+      - [rupee1, 25]
+      - [hearts, 5]
+      - [bombs, 1]
+      - [arrows, 1]
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/droptables.c:gEnemyDroptables
+        confidence: 0.85
+      - kind: decomp_source
+        ref: tmc:src/object/deathFx.c:DeathFx_EnemyDroptables
+        confidence: 0.8
+  relations:
+  - type: modulates
+    target: rupee_wallet_economy
+  - type: modulates
+    target: health_and_damage
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/itemUtils.c:CreateRandomItemDrop
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/itemUtils.c:CreateItemDrop
+    confidence: 0.95
+  - kind: decomp_source
+    ref: tmc:src/droptables.c:gDroptableModifiers
+    confidence: 0.9
+- id: shops
+  facet: economy
+  label: Fixed-price shops for gear, ammo, food and bottle contents
+  summary: Stockwell's shop, the bakery and other merchants sell from a price table (purchase requires price <= rupees,
+    then deducts). Representative prices are in the table; capacity upgrades (bomb bag, quiver) are the big rupee
+    sinks.
+  instantiates:
+  - concept: economy.trade.fixed_price_shop
+  reads:
+  - resources.rupees
+  writes:
+  - resources.rupees
+  - inventory.*
+  tables:
+    prices:
+      columns:
+      - item
+      - rupees
+      rows:
+      - [boomerang, 300]
+      - [shield, 40]
+      - [bottle, 100]
+      - [wallet, 80]
+      - [bomb_bag, 600]
+      - [large_quiver, 600]
+      - [bombs_10, 30]
+      - [bombs_30, 80]
+      - [arrows_10, 20]
+      - [arrows_30, 50]
+      - [shell, 15]
+      - [shells_30, 200]
+      - [red_potion, 150]
+      - [blue_potion, 60]
+      - [picolyte, 200]
+      - [brioche, 20]
+      - [cake, 60]
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/itemMetaData.c:gUnk_080FD964 (itemPrice, USA branch)
+        confidence: 0.85
+  relations:
+  - type: modulates
+    target: rupee_wallet_economy
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/itemUtils.c:GetItemPrice
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/script.c:ScriptCommand_BuyItem
+    confidence: 0.85
+- id: figurine_gacha
+  facet: economy
+  label: Mysterious Shell figurine gacha with pity floor
+  summary: 'Shells buy draws at a figurine machine. The chance of a new figurine is 100 x (available - owned) / available
+    percent, +1 % per extra shell inserted, with a floor that drops as the collection grows (15 % under 50 owned,
+    12 % under 80, 9 % under 110, else 6 %). A miss returns a duplicate. Availability widens with story progress
+    (136 figurines; 130 before the credits). Completing the set grants the Carlov Medal and removes shells from drop
+    tables.'
+  instantiates:
+  - concept: economy.converter.collection_gacha
+  reads:
+  - resources.shells
+  - save.figurines[136]
+  - save.global_progress
+  writes:
+  - save.figurines[136]
+  - resources.shells
+  params:
+    figurines:
+      value: 136
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/object/figurineDevice.c (index wraps at 136)
+        confidence: 0.85
+    floor_chances:
+      value:
+        under_50: 15
+        under_80: 12
+        under_110: 9
+        otherwise: 6
+      unit: percent
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/object/figurineDevice.c:FigurineDevice_GetChanceBasedOffFigurineCount
+        confidence: 0.9
+    per_shell_bonus:
+      value: 1
+      unit: percent per extra shell
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/object/figurineDevice.c:FigurineDevice_ChangeShellAmount
+        confidence: 0.85
+  relations:
+  - type: gated_by
+    target: story_progress_gate
+  - type: modulates
+    target: drop_tables
+    condition: all figurines owned
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/object/figurineDevice.c:FigurineDevice_Draw
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/object/figurineDevice.c:sub_0808826C
+    confidence: 0.85
+- id: hud
+  facet: ui_hud
+  label: Hearts, rupee, key counter and A/B/R button HUD
+  summary: 'The HUD shows up to 20 hearts in two rows of 10 with quarter-heart resolution (health catches up 1 quarter
+    every 2 frames on gain), a 3-digit rupee counter, a dungeon key counter only in key areas, A and B item icons
+    with ammo counts, an R label naming the context action (e.g. Shrink/Grow at a portal), and a 40-segment charge
+    bar for sword split charging. Buttons slide away while messages are shown. A low-health beep plays every 90 frames
+    below the threshold.'
+  instantiates:
+  - concept: ui_hud.hud.resource_counters
+  - concept: ui_hud.alert.low_health_warning
+  - concept: ui_hud.hud.context_action_label
+  reads:
+  - player.health
+  - resources.rupees
+  - save.dungeon_keys
+  - save.stats.equipped
+  - player.context_action
+  writes:
+  - oam.hud
+  params:
+    hearts_per_row:
+      value: 10
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/ui.c:DrawHearts
+        confidence: 0.9
+    hud_elements_max:
+      value: 24
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/ui.h (MAX_UI_ELEMENTS)
+        confidence: 0.85
+    button_positions:
+      value:
+        A: 208,28
+        B: 184,28
+        R: 216,14
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/ui.c:InitUI
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: pause_menus
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/ui.c:DrawHearts
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/ui.c:TextUIElement
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/ui.c:DrawKeys
+    confidence: 0.85
+- id: pause_menus
+  facet: ui_hud
+  label: Multi-screen pause menu (items, quest status, maps, kinstones, techniques, save/sleep)
+  summary: Start opens a set of screens switched with L/R - item grid (equip to A/B), quest status (kinstone bag tier,
+    heart pieces, techniques count, shells), overworld map or dungeon map (with map/compass data), kinstone piece
+    list, sword techniques, and save and sleep prompts. Screens cross-fade by alpha 2 per frame; the overworld map
+    is skipped until the map item is owned.
+  instantiates:
+  - concept: ui_hud.menu.pause_map_screen
+  - concept: ui_hud.menu.inventory_equip_grid
+  reads:
+  - inventory.*
+  - save.*
+  writes:
+  - save.stats.equipped
+  params:
+    screens:
+      value: 9
+      unit: pause screens (items, quest, map, dungeon map, map detail, kinstones, techniques, sleep, save)
+      evidence:
+      - kind: decomp_source
+        ref: tmc:include/pauseMenu.h
+        confidence: 0.85
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/menu/pauseMenu.c:PauseMenu_ItemMenu_Update
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/player.c:CheckInitPauseMenu
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/menu/pauseMenu.c:sub_080A5594
+    confidence: 0.8
+- id: dialogue_and_scripts
+  facet: narrative_delivery
+  label: Script-bytecode cutscenes and typewriter dialogue boxes
+  summary: NPCs, cutscenes and world events run a u16 script bytecode (139 commands - flag ops, waits, fades, movement,
+    messages, item/rupee/health grants, camera target and scroll speed). Messages print in a 26x4-tile window (two
+    208 px lines per page) at 5/3/1 frames per character, 8x faster while B is held, with up to 4 choices; the box
+    jumps to the top if the speaker is low on screen. Ezlo comments constantly as a companion voice.
+  instantiates:
+  - concept: narrative_delivery.cutscene.in_engine_cutscene
+  - concept: narrative_delivery.dialogue.typewriter_dialogue
+  reads:
+  - script.pc
+  - input.buttons
+  writes:
+  - world.flags.*
+  - message.state
+  params:
+    script_commands:
+      value: 139
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/script.c:gScriptCommands
+        confidence: 0.85
+    max_choices:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: tmc:src/message.c:TextDispEnquiry
+        confidence: 0.8
+  evidence:
+  - kind: decomp_source
+    ref: tmc:src/script.c:ExecuteScript
+    confidence: 0.9
+  - kind: decomp_source
+    ref: tmc:src/message.c:MessageRequest
+    confidence: 0.85
+- id: story_intro_and_credits
+  facet: narrative_delivery
+  label: Stained-glass story intro and staff roll
+  summary: New games open with a narrated stained-glass slideshow (Picori legend) framed by a window and alpha blending,
+    then a playable prologue from Link's bedroom. Completing the game plays the staff roll, records saw_staffroll and
+    the GAMECLEAR flag (unlocking the last figurines) and prompts to save.
+  instantiates:
+  - concept: narrative_delivery.text.story_text_crawl
+  - concept: narrative_delivery.structure.predetermined_story
+  reads:
+  - world.flags.*
+  writes:
+  - save.saw_staffroll
+  - world.flags.gameclear
+  evidence:
+  - kind: capture_frame
+    ref: capture:frontend:keyframes f001431 (stained-glass panel), f002582 (narration text)
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: capture:frontend:frames 1347-4102 WIN0 0x00f0/0x0060, BLDCNT 0x2244
+    confidence: 0.85
+  - kind: decomp_source
+    ref: tmc:src/staffroll.c:StaffrollTask_State0
+    confidence: 0.75
+  - kind: decomp_source
+    ref: tmc:src/playerUtils.c:FinalizeSave (spawn in Link's bedroom)
+    confidence: 0.85
+- id: minish_fantasy_setting
+  facet: setting
+  label: Hyrule seen from two scales - Picori folklore fantasy
+  summary: High-fantasy Hyrule where the tiny Picori (Minish) secretly live alongside humans; the sorcerer Vaati
+    petrifies Princess Zelda, and Link, guided by Ezlo (a talking cap who can shrink him), restores the Picori Blade
+    with four elements. Bright, whimsical tone; much of the charm comes from seeing ordinary places at Minish scale.
+  instantiates:
+  - concept: setting.theme.high_fantasy
+  - concept: setting.tone.whimsical_scale_shift
+  evidence:
+  - kind: llm_knowledge
+    ref: plot and characters of The Minish Cap
+    confidence: 0.55
+  - kind: capture_frame
+    ref: capture:frontend:keyframe f002582 ("The tiny Picori appeared from the sky...")
+    confidence: 0.9
+proposed_concepts:
+- id: ai.boss.scale_shift_interior_boss
+  label: Scale-shift interior boss
+  definition: Boss fight with a phase that requires the player to change size (or form) to enter the boss's body
+    or a hidden part of it, continuing the fight in another space with shared boss state.
+  is_a:
+  - ai.boss.multi_part_boss
+- id: ai.enemy.ambush_grab
+  label: Ambush grab
+  definition: Enemy that appears or drops onto the player after a telegraph, captures them on contact and displaces
+    them (to an entrance, into its body) or holds them until escape.
+  seed_source: 'game_ai_taxonomy: Scripted / pattern-based AI'
+- id: ai.enemy.erratic_flyer
+  label: Erratic flyer
+  definition: Flying enemy that changes heading at random intervals, alternating flight and rest phases, often waking
+    on player proximity.
+  seed_source: VGDL RandomNPC (generalized)
+- id: ai.enemy.guard_counter_melee
+  label: Guard-and-counter melee
+  definition: Melee enemy that keeps a fighting distance, blocks frontal attacks, and becomes vulnerable only around
+    its own attacks or after being staggered.
+  seed_source: 'game_ai_taxonomy: Finite state machine'
+- id: ai.enemy.line_of_sight_charge
+  label: Alignment charge
+  definition: Enemy that wanders until the player is aligned on an axis or in clear line of sight, then charges in
+    a straight line at increased speed.
+  seed_source: 'game_ai_taxonomy: Aggro / detection range'
+- id: ai.enemy.proximity_hop_attack
+  label: Proximity hop attack
+  definition: Enemy that creeps toward the player and, inside a trigger radius, launches a committed hop or lunge
+    with its own arc.
+- id: ai.enemy.random_walk_shooter
+  label: Random-walk shooter
+  definition: Enemy that alternates pauses and short walks in random directions and fires a projectile when facing
+    the player.
+  seed_source: VGDL RandomNPC + Missile
+- id: ai.movement.home_territory_leash
+  label: Home territory leash
+  definition: Enemy movement constrained to an authored home region; outside it the enemy steers back, and some
+    behaviours trigger only when the player is inside the region.
+  seed_source: 'game_ai_taxonomy: Steering behaviors'
+- id: ai.perception.scale_filtered_target_selection
+  label: Scale-filtered targeting
+  definition: Enemies acquire the player as a target only when the player's size or form matches the enemy's scale
+    class, so changing size changes which enemies are threats.
+- id: ai.spawn.wave_until_cleared
+  label: Clear-the-room ambush
+  definition: Room spawns a monitored group of enemies (often sealing exits or changing music) and sets a completion
+    flag once all are defeated.
+  seed_source: 'gdp: Arenas'
+- id: camera.parallax.foreground_overspeed_scale_cue
+  label: Overspeed foreground parallax
+  definition: Layers scroll faster than the camera to read as objects close to the lens, used to sell a small avatar
+    scale.
+  is_a:
+  - camera.parallax.layer_ratio_scroll
+- id: camera.transition.edge_slide_scroll
+  label: Edge-slide room transition
+  definition: Leaving a room by its edge scrolls the view a full screen to the adjacent room at a fixed speed while
+    the avatar is moved a short distance inside.
+  seed_source: flip-screen / room scrolling (our vocabulary)
+- id: economy.converter.collection_gacha
+  label: Collection gacha
+  definition: A currency is converted into random draws from a collectible set, with the chance of a new item depending
+    on collection completeness, extra currency spent and a minimum floor.
+  seed_source: 'machinations: Converter; gdp: Collecting'
+- id: economy.trade.fixed_price_shop
+  label: Fixed-price shop
+  definition: Vendor exchanging currency for items at authored prices, refusing purchases the player cannot afford.
+  seed_source: 'gdp: Trading'
+- id: frontend.boot.publisher_logos
+  label: Publisher logo sequence
+  definition: Boot sequence showing publisher/developer logos for a fixed time or until a button press.
+  seed_source: 'front_end_flow: Boot logo sequence'
+- id: frontend.menu.name_entry_grid
+  label: Name entry grid
+  definition: On-screen character grid for naming the save or avatar with paging, backspace and confirm.
+- id: frontend.save.save_anywhere
+  label: Save anywhere
+  definition: Saving is allowed at any time from a menu; loading resumes at a recorded checkpoint such as the last
+    room or area entry.
+  seed_source: 'gdp: Save Files'
+- id: frontend.title.idle_loop_to_logos
+  label: Idle loop to intro
+  definition: An idle title screen restarts the boot/intro sequence after a timeout instead of playing a gameplay demo.
+  is_a:
+  - frontend.flow.mode_state_machine
+- id: mechanics.avatar.mirrored_clones
+  label: Mirrored clones
+  definition: The player temporarily spawns copies that replicate the avatar's movement and actions, used to press
+    multiple switches or combine strength.
+- id: mechanics.combat.auto_revive_consumable
+  label: Auto-revive consumable
+  definition: A carried consumable is automatically used at zero health to restore some health instead of ending the
+    game.
+  seed_source: 'gdp: Extra Lives (related)'
+- id: mechanics.combat.button_mash_escape
+  label: Button-mash escape
+  definition: When grabbed, repeated button presses fill an escape meter before a harmful timer completes.
+- id: mechanics.combat.equipment_theft
+  label: Equipment theft
+  definition: Enemy action that removes a piece of the player's equipment, which must be recovered or re-bought.
+  seed_source: 'gdp: Ability Losses'
+- id: mechanics.combat.tool_specific_enemy_reaction
+  label: Tool-specific enemy reaction
+  definition: Enemies react differently to each tool (sucked in, flipped, stripped of armour, stunned) so tools act
+    as typed keys in combat.
+  is_a:
+  - mechanics.combat.enemy_weakness_mask
+- id: mechanics.hazard.pit_respawn_breadcrumb
+  label: Pit respawn at last safe tile
+  definition: Falling into a pit or deadly liquid costs a small penalty and returns the avatar to the most recent
+    safe ground position instead of killing it.
+  seed_source: 'gdp: Penalties'
+- id: mechanics.hazard.sinking_floor
+  label: Sinking floor
+  definition: Terrain that slows the avatar and progressively sinks it, causing a penalty unless the player leaves
+    in time or moves fast enough.
+  is_a:
+  - mechanics.hazard.environmental_damage_over_time
+- id: mechanics.puzzle.push_pull_block
+  label: Push/pull blocks
+  definition: Movable blocks or furniture that the avatar pushes or pulls along a grid after sustained contact.
+  seed_source: VGDL Passive / bounceForward
+- id: mechanics.scale.portal_size_toggle
+  label: Portal size toggle
+  definition: The avatar switches between a normal and a tiny scale only at designated points; scale changes hitbox,
+    speed, usable actions, passable terrain, hazards and which enemies perceive it.
+  seed_source: 'gdp: Abilities / Alternative Realities (related)'
+- id: mechanics.weapon.health_conditional_projectile
+  label: Health-conditional projectile
+  definition: Melee attack that also fires a projectile only when health meets a condition (full health, or critically
+    low).
+- id: movement_physics.collision.corner_nudge_assist
+  label: Corner nudge
+  definition: When the avatar walks into the edge of a wall and only part of its leading side is blocked, movement
+    is redirected sideways around the corner.
+  seed_source: 'movement_physics_game_feel: Polish'
+- id: movement_physics.collision.tile_mask_wall_slide
+  label: Tile-mask wall slide
+  definition: Sub-tile collision masks and per-axis blocking let diagonal movement slide along walls instead of stopping.
+- id: movement_physics.dash.charge_dash
+  label: Charge dash
+  definition: After a short charge the avatar dashes at high fixed speed with limited steering, crashing back on
+    walls.
+- id: movement_physics.dash.dodge_roll
+  label: Dodge roll
+  definition: Short burst roll with scripted speed per frame used to reposition quickly.
+- id: movement_physics.jump.z_axis_hop
+  label: Top-down height jump
+  definition: In a top-down view, jumping changes only a height coordinate (with shadow), letting the avatar cross
+    gaps and pits while ground movement continues.
+  is_a:
+  - movement_physics.jump.fixed_impulse_gravity_arc
+- id: movement_physics.ledge.one_way_ledge_hop
+  label: One-way ledge hop
+  definition: Pushing against a ledge edge for a short time hops the avatar down to the lower level; the ledge cannot
+    be climbed back.
+- id: movement_physics.locomotion.action_speed_penalty
+  label: Action speed penalty
+  definition: Walking speed is replaced by a slower value while performing actions such as guarding, aiming or charging.
+- id: movement_physics.locomotion.instant_eight_way_walk
+  label: Instant 8-way walk
+  definition: Top-down movement in 8 directions with no acceleration, constant speed and normalised diagonals.
+  seed_source: VGDL GridPhysics / ContinuousPhysics (top-down)
+- id: movement_physics.medium.swim_with_item
+  label: Item-gated swimming
+  definition: Deep water drowns the avatar unless an item enables swimming, which has its own slower speed, bursts
+    and diving.
+  is_a:
+  - movement_physics.medium.liquid_drag
+- id: movement_physics.surface.conveyor_push
+  label: Conveyor push
+  definition: Floor tiles that move the avatar in a fixed direction while standing on them.
+  seed_source: VGDL Conveyor / conveySprite
+- id: movement_physics.surface.ice_momentum
+  label: Ice momentum
+  definition: Slippery floor switching movement to low acceleration, low friction velocity physics.
+  seed_source: VGDL slipForward
+- id: narrative_delivery.dialogue.typewriter_dialogue
+  label: Typewriter dialogue box
+  definition: Text revealed character by character in a box with speed settings, page advance and simple choices.
+  seed_source: 'gdp: Dialogues'
+- id: progression.gating.consumable_key_lock
+  label: Consumable key lock
+  definition: Locks opened by spending a counted key scoped to a region; the opened lock persists.
+  is_a:
+  - progression.gating.typed_lock_and_key
+  seed_source: 'dormans: Lock and key (single-use)'
+- id: progression.guidance.companion_hint
+  label: Companion hints
+  definition: A companion character offers context-sensitive hints chosen from the player's current progress.
+  is_a:
+  - progression.guidance.hint_waypoint
+- id: progression.skills.learned_technique_flags
+  label: Learned techniques
+  definition: Extra combat moves unlocked permanently as individual flags, typically taught by NPCs, each with its
+    own trigger condition.
+  seed_source: 'gdp: New Abilities'
+- id: progression.structure.dungeon_with_boss_key
+  label: Dungeon with boss key
+  definition: Self-contained level with local keys, a map/compass aid, a unique boss key and a boss whose defeat
+    marks completion and grants a progression token.
+  seed_source: 'progression_structure: Levels'
+- id: progression.structure.global_progress_level
+  label: Global progress level
+  definition: A single ordinal value summarising story milestones, used by many systems to gate content.
+- id: progression.structure.scale_layered_world
+  label: Scale-layered world
+  definition: The same world contains a parallel layer of spaces reachable only at a different avatar scale, entered
+    at specific transition points.
+  is_a:
+  - progression.structure.interconnected_areas
+- id: progression.travel.unlockable_fast_travel_points
+  label: Unlockable fast travel
+  definition: Fixed travel points activated by visiting them, later selectable from a menu to warp.
+  seed_source: 'progression_structure: Fast travel / save points'
+- id: progression.unlock.distributed_matching_token_fusion
+  label: Distributed matching-token unlocks
+  definition: Players collect token halves and match them, by shape, with halves held by many NPCs or objects; each
+    match permanently changes some remote part of the world (new chests, paths, enemies), often revealed by a cutscene
+    and map marker.
+  seed_source: 'gdp: Collecting / Trading (combined)'
+- id: progression.world.recent_room_enemy_memory
+  label: Recent-room enemy memory
+  definition: Defeated enemies stay defeated only for a short list of recently visited rooms, so enemies respawn
+    after travelling far enough.
+- id: projection.top_down.three_quarter_view
+  label: Top-down 3/4 view
+  definition: Overhead view with a slight tilt so vertical faces are visible, movement on a ground plane.
+  seed_source: Top-down / bird's-eye
+- id: projection.top_down.z_height_layering
+  label: Height axis and floor layers
+  definition: A top-down world adds a height coordinate for jumps and falls and two or more collision layers for
+    bridges and upper floors.
+- id: rendering.raster.per_scanline_affine
+  label: Per-scanline affine
+  definition: Affine background parameters rewritten every scanline (HBlank DMA) to warp a layer, e.g. a rotating
+    cylinder or Mode-7 floor.
+  is_a:
+  - rendering.background.affine_rotscale
+  seed_source: HBlank raster effects / Mode 7
+- id: setting.theme.high_fantasy
+  label: High fantasy
+  definition: Fiction set in an invented world with magic, kingdoms, monsters and legendary artefacts.
+  seed_source: 'igdb theme: Fantasy'
+- id: setting.tone.whimsical_scale_shift
+  label: Whimsical scale shift
+  definition: Light-hearted tone built on seeing everyday places and objects from a tiny creature's perspective.
+- id: ui_hud.hud.context_action_label
+  label: Context action label
+  definition: HUD label naming what a context button will do right now (talk, roll, shrink, open).
+  seed_source: 'gdp: Tooltips'
+- id: ui_hud.input.two_slot_item_assignment
+  label: Two-slot item assignment
+  definition: The player assigns tools from an inventory to two action buttons and swaps them through a menu.
+- id: ui_hud.menu.inventory_equip_grid
+  label: Inventory equip grid
+  definition: Pause screen grid of collected tools where selecting one equips it to an action button.
+open_questions:
+- Sword damage per tier and move, enemy contact damage, and per-pair knockback/i-frames live in the binary collision
+  matrix (data_080B7B74/gCollisionMtx.bin, 173x34 entries), which is not extracted in this checkout; damage params
+  are therefore missing. Extracting assets from the ROM would resolve this.
+- Sub-tile collision shape tables (data_08007DF4/*.bin) are not extracted, so exactly which shapes open only to Minish
+  Link is unknown.
+- Kinstone colour mapping (palette 4/0/1/2 = gold/red/blue/green) and counts (9/24/18/49) are derived from palette
+  indices, not from named colour constants.
+- Ice, air-control and corner-nudge numbers come from hand-written ASM (asm/src/player.s, code_08001A7C.s) and should
+  be confirmed by a frame-stepped gameplay capture; current captures only cover the front end and the first seconds
+  of play.
+- Captures did not reach gameplay rooms with raster effects, so HBlank-DMA uses (iris, dark-room light, barrel,
+  steam) are code-only.
+- Decomp completeness was not measured (progress.py needs a build map; no build directory). src/ contains no NONMATCH
+  or ASM_FUNC markers; residual hand-written ASM (~6.2k lines in asm/src, incl. player.s, intr.s, collision and
+  GravityUpdate helpers) is likely original hand-ARM code.
+- Hit-type ids (e.g. Darknut 0x56 vs 0x51, contact type 0x13 as Gust Jar suction) are interpreted from usage, not
+  named constants.
+- Per-room data (which tiles, obstacles and items sit where; the item order across dungeons) was not parsed; a full
+  gating graph needs a room-data extraction pass.
+- Many enemies (Gleerok, Gyorg pair, Vaati forms, Moldorm, Madderpillar, Acro Bandits, Wizzrobes) were not decomposed
+  in detail.
+- The save.h comment for dungeonItems contradicts the code; the code (map 1, compass 2, big key 4) was followed.

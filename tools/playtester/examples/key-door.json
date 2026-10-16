@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "game_id": "reference-key-door",
+  "title": "Find a key, open a door, reach the goal",
+  "width": 9,
+  "height": 5,
+  "start": [1, 2],
+  "goal": [7, 2],
+  "walls": [[4, 0], [4, 1], [4, 3], [4, 4]],
+  "keys": [{"id": "brass-key", "position": [2, 1]}],
+  "doors": [{"id": "east-door", "position": [4, 2], "requires": "brass-key"}],
+  "max_episode_steps": 80,
+  "source_components": [],
+  "notes": "Synthetic test mechanics; not a reconstructed ROM, asset reuse, or claim of component compatibility."
+}

@@ -1,0 +1,3 @@
+{"comment":"Gameplay: New Game, A through the FMV-style opening, Castle Oblivion dialogue and world select (~5.5 min of story); first card battle (tutorial, Traverse Town) is played from ~20250 with run/jump/attack.",
+ "phases":[{"name":"gameplay","frames":23000,"play_starts_frame":20250,
+ "repeat":[{"from_frame":180,"until_frame":1100,"template":"menu_mash"},{"from_frame":1100,"until_frame":20400,"template":"a_mash"},{"from_frame":20400,"template":"move_side"}]}]}

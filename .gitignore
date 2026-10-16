@@ -19,6 +19,8 @@ coverage/
 artifacts/
 
 # Local game, worker and capture data
+# local/ holds ROMs, decompilations, Ghidra projects and captures; never commit it.
+local/
 .gameverse/
 local-data/
 recordings/

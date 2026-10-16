@@ -1,0 +1,44 @@
+{
+ "comment": "Gameplay: title START -> One Player (A) -> Vegetable Valley hub; UP at the stage-1 door at 900; side-scrolling stage 1 from ~960.",
+ "phases": [
+  {
+   "name": "gameplay",
+   "frames": 5400,
+   "events": [
+    {
+     "frame": 900,
+     "keys": [
+      "UP"
+     ],
+     "hold": 10
+    },
+    {
+     "frame": 960,
+     "keys": [
+      "RIGHT"
+     ],
+     "hold": 4
+    },
+    {
+     "frame": 1000,
+     "keys": [
+      "UP"
+     ],
+     "hold": 10
+    }
+   ],
+   "repeat": [
+    {
+     "from_frame": 180,
+     "until_frame": 700,
+     "template": "menu_mash"
+    },
+    {
+     "from_frame": 1300,
+     "template": "move_side"
+    }
+   ],
+   "play_starts_frame": 960
+  }
+ ]
+}

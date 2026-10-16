@@ -1,0 +1,315 @@
+{
+  "review_version": 1,
+  "reviewer": "Codex/GPT source audit (exact served model revision unavailable)",
+  "recorded_at": "2026-10-16T04:42:17.246514+00:00",
+  "method": "Two bounded local-model extractions followed by GPT review against the same frozen source packets. Reviewer saw the local responses; not a blinded or independent model benchmark. No accuracy or latency advantage for GPT is claimed.",
+  "source_packets": [
+    {
+      "game_id": "metroid-zero-mission",
+      "path": "local/ontology-pilots/packets/metroid-zero-mission.json",
+      "sha256": "8c6dfe972a61667d29b0709136c2088be628cf0f29cc9dc2633cd0bf944bbad7",
+      "decomp_commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+      "sources": [
+        {
+          "id": "S1",
+          "path": "mzm:src/samus.c",
+          "start_line": 3545,
+          "end_line": 3572,
+          "sha256": "81c1d9b4a679d446a6cbad2a6079522210ec2328580d997459a5a5f6542ab7ba"
+        },
+        {
+          "id": "S2",
+          "path": "mzm:src/samus.c",
+          "start_line": 6737,
+          "end_line": 6816,
+          "sha256": "ae10e7a74aba4a15af7ec261ab0afb336b7e6c9ea0c4fba47edf0a6a8482f556"
+        },
+        {
+          "id": "S3",
+          "path": "mzm:include/types.h",
+          "start_line": 37,
+          "end_line": 65,
+          "sha256": "e086a72392d5645fcd3d446d8e163a401d3c299ddfe301aa07346dd2b64f7c1d"
+        },
+        {
+          "id": "S4",
+          "path": "mzm:include/structs/samus.h",
+          "start_line": 46,
+          "end_line": 68,
+          "sha256": "877592ddc221b5c67ab6eb8e0f394c5aed5b71b581d79e1fc2eef34fedaae9a5"
+        },
+        {
+          "id": "S5",
+          "path": "mzm:include/macros.h",
+          "start_line": 377,
+          "end_line": 377,
+          "sha256": "96af0387912e525901aaf72e8d2b480a4c407c94f2c6340c0989bd0f971668c8"
+        }
+      ],
+      "local_model_run": "20261016T043740Z-011a43ad",
+      "local_model_wall_s": 22.074,
+      "local_model_usage": {
+        "completion_tokens": 1898,
+        "prompt_tokens": 2373,
+        "total_tokens": 4271
+      }
+    },
+    {
+      "game_id": "pokemon-emerald-version",
+      "path": "local/ontology-pilots/packets/pokemon-emerald-version.json",
+      "sha256": "44d0ec29351c5e8fc00e4318af41b8b828d04e2c7be0c0eea43b37d4fe1deb5d",
+      "decomp_commit": "731ad5bfd6e6f265508d0efcca0ba42f9dcf5881",
+      "sources": [
+        {
+          "id": "S1",
+          "path": "pokeemerald:src/battle_main.c",
+          "start_line": 4595,
+          "end_line": 4766,
+          "sha256": "e3e15ad11bc6d1887baeb2909738ac1a704c8337191309b206148a62a845af26"
+        },
+        {
+          "id": "S2",
+          "path": "pokeemerald:src/random.c",
+          "start_line": 1,
+          "end_line": 33,
+          "sha256": "71d7335fde4c0c7dd8c3245560defa2e23124b8ba8ec5d50bf1295ebc24bdcdf"
+        },
+        {
+          "id": "S3",
+          "path": "pokeemerald:include/random.h",
+          "start_line": 1,
+          "end_line": 23,
+          "sha256": "566ab9be0a0840b31465faf3df5c529445a9c6d08959fd4f7f1f0ec7e637c941"
+        },
+        {
+          "id": "S4",
+          "path": "pokeemerald:src/data/items.h",
+          "start_line": 2235,
+          "end_line": 2247,
+          "sha256": "265045eacf7661ed6322d5e0d4a8ca152332e6da0381cdc52769417c22054d4a"
+        }
+      ],
+      "local_model_run": "20261016T043740Z-ac7ba4cd",
+      "local_model_wall_s": 31.8411,
+      "local_model_usage": {
+        "completion_tokens": 2877,
+        "prompt_tokens": 3324,
+        "total_tokens": 6201
+      }
+    }
+  ],
+  "findings": [
+    {
+      "game_id": "metroid-zero-mission",
+      "local_claim": "C1",
+      "issue": "Incorrect unconditional symmetric velocity bound",
+      "correction": "The right branch enforces an upper bound only; the left branch enforces a lower bound only. A velocity of -100 with acceleration 1 and cap20 remains below -20 after a right-facing update. Caller assumptions could establish a stronger bound but were not in the packet.",
+      "evidence": [
+        "mzm:src/samus.c:3545-3572"
+      ]
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "local_claim": "C2",
+      "issue": "Grounded condition omitted from general position-integration claim",
+      "correction": "Airborne X uses shifted xVelocity. Grounded X uses the missing slope function first, then the running branch suppresses displacement opposite facing direction.",
+      "evidence": [
+        "mzm:src/samus.c:6789-6811"
+      ]
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "local_claim": "C3/C7",
+      "issue": "Unsupported native-unit label and portable-C rounding assertion",
+      "correction": "The macro shifts by3 for divisor8. Four position subpixels equal one pixel, so the nominal scale is1/32 px per raw velocity unit per call; quantization and negative shifting still matter. Portable C signed right-shift semantics cannot be established from this macro alone.",
+      "evidence": [
+        "mzm:include/types.h:47-49",
+        "mzm:include/macros.h:377",
+        "mzm:src/samus.c:6808-6811"
+      ]
+    },
+    {
+      "game_id": "pokemon-emerald-version",
+      "local_claim": "C2",
+      "issue": "Multiplicative operations rendered as additive/subtractive formula",
+      "correction": "Compute base speed times weather factor times stage numerator, then divide by stage denominator; apply conditional badge integer scaling, then Macho Brace divisor2, then paralysis divisor4; finally possible Quick Claw sentinel. Preserve every truncation site.",
+      "evidence": [
+        "pokeemerald:src/battle_main.c:4624-4654"
+      ]
+    },
+    {
+      "game_id": "pokemon-emerald-version",
+      "local_claim": "C4",
+      "issue": "Division separated from preceding multiplication",
+      "correction": "The product with base speed and weather precedes division by the stage denominator. Dividing the stage numerator first can yield a different result.",
+      "evidence": [
+        "pokeemerald:src/battle_main.c:4624-4626"
+      ]
+    },
+    {
+      "game_id": "pokemon-emerald-version",
+      "local_claim": "C8",
+      "issue": "Quick Claw described as guaranteeing first action; citation only proves item parameter",
+      "correction": "Quick Claw replaces effective speed with UINT_MAX; higher move priority still wins. Threshold is floor(65535*20/100)=13107. Activation probability13107/65536 is conditional on a uniform u16 draw; random distribution and refresh schedule are outside this packet. Both ordinary holders share the same test.",
+      "evidence": [
+        "pokeemerald:src/battle_main.c:4653-4654",
+        "pokeemerald:src/battle_main.c:4687-4688",
+        "pokeemerald:src/battle_main.c:4722-4748",
+        "pokeemerald:src/data/items.h:2235-2247"
+      ]
+    },
+    {
+      "game_id": "pokemon-emerald-version",
+      "local_claim": "C5/C6/C7/C9/C10",
+      "issue": "Several plausible descriptions cite wrong or insufficient line ranges",
+      "correction": "Badge behavior is at4640-4645, Macho Brace4647-4648, paralysis4650-4651, and ties4728-4731 or4745-4748. RNG recurrence needs random.h plus random.c; header alone does not prove state updates.",
+      "evidence": [
+        "pokeemerald:src/battle_main.c:4640-4651",
+        "pokeemerald:src/battle_main.c:4728-4748",
+        "pokeemerald:src/random.c:11-16",
+        "pokeemerald:include/random.h:16-17"
+      ]
+    }
+  ],
+  "knowledge_candidates": [
+    {
+      "id": "priority_bracket_planning",
+      "game_id": "pokemon-emerald-version",
+      "kind": "strategy",
+      "status": "inferred_unvalidated",
+      "preconditions": [
+        "Two compared battlers use moves with known different priorities"
+      ],
+      "actions": [
+        "Compare priority before investing in effective speed advantages"
+      ],
+      "expected_effect": "Higher effective speed alone cannot overcome lower move priority in this comparator.",
+      "reads": [
+        "moves.priority:i8",
+        "battlers.effective_speed:u32"
+      ],
+      "writes": [
+        "player.chosen_move:move_id"
+      ],
+      "invariant": "Do not generalize comparator to switch/item/action ordering without inspecting its caller.",
+      "evidence": [
+        "pokeemerald:src/battle_main.c:GetWhoStrikesFirst"
+      ]
+    },
+    {
+      "id": "shared_proc_risk_reasoning",
+      "game_id": "pokemon-emerald-version",
+      "kind": "skill",
+      "status": "inferred_unvalidated",
+      "preconditions": [
+        "Both ordinary Quick Claw holders evaluated with the same shared turn number"
+      ],
+      "actions": [
+        "Reason about their activations as correlated, then resolve equal speed using comparator tie logic"
+      ],
+      "expected_effect": "Avoids planning from an incorrect independent-roll model.",
+      "reads": [
+        "battle.random_turn_number:u16",
+        "held_item.parameter:u8"
+      ],
+      "writes": [
+        "player.action_plan:decision"
+      ],
+      "invariant": "No empirical calibration or win-rate improvement established.",
+      "evidence": [
+        "pokeemerald:src/battle_main.c:GetWhoStrikesFirst",
+        "pokeemerald:src/data/items.h:ITEM_QUICK_CLAW"
+      ]
+    },
+    {
+      "id": "quantized_motion_control",
+      "game_id": "metroid-zero-mission",
+      "kind": "skill",
+      "status": "inferred_unvalidated",
+      "preconditions": [
+        "Airborne branch used",
+        "Pinned compiler/ROM confirms signed shift behavior"
+      ],
+      "actions": [
+        "Anticipate discrete position steps instead of assuming continuous floating-point integration"
+      ],
+      "expected_effect": "Candidate control skill relevant to small velocity adjustments; actual input timing and benefit remain unknown.",
+      "reads": [
+        "samus.x_velocity:i16",
+        "samus.standing_status:enum"
+      ],
+      "writes": [
+        "player.input_plan:button_sequence"
+      ],
+      "invariant": "Do not infer per-frame acceleration, precision-jump timing or collision outcomes without callers and trajectories.",
+      "evidence": [
+        "mzm:src/samus.c:SamusUpdateVelocityPosition",
+        "mzm:include/macros.h:DIV_SHIFT",
+        "mzm:include/types.h:SUB_PIXEL_RATIO"
+      ]
+    }
+  ],
+  "limitations": [
+    "Two small packets do not measure whole-game extraction quality.",
+    "No player trajectories, skill execution or strategies were playtested.",
+    "Provider cost and server queue times unavailable; GPT review latency/token usage not instrumented.",
+    "MZM signed negative right-shift behavior needs pinned compiler or ROM instruction confirmation."
+  ],
+  "counterexample_experiment": {
+    "result_path": "local/ontology-pilots/directional-cap-counterexample/result.json",
+    "experiment": "execute source function with counterexample states",
+    "source_ref": "mzm:src/samus.c:3545-3568",
+    "source_excerpt_sha256": "23f930df6f084605a265b469fa868638b8ed1072d4023b8edc8358926325dcc3",
+    "wrapper_scope": "Native compilation of exact function with minimal type/struct declarations; no GBA ROM execution and no caller behavior established",
+    "build": {
+      "mode": "clean",
+      "cache": "not used",
+      "wall_s": 0.147997,
+      "outcome": 0,
+      "flags": [
+        "-std=c99",
+        "-O0"
+      ],
+      "compiler": "Apple clang version 21.0.0 (clang-2100.0.123.102)"
+    },
+    "execution_wall_s": 0.12037,
+    "observed": [
+      "right:-99",
+      "left:99"
+    ],
+    "expected_if_local_unconditional_bound_were_true": "both results within [-20,20]",
+    "conclusion": "unconditional symmetric bound refuted for these valid integer inputs",
+    "recorded_at": "2026-10-16T04:42:54.775175+00:00",
+    "machine": "macOS-27.0.1-arm64-arm-64bit",
+    "queue_s": null,
+    "outcome": "ok"
+  },
+  "positive_velocity_recurrence_check": {
+    "recorded_at": "2026-10-16T04:51:01.941550+00:00",
+    "method": "sum (min(v,192)>>3)/4 while v>0; decrement v by10 each update; collision and button release excluded",
+    "sources": [
+      "mzm:src/samus.c:SamusUpdateVelocityPosition",
+      "mzm:include/constants/samus.h",
+      "mzm:include/types.h",
+      "mzm:include/macros.h"
+    ],
+    "results": [
+      {
+        "initial_native_velocity": 192,
+        "apex_px": 58.75,
+        "positive_updates": 20
+      },
+      {
+        "initial_native_velocity": 232,
+        "apex_px": 82.75,
+        "positive_updates": 24
+      },
+      {
+        "initial_native_velocity": 164,
+        "apex_px": 43,
+        "positive_updates": 17
+      }
+    ],
+    "kind": "derived; not emulator validation"
+  }
+}

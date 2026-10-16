@@ -1,0 +1,51 @@
+{
+ "comment": "Gameplay: New Game, A through the opening; at name entry (default 'Marche', the A mash appends 'AAA') START=OK, LEFT to 'Yes', A; A through the tutorial dialogue; the snowball-fight tactics battle (cursor/move/action menus) is played from ~10500.",
+ "phases": [
+  {
+   "name": "gameplay",
+   "frames": 13500,
+   "events": [
+    {
+     "frame": 5040,
+     "keys": [
+      "START"
+     ]
+    },
+    {
+     "frame": 5100,
+     "keys": [
+      "LEFT"
+     ]
+    },
+    {
+     "frame": 5150,
+     "keys": [
+      "A"
+     ]
+    }
+   ],
+   "repeat": [
+    {
+     "from_frame": 180,
+     "until_frame": 800,
+     "template": "menu_mash"
+    },
+    {
+     "from_frame": 800,
+     "until_frame": 4660,
+     "template": "a_mash"
+    },
+    {
+     "from_frame": 5200,
+     "until_frame": 11000,
+     "template": "a_mash"
+    },
+    {
+     "from_frame": 11000,
+     "template": "move_topdown"
+    }
+   ],
+   "play_starts_frame": 10500
+  }
+ ]
+}

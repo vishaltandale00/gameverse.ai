@@ -1,0 +1,4936 @@
+schema_version: 0
+id: metroid-fusion
+game:
+  title: Metroid Fusion
+  platform: gba
+  game_code: AMTE
+  rom_sha1: ca33f4348c2c05dd330d37b97e2c5a69531dfe87
+  year: 2002
+  developer: Nintendo R&D1
+  derived_genres:
+  - metroidvania
+  - action_platformer
+  - action_adventure
+  evidence_basis:
+  - decomp_source
+  - capture_telemetry
+  - capture_frame
+  - static_signature
+  - derived
+  - llm_knowledge
+  sources:
+  - kind: decomp
+    ref: https://github.com/metroidret/mf @ 55b1a54bd20c0daf5a64859850b6ebc1322bf514 (local/decomps/mf; USA target sha1
+      matches; README reports 3193/3607 functions decompiled, 88.5 %). Remaining asm cited as mf:asm/<file>:<symbol> covers
+      file select, pause/status screens, nav-conversation panel, cutscene handler, intro stages and SRAM save code.
+  - kind: rom_header
+    ref: local/re/roms.json id=metroid-fusion (header title METROID4USA, maker 01, version 0, 8 MiB)
+  - kind: captures
+    ref: local/captures/metroid-fusion/ run 20261015T234415-8f46cf (harness 0.1.0, libmgba 0.10.5 HLE BIOS, source commit
+      d431b81 dirty tree, Apple M5 Pro, script default.json); phases attract 3600 frames (no input) and frontend 5400 frames
+      (START/A pulses); front end only, no in-game rooms
+  - kind: extraction_run
+    ref: claude-opus-5-5, brief v1, 2026-10-16T03:56:00Z-2026-10-16T04:14:20Z (~18 min wall, main agent plus two parallel
+      research forks), ~95 decomp files opened or grepped (~55 read in depth) plus captures summary/keyframes and 6 repo
+      inputs
+conventions:
+  units_convention: Same engine units as Zero Mission (mf:include/types.h, macros.h). Positions are u16 sub-pixels, 1 px
+    = 4 sub-px, 1 block = 16 px = 64 sub-px. Samus velocities are s16 in 1/8 sub-px per frame (SUB_PIXEL_TO_VELOCITY = x8),
+    so 1 velocity unit = 1/32 px/frame; SamusUpdateVelocityPosition adds velocity/8 sub-px per frame after clamping. Ladder/elevator
+    poses write raw sub-px per frame. Sprite movement tables are in sub-px per frame. Timers are frames at 60 fps (CONVERT_SECONDS)
+    except the in-game and escape timers, which count 64 ticks per displayed second. Params are converted to px and frames
+    with native values kept. Screen is 240x160 px.
+  zero_mission_comparison: Components marked variant_of metroid-zero-mission/<id> share code shape with the Zero Mission
+    decomposition; their relation note lists the constants that differ.
+  event_counter: Story state is a single byte (world.event_counter) indexing 110 ordered events; '<=' or '>=' comparisons
+    on it gate rooms, doors, music and sprites.
+components:
+- id: game_mode_flow
+  facet: frontend
+  label: Top-level game-mode state machine and soft reset
+  summary: AgbMain dispatches over 15 modes (TITLE, IN_GAME, SOFT_RESET, MAP_SCREEN, CUTSCENE, SA_X_CLOSE_UP, ERASE_SRAM_MENU,
+    FILE_SELECT_OR_INTRO, GAME_OVER, ENDING, DIED_FROM_SR388_COLLISION, CREDITS, DEMO, plus unknown/debug). MAP_SCREEN is
+    both the pause screen and the host for navigation conversations; the SA-X close-up is its own mode entered from in-game.
+    Game over offers continue-from-save or soft reset. A+B+Select+Start soft-resets unless a save is in progress.
+  instantiates:
+  - concept: frontend.flow.mode_state_machine
+  - concept: frontend.soft_reset.button_combo
+  reads:
+  - input.buttons.held
+  - frontend.mode
+  - frontend.pause_flag
+  - cutscene.current
+  - save.write_in_progress
+  writes:
+  - frontend.mode
+  - frontend.submode
+  params:
+    game_modes:
+      value: 15
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/globals.h:GameMode
+        confidence: 0.95
+    soft_reset_keys:
+      value: A+B+Select+Start
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/softreset.h:SOFTRESET_KEYS
+        confidence: 0.95
+  invariants:
+  - Soft reset is ignored while gDisableSoftReset is set (SRAM writes).
+  - In-game exits to the SA-X close-up when the pause flag is 6, to ending when the cutscene id has bit 0x80, and to the
+    SR388-collision death when it is 0x81.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/game_mode_flow
+    note: adds SA_X_CLOSE_UP, DIED_FROM_SR388_COLLISION and nav-conversation use of MAP_SCREEN; no galleries
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/agbmain.c:AgbMain
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/softreset.c:SoftresetCheck
+    confidence: 0.95
+- id: intro_sequence
+  facet: frontend
+  label: Two-stage pre-title space intro
+  summary: Before the title, IntroHandler runs two stages - a space view of the station and Samus's ship crashing through
+    an asteroid field ("WARNING / TIME / DISTANCE" HUD). A or Start skips with a 20-frame sound/music fade. Both stage routines
+    are still assembly.
+  instantiates:
+  - concept: frontend.intro.skippable_story_intro
+  reads:
+  - input.buttons.pressed
+  writes:
+  - intro.stage
+  - frontend.mode
+  params:
+    stage_count:
+      value: 2
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/new_file_intro.c:IntroHandler
+        confidence: 0.85
+    skip_fade_frames:
+      value: 20
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/new_file_intro.c:IntroHandler
+        confidence: 0.85
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/intro_sequence
+    note: 2 stages vs 8; skip fade 20 vs 10 frames
+  - type: part_of
+    target: game_mode_flow
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/new_file_intro.c:IntroHandler
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:asm/disasm_0x0808F5C4.s:IntroSpaceViewInit
+    confidence: 0.6
+    note: stage code still asm
+  - kind: capture_frame
+    ref: capture:attract:keyframes f001406 (station in space), f002498 (asteroid crash HUD)
+    confidence: 0.8
+- id: new_file_prologue
+  facet: frontend
+  label: New-file prologue with paged story text and X-infection mosaic
+  summary: 'Starting a new file runs an 11-stage prologue: SR388 preview, researchers and a Hornoad turning into an X (mosaic
+    dissolve), the ship flight, Samus fainting and drifting into asteroids, being found and cured with the Metroid vaccine,
+    then arriving at the BSL. Text pages advance with a prompt arrow. The final fade writes the file over four frames; completed
+    files skip it (introPlayed).'
+  instantiates:
+  - concept: frontend.intro.new_game_prologue
+  - concept: narrative_delivery.text.story_text_crawl
+    weight: 0.6
+  reads:
+  - input.buttons.pressed
+  - save.game_completion.intro_played
+  writes:
+  - save.files[*]
+  - frontend.mode
+  params:
+    stages:
+      value: 11
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/new_file_intro.h
+        confidence: 0.9
+    initial_delay:
+      value: 100
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/new_file_intro.c:NewFileIntroHandler
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: game_mode_flow
+  - type: requires
+    target: sprite_mosaic_dissolve
+    note: Hornoad-to-X transformation
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/new_file_intro.c:NewFileIntroHandler
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/new_file_intro.c:NewFileIntroProcessHornoad
+    confidence: 0.9
+  - kind: capture_frame
+    ref: capture:frontend:keyframes f003036-f005234 (prologue text pages)
+    confidence: 0.85
+  - kind: capture_telemetry
+    ref: capture:frontend:frames 2202-2370 MOSAIC 0x0110->0x0ff0->0x0110 in 2-frame steps
+    confidence: 0.85
+- id: title_and_attract_demo
+  facet: frontend
+  label: Title screen with 20 s idle attract demos replaying recorded input
+  summary: The logo fades in by stepping BLDALPHA EVA every 5 frames; PRESS START and the copyright are semi-transparent
+    sprites whose palette cycles every 12 frames. After 1200 idle frames a demo starts. Twelve demos (sector runs plus wall-jump,
+    shinespark, ladder, power-bomb, Arachnus and Screw Attack showcases) play in two halves of six chosen by frame-counter
+    parity; each loads a RAM snapshot and run-length input (256 slots), and any press ends it.
+  instantiates:
+  - concept: frontend.title.attract_demo
+  - concept: frontend.attract.input_playback_demo
+  reads:
+  - input.buttons.held
+  - title.idle_timer
+  - rng.frame_counters
+  writes:
+  - input.buttons.held
+  - equipment.*
+  - equipment.security_level
+  params:
+    demo_idle_timeout:
+      value: 1200
+      unit: frames (20 s)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/menus/title_screen.c:TitleScreenSpawningIn
+        confidence: 0.9
+    demo_count:
+      value: 12
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/demo.h
+        confidence: 0.95
+    demo_input_slots:
+      value: 256
+      unit: run-length entries
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/demo_input.c
+        confidence: 0.85
+  invariants:
+  - Any physical input during playback ends the demo.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/title_and_attract_demo
+    note: idle 1200 vs 1020 frames; 12 demos chained in halves
+  - type: part_of
+    target: game_mode_flow
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/menus/title_screen.c:TitleScreenSpawningIn
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/demo.c:DemoInit
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/demo.c (sDemoRam security level / equipment restore)
+    confidence: 0.85
+  - kind: capture_frame
+    ref: capture:attract:keyframes f3191-3544 (title)
+    confidence: 0.8
+    note: capture ended before the 1200-frame demo timeout
+- id: file_select_and_extras
+  facet: frontend
+  label: Three-slot file select with sound option, no difficulty select
+  summary: File select shows slots A/B/C with SOUND and EXIT options; an erase-SRAM menu exists as its own game mode. There
+    is no difficulty choice in C code; completion data holds only completedGame and introPlayed. A completed file skips
+    some late event hatch locks.
+  instantiates:
+  - concept: frontend.menu.file_select_slots
+  reads:
+  - save.files[*].exists
+  - save.game_completion
+  writes:
+  - save.most_recent_file
+  params:
+    save_slots:
+      value: 3
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/structs/save_file.h
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/file_select_and_extras
+    note: no difficulty, galleries or time attack found
+  - type: part_of
+    target: game_mode_flow
+  evidence:
+  - kind: capture_frame
+    ref: capture:frontend:keyframe f1528 (SAMUS DATA, A/B/C, SOUND, EXIT)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:asm/disasm_0x0809deb4.s:FileSelectHandler
+    confidence: 0.5
+    note: still asm
+  - kind: decomp_source
+    ref: mf:src/room_effect.c:RoomEffectCheckHatchLockEvents
+    confidence: 0.8
+- id: save_and_continue
+  facet: frontend
+  label: Save pads, redundant SRAM slots and game-over continue
+  summary: Saving happens on save pads (platform sinks, yes/no prompt banner). SRAM is 32 KiB holding three 4608-byte files,
+    each with an interleaved backup copy. Saves are disabled by the event script during the power outage, the meltdown and
+    after the orbit change. Game over offers continue (reload last save) or quit.
+  instantiates:
+  - concept: frontend.save.save_station
+  - concept: frontend.save.redundant_slot_backup
+  - concept: frontend.game_over.continue_from_save
+  reads:
+  - player.*
+  - equipment.*
+  - world.event_counter
+  writes:
+  - save.files[*]
+  params:
+    sram_size:
+      value: 32768
+      unit: bytes
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/gba/memory.h:SRAM_SIZE
+        confidence: 0.95
+    file_size:
+      value: 4608
+      unit: bytes
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sram_pointers.c
+        confidence: 0.85
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/save_and_continue
+  - type: gated_by
+    target: event_counter_progression
+    condition: power outage, meltdown, after orbit change
+  - type: part_of
+    target: game_mode_flow
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/save_pad.c:SavePlatformSpawnSavePrompt
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:include/structs/save_file.h
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sram_misc.c
+    confidence: 0.8
+  - kind: decomp_source
+    ref: mf:src/event_checks.c:EventCheckWith_SaveDisabled
+    confidence: 0.95
+- id: bg_layer_stack
+  facet: rendering
+  label: Mode-0 four-layer tilemap room renderer with OBJ actors
+  summary: Same engine as Zero Mission - gameplay is pure Mode 0 with four text BGs set per room by RoomEffectSetTransparency
+    (BG0 overlay/liquid/darkness, BG1 collision layer, BG2 decoration, BG3 backdrop). Fusion adds BG0 room types for dark,
+    dim, SA-X and Nightmare rooms. Captures saw Mode 0 in 8966/9000 frames with up to 88 OBJ visible.
+  instantiates:
+  - concept: rendering.background.tile_layer_stack
+  reads:
+  - room.bg_props
+  - room.transparency_code
+  - camera.scroll
+  writes:
+  - io.bgcnt[0..3]
+  - io.dispcnt
+  - oam.*
+  params:
+    gameplay_bg_layers:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/room_effect.c
+        confidence: 0.85
+    max_sprites:
+      value: 24
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/structs/sprite.h
+        confidence: 0.9
+    max_projectiles:
+      value: 16
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/structs/projectile.h
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/bg_layer_stack
+  - type: part_of
+    target: side_view_projection
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/room_effect.c
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:include/constants/room.h
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: capture:attract+frontend:dispcnt mode 0 in 8966/9000 frames, max 88 OBJ
+    confidence: 0.9
+    note: front-end only; no in-game rooms captured
+- id: hblank_raster_effects
+  facet: rendering
+  label: HBlank-DMA haze and power-bomb window with event-driven fog
+  summary: Same RAM-resident per-scanline HBlank-DMA routines as Zero Mission, with 14 haze values instead of 8 (adds BG0
+    haze, a cold no-op and an after-power-bomb value). Haze data also sets the room's damaging effect and water motion,
+    and in fog rooms the haze value is chosen from the event counter (atmospheric stabilizers). The power-bomb window ellipse
+    matches Zero Mission (BLDY 12).
+  instantiates:
+  - concept: rendering.raster.hblank_dma_scroll_distortion
+  - concept: rendering.raster.window_shape_per_scanline
+  - concept: rendering.raster.hblank_palette_gradient
+    weight: 0.5
+  reads:
+  - room.visual_effect
+  - world.event_counter
+  - power_bomb.semi_minor_axis
+  writes:
+  - io.bg_hofs
+  - io.win1h
+  - io.bldcnt
+  - io.bldy
+  params:
+    haze_values:
+      value: 14
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/haze.h
+        confidence: 0.95
+    pb_darken_bldy:
+      value: 12
+      unit: BLDY level (of 16)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/haze.c:HazeSetupCode
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/hblank_raster_effects
+    note: 14 vs 8 haze values; event-chosen fog haze
+  - type: part_of
+    target: bombs_and_power_bombs
+    note: power-bomb window
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/haze.c:HazeSetupCode
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/haze.c:HazeGetAtmosphericStabilizerValue
+    confidence: 0.85
+  - kind: capture_telemetry
+    ref: capture:attract+frontend:no HBlank DMA/IRQ observed
+    confidence: 0.7
+    note: front end only; in-game haze unverified at runtime
+- id: blend_and_palette_effects
+  facet: rendering
+  label: Alpha-blended overlays, dark/dim rooms, colour fades and iris window transition
+  summary: BG0 overlays use BLDALPHA; dark rooms persist until the SA-X elevator cutscene ends and dim lighting follows
+    an event table. There are 20 colour-fade types including an iris transition where window 1 grows from a point at (timer/2
+    + 2) px per frame per edge or closes onto Samus. No Zero-Mission-style clipdata-triggered blend fades were found in
+    C.
+  instantiates:
+  - concept: rendering.blending.alpha_layer_transparency
+  - concept: rendering.blending.brightness_fade
+  - concept: rendering.palette.runtime_palette_effects
+  - concept: rendering.transition.window_iris
+  reads:
+  - room.bg0_prop
+  - world.event_counter
+  - player.position
+  writes:
+  - io.bldalpha
+  - io.bldcnt
+  - io.bldy
+  - io.win1h
+  - io.win1v
+  - palram.*
+  params:
+    colour_fade_types:
+      value: 20
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/color_fading.c
+        confidence: 0.85
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/blend_and_palette_effects
+  - type: modulates
+    target: bg_layer_stack
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/color_fading.c:ColorFadingExpandWindow
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/color_fading.c:ColorFadingCloseWindowOnSamus
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/room_effect.c:RoomEffectCheckRoomIsDark
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: capture:attract+frontend:alpha blend and brightness fade active
+    confidence: 0.85
+- id: event_driven_room_effects
+  facet: rendering
+  label: Story-state room effects (fog, electrified water, meltdown, power outage)
+  summary: About 23 room effects are keyed to the event counter rather than the room alone - stabilizer fog, electrified
+    water with a 20-frame shake, meltdown lighting between the Ice Missile download and the cooling unit fix, auxiliary
+    power off, power outage, the SA-X elevator, reactor core and boss rooms (Yakuza, Nightmare, Omega Metroid). They swap
+    palettes, haze and blend and fire music events, so the same room reads differently at different story points.
+  instantiates:
+  - concept: rendering.environment.story_state_room_effects
+  reads:
+  - world.event_counter
+  - world.room
+  writes:
+  - palram.*
+  - room.visual_effect
+  - io.bldalpha
+  params:
+    event_effects:
+      value: 23
+      unit: approx.
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/room_effect.c (EventBasedEffect enum)
+        confidence: 0.85
+  relations:
+  - type: requires
+    target: event_counter_progression
+  - type: modulates
+    target: hblank_raster_effects
+  - type: modulates
+    target: adaptive_music
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/room_effect.c:RoomEffectSetupCurrentEventBased
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/room_effect.c:RoomEffectProcessEventBased
+    confidence: 0.85
+- id: sprite_mosaic_dissolve
+  facet: rendering
+  label: OBJ mosaic dissolve for X emergence and absorption
+  summary: A 45-step table ramps OBJ mosaic size 0 -> 15 -> 0. A dying infected enemy counts down 44 -> 0 through it, blinking
+    every other frame, then becomes an X; a newly spawned X starts at index 22 and is untouchable until the index drops
+    to 22 or below. The value is written to the MOSAIC register every frame from the in-game loop.
+  instantiates:
+  - concept: rendering.sprite.mosaic_dissolve
+  reads:
+  - sprites[*].mosaic_index
+  writes:
+  - io.mosaic
+  params:
+    mosaic_steps:
+      value: 45
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sprites/x_parasite.c:sXParasiteMosaicValues
+        confidence: 0.95
+    max_mosaic:
+      value: 15
+      unit: OBJ mosaic size - 1
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sprites/x_parasite.c:sXParasiteMosaicValues
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: x_parasite_lifecycle
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/x_parasite_util.c:SpriteDying
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/x_parasite_util.c:XParasiteSpawningInit
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/in_game.c (MOSAIC write)
+    confidence: 0.85
+  - kind: capture_telemetry
+    ref: capture:frontend:frames 2202-2370 MOSAIC sweep 0x0110->0x0ff0->0x0110
+    confidence: 0.85
+- id: affine_rotscale
+  facet: rendering
+  label: Affine OBJ only (no affine backgrounds)
+  summary: Unlike Zero Mission, no mode-1/2 affine background was found; rotation/scaling is OBJ-only (cutscene sprites
+    and rotating gameplay sprites, up to 3 affine OBJ seen in captures). The ending's posing sequence uses a CPU HBlank
+    callback instead.
+  instantiates:
+  - concept: rendering.sprite.affine_rotscale
+  reads:
+  - sprite.rotation
+  - sprite.scaling
+  writes:
+  - oam.affine_params
+  params:
+    max_affine_obj_seen:
+      value: 3
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:attract:obj_affine frames 1331-3164; frontend from ~f2500
+        confidence: 0.85
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/affine_rotscale
+    note: drops the affine-BG cutscene
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/new_file_intro.c (SpecialCutsceneOam)
+    confidence: 0.8
+  - kind: decomp_source
+    ref: mf:src/ending.c:EndingSamusPosingInit
+    confidence: 0.8
+  - kind: capture_telemetry
+    ref: capture:attract+frontend:no affine BG frames
+    confidence: 0.9
+- id: scroll_camera
+  facet: camera
+  label: Scroll-region-bounded follow camera with displacement-limited catch-up
+  summary: Same anchors as Zero Mission (120 px across, 96 px down, clamped to room scroll boxes), but each axis steps by
+    min(distance to target, 12 px/frame, Samus displacement + 1 px) and does not move when Samus moves away from the target.
+    Screen shake alternates every 2 frames and halves in its last 15. A 32 px look-ahead camera exists only behind a debug
+    option; special scrolls serve the Nightmare shadow and SR388 planet.
+  instantiates:
+  - concept: camera.follow.region_bounded_scroll
+  - concept: camera.follow.speed_adaptive_lag
+  - concept: camera.effect.screen_shake
+    weight: 0.5
+  reads:
+  - player.position
+  - player.previous_position
+  - room.scroll_boxes
+  writes:
+  - camera.scroll.x
+  - camera.scroll.y
+  params:
+    anchor_x:
+      value: 120
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/structs/scroll.h
+        confidence: 0.95
+    anchor_y:
+      value: 96
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/structs/scroll.h
+        confidence: 0.95
+    max_step:
+      value: 12
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/scroll.c:ScrollScreen
+        confidence: 0.85
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/scroll_camera
+    note: catch-up bounded by Samus displacement+1 with 12 px/frame ceiling vs 2 px/frame base cap
+  - type: requires
+    target: side_view_projection
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/scroll.c:ScrollScreen
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/scroll.c:ScrollWithNoScrolls
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/scroll.c:ScrollFrontWideComputeTarget
+    confidence: 0.8
+  - kind: decomp_source
+    ref: mf:src/screen_shake.c
+    confidence: 0.9
+- id: parallax_layers
+  facet: camera
+  label: Per-room BG3 parallax codes and auto-scrolling BG0
+  summary: BG3 scroll codes 0-10 select none, half, full or quarter (X only) speed per axis; BG0 auto-scrolls water, fog
+    or snowflakes.
+  instantiates:
+  - concept: camera.parallax.layer_ratio_scroll
+  reads:
+  - camera.scroll
+  - room.bg3_scrolling
+  - room.bg0_movement
+  writes:
+  - io.bg0hofs
+  - io.bg3hofs
+  - io.bg3vofs
+  params:
+    bg3_codes:
+      value: 11
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/scroll.c:ScrollGetBg3Scroll
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/parallax_layers
+  - type: part_of
+    target: scroll_camera
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/scroll.c:ScrollGetBg3Scroll
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/scroll.c:ScrollAutoBg0
+    confidence: 0.85
+- id: side_view_projection
+  facet: projection
+  label: Side-view orthographic 2D with 16 px metatile grid
+  summary: Identical to Zero Mission - a 16x16 px block grid with slopes, 240x160 screen, no depth axis; facing-foreground/background
+    poses fake a turn at save, nav and data pads.
+  instantiates:
+  - concept: projection.side_view.orthographic_2d
+  params:
+    block_size:
+      value: 16
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/types.h:PIXEL_PER_BLOCK
+        confidence: 0.95
+    screen:
+      value: 240x160
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/types.h:SCREEN_SIZE_X
+        confidence: 0.95
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/side_view_projection
+  evidence:
+  - kind: decomp_source
+    ref: mf:include/types.h
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:include/constants/samus.h:SamusPose (SPOSE_FACING_FOREGROUND)
+    confidence: 0.85
+- id: ground_locomotion
+  facet: movement_physics
+  label: Ground run with slower linear acceleration, slope scaling and skid
+  summary: Same run model as Zero Mission (constant acceleration to a 3 px/frame cap, instant stop on release unless speed-boosting,
+    then a linear skid; slope scaling x0.6 steep / x0.8 slight uphill, 5 px/frame clamp otherwise), but the ground acceleration
+    is 0.1875 instead of 0.25 px/frame^2, so top speed takes 16 frames instead of 12. Physics constants are rewritten each
+    frame from a normal or a liquid-slowed set in SamusUpdatePhysics.
+  instantiates:
+  - concept: movement_physics.locomotion.accel_to_cap_run
+  - concept: movement_physics.locomotion.slope_speed_modifier
+  - concept: movement_physics.locomotion.skid_stop
+  reads:
+  - input.buttons.held
+  - player.facing
+  - player.velocity.x
+  - player.slope
+  - physics.slowed_by_liquid
+  writes:
+  - player.velocity.x
+  - player.position.x
+  - player.pose
+  params:
+    run_acceleration:
+      value: 0.1875
+      unit: px/frame^2
+      native_value: 6
+      native_unit: velocity units/frame (1/32 px)
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_X_ACCELERATION
+        note: SUB_PIXEL_TO_VELOCITY(0.75 sub-px) = 6; Zero Mission uses 8
+        confidence: 0.95
+    run_speed_cap:
+      value: 3.0
+      unit: px/frame
+      native_value: 96
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_X_VELOCITY_CAP
+        confidence: 0.95
+    frames_to_top_speed:
+      value: 16
+      unit: frames
+      evidence:
+      - kind: derived
+        ref: 96 / 6 velocity units per frame
+        inputs:
+        - mf:include/constants/samus.h:SAMUS_X_ACCELERATION
+        - mf:include/constants/samus.h:SAMUS_X_VELOCITY_CAP
+        confidence: 0.85
+    slope_uphill_steep_factor:
+      value: 0.6
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusChangeVelocityOnSlope
+        confidence: 0.95
+    slope_uphill_slight_factor:
+      value: 0.8
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusChangeVelocityOnSlope
+        confidence: 0.95
+    slope_other_clamp:
+      value: 5.0
+      unit: px/frame
+      native_value: 160
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusChangeVelocityOnSlope
+        confidence: 0.95
+    skid_deceleration:
+      value: 0.3125
+      unit: px/frame^2
+      native_value: 10
+      native_unit: velocity units/frame
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SKIDDING_VELOCITY_LOSS
+        confidence: 0.95
+  invariants:
+  - Ground X displacement uses slope-adjusted velocity; airborne X uses raw velocity.
+  - Releasing direction while not speed-boosting goes straight to standing/turning (no friction slide).
+  - A running frame never moves Samus opposite to her facing (displacement clamped at 0).
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/ground_locomotion
+    note: same code shape; run acceleration 0.1875 vs 0.25 px/frame^2, other constants equal
+  - type: modulates
+    target: speed_booster
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusRunning
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusUpdatePhysics
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusUpdateVelocityPosition
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusSkidding
+    confidence: 0.95
+- id: jump_and_gravity
+  facet: movement_physics
+  label: Low-gravity impulse jump with release cut and symmetric 4 px/frame displacement cap
+  summary: 'Pressing A in a grounded pose sets an upward velocity (5.3125 px/frame, or 6.875 with High Jump); gravity subtracts
+    0.1875 px/frame^2 while airborne until the stored velocity reaches -6.875 px/frame. Releasing A while rising zeroes
+    vertical velocity (hard cut). Per-frame displacement is clamped to 4 px both up and down, so jumps are floatier than
+    Zero Mission: lower impulse but 40% less gravity gives a higher, slower arc (70.75 px normal, 104 px High Jump). Jump
+    is read only on a newly pressed A; there is no suit-dependent impulse.'
+  instantiates:
+  - concept: movement_physics.jump.variable_height
+  - concept: movement_physics.jump.fixed_impulse_gravity_arc
+  - concept: movement_physics.gravity.terminal_velocity
+  reads:
+  - input.buttons.pressed.a
+  - input.buttons.held.a
+  - equipment.high_jump
+  - physics.slowed_by_liquid
+  writes:
+  - player.velocity.y
+  - player.position.y
+  - player.pose
+  params:
+    gravity:
+      value: 0.1875
+      unit: px/frame^2
+      native_value: 6
+      native_unit: velocity units/frame
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_Y_ACCELERATION
+        note: Zero Mission uses 10 (0.3125 px/frame^2)
+        confidence: 0.95
+    jump_velocity_normal:
+      value: 5.3125
+      unit: px/frame
+      native_value: 170
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_LOW_JUMP_VELOCITY
+        confidence: 0.95
+    jump_velocity_high_jump:
+      value: 6.875
+      unit: px/frame
+      native_value: 220
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_HIGH_JUMP_VELOCITY
+        confidence: 0.95
+    displacement_cap:
+      value: 4.0
+      unit: px/frame (both directions)
+      native_value: 128
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_Y_VELOCITY_CAP
+        note: applied to displacement in SamusUpdateVelocityPosition; Zero Mission caps 6 up / 4 down
+        confidence: 0.95
+    stored_fall_velocity_limit:
+      value: 6.875
+      unit: px/frame (gravity stops accumulating)
+      native_value: 220
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_TERMINAL_VELOCITY
+        confidence: 0.9
+    apex_height_normal:
+      value: 70.75
+      unit: px (~4.4 blocks, 28 frames to apex)
+      evidence:
+      - kind: derived
+        ref: simulated SamusUpdateVelocityPosition (displacement clamp(v,+-128)/8 sub-px, then v -= 6) from v0=170
+        inputs:
+        - mf:src/samus.c:SamusUpdateVelocityPosition
+        - mf:include/constants/samus.h:SAMUS_LOW_JUMP_VELOCITY
+        confidence: 0.75
+    apex_height_high_jump:
+      value: 104
+      unit: px (6.5 blocks, 36 frames to apex)
+      evidence:
+      - kind: derived
+        ref: same simulation from v0=220
+        inputs:
+        - mf:src/samus.c:SamusUpdateVelocityPosition
+        - mf:include/constants/samus.h:SAMUS_HIGH_JUMP_VELOCITY
+        confidence: 0.75
+    jump_cut:
+      value: 0
+      unit: vertical velocity set on A release while rising (px/frame)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusMidAir
+        confidence: 0.95
+  invariants:
+  - Vertical displacement per frame never exceeds 4 px in either direction regardless of stored velocity.
+  - Jump impulse is applied only on a newly pressed A (gChangedInput).
+  - A speed-boosting jump off a steep uphill slope converts Y velocity into X travel (gSamusUseYVelocityForX).
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/jump_and_gravity
+    note: gravity 6 vs 10 units, impulses 170/220 vs 192/232, displacement cap 4/4 vs 6/4 px/frame
+  - type: gated_by
+    target: ability_recovery_by_event
+    note: High Jump raises impulse
+  - type: modulates
+    target: air_control_and_spin
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusSetMidAirPose
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusMidAir
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusUpdateVelocityPosition
+    confidence: 0.95
+- id: air_control_and_spin
+  facet: movement_physics
+  label: Air control, spin jump mode and spin break
+  summary: As in Zero Mission, running jumps or a mid-air A press without up/down enter a spin; opposite input in a spin
+    flips facing and zeroes X velocity in one frame; holding up/down without left/right, or firing, breaks the spin. Air
+    acceleration is 0.25 px/frame^2 but the air cap is lower (1.5 px/frame, 1.25 in morph ball), so horizontal jump distance
+    comes mostly from carried run speed. Spin is the carrier pose for wall jump, Space Jump and Screw Attack.
+  instantiates:
+  - concept: movement_physics.air_control.capped_air_acceleration
+  - concept: movement_physics.jump.spin_jump_mode
+  reads:
+  - input.buttons.held
+  - player.facing
+  - player.pose
+  - weapon.shooting
+  writes:
+  - player.velocity.x
+  - player.facing
+  - player.pose
+  params:
+    air_acceleration:
+      value: 0.25
+      unit: px/frame^2
+      native_value: 8
+      native_unit: velocity units/frame
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_MID_AIR_X_ACCELERATION
+        confidence: 0.95
+    air_speed_cap:
+      value: 1.5
+      unit: px/frame
+      native_value: 48
+      native_unit: velocity units
+      variants:
+      - when: speed_boosting
+        value: 5.0
+        unit: px/frame (cap x10/3)
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_MID_AIR_X_VELOCITY_CAP
+        confidence: 0.95
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusUpdatePhysics
+        note: speed-boost multiplier
+        confidence: 0.95
+    morph_air_speed_cap:
+      value: 1.25
+      unit: px/frame
+      native_value: 40
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_MID_AIR_MORPHED_X_VELOCITY_CAP
+        confidence: 0.95
+  invariants:
+  - Air turn in a spin cancels all X velocity in one frame.
+  - Firing during a spin or wall jump always ends it (forced mid-air fall).
+  - Take-off copies ground X velocity, which may exceed the air cap; acceleration only clamps when input is held.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/air_control_and_spin
+    note: air cap 1.5 vs 2.0 px/frame, morph air cap 1.25 vs 1.5
+  - type: part_of
+    target: jump_and_gravity
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusSpinning
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusMidAir
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusSetSpinningPose
+    confidence: 0.9
+- id: wall_jump
+  facet: movement_physics
+  label: Spin wall jump with fixed impulse and horizontal kick
+  summary: Touching a wall while spinning/screw-attacking opens a 6-frame window; turning away mid-spin with a wall within
+    8 px at foot or head height opens a 10-frame window. Pressing A in the window, facing away, with a solid block 10 px
+    behind, starts a wall jump that always uses the normal impulse (5.3125 px/frame, not High Jump) plus a 2 px/frame kick
+    away from the wall (1.5 px/frame vertical in liquid). The same wall-jump start is reachable from a ledge hang or a wall
+    ladder by pressing A while holding away.
+  instantiates:
+  - concept: movement_physics.wall.wall_jump
+  reads:
+  - player.pose
+  - player.timers.walljump
+  - player.last_wall_side
+  - input.buttons.pressed.a
+  - world.tiles.clipdata
+  writes:
+  - player.timers.walljump
+  - player.pose
+  - player.velocity
+  - player.facing
+  params:
+    contact_window:
+      value: 6
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusCheckCollisions (walljumpTimer = CONVERT_SECONDS(.1f))
+        confidence: 0.95
+    turn_away_window:
+      value: 10
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusSpinning (walljumpTimer = CONVERT_SECONDS(1/6))
+        confidence: 0.95
+    wall_probe_offset:
+      value: 10
+      unit: px (HALF_BLOCK + EIGHTH_BLOCK)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusSpinning
+        confidence: 0.95
+    walljump_vy:
+      value: 5.3125
+      unit: px/frame
+      native_value: 170
+      native_unit: velocity units
+      variants:
+      - when: in_liquid_without_gravity
+        value: 1.5
+        unit: px/frame (0x30)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusSetMidAirPose (SPOSE_STARTING_WALL_JUMP)
+        confidence: 0.95
+    walljump_vx:
+      value: 2.0
+      unit: px/frame
+      native_value: 64
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_WALL_JUMP_X_VELOCITY
+        confidence: 0.95
+    wall_hug_air_accel:
+      value: 0.03125
+      unit: px/frame^2 (1 velocity unit)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusSpinning
+        confidence: 0.9
+  invariants:
+  - Wall-jump checks run only when Space Jump is absent or Samus is slowed by liquid.
+  - Wall-jump impulse ignores High Jump.
+  - Releasing A during the wall-jump rise cuts vertical velocity and returns to plain spinning.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/wall_jump
+    note: windows 6/10 frames vs 8; fixed low impulse plus 2 px/frame kick vs High-Jump-aware impulse
+  - type: conflicts_with
+    target: space_jump
+    condition: outside liquid
+  - type: requires
+    target: air_control_and_spin
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusSpinning
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusWallJumping
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusSetMidAirPose
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusCheckCollisions
+    confidence: 0.9
+- id: space_jump
+  facet: movement_physics
+  label: Space Jump re-jump with fall-speed window
+  summary: With Space Jump and not slowed, pressing A during a spin re-applies the jump impulse (High Jump aware) once vertical
+    velocity has fallen to -2.4375 px/frame or lower. No jump counter, so timed presses give unlimited height. Screw Attack
+    overrides the space-jump pose when both are owned.
+  instantiates:
+  - concept: movement_physics.jump.timed_air_rejump
+  reads:
+  - equipment.space_jump
+  - equipment.high_jump
+  - physics.slowed_by_liquid
+  - player.velocity.y
+  - input.buttons.pressed.a
+  writes:
+  - player.velocity.y
+  params:
+    rejump_min_fall_speed:
+      value: 2.4375
+      unit: px/frame downward
+      native_value: -78
+      native_unit: velocity units (yVelocity <= -78)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusSpinning
+        note: Zero Mission threshold is -64 (2.0 px/frame)
+        confidence: 0.95
+  invariants:
+  - No re-jump while rising or falling slower than 2.4375 px/frame.
+  - Unavailable in liquid unless Gravity Suit (or the late SA-X suit flag) removes the slowdown.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/space_jump
+    note: threshold -78 vs -64 velocity units; impulse High-Jump aware
+  - type: gated_by
+    target: ability_recovery_by_event
+  - type: requires
+    target: air_control_and_spin
+  - type: conflicts_with
+    target: wall_jump
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusSpinning
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusSetSpinningPose
+    confidence: 0.9
+- id: speed_booster
+  facet: movement_physics
+  label: Speed Booster sustained-run speed mode
+  summary: With Speed Booster and not slowed, a run counter increments while |vx| >= 2 px/frame and resets below. At 120
+    frames the run cap rises to 4.375 px/frame, at 140 to 5 px/frame. Separately, a boosting counter runs whenever |vx|
+    >= 5 px/frame; while it is non-zero the ground cap is 5 px/frame and the air cap 5 px/frame, Samus breaks speed blocks
+    and weak enemies, and releasing the direction triggers a skid. Liquid without Gravity clears the counter the same frame.
+  instantiates:
+  - concept: movement_physics.speed.sustained_run_speed_mode
+  - concept: mechanics.combat.body_attack
+    weight: 0.4
+  reads:
+  - equipment.speed_booster
+  - physics.slowed_by_liquid
+  - player.velocity.x
+  - player.timers.run_counter
+  writes:
+  - player.timers.run_counter
+  - player.timers.speedboosting
+  - physics.x_velocity_cap
+  params:
+    run_counter_min_speed:
+      value: 2.0
+      unit: px/frame (|vx| >= 64 units)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusRunning (xVelocity + 0x3F > 0x7E)
+        confidence: 0.85
+    stage1_frames:
+      value: 120
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusRunning
+        confidence: 0.95
+    stage1_cap:
+      value: 4.375
+      unit: px/frame
+      native_value: 140
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusRunning
+        confidence: 0.95
+    stage2_frames:
+      value: 140
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusRunning
+        confidence: 0.95
+    boost_cap:
+      value: 5.0
+      unit: px/frame
+      native_value: 160
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_X_SPEEDBOOST_VELOCITY_CAP
+        confidence: 0.95
+    activation_speed:
+      value: 5.0
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusUpdate (speedboostingCounter)
+        confidence: 0.9
+    approx_frames_to_activate_from_rest:
+      value: 155
+      unit: frames (derived, +-4)
+      evidence:
+      - kind: derived
+        ref: ~11 frames to reach 2 px/frame at 0.1875 px/frame^2, 140 counter frames, ~4 frames ramp to 5 px/frame
+        inputs:
+        - mf:src/samus.c:SamusRunning
+        - mf:include/constants/samus.h:SAMUS_X_ACCELERATION
+        confidence: 0.65
+  invariants:
+  - Run counter resets whenever |vx| < 2 px/frame or Samus is slowed.
+  - Boost state persists into jumps (counter copied on take-off) and raises the air cap to 5 px/frame.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/speed_booster
+    note: same thresholds/caps; counter speed gate 2 px/frame (MZM 3)
+  - type: requires
+    target: ground_locomotion
+  - type: gated_by
+    target: ability_recovery_by_event
+  - type: conflicts_with
+    target: liquid_physics
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusRunning
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusUpdate
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusUpdatePhysics
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusCheckScrewSpeedboosterAffectingEnvironment
+    confidence: 0.9
+- id: shinespark
+  facet: movement_physics
+  label: Stored shinespark dash
+  summary: Holding only down during a speed-boost skid stores a 3 s charge. Pressing A mid-air with a charge plays an animation-timed
+    wind-up, then launches a gravity-free dash (6 px/frame up by default, 6 px/frame sideways, or 5/3 px/frame diagonal).
+    The dash ends when the relevant velocity is zeroed by collision, shaking the screen for 30 frames. Being hurt clears
+    the charge.
+  instantiates:
+  - concept: movement_physics.speed.stored_dash_launch
+  reads:
+  - player.timers.speedboosting
+  - player.timers.shinespark
+  - input.buttons.held
+  - input.buttons.pressed.a
+  writes:
+  - player.timers.shinespark
+  - player.velocity
+  - player.pose
+  params:
+    storage_time:
+      value: 180
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusSkidding (shinesparkTimer = 60*3)
+        confidence: 0.95
+    vertical_and_sideways_speed:
+      value: 6.0
+      unit: px/frame
+      native_value: 192
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_SIDEWARD_SHINESPARK_X_VELOCITY
+        confidence: 0.95
+    diagonal_velocity:
+      value:
+      - 5.0
+      - 3.0
+      unit: px/frame (x, y)
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_DIAGONAL_SHINESPARK_X_VELOCITY
+        confidence: 0.95
+    impact_shake:
+      value: 30
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusShinesparking (ScreenShakeStart*(30, 1))
+        confidence: 0.95
+  invariants:
+  - A stored charge expires after 180 frames if unused.
+  - Taking damage clears the stored charge (SamusSetHurtPose).
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/shinespark
+    note: identical velocities and storage time
+  - type: requires
+    target: speed_booster
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusSkidding
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusShinesparking
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusCheckCarryFromCopy
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusDelayBeforeShinesparkingGfx
+    confidence: 0.8
+- id: morph_ball_and_bomb_jump
+  facet: movement_physics
+  label: Morph Ball with High-Jump ball jump and weak mid-air bomb re-bounce
+  summary: Morph Ball is entered from crouch or mid-air (down while aiming down). With High Jump the ball can jump at the
+    normal 5.3125 px/frame impulse. A bomb under a grounded/rolling ball bounces it 4 px/frame up (43 px) with 1.25 px/frame
+    sideways depending on bomb side, but a re-bounce while already airborne gets only 2 px/frame (~11 px), so chained infinite
+    bomb jumps are far weaker than in Zero Mission. No bounce while slowed by liquid.
+  instantiates:
+  - concept: movement_physics.mode.ball_form
+  - concept: movement_physics.jump.explosive_self_propulsion
+  reads:
+  - equipment.morph_ball
+  - equipment.high_jump
+  - bombs[*].position
+  - player.velocity.y
+  - physics.slowed_by_liquid
+  writes:
+  - player.pose
+  - player.velocity
+  - player.hitbox_type
+  params:
+    ball_jump_velocity:
+      value: 5.3125
+      unit: px/frame
+      native_value: 170
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusSetMidAirPose (morph cases, SAMUS_LOW_JUMP_VELOCITY)
+        confidence: 0.9
+    ground_bomb_bounce_vy:
+      value: 4.0
+      unit: px/frame
+      native_value: 128
+      native_unit: velocity units (2 x SAMUS_BOMB_BOUNCE_Y_VELOCITY)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusSetMidAirPose
+        confidence: 0.95
+    air_bomb_rebounce_vy:
+      value: 2.0
+      unit: px/frame
+      native_value: 64
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusSetMidAirPose (SPOSE_MORPH_BALL_MID_AIR case)
+        confidence: 0.95
+    bomb_bounce_vx:
+      value: 1.25
+      unit: px/frame
+      native_value: 40
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_BOMB_BOUNCE_X_VELOCITY
+        confidence: 0.95
+    ground_bounce_apex:
+      value: 42.75
+      unit: px (21 frames)
+      evidence:
+      - kind: derived
+        ref: simulated SamusUpdateVelocityPosition from v0=128, g=6
+        inputs:
+        - mf:src/samus.c:SamusUpdateVelocityPosition
+        confidence: 0.7
+    air_rebounce_apex:
+      value: 10.75
+      unit: px (10 frames)
+      evidence:
+      - kind: derived
+        ref: simulated SamusUpdateVelocityPosition from v0=64, g=6
+        inputs:
+        - mf:src/samus.c:SamusUpdateVelocityPosition
+        confidence: 0.7
+  invariants:
+  - Ball jump only with High Jump.
+  - Mid-air bomb bounce only while falling (yVelocity <= 0) and never from a bomb above the ball.
+  - No bomb bounce while slowed by liquid.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/morph_ball_and_bomb_jump
+    note: ground bounce 4 px/f, air re-bounce 2 px/f (MZM 5.125 both); ball jump 5.3125 vs 6.625
+  - type: requires
+    target: bombs_and_power_bombs
+  - type: gated_by
+    target: ability_recovery_by_event
+  - type: conflicts_with
+    target: liquid_physics
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusBombBounce
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusSetMidAirPose
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusMorphBall
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusMidAir
+    confidence: 0.9
+- id: ledge_grab
+  facet: movement_physics
+  label: Innate ledge grab with pull-up, morph pull-in and ledge jump
+  summary: 'Unlike Zero Mission (Power Grip item), every airborne pose grabs ledges when holding toward a wall while not
+    rising: the space 8 px below the feet must be air, the space 40 px above the feet clear, the wall solid at 28 px above
+    the feet and open at 32 px (a 4 px catch window) within 8 px horizontally. From the hang: Up pulls up (a separate pull-into-morph
+    pose exists for low gaps when Morph Ball is owned), A+forward climbs, A alone hops up at 4 px/frame, A+away wall-jumps,
+    Down drops. A strong screen shake knocks Samus off.'
+  instantiates:
+  - concept: movement_physics.ledge.ledge_grab_hang
+  reads:
+  - input.buttons.held
+  - input.buttons.pressed
+  - player.velocity.y
+  - player.pose
+  - world.tiles.clipdata
+  - equipment.morph_ball
+  - camera.shake_timer
+  writes:
+  - player.pose
+  - player.velocity.y
+  params:
+    horizontal_reach:
+      value: 7.75
+      unit: px (HALF_BLOCK - 1 sub-px)
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_LEDGE_GRAB_X_RANGE
+        confidence: 0.95
+    catch_window_height:
+      value: 4
+      unit: px (ledge surface between 28 and 32 px above feet)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusCheckCollisions
+        confidence: 0.85
+    ledge_hop_vy:
+      value: 4.0
+      unit: px/frame
+      native_value: 128
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusHangingOnLedge
+        confidence: 0.9
+    shake_release_threshold:
+      value: 30
+      unit: frames of horizontal screen shake remaining
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusHangingOnLedge (gScreenShakeX.timer >= CONVERT_SECONDS(.5f))
+        confidence: 0.85
+  invariants:
+  - Ledge grab never triggers while rising (yVelocity > 0).
+  - Grab requires air below the feet, so it cannot trigger from standing next to a step.
+  - Without Morph Ball, a pull-up under a low ceiling plays a lower-and-hang animation instead.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/ledge_grab
+    note: innate (no Power Grip), 4 px catch window, extra ledge-hop and wall-jump exits
+  - type: modulates
+    target: wall_jump
+  - type: part_of
+    target: climbable_surfaces
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusCheckCollisions
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusHangingOnLedge
+    confidence: 0.95
+- id: climbable_surfaces
+  facet: movement_physics
+  label: Wall ladders and ceiling monkey bars
+  summary: Special movement clipdata makes wall surfaces and ceilings climbable. Holding toward a wall-ladder tile mid-air
+    (or reaching one from a ledge hang) attaches Samus; Up/Down climb at 1 px/frame, she can turn to aim out and shoot,
+    and after 20 frames A+away wall-jumps off. Holding Up while airborne under a ceiling-ladder tile hangs from it; left/right
+    shimmy at 1 px/frame, shooting is allowed, A drops. Both speeds halve in liquid.
+  instantiates:
+  - concept: movement_physics.climb.surface_climb
+  reads:
+  - world.tiles.movement_clipdata
+  - input.buttons.held
+  - input.buttons.pressed.a
+  - physics.slowed_by_liquid
+  writes:
+  - player.pose
+  - player.velocity
+  - player.position
+  params:
+    wall_climb_speed:
+      value: 1.0
+      unit: px/frame
+      native_value: 4
+      native_unit: sub-px/frame (velocity written raw for ladder pose)
+      variants:
+      - when: in_liquid_without_gravity
+        value: 0.5
+        unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusHangingOnVerticalLadder
+        confidence: 0.9
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusUpdateVelocityPosition (no conversion for ladder pose)
+        confidence: 0.9
+    ceiling_shimmy_speed:
+      value: 1.0
+      unit: px/frame
+      native_value: 32
+      native_unit: velocity units
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:HORIZONTAL_LADDER_X_VELOCITY
+        confidence: 0.95
+    wall_ladder_jump_delay:
+      value: 20
+      unit: frames before A can jump off
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusHangingOnVerticalLadder (ONE_THIRD_SECOND)
+        confidence: 0.9
+  invariants:
+  - Ladder behaviour is a property of movement clipdata, not of an item; always available.
+  - Ceiling hang triggers only while holding Up and not rising.
+  relations:
+  - type: modulates
+    target: wall_jump
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusCheckCollisions
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusHangingOnVerticalLadder
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusMovingOnHorizontalLadder
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:include/constants/samus.h:SamusPose
+    confidence: 0.9
+- id: liquid_physics
+  facet: movement_physics
+  label: Liquid drag negated by Gravity Suit (or late SA-X suit flag)
+  summary: 'When the hazard at Samus''s position is water, lava or acid and neither Gravity Suit nor the SA-X suit flag
+    is set (the flag mirrors owning Ice Beam, obtained last), physics switch to a slowed set: horizontal accelerations and
+    caps halved, gravity x2/3, vertical displacement capped at 1.5 px/frame, speed-boost counter cleared. A special slowed
+    value (0x80) reuses the same set outside liquid (Nightmare''s gravity field).'
+  instantiates:
+  - concept: movement_physics.medium.liquid_drag
+  reads:
+  - world.hazard_at_position
+  - equipment.gravity_suit
+  - equipment.ice_beam
+  writes:
+  - physics.slowed_by_liquid
+  - physics.x_acceleration
+  - physics.x_velocity_cap
+  - physics.y_acceleration
+  - physics.y_velocity_cap
+  params:
+    x_scale:
+      value: 0.5
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusUpdatePhysics
+        confidence: 0.95
+    gravity_liquid:
+      value: 0.125
+      unit: px/frame^2
+      native_value: 4
+      native_unit: velocity units/frame
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusUpdatePhysics (SAMUS_Y_ACCELERATION * 2/3)
+        confidence: 0.95
+    vertical_cap_liquid:
+      value: 1.5
+      unit: px/frame (both directions)
+      native_value: 48
+      native_unit: velocity units (cap x0.375)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusUpdatePhysics
+        confidence: 0.95
+    apex_height_normal_liquid:
+      value: 54
+      unit: px (41 frames)
+      evidence:
+      - kind: derived
+        ref: simulated integration with g=4, cap 48, v0=170
+        inputs:
+        - mf:src/samus.c:SamusUpdatePhysics
+        - mf:src/samus.c:SamusUpdateVelocityPosition
+        confidence: 0.65
+  invariants:
+  - Gravity Suit makes liquids behave like air for movement; Varia does not.
+  - Slowed state disables Space Jump, Screw Attack pose, bomb bounce and speed boosting.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/liquid_physics
+    note: gravity x2/3 and 1.5 px/frame cap vs x0.5 and 1.25
+  - type: gated_by
+    target: ability_recovery_by_event
+    note: Gravity Suit
+  - type: modulates
+    target: jump_and_gravity
+  - type: modulates
+    target: ground_locomotion
+  - type: part_of
+    target: environmental_hazards
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusUpdatePhysics
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusSetSpinningPose
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusBombBounce
+    confidence: 0.9
+- id: beam_hierarchy_and_charge
+  facet: mechanics
+  label: Cumulative beam upgrades with highest-beam projectile shape and charge shot
+  summary: 'Beams are bit flags (Charge, Wide, Plasma, Wave, Ice) that accumulate, but the fired projectile is picked by
+    priority Wave > Plasma > Wide > Charge > Power: Wide and above fire three parallel parts (max 7 parts on screen), Plasma
+    parts pierce, Wave parts pass walls, and Ice overrides each part''s damage to 6 and adds an 8 s freeze. Holding B charges
+    once Charge Beam is owned: release after more than 25 frames fires a normal shot, 64+ frames a charged shot; holding
+    a charge while spinning turns the spin into a pseudo Screw Attack. Arming missiles auto-fires a ready charge. Cooldown
+    between beam shots is 7 frames.'
+  instantiates:
+  - concept: mechanics.weapon.stackable_beam_modifiers
+    weight: 0.6
+  - concept: mechanics.weapon.charge_shot
+  - concept: mechanics.combat.body_attack
+    weight: 0.3
+  reads:
+  - equipment.beams
+  - input.buttons.held.b
+  - input.buttons.held.arm_missiles
+  - weapon.charge_counter
+  writes:
+  - weapon.charge_counter
+  - weapon.new_projectile
+  - weapon.cooldown
+  - projectiles[*]
+  params:
+    beam_cooldown:
+      value: 7
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/projectile.c:ProjectileUpdate (cooldownTimer = 7)
+        confidence: 0.95
+    normal_beam_limit:
+      value: 3
+      unit: projectiles
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/projectile.h:BEAM_LIMIT
+        confidence: 0.95
+    multi_part_beam_limit:
+      value: 7
+      unit: projectile parts (3 x (BEAM_LIMIT - 1) + 1)
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/projectile.h:MULTI_PART_BEAM_LIMIT
+        confidence: 0.95
+    charge_full_threshold:
+      value: 64
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/projectile.h:CHARGE_BEAM_THRESHOLD
+        confidence: 0.95
+    uncharged_release_min:
+      value: 26
+      unit: frames held (counter > 0.4 x 64)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusCheckShooting
+        confidence: 0.9
+    charge_cap:
+      value: 79
+      unit: frames (counter wraps back to 64 above this)
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/projectile.h:CHARGE_BEAM_MAX_THRESHOLD
+        confidence: 0.9
+  invariants:
+  - Only the highest owned beam among Wave/Plasma/Wide/Charge determines the projectile type; Ice modifies whichever is
+    fired.
+  - A new B press always fires an uncharged shot immediately (bug in USA build lets it cancel a stored charge).
+  - Pseudo screw needs a full charge in a spin/wall-jump/space-jump pose and the target weak to charge beam or beams.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/beam_stacking
+    note: same flag storage; projectile choice is priority-based with 3-part spread shots instead of a damage lookup over
+      combinations; no beam toggling
+  - type: gated_by
+    target: ability_recovery_by_event
+  - type: modulates
+    target: ice_freeze
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/projectile.c:ProjectileUpdate
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusCheckShooting
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusUpdateHighlightedWeaponsAndCharge
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/projectile.c:ProjectileWaveBeamHitSprite
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprite_util.c:SpriteUtilCheckSamusPseudoScrew
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:include/constants/projectile.h
+    confidence: 0.95
+  tables:
+    beam_damage:
+      description: Per-part damage by highest beam; Ice overrides uncharged part damage to 6 (charged 12). Pseudo screw
+        damage applies to spin contact with a full charge.
+      columns:
+      - beam
+      - parts
+      - damage
+      - charged_damage
+      - pseudo_screw_damage
+      rows:
+      - - power
+        - 1
+        - 2
+        - 10
+        - 0
+      - - charge
+        - 3
+        - 2
+        - 10
+        - 14
+      - - wide
+        - 3
+        - 3
+        - 15
+        - 21
+      - - plasma
+        - 3
+        - 3
+        - 9
+        - 30
+      - - wave
+        - 3
+        - 3
+        - 9
+        - 48
+      - - ice_modifier
+        - '-'
+        - 6
+        - 12
+        - 48
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/projectile.h (NORMAL_BEAM_DAMAGE .. ICE_BEAM_PSEUDO_SCREW_DAMAGE)
+        confidence: 0.9
+        note: whether each per-part hit lands separately on the same enemy depends on hit-flash timing; not traced
+- id: missile_hierarchy
+  facet: mechanics
+  label: Hold-to-arm missiles where each missile upgrade replaces the last, with chargeable Diffusion
+  summary: 'Holding the arm-missiles button (R by default) highlights missiles (or Power Bombs in ball form) and B fires
+    from one shared missile pool. The missile type is the highest owned: Diffusion > Ice > Super > Normal, damage 10/30/40/45,
+    at most 2 on screen, 14-16 frame cooldown. Ice missiles freeze. With Diffusion, keeping missiles armed for 128 frames
+    charges a shot that bursts into freezing flakes on impact.'
+  instantiates:
+  - concept: mechanics.weapon.ammo_secondary_weapon
+  - concept: ui_hud.input.hold_to_arm_modifier
+    weight: 0.5
+  - concept: mechanics.weapon.charge_shot
+    weight: 0.4
+  reads:
+  - equipment.missile_types
+  - resources.missiles.current
+  - input.buttons.held.arm_missiles
+  - weapon.missile_charge_counter
+  writes:
+  - weapon.armed
+  - weapon.missile_charge_counter
+  - projectiles[*]
+  - resources.missiles.current
+  params:
+    missile_limit:
+      value: 2
+      unit: on screen
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/projectile.h:MISSILE_LIMIT
+        confidence: 0.95
+    diffusion_charge_frames:
+      value: 128
+      unit: frames armed
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/projectile.h:CHARGE_MISSILE_THRESHOLD
+        confidence: 0.95
+    cooldown:
+      value: 14
+      unit: frames (super); ice 15, diffusion 16
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/projectile.c:ProjectileUpdate
+        confidence: 0.9
+  invariants:
+  - All missile types draw from one missile pool; there is no separate super-missile ammo.
+  - Missiles cannot be armed with zero missiles; Power Bombs arm only in a morph-ball pose.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/missiles_and_arming
+    note: replacement hierarchy over one pool vs separate missile/super pools with auto-switch
+  - type: gated_by
+    target: ability_recovery_by_event
+  - type: requires
+    target: resource_pools
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/projectile.c:ProjectileUpdate
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusUpdateHighlightedWeaponsAndCharge
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/projectile.c:ProjectileDiffusionMissileHandler
+    confidence: 0.7
+    note: name only; flake spread not read
+  tables:
+    missile_damage:
+      columns:
+      - missile
+      - damage
+      - effect
+      rows:
+      - - normal
+        - 10
+        - none
+      - - super
+        - 30
+        - none
+      - - ice
+        - 40
+        - freeze 480 frames (240 ticks)
+      - - diffusion
+        - 45
+        - charged shot releases freezing flakes
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/projectile.h (NORMAL_MISSILE_DAMAGE .. DIFFUSION_MISSILE_DAMAGE)
+        confidence: 0.95
+- id: bombs_and_power_bombs
+  facet: mechanics
+  label: Morph-ball bombs and screen-filling power bombs
+  summary: In ball form B lays a bomb (max 4) that spins 50 frames, fast-spins 30, then explodes over 16 frames for 8 damage,
+    breaking bomb blocks and bouncing the ball. Holding the arm button in ball form selects Power Bombs (max 1 active),
+    a 50-damage expanding ellipse that hits every weak sprite on screen, breaks PB blocks and starts a 120-frame screen
+    shake.
+  instantiates:
+  - concept: mechanics.weapon.placed_explosive
+  - concept: mechanics.weapon.screen_clearing_bomb
+  reads:
+  - equipment.bombs
+  - equipment.power_bombs
+  - resources.power_bombs.current
+  - player.pose
+  writes:
+  - projectiles[*]
+  - resources.power_bombs.current
+  - power_bomb.semi_minor_axis
+  params:
+    bomb_limit:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/projectile.h:BOMB_LIMIT
+        confidence: 0.95
+    bomb_fuse:
+      value: 80
+      unit: frames to explosion (+16 explosion frames)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/projectile.c:ProjectileBombHandler (timers 50, 30, 16)
+        confidence: 0.9
+    bomb_damage:
+      value: 8
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/projectile.h:BOMB_DAMAGE
+        confidence: 0.95
+    power_bomb_damage:
+      value: 50
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/projectile.h:POWER_BOMB_DAMAGE
+        confidence: 0.95
+    power_bomb_limit:
+      value: 1
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/projectile.h:POWER_BOMB_LIMIT
+        confidence: 0.95
+    power_bomb_shake:
+      value: 120
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/power_bomb_explosion.c (ScreenShakeStartHorizontal(120, 0x80))
+        confidence: 0.85
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/bombs_and_power_bombs
+  - type: requires
+    target: morph_ball_and_bomb_jump
+  - type: gated_by
+    target: ability_recovery_by_event
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/projectile.c:ProjectileBombHandler
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/projectile.c:ProjectilePowerBombHandler
+    confidence: 0.8
+  - kind: decomp_source
+    ref: mf:src/power_bomb_explosion.c
+    confidence: 0.8
+- id: ice_freeze
+  facet: mechanics
+  label: Ice weapons freeze enemies into platforms; a lethal ice hit freezes at 1 HP instead of killing
+  summary: Ice Beam and Ice/Diffusion missiles set freezeTimer = 240 on freezable enemies; it decrements every other frame,
+    so a freeze lasts 480 frames (8 s) with a warning flash in the last ~92. A freezable, not-yet-frozen enemy that takes
+    a lethal ice-missile hit is left at 1 HP and frozen instead of destroyed; the next damaging hit kills it and releases
+    its X. Frozen sprites are solid platforms Samus can stand on, and frozen dormant hosts cannot be revived by X. Enemies
+    solid to projectiles are frozen without damage.
+  instantiates:
+  - concept: mechanics.status.freeze_enemy_platform
+  reads:
+  - equipment.ice_beam
+  - equipment.missile_types
+  - enemies[*].weakness
+  - enemies[*].freeze_timer
+  - enemies[*].health
+  - frame_counter
+  writes:
+  - enemies[*].freeze_timer
+  - enemies[*].health
+  - enemies[*].palette_row
+  params:
+    freeze_duration:
+      value: 480
+      unit: frames (8 s)
+      native_value: 240
+      native_unit: freeze ticks, decremented on odd frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/projectile.c:ProjectileIceMissileDealDamage (freezeTimer = 60*4)
+        confidence: 0.95
+      - kind: decomp_source
+        ref: mf:src/sprite_util.c:SpriteUtilUpdateFreezeTimer
+        confidence: 0.95
+    thaw_warning:
+      value: 92
+      unit: frames (timer < 46, palette blinks)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprite_util.c:SpriteUtilUpdateFreezeTimer
+        confidence: 0.9
+    hit_flash:
+      value: 17
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/projectile.c:ProjectileIceMissileDealDamage
+        confidence: 0.9
+  invariants:
+  - Freeze-instead-of-kill applies only when the enemy is not already frozen.
+  - Frozen hosts are never targeted for X revival.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/ice_freeze
+    note: 8 s freeze; freeze-before-kill on lethal ice hits
+  - type: modulates
+    target: x_host_reinfection
+    note: freezing a dormant shell blocks its revival
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/projectile.c:ProjectileIceMissileDealDamage
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/projectile.c:ProjectileIceBeamDealDamage
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprite_util.c:SpriteUtilSamusAndSpriteCollision
+    confidence: 0.8
+    note: frozen-sprite platform collision
+  - kind: decomp_source
+    ref: mf:include/constants/sprite.h:WEAKNESS_CAN_BE_FROZEN
+    confidence: 0.95
+- id: damage_and_iframes
+  facet: mechanics
+  label: Contact damage with four suit-reduction classes, knockback and i-frames
+  summary: Enemy contact damage = species damage x collision multiplier, then scaled by the species' suit-reduction class
+    (Varia/Gravity keep 30/10, 60/30, 80/10 or 90/80 percent), minimum 1; there is no difficulty scaling. Getting hurt launches
+    Samus 3 px/frame up (1.5 if airborne) and 1.5 px/frame away with 48 i-frames, clears a stored shinespark and pending
+    shot. Constant-damage grabs (Zazabi, Yakuza, Ridley claw) tick every 8-30 frames. Energy 0 starts the dying pose with
+    a monochrome fade.
+  instantiates:
+  - concept: mechanics.combat.contact_damage
+  - concept: mechanics.combat.damage_mitigation_equipment
+  - concept: mechanics.combat.invulnerability_frames
+  - concept: movement_physics.feedback.knockback_iframes
+  reads:
+  - enemies[*].damage
+  - enemies[*].suit_reduction_class
+  - equipment.suits
+  - player.timers.iframes
+  writes:
+  - resources.energy.current
+  - player.pose
+  - player.velocity
+  - player.timers.iframes
+  - player.timers.shinespark
+  params:
+    hurt_iframes:
+      value: 48
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusSetHurtPose (CONVERT_SECONDS(.8f))
+        confidence: 0.95
+    hurt_vy:
+      value: 3.0
+      unit: px/frame
+      native_value: 96
+      native_unit: velocity units
+      variants:
+      - when: airborne
+        value: 1.5
+        unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:HURT_Y_VELOCITY
+        confidence: 0.95
+    hurt_vx:
+      value: 1.5
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:HURT_X_VELOCITY
+        confidence: 0.95
+    knockback_vy:
+      value: 2.0
+      unit: px/frame (knockback without damage)
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:KNOCKBACK_Y_VELOCITY
+        confidence: 0.95
+    constant_damage_interval:
+      value: 8
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/sprite.h:SPRITE_CONSTANT_DAMAGE_INTERVAL
+        confidence: 0.95
+  invariants:
+  - Damage is never below 1 per hit.
+  - Screw Attack, shinesparking and speed boosting make contact non-damaging to Samus.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/damage_and_iframes
+    note: per-species reduction classes instead of fixed suit multipliers; no difficulty multiplier; hurt vy 3 vs 3.5
+  - type: modulates
+    target: shinespark
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprite_util.c:SpriteUtilTakeDamageFromSprite
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusSetHurtPose
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusSetKnockbackPose
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprite_util.c:SpriteUtilSamusAndSpriteCollision
+    confidence: 0.85
+  tables:
+    suit_reduction_classes:
+      description: Percent of damage kept (x10 fraction) per species class.
+      columns:
+      - class
+      - power_suit
+      - varia
+      - gravity
+      rows:
+      - - SDRT_30_10
+        - 100
+        - 30
+        - 10
+      - - SDRT_60_30
+        - 100
+        - 60
+        - 30
+      - - SDRT_80_10
+        - 100
+        - 80
+        - 10
+      - - SDRT_90_80
+        - 100
+        - 90
+        - 80
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sprite_data.c:sSuitDamageReductionPercent
+        confidence: 0.95
+- id: environmental_hazards
+  facet: mechanics
+  label: Suit-dependent hazard damage including cold before Varia
+  summary: 'Hazard clipdata (water, lava, acid, heat, cold, cold-with-knockback) drains 1 energy per tick. Before Varia,
+    Samus (carrying Metroid DNA) is hurt by cold as well as heat: heat/cold tick every 10 frames, lava every 3, acid every
+    frame, and cold-knockback rooms shove her every 87 frames. Varia removes heat/cold damage and slows lava (5) and acid
+    (2); Gravity (or the SA-X suit flag) leaves only acid every 4 frames.'
+  instantiates:
+  - concept: mechanics.hazard.environmental_damage_over_time
+  reads:
+  - world.hazard_at_position
+  - equipment.suits
+  writes:
+  - resources.energy.current
+  - player.pose
+  params:
+    damage_per_tick:
+      value: 1
+      unit: energy
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusHazardDamage
+        confidence: 0.95
+    cold_knockback_period:
+      value: 87
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusHazardDamage (CONVERT_SECONDS(1.45f))
+        confidence: 0.9
+  invariants:
+  - Leaving every hazard resets all hazard timers.
+  - Hazard damage alone can kill (energy 0 forces hurt request).
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/environmental_hazards
+    note: adds cold and cold-knockback hazards that hurt until Varia
+  - type: gated_by
+    target: ability_recovery_by_event
+    note: Varia/Gravity
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusHazardDamage
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:include/constants/clipdata.h:Hazard
+    confidence: 0.9
+  tables:
+    hazard_tick_period_frames:
+      description: Frames between 1-energy ticks (timer must exceed threshold, then resets).
+      columns:
+      - hazard
+      - power_suit
+      - varia
+      - gravity_or_sa_x_flag
+      rows:
+      - - acid
+        - 1
+        - 2
+        - 4
+      - - lava
+        - 3
+        - 5
+        - none
+      - - heat
+        - 10
+        - none
+        - none
+      - - cold
+        - 10
+        - none
+        - none
+      - - cold_knockback
+        - 4 (plus knockback every 87)
+        - none
+        - none
+      evidence:
+      - kind: derived
+        ref: thresholds CONVERT_SECONDS(1/60, 1/30, .05, 1/15, .15) +1 frame per reset
+        inputs:
+        - mf:src/samus.c:SamusHazardDamage
+        confidence: 0.85
+- id: body_attacks
+  facet: mechanics
+  label: Movement-as-weapon (Screw Attack, speed boost, shinespark, pseudo screw)
+  summary: Screw Attack, shinesparking and any speed-boosting pose make Samus invulnerable to contact and instantly destroy
+    sprites weak to speed/screw; other sprites are only stunned (SA-X boss takes 10 and still hurts Samus). The same states
+    break matching blocks around her hitbox each frame (top corners, leading side, floor when grounded). A full charge held
+    through a spin acts as a pseudo screw against beam-weak enemies.
+  instantiates:
+  - concept: mechanics.combat.body_attack
+  reads:
+  - player.pose
+  - player.timers.speedboosting
+  - weapon.charge_counter
+  - enemies[*].weakness
+  writes:
+  - enemies[*].health
+  - world.tiles.blocks
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/body_attacks
+  - type: requires
+    target: speed_booster
+    condition: speed variant
+  - type: part_of
+    target: destructible_block_locks
+    note: block damage pattern
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/projectile.c:ProjectileContactDamageHitSprite
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprite_util.c:SpriteUtilCheckSamusDamagingPose
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusCheckScrewSpeedboosterAffectingEnvironment
+    confidence: 0.95
+- id: x_parasite_lifecycle
+  facet: mechanics
+  label: Killed infected enemies release an X that is either absorbed or flies off to revive a host
+  summary: 'An infected enemy (spriteset class 0x20-0x4F) reaching 0 HP does not explode: it plays a 44-step mosaic flicker
+    and re-initialises in the same slot as a floating X parasite (bosses and uninfected sprites explode normally and leave
+    nothing). The X becomes touchable once its spawn mosaic falls to index 22, idles 60 frames, then for up to 300 frames
+    homes on the nearest dormant host (or a room target point), finally flying off-screen. Touching it absorbs it: it shrinks
+    into Samus over ~22 frames and refills her by colour. X ignore all projectiles; power bombs freeze X inside the blast
+    and drag outside ones toward the centre.'
+  instantiates:
+  - concept: mechanics.entity.death_releases_pickup_entity
+  - concept: mechanics.entity.enemy_respawn_by_reinfection
+    weight: 0.5
+  - concept: economy.source.enemy_drop_table
+    weight: 0.4
+  reads:
+  - enemies[*].health
+  - enemies[*].infection_class
+  - player.position
+  - power_bomb.state
+  writes:
+  - enemies[*].pose
+  - enemies[*].sprite_id
+  - resources.*
+  params:
+    death_mosaic_frames:
+      value: 44
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/x_parasite_util.c:SpriteDying
+        confidence: 0.9
+    absorbable_after_spawn:
+      value: 22
+      unit: frames (mosaic index <= 22)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/x_parasite_util.c:XParasiteSpawningInit
+        confidence: 0.85
+    idle_absorbable:
+      value: 60
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/x_parasite_util.c:XParasiteIdleFloating
+        confidence: 0.9
+    flying_lifetime:
+      value: 300
+      unit: frames (reset while a host target exists)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/x_parasite_util.c:XParasiteFlyingMovement
+        confidence: 0.9
+    hitbox_half_size:
+      value: 9
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/x_parasite_util.c:XParasiteInit
+        confidence: 0.9
+    absorb_shrink:
+      value: 22
+      unit: frames (scale 1.0 -> 0.3125 at -1/32 per frame)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/x_parasite_util.c:XParasiteGettingAbsorbed
+        confidence: 0.9
+    pb_pull_speed:
+      value:
+      - 6
+      - 5
+      unit: px/frame (x, y) toward power-bomb centre
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/projectile.c:ProjectileBringSpriteToPowerBombCenter
+        confidence: 0.8
+  invariants:
+  - An X never takes projectile damage.
+  - Boss parts (secondary sprites) and uninfected enemies never release an X.
+  - An unabsorbable X (class 0x30) ignores Samus while any dormant host exists.
+  relations:
+  - type: part_of
+    target: x_absorption_economy
+  - type: requires
+    target: sprite_mosaic_dissolve
+  - type: modulates
+    target: x_host_reinfection
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/x_parasite_util.c:SpriteDyingInit
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/x_parasite_util.c:XParasiteInit
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/x_parasite_util.c:XParasiteFlyingAway
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/x_parasite_util.c:SamusAbsorbX
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/projectile.c:ProjecileDealDamage
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/hornoad.c:Hornoad (pose 0x5B -> XParasiteInit)
+    confidence: 0.9
+- id: blue_x_varia_gate
+  facet: mechanics
+  label: Cold Blue X that drain Samus until Varia, then heal her
+  summary: Blue X hide inside solid tiles until uncovered, then drift and chase Samus within 80 px. Touching Samus without
+    Varia drains 3 energy per shrink tick and forces a hurt pose; with Varia the same contact heals 30 energy. Any hit stuns
+    them for 240 frames. After the post-Varia event they move to the target point for 150 frames then flee.
+  instantiates:
+  - concept: mechanics.status.elemental_hazard_entity
+  - concept: ai.movement.overshoot_homing
+    weight: 0.4
+  reads:
+  - equipment.varia
+  - player.position
+  - world.event_counter
+  writes:
+  - resources.energy.current
+  - player.pose
+  params:
+    drain_per_tick:
+      value: 3
+      unit: energy
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/blue_x.c:BlueXGetAbsorbed
+        confidence: 0.9
+    varia_heal:
+      value: 30
+      unit: energy
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/blue_x.c:BlueXAbsorbed
+        confidence: 0.9
+    detect_range:
+      value: 80
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/blue_x.c:BlueXIdle
+        confidence: 0.85
+    stun:
+      value: 240
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/blue_x.c:BlueXCheckStun
+        confidence: 0.85
+  relations:
+  - type: gated_by
+    target: ability_recovery_by_event
+    note: Varia flips the effect from harmful to beneficial
+  - type: part_of
+    target: x_parasite_lifecycle
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/blue_x.c
+    confidence: 0.9
+- id: sa_x_arsenal
+  facet: mechanics
+  label: Mirror enemy with the player's kit - freezing ice beam, super missiles, power bombs
+  summary: The SA-X fires a three-aim ice beam (200 damage). With Varia it is ordinary damage and knockback; without Varia
+    damage uses the power-suit column and Samus is frozen for 80 frames instead, and a lethal hit leaves her at 1 energy
+    (unless already at 1). When Samus is frozen the SA-X follows up with a super missile (100 damage, 40-frame wind-up).
+    In NOC it walks to a spot, morphs and lays a power bomb (20 damage).
+  instantiates:
+  - concept: ai.enemy.player_mirror_enemy
+  - concept: mechanics.status.player_freeze
+  - concept: mechanics.combat.one_shot_protection
+  reads:
+  - equipment.varia
+  - resources.energy.current
+  - player.pose
+  writes:
+  - player.pose
+  - resources.energy.current
+  - projectiles.enemy[*]
+  params:
+    ice_beam_damage:
+      value: 200
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sprite_data.c:sSecondarySpriteStats
+        confidence: 0.85
+    player_frozen_duration:
+      value: 80
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SAMUS_FROZEN_DURATION
+        confidence: 0.95
+    super_missile_damage:
+      value: 100
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sprite_data.c:sSecondarySpriteStats
+        confidence: 0.85
+    missile_windup:
+      value: 40
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/sa_x.c:SaXDelayBeforeShootingMissileInit
+        confidence: 0.85
+    power_bomb_damage:
+      value: 20
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/sa_x_noc.c:SaXNocLayingPowerBomb
+        confidence: 0.8
+  invariants:
+  - Without Varia a single ice-beam hit can never kill Samus from above 1 energy.
+  - Frozen Samus still falls (frozen-and-falling poses).
+  relations:
+  - type: gated_by
+    target: ability_recovery_by_event
+    note: Varia removes the freeze
+  - type: part_of
+    target: sa_x_stalker_ai
+  - type: modulates
+    target: damage_and_iframes
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprite_util.c:SpriteUtilTakeDamageFromSaXIceBeamWithoutVaria
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/sprite_util.c:SpriteUtilSamusAndSpriteCollision (SSC_SA_X_ICE_BEAM)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusFrozenGfx
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusSetFrozenPose
+    confidence: 0.9
+- id: enemy_weakness_mask
+  facet: mechanics
+  label: Enemy weakness bitmask and hit-flash invulnerability
+  summary: 'Each enemy carries a weakness mask: charge-beam-only, beams/bombs, super missiles, missiles, power bomb, speed/screw
+    (instant kill on contact) and freezable. A weapon that does not match turns the hit into a "solid" ricochet. Damaged
+    enemies flash for 5, 9 or 17 frames depending on hit size, and after a contact hit a sprite ignores Samus for 15 frames.'
+  instantiates:
+  - concept: mechanics.combat.enemy_weakness_mask
+  reads:
+  - enemies[*].weakness
+  - weapon.type
+  writes:
+  - enemies[*].health
+  - enemies[*].hit_flash
+  params:
+    weakness_bits:
+      value: 7
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/sprite.h (WEAKNESS_*)
+        confidence: 0.95
+    contact_ignore:
+      value: 15
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprite_util.c:SpriteUtilSamusAndSpriteCollision
+        confidence: 0.85
+  relations:
+  - type: modulates
+    target: beam_hierarchy_and_charge
+  - type: modulates
+    target: missile_hierarchy
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/projectile.c:ProjecileDealDamage
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/projectile.c:ProjectileNormalBeamHitSprite
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/projectile.c:ProjectileGetSpriteWeakness
+    confidence: 0.85
+- id: x_parasite_homing_ai
+  facet: ai
+  label: Overshooting accelerate/decelerate homing shared by X, Core-X and Blue X
+  summary: XParasiteMove keeps a per-axis speed counter that rises by 1 per frame to a cap and moves the sprite counter
+    >> divisor sub-px per frame; after passing the target (+-1 px) it coasts while the counter decays, then reverses, producing
+    springy overshooting orbits rather than direct seeking. Targets are the nearest eligible dormant host (taxicab distance,
+    alive, not frozen) or a room target point set by an invisible Target sprite, a Core-X or the lab SA-X. Some room X wait
+    until Samus is within 10 blocks vertically and 8 horizontally.
+  instantiates:
+  - concept: ai.movement.overshoot_homing
+  reads:
+  - sprites[*].position
+  - x.target_position
+  - player.position
+  writes:
+  - sprites[*].position
+  - sprites[*].speed_counters
+  params:
+    free_float_cap:
+      value:
+      - 3.5
+      - 2.5
+      unit: px/frame (x, y)
+      native_value:
+      - 28
+      - 20
+      native_unit: counter cap (divisor 1)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/x_parasite_util.c:XParasiteFlyingMovement
+        confidence: 0.9
+    free_float_accel:
+      value: 0.125
+      unit: px/frame^2
+      evidence:
+      - kind: derived
+        ref: counter +1/frame, 1 counter unit = 0.5 sub-px at divisor 1
+        inputs:
+        - mf:src/x_parasite_util.c:XParasiteMove
+        confidence: 0.75
+    to_host_cap:
+      value: 2.5
+      unit: px/frame (both axes)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/x_parasite_util.c:XParasiteFlyingMovement
+        confidence: 0.9
+    fly_away_cap:
+      value: 6.25
+      unit: px/frame (accel 1/32 px/frame^2)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/x_parasite_util.c:XParasiteFlyingAway
+        confidence: 0.85
+    core_x_chase_cap:
+      value:
+      - 2.5
+      - 1.75
+      unit: px/frame (x, y), target 18 px above Samus
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/core_x.c:CoreXAbilityMoving
+        confidence: 0.85
+    proximity_trigger:
+      value:
+      - 128
+      - 160
+      unit: px (x, y) Samus distance to wake a waiting room X
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/x_parasite.c:XParasiteInRoomWaitingToMove
+        confidence: 0.85
+  invariants:
+  - Frozen or dead hosts are never targeted.
+  - Velocity changes by at most one counter step per frame per axis (no instant turns).
+  relations:
+  - type: part_of
+    target: x_parasite_lifecycle
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/x_parasite_util.c:XParasiteMove
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/x_parasite_util.c:XParasiteFlyingMovement
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/target.c:TargetSetTargetPosition
+    confidence: 0.85
+- id: x_host_reinfection
+  facet: ai
+  label: Dormant enemy shells revived by X, plus a continual off-screen X spawner
+  summary: Enemies flagged able to absorb X spawn as dormant shells (drawn behind BG1, no collision, projectile-immune;
+    some still twitch or hop). An X touching a shell decrements its X-to-form count (default 1); at 0 the shell plays a
+    44-frame mosaic and re-inits as a live infected enemy, so killing without absorbing repopulates the room. An invisible
+    ContinualXSpawner emits an X one block beyond a random screen edge whenever a dormant host exists and fewer than 4 free
+    X / unrevived infected sprites are present.
+  instantiates:
+  - concept: mechanics.entity.enemy_respawn_by_reinfection
+  - concept: ai.spawn.offscreen_continual_spawner
+  reads:
+  - enemies[*].can_absorb_x
+  - enemies[*].x_to_form
+  - sprites.count_free_x
+  - frame_counter
+  writes:
+  - enemies[*].x_to_form
+  - enemies[*].pose
+  - sprites[*]
+  params:
+    x_to_form_default:
+      value: 1
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprite.c:SpriteInitPrimary
+        confidence: 0.9
+    wait_for_more_x:
+      value: 300
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/x_parasite_util.c:XParasiteWaitingForEnoughXToFormInit
+        confidence: 0.8
+    spawner_population_cap:
+      value: 4
+      unit: free X + unrevived infected (spawns while fewer)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/continual_x_spawner.c:ContinualXSpawnerIdle
+        confidence: 0.9
+    spawn_offset:
+      value: 16
+      unit: px beyond screen edge (edge from frameCounter & 3)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/continual_x_spawner.c:ContinualXSpawnerIdle
+        confidence: 0.85
+  invariants:
+  - A revived host clears its can-absorb-X flag (one revival per shell).
+  - Frozen shells cannot be revived.
+  relations:
+  - type: requires
+    target: x_parasite_homing_ai
+  - type: conflicts_with
+    target: ice_freeze
+    note: freezing a shell blocks revival
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprite_util.c:SpriteUtilTrySetAbsorbXFlag
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/x_parasite_util.c:SpriteSpawningFromX
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/hornoad.c:HornoadInit
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/continual_x_spawner.c
+    confidence: 0.9
+- id: sa_x_stalker_ai
+  facet: ai
+  label: SA-X - event-scripted unkillable stalker with sight, hearing and door pursuit
+  summary: The SA-X is a Samus-shaped sprite with its own 20-pose state (walk, run, jump, morph, roll, shoot) and one AI
+    file per encounter (TRO 1, NOC, ARC, lab, TRO 2, elevator, boss, Omega), each spawned only at its event. It patrols
+    at 0.25-0.5 px/frame; on seeing Samus (10-block gate, 8-tile two-tall ray horizontal or 45 degrees, blocked by tiles,
+    crouching/morphing behind low cover breaks sight) it either aims and shoots or runs at up to 3 px/frame. It auto-jumps
+    1-block steps, morphs through 1-tile gaps, and in ARC/TRO 2 turns toward Samus if she fires behind it. Chases cross
+    doors after a 60+30 frame delay with a door-opening shot. With 64000 HP and freeze-only weakness it must be evaded,
+    not fought; escaping advances the event counter.
+  instantiates:
+  - concept: ai.enemy.invulnerable_stalker
+  - concept: ai.perception.tile_raycast_line_of_sight
+  - concept: ai.perception.posture_dependent_visibility
+  - concept: ai.perception.sound_alert_turn
+  - concept: mechanics.stealth.detection_alarm
+    weight: 0.5
+  reads:
+  - player.position
+  - player.pose
+  - weapon.new_projectile
+  - world.tiles.clipdata
+  - world.event_counter
+  writes:
+  - sa_x.pose
+  - sa_x.position
+  - sprites[*]
+  - audio.music
+  - world.event_counter
+  params:
+    sight_gate:
+      value: 160
+      unit: px (10 blocks, both axes)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/sa_x.c:SaXSeeAndLocateSamus
+        confidence: 0.9
+    sight_ray_length:
+      value: 128
+      unit: px (8 tiles, 2 tiles tall)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/sa_x.c:SaXSeeAndLocateSamus
+        confidence: 0.9
+    walk_speed:
+      value:
+      - 0.25
+      - 0.5
+      unit: px/frame (ramps over 8-frame steps)
+      native_value:
+      - 1
+      - 2
+      native_unit: sub-px/frame
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sprites/sa_x.c:sSaXWalkingSpeed
+        confidence: 0.85
+    run_speed:
+      value:
+      - 1.0
+      - 3.0
+      unit: px/frame (ramps over 64 frames)
+      native_value:
+      - 4
+      - 12
+      native_unit: sub-px/frame
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sprites/sa_x.c:sSaXRunningSpeed
+        confidence: 0.85
+    beam_windup:
+      value: 16
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/sa_x.c:SaXDelayBeforeShootingBeamInit
+        confidence: 0.85
+    hear_weapon_pause:
+      value: 120
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/sa_x_arc.c:SaXArcIdleAfterHearingWeaponInit
+        confidence: 0.85
+    door_follow_delay:
+      value: 90
+      unit: frames (60 wait + 30 door-opening)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/sa_x_arc.c:SaXArcWaitingInDoorDuringChase
+        confidence: 0.8
+    health:
+      value: 64000
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sprite_data.c:sPrimarySpriteStats
+        confidence: 0.9
+    contact_damage:
+      value: 500
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sprite_data.c:sPrimarySpriteStats
+        confidence: 0.9
+    freeze_decay:
+      value: 3
+      unit: freeze units/frame (~80 frames per freeze)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/sa_x.c:SaXUpdateFreezeTimer
+        confidence: 0.85
+  invariants:
+  - SA-X exists only within its encounter's event window.
+  - Outside the boss fight it cannot be killed; freezing only delays it.
+  - Projectiles do not affect it while airborne.
+  - Detection switches music to the SA-X chase theme.
+  relations:
+  - type: requires
+    target: event_counter_progression
+  - type: variant_of
+    target: metroid-zero-mission/space_pirate_ai
+    note: perception lineage (tile ray LOS); MZM ray is a single row and pirates are killable
+  - type: modulates
+    target: adaptive_music
+  - type: requires
+    target: sa_x_arsenal
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sa_x.c
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/sa_x.c:SaXSeeAndLocateSamus
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/sa_x_arc.c:SaXArc
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/sa_x_noc.c:SaXNocInit
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/sa_x_tro_1.c:SaXTro1Init
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:include/structs/sa_x.h
+    confidence: 0.9
+- id: sa_x_boss_sequence
+  facet: ai
+  label: Multi-form SA-X finale (SA-X, monster, ice Core-X, Omega rescue)
+  summary: On the Operations Deck the SA-X becomes a boss (350 HP, 99 contact, freeze-only weakness) that runs, spin-jumps
+    and shoots; only charged Wave hits (9) and screw/speed contact (10, which also hurts Samus) damage it, with mosaic stages
+    at 1/2, 2/3 and 1/6 HP. At 0 HP it kneels and becomes a monster (600 HP, charge-beam weak), which then collapses into
+    an unabsorbable ice Core-X that flees after 180 frames. Later, during the Omega Metroid fight, a second SA-X shoots
+    the Omega, is struck down and reverts to the X that grants Ice Beam.
+  instantiates:
+  - concept: ai.boss.multi_phase_transforming_boss
+  - concept: ai.boss.weak_point_window
+    weight: 0.3
+  reads:
+  - sprites[*].health
+  - player.position
+  - player.pose
+  writes:
+  - sprites[*].sprite_id
+  - world.event_counter
+  params:
+    boss_hp:
+      value: 350
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sprite_data.c (PSPRITE_SA_X_BOSS)
+        confidence: 0.85
+    monster_hp:
+      value: 600
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sprite_data.c (SA-X monster)
+        confidence: 0.85
+    core_flee_delay:
+      value: 180
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/beam_core_x.c:BeamCoreXWaitToFlee
+        confidence: 0.8
+  relations:
+  - type: requires
+    target: event_counter_progression
+  - type: variant_of
+    target: sa_x_stalker_ai
+    note: shares SA-X pose system
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/sa_x_boss.c:SaXBossKnockbackInit
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/projectile.c:ProjectileChargedWaveBeamHitSprite
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/projectile.c:ProjectileContactDamageHitSprite
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/sa_x_monster.c
+    confidence: 0.8
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/sa_x_omega.c
+    confidence: 0.75
+- id: core_x_ability_boss
+  facet: ai
+  label: Core-X - shielded ability core that must be shattered and absorbed
+  summary: Ability Core-X either descend and form their host from X (Arachnus, Zazabi; skipped if the ability is owned)
+    or emerge from a dying host boss by mosaic (Serris, Yakuza, Nightmare, Ridley, Mega-X). The core homes on Samus inside
+    a missile-only shell with six absorbable escort X; shell palette changes at 2/3 and 1/3 HP. Breaking the shell scatters
+    the escorts, switches to tension music and sends the core to rest; touching it locks movement, advances the ability
+    event, refills 400/50/10 and shows a banner.
+  instantiates:
+  - concept: ai.boss.shielded_core
+  - concept: progression.items.boss_drops_ability
+  - concept: ai.movement.overshoot_homing
+    weight: 0.4
+  reads:
+  - player.position
+  - equipment.*
+  - sprites[*].health
+  writes:
+  - world.event_counter
+  - resources.*
+  - audio.music
+  params:
+    escort_x:
+      value: 6
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/core_x.c:CoreXAbilityMovingInit
+        confidence: 0.85
+  invariants:
+  - Only missile-class hits damage the shell.
+  - The core grants its ability only if the event counter is at the preceding event.
+  relations:
+  - type: requires
+    target: x_parasite_homing_ai
+  - type: part_of
+    target: ability_recovery_by_event
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/core_x.c:CoreXShell
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/core_x.c:CoreXAbilityWaitingAtTarget
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/serris.c (host death -> Core-X)
+    confidence: 0.8
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/core_x_downloading_varia.c:CoreXShellBeforeVariaCore
+    confidence: 0.8
+  tables:
+    core_x_shells:
+      columns:
+      - ability
+      - shell_hp
+      - shell_contact
+      - host
+      - host_hp
+      rows:
+      - - Morph Ball
+        - 30
+        - 10
+        - Arachnus
+        - 150
+      - - High Jump
+        - 40
+        - 20
+        - Zazabi
+        - 100
+      - - Speed Booster
+        - 50
+        - 30
+        - Serris
+        - 50
+      - - Varia Suit
+        - 180
+        - 40
+        - Mega-X
+        - 100
+      - - Space Jump
+        - 240
+        - 45
+        - Yakuza
+        - 1000
+      - - Gravity Suit
+        - 240
+        - 50
+        - Nightmare
+        - 1200
+      - - Screw Attack
+        - 270
+        - 55
+        - Ridley
+        - 4500
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sprite_data.c (CORE_X_SHELL_* and host rows)
+        confidence: 0.9
+- id: beam_core_x_boss
+  facet: ai
+  label: Beam Core-X - rotating eye that opens to fire the beam it holds
+  summary: Beam abilities sit in a Core-X with an immune shell and a rotating eye that tracks Samus. The eye cycles closed
+    -> opening -> open for 160 frames (charging cues at 110 and 60) -> fires a 3-part beam in one of 8 directions quantised
+    from its rotation -> closes; a missile-strength hit aborts the cycle, and only missiles hurt the eye. At 0 HP the core
+    rests and is absorbed for the beam event and a 400/50/10 refill. Hosts are a fake Chozo statue (Charge), an infected
+    scientist (Wide), Nettori (Plasma), BOX 2 (Wave) and the SA-X monster (Ice, not absorbed).
+  instantiates:
+  - concept: ai.boss.weak_point_window
+  - concept: ai.boss.shielded_core
+  reads:
+  - player.position
+  - sprites[*].rotation
+  writes:
+  - projectiles.enemy[*]
+  - world.event_counter
+  params:
+    eye_open_window:
+      value: 160
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/beam_core_x.c:BeamCoreXEyeOpened
+        confidence: 0.85
+    fire_directions:
+      value: 8
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/beam_core_x.c:BeamCoreXEyeOpened
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: ability_recovery_by_event
+  - type: variant_of
+    target: core_x_ability_boss
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/beam_core_x.c:BeamCoreXEyeOpening
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/beam_core_x.c:BeamCoreXRestingAtTarget
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/chozo_statue.c
+    confidence: 0.7
+  tables:
+    beam_cores:
+      columns:
+      - beam
+      - eye_hp
+      - contact
+      - fired_beam_damage
+      - host
+      rows:
+      - - Charge
+        - 33
+        - 15
+        - 30
+        - fake Chozo statue
+      - - Wide
+        - 150
+        - 16
+        - 50
+        - infected scientist
+      - - Plasma
+        - 200
+        - 24
+        - 70
+        - Nettori
+      - - Wave
+        - 170
+        - 32
+        - 100
+        - BOX 2
+      - - Ice
+        - 240
+        - 40
+        - 135
+        - SA-X monster
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sprite_data.c
+        confidence: 0.85
+- id: host_bosses
+  facet: ai
+  label: Host-boss roster with grab, gravity-field and multi-part patterns
+  summary: Each ability boss is a distinct pattern built on the sprite runtime. Notable mechanics - Zazabi swallows Samus
+    and drains 1 energy per 8 frames until spat out; Yakuza grabs and slams, changing phase after losing legs; Nightmare's
+    field drags missiles down (accelerating to 0x2A sub-px/frame) and bleeds Samus's horizontal speed above 4 units by 2
+    per frame (reusing the liquid-slowed physics flag); Serris is a speed-boosting segmented eel; Ridley grabs with a claw;
+    Omega Metroid is beam-only.
+  instantiates:
+  - concept: ai.boss.multi_part_boss
+  - concept: ai.boss.weak_point_window
+    weight: 0.5
+  - concept: mechanics.combat.grab_and_drain
+    weight: 0.5
+  reads:
+  - player.position
+  - player.velocity
+  - player.pose
+  writes:
+  - player.pose
+  - player.velocity.x
+  - resources.energy.current
+  params:
+    zazabi_drain_interval:
+      value: 8
+      unit: frames per 1 energy
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprite_util.c:SpriteUtilTakeConstantDamageFromZazabi
+        confidence: 0.85
+  relations:
+  - type: requires
+    target: sprite_fsm_framework
+  - type: modulates
+    target: liquid_physics
+    note: Nightmare reuses the slowed flag (0x80)
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/nightmare.c:NightmareReduceSamusXVelocity
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/nightmare.c:NightmareMakeMissilesFall
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/sprite_util.c:SpriteUtilTakeConstantDamageFromYakuza
+    confidence: 0.8
+  - kind: decomp_source
+    ref: mf:src/data/sprite_data.c
+    confidence: 0.9
+  tables:
+    host_boss_stats:
+      columns:
+      - boss
+      - hp
+      - contact
+      - weakness
+      rows:
+      - - Arachnus
+        - 150
+        - 32
+        - beam/missile/PB/screw
+      - - Zazabi
+        - 100
+        - 1
+        - none (swallow mechanic)
+      - - Serris
+        - 50
+        - '-'
+        - charge/missile
+      - - BOX
+        - 300 per part
+        - '-'
+        - charge/missile
+      - - BOX 2
+        - 500 per part
+        - '-'
+        - missile
+      - - Yakuza
+        - 1000
+        - 30
+        - charge/missile
+      - - Nettori
+        - 2000
+        - '-'
+        - charge/missile/PB
+      - - Nightmare
+        - 1200 (+600 parts)
+        - '-'
+        - '-'
+      - - Ridley
+        - 4500
+        - 30
+        - charge/missile
+      - - Omega Metroid
+        - 1200
+        - 80
+        - beam
+      - - Mega-X
+        - 100
+        - '-'
+        - charge
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sprite_data.c:sPrimarySpriteStats
+        confidence: 0.85
+- id: sprite_fsm_framework
+  facet: ai
+  label: Per-sprite pose state machines with infection classes and X pose band
+  summary: As in Zero Mission, 24 sprite slots each run a pose-switch AI routine selected by sprite ID (primary and secondary
+    pointer tables), with the current sprite copied in and out each frame. Fusion adds a shared pose band used by every
+    enemy for dying/spawning-from-X (0x57-0x5A) and X poses (0x5B+), an infection class in each spriteset byte (0x10 uninfected/boss,
+    0x20 absorbable X, 0x30 unabsorbable, hidden flag 0x80), and per-sprite RNG from a slot-indexed table. Only pose-0 or
+    always-active sprites update while Samus is in a sprite-stopping pose.
+  instantiates:
+  - concept: ai.framework.pose_fsm_per_entity
+  reads:
+  - sprites[*]
+  - frame_counter
+  writes:
+  - sprites[*]
+  params:
+    max_sprites:
+      value: 24
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/structs/sprite.h
+        confidence: 0.95
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/sprite_fsm_framework
+    note: adds infection classes and shared X pose band
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprite.c:SpriteUpdate
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/sprite.c:SpriteUpdateRandomNumber
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:include/constants/sprite.h
+    confidence: 0.95
+- id: hornoad_hopper_ai
+  facet: ai
+  label: Hornoad - frontal-range hopper whose detection widens after being hit
+  summary: Hornoads hop toward Samus when she is within 35 px vertically and 125 px horizontally in front, and spit at closer
+    range. Being hit on screen sets a detected flag that widens the next hop check to 85 x 175 px (one-shot, cleared after
+    the check). Dormant husk variants skip the check and use a low-hop table while waiting for an X.
+  instantiates:
+  - concept: ai.enemy.damage_provoked_aggression
+  - concept: ai.enemy.patrol_detect_pursue
+    weight: 0.4
+  reads:
+  - player.position
+  - sprites[*].hit_flash
+  - sprites[*].can_absorb_x
+  writes:
+  - sprites[*].pose
+  - sprites[*].position
+  - sprites[*].status.samus_detected
+  params:
+    hop_range:
+      value:
+      - 125
+      - 35
+      unit: px (x in front, y)
+      native_value:
+      - 500
+      - 140
+      native_unit: sub-px
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/hornoad.c:HornoadCheckSamusInJumpingRange
+        confidence: 0.9
+    provoked_hop_range:
+      value:
+      - 175
+      - 85
+      unit: px (x, y)
+      native_value:
+      - 700
+      - 340
+      native_unit: sub-px
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/hornoad.c:HornoadCheckSamusInJumpingRange
+        confidence: 0.9
+  invariants:
+  - The widened range applies to a single check after a hit, then reverts.
+  relations:
+  - type: requires
+    target: sprite_fsm_framework
+  - type: modulates
+    target: x_host_reinfection
+    note: husk variant is the dormant host form
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/hornoad.c:HornoadCheckSamusInJumpingRange
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/hornoad.c:Hornoad (SPRITE_STATUS_SAMUS_DETECTED set on hit flash)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/hornoad.c:HornoadJumping
+    confidence: 0.8
+- id: surface_crawler_ai
+  facet: ai
+  label: Geemer - surface crawler that curls up when Samus approaches
+  summary: Zero Mission's Zoomer crawler, plus a hide reflex - within 5 blocks the Geemer curls into a smaller +-10 px hitbox
+    unless Samus has made no input change for over 120 frames. Weak only to charged shots.
+  instantiates:
+  - concept: ai.enemy.surface_crawler
+  reads:
+  - player.position
+  - input.last_change_timer
+  writes:
+  - sprites[*].pose
+  - sprites[*].hitbox
+  params:
+    hide_range:
+      value: 80
+      unit: px (5 blocks)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/geemer.c:GeemerCheckShouldHide
+        confidence: 0.85
+    idle_input_ignore:
+      value: 120
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/geemer.c:GeemerCheckShouldHide
+        confidence: 0.8
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/surface_crawler_ai
+    note: adds proximity hiding
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/geemer.c
+    confidence: 0.85
+- id: ceiling_diver_ai
+  facet: ai
+  label: Skree - ceiling diver that burrows and re-emerges under Samus
+  summary: Triggers when Samus is more than ~50 px below and within +-37.5 px horizontally; the dive accelerates in 2 sub-px
+    steps up to 6 px/frame. Instead of exploding on impact (Zero Mission) it burrows, waits 60 frames and re-emerges beneath
+    Samus if she is within +-48 px.
+  instantiates:
+  - concept: ai.enemy.proximity_triggered_dive
+  reads:
+  - player.position
+  writes:
+  - sprites[*].position
+  - sprites[*].pose
+  params:
+    trigger_x_range:
+      value: 37.5
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/skree.c:SkreeDetectSamus
+        confidence: 0.8
+    max_dive_speed:
+      value: 6
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/skree.c
+        confidence: 0.8
+    burrow_wait:
+      value: 60
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/skree.c:SkreeCrashing
+        confidence: 0.8
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/ceiling_diver_ai
+    note: burrow and re-emerge instead of self-destruct
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/skree.c:SkreeDetectSamus
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/skree.c:SkreeCrashing
+    confidence: 0.8
+- id: zebesian_ai
+  facet: ai
+  label: Zebesian - front-cone jumper and shooter
+  summary: Ground Zebesians jump when Samus is in front within 3 blocks vertically and 4 horizontally (not when she is below
+    their feet) and shoot within 6 x 13 blocks in front, turning to shoot when she is behind; beam damage 64 (Aqua variant
+    55), HP 90. Wall Zebesians cling and fire. Unlike Zero Mission pirates there is no alarm.
+  instantiates:
+  - concept: ai.enemy.patrol_detect_pursue
+  reads:
+  - player.position
+  writes:
+  - sprites[*].pose
+  - projectiles.enemy[*]
+  params:
+    jump_range:
+      value:
+      - 64
+      - 48
+      unit: px (x, y)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/zebesian_ground.c:ZebesianGroundCheckInRange
+        confidence: 0.8
+    shoot_range:
+      value:
+      - 208
+      - 96
+      unit: px (x, y)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/zebesian_ground.c:ZebesianGroundCheckInRange
+        confidence: 0.8
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/space_pirate_ai
+    note: range checks only; no line-of-sight ray or alarm
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/zebesian_ground.c
+    confidence: 0.85
+- id: timed_escapes
+  facet: progression
+  label: Three countdown sequences (meltdown, lab detachment, orbit change)
+  summary: The event counter starts three countdowns - reactor meltdown 6:00, restricted-lab detachment 1:00 and the final
+    orbit-change escape 3:00. The displayed second ticks every 64 frames, so real lengths are 23040, 3840 and 11520 frames.
+    The timer pauses during freezes and outside normal play; failing the lab escape plays a death cutscene and failing the
+    last one the SR388 collision ending.
+  instantiates:
+  - concept: mechanics.goal.timed_escape
+  reads:
+  - world.event_counter
+  - escape.timer
+  writes:
+  - escape.timer
+  - frontend.mode
+  params:
+    meltdown_time:
+      value: 23040
+      unit: frames (6:00 displayed)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/escape.c:EscapeSetDigits
+        confidence: 0.9
+    lab_time:
+      value: 3840
+      unit: frames (1:00 displayed)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/escape.c:EscapeSetDigits
+        confidence: 0.9
+    orbit_change_time:
+      value: 11520
+      unit: frames (3:00 displayed)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/escape.c:EscapeSetDigits
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/timed_escapes
+  - type: requires
+    target: event_counter_progression
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/escape.c:EscapeUpdate
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/event_checks.c:EventCheckOn_Escape
+    confidence: 0.95
+- id: ranked_ending
+  facet: progression
+  label: Tank-completion and time-ranked ending images
+  summary: Completion percent counts only tanks (20+48+32 = 100 %). The ending image is chosen by play time (under 2 h,
+    under 4 h, otherwise) and upgraded at 100 % (best image needs 100 % under 2 h). The in-game timer runs at 64 ticks per
+    displayed second and caps at 99:59:59. There is no difficulty factor.
+  instantiates:
+  - concept: progression.completion.ranked_ending
+  reads:
+  - game.timer
+  - equipment.max_*
+  writes:
+  - save.game_completion
+  params:
+    image_count:
+      value: 5
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/ending.c:EndingImageInit
+        confidence: 0.9
+    fast_time:
+      value: 2
+      unit: hours
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/ending.c:EndingImageInit
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/ranked_ending
+    note: completion counts tanks only; no difficulty
+  - type: requires
+    target: resource_pools
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/ending.c:CreditsInit
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/in_game_timer.c
+    confidence: 0.85
+- id: event_counter_progression
+  facet: progression
+  label: Single linear event counter driving the mission script
+  summary: 'All story progress is one byte, the event counter (110 events). Only event counter+1 can fire, from one of five
+    trigger kinds: entering a listed room, crossing a trigger box, talking in a listed Navigation Room, finishing a data
+    download, or a boss/objective callback (EventCheckAdvance requires counter == event-1). Twelve events are marked skippable
+    so ignored nav briefings do not soft-lock. The counter selects event-based door destinations (60 rerouted connections),
+    sprite sets, music and room effects, and disables saves/nav/recharge during the power outage, meltdown and post-orbit-change
+    sequences.'
+  instantiates:
+  - concept: progression.structure.linear_event_script
+  - concept: progression.world.persistent_world_flags
+    weight: 0.3
+  - concept: narrative_delivery.structure.predetermined_story
+    weight: 0.4
+  reads:
+  - world.event_counter
+  - world.area
+  - world.room
+  - player.position
+  writes:
+  - world.event_counter
+  - world.room_event_trigger
+  - equipment.*
+  - equipment.security_level
+  params:
+    event_count:
+      value: 110
+      unit: events (EVENT_NONE..EVENT_ESCAPED_ON_SHIP)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/event_data.c:sEventLocationAndNavigationInfo
+        confidence: 0.85
+    skippable_events:
+      value: 12
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/event_data.c:sEventLocationAndNavigationInfo (skippable = TRUE)
+        confidence: 0.85
+    trigger_box_events:
+      value: 9
+      unit: events with an xStart..yEnd block rectangle
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/event_data.c:sEventLocationAndNavigationInfo
+        confidence: 0.8
+    event_based_connections:
+      value: 60
+      unit: door reroutes keyed on counter >= event
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/connection_data.c:sEventBasedConnections
+        confidence: 0.9
+    door_unlock_delay_after_objective:
+      value: 60
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/event_checks.c:EventCheckAdvance (gDoorUnlockTimer = 60)
+        confidence: 0.95
+  invariants:
+  - The counter only ever increases by one per EventSet call path (room/box/nav/download/callback), except skips over consecutive
+    skippable entries.
+  - Objective callbacks are ignored unless the counter equals the preceding event, so bosses cannot be completed out of
+    order.
+  - Saving, navigation rooms and recharge stations are disabled for specific counter ranges (power outage; meltdown for
+    saves; everything after orbit change).
+  relations:
+  - type: conflicts_with
+    target: metroid-zero-mission/event_flags_and_sequence_breaks
+    note: one ordered counter vs independent flags; Fusion has little room for sequence breaking
+  - type: modulates
+    target: security_level_hatches
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/event.c:EventSet
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/event.c:EventCheckRoomHasEventTrigger
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/event.c:EventCheckRoomEventTrigger
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/event_checks.c:EventCheckAdvance
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/event_checks.c:EventCheckWith_SaveDisabled
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/event_checks.c:EventCheckWith_NavigationDisabled
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/connection.c:ConnectionFindEventBasedDoor
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:include/constants/event.h:Event
+    confidence: 0.95
+- id: security_level_hatches
+  facet: progression
+  label: Security-level colored hatches unlocked at sector security rooms
+  summary: Hatches are gray (level 0), blue (1), green (2), yellow (3) or red (4); any projectile opens a closed hatch whose
+    level is <= Samus's security level. Levels are raised only at security rooms in a fixed sector (L1 Sector 2, L2 Sector
+    3, L3 Sector 5, L4 Sector 4), and only when the event counter is at the matching briefing event. A "no hatches" level
+    (255) locks every hatch at game start and during the power outage, restored after Plasma Beam. Separate lockable hatches
+    close for boss rooms and objectives.
+  instantiates:
+  - concept: progression.gating.typed_lock_and_key
+  - concept: progression.gating.event_locked_doors
+  - concept: progression.gating.security_clearance_levels
+  reads:
+  - equipment.security_level
+  - world.event_counter
+  - world.area
+  - hatches[*].lock_type
+  writes:
+  - equipment.security_level
+  - hatches[*].state
+  params:
+    security_levels:
+      value: 5
+      unit: levels 0-4 (+ 255 no hatches)
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:SecurityLevel
+        confidence: 0.95
+    hatch_flash_period:
+      value: 8
+      unit: frames per palette step (6 steps)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/room.c:RoomUpdateHatchFlashingAnimation
+        confidence: 0.85
+  invariants:
+  - A hatch opens only if lockType <= equipment.security_level, regardless of weapon type.
+  - Security level never decreases except via the temporary no-hatches state, whose prior level is backed up and restored.
+  - Unlock requires being in the sector's security room AND the event counter at the preceding event.
+  relations:
+  - type: requires
+    target: event_counter_progression
+  - type: variant_of
+    target: metroid-zero-mission/typed_locks
+    note: color = clearance level instead of weapon type
+  - type: part_of
+    target: sector_hub_structure
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/bg_clip.c:BgClipCheckProjectileHitHatch
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/room.c:RoomLoadDoors
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/event.c:EventCheckUnlockSecurityLevel
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/event.c:EventSet
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/security_pad.c
+    confidence: 0.8
+  tables:
+    security_unlocks:
+      columns:
+      - level
+      - color
+      - sector
+      - required_event
+      rows:
+      - - 1
+        - blue
+        - Sector 2 (TRO)
+        - NAVIGATION_ROOM_ENTERING_TRO
+      - - 2
+        - green
+        - Sector 3 (PYR)
+        - NAVIGATION_ROOM_ENTERING_PYR
+      - - 3
+        - yellow
+        - Sector 5 (ARC)
+        - NAVIGATION_ROOM_ENTERING_ARC
+      - - 4
+        - red
+        - Sector 4 (AQA)
+        - ENTERED_LEVEL_4_SECURITY_ROOM
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/event_data.c:sSecurityUnlockEvents
+        confidence: 0.95
+- id: navigation_room_waypoints
+  facet: progression
+  label: Navigation Rooms as mandatory briefing waypoints with per-sector map download
+  summary: Twelve navigation-room locations (6 on the Main Deck, one per sector) act as story checkpoints. Using one advances
+    the counter when the next event names that room (or "any" room), plays the matching Adam briefing, and grants that area's
+    map bit if not owned. Navigation hatches close while in the room. Nav rooms are disabled during the power outage and
+    after the orbit change.
+  instantiates:
+  - concept: progression.guidance.hint_waypoint
+  - concept: progression.guidance.directed_objective_briefing
+  - concept: ui_hud.menu.pause_map_screen
+    weight: 0.2
+  reads:
+  - world.event_counter
+  - world.area
+  - world.room
+  - equipment.downloaded_maps
+  writes:
+  - world.event_counter
+  - equipment.downloaded_maps
+  params:
+    nav_room_locations:
+      value: 12
+      unit: rooms (+ an 'any' wildcard)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/event_data.c:sNavigationRoomLocations
+        confidence: 0.95
+    nav_driven_events:
+      value: 40
+      unit: events whose trigger is a nav room
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/event_data.c:sEventLocationAndNavigationInfo (navRoom != NAV_ROOM_NONE)
+        confidence: 0.8
+  invariants:
+  - A nav room only advances the story if the next event is tied to it; otherwise it replays the last briefing.
+  - Map download happens once per area regardless of event state.
+  relations:
+  - type: part_of
+    target: event_counter_progression
+  - type: gated_by
+    target: event_counter_progression
+    condition: power outage or after orbit change
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/event.c:EventCheckSetNavigationRoomEvent
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/event.c:EventCheckRoomHasEventTrigger (gPreviousNavigationConversation)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/room.c:RoomGetClosedNavigationHatches
+    confidence: 0.85
+- id: ability_recovery_by_event
+  facet: progression
+  label: Abilities restored by scripted events (data downloads and absorbed Core-X)
+  summary: 'Samus starts stripped of abilities. Eighteen abilities return in a fixed order, each bound to one event: six
+    by downloading from Data Rooms (Missiles, Bombs, Super/Ice/Diffusion Missiles, Power Bombs) and twelve by absorbing
+    a boss''s Core-X (Morph Ball, Charge, High Jump, Speed Booster, Varia, Wide, Space Jump, Plasma, Gravity, Wave, Screw,
+    Ice). When the counter hits an ability event, EventSet ORs the table''s beam/weapon/suit bits into equipment; suits
+    play a recovery effect. There is no item pickup for abilities and no toggling.'
+  instantiates:
+  - concept: progression.gating.ability_gating
+  - concept: progression.items.scripted_ability_restoration
+  - concept: mechanics.ability.temporary_ability_loss
+    weight: 0.4
+  reads:
+  - world.event_counter
+  writes:
+  - equipment.beams
+  - equipment.missile_types
+  - equipment.suit_misc
+  - equipment.ability_count
+  params:
+    ability_count:
+      value: 18
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/event_data.c:sObtainItemEvents
+        confidence: 0.95
+    data_room_downloads:
+      value: 6
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/event_data.c:sEventLocationAndNavigationInfo (download = TRUE)
+        confidence: 0.9
+  invariants:
+  - Ability bits are only ever ORed in; nothing removes an ability once recovered.
+  - The ability order equals event order; an ability cannot be gained early.
+  relations:
+  - type: requires
+    target: event_counter_progression
+  - type: variant_of
+    target: metroid-zero-mission/ability_gating_graph
+    note: same equipment-bit gates; acquisition is event-scripted instead of item placement, no owned/active split
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/event.c:EventSet
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/data/event_data.c:sAbilityRamValues
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/data_pad.c
+    confidence: 0.8
+    note: EventCheckDownloadedDataItem(TRUE) on download; door unlock 60 frames
+  - kind: decomp_source
+    ref: mf:include/constants/samus.h (SMF_/BF_/MBF_ flags)
+    confidence: 0.95
+  tables:
+    ability_order:
+      columns:
+      - order
+      - ability
+      - source
+      rows:
+      - - 1
+        - Missiles
+        - data download
+      - - 2
+        - Morph Ball
+        - Core-X (Arachnus)
+      - - 3
+        - Charge Beam
+        - Core-X
+      - - 4
+        - Bombs
+        - data download
+      - - 5
+        - High Jump
+        - Core-X (Zazabi)
+      - - 6
+        - Speed Booster
+        - Core-X (Serris)
+      - - 7
+        - Super Missiles
+        - data download
+      - - 8
+        - Varia Suit
+        - Core-X
+      - - 9
+        - Ice Missiles
+        - data download
+      - - 10
+        - Wide Beam
+        - Core-X
+      - - 11
+        - Power Bombs
+        - data download
+      - - 12
+        - Space Jump
+        - Core-X (Yakuza)
+      - - 13
+        - Plasma Beam
+        - Core-X
+      - - 14
+        - Gravity Suit
+        - Core-X (Nightmare)
+      - - 15
+        - Diffusion Missiles
+        - data download
+      - - 16
+        - Wave Beam
+        - Core-X (Nettori)
+      - - 17
+        - Screw Attack
+        - Core-X (Ridley)
+      - - 18
+        - Ice Beam
+        - SA-X Core-X after Omega Metroid
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/event_data.c:sObtainItemEvents
+        confidence: 0.95
+      - kind: llm_knowledge
+        ref: host boss names per Core-X (bosses not in the event names)
+        confidence: 0.55
+- id: destructible_block_locks
+  facet: progression
+  label: Weapon-typed destructible and reforming blocks, hidden tanks
+  summary: 'Breakable blocks respond to one action class: shot and bomb blocks reform after ~4.25 s, speed-booster and crumble
+    blocks reform fast; missile, power-bomb and screw-attack blocks stay broken (some never reform across visits). Bomb-chain
+    blocks propagate. Tanks can be hidden inside blocks and revealed by weapons. These are the main ability gates since
+    hatches are keyed to security rather than weapons.'
+  instantiates:
+  - concept: progression.gating.typed_lock_and_key
+    weight: 0.6
+  - concept: progression.gating.ability_gating
+    weight: 0.4
+  reads:
+  - world.tiles.clipdata_behavior
+  - weapon.clipdata_affecting_action
+  writes:
+  - world.tiles.blocks
+  - world.broken_blocks
+  params:
+    reform_delay_shot_bomb:
+      value: 255
+      unit: frames (4.25 s)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/block_data.c:sBrokenBlockTimers
+        confidence: 0.9
+    reform_delay_speed:
+      value: 20
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/block_data.c:sBrokenBlockTimers
+        confidence: 0.85
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/typed_locks
+    note: block half of MZM typed locks
+  - type: part_of
+    target: ability_recovery_by_event
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/data/block_data.c:sBlockWeaknesses
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/block.c
+    confidence: 0.75
+  - kind: decomp_source
+    ref: mf:src/bg_clip.c:BgClipRevealHiddenTank
+    confidence: 0.9
+- id: sector_hub_structure
+  facet: progression
+  label: Main Deck hub with elevator spokes to six themed sectors
+  summary: The station is a Main Deck hub plus six sectors (SRX, TRO, PYR, AQA, ARC, NOC), each reached by an elevator from
+    the Main Deck (11 elevator routes including Operations Deck, Habitation Deck and a Restricted-Zone link). Each sector
+    has its own nav room, security room and tank budget; backtracking happens as new security levels and abilities open
+    sealed parts of earlier sectors, but the event script decides which sector is next.
+  instantiates:
+  - concept: progression.structure.hub_and_spoke
+  - concept: progression.structure.backtracking
+  - concept: progression.structure.interconnected_areas
+    weight: 0.4
+  reads:
+  - world.area
+  - world.event_counter
+  writes:
+  - world.area
+  params:
+    areas:
+      value: 7
+      unit: Main Deck + 6 sectors
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/connection.h:Area
+        confidence: 0.95
+    elevator_routes:
+      value: 11
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/connection.h:Elevator
+        confidence: 0.9
+  relations:
+  - type: requires
+    target: event_counter_progression
+  evidence:
+  - kind: decomp_source
+    ref: mf:include/constants/connection.h
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/data/event_data.c:sNavigationTargetLocationAreas
+    confidence: 0.85
+  - kind: llm_knowledge
+    ref: sector themes (SRX/TRO/PYR/AQA/ARC/NOC)
+    confidence: 0.6
+- id: resource_pools
+  facet: economy
+  label: Energy, one missile pool and power bombs with tank expansions
+  summary: 'Three capped pools: energy (starts 99), missiles (one pool shared by all missile types) and power bombs. Data
+    downloads unlock the weapon; tanks raise capacity: energy +100 (and full refill), missiles +5, power bombs +2. Totals
+    are fixed per area: 20 energy, 48 missile and 32 power-bomb tanks. Sources are tanks, X parasites and recharge pads;
+    drains are firing and damage.'
+  instantiates:
+  - concept: economy.resource.capped_pool
+  - concept: economy.resource.capacity_expansion
+  reads:
+  - resources.*
+  writes:
+  - resources.energy.max
+  - resources.energy.current
+  - resources.missiles.max
+  - resources.power_bombs.max
+  params:
+    start_energy:
+      value: 99
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:STARTING_ENERGY
+        confidence: 0.95
+    base_missiles:
+      value: 10
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:STARTING_MISSILES
+        confidence: 0.9
+    base_power_bombs:
+      value: 10
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:STARTING_POWER_BOMBS
+        confidence: 0.9
+    energy_tank_amount:
+      value: 100
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:ENERGY_INCREASE_AMOUNT
+        confidence: 0.95
+    missile_tank_amount:
+      value: 5
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:MISSILE_INCREASE_AMOUNT
+        confidence: 0.95
+    power_bomb_tank_amount:
+      value: 2
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:POWER_BOMB_INCREASE_AMOUNT
+        confidence: 0.95
+    max_energy_all_tanks:
+      value: 2099
+      evidence:
+      - kind: derived
+        ref: 99 + 20 x 100
+        inputs:
+        - mf:src/data/event_data.c:sNumberOfTanksPerArea
+        confidence: 0.85
+    max_missiles_all_tanks:
+      value: 250
+      evidence:
+      - kind: derived
+        ref: 10 + 48 x 5
+        inputs:
+        - mf:src/data/event_data.c:sNumberOfTanksPerArea
+        confidence: 0.8
+    max_power_bombs_all_tanks:
+      value: 74
+      evidence:
+      - kind: derived
+        ref: 10 + 32 x 2
+        inputs:
+        - mf:src/data/event_data.c:sNumberOfTanksPerArea
+        - mf:src/ending.c (tank count formulas)
+        confidence: 0.7
+  invariants:
+  - Capacity is capped by MAX_*_AMOUNT (2099/255/254) independently of tank count.
+  - Missile refills from X are ignored until a missile weapon is owned; same for power bombs.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/resource_pools
+    note: no separate super-missile pool; base capacities granted with the data download
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/bg_clip.c (tank pickup raises max by INCREASE_AMOUNT)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprite_util.c:SpriteUtilRefillSamus
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/data/event_data.c:sNumberOfTanksPerArea
+    confidence: 0.95
+  tables:
+    tanks_per_area:
+      columns:
+      - area
+      - energy
+      - missile
+      - power_bomb
+      rows:
+      - - Main Deck
+        - 3
+        - 7
+        - 3
+      - - Sector 1
+        - 3
+        - 6
+        - 3
+      - - Sector 2
+        - 3
+        - 9
+        - 5
+      - - Sector 3
+        - 3
+        - 7
+        - 6
+      - - Sector 4
+        - 2
+        - 9
+        - 4
+      - - Sector 5
+        - 3
+        - 4
+        - 8
+      - - Sector 6
+        - 3
+        - 6
+        - 3
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/event_data.c:sNumberOfTanksPerArea
+        confidence: 0.95
+- id: recharge_stations
+  facet: economy
+  label: Energy, ammo and combined recharge pads
+  summary: Three pad sprites refill energy, missiles+power bombs, or all three at 10 units per frame while Samus stands
+    on them, then lock movement for the banner. Pads are disabled during the power outage. With no enemy drop tables, pads
+    and X parasites are the only renewable sources.
+  instantiates:
+  - concept: economy.source.refill_station
+  reads:
+  - resources.*
+  - world.event_counter
+  writes:
+  - resources.energy.current
+  - resources.missiles.current
+  - resources.power_bombs.current
+  params:
+    refill_rate:
+      value: 10
+      unit: units/frame per pool (energy, then missiles, then power bombs)
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprite_util.c:SpriteUtilRefillEnergy
+        confidence: 0.95
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/recharge_pad.c:RechargePadRefilling
+        confidence: 0.9
+    pad_types:
+      value: 3
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/recharge_pad.c:RechargePadRefilling
+        confidence: 0.95
+  relations:
+  - type: gated_by
+    target: event_counter_progression
+    condition: power outage
+  - type: part_of
+    target: resource_pools
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/recharge_pad.c
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/event_checks.c:EventCheckWith_RechargeDisabled
+    confidence: 0.95
+- id: x_absorption_economy
+  facet: economy
+  label: Colour-coded X refills with per-enemy odds and need-aware substitution
+  summary: X parasites are the only enemy drop. Each enemy's stats row carries yellow/green/red X weights out of 1024; a
+    roll of 1..1024 checks red, then green, then yellow. Yellow gives +10 energy, green +2 missiles, red +500 energy/+100
+    missiles/+10 power bombs, and absorbed Core-X give +400/+50/+10 (all capped; ammo only once owned). Green becomes yellow
+    when missiles are full and energy is not, and vice versa.
+  instantiates:
+  - concept: economy.source.enemy_drop_table
+  - concept: economy.source.need_aware_drop_substitution
+  - concept: economy.resource.capped_pool
+    weight: 0.3
+  reads:
+  - enemies[*].x_weights
+  - resources.*
+  - rng.sprite_random
+  - frame_counter
+  writes:
+  - x.color
+  - resources.energy.current
+  - resources.missiles.current
+  - resources.power_bombs.current
+  params:
+    roll_range:
+      value: 1024
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/x_parasite_util.c:XParasiteDetermineColor
+        confidence: 0.9
+  invariants:
+  - Weights for an enemy sum to 1024 (red checked first).
+  - Missile/power-bomb gains are discarded until the corresponding weapon is owned.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/enemy_drops
+    note: colour-coded X instead of item drops; same need-aware swap idea
+  - type: part_of
+    target: resource_pools
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/x_parasite_util.c:SamusAbsorbX
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/x_parasite_util.c:XParasiteDetermineColor
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/core_x.c:CoreXAbilityWaitingAtTarget
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprite_util.c:SpriteUtilRefillSamus
+    confidence: 0.95
+  tables:
+    x_refill:
+      columns:
+      - source
+      - energy
+      - missiles
+      - power_bombs
+      rows:
+      - - yellow X
+        - 10
+        - 0
+        - 0
+      - - green X
+        - 0
+        - 2
+        - 0
+      - - red X
+        - 500
+        - 100
+        - 10
+      - - Core-X
+        - 400
+        - 50
+        - 10
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/x_parasite_util.c:SamusAbsorbX; mf:src/sprites_AI/beam_core_x.c:BeamCoreXRestingAtTarget
+        confidence: 0.95
+    enemy_stats_and_x_odds:
+      description: HP, contact damage and X colour weights (of 1024) for representative enemies.
+      columns:
+      - enemy
+      - hp
+      - contact_damage
+      - yellow
+      - green
+      - red
+      rows:
+      - - Hornoad
+        - 4
+        - 15
+        - 823
+        - 200
+        - 1
+      - - Zombie researcher
+        - 2
+        - 16
+        - 523
+        - 500
+        - 1
+      - - Geemer
+        - 4
+        - 45
+        - 1012
+        - 10
+        - 2
+      - - Skree
+        - 4
+        - 38
+        - 823
+        - 200
+        - 1
+      - - Sidehopper
+        - 24
+        - 52
+        - 523
+        - 500
+        - 1
+      - - Zebesian (ground)
+        - 90
+        - 94
+        - 714
+        - 300
+        - 10
+      - - Zebesian (wall)
+        - 6
+        - 42
+        - 714
+        - 300
+        - 10
+      - - Kihunter
+        - 40
+        - 86
+        - 823
+        - 200
+        - 1
+      - - Kago
+        - 5
+        - 34
+        - 424
+        - 300
+        - 300
+      - - Geruboss
+        - 45
+        - 100
+        - 674
+        - 300
+        - 50
+      - - Blue Zoro
+        - 120
+        - 85
+        - 100
+        - 124
+        - 800
+      - - Gold Zebesian
+        - 135
+        - 94
+        - 500
+        - 500
+        - 24
+      - - Yard
+        - 60
+        - 64
+        - 622
+        - 400
+        - 2
+      - - Evir
+        - 80
+        - 10
+        - 521
+        - 500
+        - 3
+      - - Red Zeela
+        - 82
+        - 80
+        - 0
+        - 0
+        - 1024
+      - - Geron (power bomb)
+        - 17
+        - 96
+        - 200
+        - 300
+        - 524
+      - - Geron (missile)
+        - 30
+        - 30
+        - 0
+        - 1024
+        - 0
+      - - Mimic energy tank
+        - 1
+        - 7
+        - 1000
+        - 0
+        - 24
+      - - Gadora eye door
+        - 1
+        - 50
+        - 0
+        - 0
+        - 1024
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/sprite_data.c:sPrimarySpriteStats
+        confidence: 0.95
+- id: obj_hud
+  facet: ui_hud
+  label: Sprite HUD with energy bar, single missile counter, minimap and low-health beep
+  summary: The HUD is built from OBJ - a two-part energy display, one missile counter (missile upgrades replace the type)
+    and a power-bomb counter that appear only once owned, and a 3x3 minimap window onto a 32x32 per-area grid with a tile
+    blinking every 8 frames. Below 30 energy a beep plays every 16 frames.
+  instantiates:
+  - concept: ui_hud.hud.resource_counters
+  - concept: ui_hud.hud.minimap
+  - concept: ui_hud.alert.low_health_warning
+  reads:
+  - resources.*
+  - equipment.missile_types
+  - map.explored_tiles
+  - player.position
+  writes:
+  - oam.*
+  params:
+    low_health_threshold:
+      value: 30
+      unit: energy
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusCheckPlayLowHealthSound
+        confidence: 0.95
+    low_health_beep_period:
+      value: 16
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/samus.c:SamusCheckPlayLowHealthSound
+        confidence: 0.9
+    minimap_window:
+      value: 3x3
+      unit: map tiles
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/minimap.c
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/obj_hud
+    note: one missile counter instead of separate missile/super counters
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/hud.c:HudDrawOam
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/hud.c:HudDrawEnergy
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/minimap.c
+    confidence: 0.9
+- id: pause_map_and_status
+  facet: ui_hud
+  label: Pause map with downloaded sector maps and read-only status screen
+  summary: The pause screen scrolls the area map with the D-pad and switches screens with L/R; the map combines explored
+    tiles with sector maps downloaded at navigation rooms and shows per-area tank counts. The status screen only displays
+    equipment (no toggling, unlike Zero Mission). Pausing is blocked on pads, during power bombs or while dying. Most pause-screen
+    code is still asm.
+  instantiates:
+  - concept: ui_hud.menu.pause_map_screen
+  - concept: ui_hud.menu.equipment_status_display
+  reads:
+  - map.explored_tiles
+  - equipment.downloaded_maps
+  - equipment.*
+  writes:
+  - frontend.mode
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/pause_map_and_status
+    note: status is display-only
+  - type: requires
+    target: navigation_room_waypoints
+    note: map download
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/menus/pause_screen_map.c
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/status_screen.c
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/process_pause_press.c
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:asm/disasm_0x080765f8.s:PauseScreenHandler
+    confidence: 0.5
+    note: still asm
+- id: controls_and_aiming
+  facet: ui_hud
+  label: Hold-to-arm weapon button and five-way aiming
+  summary: A configurable arm button (R by default) arms missiles, or power bombs in ball form, and releases a ready charge
+    shot when pressed; the diagonal-aim button (L by default) holds diagonal aim. Aiming covers forward, diagonal up/down,
+    up and down. A swap-missiles assignment exists in the button table but is never read in C.
+  instantiates:
+  - concept: ui_hud.input.multi_direction_aim
+  - concept: ui_hud.input.hold_to_arm_modifier
+  reads:
+  - input.buttons.held
+  - input.button_assignments
+  writes:
+  - player.arm_cannon_direction
+  - weapon.armed
+  params:
+    aim_directions:
+      value: 5
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/samus.h:ArmCannonDirection
+        confidence: 0.95
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/controls_and_aiming
+  - type: part_of
+    target: missile_hierarchy
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusUpdateHighlightedWeaponsAndCharge
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:include/globals.h:ButtonAssignments
+    confidence: 0.9
+  - kind: llm_knowledge
+    ref: default mapping R = arm weapon, L = diagonal aim (defaults set in asm)
+    confidence: 0.5
+- id: navigation_briefings
+  facet: narrative_delivery
+  label: Remote-commander briefings delivered at navigation terminals
+  summary: Standing on a navigation pad centres Samus; at animation frame 14 the terminal screen spawns and 30 frames later
+    the pause-screen mode draws a conversation panel with portrait sounds for Adam, Samus or the Federation. There are 57
+    conversation IDs; the current one is chosen by the event counter (replaying the last if nothing new), 22 of them change
+    the music, and a pending escape starts when one ends. Elevator monologues and secret conversations reuse the same text
+    system.
+  instantiates:
+  - concept: narrative_delivery.dialogue.remote_commander_briefing
+  - concept: narrative_delivery.structure.predetermined_story
+    weight: 0.5
+  reads:
+  - world.event_counter
+  - nav.previous_conversation
+  writes:
+  - nav.previous_conversation
+  - frontend.mode
+  - audio.music
+  params:
+    conversation_ids:
+      value: 57
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/event.h:NavigationConversation
+        confidence: 0.95
+    screen_spawn_frame:
+      value: 14
+      unit: pad animation frame
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/navigation_pad.c
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: navigation_room_waypoints
+  - type: modulates
+    target: adaptive_music
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/navigation_pad.c
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/music_wrappers.c:PlayCharacterAppearingSound
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:src/sound_event.c:SoundEventUpdateForNavConversation
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:asm/disasm_0x080765f8.s:NavigationConversationUpdatePanel
+    confidence: 0.55
+    note: panel drawing still asm
+- id: cutscenes
+  facet: narrative_delivery
+  label: Elevator monologues, SA-X close-ups and set-piece cutscenes
+  summary: 'Twelve cutscenes: an intro monologue, five elevator monologues that play mid-ride when event and destination
+    room match (remind, trust, SA-X, animals, incident), Federation and ending monologues, a secret conversation, the restricted
+    lab detaching (with a death variant) and the BSL exploding. SA-X sightings use a separate close-up game mode. The cutscene
+    handler itself is still asm.'
+  instantiates:
+  - concept: narrative_delivery.cutscene.in_engine_cutscene
+  - concept: narrative_delivery.cutscene.transit_monologue
+  reads:
+  - world.event_counter
+  - room.elevator_destination
+  writes:
+  - cutscene.current
+  - frontend.mode
+  params:
+    cutscene_count:
+      value: 12
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/globals.h:Cutscene
+        confidence: 0.9
+    elevator_monologues:
+      value: 6
+      unit: monologue table entries
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/data/event_data.c:sMonologueEvents
+        confidence: 0.9
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/cutscenes
+  - type: requires
+    target: event_counter_progression
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/event.c:EventCheckPlayCutsceneDuringTransition
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sa_x_close_up.c
+    confidence: 0.85
+  - kind: decomp_source
+    ref: mf:asm/disasm_0x0808F5C4.s:CutsceneHandler
+    confidence: 0.5
+    note: still asm
+- id: banners_and_area_text
+  facet: narrative_delivery
+  label: Message banners, room-type banners and location names
+  summary: Item banners play the jingle and hold 370 frames, objective banners 180, others 90; two banner kinds start an
+    escape timer and switch to chase/escape music when dismissed. Doors flagged for it show one of 25 location names, and
+    Navigation, Recharge, Save, Data and Security rooms show room-type banners.
+  instantiates:
+  - concept: narrative_delivery.text.item_acquisition_message
+  - concept: narrative_delivery.diegetic.area_name_banner
+  reads:
+  - world.room
+  - message.id
+  writes:
+  - message.active
+  - player.prevent_movement_timer
+  params:
+    item_banner_hold:
+      value: 370
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/message_banner.c
+        confidence: 0.9
+    objective_banner_hold:
+      value: 180
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/sprites_AI/message_banner.c
+        confidence: 0.9
+    location_names:
+      value: 25
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/location_text.c
+        confidence: 0.85
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/banners_and_area_text
+  - type: modulates
+    target: timed_escapes
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/message_banner.c
+    confidence: 0.95
+  - kind: decomp_source
+    ref: mf:src/location_text.c
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/area_banner.c
+    confidence: 0.85
+- id: bsl_station_setting
+  facet: setting
+  label: Infested orbital research station above SR388
+  summary: The game takes place on the Biologic Space Laboratories station - a Main Deck plus six environment sectors -
+    where X parasites from SR388 have taken over specimens and crew and an X copy of Samus (SA-X) hunts her. Samus survives
+    thanks to a Metroid-derived vaccine, which also makes her vulnerable to cold. Tone is isolated, stalked survival under
+    the direction of an AI commander.
+  instantiates:
+  - concept: setting.theme.science_fiction
+  - concept: setting.location.research_space_station
+  - concept: setting.theme.parasitic_infection
+  - concept: setting.tone.stalked_survival
+  - concept: setting.tone.isolation_exploration
+    weight: 0.5
+  evidence:
+  - kind: decomp_source
+    ref: mf:include/constants/connection.h:Area
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/location_text.c
+    confidence: 0.8
+  - kind: capture_frame
+    ref: capture:frontend:prologue keyframes ('Once the X had infested...')
+    confidence: 0.8
+  - kind: decomp_source
+    ref: mf:src/samus.c:SamusHazardDamage (cold hazards before Varia)
+    confidence: 0.7
+  - kind: llm_knowledge
+    ref: BSL orbiting SR388, Adam as the navigation AI, Federation involvement, stalker tone
+    confidence: 0.5
+- id: sound_engine
+  facet: audio
+  label: MP2K-style sequenced engine at 10512 Hz with DirectSound and PSG
+  summary: InitializeAudio sets a mono 10512 Hz mixer with 6 DirectSound channels, PWM resolution 9 and volume 15; the mixer
+    is copied to RAM and sequences use MP2K-style macros (745 sound-table entries, 661 track files). Captures confirm DirectSound
+    A and B at 10512 Hz plus PSG channels 1, 2 and 4.
+  instantiates:
+  - concept: audio.engine.sample_psg_sequencer
+  - concept: audio.sfx.contextual_action_sfx
+    weight: 0.5
+  params:
+    mix_rate:
+      value: 10512
+      unit: Hz
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/audio_wrappers.c:InitializeAudio
+        confidence: 0.9
+      - kind: capture_telemetry
+        ref: capture:attract+frontend:DirectSound A/B at 10512 Hz in 8970 frames
+        confidence: 0.9
+    directsound_channels:
+      value: 6
+      evidence:
+      - kind: decomp_source
+        ref: mf:src/audio_wrappers.c:InitializeAudio
+        confidence: 0.85
+    psg_channels_used:
+      value:
+      - 1
+      - 2
+      - 4
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:attract+frontend:PSG channel activity
+        confidence: 0.85
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/sound_engine
+    note: 10512 Hz / 6 channels vs 13379 Hz / 7
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/audio_wrappers.c:InitializeAudio
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/audio.c
+    confidence: 0.8
+  - kind: static_signature
+    ref: mf:sound/ (MP2K-style sequence macros)
+    confidence: 0.65
+  - kind: decomp_source
+    ref: mf:asm/audio_internal.s
+    confidence: 0.6
+    note: mixer still asm
+- id: adaptive_music
+  facet: audio
+  label: Story-event music script with SA-X chase and boss tension cues
+  summary: Besides per-room tracks, a sound-event counter (~157 entries) scripts music changes; each entry has a trigger
+    type (room load, cutscene start/end, conversation start/end, SA-X encounter, item, security unlock, room event, elevator)
+    and fires only when the current trigger type matches. SA-X encounters play an appearance sting then the chase theme;
+    bosses get a tension cue first. Pausing lowers volume.
+  instantiates:
+  - concept: audio.music.room_based_tracks
+  - concept: audio.music.state_driven_music
+  - concept: audio.music.story_event_music_script
+  reads:
+  - audio.sound_event_counter
+  - world.event_counter
+  - world.room
+  writes:
+  - audio.music
+  - audio.sound_event_counter
+  params:
+    sound_events:
+      value: 157
+      unit: approx.
+      evidence:
+      - kind: decomp_source
+        ref: mf:include/constants/event.h:SoundEvent
+        confidence: 0.85
+  invariants:
+  - A scripted music change fires only on its declared trigger type.
+  relations:
+  - type: variant_of
+    target: metroid-zero-mission/adaptive_music
+  - type: requires
+    target: event_counter_progression
+  evidence:
+  - kind: decomp_source
+    ref: mf:src/sound_event.c
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/event.c:EventSet (SoundEventUpdate calls)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: mf:src/sprites_AI/sa_x_noc.c
+    confidence: 0.8
+proposed_concepts:
+- id: movement_physics.climb.surface_climb
+  label: Surface climb
+  definition: Tile-flagged walls or ceilings the avatar can attach to and traverse at a fixed slow speed, with its own shoot
+    and jump-off options, independent of items.
+  is_a:
+  - movement_physics.ledge.ledge_grab_hang
+  aliases:
+  - ladder
+  - monkey bars
+  - climbable wall
+- id: mechanics.entity.death_releases_pickup_entity
+  label: Death releases mobile pickup
+  definition: A defeated enemy turns into a mobile entity that the player can collect for a reward but that acts on its
+    own (moves, despawns, empowers others) if not collected in time.
+  seed_source: gdp Loot / Rewards (paraphrase)
+- id: mechanics.entity.enemy_respawn_by_reinfection
+  label: Respawn by reinfection
+  definition: Defeated enemies repopulate a space because a released essence travels to and reanimates dormant enemy bodies,
+    so the player controls respawns by collecting or intercepting the essence.
+- id: mechanics.status.elemental_hazard_entity
+  label: Resistance-flipped hazard entity
+  definition: A hostile entity whose contact effect is harmful until the player gains a specific resistance, after which
+    the same contact is beneficial.
+- id: mechanics.status.player_freeze
+  label: Player freeze
+  definition: An enemy attack that immobilises the player for a fixed time instead of (or in addition to) knockback, leaving
+    them open to follow-up attacks.
+- id: mechanics.combat.one_shot_protection
+  label: One-shot protection
+  definition: A hit that would kill the player from above a threshold instead leaves them at minimum health.
+- id: mechanics.combat.grab_and_drain
+  label: Grab and drain
+  definition: An enemy captures the player, removing control and draining health at a fixed interval until a release condition.
+- id: ai.movement.overshoot_homing
+  label: Overshoot homing
+  definition: Seeking with bounded per-axis acceleration that overshoots the target and decelerates before reversing, producing
+    orbiting, organic motion instead of direct pursuit.
+- id: ai.spawn.offscreen_continual_spawner
+  label: Off-screen continual spawner
+  definition: An invisible emitter that keeps spawning entities just beyond the screen edge while a population cap and a
+    precondition hold.
+- id: ai.enemy.invulnerable_stalker
+  label: Invulnerable stalker
+  definition: A scripted, unkillable pursuer that patrols, detects the player by sight or sound and follows across rooms,
+    forcing evasion rather than combat.
+  is_a:
+  - ai.enemy.patrol_detect_pursue
+- id: ai.enemy.player_mirror_enemy
+  label: Player-mirror enemy
+  definition: An enemy that uses the player's own movement repertoire and weapon set against them.
+- id: ai.enemy.damage_provoked_aggression
+  label: Damage-provoked aggression
+  definition: An enemy whose detection or attack range expands after it is hurt.
+- id: ai.perception.posture_dependent_visibility
+  label: Posture-dependent visibility
+  definition: Line-of-sight checks account for the player's body height, so crouching or rolling behind low cover breaks
+    detection.
+  is_a:
+  - ai.perception.tile_raycast_line_of_sight
+- id: ai.perception.sound_alert_turn
+  label: Sound alert turn
+  definition: An agent turns toward the player when the player makes noise (e.g. fires) outside its field of view.
+- id: ai.boss.shielded_core
+  label: Shielded core
+  definition: A core enemy protected by a shell or closing eye that only a specific weapon or timing window can breach.
+  is_a:
+  - ai.boss.weak_point_window
+- id: ai.boss.multi_phase_transforming_boss
+  label: Transforming multi-phase boss
+  definition: A boss that changes body, move set and weakness between health phases.
+- id: progression.structure.linear_event_script
+  label: Linear event script
+  definition: Story and world state advance through one ordered counter where only the next event can fire, from room entry,
+    trigger volumes, terminals or objective callbacks; content keys off counter comparisons.
+- id: progression.gating.security_clearance_levels
+  label: Security clearance levels
+  definition: Doors are keyed to an ordered clearance level that the player raises at scripted terminals, independent of
+    weapons.
+  is_a:
+  - progression.gating.typed_lock_and_key
+- id: progression.guidance.directed_objective_briefing
+  label: Directed objective briefing
+  definition: Mandatory terminals where a commander character assigns the next objective, steering a nominally open map
+    along a fixed route.
+  is_a:
+  - progression.guidance.hint_waypoint
+- id: progression.items.scripted_ability_restoration
+  label: Scripted ability restoration
+  definition: The player starts stripped of abilities and regains them in a fixed order from story events (downloads, boss
+    rewards) rather than from freely placed pickups.
+- id: progression.items.boss_drops_ability
+  label: Boss drops ability
+  definition: Defeating a boss releases its associated upgrade as a collectible the player must touch to gain.
+- id: progression.structure.hub_and_spoke
+  label: Hub and spoke
+  definition: A central area connects to several otherwise separate regions via dedicated transit links.
+- id: frontend.intro.new_game_prologue
+  label: New-game prologue
+  definition: A story sequence that plays once when a new save file is started, before first control.
+- id: rendering.transition.window_iris
+  label: Window iris transition
+  definition: A screen transition drawn by growing or shrinking a hardware window rectangle around a point or the player.
+- id: rendering.environment.story_state_room_effects
+  label: Story-state room effects
+  definition: Rooms change palette, lighting, raster effects and hazards based on global story progress rather than room
+    data alone.
+- id: rendering.sprite.mosaic_dissolve
+  label: Mosaic dissolve
+  definition: Sprites appear, disappear or transform through a ramped hardware mosaic effect.
+- id: ui_hud.menu.equipment_status_display
+  label: Equipment status display
+  definition: A read-only screen listing owned equipment without toggles.
+- id: narrative_delivery.dialogue.remote_commander_briefing
+  label: Remote commander briefing
+  definition: Story and objectives are delivered by an off-site commander through in-world terminals as text dialogue.
+- id: narrative_delivery.cutscene.transit_monologue
+  label: Transit monologue
+  definition: Protagonist narration that plays during an elevator or travel transition when story state matches.
+- id: setting.location.research_space_station
+  label: Research space station
+  definition: The world is an orbital research facility divided into environment-themed sectors.
+- id: setting.theme.parasitic_infection
+  label: Parasitic infection
+  definition: A parasite that copies or possesses hosts drives the conflict and enemy roster.
+- id: setting.tone.stalked_survival
+  label: Stalked survival
+  definition: Tension comes from being hunted by a stronger pursuer the player must evade.
+- id: audio.music.story_event_music_script
+  label: Story-event music script
+  definition: Music changes follow an ordered script of story events, each firing only on a declared trigger type.
+  is_a:
+  - audio.music.state_driven_music
+open_questions:
+- Default button mapping (R arm weapon, L diagonal aim), file-select SOUND option, any Hard-mode unlock and the game-over
+  menu are in asm; cited at low confidence or omitted.
+- Jump apex heights, bomb-bounce apexes and speed-booster activation (~155 frames) are simulated from constants; the pose-request
+  frame order may shift them by a few frames. Captures contain no in-game footage to confirm.
+- Haze/HBlank-DMA, power-bomb window and in-game mosaic are decomp-only; the capture run covered attract and front-end phases
+  only (no HBlank DMA seen there).
+- Shinespark wind-up length is animation-table driven (sSamusAnim_DelayBeforeShinesparking_Right) and was not summed.
+- What free X fly toward in rooms with no Target sprite (gXParasiteTargetY/X may hold a stale value) was not established.
+- Range of gSpriteRandomNumber (affects Core-X escort colour odds) not verified.
+- Per-boss attack timings, Ridley/Omega Metroid damage gating and Kihunter detection ranges were not extracted; host_bosses
+  is a roster, not full boss FSMs.
+- Whether per-part hits of 3-part beams (Wide/Plasma/Wave) all land on one enemy in the same frame depends on hit-flash
+  timing; damage table lists per-part values only.
+- Max power bombs from tanks is derived as 74 (10 + 32 x 2) from the tank table; whether the PB data download grants exactly
+  STARTING_POWER_BOMBS was not traced.
+- Room-level data (which blocks gate which rooms, event-based room swaps, item placement) lives in src/data/rooms and sEventBasedConnections
+  and was not parsed into a full gating graph.
+- Fusion's Metroids (restricted lab) only float and swarm the SA-X; no Metroid latch AI exists, so metroid_latch_ai has
+  no counterpart.
+- The look-ahead camera (ScrollFrontWideComputeTarget) appears debug-only; retail use not confirmed.

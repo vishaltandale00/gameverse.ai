@@ -1,0 +1,3076 @@
+schema_version: 0
+id: sonic-advance
+game:
+  title: Sonic Advance
+  platform: gba
+  game_code: ASOE
+  rom_sha1: d842afa7dd1e84de08addb94a51506f1bcafd551
+  year: 2002
+  developer: Dimps / Sonic Team
+  derived_genres:
+  - momentum_platformer
+  - action_platformer
+  evidence_basis:
+  - decomp_source
+  - static_signature
+  - capture_telemetry
+  - capture_frame
+  - derived
+  - llm_knowledge
+  sources:
+  - kind: decomp
+    ref: https://github.com/SAT-R/sa2 @ 393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d (no license file; local/decomps/sa2). SA1 is
+      built with GAME_NAME=sa1 (config.mk GAME_REGION EUROPE, sa1.sha1 eb00f101... = 'Sonic Advance (Europe) (En,Ja,Fr,De,Es)'
+      per README), not our USA ASOE ROM. SA1 code lives in src/game/sa1/** (173 .c files, ~82k lines) plus engine code
+      shared with SA2 in src/game/shared/** behind '#if GAME == GAME_SA1' guards; sa1_ldscript links only C objects
+      (no asm/*.o), with ~159 function bodies still pulled from asm/non_matching (*sa1*). Data tables are incbin'd
+      from a EU baserom, so values were cross-checked in the USA ROM where noted.
+  - kind: rom_header
+    ref: local/re/roms.json id=sonic-advance (header title SONICADVANCE, maker 78, version 0, 8 MiB, file 'Sonic Advance
+      (USA) (En,Ja).gba')
+  - kind: rom_scan
+    ref: 'USA ROM byte scans (values only, no bytes committed): gPlayerCharacterIdleAnims signature {0,99,199,298} found
+      once at 0x4A6F04 (EU 0x4ADF08); spindash tables follow at +0x180 and match EU layout (next bytes 42 43 44 45 =
+      gCharStatesKnucklesGlideTurn). Special-stage Background template with layoutVram 0x0600C01A found at 0x47FF34;
+      stage->special-stage map and ring-quota table at +0x100.'
+  - kind: captures
+    ref: local/captures/sonic-advance run 20261015T234415-8f46cf (harness 0.1.0, libmgba 0.10.5 HLE BIOS, source commit
+      d431b81 dirty tree); phases attract (3600 frames, no input) and frontend (5400 frames, START/A alternating every
+      90 frames from frame 180)
+  - kind: extraction_run
+    ref: claude-opus-5-5, brief v1, 2026-10-16T03:56:00Z-2026-10-16T04:13:00Z (~17 min wall), ~45 decomp files opened
+      or grepped (~25 read in depth) plus 2 capture phases (summary, phase.json, telemetry.csv, 8 keyframes) and 2 ROM
+      byte scans
+conventions:
+  units_convention: 'Positions and speeds are Q24.8 fixed point (global.h Q()/I()): 1 native unit = 1/256 px, so speeds
+    are 1/256 px/frame and accelerations 1/256 px/frame^2. The player keeps a scalar ground speed (qSpeedGround) along
+    the surface and an air velocity (qSpeedAirX/Y); on ground the air velocity is recomputed each frame as ground speed
+    projected through the surface angle (cos/sin). Screen-space +Y is down; negative Y speed is upward. Params below
+    are converted to px, px/frame, px/frame^2 and frames; native values are in native_value or evidence notes.'
+  angle_convention: 'p->rotation is a u8 angle, 256 steps per full turn (0 = flat floor; 0x40 = quarter turn). Trig
+    uses a Q2.14 sine table indexed by rotation*4 (trig.h SIN_24_8/COS_24_8 convert to Q24.8).'
+  time_convention: 60 frames per second (GBA_FRAMES_PER_SECOND); TIME(m,s) = (m*60+s)*60 frames.
+  space_convention: 'Screen 240x160 px. Background tiles are 8 px; stage metatiles are 12x12 tiles = 96 px (camera.h
+    METATILE_DIM); entity placement regions are 256 px (CAM_REGION_WIDTH).'
+  region_note: Decomp targets the European ROM; every decomp citation is EU-build code assumed identical in mechanics
+    for USA ASOE unless a USA ROM scan (static_signature) is cited. See open_questions.
+components:
+- id: boot_and_mode_flow
+  facet: frontend
+  label: Language select, SEGA logo, title and task-driven mode flow
+  summary: The USA cart boots to a two-option language select (Japanese/English), then a 'Presented by SEGA' logo, an
+    intro animation and the title screen ('PRESS START'), followed by a main menu with single player, multiplayer,
+    time attack, options and a Tiny Chao Garden entry. Flow is not a central mode switch but chained task callbacks
+    (gCurTask->main reassignment) with brightness fades between screens.
+  instantiates:
+  - concept: frontend.flow.mode_state_machine
+    weight: 0.7
+  - concept: frontend.boot.language_select
+  reads:
+  - input.buttons.pressed
+  - save.language
+  writes:
+  - frontend.active_task
+  - save.language
+  params:
+    title_start_ignore_frames:
+      value: 60
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/menus/title_screen.c (title->unkE2 > 60 before START is read)
+        confidence: 0.85
+    main_menu_secondary_items:
+      value: multiplayer, time attack, options, Tiny Chao Garden
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/menus/title_screen.c:sMainMenuSecondaryItems
+        confidence: 0.9
+  invariants:
+  - Each screen is a task; transitions replace the task callback rather than returning to a dispatcher.
+  relations:
+  - type: part_of
+    target: title_and_attract_demo
+  evidence:
+  - kind: capture_frame
+    ref: capture:attract:frame 300 keyframe (language select, Japanese/English only, idles without input)
+    confidence: 0.9
+  - kind: capture_frame
+    ref: capture:frontend:frames 561 (SEGA logo), 1203 (title), 1451 (character select)
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: capture:frontend:frames 7-1587 DISPCNT 0x5140 (language) -> 0x0440 (logo) -> 0x1541 mode1 (title) -> 0x3e40
+      (stage)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/menus/title_screen.c
+    confidence: 0.8
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/ui/edit_language_screen.c
+    confidence: 0.5
+    note: file exists; EU build offers 5 languages, USA capture shows only 2 (region difference)
+- id: title_and_attract_demo
+  facet: frontend
+  label: Title idle timer and rotating recorded-input attract demos
+  summary: After 900 idle frames on the title the game starts one of four attract demos in rotation, each a fixed
+    (character, level) pair driven by recorded input through the normal stage code with a 'DEMO PLAY' sprite. The demo
+    manager forces default button mapping and normal difficulty and ends playback after 30 s of stage time or on a
+    real button press.
+  instantiates:
+  - concept: frontend.title.attract_demo
+  - concept: frontend.attract.input_playback_demo
+  reads:
+  - title.idle_timer
+  - demo.play_counter
+  - stage.checkpoint_time
+  writes:
+  - input.playback_stream
+  - game.selected_character
+  - game.current_level
+  - demo.play_counter
+  params:
+    demo_idle_timeout:
+      value: 900
+      unit: frames (15 s)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/menus/title_screen.c (title->unkE2 > 900 -> Task_SwitchToDemoInit)
+        confidence: 0.9
+    demo_playback_time:
+      value: 1800
+      unit: frames (30 s)
+      native_value: TIME(0, 30)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/demo_manager.c:DEMO_PLAYBACK_TIME (SA1 branch)
+        confidence: 0.9
+    demo_count:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/menus/title_screen.c:Task_SwitchToDemoInit (gDemoPlayCounter % 4)
+        confidence: 0.9
+  tables:
+    demos:
+      description: Demo rotation order (character id 0 Sonic, 1 Tails, 2 Knuckles, 3 Amy; level index = zone*2+act).
+      columns:
+      - slot
+      - character
+      - level
+      rows:
+      - [0, Sonic, Neo Green Hill act 1]
+      - [1, Tails, Secret Base act 1]
+      - [2, Amy, Casino Paradise act 1]
+      - [3, Knuckles, Ice Mountain act 1]
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/menus/title_screen.c:gUnknown_080BB323/gUnknown_080BB327
+        confidence: 0.85
+  invariants:
+  - Demo playback uses the real stage update; only the input source differs.
+  - Demo runs with STAGE_FLAG__DEMO_RUNNING, which also suppresses death on a ringless hit.
+  relations:
+  - type: part_of
+    target: boot_and_mode_flow
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/demo_manager.c:CreateDemoManager
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/demo_manager.c:Task_DemoManagerMain
+    confidence: 0.8
+  - kind: capture_telemetry
+    ref: capture:attract:frames 0-3600 (no input; stuck on language select, so no demo observed)
+    confidence: 0.6
+- id: character_and_course_select
+  facet: frontend
+  label: Four-character select, per-character course unlocks and CPU-Tails secret code
+  summary: Single player picks Sonic, Tails, Knuckles or Amy; each character keeps its own highest unlocked level
+    (unlockedLevels[character]) and a fresh character starts directly at Neo Green Hill act 1 while others go through
+    course select. A nine-key input on character select (Up, Right, Down, Right, L, Right, R, Right, A) turns on a
+    CPU partner Tails that follows the player.
+  instantiates:
+  - concept: frontend.menu.character_select
+  - concept: frontend.menu.unlockable_extras
+    weight: 0.4
+  reads:
+  - input.buttons.pressed
+  - save.unlocked_levels[character]
+  writes:
+  - game.selected_character
+  - game.tails_partner_enabled
+  - game.current_level
+  params:
+    partner_code_length:
+      value: 9
+      unit: key presses
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/ui/character_select.c:sTailsUnlockKeys
+        confidence: 0.9
+  invariants:
+  - A wrong key in the code sequence locks the check (index 0xFF) until Up restarts it.
+  relations:
+  - type: requires
+    target: cpu_partner_follow_ai
+    condition: code entered
+  - type: part_of
+    target: zone_act_progression
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/ui/character_select.c:CheckCPUPartnerUnlock
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/ui/character_select.c (gTailsEnabled, unlockedLevels == 0 -> ApplyGameStageSettingsAndStart)
+    confidence: 0.85
+  - kind: capture_frame
+    ref: capture:frontend:frame 1451 keyframe (character select carousel)
+    confidence: 0.85
+  - kind: llm_knowledge
+    ref: Amy must be unlocked by clearing the game with the other three characters
+    confidence: 0.5
+- id: flash_save
+  facet: frontend
+  label: Single flash save with emeralds, per-character progress, settings and records
+  summary: One SaveGame record is kept in flash (two-sector rotation with erase/program/verify) holding a magic number,
+    per-character unlocked level, player name, difficulty, language, time-limit toggle, button layout, a chaos-emerald
+    bitfield, time-attack records, multiplayer scores, total score and a checksum. Saving happens on results screens,
+    not at in-level save points.
+  instantiates:
+  - concept: frontend.save.checksummed_flash_record
+  reads:
+  - save.*
+  writes:
+  - save.*
+  params:
+    save_record_size:
+      value: 1072
+      unit: bytes
+      native_value: '0x430'
+      evidence:
+      - kind: decomp_source
+        ref: sa2:include/game/sa1/save.h:struct SaveGame
+        confidence: 0.9
+  invariants:
+  - A missing flash chip (FLAGS_NO_FLASH_MEMORY) disables saving rather than blocking play.
+  relations:
+  - type: part_of
+    target: zone_act_progression
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/save.c:WriteSaveGame
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/save.c:SaveGameExists
+    confidence: 0.85
+- id: lives_and_game_over
+  facet: frontend
+  label: Lives, time-over and game over
+  summary: Single player starts with 3 lives (1 in some modes). Death (ringless hit, pit, drowning, or time over
+    at 10:00 when the time limit is enabled) costs a life and restarts from the last checkpoint; reaching zero shows
+    game over. Extra lives come from 1-UP boxes, every 100 rings and every 50,000 points.
+  instantiates:
+  - concept: frontend.game_over.lives_restart_checkpoint
+  - concept: mechanics.goal.time_limit
+    weight: 0.4
+  reads:
+  - game.lives
+  - stage.course_time
+  - save.time_limit_disabled
+  writes:
+  - game.lives
+  - frontend.active_task
+  params:
+    starting_lives:
+      value: 3
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/stage.c (gNumLives = 3)
+        confidence: 0.9
+    course_time_limit:
+      value: 36000
+      unit: frames (10:00)
+      native_value: TIME(10, 0)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:include/constants/zones.h:MAX_COURSE_TIME
+        confidence: 0.95
+  invariants:
+  - With the options toggle timeLimitDisabled set, passing 10:00 does not kill the player.
+  relations:
+  - type: requires
+    target: ring_damage_rule
+  - type: part_of
+    target: checkpoints
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/stage.c (gCourseTime > MAX_COURSE_TIME branch)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/ui/time_over.c
+    confidence: 0.6
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/ui/game_over.c
+    confidence: 0.6
+- id: extra_modes
+  facet: frontend
+  label: Time attack, link multiplayer modes and Tiny Chao Garden
+  summary: Besides the story, the game offers time attack (best three times per course and character), link-cable
+    multiplayer (race, Chao hunt, team play, and a single-pak ring-collection mode sent by multiboot) and a Tiny Chao
+    Garden mini-game. Time attack and multiplayer force normal difficulty for the session.
+  instantiates:
+  - concept: frontend.menu.unlockable_extras
+    weight: 0.5
+  - concept: mechanics.mode.time_attack
+  reads:
+  - save.time_records
+  writes:
+  - save.time_records
+  - game.mode
+  params:
+    game_modes:
+      value: single, time attack, race, chao hunt, team play, collect rings (multiboot)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:include/game/globals.h:GAME_MODE_* (SA1 branch)
+        confidence: 0.85
+  relations:
+  - type: modulates
+    target: difficulty_modes
+    note: forces DIFFICULTY_NORMAL during time attack, race and multiplayer
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/stage.c (LOADED_SAVE->difficultyLevel = DIFFICULTY_NORMAL for these modes)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/menus/time_attack.c
+    confidence: 0.5
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/save.c:RegisterTimeRecord
+    confidence: 0.7
+- id: stage_bg_layer_stack
+  facet: rendering
+  label: Mode-0 stage stack of two metatile collision layers plus scenery BG
+  summary: Stages run in DISPCNT mode 0 with BG1 (front metatile layer, priority 1), BG2 (back metatile layer, priority
+    2) and BG3 (zone scenery, priority 3), OBJ in 1D mapping and WIN0 enabled. The two metatile layers mirror the two
+    collision layers the player can switch between (loops). The extra stage switches to mode 1 with BG0-BG2.
+  instantiates:
+  - concept: rendering.background.tile_layer_stack
+  reads:
+  - camera.x
+  - camera.y
+  writes:
+  - vram.bg_tilemaps
+  - io.dispcnt
+  - io.bgcnt
+  params:
+    metatile_size:
+      value: 96
+      unit: px (12x12 tiles)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:include/game/shared/stage/camera.h:METATILE_DIM
+        confidence: 0.95
+    stage_video_mode:
+      value: 0
+      variants:
+      - when: extra stage (The Moon)
+        value: 1
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/camera.c:InitCamera
+        confidence: 0.9
+      - kind: capture_telemetry
+        ref: capture:frontend:frames 1587-5400 DISPCNT 0x3e40/0x1e40 (mode 0, BG1-3, OBJ, WIN0)
+        confidence: 0.9
+  relations:
+  - type: requires
+    target: loops_and_collision_layers
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/camera.c:InitCamera
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/camera.c:RenderMetatileLayers
+    confidence: 0.7
+  - kind: capture_telemetry
+    ref: capture:frontend:max_sprites_visible 52, mode-0 frames 8577 / mode-1 409
+    confidence: 0.8
+- id: hblank_line_scroll_parallax
+  facet: rendering
+  label: Per-scanline BG scroll table for cloud bands and perspective water
+  summary: Zone background updaters fill a 160-entry horizontal-offset table that an HBlank copy writes into a BG
+    scroll register each line. In Neo Green Hill the top bands scroll on a timer at three speeds (clouds), middle
+    rows stay static, and the bottom 'water' rows scroll by (line-86)/256 of camera X so lower lines move faster,
+    giving a perspective water plane. Other zones (2 interior, 3, 6, 7 act 2) use the same mechanism.
+  instantiates:
+  - concept: rendering.raster.hblank_dma_scroll_distortion
+  - concept: camera.parallax.layer_ratio_scroll
+    weight: 0.6
+  reads:
+  - camera.x
+  - stage.time
+  writes:
+  - io.bg3hofs[line]
+  params:
+    cloud_band_speeds:
+      value: [0.0625, 0.03125, 0.015625]
+      unit: px/frame (time-driven, rows 0-7, 8-23, 24-39)
+      native_value: gStageTime >> 4, >> 5, >> 6
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/backgrounds/zone_1.inc.c:StageBgUpdate_Zone1Acts12
+        confidence: 0.95
+    water_line_ratio:
+      value: (line - 86) / 256
+      unit: fraction of camera X per scanline, lines 88-159
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/backgrounds/zone_1.inc.c:StageBgUpdate_Zone1Acts12
+        confidence: 0.9
+  invariants:
+  - Lines 40-87 (big clouds and islands) carry zero offset in Neo Green Hill.
+  relations:
+  - type: part_of
+    target: stage_bg_layer_stack
+  - type: modulates
+    target: stage_camera
+    note: reads camera X each frame
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/backgrounds/zone_1.inc.c:StageBgUpdate_Zone1Acts12
+    confidence: 0.95
+  - kind: capture_telemetry
+    ref: capture:frontend:hblank_dma_targets ch0->0x04000018 and ch0->0x0400001C (BG2/BG3 HOFS), bg_scroll hdma_frames_ge32=4268
+    confidence: 0.9
+- id: affine_title_zoom
+  facet: rendering
+  label: Title emblem zoom with mode-1 affine BG2
+  summary: The title screen switches to mode 1 and scales the affine BG2 emblem from a large magnification down to
+    1:1 over about 12 frames (BG2PA/PD ramp 0x41 -> 0x100) before showing PRESS START. Only one affine OBJ is ever
+    visible in the captured front end.
+  instantiates:
+  - concept: rendering.background.affine_rotscale
+  reads:
+  - title.anim_timer
+  writes:
+  - io.bg2pa
+  - io.bg2pd
+  params:
+    zoom_frames:
+      value: 12
+      unit: frames
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:frontend:frames 1042-1054 BG2PA 0x0041 -> 0x0100
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: boot_and_mode_flow
+  evidence:
+  - kind: capture_telemetry
+    ref: capture:frontend:frames 992-1263 DISPCNT 0x1541 (mode 1, BG0/BG2, OBJ)
+    confidence: 0.85
+  - kind: capture_frame
+    ref: capture:frontend:frame 1203 keyframe (title)
+    confidence: 0.85
+- id: special_stage_renderer
+  facet: rendering
+  label: Sprite-scaled pseudo-3D special stage over palette-cycled backgrounds
+  summary: The special stage stays in tile mode 0 (DISPCNT 0x1C40) with four text BG panels and a full background;
+    depth is faked by OBJ affine scaling of rings, bombs and the character as a forward-progress counter advances,
+    while palette-loader tasks cycle 'big orthogonal' and 'small diagonal' light palettes per stage.
+  instantiates:
+  - concept: rendering.sprite.affine_rotscale
+  - concept: projection.pseudo_3d.scaled_sprite_depth
+  - concept: rendering.palette.runtime_palette_effects
+    weight: 0.5
+  reads:
+  - special_stage.depth_progress
+  - special_stage.forward_speed
+  writes:
+  - oam.affine_params
+  - palette.bg
+  params:
+    stage_dispcnt:
+      value: '0x1C40'
+      unit: DISPCNT (mode 0, BG2+BG3+OBJ, 1D OBJ)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/special_stage/main.c:sub_8029B74
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: special_stage
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/special_stage/main.c:sub_8029B74
+    confidence: 0.8
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/special_stage/main.c (tf->qScaleX/qScaleY, Div(0x10000, qScale) into OAM affine)
+    confidence: 0.75
+- id: fades_and_transitions
+  facet: rendering
+  label: Brightness fades and zig-zag title-card wipe
+  summary: Screen transitions use BLDY brightness fades (BLDCNT 0x3FFF/0x3F9F style full-screen fades), a zig-zag colour
+    wipe at act start, and windows to mask regions; capture shows brightness fade and windows used but no alpha
+    blending or mosaic in the observed front end and first act.
+  instantiates:
+  - concept: rendering.blending.brightness_fade
+  reads:
+  - transition.timer
+  writes:
+  - io.bldcnt
+  - io.bldy
+  - io.win0
+  params:
+    special_stage_fail_fade_step:
+      value: 0.25
+      unit: BLDY levels/frame (16 = full)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/special_stage/main.c:Task_8029AC4 (qBlend += Q(0.25))
+        confidence: 0.9
+  evidence:
+  - kind: capture_telemetry
+    ref: capture:derived flags brightness_fade=true, windows=true, alpha_blend=false, mosaic=false
+    confidence: 0.85
+  - kind: capture_frame
+    ref: capture:frontend:frame 1600 keyframe (zig-zag wipe at act start)
+    confidence: 0.8
+- id: stage_camera
+  facet: camera
+  label: Dead-zone follow camera with air band, look up/down and spindash hold
+  summary: 'The camera target is the player centred (x-120, y-80 plus a sprite-height offset that eases 5 px/frame).
+    Horizontally the camera only moves once the target leaves an 8 px dead band and then by at most 16 px/frame;
+    there is no velocity look-ahead in SA1 (SA2 added one). Vertically the dead band is 0 on ground and grows by
+    4 px/frame to 24 px in the air, with a 12 px/frame cap. Holding Up/Down while standing still for 120 frames pans
+    the view 2 px/frame to 72 px up or 60 px down. Releasing a spindash freezes the camera for 10 frames, letting the
+    player outrun the screen.'
+  instantiates:
+  - concept: camera.follow.deadzone_window
+  - concept: camera.follow.speed_adaptive_lag
+    weight: 0.4
+  - concept: camera.look.directional_peek
+  - concept: camera.follow.region_bounded_scroll
+    weight: 0.5
+  reads:
+  - player.position
+  - player.move_state.in_air
+  - input.buttons.held.dpad_vertical
+  writes:
+  - camera.x
+  - camera.y
+  - camera.look_offset
+  - camera.hold_frames
+  params:
+    horizontal_deadzone_half_width:
+      value: 8
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/camera.c:InitCamera (unk44 = 8)
+        confidence: 0.9
+    horizontal_max_speed:
+      value: 16
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/camera.c:InitCamera (SA1 unk8 = 16, used as integer)
+        confidence: 0.85
+    vertical_max_speed:
+      value: 12
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/camera.c:InitCamera (unkC = 12)
+        confidence: 0.9
+    vertical_air_band:
+      value: 24
+      unit: px (grows/shrinks 4 px/frame)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/camera.c:UpdateCamera (unk48 += 4, MIN 24)
+        confidence: 0.9
+    look_delay:
+      value: 120
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_8044750 (unk25 = 120 countdown)
+        confidence: 0.85
+    look_up_limit:
+      value: 72
+      unit: px (2 px/frame)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_8044750
+        confidence: 0.85
+    look_down_limit:
+      value: 60
+      unit: px (2 px/frame)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_80447D8
+        confidence: 0.8
+    spindash_camera_hold:
+      value: 10
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_TrySpindash (gCamera.unk40 = 10)
+        confidence: 0.9
+  invariants:
+  - Camera is clamped to [minX, maxX-240] x [minY, maxY-160] of the stage collision size.
+  - Look offset decays back by 2 px/frame as soon as the player moves or jumps.
+  relations:
+  - type: modulates
+    target: spin_dash
+  - type: part_of
+    target: side_view_projection
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/camera.c:UpdateCamera
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/camera.c:InitCamera
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:sub_80448D0
+    confidence: 0.8
+- id: side_view_projection
+  facet: projection
+  label: Side-view orthographic stages with rotating-surface character
+  summary: Regular acts are orthographic side views; the player sprite is rotated to the surface angle while running
+    on slopes, walls and ceilings. Special stages switch to a scaled-sprite pseudo-3D view.
+  instantiates:
+  - concept: projection.side_view.orthographic_2d
+  reads:
+  - player.rotation
+  writes:
+  - player.sprite.rotation
+  evidence:
+  - kind: capture_frame
+    ref: capture:frontend:frame 2200 keyframe (side-view Neo Green Hill with pause overlay)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:sub_8024B10
+    confidence: 0.6
+- id: ground_momentum
+  facet: movement_physics
+  label: Scalar ground-speed momentum with turnaround skid and friction
+  summary: 'Holding a direction adds 8/256 px/frame^2 to ground speed up to a 4.5 px/frame cap, but the cap only stops
+    acceleration: speed already above it (from slopes, springs, spindash) is kept. Pressing against the motion
+    subtracts 96/256 px/frame^2 (a skid with a brake sound above 3 px/frame) and, when it crosses zero, snaps to
+    96/256 px/frame in the new direction. With no direction held a flat 8/256 px/frame^2 friction applies. Ground
+    speed is projected onto the surface angle every frame to produce the air-velocity used for movement.'
+  instantiates:
+  - concept: movement_physics.locomotion.accel_to_cap_run
+  - concept: movement_physics.locomotion.skid_stop
+  - concept: movement_physics.momentum.surface_ground_speed
+  reads:
+  - input.buttons.held.dpad_horizontal
+  - player.ground_speed
+  - player.rotation
+  - player.max_speed
+  - player.acceleration
+  - player.deceleration
+  - player.control_lock_frames
+  writes:
+  - player.ground_speed
+  - player.velocity
+  - player.facing
+  - player.anim_state
+  params:
+    run_acceleration:
+      value: 0.03125
+      unit: px/frame^2
+      native_value: 8
+      native_unit: 1/256 px/frame^2
+      variants:
+      - when: underwater
+        value: 0.015625
+      - when: speed_shoes
+        value: 0.0625
+      - when: MOVESTATE_2000 (boosted mode; setter not located)
+        value: 0.140625
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:InitializePlayer (acceleration = Q(8/256))
+        confidence: 0.95
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_HandleWater (SA1 per-frame constant rewrite)
+        confidence: 0.95
+    run_top_speed:
+      value: 4.5
+      unit: px/frame
+      native_value: 1152
+      variants:
+      - when: underwater
+        value: 2.25
+      - when: speed_shoes
+        value: 9.0
+      - when: MOVESTATE_2000
+        value: 7.5
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:InitializePlayer (maxSpeed = Q(4.5))
+        confidence: 0.95
+    skid_deceleration:
+      value: 0.375
+      unit: px/frame^2
+      native_value: 96
+      variants:
+      - when: underwater
+        value: 0.1875
+      - when: speed_shoes
+        value: 0.75
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_8043A2C
+        confidence: 0.95
+    turnaround_speed:
+      value: 0.375
+      unit: px/frame (set in new direction when a skid crosses zero)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_8043970
+        confidence: 0.95
+    brake_sound_threshold:
+      value: 3.0
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_8043A2C (SE_BRAKE when |speed| >= Q(3))
+        confidence: 0.9
+    ground_friction:
+      value: 0.03125
+      unit: px/frame^2 (no direction held; constant, not scaled by water)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_8044F7C
+        confidence: 0.95
+    frames_to_top_speed:
+      value: 144
+      unit: frames (2.4 s, flat ground)
+      evidence:
+      - kind: derived
+        ref: run_top_speed / run_acceleration
+        inputs:
+        - run_top_speed
+        - run_acceleration
+        confidence: 0.85
+  invariants:
+  - Accelerating input never reduces a speed that already exceeds max_speed.
+  - Speed constants are rewritten every frame from water state, MOVESTATE_2000 and item effects (no persistent upgrades).
+  - While control_lock_frames > 0 (slip, some objects) directional input is ignored.
+  relations:
+  - type: modulates
+    target: slope_physics
+  - type: variant_of
+    target: water_physics
+    note: same code path with halved constants underwater
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:Player_8043970
+    confidence: 0.95
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:Player_8043A2C
+    confidence: 0.95
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:Player_8044F7C
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_sonic.c:Player_Sonic_80473AC
+    confidence: 0.9
+- id: slope_physics
+  facet: movement_physics
+  label: Slope gravity on ground speed, roll asymmetry and steep-surface slip
+  summary: 'Each grounded frame adds a slope term proportional to sin(surface angle): 3/32 of the sine (max 24/256
+    px/frame^2) when running, and 60/256 of the sine when rolling, quartered when it opposes motion (uphill). The run
+    term is applied only while moving and away from ceilings. On a surface steeper than 45 degrees, ground speed below
+    1.875 px/frame drops the player off (air state) and locks horizontal control for 30 frames; that is what forces
+    momentum into loops and quarter-pipes.'
+  instantiates:
+  - concept: movement_physics.locomotion.slope_speed_modifier
+  - concept: movement_physics.momentum.slope_slip_detach
+  reads:
+  - player.rotation
+  - player.ground_speed
+  - player.move_state.rolling
+  writes:
+  - player.ground_speed
+  - player.move_state.in_air
+  - player.control_lock_frames
+  params:
+    run_slope_factor_max:
+      value: 0.09375
+      unit: px/frame^2 at 90 degrees
+      native_value: (sin*3)>>5 on Q8 sine
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:sa2__sub_8029CA0 (GET_ROTATED_ACCEL)
+        confidence: 0.9
+    roll_slope_factor_downhill:
+      value: 0.234375
+      unit: px/frame^2 at 90 degrees
+      native_value: I(sin*60)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:sa2__sub_8029D14 (GET_ROTATED_ACCEL_3)
+        confidence: 0.85
+    roll_slope_factor_uphill:
+      value: 0.0586
+      unit: px/frame^2 at 90 degrees (downhill value >> 2)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:sa2__sub_8029D14
+        confidence: 0.8
+    slip_speed_threshold:
+      value: 1.875
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:PLAYERFN_UPDATE_UNK2A
+        confidence: 0.9
+    slip_control_lock:
+      value: 30
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:PLAYERFN_UPDATE_UNK2A (GBA_FRAMES_PER_SECOND / 2)
+        confidence: 0.9
+    slip_angle_threshold:
+      value: 45
+      unit: degrees from floor ((rotation + 0x20) & 0xC0 != 0)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:PLAYERFN_UPDATE_UNK2A
+        confidence: 0.85
+  invariants:
+  - Run slope term is skipped when ground speed is exactly 0, so a stopped player does not start sliding on gentle slopes.
+  - Slip check is skipped while sliding on ice (MOVESTATE_ICE_SLIDE).
+  relations:
+  - type: requires
+    target: terrain_sensors_and_angles
+  - type: modulates
+    target: rolling
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:sa2__sub_8029CA0
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:sa2__sub_8029D14
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:sa2__sub_8029ED8
+    confidence: 0.85
+- id: terrain_sensors_and_angles
+  facet: movement_physics
+  label: Height-map terrain sensors with 256-step surface angles
+  summary: Collision data per level is a metatile map of 8x8 tiles carrying a height map, a per-tile angle and flags,
+    on two layers. Ground, wall and ceiling probes return signed distances; grounded movement snaps to the floor and
+    takes its angle, a forward probe stops the player at walls (zeroing ground speed and leaving the roll), and a jump
+    needs at least 4 px of headroom along the surface normal. In the air the sprite angle relaxes back to upright by
+    2/256 turn per frame.
+  instantiates:
+  - concept: movement_physics.collision.heightmap_tile_sensors
+  reads:
+  - level.collision.height_map
+  - level.collision.tile_rotation
+  - player.layer
+  - player.position
+  writes:
+  - player.position
+  - player.rotation
+  - player.ground_speed
+  - player.move_state.pushing_wall
+  params:
+    jump_headroom_min:
+      value: 4
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_TryJump (sub_8022F58(rot+0x80) < 4 -> no jump)
+        confidence: 0.85
+    air_rotation_relax:
+      value: 2
+      unit: angle units/frame (of 256)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_8047224
+        confidence: 0.85
+  invariants:
+  - Wall contact zeroes ground speed and clears the spin-attack state.
+  - Leaving the stage's bottom bound kills the player (bottomless pit), launching the corpse upward with jump speed.
+  relations:
+  - type: part_of
+    target: loops_and_collision_layers
+  evidence:
+  - kind: decomp_source
+    ref: sa2:include/core.h:struct Collision
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:sa2__sub_8023128
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:sa2__sub_80232D0
+    confidence: 0.8
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/terrain_collision.c
+    confidence: 0.6
+    note: sensor internals (sub_801E4E4 etc.) not traced
+- id: loops_and_collision_layers
+  facet: movement_physics
+  label: Loops via two collision layers and layer-toggle triggers
+  summary: Every map has a front and back collision layer; the player carries a layer bit. Invisible rectangular toggle
+    objects set or clear that bit when the player's position is inside them, so a loop's entry and exit can be on
+    different layers while the player runs 360 degrees around using the angle-following ground physics. The CPU
+    partner copies the leader's layer.
+  instantiates:
+  - concept: movement_physics.collision.layer_switch_loop
+  reads:
+  - player.position
+  - trigger.rect
+  writes:
+  - player.layer
+  invariants:
+  - A loop can only be completed if ground speed stays above the slip threshold on the steep sections.
+  relations:
+  - type: requires
+    target: slope_physics
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/interactables/toggle_player_layer.c:Task_Toggle_PlayerLayer
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:include/core.h:struct Collision (map[MAP_LAYER_COUNT])
+    confidence: 0.85
+- id: jump_and_gravity
+  facet: movement_physics
+  label: Surface-normal jump, release cap and light gravity without terminal velocity
+  summary: 'Jump adds 4.875 px/frame along the surface normal (so jumping off a wall or slope keeps tangential momentum)
+    and puts Sonic, Tails and Knuckles into a rolled, damaging state. Gravity is 42/256 px/frame^2. Releasing the button
+    while rising faster than 3 px/frame caps upward speed at 3. SA1 has no fall-speed cap (SA2 added one); non-jump
+    launches are capped at 11.8125 px/frame upward. While rising, horizontal speed bleeds 1/32 per frame (air drag).'
+  instantiates:
+  - concept: movement_physics.jump.variable_height
+  - concept: movement_physics.jump.fixed_impulse_gravity_arc
+  - concept: movement_physics.jump.surface_normal_impulse
+  - concept: movement_physics.air_control.air_drag
+  reads:
+  - input.buttons.pressed.jump
+  - input.buttons.held.jump
+  - player.rotation
+  - player.move_state.in_water
+  writes:
+  - player.velocity
+  - player.move_state.in_air
+  - player.move_state.spin_attack
+  params:
+    jump_impulse:
+      value: 4.875
+      unit: px/frame
+      native_value: '0x4E0'
+      variants:
+      - when: underwater
+        value: 2.625
+      - when: character=amy, Down+B hammer jump (see amy_hammer_moveset)
+        value: 6.0
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_TryJump (r5 = 0x4E0 / 0x2A0)
+        confidence: 0.95
+    gravity:
+      value: 0.1640625
+      unit: px/frame^2
+      native_value: 42
+      variants:
+      - when: underwater
+        value: 0.046875
+      evidence:
+      - kind: decomp_source
+        ref: sa2:include/game/shared/parameters/characters.h:PLAYER_GRAVITY
+        confidence: 0.9
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:PLAYERFN_UPDATE_AIR_FALL_SPEED (SA1 branch)
+        confidence: 0.9
+    release_cap:
+      value: 3.0
+      unit: px/frame upward
+      variants:
+      - when: underwater
+        value: 1.5
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_8044670
+        confidence: 0.95
+    launch_upward_cap:
+      value: 11.8125
+      unit: px/frame (non-jump airborne states)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_8044670
+        confidence: 0.85
+    air_drag:
+      value: 0.03125
+      unit: fraction of X speed removed per frame while rising
+      native_value: x -= x >> 5
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_AirInputControls (SA1 block)
+        confidence: 0.8
+    apex_height_full:
+      value: 74.9
+      unit: px (30 frames to apex, flat ground)
+      evidence:
+      - kind: derived
+        ref: integrated position += v; v += gravity from jump_impulse
+        inputs:
+        - jump_impulse
+        - gravity
+        confidence: 0.75
+    apex_height_tap:
+      value: 28.9
+      unit: px (19 frames)
+      evidence:
+      - kind: derived
+        ref: same integration with release_cap applied on the first airborne frame
+        inputs:
+        - jump_impulse
+        - gravity
+        - release_cap
+        confidence: 0.65
+    fall_speed_cap:
+      value: none
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:UPDATE_POS_SPEEDCAP (empty for SA1, 15 px/frame for SA2)
+        confidence: 0.85
+  invariants:
+  - Jump is read only on the frame the button is newly pressed (frameInput) and needs >= 4 px headroom.
+  - Amy's jump is not a spin attack; the other three are damaging while rolled.
+  relations:
+  - type: modulates
+    target: air_control
+  - type: part_of
+    target: character_ability_matrix
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:Player_TryJump
+    confidence: 0.95
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:Player_8044670
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_sonic.c:Player_Sonic_80473AC
+    confidence: 0.85
+- id: air_control
+  facet: movement_physics
+  label: Double-rate air acceleration capped at run speed
+  summary: Airborne, left/right add twice the ground acceleration (16/256 px/frame^2) up to the current max speed,
+    again without reducing speed already above it, and turn the character unless bouncing. Control is ignored while
+    in the hurt state.
+  instantiates:
+  - concept: movement_physics.air_control.capped_air_acceleration
+  reads:
+  - input.buttons.held.dpad_horizontal
+  - player.velocity.x
+  - player.max_speed
+  - player.acceleration
+  writes:
+  - player.velocity.x
+  - player.facing
+  params:
+    air_acceleration:
+      value: 0.0625
+      unit: px/frame^2 (2 x acceleration)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_AirInputControls (r5 = acceleration * 2)
+        confidence: 0.95
+    air_speed_cap:
+      value: 4.5
+      unit: px/frame (= max_speed; SA2 uses topSpeed)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_AirInputControls
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: jump_and_gravity
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:Player_AirInputControls
+    confidence: 0.95
+- id: rolling
+  facet: movement_physics
+  label: Down-to-roll with low friction and attack hitbox
+  summary: Pressing Down while moving curls Sonic, Tails or Knuckles into a roll (damaging, shorter hitbox). A rolling
+    player cannot accelerate; friction is half the acceleration (4/256 px/frame^2), pressing against the roll
+    decelerates 24/256 px/frame^2 and turns around at 96/256, and rolling slopes use the stronger downhill factor. When
+    the roll stops, it uncurls to crouch or stand; in forced-roll tubes (MOVESTATE_200) it is re-launched at 3 px/frame.
+  instantiates:
+  - concept: movement_physics.mode.ball_form
+  - concept: mechanics.combat.body_attack
+    weight: 0.6
+  reads:
+  - input.buttons.held.down
+  - player.ground_speed
+  - player.rotation
+  writes:
+  - player.ground_speed
+  - player.move_state.spin_attack
+  - player.hitbox
+  params:
+    roll_friction:
+      value: 0.015625
+      unit: px/frame^2 (acceleration / 2)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_8043DDC (qHalfAccel)
+        confidence: 0.9
+    roll_brake:
+      value: 0.09375
+      unit: px/frame^2
+      native_value: 24
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_8043DDC
+        confidence: 0.9
+    forced_roll_relaunch_speed:
+      value: 3.0
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_8043DDC (MOVESTATE_200 branch)
+        confidence: 0.85
+  invariants:
+  - Amy cannot roll; Down while moving does nothing for her (Player_80447D8 excludes CHARACTER_AMY).
+  relations:
+  - type: requires
+    target: slope_physics
+  - type: part_of
+    target: character_ability_matrix
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:Player_8043DDC
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:Player_80447D8
+    confidence: 0.85
+- id: spin_dash
+  facet: movement_physics
+  label: Crouch-charged spin dash with decaying charge and release table
+  summary: 'From a crouch, Jump starts a spin dash; each further Jump press adds 2 charge units and a pitched rev
+    sound, charge decays by 1/32 per frame, and releasing Down launches at a table speed indexed by the integer charge
+    (6.0 to 9.0 px/frame in 0.375 steps; 8.25 to 11.25 in the boosted mode). Because the code clamps with MAX(charge+2,
+    8), the first press already gives a full charge (index 8); rapid re-presses can reach index 9, which reads the next
+    table. The camera freezes for 10 frames on release.'
+  instantiates:
+  - concept: movement_physics.speed.stored_dash_launch
+  - concept: movement_physics.mode.ball_form
+    weight: 0.5
+  reads:
+  - input.buttons.pressed.jump
+  - input.buttons.held.down
+  - player.anim_state.crouch
+  - player.spindash_charge
+  writes:
+  - player.spindash_charge
+  - player.ground_speed
+  - player.move_state.spin_attack
+  - camera.hold_frames
+  params:
+    charge_per_press:
+      value: 2
+      unit: charge units (Q8 2.0)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_TrySpindash (qNewAccel += Q(2.0); MAX(.., Q(8.0)))
+        confidence: 0.9
+    charge_decay:
+      value: 0.03125
+      unit: fraction of charge per frame
+      native_value: accel - (accel << 3 >> 8)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_TrySpindash
+        confidence: 0.85
+    release_speed_min:
+      value: 6.0
+      unit: px/frame (charge index 0)
+      evidence:
+      - kind: static_signature
+        ref: rom:ASOE 0x4A7084 s16[9] spindash table (located 0x180 after gPlayerCharacterIdleAnims signature at 0x4A6F04)
+        note: '1536..2304 in steps of 96 (Q8)'
+        confidence: 0.9
+    release_speed_max:
+      value: 9.0
+      unit: px/frame (charge index 8)
+      variants:
+      - when: MOVESTATE_2000
+        value: 11.25
+      evidence:
+      - kind: static_signature
+        ref: rom:ASOE 0x4A7084 and 0x4A7096 s16[9] tables (gUnknown_084AE188 / gUnknown_084AE19A equivalents)
+        note: boosted table 2112..2880 (8.25..11.25)
+        confidence: 0.9
+    release_speed_typical:
+      value: 9.0
+      unit: px/frame (first press saturates to index 8)
+      evidence:
+      - kind: derived
+        ref: MAX(charge+2, 8) clamp in Player_TrySpindash
+        inputs:
+        - charge_per_press
+        - release_speed_max
+        confidence: 0.6
+  invariants:
+  - Spin dash requires the crouch state; Amy has no spin dash.
+  - Release speed (6-9 px/frame) exceeds run top speed (4.5) and is not clamped by it.
+  relations:
+  - type: requires
+    target: rolling
+  - type: modulates
+    target: stage_camera
+  - type: part_of
+    target: character_ability_matrix
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:Player_TrySpindash
+    confidence: 0.9
+  - kind: static_signature
+    ref: rom:ASOE 0x4A6F04 gPlayerCharacterIdleAnims {0,99,199,298} anchor
+    confidence: 0.85
+- id: springs_and_boosters
+  facet: movement_physics
+  label: Springs, dash panels and special springs as speed injectors
+  summary: Springs set vertical or horizontal speed to one of four strengths (7.5, 9, 10.5, 12 px/frame) or a per-object
+    custom value, cancel flight, and multiply by 1.5 if Amy triggers them with her hammer. Diagonal springs set both
+    axes. Dash panels (boosters) set ground speed to 12 px/frame if it is below 9. Special springs launch upward at 7.5
+    px/frame and, the first time, carry the player off-screen into the special stage.
+  instantiates:
+  - concept: movement_physics.launcher.spring_set_velocity
+  - concept: movement_physics.launcher.dash_panel
+  reads:
+  - player.ground_speed
+  - entity.spring_strength_index
+  writes:
+  - player.velocity
+  - player.ground_speed
+  - player.move_state.in_air
+  params:
+    spring_strengths:
+      value: [7.5, 9.0, 10.5, 12.0]
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/interactables/spring.c:sData0Accel
+        confidence: 0.95
+    amy_hammer_spring_multiplier:
+      value: 1.5
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/interactables/spring.c (qSpeedAirY + (qSpeedAirY >> 1))
+        confidence: 0.9
+    booster_speed:
+      value: 12.0
+      unit: px/frame (applied if below 9)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/interactables/booster.c
+        confidence: 0.9
+    special_spring_launch:
+      value: 7.5
+      unit: px/frame upward
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/interactables/special_spring.c:Task_SpecialSpringMain
+        confidence: 0.9
+    spring_apex_weakest:
+      value: 175
+      unit: px (46 frames)
+      evidence:
+      - kind: derived
+        ref: integrate 7.5 px/frame against gravity 42/256
+        inputs:
+        - spring_strengths
+        - jump_and_gravity.gravity
+        confidence: 0.7
+  relations:
+  - type: gated_by
+    target: special_stage
+    note: special spring is the only entrance
+    condition: emerald for this stage not yet collected (unk99[1] == 0 check, semantics inferred)
+  - type: modulates
+    target: ground_momentum
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/interactables/spring.c
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/interactables/booster.c
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/interactables/special_spring.c:Task_TransitionSpStage
+    confidence: 0.85
+- id: water_physics
+  facet: movement_physics
+  label: Underwater constant set, surface splash and drowning countdown
+  summary: Below the water level the player's speed caps and accelerations halve, gravity drops to 12/256 and jumps
+    to 2.625 px/frame. Entering halves X and quarters Y speed; leaving doubles Y speed. An air timer of 30 s counts
+    down with countdown digits from 12 s, music switch near 11 s, and death at zero; air bubbles reset it.
+  instantiates:
+  - concept: movement_physics.medium.liquid_drag
+  - concept: mechanics.hazard.drowning_timer
+  reads:
+  - player.position.y
+  - water.level
+  - player.seconds_until_drown
+  writes:
+  - player.max_speed
+  - player.acceleration
+  - player.deceleration
+  - player.velocity
+  - player.seconds_until_drown
+  - player.move_state.dead
+  params:
+    underwater_top_speed:
+      value: 2.25
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_HandleWater
+        confidence: 0.95
+    underwater_acceleration:
+      value: 0.015625
+      unit: px/frame^2
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_HandleWater
+        confidence: 0.95
+    underwater_gravity:
+      value: 0.046875
+      unit: px/frame^2
+      evidence:
+      - kind: decomp_source
+        ref: sa2:include/game/shared/parameters/characters.h:PLAYER_GRAVITY_UNDER_WATER
+        confidence: 0.9
+    air_seconds:
+      value: 30
+      unit: s
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:InitializePlayer (secondsUntilDrown = 30)
+        confidence: 0.95
+    entry_speed_scale:
+      value: x0.5 X, x0.25 Y on entry; x2 Y on exit
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_HandleWater
+        confidence: 0.95
+  invariants:
+  - SA1 skips the 'water active' check (bug kept unless BUG_FIX), so any level with a non-negative water level applies it.
+  relations:
+  - type: modulates
+    target: jump_and_gravity
+  - type: modulates
+    target: ground_momentum
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:Player_HandleWater
+    confidence: 0.95
+  - kind: decomp_source
+    ref: sa2:include/game/sa1/parameters/stage.h:INITIAL_WATERLEVEL_ZONE_4_ACT_1
+    confidence: 0.6
+    note: Ice Mountain water levels
+- id: grind_rails
+  facet: movement_physics
+  label: Rail grinding on a second layer
+  summary: Grind rails put the player in a rail state where ground speed loses 8/256 px/frame^2 (twice that if holding
+    Left), never drops below 0.75 px/frame, and gains a 5/32 sine slope term when Down or Right is held. Jumping off
+    flips the collision layer and launches at the normal jump speed.
+  instantiates:
+  - concept: movement_physics.locomotion.rail_grind
+  reads:
+  - input.buttons.held
+  - player.ground_speed
+  - player.rotation
+  writes:
+  - player.ground_speed
+  - player.layer
+  - player.velocity
+  params:
+    rail_friction:
+      value: 0.03125
+      unit: px/frame^2
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:sub_80449D8
+        confidence: 0.9
+    rail_min_speed:
+      value: 0.75
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:sub_80449D8
+        confidence: 0.9
+  invariants:
+  - Rails are one-directional in practice; speed is clamped to >= +0.75, never negative.
+  relations:
+  - type: part_of
+    target: loops_and_collision_layers
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:sub_80449D8
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:sub_8044434
+    confidence: 0.8
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/interactables/grind_rail.c
+    confidence: 0.5
+- id: sonic_moveset
+  facet: movement_physics
+  label: 'Sonic: insta-shield, double-tap air dash and B-button ground combo'
+  summary: Sonic's second Jump press in the air fires an insta-shield burst; double-tapping a direction in the air
+    (second tap 4-10 frames after the first) gives a horizontal air dash of max_speed/4 and zeroes vertical speed.
+    On the ground, B starts a 2 px/frame skid attack, a second B a 3 px/frame somersault, then a slide (32/256
+    friction) or a spinning back-jump on Jump.
+  instantiates:
+  - concept: movement_physics.air_action.air_dash
+  - concept: mechanics.combat.body_attack
+    weight: 0.5
+  reads:
+  - input.history_60
+  - input.buttons.pressed
+  - player.mid_air_action_used
+  writes:
+  - player.velocity
+  - player.ground_speed
+  - player.anim_state
+  params:
+    air_dash_impulse:
+      value: 1.125
+      unit: px/frame (max_speed >> 2)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_sonic.c:sub_8047714
+        confidence: 0.85
+    double_tap_window:
+      value: 4-10
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_controls.c:GetAirDashDirection(10)
+        confidence: 0.75
+    skid_attack_speed:
+      value: 2.0
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_sonic.c:Player_Sonic_StartRoll
+        confidence: 0.85
+    somersault_speed:
+      value: 3.0
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_sonic.c:Player_Sonic_UpdateRoll
+        confidence: 0.85
+  invariants:
+  - One mid-air action per jump (unk61 latch reset on landing).
+  relations:
+  - type: part_of
+    target: character_ability_matrix
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_sonic.c:Player_Sonic_InitInstaShield
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_sonic.c:sub_8047668
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:Player_8044670
+    confidence: 0.85
+- id: tails_flight
+  facet: movement_physics
+  label: 'Tails: flap-to-rise flight with an 8 s stamina timer'
+  summary: Pressing Jump again in the air starts flight. Each flap applies 24/256 px/frame^2 upward for up to 31 frames
+    while upward speed is under 0.75 px/frame, then Tails sinks with 8/256 px/frame^2 (16/256 when MOVESTATE_10000)
+    until Jump re-flaps. The stamina counter starts at 240 and ticks every other frame (8 s); at zero Tails is
+    exhausted and falls. Flight cannot rise above the camera top bound. Underwater it becomes swimming.
+  instantiates:
+  - concept: movement_physics.air_action.timed_flight
+  reads:
+  - input.buttons.pressed.jump
+  - player.flight_timer
+  - player.velocity.y
+  writes:
+  - player.velocity.y
+  - player.flight_timer
+  - player.anim_state
+  params:
+    flight_duration:
+      value: 480
+      unit: frames (240 ticks decremented every 2nd frame)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_tails.c:Player_Tails_InitFlying (TIME(0,4)) and Player_Tails_8047A3C (gStageTime & 1)
+        confidence: 0.9
+    flap_lift:
+      value: 0.09375
+      unit: px/frame^2 upward
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_tails.c:Player_Tails_8047A3C
+        confidence: 0.9
+    flap_max_rise_speed:
+      value: 0.75
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_tails.c:Player_Tails_8047A3C
+        confidence: 0.9
+    flight_sink_gravity:
+      value: 0.03125
+      unit: px/frame^2
+      variants:
+      - when: MOVESTATE_10000
+        value: 0.0625
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_tails.c:Player_Tails_8047A3C
+        confidence: 0.9
+    flap_frames_max:
+      value: 31
+      unit: frames per flap
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_tails.c:Player_Tails_8047A3C (++unk61 == 32)
+        confidence: 0.8
+  invariants:
+  - Re-flap only when not rising faster than 0.75 px/frame and stamina > 0.
+  - Tails' ground B is a tail swipe that decelerates by deceleration/2 per frame.
+  relations:
+  - type: part_of
+    target: character_ability_matrix
+  - type: conflicts_with
+    target: springs_and_boosters
+    note: springs call Player_TransitionCancelFlyingAndBoost
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_tails.c:Player_Tails_8047A3C
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_tails.c:Player_Tails_InitFlying
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:include/game/shared/parameters/characters.h:TAILS_FLYING_DURATION
+    confidence: 0.8
+- id: knuckles_glide_climb
+  facet: movement_physics
+  label: 'Knuckles: accelerating glide, steerable turn, wall climb and wall jump'
+  summary: 'Second Jump in the air starts a glide at 3 px/frame horizontally (1.5 underwater) with vertical speed
+    nudged 24/256 per frame toward a 0.5 px/frame descent. Glide speed grows 6/256 per frame below 3 and 3/256 per frame
+    up to 18 px/frame when not turning; pressing the opposite direction swings a heading angle 2 steps per frame so
+    the X velocity follows cos(heading). Touching a wall grabs it: Up/Down climbs at 0.75 px/frame (0.5 underwater) and
+    Jump kicks off at 3 px/frame away and 2.625 up. Ground B is a punch adding 3 px/frame.'
+  instantiates:
+  - concept: movement_physics.air_action.glide
+  - concept: movement_physics.wall.wall_climb
+  - concept: movement_physics.wall.wall_jump
+    weight: 0.6
+  reads:
+  - input.buttons.held
+  - player.glide_heading
+  - player.ground_speed
+  - level.collision.walls
+  writes:
+  - player.velocity
+  - player.ground_speed
+  - player.glide_heading
+  - player.position
+  params:
+    glide_start_speed:
+      value: 3.0
+      unit: px/frame
+      variants:
+      - when: underwater
+        value: 1.5
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_knuckles.c:Player_Knuckles_InitGlide
+        confidence: 0.95
+    glide_accel_low:
+      value: 0.0234
+      unit: px/frame^2 below 3 px/frame
+      native_value: 6
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_knuckles.c:sub_8048980
+        confidence: 0.8
+    glide_accel_high:
+      value: 0.0117
+      unit: px/frame^2 from 3 to 18 px/frame (only when heading straight)
+      native_value: 3
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_knuckles.c:sub_8048980
+        confidence: 0.8
+    glide_speed_cap:
+      value: 18.0
+      unit: px/frame
+      variants:
+      - when: underwater
+        value: 3.0
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_knuckles.c:sub_8048980
+        confidence: 0.75
+    glide_descent_target:
+      value: 0.5
+      unit: px/frame (approached at 24/256 per frame)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_knuckles.c:sub_8048980
+        confidence: 0.8
+    glide_turn_rate:
+      value: 2
+      unit: heading units/frame (128 = half turn, ~64 frames to reverse)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_knuckles.c:sub_8048980
+        confidence: 0.7
+    climb_speed:
+      value: 0.75
+      unit: px/frame
+      variants:
+      - when: underwater
+        value: 0.5
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_knuckles.c:sub_80486E8
+        confidence: 0.8
+    wall_jump_velocity:
+      value: '3.0 away, 2.625 up'
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_knuckles.c:sub_80486E8
+        confidence: 0.75
+    punch_speed_bonus:
+      value: 3.0
+      unit: px/frame added to ground speed
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_knuckles.c:sub_8048ADC
+        confidence: 0.85
+  invariants:
+  - Glide speed growth stops while the heading is turning ((shift & 0x7F) != 0).
+  relations:
+  - type: part_of
+    target: character_ability_matrix
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_knuckles.c:Player_Knuckles_InitGlide
+    confidence: 0.95
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_knuckles.c:sub_8048980
+    confidence: 0.75
+    note: non-matching function (96.5%)
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_knuckles.c:sub_80486E8
+    confidence: 0.7
+- id: amy_hammer_moveset
+  facet: movement_physics
+  label: 'Amy: hammer attacks, hammer jump and no rolling'
+  summary: 'Amy never rolls or spin-dashes and her normal jump is not an attack. B on the ground swings the hammer
+    (ground speed bleeds 0.375 px/frame per frame), Down+B (B with Down while grounded) performs a high hammer jump at
+    6.0 px/frame (3.375 underwater), Down+Jump is a forward hammer dash (4.0 forward, 1.25 up). In the air B swings or,
+    with Down, does a downward hammer swirl that stops X speed. Hammer hits on springs multiply the launch by 1.5.'
+  instantiates:
+  - concept: mechanics.combat.melee_weapon_swing
+  - concept: movement_physics.jump.fixed_impulse_gravity_arc
+    weight: 0.4
+  reads:
+  - input.buttons.pressed.attack
+  - input.buttons.held.down
+  - player.ground_speed
+  writes:
+  - player.velocity
+  - player.ground_speed
+  - player.hitbox.attack
+  params:
+    hammer_jump_impulse:
+      value: 6.0
+      unit: px/frame
+      variants:
+      - when: underwater
+        value: 3.375
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_amy.c:Player_Amy_8049370
+        confidence: 0.9
+    hammer_jump_apex:
+      value: 112.7
+      unit: px (37 frames)
+      evidence:
+      - kind: derived
+        ref: integrate 6.0 px/frame against gravity 42/256
+        inputs:
+        - hammer_jump_impulse
+        - jump_and_gravity.gravity
+        confidence: 0.7
+    hammer_dash_velocity:
+      value: '4.0 forward, 1.25 up'
+      unit: px/frame
+      variants:
+      - when: underwater
+        value: '2.5 forward, 0.75 up'
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_TryJump (CHARACTER_AMY, DPAD_DOWN branch)
+        confidence: 0.9
+    hammer_ground_decel:
+      value: 0.375
+      unit: px/frame^2
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_amy.c:Player_Amy_80494E8
+        confidence: 0.9
+  invariants:
+  - Contact with an enemy during Amy's attack halves her X speed and reflects Y instead of fully reversing both.
+  relations:
+  - type: part_of
+    target: character_ability_matrix
+  - type: modulates
+    target: springs_and_boosters
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_amy.c:Player_Amy_8049370
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_amy.c:Player_Amy_804948C
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/collision_3.c:Coll_Player_Enemy (Amy branch)
+    confidence: 0.85
+- id: character_ability_matrix
+  facet: mechanics
+  label: Four playable characters sharing one physics core with per-character actions
+  summary: All four characters use the same ground, slope, jump and water constants and differ only in their action
+    layer (mid-air action, ground B action, roll/spin dash availability). Each frame the player task dispatches to a
+    per-character state function over the (in_air, spin_attack) state pair.
+  instantiates:
+  - concept: mechanics.roster.shared_core_character_variants
+  reads:
+  - player.character
+  - player.move_state
+  writes:
+  - player.*
+  tables:
+    abilities:
+      description: Per-character action layer (all share ground_momentum, slope_physics, jump_and_gravity).
+      columns:
+      - character
+      - jump_is_attack
+      - roll_and_spindash
+      - mid_air_action
+      - ground_b_action
+      rows:
+      - [Sonic, true, true, insta-shield; double-tap air dash, skid attack -> somersault -> slide / back-jump]
+      - [Tails, true, true, flight (8 s stamina), tail swipe]
+      - [Knuckles, true, true, glide -> wall climb, punch (+3 px/frame)]
+      - [Amy, false, false, hammer swing / hammer swirl, hammer swing; Down+B hammer jump; Down+Jump hammer dash]
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Task_PlayerMain (SA1 switch on p->character)
+        confidence: 0.9
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:Player_8044670 (mid-air action dispatch)
+        confidence: 0.9
+  invariants:
+  - Constants are not per-character; only state functions differ.
+  relations:
+  - type: requires
+    target: ground_momentum
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:Task_PlayerMain
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_sonic.c:Player_Sonic_80473AC
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_tails.c:Player_Tails_8047BA0
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_knuckles.c:Player_Knuckles_8049000
+    confidence: 0.8
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_amy.c:Player_Amy_80497AC
+    confidence: 0.9
+- id: ring_damage_rule
+  facet: mechanics
+  label: Rings as one-hit buffer with full scatter on damage
+  summary: 'Getting hit with no shield and at least one ring drops all rings (up to 48 are spawned as collectible
+    scatter, the rest are lost), knocks the player back 1.5 px/frame away and 3 px/frame up (halved underwater) and
+    grants 120 frames of invulnerability. A hit with zero rings is death; a shield absorbs one hit and is consumed
+    instead. Only player 1 loses rings; the CPU partner just gets knocked back. Invincibility makes the body hitbox
+    destroy enemies.'
+  instantiates:
+  - concept: mechanics.combat.ring_buffer_health
+  - concept: movement_physics.feedback.knockback_iframes
+  - concept: mechanics.combat.invulnerability_frames
+  reads:
+  - game.rings
+  - player.item_effect.shield
+  - player.timer_invulnerability
+  - player.timer_invincibility
+  writes:
+  - game.rings
+  - player.velocity
+  - player.timer_invulnerability
+  - player.move_state.dead
+  - player.item_effect.shield
+  params:
+    invulnerability_after_hit:
+      value: 120
+      unit: frames
+      native_value: TIME(0, 2)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:include/game/shared/parameters/characters.h:PLAYER_INVULNERABLE_DURATION
+        confidence: 0.9
+    knockback_velocity:
+      value: '1.5 away, 3.0 up'
+      unit: px/frame
+      variants:
+      - when: underwater
+        value: '0.75 away, 1.5 up'
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/collision_3.c:Coll_DamagePlayer
+        confidence: 0.95
+    max_scattered_rings:
+      value: 48
+      variants:
+      - when: multiplayer
+        value: 32
+      evidence:
+      - kind: decomp_source
+        ref: sa2:include/game/shared/stage/rings_scatter.h:MAX_SCATTERING_RINGS_COUNT_SP (SA1)
+        confidence: 0.9
+    rings_lost:
+      value: all
+      variants:
+      - when: multiplayer collect-rings mode
+        value: min(rings, 10)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/collision_3.c:Coll_DamagePlayer (gRingCount -= rings)
+        confidence: 0.95
+  invariants:
+  - Rings above 48 are destroyed outright on a hit, never recoverable.
+  - Damage is ignored while invulnerable or invincible.
+  - With zero rings a hit kills unless a demo is running or in team/chao-hunt modes.
+  relations:
+  - type: requires
+    target: scattered_ring_physics
+  - type: part_of
+    target: ring_economy
+  - type: modulates
+    target: lives_and_game_over
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/collision_3.c:Coll_DamagePlayer
+    confidence: 0.95
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/collision_3.c:Coll_Player_Enemy
+    confidence: 0.9
+- id: scattered_ring_physics
+  facet: mechanics
+  label: Dropped-ring fan, bounce and expiry
+  summary: Lost rings spawn in symmetric pairs around a fan whose speed starts at about 4.5 px/frame and steps through
+    angles in 16-unit increments, halving magnitude per ring of 16; each falls at 18/256 px/frame^2, bounces off floors
+    with -0.75 restitution, cannot be re-collected for the first 32 frames, blinks in its last 32 frames and vanishes
+    after 256 frames. The extra stage uses 7/256 gravity.
+  instantiates:
+  - concept: economy.drain.recoverable_scatter
+  reads:
+  - scatter.rings[*]
+  - level.collision.floor
+  writes:
+  - scatter.rings[*]
+  - game.rings
+  params:
+    ring_lifetime:
+      value: 256
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/rings_scatter.c:InitScatteringRings (unkC = 256 for SA1; SA2 180)
+        confidence: 0.95
+    pickup_delay:
+      value: 32
+      unit: frames (collectable when age counter <= 224)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/rings_scatter.c:InitPlayerHitRingsScatter (unk2B4 = 0xE0)
+        confidence: 0.9
+    scatter_gravity:
+      value: 0.0703125
+      unit: px/frame^2
+      native_value: 18
+      variants:
+      - when: extra stage
+        value: 0.02734375
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/rings_scatter.c:InitPlayerHitRingsScatter (unk2B0)
+        confidence: 0.9
+    bounce_restitution:
+      value: -0.75
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/rings_scatter.c:RingsScatterSingleplayer_NormalGravity (velY = velY/4 - velY)
+        confidence: 0.9
+    initial_fan_speed:
+      value: 4.53125
+      unit: px/frame (Q8 0x488 seed; pairs mirrored in X)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/rings_scatter.c:InitScatteringRings
+        confidence: 0.6
+        note: exact per-ring magnitude depends on shift arithmetic not simulated
+  relations:
+  - type: part_of
+    target: ring_damage_rule
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/rings_scatter.c:InitScatteringRings
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/rings_scatter.c:RingsScatterSingleplayer_NormalGravity
+    confidence: 0.85
+- id: enemy_contact_combat
+  facet: mechanics
+  label: Attack-hitbox enemy kills with bounce and landing-reset score chain
+  summary: The player sprite has a body hitbox and an attack hitbox that is active while rolled, spin-dashing or using
+    a character attack. An enemy overlapping the attack hitbox is destroyed (dust cloud, freed animal) and, if the
+    player was falling, vertical speed is reflected upward; overlapping only the body hitbox damages the player
+    unless invincible. Consecutive kills before touching ground score 100, 200, 400, 800, then 1000 each.
+  instantiates:
+  - concept: mechanics.combat.body_attack
+  - concept: mechanics.combat.contact_damage
+  - concept: economy.source.chain_score_multiplier
+  reads:
+  - player.hitbox.attack
+  - player.hitbox.body
+  - player.velocity.y
+  - player.defeat_chain_index
+  writes:
+  - enemy.alive
+  - player.velocity.y
+  - game.score
+  - player.defeat_chain_index
+  params:
+    chain_scores:
+      value: [100, 200, 400, 800, 1000]
+      unit: points
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/entities_manager.c:enemyDefeatScores
+        confidence: 0.95
+  invariants:
+  - The chain index resets to 0 whenever the player lands (sub_8022190 landing path).
+  - Bounce only reflects downward speed; an upward-moving kill keeps its velocity.
+  relations:
+  - type: requires
+    target: jump_and_gravity
+  - type: part_of
+    target: score_and_bonuses
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/collision_3.c:Coll_Player_Enemy_Attack
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/entities_manager.c:CreateEnemyDefeatScoreAndManageLives
+    confidence: 0.95
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c (defeatScoreIndex = 0 on landing)
+    confidence: 0.85
+- id: item_boxes
+  facet: mechanics
+  label: Monitor power-ups
+  summary: Breaking an item box grants its content after a 60-frame display delay. Contents are 1-UP, normal shield
+    (absorbs one hit), magnetic shield (also pulls nearby rings), 20 s invincibility (with its own music), 20 s speed
+    shoes (doubles max speed, acceleration and deceleration and doubles music tempo), random rings, 5 or 10 rings.
+  instantiates:
+  - concept: mechanics.powerup.timed_powerup
+  - concept: economy.source.item_container
+  reads:
+  - itembox.kind
+  - rng
+  writes:
+  - game.lives
+  - game.rings
+  - player.item_effect
+  - player.timer_invincibility
+  - player.timer_speedup
+  - audio.bgm_tempo
+  params:
+    invincibility_duration:
+      value: 1200
+      unit: frames (20 s)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/itembox.c:ITEM_DURATION_INVINCIBILITY
+        confidence: 0.95
+    speed_shoes_duration:
+      value: 1200
+      unit: frames (20 s)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/itembox.c:ITEM_DURATION_SPEED_UP
+        confidence: 0.95
+    magnet_radius:
+      value: 'x +-64 px, y -72..+56 px'
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/rings_manager.c:Task_RingsMgrMain (magnetic radius check)
+        confidence: 0.85
+    magnet_ring_accel:
+      value: 0.25
+      unit: px/frame^2 toward player
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/magnetic_ring.c:Task_MagneticRing
+        confidence: 0.8
+  tables:
+    random_ring_amounts:
+      description: Possible values for the random-rings box, chosen uniformly by PSEUDO_RANDOM_32.
+      columns:
+      - rings
+      rows:
+      - [1]
+      - [5]
+      - [10]
+      - [20]
+      - [30]
+      - [40]
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/itembox.c:ItemBox_RingAmountTable (SA1 branch)
+        confidence: 0.95
+  relations:
+  - type: modulates
+    target: ground_momentum
+    condition: speed shoes active
+  - type: modulates
+    target: ring_damage_rule
+    condition: shield or invincibility
+  - type: part_of
+    target: ring_economy
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/itembox.c
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:Player_HandleWater (SA1 speed-up doubling)
+    confidence: 0.9
+- id: checkpoints
+  facet: mechanics
+  label: Checkpoint posts storing respawn position and time
+  summary: Touching a checkpoint post stores its position and the current stage time on the player; after a death the
+    act restarts there with the stored time. Special springs also overwrite the checkpoint so the player returns to
+    the spring after a special stage.
+  instantiates:
+  - concept: mechanics.respawn.checkpoint
+  reads:
+  - player.position
+  - stage.checkpoint_time
+  writes:
+  - player.checkpoint_position
+  - player.checkpoint_time
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/interactables/checkpoint.c
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/interactables/special_spring.c:Task_TransitionSpStage (gSpecialStageReturnX/Y)
+    confidence: 0.85
+- id: difficulty_modes
+  facet: mechanics
+  label: Easy/Normal difficulty that thins enemies and shortens bosses
+  summary: An options setting picks Normal or Easy. Easy removes selected badnik placements in early zones (Buzzer in
+    zone 1, Leon in zone 5 and others) and starts zone bosses two hits down (8 -> 6 hits for Mecha Knuckles and the
+    Super Egg Robo). Time attack, race, multiplayer and demos always run on Normal.
+  instantiates:
+  - concept: mechanics.difficulty.selectable_difficulty
+  reads:
+  - save.difficulty_level
+  writes:
+  - entity.spawned
+  - boss.hits_remaining
+  params:
+    boss_hit_reduction_easy:
+      value: 2
+      unit: hits
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/enemies/boss_5_mecha_knuckles.c (lives = 8 - difficulty*2)
+        confidence: 0.9
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/enemies/boss_1_egg_hammer_tank.c (unk9A = 2 on easy)
+        confidence: 0.85
+  relations:
+  - type: modulates
+    target: boss_framework
+  - type: modulates
+    target: badnik_patrol_charge
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/enemies/buzzer.c:CreateEntity_Buzzer
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/enemies/leon.c:CreateEntity_Leon
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/stage.c (difficulty forced normal for modes)
+    confidence: 0.85
+- id: special_stage
+  facet: mechanics
+  label: Pseudo-3D ring-quota special stage with two checkpoints
+  summary: 'Entered through a hidden special spring, the stage moves the character forward through depth while the
+    player steers within a +-134 x +-94 px plane, collecting rings and avoiding hazards. There are two ring gates:
+    the first needs the stage''s first quota (60 to 100) and the second twice that (120 to 200); falling short shows a
+    NOT ENOUGH RINGS message and fades out without an emerald. Forward speed starts at 8 depth units/frame and can be
+    boosted by 1.5x up to 12.'
+  instantiates:
+  - concept: mechanics.goal.ring_quota_checkpoint
+  - concept: progression.collectible.bonus_stage_token
+    weight: 0.5
+  reads:
+  - input.buttons.held
+  - special_stage.collected_rings
+  - special_stage.depth_progress
+  writes:
+  - special_stage.collected_rings
+  - special_stage.player_plane_position
+  - save.chaos_emeralds
+  params:
+    steer_bounds:
+      value: 'x +-134, y +-94'
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/special_stage/main.c:sub_802A248
+        confidence: 0.85
+    base_forward_speed:
+      value: 8
+      unit: depth units/frame (native 0x800)
+      variants:
+      - when: boosted
+        value: 12
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/special_stage/main.c:sub_802A248 (unk18 clamped 0x800..0xC00)
+        confidence: 0.75
+    checkpoint_message_hold:
+      value: 420
+      unit: frames
+      native_value: '0x1A4'
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/special_stage/main.c:Task_80299B0
+        confidence: 0.8
+  tables:
+    ring_quotas:
+      description: Per special stage (1-7) ring targets at the first and second gate, read from the USA ROM.
+      columns:
+      - special_stage
+      - entered_from
+      - gate_1
+      - gate_2
+      rows:
+      - [1, Neo Green Hill 1/2, 60, 120]
+      - [2, Secret Base 1/2, 70, 140]
+      - [3, Casino Paradise 1/2, 80, 160]
+      - [4, Ice Mountain 1, 80, 160]
+      - [5, Ice Mountain 2, 90, 180]
+      - [6, Angel Island 1/2, 90, 180]
+      - [7, Egg Rocket / Cosmic Angel, 100, 200]
+      evidence:
+      - kind: static_signature
+        ref: rom:ASOE 0x480034 u8[12] level->special-stage map {0,0,1,1,2,2,3,4,5,5,6,6}; 0x480040 u16[7][2] quotas
+          (gUnknown_08487134 / gUnknown_08487140 equivalents)
+        confidence: 0.85
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/special_stage/main.c:CreateSpecialStage
+        confidence: 0.85
+  invariants:
+  - An emerald bit is only set once per special stage; already-collected stages are skipped (bit test in game_2_1.c).
+  relations:
+  - type: requires
+    target: springs_and_boosters
+  - type: part_of
+    target: chaos_emerald_true_ending_gate
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/special_stage/main.c:CreateSpecialStage
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/special_stage/main.c:Task_80299B0
+    confidence: 0.8
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/ui/game_2_1.c (SetBit chaosEmeralds)
+    confidence: 0.8
+  - kind: llm_knowledge
+    ref: the character rides a pseudo-3D track collecting rings while bombs cost rings
+    confidence: 0.4
+- id: super_sonic_extra_stage
+  facet: mechanics
+  label: Super Sonic flight with draining ring timer in the extra stage
+  summary: 'The Moon extra stage turns Sonic into Super Sonic flying in an auto-scrolling arena (scroll 8 px/frame,
+    wrapping every 2688 px). Rings start at 50 and drain one per second, with a warning sound at 10 or fewer; reaching
+    0 kills. Hits from the Super Egg Robo only knock Super Sonic back (3 px/frame, 30 invulnerability frames, 24-frame
+    control lock) and capsules released by the boss refill rings.'
+  instantiates:
+  - concept: mechanics.resource.draining_timer_resource
+  - concept: movement_physics.air_action.free_flight
+    weight: 0.6
+  reads:
+  - game.rings
+  - input.buttons.held
+  writes:
+  - game.rings
+  - player.move_state.dead
+  - player.velocity
+  params:
+    initial_rings:
+      value: 50
+      evidence:
+      - kind: decomp_source
+        ref: sa2:include/game/sa1/stage/player_super_sonic.h:EXTRA_BOSS__INITIAL_RING_COUNT
+        confidence: 0.95
+    ring_drain_period:
+      value: 60
+      unit: frames per ring
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_super_sonic.c:Player_SuperSonic_80499CC
+        confidence: 0.9
+    autoscroll_speed:
+      value: 8
+      unit: px/frame (gStageTime * 8, wrap 2688)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_super_sonic.c:sub_8049FD0
+        confidence: 0.8
+    super_hit_knockback:
+      value: 3.0
+      unit: px/frame backward
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/collision_3.c:Coll_DamageSuperSonic
+        confidence: 0.9
+  relations:
+  - type: gated_by
+    target: chaos_emerald_true_ending_gate
+  - type: variant_of
+    target: ring_damage_rule
+    note: rings become a countdown instead of a hit buffer
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_super_sonic.c:Player_SuperSonic_80499CC
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_super_sonic.c:sub_804A1B8
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/rings_scatter.c:InitScatteringRings_ExtraBossCapsule
+    confidence: 0.8
+- id: cpu_partner_follow_ai
+  facet: ai
+  label: CPU Tails replaying the leader's inputs with a 20-frame delay
+  summary: 'With the partner code entered, a second Player struct runs Tails on the same physics, fed by the leader''s
+    held input from 20 frames earlier (a 60-frame input history ring). It overrides horizontal input to close a 16 px
+    gap, turns to face the leader when idle, presses Jump when the leader is 80+ px higher or when falling behind
+    in the air, copies the leader''s collision layer, and if left far off-screen respawns by flying in from a
+    camera-relative point. The partner can break enemies and collect rings but never loses rings.'
+  instantiates:
+  - concept: ai.companion.delayed_input_follower
+  reads:
+  - input.history_60
+  - leader.position
+  - leader.move_state
+  - leader.layer
+  - camera.position
+  writes:
+  - partner.input.held
+  - partner.input.pressed
+  - partner.layer
+  - partner.position
+  params:
+    input_delay:
+      value: 20
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:sub_8045DF0 (gUnknown_030060F0[20])
+        confidence: 0.9
+    follow_gap:
+      value: 16
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:sub_8045DF0
+        confidence: 0.9
+    jump_assist_height:
+      value: 80
+      unit: px (leader above partner)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/shared/stage/player.c:sub_8045DF0
+        confidence: 0.85
+    input_history_length:
+      value: 60
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/player_controls.c:sub_804D13C
+        confidence: 0.9
+  invariants:
+  - Partner damage never scatters rings (Coll_DamagePlayer checks playerID == 0).
+  relations:
+  - type: requires
+    target: character_and_course_select
+  - type: requires
+    target: tails_flight
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:sub_8045DF0
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:Player_Tails_804571C
+    confidence: 0.6
+    note: non-matching; respawn/fly-in path
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/player_controls.c:sub_804D13C
+    confidence: 0.9
+- id: badnik_patrol_charge
+  facet: ai
+  label: Patrol-then-charge badnik (Rhinotank)
+  summary: Rhinotank patrols a map-defined span at 0.625 px/frame, turning at its ends. If the player is within 80 px
+    ahead and between 32 px above and 8 px below, it revs and charges at 3 px/frame until the span end. It is destroyed
+    by any attack-hitbox contact.
+  instantiates:
+  - concept: ai.enemy.patrol_detect_pursue
+  reads:
+  - player.position
+  - entity.patrol_span
+  writes:
+  - enemy.velocity.x
+  - enemy.state
+  params:
+    patrol_speed:
+      value: 0.625
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/enemies/rhinotank.c
+        confidence: 0.9
+    charge_speed:
+      value: 3.0
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/enemies/rhinotank.c
+        confidence: 0.9
+    detect_range:
+      value: '80 px ahead, -32..+8 px vertical'
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/enemies/rhinotank.c
+        confidence: 0.9
+  relations:
+  - type: requires
+    target: enemy_contact_combat
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/enemies/rhinotank.c
+    confidence: 0.9
+- id: badnik_patrol_shooter
+  facet: ai
+  label: Patrolling ranged badniks (Buzzer, Kiki)
+  summary: Buzzer flies a map-defined span at 1 px/frame and, when the player is up to 96 px below and inside a forward
+    window, stops and fires a projectile downward. Kiki throws projectiles whose horizontal speed is scaled to the
+    player's distance so they land near the player.
+  instantiates:
+  - concept: ai.enemy.patrol_ranged_attack
+  reads:
+  - player.position
+  - entity.patrol_span
+  writes:
+  - enemy.velocity
+  - projectile.spawn
+  params:
+    buzzer_patrol_speed:
+      value: 1.0
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/enemies/buzzer.c
+        confidence: 0.85
+    buzzer_detect_depth:
+      value: 96
+      unit: px below
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/enemies/buzzer.c
+        confidence: 0.85
+  relations:
+  - type: requires
+    target: enemy_contact_combat
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/enemies/buzzer.c:CreateBuzzerProjectile
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/enemies/kiki.c:CreateKikiProjectile
+    confidence: 0.75
+- id: boss_framework
+  facet: ai
+  label: Hit-counter Eggman bosses with post-hit invulnerability and pinch phase
+  summary: 'Each zone ends with an Eggman machine that takes a fixed number of hits (7-8 on Normal, 2 fewer on Easy)
+    and is invulnerable for 32 frames after each hit. Hits come from attack-hitbox contact by the player or partner;
+    body contact hurts. The Egg Hammer Tank (zone 1) speeds up after its 5th hit and switches to a defeat sequence at
+    7. X Zone chains three more bosses and the Moon hosts the Super Egg Robo.'
+  instantiates:
+  - concept: ai.boss.weak_point_window
+  - concept: ai.boss.hit_counter_pinch_phase
+  reads:
+  - player.hitbox.attack
+  - partner.hitbox.attack
+  - boss.hit_count
+  - save.difficulty_level
+  writes:
+  - boss.hit_count
+  - boss.invuln_timer
+  - boss.speed
+  params:
+    egg_hammer_tank_hits:
+      value: 7
+      variants:
+      - when: difficulty=easy
+        value: 5
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/enemies/boss_1_egg_hammer_tank.c:Task_802611C (unk9A == 7)
+        confidence: 0.85
+    boss_post_hit_invuln:
+      value: 32
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/enemies/boss_1_egg_hammer_tank.c:Task_802611C (unk9B = 0x20)
+        confidence: 0.85
+    pinch_threshold:
+      value: 5
+      unit: hits (speed-up after hit 5)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/enemies/boss_1_egg_hammer_tank.c:Task_802611C (unk9A > 4)
+        confidence: 0.75
+  tables:
+    bosses:
+      description: Boss roster by source file; hit counts only where read.
+      columns:
+      - zone
+      - boss
+      - normal_hits
+      rows:
+      - [1 Neo Green Hill, Egg Hammer Tank, 7]
+      - [2 Secret Base, Egg Press, unknown]
+      - [3 Casino Paradise, Egg Ball, unknown]
+      - [4 Ice Mountain, Egg Spider, unknown]
+      - [5 Angel Island, Mecha Knuckles, 8]
+      - [6 Egg Rocket / Cosmic Angel, Egg Snake, unknown]
+      - [7 X Zone, Egg Wrecker -> Egg Drillster -> Egg X, unknown]
+      - [7 The Moon, Super Egg Robo, 8]
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/enemies/boss_*.c (file names and difficulty branches)
+        confidence: 0.8
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/enemies/boss_xtra_super_egg_robot.c (unk68 = 8 - difficulty*2)
+        confidence: 0.85
+  invariants:
+  - Boss collision ignores hits while its invulnerability timer is non-zero.
+  relations:
+  - type: requires
+    target: enemy_contact_combat
+  - type: part_of
+    target: zone_act_progression
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/enemies/boss_1_egg_hammer_tank.c:Task_802611C
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/collision_3.c:Coll_Player_Boss_1
+    confidence: 0.75
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/enemies/boss_5_mecha_knuckles.c
+    confidence: 0.8
+- id: zone_act_progression
+  facet: progression
+  label: Linear zones of two acts with end-of-act-2 bosses, unlocked per character
+  summary: 'Story mode is linear: Neo Green Hill, Secret Base, Casino Paradise, Ice Mountain and Angel Island each have
+    two acts with a boss at the end of act 2; zone 6 is Egg Rocket (act 1, with a 3-minute launch countdown subtracted
+    from the course time) and Cosmic Angel (act 2); zone 7 is X Zone (boss rush) and The Moon (extra). Clearing an act
+    raises unlockedLevels for the current character, which the course select reads.'
+  instantiates:
+  - concept: progression.structure.linear_level_sequence
+  - concept: progression.world.persistent_world_flags
+    weight: 0.4
+  reads:
+  - game.current_level
+  - save.unlocked_levels[character]
+  writes:
+  - save.unlocked_levels[character]
+  - game.current_level
+  params:
+    single_player_level_ids:
+      value: 14
+      evidence:
+      - kind: decomp_source
+        ref: sa2:include/constants/zones.h:NUM_LEVEL_IDS_SP (SA1)
+        confidence: 0.95
+    acts_per_zone:
+      value: 2
+      evidence:
+      - kind: decomp_source
+        ref: sa2:include/constants/zones.h:ACTS_PER_ZONE (SA1)
+        confidence: 0.95
+  invariants:
+  - Progress is per character; clearing with Sonic does not unlock levels for Tails.
+  relations:
+  - type: part_of
+    target: chaos_emerald_true_ending_gate
+  evidence:
+  - kind: decomp_source
+    ref: sa2:include/constants/zones.h
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:include/constants/sa1/songs.h (zone names via MUS_* ids)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/ui/stage_results.c:CreateStageResults (unlockedLevels update, Egg Rocket countdown)
+    confidence: 0.85
+- id: chaos_emerald_true_ending_gate
+  facet: progression
+  label: Seven emeralds plus all-character clears gate the extra stage
+  summary: 'Each special stage awards one bit of a 7-bit chaos-emerald field shared by all characters. The Moon (Super
+    Sonic vs Super Egg Robo) and the true ending happen only if the current character is Sonic, all 7 emeralds are
+    held, and all four characters have cleared beyond level 12 (X Zone). Otherwise the X Zone clear ends the game.'
+  instantiates:
+  - concept: progression.gating.collect_all_tokens
+  - concept: progression.completion.ranked_ending
+    weight: 0.5
+  reads:
+  - save.chaos_emeralds
+  - save.unlocked_levels[*]
+  - game.selected_character
+  writes:
+  - game.current_level
+  params:
+    emeralds_required:
+      value: 7
+      evidence:
+      - kind: decomp_source
+        ref: sa2:include/constants/zones.h:ALL_ZONE_CHAOS_EMERALDS
+        confidence: 0.95
+  invariants:
+  - Only Sonic can enter the extra stage.
+  - The emerald bitfield is global, not per character.
+  relations:
+  - type: requires
+    target: special_stage
+  - type: requires
+    target: zone_act_progression
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/enemies/boss_x3_egg_x.c (chaosEmeralds == ALL_ZONE_CHAOS_EMERALDS and unlockedLevels[0..3] > 12)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/ui/stage_results.c:CreateStageResults (isInFinalStage)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/ui/staff_credits.c
+    confidence: 0.6
+- id: ring_economy
+  facet: economy
+  label: 'Ring loop: placed and boxed sources, damage sink, life converter'
+  summary: Rings come from fixed level placements, item boxes and re-collected scatter; they are spent only by damage
+    (all lost, up to 48 recoverable). Every crossing of a multiple of 100 rings gives an extra life (single player, not
+    in the extra stage), and at the goal each ring is worth 100 points. In the extra stage rings become a draining
+    countdown.
+  instantiates:
+  - concept: economy.resource.capped_pool
+    weight: 0.3
+  - concept: economy.converter.threshold_reward
+  reads:
+  - game.rings
+  writes:
+  - game.rings
+  - game.lives
+  - game.score
+  params:
+    rings_per_extra_life:
+      value: 100
+      evidence:
+      - kind: decomp_source
+        ref: sa2:include/game/globals.h:INCREMENT_RINGS (Div(gRingCount, 100) change)
+        confidence: 0.95
+    ring_bonus_points:
+      value: 100
+      unit: points per ring at act clear
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/ui/stage_results.c:CreateStageResults (ringScore = 100 * ringCount)
+        confidence: 0.9
+  invariants:
+  - Extra-life threshold counts each 100-boundary crossing, so losing and regaining rings past 100 grants another life.
+  relations:
+  - type: requires
+    target: ring_damage_rule
+  - type: modulates
+    target: lives_and_game_over
+  evidence:
+  - kind: decomp_source
+    ref: sa2:include/game/globals.h:INCREMENT_RINGS
+    confidence: 0.95
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/rings_manager.c:Task_RingsMgrMain
+    confidence: 0.7
+- id: score_and_bonuses
+  facet: economy
+  label: Score from enemy chains and end-of-act time and ring bonuses
+  summary: Score comes from enemy chains (100-1000), item boxes and the act-clear tally of a time bonus (80,000 under
+    30 s down to 0 at 6:00 or later) plus 100 per ring. Every 50,000 points gives an extra life.
+  instantiates:
+  - concept: economy.source.time_bonus_tiers
+  - concept: economy.converter.threshold_reward
+  reads:
+  - stage.course_time
+  - game.rings
+  - game.score
+  writes:
+  - game.score
+  - game.lives
+  params:
+    points_per_extra_life:
+      value: 50000
+      evidence:
+      - kind: decomp_source
+        ref: sa2:include/game/globals.h:INCREMENT_SCORE (Div(gLevelScore, 50000))
+        confidence: 0.9
+  tables:
+    time_bonus:
+      description: Act-clear time bonus by course time (first matching row from the top).
+      columns:
+      - course_time_at_least
+      - bonus
+      rows:
+      - ['6:00', 0]
+      - ['5:00', 500]
+      - ['4:00', 1000]
+      - ['3:00', 2000]
+      - ['2:00', 3000]
+      - ['1:30', 4000]
+      - ['1:00', 5000]
+      - ['0:50', 10000]
+      - ['0:30', 50000]
+      - ['under 0:30', 80000]
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/ui/stage_results.c:CreateStageResults
+        confidence: 0.95
+  relations:
+  - type: part_of
+    target: ring_economy
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/ui/stage_results.c:CreateStageResults
+    confidence: 0.9
+- id: stage_hud
+  facet: ui_hud
+  label: Ring, time and lives counters with warning flashes
+  summary: The stage HUD shows the ring count and an M:SS:cc timer top-left and the character's life icon with the
+    lives count bottom-left. Digits flash red when under a minute remains in timed modes or past 9:00 of the 10-minute
+    limit; drowning shows countdown numbers over the player.
+  instantiates:
+  - concept: ui_hud.hud.resource_counters
+  - concept: ui_hud.alert.low_health_warning
+    weight: 0.4
+  reads:
+  - game.rings
+  - stage.course_time
+  - game.lives
+  writes:
+  - oam.hud
+  params:
+    timer_warning_start:
+      value: 32400
+      unit: frames (9:00)
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/stage_ui.c (gCourseTime > TIME(9, 0) && gStageTime & 0x10)
+        confidence: 0.85
+  evidence:
+  - kind: capture_frame
+    ref: capture:frontend:frame 2200 keyframe (ring icon, 0:04:37 timer, lives 2)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/stage_ui.c
+    confidence: 0.75
+- id: pause_and_controls
+  facet: ui_hud
+  label: Start pause and two-layout button mapping
+  summary: Start pauses with a PAUSE banner and resumes on Start (time attack also allows a retry with A). Jump and
+    attack are mapped to A/B with a reversible layout stored in the save; demos force the default layout.
+  instantiates:
+  - concept: ui_hud.input.configurable_button_layout
+  reads:
+  - input.buttons.pressed.start
+  - save.btn_config
+  writes:
+  - game.paused
+  - controls.mapping
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/pause_menu.c (SA1 branch)
+    confidence: 0.8
+  - kind: decomp_source
+    ref: sa2:include/game/sa1/save.h (btnConfig BTNCONFIG_NORMAL/REVERSE)
+    confidence: 0.85
+  - kind: capture_frame
+    ref: capture:frontend:frame 2200 keyframe (PAUSE banner)
+    confidence: 0.9
+- id: story_delivery
+  facet: narrative_delivery
+  label: Wordless intro, act transitions and emerald-dependent endings
+  summary: Story is delivered without dialogue through an animated intro, sprite cutscenes between zones (including a
+    Tornado rescue and an Egg Rocket launch sequence), and staff credits whose ending differs with the emerald count.
+  instantiates:
+  - concept: narrative_delivery.cutscene.in_engine_cutscene
+  - concept: narrative_delivery.structure.predetermined_story
+  reads:
+  - save.chaos_emeralds
+  writes:
+  - frontend.active_task
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/ui/intro_animation.c
+    confidence: 0.6
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/ui/staff_credits.c (chaosEmeralds != ALL_ZONE_CHAOS_EMERALDS branch)
+    confidence: 0.7
+  - kind: decomp_source
+    ref: sa2:include/constants/sa1/songs.h (MUS_CUTSCENE_TORNADO_RESCUE, MUS_CUTSCENE_A_FEW_DAYS_LATER)
+    confidence: 0.6
+- id: sonic_setting
+  facet: setting
+  label: Bright cartoon island-to-space Eggman story
+  summary: Sonic and friends cross bright tropical, casino, ice and ancient-island zones to Eggman's rocket and space
+    station, then the Moon; enemies are robot 'badniks' that free trapped animals when broken. Tone is upbeat, fast and
+    arcade-like.
+  instantiates:
+  - concept: setting.theme.cartoon_mascot_adventure
+  - concept: setting.tone.upbeat_speed
+  evidence:
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/stage/trapped_animals.c
+    confidence: 0.6
+  - kind: capture_frame
+    ref: capture:frontend:frames 1203, 2200 keyframes
+    confidence: 0.7
+  - kind: llm_knowledge
+    ref: Sonic series setting and tone
+    confidence: 0.5
+- id: sound_engine
+  facet: audio
+  label: MP2K (m4a) sequencer at a 10.5 kHz mix rate with PSG
+  summary: Audio uses Nintendo's m4a/MP2K library (src/lib/m4a linked into the SA1 build) with 174 MIDI-derived songs.
+    Captures show DirectSound A and B active nearly every frame at 10512 Hz and all four PSG channels used. Pitch
+    control is used for the spindash rev and tempo control for speed shoes.
+  instantiates:
+  - concept: audio.engine.sample_psg_sequencer
+  - concept: audio.sfx.contextual_action_sfx
+    weight: 0.4
+  reads:
+  - audio.song_requests
+  writes:
+  - io.sound
+  params:
+    mix_rate:
+      value: 10512
+      unit: Hz
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:derived.sound.directsound_rates_hz 10512 (17966 frames)
+        confidence: 0.9
+    song_count:
+      value: 174
+      unit: MIDI tracks in the SA1 build
+      evidence:
+      - kind: decomp_source
+        ref: sa2:sa1_ldscript.txt (sound/sa1/songs/midi objects)
+        confidence: 0.8
+  relations:
+  - type: part_of
+    target: state_driven_music
+  evidence:
+  - kind: capture_telemetry
+    ref: capture:frontend:directsound_A/B true, psg_channels_triggered [1,2,3,4]
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/player.c:Player_TrySpindash (m4aMPlayPitchControl)
+    confidence: 0.85
+- id: state_driven_music
+  facet: audio
+  label: Per-act tracks with power-up, drowning and boss overrides
+  summary: Each act has its own track; boss fights, invincibility, drowning and special stages switch tracks, speed
+    shoes double the BGM tempo for 20 s, and 1-UPs queue a jingle. Act clear plays a different jingle for normal acts,
+    boss acts, X Zone and the Moon.
+  instantiates:
+  - concept: audio.music.state_driven_music
+  - concept: audio.music.jingle_interrupt_queue
+    weight: 0.6
+  - concept: audio.music.tempo_modulated_music
+  reads:
+  - player.item_effect
+  - player.seconds_until_drown
+  - game.current_level
+  writes:
+  - audio.bgm
+  - audio.bgm_tempo
+  params:
+    speed_shoes_tempo:
+      value: 2.0
+      unit: x
+      evidence:
+      - kind: decomp_source
+        ref: sa2:src/game/sa1/stage/itembox.c (m4aMPlayTempoControl PLAYER_SPEED_UP_MUSIC_TEMPO)
+        confidence: 0.85
+  relations:
+  - type: modulates
+    target: item_boxes
+  evidence:
+  - kind: decomp_source
+    ref: sa2:include/constants/sa1/songs.h
+    confidence: 0.85
+  - kind: decomp_source
+    ref: sa2:src/game/sa1/ui/stage_results.c (MUS_EXTRA_CLEAR / MUS_FINAL_CLEAR / MUS_BOSS_CLEAR / MUS_ACT_CLEAR)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: sa2:src/game/shared/stage/music_manager.c
+    confidence: 0.5
+proposed_concepts:
+- id: frontend.boot.language_select
+  label: Boot language select
+  definition: A language choice shown before or instead of the publisher logos on first boot, stored for later sessions.
+  is_a:
+  - frontend.flow.mode_state_machine
+- id: frontend.menu.character_select
+  label: Character select
+  definition: Front-end choice among playable characters that share a core rule set but differ in abilities.
+- id: frontend.save.checksummed_flash_record
+  label: Checksummed single save record
+  definition: One whole-game save record (progress, settings, records) written to non-volatile memory with a magic
+    number and checksum, rotated across sectors.
+- id: frontend.game_over.lives_restart_checkpoint
+  label: Lives with checkpoint restart
+  definition: Each death consumes a life and restarts the level from the last checkpoint; zero lives ends the run.
+  seed_source: 'gdp: Lives'
+- id: mechanics.goal.time_limit
+  label: Level time limit
+  definition: A per-level clock that kills or fails the player when it reaches a fixed maximum.
+  seed_source: 'gdp: Time Limits'
+- id: mechanics.mode.time_attack
+  label: Time attack mode
+  definition: Separate mode that replays levels for fastest completion with stored best times.
+  seed_source: 'gdp: High Score Lists'
+- id: projection.pseudo_3d.scaled_sprite_depth
+  label: Scaled-sprite depth
+  definition: Fakes forward motion through depth by scaling sprites with a per-object depth value instead of transforming
+    a background plane.
+- id: camera.follow.deadzone_window
+  label: Dead-zone follow window
+  definition: The camera stays still while the target is inside a window around the screen centre and moves at a capped
+    speed once it leaves, possibly with different windows per axis and state.
+- id: camera.look.directional_peek
+  label: Directional peek
+  definition: Holding a direction while idle pans the camera ahead in that direction after a delay, returning when
+    the player moves.
+- id: movement_physics.momentum.surface_ground_speed
+  label: Surface ground-speed momentum
+  definition: Movement keeps one scalar speed along the current surface that is projected through the surface angle,
+    so momentum carries around slopes, walls and ceilings.
+  is_a:
+  - movement_physics.locomotion.accel_to_cap_run
+  seed_source: 'vgdl: InertialAvatar'
+- id: movement_physics.momentum.slope_slip_detach
+  label: Slope slip and detach
+  definition: On surfaces steeper than a threshold the character falls off and loses control briefly unless moving
+    faster than a minimum speed.
+  is_a:
+  - movement_physics.locomotion.slope_speed_modifier
+- id: movement_physics.collision.heightmap_tile_sensors
+  label: Height-map tile sensors
+  definition: Terrain collision by probing per-tile height maps and angles along the character's local axes, giving
+    smooth slopes and arbitrary-angle surfaces on a tile grid.
+- id: movement_physics.collision.layer_switch_loop
+  label: Layer-switched loops
+  definition: Overlapping terrain is split into collision layers and invisible triggers switch the character's active
+    layer, enabling loops and crossing paths in a 2D tile map.
+- id: movement_physics.jump.surface_normal_impulse
+  label: Surface-normal jump
+  definition: The jump impulse is applied perpendicular to the current surface instead of straight up, preserving
+    tangential momentum.
+  is_a:
+  - movement_physics.jump.fixed_impulse_gravity_arc
+- id: movement_physics.air_control.air_drag
+  label: Air drag
+  definition: A small proportional loss of horizontal airborne speed per frame under certain conditions.
+- id: movement_physics.launcher.spring_set_velocity
+  label: Spring launcher
+  definition: A contact object that overwrites the character's velocity along its axis with a fixed strength.
+- id: movement_physics.launcher.dash_panel
+  label: Dash panel
+  definition: A floor object that sets ground speed to a fixed high value if the character is slower.
+- id: movement_physics.locomotion.rail_grind
+  label: Rail grind
+  definition: A rail-riding state with its own friction, minimum speed and slope gain, exited by jumping.
+- id: movement_physics.air_action.air_dash
+  label: Air dash
+  definition: A one-per-jump mid-air horizontal impulse triggered by input.
+- id: movement_physics.air_action.timed_flight
+  label: Stamina-limited flight
+  definition: Repeated mid-air flaps give lift until a stamina timer runs out.
+- id: movement_physics.air_action.glide
+  label: Glide
+  definition: Mid-air state with slow capped descent and horizontal speed that builds over time, steered by input.
+- id: movement_physics.air_action.free_flight
+  label: Free flight
+  definition: Unrestricted 2D movement in the air without gravity, usually in a special mode.
+- id: movement_physics.wall.wall_climb
+  label: Wall climb
+  definition: Grabbing a wall from a glide or jump and moving vertically along it with optional kick-off.
+- id: mechanics.hazard.drowning_timer
+  label: Drowning timer
+  definition: Staying submerged runs down an air timer with on-screen countdown that kills at zero unless air is
+    replenished.
+  is_a:
+  - mechanics.hazard.environmental_damage_over_time
+- id: mechanics.combat.melee_weapon_swing
+  label: Melee weapon swing
+  definition: A button-triggered attack hitbox from a held weapon, separate from body-contact attacks.
+- id: mechanics.roster.shared_core_character_variants
+  label: Shared-core character roster
+  definition: Several playable characters run the same physics core and differ by an action layer of special moves.
+- id: mechanics.combat.ring_buffer_health
+  label: Collectible-buffer health
+  definition: A collected resource acts as health; any hit with at least one unit drops the whole stock instead of
+    killing, and a hit with none is lethal.
+  seed_source: 'gdp: Lives'
+- id: economy.drain.recoverable_scatter
+  label: Recoverable scatter
+  definition: On loss, part of a resource is spawned as short-lived pickups the player can recover.
+- id: economy.source.chain_score_multiplier
+  label: Chain score
+  definition: Consecutive scoring events without a reset condition award increasing points.
+- id: mechanics.powerup.timed_powerup
+  label: Timed power-up
+  definition: A pickup that grants a temporary state (invincibility, speed, shield) for a fixed duration or one hit.
+- id: economy.source.item_container
+  label: Item container
+  definition: A breakable object that yields one predefined or random reward.
+- id: mechanics.respawn.checkpoint
+  label: Checkpoint respawn
+  definition: Touching a marker stores the respawn point (and possibly time) used after death.
+- id: mechanics.goal.ring_quota_checkpoint
+  label: Collection quota gates
+  definition: A bonus course where reaching each gate requires having collected a minimum count, failing the stage
+    otherwise.
+- id: progression.collectible.bonus_stage_token
+  label: Bonus-stage token
+  definition: A persistent collectible earned only by clearing an optional bonus stage.
+- id: mechanics.resource.draining_timer_resource
+  label: Draining resource timer
+  definition: A resource that decreases at a fixed rate and ends the attempt when empty, refilled by pickups.
+- id: ai.companion.delayed_input_follower
+  label: Delayed-input follower
+  definition: A companion character driven by the leader's recorded inputs after a fixed delay, with corrections to
+    stay close and catch-up respawn when lost.
+  seed_source: 'gdp: Companions'
+- id: ai.enemy.patrol_ranged_attack
+  label: Patrol with ranged attack
+  definition: An enemy patrolling a fixed span that fires projectiles when the player enters a detection region.
+- id: ai.boss.hit_counter_pinch_phase
+  label: Hit-counter boss with pinch phase
+  definition: A boss defeated after a fixed number of hits, with brief post-hit invulnerability and faster behaviour
+    after a threshold.
+- id: progression.structure.linear_level_sequence
+  label: Linear level sequence
+  definition: Levels are played in a fixed order and unlocked by clearing the previous one.
+- id: progression.gating.collect_all_tokens
+  label: Collect-all gate
+  definition: Access to final content or the true ending requires every one of a set of optional collectibles.
+- id: economy.converter.threshold_reward
+  label: Threshold reward
+  definition: Crossing each multiple of a counter (rings, score) grants a reward such as an extra life.
+- id: economy.source.time_bonus_tiers
+  label: Tiered time bonus
+  definition: Completion awards points from a table of time thresholds; faster clears earn more.
+- id: ui_hud.input.configurable_button_layout
+  label: Configurable button layout
+  definition: An option that swaps or remaps action buttons, stored in the save.
+- id: setting.theme.cartoon_mascot_adventure
+  label: Cartoon mascot adventure
+  definition: Colourful cartoon world with an animal mascot hero opposing a comic villain and his robots.
+- id: setting.tone.upbeat_speed
+  label: Upbeat speed
+  definition: Optimistic, fast-paced tone emphasising speed and spectacle over threat.
+- id: audio.music.tempo_modulated_music
+  label: Tempo-modulated music
+  definition: Gameplay state changes the playback tempo of the current track rather than switching tracks.
+open_questions:
+- 'Region mismatch: SAT-R/sa2 builds the European SA1 ROM (config.mk GAME_REGION EUROPE, sa1.sha1 eb00f101...,
+  5 languages), our ROM is USA ASOE (d842af..., En/Ja). All decomp citations are EU code. Spindash tables and
+  special-stage quotas were confirmed directly in the USA ROM at shifted offsets (-0x7004 and -0x7100 vs EU), so code
+  and data are not byte-aligned across regions; other EU-only data (incbin tables) were not checked.'
+- 'Decomp completeness: SA1 links entirely from C but ~159 function bodies are still non-matching asm includes and
+  most SA1 functions are unnamed (sub_80xxxxx). Non-matching ones used here: Knuckles glide update (sub_8048980), CPU
+  Tails respawn (Player_Tails_804571C), rail jump (sub_8044434), look-down (Player_80447D8).'
+- 'Spindash charge clamp: the code uses MAX(charge+2, Q(8)), so the first press saturates to index 8 (9 px/frame) and
+  quick re-presses can index 9, reading the next table (8.25 normal) or unrelated bytes 0x4342 in boosted mode. Whether
+  this matches real behaviour needs a frame-stepped capture.'
+- MOVESTATE_2000 swaps in 7.5 px/frame top speed and the fast spindash table but no setter was found in SA1 sources;
+  it may be Super Sonic-related or unused.
+- 'Air drag condition compares (u16)qSpeedAirY > (u16)(-Q(67)-1), i.e. applies for any upward speed; the Genesis rule
+  limits it to the top of the arc. Confirm with capture.'
+- Special-stage depth units, hazard types (bombs) and ring loss on hazards were not traced in special_stage/main.c
+  (2841 lines); the component relies partly on low-confidence recall.
+- Bosses 2, 3, 4, 6 and the X Zone trio hit counts and attack patterns were not read; only Egg Hammer Tank, Mecha
+  Knuckles and Super Egg Robo counts are cited.
+- Captures cover only front end and the first seconds of Neo Green Hill 1 (paused by the scripted START presses). No
+  gameplay physics, special stage, boss or attract-demo footage exists to confirm derived values.
+- Amy's unlock condition and the exact options menu contents were not traced in options.c/course_select.c.
+- 'gUnknown_080D650C/080D661C per-level teleport offsets in sub_80232D0 look like level wrap/shift points but their
+  data (incbin) was not decoded.'
+- SA2 and SA3 share this engine (src/game/shared); once decomposed, ground_momentum, slope_physics, spin_dash and
+  stage_camera should get variant_of relations to them.

@@ -1,0 +1,21 @@
+{
+ "comment": "Gameplay: title START -> file A -> Start Game -> Normal; landing cutscene; Samus controllable in Brinstar from ~1250 (START opens the map, so menu presses stop at 1250); run/jump/shoot from 1300.",
+ "phases": [
+  {
+   "name": "gameplay",
+   "frames": 5400,
+   "play_starts_frame": 1300,
+   "repeat": [
+    {
+     "from_frame": 180,
+     "until_frame": 1250,
+     "template": "menu_mash"
+    },
+    {
+     "from_frame": 1300,
+     "template": "move_side"
+    }
+   ]
+  }
+ ]
+}

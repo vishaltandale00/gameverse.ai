@@ -1,0 +1,104 @@
+schema_version: 0
+id: crash-bandicoot-the-huge-adventure
+game:
+  title: 'Crash Bandicoot: The Huge Adventure'
+  platform: gba
+  game_code: ACQE
+  rom_sha1: 5a2651c78bb8a1d707e3c3af1f46fb64e2104198
+  evidence_basis:
+  - ghidra_function
+  - static_signature
+  sources:
+  - kind: ghidra_export
+    ref: local/re/experiments/20261016-corpus-decompile/shard-a/crash-bandicoot-the-huge-adventure/functions.jsonl;
+      run 20261016T005243-7bfbd5; Ghidra12.1.4; no auto-analysis/capture-seeded; C SHA256 41232860e1a6ff0bd2ba361cff07d2f25dd9ebf7fa65fa311537e5c3f8b38dd8
+  - kind: instruction_check
+    ref: ARM binutils2.47 objdump of indexed ROM, Thumb0x08009df4-0x08009ea2; signed conditional branches and word/byte
+      stores checked directly
+  - kind: extraction_run
+    ref: Codex/GPT source/disassembly audit 2026-10-16T05:01:38.642096+00:00; exact model revision unavailable;
+      brief v2; one function only, no gameplay semantics assumed
+conventions:
+  scope: 'PARTIAL: one instruction-checked numeric state-update operator. No complete mechanics, player controls,
+    physics units, story or asset extraction is claimed.'
+  state_layout: Offsets refer to the struct-like base supplied in r0. Signed comparisons and 32-bit loads/stores
+    establish the arithmetic; object identity and field names are unknown. Coordinate/increment interpretations
+    are hypotheses.
+  units: Native integers per invocation; no pixel, fixed-point or frame conversion established.
+components:
+- id: paired_target_approach
+  facet: mechanics
+  label: Two target-approach increments integrated into paired state
+  summary: The helper moves signed words at offsets0x60 and0x64 toward targets0x50 and0x5c using steps0x4c and0x58,
+    clipping overshoot in the direction taken. It saves words0x00/0x04 into0x6c/0x70, then adds the updated increments
+    to0x00/0x04. It writes sign bits at0x24 and returns whether either increment is nonzero; which actor or camera
+    uses this apparent movement kernel is not established.
+  instantiates:
+  - concept: mechanics.state.paired_target_approach_integration
+  reads:
+  - object[0x00]:u32
+  - object[0x04]:u32
+  - object[0x4c]:i32
+  - object[0x50]:i32
+  - object[0x58]:i32
+  - object[0x5c]:i32
+  - object[0x60]:i32
+  - object[0x64]:i32
+  - ram[0x03001278]:i32
+  writes:
+  - object[0x60]:i32
+  - object[0x64]:i32
+  - object[0x24]:u8
+  - object[0x6c]:u32
+  - object[0x70]:u32
+  - object[0x00]:u32
+  - object[0x04]:u32
+  - ram[0x03001278]:i32
+  - return:r0 (0 or1)
+  params:
+    sign_bits:
+      value:
+        first_positive: 1
+        first_negative: 2
+        second_positive: 8
+        second_negative: 4
+      unit: bits in object byte0x24
+      native_value:
+      - 1
+      - 2
+      - 8
+      - 4
+      native_unit: bit masks
+      evidence:
+      - kind: static_signature
+        ref: 5a2651c78bb8a1d707e3c3af1f46fb64e2104198:Thumb0x08009e3e-0x08009e6c
+        confidence: 0.9
+        note: Direct disassembly checked; no named animation/facing interpretation established.
+  invariants:
+  - With nonnegative steps and no signed overflow, each updated increment lies between its previous value and target;
+    it does not overshoot.
+  - A zero increment contributes no sign bit; positive and negative bits for one axis are mutually exclusive.
+  - Previous paired state is copied before new increments are added.
+  - Accumulator additions are native32-bit operations; overflow/reachability and coordinate units remain unknown.
+  - A nonzero return means a nonzero increment, not confirmed player movement or successful collision resolution.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x08009df4 (shard-a run20261016T005243-7bfbd5)
+    confidence: 0.85
+    note: Numeric operations cross-checked against direct Thumb disassembly; actor meaning remains unknown.
+  - kind: static_signature
+    ref: 5a2651c78bb8a1d707e3c3af1f46fb64e2104198:Thumb0x08009df4-0x08009ea2
+    confidence: 0.9
+    note: Signed compare/branch, word loads/stores, sign-byte writes, accumulator additions and bx lr verified.
+proposed_concepts:
+- id: mechanics.state.paired_target_approach_integration
+  label: Paired target approach with integration
+  definition: Two signed increment states approach corresponding targets by bounded steps, then update paired accumulators
+    while retaining their previous values.
+open_questions:
+- Identify callers and object ownership before naming these fields player velocity, camera scroll or enemy movement.
+- Establish step sign constraints, numeric units, per-frame call frequency and collision interactions.
+- Recover other functions and indirect flows beyond observed capture targets.
+- Extract entities, combat, skills/strategies, progression, economy, narrative, hardware and asset-use graphs; these
+  domains are unmined here.
+- A schema-valid one-function record is an incremental result, not a full game ontology.

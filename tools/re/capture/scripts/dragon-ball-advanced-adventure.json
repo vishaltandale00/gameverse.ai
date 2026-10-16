@@ -1,0 +1,21 @@
+{
+ "comment": "Gameplay: title START -> Data 1 / Story; Goku is controllable from ~1050; stop START presses (pause) and run/jump/attack from 1100.",
+ "phases": [
+  {
+   "name": "gameplay",
+   "frames": 5400,
+   "play_starts_frame": 1100,
+   "repeat": [
+    {
+     "from_frame": 180,
+     "until_frame": 1000,
+     "template": "menu_mash"
+    },
+    {
+     "from_frame": 1100,
+     "template": "move_side"
+    }
+   ]
+  }
+ ]
+}

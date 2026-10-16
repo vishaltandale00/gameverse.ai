@@ -1,0 +1,509 @@
+schema_version: 0
+id: metal-slug-advance
+game:
+  title: Metal Slug Advance
+  platform: gba
+  game_code: BSME
+  rom_sha1: 067e1511ab6becf797f1bbd321a858e96a0349af
+  evidence_basis:
+  - ghidra_function
+  - static_signature
+  sources:
+  - kind: ghidra_export
+    ref: local/re/experiments/20261016-corpus-decompile/shard-b/metal-slug-advance/functions.jsonl; SHA256 0bbb54b05bfc922765c1af9dc55b02c4b05223f3bcf1e23f0f2555fbec194fac;
+      run20261016T005524-478941; capture-observed ROM call targets only; no automatic analysis, odd-pointer discovery,
+      matching source build or return repair.
+  - kind: rom_instruction_verification
+    ref: Direct Thumb disassembly with GNU arm-none-eabi-objdump2.47 of the indexed ROM, SHA1 067e1511ab6becf797f1bbd321a858e96a0349af.
+      Exact instruction ranges, ROM-range hashes, PC-literal values/hashes and disassembly hashes in local/scratch/rom_pipeline_audit/mining-v2/evidence_manifest.json
+      (SHA256 4ebc9fb668b1b2d9cda42f4c94e25a1441709ac0472be0ceb8db331e363d1fd6). No ROM bytes or raw code copied
+      into this ontology.
+  - kind: extraction_run
+    ref: Codex GPT-6-family agent, exact serving model ID unavailable; brief v2. Instruction acquisition recorded
+      from 2026-10-16T05:10:39.391167+00:00; writing/review completed 2026-10-16T05:20:49+00:00. Work was explicitly
+      paused/resumed for another user task, so uninterrupted active wall time and provider queue/inference are unavailable.
+      Read unrepaired shard-b pseudo-C for7 selected entries, direct Thumb disassembly and literal-pool words, fresh
+      capture summaries where cited; no source decomp/game recall or additional provider API call used.
+conventions:
+  coverage_scope: PARTIAL instruction-grounded engine/data operators. Entity roles, combat, progression, player
+    movement, economy, assets and story are not comprehensively recovered. Component count is not completeness.
+    No player skill or strategy is claimed.
+  state_types: u8/u16/u32 mean instruction access widths, ptr32 means a 32-bit address. Semantic paths containing
+    offsets identify unknown layouts, not reverse-engineered actor names. Caller-owned memory validity and table
+    extents remain preconditions.
+  units: Offsets, record strides and allocation counts use bytes or raw scalar counts. No raw number is converted
+    to pixels, seconds or player-physics units without evidence.
+  proof_scope: Consequential loads/stores, shifts, comparisons and return instructions were read directly from ROM
+    disassembly. Decompiler types, return signatures and IO-direction hints remain untrusted where not confirmed.
+    Literal-pool data printed by objdump is not treated as executed instructions.
+  inference_scope: Names such as record, pool and mask describe operations, not known gameplay meaning. Potential
+    reuse follows from the operator algebra; no gameplay trajectory or successful composition has been tested.
+components:
+- id: paired_halfword_banks
+  facet: mechanics
+  label: Write a pair of indexed halfword values
+  summary: The helper truncates index to 16 bits, scales by 2, then writes separate supplied halfwords at 0x03000210+2*i
+    and 0x03000218+2*i. Neither index range nor bank extent is checked; the8-byte separation alone does not prove
+    a four-entry array contract.
+  instantiates:
+  - concept: mechanics.data.parallel_halfword_write
+  reads:
+  - arg.index:u16
+  - arg.value_a:u16
+  - arg.value_b:u16
+  writes:
+  - ram[0x03000210+2*i]:u16
+  - ram[0x03000218+2*i]:u16
+  invariants:
+  - Both writes share the truncated index and occur in bankA then bankB order.
+  - Caller must prevent unintended aliasing or out-of-range access.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x080007f4
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/metal-slug-advance/functions.jsonl:18; pseudo-C
+      SHA256 86f824e2cfda3afc04b3862027f97099e4f3d7b2180d1fd0049a94ef4a5cfc75; semantics checked against ROM instructions,
+      not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x080007f4..0x8000806
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 c9357f593f83c62e934197115350b6ac28ab1e3c77fc2998f222b765458d102b; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x080007f4.asm.txt
+      SHA256 050272d66b1d82f36d04f0214e83f9e3787f035b4f7a6157ad6ed8c2a5e13d0c; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    element_stride:
+      value: 2
+      unit: bytes
+      native_value: 2
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x080007f4..0x8000806
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 c9357f593f83c62e934197115350b6ac28ab1e3c77fc2998f222b765458d102b; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x080007f4.asm.txt
+          SHA256 050272d66b1d82f36d04f0214e83f9e3787f035b4f7a6157ad6ed8c2a5e13d0c; PC-relative literal words separately
+          recorded in the evidence manifest.
+    bank_base_separation:
+      value: 8
+      unit: bytes
+      native_value: 8
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x080007f4..0x8000806
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 c9357f593f83c62e934197115350b6ac28ab1e3c77fc2998f222b765458d102b; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x080007f4.asm.txt
+          SHA256 050272d66b1d82f36d04f0214e83f9e3787f035b4f7a6157ad6ed8c2a5e13d0c; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: dual_indexed_field_clear
+  facet: mechanics
+  label: Clear one halfword and one word in differently strided banks
+  summary: For the low8 bits of the input, the helper clears a halfword at 0x03001ea8+i*32 and a word at 0x03001c58+i*4.
+    It clears exactly these fields, not entire32-byte records; the fields may belong to a shared slot system, but
+    their gameplay role is unknown.
+  instantiates:
+  - concept: mechanics.data.parallel_indexed_field_clear
+  reads:
+  - arg.index:u8
+  writes:
+  - ram[0x03001ea8+32*i]:u16
+  - ram[0x03001c58+4*i]:u32
+  invariants:
+  - Only the low8 input bits select the slot.
+  - No caller-valid slot count is locally enforced.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x08003f54
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/metal-slug-advance/functions.jsonl:100; pseudo-C
+      SHA256 d549c47c2c1c2842e276ef9a41ece4db52ccff4ac90b0d8edc28446e05c10800; semantics checked against ROM instructions,
+      not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x08003f54..0x8003f6c
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 b0dac0810c12f6804df9aa2c18eadc88e4cb5e99f8700f9e4589acbccfafcd5a; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x08003f54.asm.txt
+      SHA256 30d704dc8d537f2788f3dbf1c3d6dde7380a6fff623cfcee1149bd8e98523971; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    index_width:
+      value: 8
+      unit: bits
+      native_value: 8
+      native_unit: bits
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x08003f54..0x8003f6c
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 b0dac0810c12f6804df9aa2c18eadc88e4cb5e99f8700f9e4589acbccfafcd5a; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x08003f54.asm.txt
+          SHA256 30d704dc8d537f2788f3dbf1c3d6dde7380a6fff623cfcee1149bd8e98523971; PC-relative literal words separately
+          recorded in the evidence manifest.
+    first_stride:
+      value: 32
+      unit: bytes
+      native_value: 32
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x08003f54..0x8003f6c
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 b0dac0810c12f6804df9aa2c18eadc88e4cb5e99f8700f9e4589acbccfafcd5a; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x08003f54.asm.txt
+          SHA256 30d704dc8d537f2788f3dbf1c3d6dde7380a6fff623cfcee1149bd8e98523971; PC-relative literal words separately
+          recorded in the evidence manifest.
+    second_stride:
+      value: 4
+      unit: bytes
+      native_value: 4
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x08003f54..0x8003f6c
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 b0dac0810c12f6804df9aa2c18eadc88e4cb5e99f8700f9e4589acbccfafcd5a; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x08003f54.asm.txt
+          SHA256 30d704dc8d537f2788f3dbf1c3d6dde7380a6fff623cfcee1149bd8e98523971; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: packed_pair_bit_query
+  facet: mechanics
+  label: Read one bit from an indexed packed halfword
+  summary: Instructions truncate index and bit-offset inputs to 16 bits, load a halfword at base+2*(index>>3), then
+    arithmetic-shift the zero-extended value by the low8 bits of 2*(index&7)+offset and mask bit0. Offset0 or 1
+    would select either bit of a two-bit cell, but the caller is not proven to restrict the offset to those values.
+  instantiates:
+  - concept: mechanics.data.packed_pair_bit_query
+  reads:
+  - arg.index:u16
+  - arg.bit_offset:u16
+  - arg.bank:ptr32
+  - bank[index>>3]:u16
+  writes:
+  - return:u1
+  invariants:
+  - The result is always0 or 1.
+  - No bounds or bit-offset validation occurs.
+  - Because the loaded value is zero-extended, effective shifts16..255 produce0; do not model the shift as modulo16.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x080076f4
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/metal-slug-advance/functions.jsonl:220; pseudo-C
+      SHA256 6fa1de89ac52457c4fd568575f6511bd5ed17290c8d83b7aa651fc848b49b73e; semantics checked against ROM instructions,
+      not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x080076f4..0x8007716
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 9eca82fa9317a66dd53c821acc70e8570df9b7d36dd6d6d30d253eaad4273625; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x080076f4.asm.txt
+      SHA256 97e5ef0838283c3b334813714f82f7a7570e39359bb9c73ed206a6b567dfa002; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    cells_per_halfword:
+      value: 8
+      unit: two-bit cells
+      native_value: 8
+      native_unit: two-bit cells
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x080076f4..0x8007716
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 9eca82fa9317a66dd53c821acc70e8570df9b7d36dd6d6d30d253eaad4273625; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x080076f4.asm.txt
+          SHA256 97e5ef0838283c3b334813714f82f7a7570e39359bb9c73ed206a6b567dfa002; PC-relative literal words separately
+          recorded in the evidence manifest.
+    register_shift_mask:
+      value: 255
+      unit: bit mask
+      native_value: 255
+      native_unit: bit mask
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x080076f4..0x8007716
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 9eca82fa9317a66dd53c821acc70e8570df9b7d36dd6d6d30d253eaad4273625; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x080076f4.asm.txt
+          SHA256 97e5ef0838283c3b334813714f82f7a7570e39359bb9c73ed206a6b567dfa002; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: monotone_bitset_insert
+  facet: mechanics
+  label: Set a bit in a16-bit-word bitset
+  summary: The low16 input bits choose word index i>>4 and bit i&15. A halfword load, OR and halfword store set
+    the selected bit without clearing other bits; no index bounds or ownership checks are included.
+  instantiates:
+  - concept: mechanics.flags.monotone_word_bitset_insert
+  reads:
+  - arg.index:u16
+  - arg.bitset:ptr32
+  - bitset[index>>4]:u16
+  writes:
+  - bitset[index>>4]:u16
+  invariants:
+  - Repeating the operation with the same index is idempotent.
+  - All previously set bits remain set.
+  - Memory must cover the selected halfword.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x08007820
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/metal-slug-advance/functions.jsonl:224; pseudo-C
+      SHA256 9918ca57993a910098dc0ea97c0d4b2e71ebd0c7ad84db6e5e0dd3c91d00a77f; semantics checked against ROM instructions,
+      not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x08007820..0x800783c
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 333b4a5774e274519b99f4756fba87f6c7df9a0760cf8dfc3d5fc5dc699c6e36; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x08007820.asm.txt
+      SHA256 d6402717fbdbb0dd267dca79ba1afe34f6ca03a39f5817a7680b907680cba4e4; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    bits_per_word:
+      value: 16
+      unit: bits
+      native_value: 16
+      native_unit: bits
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x08007820..0x800783c
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 333b4a5774e274519b99f4756fba87f6c7df9a0760cf8dfc3d5fc5dc699c6e36; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x08007820.asm.txt
+          SHA256 d6402717fbdbb0dd267dca79ba1afe34f6ca03a39f5817a7680b907680cba4e4; PC-relative literal words separately
+          recorded in the evidence manifest.
+    word_stride:
+      value: 2
+      unit: bytes
+      native_value: 2
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x08007820..0x800783c
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 333b4a5774e274519b99f4756fba87f6c7df9a0760cf8dfc3d5fc5dc699c6e36; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x08007820.asm.txt
+          SHA256 d6402717fbdbb0dd267dca79ba1afe34f6ca03a39f5817a7680b907680cba4e4; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: two_byte_stream_decode
+  facet: mechanics
+  label: Consume two bytes into an indirect context
+  summary: The helper reads an object-owned pointer at+0xcc, copies the next two stream bytes to context+2 and+3,
+    and returns stream+2 in r0 before BX LR. This is a bounded stream-consumption primitive; the encoded command
+    and field roles are unknown.
+  instantiates:
+  - concept: mechanics.data.two_byte_context_decode
+  reads:
+  - object.offset_cc:ptr32
+  - arg.stream:ptr32
+  - stream[0]:u8
+  - stream[1]:u8
+  writes:
+  - context.offset_2:u8
+  - context.offset_3:u8
+  - return.stream_cursor:ptr32
+  invariants:
+  - Exactly two byte reads and two byte stores occur.
+  - Caller must provide two readable bytes and a writable context; no end-of-stream check exists.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x080166b0
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/metal-slug-advance/functions.jsonl:573; pseudo-C
+      SHA256 c44c426397cd43185217879548510d6349c9f7e98964ddec69dedbd606873c2b; semantics checked against ROM instructions,
+      not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x080166b0..0x80166c4
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 f4e2603951229dcec94e2ecb83b952bd21f70eff9c692d507bab80e5258fcf81; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x080166b0.asm.txt
+      SHA256 b47d39abe645357611074a049209ef3241ad8a2f703c94581563020354e5f20e; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    consumed_bytes:
+      value: 2
+      unit: bytes
+      native_value: 2
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x080166b0..0x80166c4
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 f4e2603951229dcec94e2ecb83b952bd21f70eff9c692d507bab80e5258fcf81; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x080166b0.asm.txt
+          SHA256 b47d39abe645357611074a049209ef3241ad8a2f703c94581563020354e5f20e; PC-relative literal words separately
+          recorded in the evidence manifest.
+    context_pointer_offset:
+      value: 204
+      unit: bytes
+      native_value: 204
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x080166b0..0x80166c4
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 f4e2603951229dcec94e2ecb83b952bd21f70eff9c692d507bab80e5258fcf81; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x080166b0.asm.txt
+          SHA256 b47d39abe645357611074a049209ef3241ad8a2f703c94581563020354e5f20e; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: state_code_table_projection
+  facet: mechanics
+  label: Project one raw state byte into two related fields
+  summary: After loading object+0xcc, the helper copies context+0x45 to+0x44 and uses that same u8 value to fetch
+    a byte from ROM table 0x083ce09c into context+0x42. The ROM table extent and meaning of the three offsets are
+    unresolved; names such as weapon, character or animation would be speculation.
+  instantiates:
+  - concept: mechanics.state.raw_code_table_projection
+  reads:
+  - object.offset_cc:ptr32
+  - context.offset_45:u8
+  - rom.table_083ce09c[code]:u8
+  writes:
+  - context.offset_44:u8
+  - context.offset_42:u8
+  invariants:
+  - The copied code and lookup index derive from the same loaded byte.
+  - There is no local bound check against the actual table extent.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x08012b5c
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/metal-slug-advance/functions.jsonl:495; pseudo-C
+      SHA256 4a09436a0a86a5debaf508dac28e9b6c9323c4459e8eef581a4d4258f3515b94; semantics checked against ROM instructions,
+      not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x08012b5c..0x8012b7a
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 913d1a5dfe6bc33964d4099cf1934091f2b4c14c001435c7c7a08a32da69b3a6; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x08012b5c.asm.txt
+      SHA256 82472e13f084d318e5d3536561f1b4155bbab879a72cb6da9c383279179d2676; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    source_code_offset:
+      value: 69
+      unit: bytes
+      native_value: 69
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x08012b5c..0x8012b7a
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 913d1a5dfe6bc33964d4099cf1934091f2b4c14c001435c7c7a08a32da69b3a6; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x08012b5c.asm.txt
+          SHA256 82472e13f084d318e5d3536561f1b4155bbab879a72cb6da9c383279179d2676; PC-relative literal words separately
+          recorded in the evidence manifest.
+    copy_offset:
+      value: 68
+      unit: bytes
+      native_value: 68
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x08012b5c..0x8012b7a
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 913d1a5dfe6bc33964d4099cf1934091f2b4c14c001435c7c7a08a32da69b3a6; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x08012b5c.asm.txt
+          SHA256 82472e13f084d318e5d3536561f1b4155bbab879a72cb6da9c383279179d2676; PC-relative literal words separately
+          recorded in the evidence manifest.
+    mapped_offset:
+      value: 66
+      unit: bytes
+      native_value: 66
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x08012b5c..0x8012b7a
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 913d1a5dfe6bc33964d4099cf1934091f2b4c14c001435c7c7a08a32da69b3a6; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x08012b5c.asm.txt
+          SHA256 82472e13f084d318e5d3536561f1b4155bbab879a72cb6da9c383279179d2676; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: three_word_template_application
+  facet: mechanics
+  label: Apply a ROM-selected three-word template
+  summary: A u8 selector indexes a ROM pointer table at 0x083ce0e4 with 4-byte entries. Three consecutive words
+    from the selected target are copied into object+0x3c,+0x38,+0x40 in that order; these are raw parameters with
+    unknown units and role, not established movement or weapon constants.
+  instantiates:
+  - concept: mechanics.data.indirect_three_word_template
+  reads:
+  - arg.selector:u8
+  - rom.pointer_table_083ce0e4[selector]:ptr32
+  - template.offset_0:u32
+  - template.offset_4:u32
+  - template.offset_8:u32
+  writes:
+  - object.offset_3c:u32
+  - object.offset_38:u32
+  - object.offset_40:u32
+  invariants:
+  - Input is truncated to 8 bits.
+  - No selector extent or pointer-validity check exists.
+  - For nonoverlapping valid template/object memory, the three source words are preserved exactly.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x08013774
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/metal-slug-advance/functions.jsonl:522; pseudo-C
+      SHA256 ccc2d7bc2d4891fc2abcc31bf92a5664792b41607effa1ad4867f9ad1ea932de; semantics checked against ROM instructions,
+      not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x08013774..0x801378c
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 bcd91a9b1e1c4696be71508c9b86d1bca38bc9751f65f1f1cf7bcadb28580355; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x08013774.asm.txt
+      SHA256 993ccac7dcbd16f7ad40048151a89d7a81d843ccc80e13c08a9756c675b90958; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    pointer_stride:
+      value: 4
+      unit: bytes
+      native_value: 4
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x08013774..0x801378c
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 bcd91a9b1e1c4696be71508c9b86d1bca38bc9751f65f1f1cf7bcadb28580355; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x08013774.asm.txt
+          SHA256 993ccac7dcbd16f7ad40048151a89d7a81d843ccc80e13c08a9756c675b90958; PC-relative literal words separately
+          recorded in the evidence manifest.
+    word_count:
+      value: 3
+      unit: words
+      native_value: 3
+      native_unit: words
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x08013774..0x801378c
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 bcd91a9b1e1c4696be71508c9b86d1bca38bc9751f65f1f1cf7bcadb28580355; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x08013774.asm.txt
+          SHA256 993ccac7dcbd16f7ad40048151a89d7a81d843ccc80e13c08a9756c675b90958; PC-relative literal words separately
+          recorded in the evidence manifest.
+    destination_offsets:
+      value: &id001
+      - 60
+      - 56
+      - 64
+      unit: bytes
+      native_value: *id001
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:067e1511ab6becf797f1bbd321a858e96a0349af:0x08013774..0x801378c
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 bcd91a9b1e1c4696be71508c9b86d1bca38bc9751f65f1f1cf7bcadb28580355; local/scratch/rom_pipeline_audit/mining-v2/metal-slug-advance/0x08013774.asm.txt
+          SHA256 993ccac7dcbd16f7ad40048151a89d7a81d843ccc80e13c08a9756c675b90958; PC-relative literal words separately
+          recorded in the evidence manifest.
+proposed_concepts:
+- id: mechanics.data.parallel_halfword_write
+  label: Parallel halfword write
+  definition: Write two values at the same index in two halfword-addressed banks.
+- id: mechanics.data.parallel_indexed_field_clear
+  label: Parallel indexed field clear
+  definition: Reset selected fields in two indexed banks with distinct strides.
+- id: mechanics.data.packed_pair_bit_query
+  label: Packed pair bit query
+  definition: Select a bit from a halfword bank using a two-bit-cell index plus an explicit bit offset.
+- id: mechanics.flags.monotone_word_bitset_insert
+  label: Monotone word bitset insert
+  definition: Insert a flag into a word-addressed bitset while preserving existing flags.
+- id: mechanics.data.two_byte_context_decode
+  label: Two byte context decode
+  definition: Consume two sequential bytes into context fields and return the advanced input cursor.
+- id: mechanics.state.raw_code_table_projection
+  label: Raw code table projection
+  definition: Preserve a raw code while mapping it through a byte table into another field.
+- id: mechanics.data.indirect_three_word_template
+  label: Indirect three word template
+  definition: Select a pointer-table entry and copy its three words into specified target fields.
+open_questions:
+- Identify callers, actual object/entity ownership, valid index ranges, memory extents and update cadence before
+  binding these operators to player or enemy behavior.
+- Extract combat, resource meanings, AI, traversal, story, assets and progression from further source/disassembly
+  and controlled trajectories; do not substitute model recall.
+- These exports cover observed call targets only. Unknown indirect branches, ABI recovery and unexecuted ROM regions
+  limit discovery completeness.
+- Establish which caller supplies0/1 to the packed pair-bit query, if any; do not assume an ordinary single-bit
+  bitmap formula.
+- The context pointer at object+0xcc is shared by several helpers. Confirm object layout and lifetimes before proposing
+  relations to actual entities or combat.

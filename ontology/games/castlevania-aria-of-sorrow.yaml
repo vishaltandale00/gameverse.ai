@@ -1,0 +1,2062 @@
+schema_version: 0
+id: castlevania-aria-of-sorrow
+game:
+  title: 'Castlevania: Aria of Sorrow'
+  platform: gba
+  game_code: A2CE
+  rom_sha1: abd71fe01ebb201bcc133074db1dd8c5253776c7
+  evidence_basis:
+  - decomp_source
+  - capture_telemetry
+  - capture_frame
+  sources:
+  - kind: decomp
+    ref: https://github.com/testyourmine/cvaos @ bc23d849d578c35ae12a5cec4e66549c3021a5be; README and cvaos_us.sha1
+      match local USA ROM. WIP matching decomp; no baseline build performed. License file read (MIT); ROM/data reuse
+      rights not inferred.
+  - kind: captures
+    ref: local/captures/castlevania-aria-of-sorrow run 20261015T234415-8f46cf; source commit d431b8183f1001722d7bc9a326da28088930c344
+      dirty; harness 0.1.0, libmgba 0.10.5 HLE BIOS; 3600 idle + 5400 default-input frontend frames, 4.254 s capture
+      wall. Capture reports many bad BIOS/memory game_error logs; images and register observations are not normal-play
+      qualification.
+  - kind: extraction_run
+    ref: Codex/GPT, exact runtime model unavailable, brief v1. Work began before first recorded clock timestamp
+      2026-10-16T04:38:09Z; completed 2026-10-16T04:41:39.960222+00:00; total extraction duration unavailable. No
+      provider calls. Read source/symbol excerpts in main.c, code_080009A0.c, code_08001004.c, code_08001194.c,
+      code_08002454.c, code_08008750.c, code_080096AC.c, code_0800B700.c, code_0800CB00.c, code_080109F4.c, code_08011DD0.c,
+      code_08012744.c, code_08013960.c, code/code_08014548.c, code/code_080211F0.c, code_08032444.c, code_08032E4C.c,
+      code_08033CAC.c, code_08035930.c, code_080D73B8.c; include/structs/ewram.h and main.h, include/constants/main.h,
+      macros.h; first function asm/code/code_08014548.s; README, database.json, LICENSE, cvaos_us.sha1; capture
+      summary/phase, model label files; four keyframes (frontend 866,1899,4959; attract1052) inspected. Corpus briefs/schema/seeds
+      and existing decompositions consulted.
+conventions:
+  evidence_scope: Partial GPT extraction of directly inspected source and capture evidence; no local-model recall.
+    The source contains many anonymous fields and assembly bodies. Missing system coverage is explicit in open_questions.
+    Reusable strategy/skill implications are labeled inference and do not assert human performance.
+  time: Native main-loop updates are reported as updates/frames, without converting them to exact seconds. Source
+    comments often use 60 updates/s; capture reports ~59.73 emulated frames/s.
+  coordinates: Only cited camera/entity helpers establish 16 fractional bits for positions; no global claim that
+    every internal quantity uses this convention. Screen dimensions are 240x160.
+  resources: Health/magic use integer points. Inventory array capacities are not catalogues of obtainable entities.
+    Soul group-adder limits are not automatically invariants of unchecked raw setters.
+components:
+- id: mode_dispatch
+  facet: frontend
+  label: Discrete game modes with reset substate on transition
+  summary: GameModeUpdate dispatches logo, title, file menu, in-game, game-over, credits, intro, boss rush, soul
+    trade and sound test handlers. Returning -1 preserves the mode, -2 increments it, and another value selects
+    that mode; changing mode clears both update-stage fields. Debug handlers exist, but their presence does not
+    establish normal player access.
+  instantiates:
+  - concept: frontend.flow.mode_state_machine
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/main.c:GameModeUpdate
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:include/constants/main.h:GameMode
+    confidence: 0.9
+  reads:
+  - frontend.mode:int
+  - frontend.handler_result:int
+  writes:
+  - frontend.mode:int
+  - frontend.stage:int
+  params:
+    stay_result:
+      value: -1
+      unit: enum
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:include/constants/main.h:GAME_MODE_SAME_MODE
+        confidence: 0.9
+      native_value: -1
+      native_unit: enum
+    next_result:
+      value: -2
+      unit: enum
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:include/constants/main.h:GAME_MODE_NEXT_MODE
+        confidence: 0.9
+      native_value: -2
+      native_unit: enum
+  invariants:
+  - Every observed mode transition clears gameModeUpdateStage and unk_12.
+- id: soft_reset
+  facet: frontend
+  label: Reset chord with one-update suppression
+  summary: The reset check accepts the full A+B+Select+Start held chord only when some new input exists and the
+    newly pressed set is not itself the entire chord. An anonymous guard bit cancels one check and clears itself.
+    The main loop then invokes BIOS SoftReset with RESET_ALL; a generic hold-only reset detector would differ from
+    this code.
+  instantiates:
+  - concept: frontend.soft_reset.button_combo
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/main.c:SoftResetCheck
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/main.c:AgbMain
+    confidence: 0.9
+  reads:
+  - input.held:u16
+  - input.new:u16
+  - runtime.reset_suppression:bool
+  writes:
+  - runtime.reset_suppression:bool
+  - runtime.boot_state
+  params:
+    buttons:
+      value: A+B+Select+Start
+      unit: buttons
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/main.c:SoftResetCheck
+        confidence: 0.9
+  invariants:
+  - Pressing the entire chord simultaneously is rejected by this check.
+  relations:
+  - type: part_of
+    target: mode_dispatch
+- id: input_repeat_and_override
+  facet: ui_hud
+  label: Edge, held and repeated input with priority override
+  summary: UpdateInput forms newly pressed bits from current and previous held inputs; menu repeat waits 32 updates
+    and repeats every 6. Gameplay has separate held/new fields that a caller can override. Despite its comment claiming
+    larger priorities win, SetPlayerInput actually accepts a smaller numeric priority or an empty priority slot;
+    extraction follows the branch.
+  instantiates:
+  - concept: ui_hud.input.priority_arbitrated_override
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/main.c:UpdateInput
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_080009A0.c:SetPlayerInput
+    confidence: 0.9
+  reads:
+  - input.hardware:u16
+  - input.previous:u16
+  - input.override_priority:u6
+  writes:
+  - input.new:u16
+  - input.held:u16
+  - input.player_new:u16
+  - input.player_held:u16
+  - input.repeat_timer:u10
+  params:
+    initial_repeat_delay:
+      value: 32
+      unit: updates
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/main.c:UpdateInput
+        confidence: 0.9
+      native_value: 32
+      native_unit: updates
+    repeat_interval:
+      value: 6
+      unit: updates
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/main.c:UpdateInput
+        confidence: 0.9
+      native_value: 6
+      native_unit: updates
+  invariants:
+  - A smaller numeric override priority replaces a larger existing priority.
+  - Override priority is cleared on the next UpdateInput that observes it.
+  relations:
+  - type: modulates
+    target: red_soul_cast
+- id: publisher_logo
+  facet: frontend
+  label: Skippable timed publisher logo
+  summary: The logo handler initializes BG0, fades from brightness increase, holds for 240 updates and accepts Start/A
+    to proceed early. It fades back out before returning the title mode. The same stage processes a Konami-code
+    state, but its unlock consequences are not established here.
+  instantiates:
+  - concept: frontend.boot.publisher_logos
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08002454.c:GameModeKonamiLogoUpdate
+    confidence: 0.9
+  reads:
+  - input.new:u16
+  - frontend.stage:int
+  writes:
+  - frontend.stage:int
+  - gpu.brightness:u16
+  params:
+    hold_duration:
+      value: 240
+      unit: updates
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08002454.c:GameModeKonamiLogoUpdate
+        confidence: 0.9
+      native_value: 240
+      native_unit: updates
+  invariants:
+  - Title transition occurs after the exit fade.
+  relations:
+  - type: part_of
+    target: mode_dispatch
+- id: title_idle_intro
+  facet: frontend
+  label: Animated title idles into story intro
+  summary: The title uses mode 1, affine BG2, object window and staged alpha/brightness animation. In its interactive
+    state it resets a 600-update idle countdown on Up/Down repeat; expiry sets a flag that directs the exit to GAME_MODE_INTRO_CUTSCENE.
+    Start/A can skip animation stages 2 through 7, so this is an intro replay path rather than evidence of a recorded
+    gameplay demo.
+  instantiates:
+  - concept: frontend.title.idle_story_replay
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08002454.c:GameModeTitleScreenUpdate
+    confidence: 0.9
+  reads:
+  - input.new:u16
+  - input.repeated:u16
+  - frontend.idle_timer:int
+  writes:
+  - frontend.stage:int
+  - frontend.next_mode:int
+  - gpu.affine_bg2
+  params:
+    idle_duration:
+      value: 600
+      unit: updates
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08002454.c:GameModeTitleScreenUpdate
+        confidence: 0.9
+      native_value: 600
+      native_unit: updates
+  invariants:
+  - Idle expiry overrides the selected menu destination with intro-cutscene mode.
+  relations:
+  - type: part_of
+    target: mode_dispatch
+  - type: requires
+    target: affine_title
+- id: sram_records
+  facet: frontend
+  label: Verified SRAM records and slot lock bits
+  summary: The SRAM initializer tests a 16-byte game signature and clears storage in 4096-byte chunks when initializing
+    it. Save-slot writes have a 0x47C-byte stride and serialize character data, metadata and map/progress blocks.
+    Writes lock then unlock the slot and verify each block, but this routine unlocks even after a reported write
+    error; a slot lock is not proof of atomic durability.
+  instantiates:
+  - concept: frontend.save.verified_sram_record
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08001004.c:SramInitialize
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08001004.c:SramLockSaveSlot
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08012744.c:SaveData_SaveSlotToSram
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08012744.c:SaveData_LoadSlotFromSram
+    confidence: 0.9
+  reads:
+  - save.character_record
+  - save.map_progress
+  - save.slot:int
+  writes:
+  - sram.bytes:u8[]
+  - sram.slot_lock_bits:u8
+  params:
+    record_stride:
+      value: 1148
+      unit: bytes
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08012744.c:SaveData_SaveSlotToSram
+        confidence: 0.9
+      native_value: 1148
+      native_unit: bytes
+    character_block:
+      value: 400
+      unit: bytes
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08012744.c:SaveData_SaveSlotToSram
+        confidence: 0.9
+      native_value: 400
+      native_unit: bytes
+    metadata_block:
+      value: 32
+      unit: bytes
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08012744.c:SaveData_SaveSlotToSram
+        confidence: 0.9
+      native_value: 32
+      native_unit: bytes
+    progress_block:
+      value: 716
+      unit: bytes
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08012744.c:SaveData_SaveSlotToSram
+        confidence: 0.9
+      native_value: 716
+      native_unit: bytes
+  invariants:
+  - Load checks signature and slot-unlocked status before reading record blocks.
+  - No checksum or redundant record copy was established in the opened writer.
+  relations:
+  - type: part_of
+    target: mode_dispatch
+- id: game_over_return
+  facet: frontend
+  label: Game-over presentation returns to boot logo
+  summary: GameModeGameOverUpdate builds a localized game-over presentation, runs fades and waits in stage 3 for
+    any new input. After its exit transition it returns GAME_MODE_KONAMI_LOGO. The inspected handler does not directly
+    reload the last save or offer a verified continue selection.
+  instantiates:
+  - concept: frontend.game_over.return_to_boot
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08013960.c:GameModeGameOverUpdate
+    confidence: 0.9
+  reads:
+  - input.new:u16
+  - save.language:u8
+  - frontend.stage:int
+  writes:
+  - frontend.mode:int
+  - gpu.display_state
+  invariants:
+  - Any new input advances stage 3; final destination is publisher-logo mode.
+  relations:
+  - type: part_of
+    target: mode_dispatch
+- id: boss_rush_setup
+  facet: progression
+  label: Boss-rush normalized start configuration
+  summary: The boss-rush menu clears the consumable inventory and gives the normal character one of item indices
+    3,4,5,6,23,24, then initializes level 40. The alternate character follows a separate initial-stat path with
+    eight stat-boost calls. Both refill HP/MP before starting the boss-rush script; item names and the encounter
+    sequence remain unverified.
+  instantiates:
+  - concept: progression.mode.normalized_challenge_loadout
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08008750.c:GameModeBossRushMenuUpdate
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08033CAC.c:sub_08033E38
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08033CAC.c:sub_08033E6C
+    confidence: 0.9
+  reads:
+  - player.character:u8
+  - frontend.selection
+  writes:
+  - inventory.items:u8[32]
+  - player.level:u8
+  - player.hp:s16
+  - player.mp:s16
+  - world.script_pointer
+  params:
+    normal_character_level:
+      value: 40
+      unit: level
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08008750.c:GameModeBossRushMenuUpdate
+        confidence: 0.9
+      native_value: 40
+      native_unit: level
+    alternate_boost_calls:
+      value: 8
+      unit: calls
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08008750.c:GameModeBossRushMenuUpdate
+        confidence: 0.9
+      native_value: 8
+      native_unit: calls
+  invariants:
+  - HP and MP are set to their maxima after either character branch.
+  relations:
+  - type: requires
+    target: level_growth
+  - type: modulates
+    target: incoming_damage
+    condition: boss-rush flag unk_A1_4 is set
+- id: character_equipment_state
+  facet: mechanics
+  label: Independent weapon, armor, accessory and soul equipment slots
+  summary: The persistent character struct stores one equipped weapon, armor and accessory plus separate red, blue
+    and yellow soul indices, and four remappable action-button masks. Inventory storage is separate from equipped
+    indices. This records a composable loadout shape; exact stat bonuses and every equipment-validation path are
+    not inferred from the struct alone.
+  instantiates:
+  - concept: mechanics.loadout.category_specific_slots
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:include/structs/ewram.h:EwramData_unk1325C
+    confidence: 0.9
+  reads:
+  - inventory.owned_items
+  writes:
+  - loadout.weapon:u8
+  - loadout.armor:u8
+  - loadout.accessory:u8
+  - loadout.red_soul:u8
+  - loadout.blue_soul:u8
+  - loadout.yellow_soul:u8
+  params:
+    soul_equipment_categories:
+      value: 3
+      unit: slots
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:include/structs/ewram.h:EwramData_unk1325C
+        confidence: 0.9
+      native_value: 3
+      native_unit: slots
+    physical_equipment_categories:
+      value: 3
+      unit: slots
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:include/structs/ewram.h:EwramData_unk1325C
+        confidence: 0.9
+      native_value: 3
+      native_unit: slots
+  invariants:
+  - Each represented equipment category has an independent byte index.
+  relations:
+  - type: modulates
+    target: red_soul_cast
+  - type: modulates
+    target: armor_avoidance
+- id: inventory_categories
+  facet: economy
+  label: Separate fixed arrays for consumables and equipment
+  summary: The persistent state allocates 32 item entries, 59 weapon entries, 25 armor entries and 20 accessory
+    entries. These are storage capacities rather than verified numbers of obtainable objects. Acquisition, shop
+    prices and per-item stack limits were not recovered from the opened C routines.
+  instantiates:
+  - concept: economy.inventory.categorized_pockets
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:include/structs/ewram.h:EwramData_unk1325C
+    confidence: 0.9
+  reads:
+  - save.character_record
+  writes:
+  - inventory.items:u8[32]
+  - inventory.weapons:u8[59]
+  - inventory.armor:u8[25]
+  - inventory.accessories:u8[20]
+  params:
+    item_entries:
+      value: 32
+      unit: entries
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:include/structs/ewram.h:EwramData_unk1325C
+        confidence: 0.9
+      native_value: 32
+      native_unit: entries
+    weapon_entries:
+      value: 59
+      unit: entries
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:include/structs/ewram.h:EwramData_unk1325C
+        confidence: 0.9
+      native_value: 59
+      native_unit: entries
+    armor_entries:
+      value: 25
+      unit: entries
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:include/structs/ewram.h:EwramData_unk1325C
+        confidence: 0.9
+      native_value: 25
+      native_unit: entries
+    accessory_entries:
+      value: 20
+      unit: entries
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:include/structs/ewram.h:EwramData_unk1325C
+        confidence: 0.9
+      native_value: 20
+      native_unit: entries
+  invariants:
+  - Do not interpret array length as a discovered acquisition catalogue.
+  relations:
+  - type: part_of
+    target: character_equipment_state
+- id: soul_inventory_banks
+  facet: economy
+  label: Packed soul inventories with two count banks
+  summary: Red, blue and yellow soul quantities are stored in two banks, with two 4-bit counts per byte. The group-add
+    helper clamps a selected count to 0..9; the aggregate getter sums both banks. Ability souls use a shared array
+    rather than independent bank pointers, so the aggregate helper appears to add that array twice for type 3; no
+    gameplay conclusion is drawn from that unresolved behavior.
+  instantiates:
+  - concept: economy.inventory.banked_collectible_counts
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08032444.c:SoulInventory_AddAmountToGroupTotal
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08032444.c:SoulInventory_GetSoulTotal
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08032444.c:SoulInventory_GetGroupSoulTotal
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:include/structs/ewram.h:EwramData_unk1325C
+    confidence: 0.9
+  reads:
+  - inventory.souls.bank:u4[][]
+  - soul.type:int
+  - soul.index:int
+  - resource.delta:int
+  writes:
+  - inventory.souls.bank:u4[][]
+  params:
+    group_min:
+      value: 0
+      unit: souls
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08032444.c:SoulInventory_AddAmountToGroupTotal
+        confidence: 0.9
+      native_value: 0
+      native_unit: souls
+    group_max:
+      value: 9
+      unit: souls
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08032444.c:SoulInventory_AddAmountToGroupTotal
+        confidence: 0.9
+      native_value: 9
+      native_unit: souls
+    count_width:
+      value: 4
+      unit: bits
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08032444.c:SoulInventory_GetGroupSoulTotal
+        confidence: 0.9
+      native_value: 4
+      native_unit: bits
+  invariants:
+  - Group-add clamps count; low-level set helpers do not independently enforce the same clamp.
+  - Two-bank semantics are not assumed for ability souls.
+  relations:
+  - type: modulates
+    target: soul_equipment_validity
+  - type: modulates
+    target: soul_completion
+- id: soul_collection_counter
+  facet: progression
+  label: Cumulative acquisition counter differs from current inventory
+  summary: SoulInventory_AddAmountToFirstGroupTotal increases a lifetime counter on positive acquisition and caps
+    it at 999, even when the local count clamps at 9. Negative additions do not decrease this counter. The distinct
+    AddAmountToSoulTotal helper calls the generic group adder and does not itself update this counter, so a call-site
+    audit is required before assuming all acquisitions are counted identically.
+  instantiates:
+  - concept: progression.collection.cumulative_counter
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08032444.c:SoulInventory_AddAmountToFirstGroupTotal
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08032444.c:sub_08032DBC
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08032444.c:SoulInventory_AddAmountToSoulTotal
+    confidence: 0.9
+  reads:
+  - resource.acquisition_delta:int
+  - player.souls_collected:u16
+  writes:
+  - player.souls_collected:u16
+  params:
+    counter_cap:
+      value: 999
+      unit: acquisitions
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08032444.c:sub_08032DBC
+        confidence: 0.9
+      native_value: 999
+      native_unit: acquisitions
+  invariants:
+  - Only positive deltas change the inspected lifetime counter.
+  relations:
+  - type: modulates
+    target: soul_completion
+- id: soul_equipment_validity
+  facet: mechanics
+  label: Remove equipped soul when its total becomes zero
+  summary: sub_08032D58 checks the total for a soul type/index and clears its equipped byte if none remain. Inventory
+    indices are zero based while equipped values are compared with index+1, leaving zero as no equipped soul. This
+    is a concrete inventory-to-action availability dependency.
+  instantiates:
+  - concept: mechanics.loadout.ownership_checked_equipment
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08032444.c:sub_08032D58
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08032444.c:SoulInventory_GetSoulTotal
+    confidence: 0.9
+  reads:
+  - inventory.souls.total:int
+  - loadout.soul_index:u8
+  writes:
+  - loadout.red_soul:u8
+  - loadout.blue_soul:u8
+  - loadout.yellow_soul:u8
+  params:
+    empty_equipment_index:
+      value: 0
+      unit: index
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08032444.c:sub_08032D58
+        confidence: 0.9
+      native_value: 0
+      native_unit: index
+  invariants:
+  - The helper returns without changing equipment when total is nonzero.
+  relations:
+  - type: requires
+    target: soul_inventory_banks
+  - type: modulates
+    target: red_soul_cast
+- id: soul_completion
+  facet: progression
+  label: Distinct soul collection percentage
+  summary: The completion routine counts distinct nonzero totals across 55 red, 24 blue and 35 yellow indices and
+    divides count*1000 by the combined 114. Duplicate quantities do not increase this score; ability type 3 is excluded
+    from its loops. The raw result is tenths of a percent and not a record of player combat skill.
+  instantiates:
+  - concept: progression.completion.collection_log
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08032444.c:sub_08032DF0
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08032444.c:sUnk_080E1CD4
+    confidence: 0.9
+  reads:
+  - inventory.souls.total:int[]
+  writes:
+  - ui.soul_completion_tenths_percent:int
+  params:
+    red_indices:
+      value: 55
+      unit: indices
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08032444.c:sUnk_080E1CD4
+        confidence: 0.9
+      native_value: 55
+      native_unit: indices
+    blue_indices:
+      value: 24
+      unit: indices
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08032444.c:sUnk_080E1CD4
+        confidence: 0.9
+      native_value: 24
+      native_unit: indices
+    yellow_indices:
+      value: 35
+      unit: indices
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08032444.c:sUnk_080E1CD4
+        confidence: 0.9
+      native_value: 35
+      native_unit: indices
+  invariants:
+  - Each included soul index contributes at most one to distinct completion.
+  relations:
+  - type: requires
+    target: soul_inventory_banks
+- id: red_soul_cast
+  facet: mechanics
+  label: Red-soul cast converts MP to bounded active entities
+  summary: 'sub_08034624 requires held Up and a newly pressed configured attack button, rejects state flags 0x540,
+    missing effect function, cost >= current MP, and a full active-soul budget. A different equipped type cannot
+    be cast while the last type still has active entities. MP is deducted only after a free soul slot and entity
+    allocation succeed. Inference: retaining more than the listed cost and timing type changes after projectiles
+    end are decision constraints; player proficiency and optimal tactics were not measured.'
+  instantiates:
+  - concept: mechanics.ability.resource_costed_entity_cast
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08033CAC.c:sub_08034624
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08033CAC.c:sub_080347AC
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:include/structs/ewram.h:EwramData_unk1325C
+    confidence: 0.9
+  reads:
+  - input.player_held:u16
+  - input.player_new:u16
+  - loadout.red_soul:u8
+  - player.mp:s16
+  - soul.cost:u16
+  - soul.active_count:int
+  - soul.last_type:u8
+  writes:
+  - player.mp:s16
+  - entities.soul_projectiles
+  - player.animation_state
+  params:
+    input_direction_mask:
+      value: 64
+      unit: button bitmask
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08033CAC.c:sub_08034624
+        confidence: 0.9
+      native_value: 64
+      native_unit: button bitmask
+    state_reject_mask:
+      value: 1344
+      unit: state bitmask
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08033CAC.c:sub_08034624
+        confidence: 0.9
+      native_value: 1344
+      native_unit: state bitmask
+    allocation_min_slot:
+      value: 2
+      unit: entity slot
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08033CAC.c:sub_08034624
+        confidence: 0.9
+      native_value: 2
+      native_unit: entity slot
+    allocation_max_slot:
+      value: 16
+      unit: entity slot inclusive
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08033CAC.c:sub_08034624
+        confidence: 0.9
+      native_value: 16
+      native_unit: entity slot inclusive
+  invariants:
+  - currentMP must be strictly greater than cost.
+  - Failed allocation causes no MP deduction in the inspected path.
+  - Active projectiles lock casting to lastUsedRedSoul until active count reaches zero.
+  relations:
+  - type: requires
+    target: mp_pool
+  - type: requires
+    target: entity_pool
+  - type: requires
+    target: character_equipment_state
+- id: incoming_damage
+  facet: mechanics
+  label: Defense subtraction, resistance and minimum incoming damage
+  summary: For the ordinary flag branch, sub_08021654 computes floor((4*attack-2*DEF)/2), or shifts by two instead
+    when a matching resistance mask applies; status bit 4 then doubles this value, followed by a minimum of 1. A
+    boss-rush flag switches to a separate expression involving attack, an anonymous runtime stat and maxHP. Invulnerability
+    state returns early; lethal HP loss sets a death flag and state 7. Parameter names for anonymous masks remain
+    provisional.
+  instantiates:
+  - concept: mechanics.combat.defense_subtracted_minimum_damage
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code/code_080211F0.c:sub_08021654
+    confidence: 0.9
+  reads:
+  - incoming.attack:s16
+  - incoming.type_mask:u16
+  - player.defense:u16
+  - player.resistance_mask:u16
+  - player.status:u16
+  - world.boss_rush:bool
+  - player.hp:s16
+  writes:
+  - player.hp:s16
+  - world.death_flag:bool
+  - player.state:int
+  - feedback.damage:int
+  params:
+    minimum_unblocked_damage:
+      value: 1
+      unit: HP
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code/code_080211F0.c:sub_08021654
+        confidence: 0.9
+      native_value: 1
+      native_unit: HP
+    ordinary_attack_multiplier:
+      value: 4
+      unit: multiplier
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code/code_080211F0.c:sub_08021654
+        confidence: 0.9
+      native_value: 4
+      native_unit: multiplier
+    defense_multiplier:
+      value: 2
+      unit: multiplier
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code/code_080211F0.c:sub_08021654
+        confidence: 0.9
+      native_value: 2
+      native_unit: multiplier
+  invariants:
+  - Unblocked damage is at least 1 after resistance/status processing.
+  - Lethal damage clamps currentHP to zero on this path.
+  relations:
+  - type: modulates
+    target: hp_pool
+  - type: modulates
+    target: game_over_return
+- id: armor_avoidance
+  facet: mechanics
+  label: Armor-specific random damage negation
+  summary: After computing damage, the incoming-damage routine checks equippedArmor == 23 and a low-nibble RNG result
+    below four; success gives zero-damage feedback and returns before HP loss. Four of the sixteen possible nibble
+    outcomes satisfy the predicate. Interpreting this as a 25% chance assumes the relevant RNG nibble is uniform;
+    that distribution was not measured.
+  instantiates:
+  - concept: mechanics.combat.equipment_random_damage_negation
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code/code_080211F0.c:sub_08021654
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_080009A0.c:RandomNumberGenerator
+    confidence: 0.9
+  reads:
+  - loadout.armor:u8
+  - rng.state:u32
+  writes:
+  - rng.state:u32
+  - feedback.damage:int
+  params:
+    armor_index:
+      value: 23
+      unit: equipment index
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code/code_080211F0.c:sub_08021654
+        confidence: 0.9
+      native_value: 23
+      native_unit: equipment index
+    accepted_nibble_values:
+      value: 4
+      unit: outcomes out of 16
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code/code_080211F0.c:sub_08021654
+        confidence: 0.9
+      native_value: 4
+      native_unit: outcomes out of 16
+  invariants:
+  - Successful avoidance returns before HP subtraction.
+  relations:
+  - type: modulates
+    target: incoming_damage
+    condition: equippedArmor == 23
+- id: hp_pool
+  facet: economy
+  label: Health gains saturate at maximum
+  summary: sub_08021FEC adds an amount to currentHP, clips values above maxHP and emits recovery feedback. The health
+    field is signed 16-bit while its maximum is unsigned 16-bit. Lower-bound handling belongs to damage paths; this
+    helper alone does not prove all callers pass positive healing amounts.
+  instantiates:
+  - concept: economy.resource.capped_pool
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code/code_080211F0.c:sub_08021FEC
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:include/structs/ewram.h:EwramData_unk1325C
+    confidence: 0.9
+  reads:
+  - resource.heal_amount:int
+  - player.hp:s16
+  - player.max_hp:u16
+  writes:
+  - player.hp:s16
+  - feedback.heal_amount:int
+  invariants:
+  - After ordinary positive healing through this helper, HP does not exceed maxHP.
+  relations:
+  - type: modulates
+    target: incoming_damage
+  - type: modulates
+    target: level_growth
+- id: mp_pool
+  facet: economy
+  label: Magic gains and drains use asymmetric clamps
+  summary: The MP-add helper changes a zero requested addition to one, adds it and clamps above maxMP; the drain
+    helper subtracts and clamps below zero. Red-soul casting deducts its own checked cost rather than calling this
+    drain helper. Regeneration rate, guardian-soul continuous drain and consumable effects were not established
+    in the opened code.
+  instantiates:
+  - concept: economy.resource.capped_pool
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code/code_080211F0.c:sub_08022028
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code/code_080211F0.c:sub_08022060
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08033CAC.c:sub_08034624
+    confidence: 0.9
+  reads:
+  - resource.mp_delta:int
+  - player.mp:s16
+  - player.max_mp:u16
+  writes:
+  - player.mp:s16
+  params:
+    zero_add_effect:
+      value: 1
+      unit: MP
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code/code_080211F0.c:sub_08022028
+        confidence: 0.9
+      native_value: 1
+      native_unit: MP
+    drain_floor:
+      value: 0
+      unit: MP
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code/code_080211F0.c:sub_08022060
+        confidence: 0.9
+      native_value: 0
+      native_unit: MP
+  invariants:
+  - Subtract helper clamps MP to zero.
+  - A zero addition through the add helper grants one MP.
+  relations:
+  - type: modulates
+    target: red_soul_cast
+- id: level_growth
+  facet: progression
+  label: Cubic experience thresholds and banded stat growth
+  summary: Level-up repeats while experience reaches the threshold for currentLevel+1, stopping at level 99. The
+    threshold helper is n*(n+1)*(3*n+8); each step adds 12 maxHP and uses currentLevel//5 to choose MP and stat
+    increments. Intelligence uses the growth table except every fourth current level, which adds one; luck adds
+    one per step. Exact XP award sources and any full refill on level-up are not established by this routine.
+  instantiates:
+  - concept: progression.character.exp_levels
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08033CAC.c:sub_08033CAC
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08033CAC.c:sub_08033DFC
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08033CAC.c:sUnk_080E1E08
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:include/structs/ewram.h:EwramData_unk1325C
+    confidence: 0.9
+  reads:
+  - player.experience:u32
+  - player.level:u8
+  - growth.tables
+  writes:
+  - player.level:u8
+  - player.max_hp:u16
+  - player.max_mp:u16
+  - player.base_stats:u16[4]
+  params:
+    level_cap:
+      value: 99
+      unit: level
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08033CAC.c:sub_08033CAC
+        confidence: 0.9
+      native_value: 99
+      native_unit: level
+    hp_per_level:
+      value: 12
+      unit: HP/level
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08033CAC.c:sub_08033CAC
+        confidence: 0.9
+      native_value: 12
+      native_unit: HP/level
+    growth_band:
+      value: 5
+      unit: levels
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08033CAC.c:sub_08033CAC
+        confidence: 0.9
+      native_value: 5
+      native_unit: levels
+    luck_per_level:
+      value: 1
+      unit: LCK/level
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08033CAC.c:sub_08033CAC
+        confidence: 0.9
+      native_value: 1
+      native_unit: LCK/level
+  invariants:
+  - A single call can advance several levels when accumulated experience crosses several thresholds.
+  relations:
+  - type: modulates
+    target: hp_pool
+  - type: modulates
+    target: mp_pool
+  - type: requires
+    target: character_initial_stats
+  tables:
+    mp_growth:
+      description: MP gain by zero-based floor(currentLevel/5) index before increment; read directly from table.
+      columns:
+      - band
+      - max_mp_gain
+      rows:
+      - - 0
+        - 5
+      - - 1
+        - 5
+      - - 2
+        - 6
+      - - 3
+        - 8
+      - - 4
+        - 10
+      - - 5
+        - 11
+      - - 6
+        - 12
+      - - 7
+        - 12
+      - - 8
+        - 13
+      - - 9
+        - 13
+      - - 10
+        - 13
+      - - 11
+        - 14
+      - - 12
+        - 15
+      - - 13
+        - 16
+      - - 14
+        - 16
+      - - 15
+        - 16
+      - - 16
+        - 17
+      - - 17
+        - 18
+      - - 18
+        - 19
+      - - 19
+        - 20
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08033CAC.c:sUnk_080E1E08
+        confidence: 0.9
+- id: character_initial_stats
+  facet: mechanics
+  label: Different base-stat configurations for two character branches
+  summary: Initialization sets level 1 and selects by currentCharacter == 0. The normal branch starts with maxHP
+    320, maxMP 80 and STR/CON/INT/LCK 10/12/11/9; the other starts 800/500 and 15/12/10/20. Struct comments identify
+    these as Soma and Julius, but unlocking the alternate character was not independently traced.
+  instantiates:
+  - concept: mechanics.character.character_specific_initial_stats
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08033CAC.c:sub_08033DA4
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:include/structs/ewram.h:EwramData_unk1325C
+    confidence: 0.9
+  reads:
+  - player.character:u8
+  writes:
+  - player.level:u8
+  - player.max_hp:u16
+  - player.max_mp:u16
+  - player.base_stats:u16[4]
+  params:
+    initial_level:
+      value: 1
+      unit: level
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08033CAC.c:sub_08033DA4
+        confidence: 0.9
+      native_value: 1
+      native_unit: level
+  invariants:
+  - Initial statistics depend on the character branch.
+  relations:
+  - type: modulates
+    target: level_growth
+  - type: modulates
+    target: boss_rush_setup
+  tables:
+    initial_stats:
+      columns:
+      - character_code
+      - maxHP
+      - maxMP
+      - STR
+      - CON
+      - INT
+      - LCK
+      rows:
+      - - 0
+        - 320
+        - 80
+        - 10
+        - 12
+        - 11
+        - 9
+      - - nonzero
+        - 800
+        - 500
+        - 15
+        - 12
+        - 10
+        - 20
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08033CAC.c:sub_08033DA4
+        confidence: 0.9
+- id: new_game_bootstrap
+  facet: progression
+  label: Empty character state initializes starting room and equipment
+  summary: 'sub_08014548 runs its bootstrap only when level is zero: it clears equipped souls, grants weapon and
+    armor entry zero, initializes statistics, refills HP/MP and chooses area 0 room 0. Several setup calls remain
+    anonymous, so their named equipment and broader starting-route consequences are not invented.'
+  instantiates:
+  - concept: progression.start.new_character_bootstrap
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code/code_08014548.c:sub_08014548
+    confidence: 0.9
+  reads:
+  - player.level:u8
+  writes:
+  - inventory.weapons:u8[]
+  - inventory.armor:u8[]
+  - loadout.souls
+  - player.hp:s16
+  - player.mp:s16
+  - world.area:u8
+  - world.room:u8
+  params:
+    area:
+      value: 0
+      unit: area index
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code/code_08014548.c:sub_08014548
+        confidence: 0.9
+      native_value: 0
+      native_unit: area index
+    room:
+      value: 0
+      unit: room index
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code/code_08014548.c:sub_08014548
+        confidence: 0.9
+      native_value: 0
+      native_unit: room index
+  invariants:
+  - Existing nonzero-level character states bypass this bootstrap.
+  relations:
+  - type: requires
+    target: character_initial_stats
+- id: map_completion
+  facet: progression
+  label: Exploration percentage from discovered map-cell bits
+  summary: sub_08011E24 scans a 64 by 40 bitmap and returns discovered_count*1000/848 using integer division. A
+    companion display routine renders the result as percent with one decimal. This establishes an exploration metric
+    and a denominator, not that every bitmap cell is reachable or that a full traversal was observed.
+  instantiates:
+  - concept: progression.completion.exploration_bitmap_percentage
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08011DD0.c:sub_08011E24
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08011DD0.c:sub_08011E88
+    confidence: 0.9
+  reads:
+  - world.map_discovered:bit[64][40]
+  writes:
+  - ui.map_completion_tenths_percent:int
+  params:
+    map_columns:
+      value: 64
+      unit: cells
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08011DD0.c:sub_08011E24
+        confidence: 0.9
+      native_value: 64
+      native_unit: cells
+    map_rows:
+      value: 40
+      unit: cells
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08011DD0.c:sub_08011E24
+        confidence: 0.9
+      native_value: 40
+      native_unit: cells
+    completion_denominator:
+      value: 848
+      unit: cells
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08011DD0.c:sub_08011E24
+        confidence: 0.9
+      native_value: 848
+      native_unit: cells
+  invariants:
+  - Completion counts discovered bits, not current character position alone.
+  relations:
+  - type: part_of
+    target: room_transition_lookup
+- id: room_transition_lookup
+  facet: progression
+  label: Room graph encoded in map-cell area and room fields
+  summary: CheckRoomTransition adds offsets shifted by eight to roomMapXPos/YPos, indexes a 64-column map and decodes
+    area from bits 6..9 and room from bits 0..5. It then compares the room pointer to a sentinel-terminated transition-room
+    list. This supplies an authored room-navigation substrate; the actual ability-gate graph has not been extracted.
+  instantiates:
+  - concept: progression.structure.authored_room_transition_lookup
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08001194.c:CheckRoomTransition
+    confidence: 0.9
+  reads:
+  - world.room_map_x:int
+  - world.room_map_y:int
+  - world.map_cells:u16[]
+  - world.transition_rooms:pointer[]
+  writes:
+  - runtime.is_transition_room:bool
+  params:
+    map_row_stride:
+      value: 64
+      unit: cells
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08001194.c:CheckRoomTransition
+        confidence: 0.9
+      native_value: 64
+      native_unit: cells
+    room_mask:
+      value: 63
+      unit: bitmask
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08001194.c:CheckRoomTransition
+        confidence: 0.9
+      native_value: 63
+      native_unit: bitmask
+    area_mask:
+      value: 15
+      unit: bitmask
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08001194.c:CheckRoomTransition
+        confidence: 0.9
+      native_value: 15
+      native_unit: bitmask
+  invariants:
+  - Transition membership is determined by matching the decoded room pointer against the list.
+  relations:
+  - type: modulates
+    target: mode_dispatch
+- id: fixed_point_room_coordinates
+  facet: movement_physics
+  label: Entity and camera fixed-point coordinate conversion
+  summary: The room-coordinate helpers add background-1 camera coordinates to entity screen coordinates. CameraPart
+    exposes a 16-bit fraction and 16-bit integer; entity position helpers use the upper 16 bits of the corresponding
+    32-bit field. This is coordinate representation evidence, not an extracted player acceleration, gravity or jump
+    model.
+  instantiates:
+  - concept: movement_physics.coordinates.fixed_point_camera_relative
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08001194.c:GetEntityRoomXPositionInteger
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08001194.c:GetEntityRoomYPositionInteger
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:include/structs/ewram.h:CameraPart
+    confidence: 0.9
+  reads:
+  - camera.bg1.position:fixed16.16
+  - entity.screen_position:fixed16.16
+  writes:
+  - query.entity_room_position:vec2i
+  params:
+    fraction_bits:
+      value: 16
+      unit: bits
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:include/structs/ewram.h:CameraPart
+        confidence: 0.9
+      native_value: 16
+      native_unit: bits
+  invariants:
+  - Integer room position equals integer camera offset plus integer entity position in the inspected helpers.
+  relations:
+  - type: requires
+    target: room_transition_lookup
+- id: entity_pool
+  facet: mechanics
+  label: Bounded callback-driven entity allocation
+  summary: EntityCreate scans slots 0..207 and returns the first free slot, while EntityCreateInRange scans inclusive
+    caller-supplied bounds. Both clear state and install an update function; failed allocation returns NULL. The
+    main ordinary-entity update skips updates when unk_A074_0 is set but still traverses draw callbacks, making
+    pause/scene gating part of the system contract.
+  instantiates:
+  - concept: mechanics.entity.bounded_callback_pool
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_080009A0.c:EntityCreate
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_080009A0.c:EntityCreateInRange
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_080009A0.c:sub_08000B64
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_080009A0.c:EntityDeleteAll
+    confidence: 0.9
+  reads:
+  - entities.update_callbacks:pointer[]
+  - runtime.update_suppression:bool
+  writes:
+  - entities.slot_state
+  - entities.draw_callbacks:pointer[]
+  params:
+    ordinary_slots:
+      value: 208
+      unit: slots
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_080009A0.c:EntityCreate
+        confidence: 0.9
+      native_value: 208
+      native_unit: slots
+    total_cleared_slots:
+      value: 224
+      unit: slots
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_080009A0.c:EntityDeleteAll
+        confidence: 0.9
+      native_value: 224
+      native_unit: slots
+  invariants:
+  - A failed allocation returns NULL.
+  - Ordinary draw traversal can continue while ordinary updates are suppressed.
+  relations:
+  - type: modulates
+    target: red_soul_cast
+- id: rng_streams
+  facet: mechanics
+  label: Shifted recurrence with alternate RNG stream
+  summary: The primary generator updates a u32 state by (state>>8)*0x3243F6AD+0x1B0CB175. RandomNumberGenerator2
+    uses that primary recurrence normally, but an anonymous mode flag switches to a second state multiplied without
+    the eight-bit shift. These are two distinct sequences; the source alone does not establish random-quality or
+    calibrated event probabilities.
+  instantiates:
+  - concept: mechanics.random.shifted_recurrence_streams
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_080009A0.c:RandomNumberGenerator
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_080009A0.c:RandomNumberGenerator2
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/main.c:InitializeGame
+    confidence: 0.9
+  reads:
+  - rng.state:u32
+  - rng.alternate_state:u32
+  - world.rng_mode:bool
+  writes:
+  - rng.state:u32
+  - rng.alternate_state:u32
+  params:
+    multiplier:
+      value: '0x3243F6AD'
+      unit: u32 constant
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_080009A0.c:RandomNumberGenerator
+        confidence: 0.9
+      native_value: '0x3243F6AD'
+      native_unit: u32 constant
+    increment:
+      value: '0x1B0CB175'
+      unit: u32 constant
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_080009A0.c:RandomNumberGenerator
+        confidence: 0.9
+      native_value: '0x1B0CB175'
+      native_unit: u32 constant
+    primary_seed:
+      value: '0x1E86EF'
+      unit: u32
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/main.c:InitializeGame
+        confidence: 0.9
+      native_value: '0x1E86EF'
+      native_unit: u32
+  invariants:
+  - Primary state is shifted by eight before multiplication; the alternate stream is not.
+  relations:
+  - type: modulates
+    target: armor_avoidance
+  - type: modulates
+    target: screen_shake
+- id: screen_shake
+  facet: camera
+  label: Mask-sampled temporary background shake
+  summary: sub_08011CD0 samples RNG values masked by configured horizontal/vertical masks while a duration counter
+    is active, then clears offsets and masks on expiry. AgbMain temporarily adds these offsets to BG1..BG3 register
+    shadows around hardware transfer and subtracts them afterwards. Pausing via unk_A074_0 stops the shake update;
+    this is a screen effect rather than a recovered camera-follow policy.
+  instantiates:
+  - concept: camera.effect.screen_shake
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_080109F4.c:sub_08011CD0
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/main.c:sub_08000424
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/main.c:sub_08000470
+    confidence: 0.9
+  reads:
+  - camera.shake_timer:u8
+  - camera.shake_mask_x:u8
+  - camera.shake_mask_y:u8
+  - runtime.update_suppression:bool
+  writes:
+  - camera.shake_offset_x:u8
+  - camera.shake_offset_y:u8
+  - gpu.bg_scroll
+  invariants:
+  - Expired shake clears offsets and both masks.
+  - Offsets are restored in register shadows after the hardware copy.
+  relations:
+  - type: requires
+    target: rng_streams
+- id: tiled_bg_transfer
+  facet: rendering
+  label: Deferred wrapping tilemap writes
+  summary: BgCmdBuffer_TransferToVram consumes queued background commands and writes tilemap entries with horizontal/vertical
+    wrapping based on 32- or 64-tile dimensions. The inspected transfer body implements BG0/BG1 and resets the command
+    pointer afterwards. String/number writers construct tile entries, so the queue is shared by interface presentation
+    and tile backgrounds.
+  instantiates:
+  - concept: rendering.tilemap.queued_wrapping_updates
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08001194.c:BgCmdBuffer_TransferToVram
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08001194.c:BgCmdBuffer_WriteData
+    confidence: 0.9
+  reads:
+  - gpu.bg_command_buffer:u16[]
+  - gpu.bg_control:u16[]
+  writes:
+  - vram.tilemap:u16[]
+  - gpu.bg_command_pointer
+  params:
+    small_map_dimension:
+      value: 32
+      unit: tiles
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08001194.c:BgCmdBuffer_TransferToVram
+        confidence: 0.9
+      native_value: 32
+      native_unit: tiles
+    large_map_dimension:
+      value: 64
+      unit: tiles
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08001194.c:BgCmdBuffer_TransferToVram
+        confidence: 0.9
+      native_value: 64
+      native_unit: tiles
+  invariants:
+  - The transfer routine resets its queue pointer after processing.
+  relations:
+  - type: modulates
+    target: numeric_text_renderer
+- id: numeric_text_renderer
+  facet: ui_hud
+  label: Tile-font strings and fixed-width numbers
+  summary: BgCmdBuffer_WriteString encodes characters into BG0 tile entries with palette selection, and BgCmdBuffer_WriteNumber
+    formats a bounded-width signed number into queued entries. Buffer-capacity checks return NULL when there is
+    insufficient room. This is verified interface-rendering infrastructure; a full gameplay HUD layout was not observed
+    in the capture.
+  instantiates:
+  - concept: ui_hud.text.queued_tile_font
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08001194.c:BgCmdBuffer_WriteString
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08001194.c:BgCmdBuffer_WriteNumber
+    confidence: 0.9
+  reads:
+  - ui.string:u8[]
+  - ui.number:s32
+  - ui.palette:u8
+  - gpu.bg_queue_capacity
+  writes:
+  - gpu.bg_command_buffer:u16[]
+  invariants:
+  - Insufficient queue capacity returns NULL rather than appending the request.
+  relations:
+  - type: requires
+    target: tiled_bg_transfer
+- id: dma_upload_queue
+  facet: rendering
+  label: Direct and indirect queued DMA3 uploads
+  summary: The DMA queue supports embedded-data uploads and pointer-based uploads, aligns the next entry to four
+    bytes and runs transfers on DMA3. Queue-add helpers check capacity and can return NULL; the direct-copy helper
+    also rejects a zero byte count. AgbMain processes the queue before background commands and final display-control
+    write.
+  instantiates:
+  - concept: rendering.transfer.queued_dma_upload
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08001194.c:DmaQueue_Process
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08001194.c:DmaQueue_DirectCopy
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08001194.c:DmaQueue_IndirectCopy
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/main.c:AgbMain
+    confidence: 0.9
+  reads:
+  - gpu.upload_queue
+  - gpu.source_memory
+  writes:
+  - vram.bytes
+  - gpu.upload_queue_end
+  params:
+    entry_alignment:
+      value: 4
+      unit: bytes
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08001194.c:DmaQueue_DirectCopy
+        confidence: 0.9
+      native_value: 4
+      native_unit: bytes
+    indirect_entry_size:
+      value: 16
+      unit: bytes
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08001194.c:DmaQueue_IndirectCopy
+        confidence: 0.9
+      native_value: 16
+      native_unit: bytes
+  invariants:
+  - After processing, the queue end returns to the first entry.
+  relations:
+  - type: part_of
+    target: mode_dispatch
+- id: hblank_scroll
+  facet: rendering
+  label: Double-buffered per-scanline scroll distortion
+  summary: HBlankEffectSetup configures write size, destination and stop line; AgbMain swaps the filled buffer on
+    request, preloads its first entry and VblankInterrupt arms repeating HBlank DMA0. Captures observed HBlank writes
+    to BG1 horizontal/vertical scroll registers over 1308 frames with at least 32 active scanlines. The opened effect
+    helper generates sinusoidal horizontal scroll over a selected scanline range; not all possible effects were
+    observed.
+  instantiates:
+  - concept: rendering.raster.hblank_dma_scroll_distortion
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/main.c:VblankInterrupt
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/main.c:AgbMain
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08001194.c:HBlankEffectSetup
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_0800CB00.c:sub_0800CB8C
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.raster_frames.bg_scroll.hdma_frames_ge32=1308; hblank_dma_targets BG1HOFS/BG1VOFS
+    confidence: 0.85
+  reads:
+  - effect.inactive_scanline_buffer:s16[]
+  - effect.current_buffer:u1
+  - effect.start_request:bool
+  writes:
+  - gpu.dma0
+  - gpu.bg_scroll
+  - effect.current_buffer:u1
+  params:
+    scanline_word_size:
+      value: 2
+      unit: bytes
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_0800CB00.c:sub_0800CB8C
+        confidence: 0.9
+      native_value: 2
+      native_unit: bytes
+  invariants:
+  - The producer fills the inactive buffer and requests a swap.
+  relations:
+  - type: requires
+    target: dma_upload_queue
+- id: circular_window
+  facet: rendering
+  label: Per-line hardware-window circle
+  summary: sub_08002324 computes horizontal circle bounds for each clipped scanline using a square root, clamps
+    them to screen width and fills the inactive HBlank buffer. sub_08002400 configures WIN1H writes across 160 entries.
+    This is source-confirmed capability; the baseline capture reported zero window-group raster frames, so its use
+    was not observed in that run.
+  instantiates:
+  - concept: rendering.raster.window_shape_per_scanline
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08001194.c:sub_08002324
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08001194.c:sub_08002400
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.raster_frames.window.hdma_frames_ge32=0
+    confidence: 0.85
+  reads:
+  - effect.circle_center:vec2i
+  - effect.circle_radius:s16
+  writes:
+  - effect.scanline_window_bounds:u16[160]
+  - gpu.win1h
+  - gpu.win1v
+  params:
+    scanlines:
+      value: 160
+      unit: lines
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_08001194.c:sub_08002400
+        confidence: 0.9
+      native_value: 160
+      native_unit: lines
+  invariants:
+  - Horizontal and vertical bounds are clipped to the screen in the inspected builder.
+  relations:
+  - type: requires
+    target: hblank_scroll
+- id: affine_title
+  facet: rendering
+  label: Mode-1 affine title with blending and object window
+  summary: The title handler explicitly enables mode 1, BG2, sprites and object-window clipping and repeatedly updates
+    affine-title state while modulating alpha and brightness. Across both phases, telemetry recorded 1718 mode-1
+    frames and otherwise mode 0; this is not evidence for mode-1 gameplay. The title image visibly contains a moon/eclipse
+    and animated logo.
+  instantiates:
+  - concept: rendering.background.affine_title_compositing
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08002454.c:GameModeTitleScreenUpdate
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.video_modes_frames
+    confidence: 0.9
+  - kind: capture_frame
+    ref: capture:attract:frame 1052 keyframe f001052.png inspected
+    confidence: 0.95
+  reads:
+  - frontend.animation_stage:int
+  writes:
+  - gpu.bg2_affine
+  - gpu.blend
+  - gpu.object_window
+  params:
+    observed_mode_1_frames:
+      value: 1718
+      unit: frames
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:summary.json:derived.video_modes_frames.1
+        confidence: 0.9
+  invariants:
+  - Mode-1 frame count covers both capture phases and cannot identify gameplay by itself.
+  relations:
+  - type: part_of
+    target: title_idle_intro
+- id: side_view_scene
+  facet: projection
+  label: Side-view orthographic scene staging
+  summary: Inspected courtyard keyframes show characters on one horizontal ground line in front of layered stone
+    architecture, rendered from the side. The room coordinate helpers use x/y without a separate gameplay depth
+    coordinate. These facts support side-view scene presentation; the keyframes alone cannot distinguish interactive
+    play from scripted story animation.
+  instantiates:
+  - concept: projection.side_view.orthographic_2d
+  evidence:
+  - kind: capture_frame
+    ref: capture:frontend:frames 1899 and 4959 keyframes inspected
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08001194.c:GetEntityRoomXPositionInteger
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_08001194.c:GetEntityRoomYPositionInteger
+    confidence: 0.9
+  params:
+    screen_width:
+      value: 240
+      unit: px
+      evidence:
+      - kind: capture_frame
+        ref: capture:frontend:frame 1899 dimensions
+        confidence: 0.95
+    screen_height:
+      value: 160
+      unit: px
+      evidence:
+      - kind: capture_frame
+        ref: capture:frontend:frame 1899 dimensions
+        confidence: 0.95
+  invariants:
+  - Scene classification does not imply player control.
+- id: pixel_gothic_courtyard
+  facet: setting
+  label: Stone courtyard and supernatural title motifs
+  summary: The inspected scene shows gray block masonry, tall sculpted statues, grass and a cool purple sky, with
+    small colored sprite characters. The title uses a dark field, eclipse/moon motif and saturated red lettering.
+    These are directly observed style/setting cues usable for style vocabulary; the full plot, factions, year and
+    narrative constraints are not established here.
+  instantiates:
+  - concept: setting.style.gothic_pixel_architecture
+  evidence:
+  - kind: capture_frame
+    ref: capture:frontend:frame 1899; attract:frame 1052 keyframes inspected
+    confidence: 0.9
+- id: intro_scene_delivery
+  facet: narrative_delivery
+  label: Authored intro rendered with game backgrounds and entities
+  summary: The separate intro handler clears entities, loads several background layers, allocates an intro entity
+    and stages music, alpha and scrolling. The frontend capture shows a downed character and later groups of characters/enemies
+    in the same courtyard; without input/session evidence these are treated as story scenes rather than playable
+    segments. Dialogue script semantics and story prerequisites remain open.
+  instantiates:
+  - concept: narrative_delivery.cutscene.in_engine_cutscene
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_08008750.c:GameModeIntroCutsceneUpdate
+    confidence: 0.9
+  - kind: capture_frame
+    ref: capture:frontend:frames 1899 and 4959 keyframes inspected
+    confidence: 0.85
+  reads:
+  - frontend.intro_stage:int
+  writes:
+  - entities.scene_actors
+  - gpu.bg_layers
+  - audio.current_song
+  invariants:
+  - Intro is an explicit game mode distinct from in-game.
+  relations:
+  - type: part_of
+    target: mode_dispatch
+  - type: requires
+    target: entity_pool
+- id: sample_audio
+  facet: audio
+  label: MP2K sequencer with observed DirectSound-A output
+  summary: InitializeAudio starts the m4a engine, prepares eight music players with silent songs and stops them.
+    AudioVSync runs the mixer and volume updates. Telemetry observed DirectSound A at about 10512 Hz for most frames
+    and no DirectSound B; PSG triggers were seen but playing-frame counters remained zero, so sustained PSG output
+    is not claimed.
+  instantiates:
+  - concept: audio.engine.sample_psg_sequencer
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_080D73B8.c:InitializeAudio
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_080D73B8.c:AudioVSync
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.sound directsound_frames and psg_playing_frames
+    confidence: 0.9
+  reads:
+  - audio.song_tracks
+  - audio.channel_state
+  writes:
+  - audio.pcm_fifo_a
+  - audio.player_state
+  params:
+    music_players:
+      value: 8
+      unit: players
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_080D73B8.c:InitializeAudio
+        confidence: 0.9
+      native_value: 8
+      native_unit: players
+    observed_dominant_rate:
+      value: 10512
+      unit: Hz
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:summary.json:derived.sound.directsound_rates_hz
+        confidence: 0.9
+  invariants:
+  - Register triggers alone are not evidence of sustained audible PSG channels.
+- id: audio_priority_and_fade
+  facet: audio
+  label: Priority arbitration and stateful song-volume ramps
+  summary: StartSong starts a paused player or replaces an active track when the requested song priority is at least
+    the current priority. MPlayVolumeSet stores target volume in sixteenth-units and MPlayVolumeUpdate steps toward
+    it, issuing coarser hardware updates; near-silent downward targets stop the player. AudioCommand has separate
+    mute, quiet and loud policies rather than requiring abrupt song replacement.
+  instantiates:
+  - concept: audio.control.priority_and_target_volume
+  evidence:
+  - kind: decomp_source
+    ref: cvaos:src/code_080D73B8.c:StartSong
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_080D73B8.c:MPlayVolumeSet
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_080D73B8.c:MPlayVolumeUpdate
+    confidence: 0.9
+  - kind: decomp_source
+    ref: cvaos:src/code_080D73B8.c:AudioCommand
+    confidence: 0.9
+  reads:
+  - audio.requested_priority:u8
+  - audio.current_priority:u8
+  - audio.volume_target:u16
+  - audio.volume_step:u16
+  writes:
+  - audio.active_song
+  - audio.player_volume:u16
+  params:
+    volume_fraction_scale:
+      value: 16
+      unit: native units/volume unit
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_080D73B8.c:MPlayVolumeSet
+        confidence: 0.9
+      native_value: 16
+      native_unit: native units/volume unit
+    quiet_target:
+      value: 144
+      unit: volume units
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_080D73B8.c:AudioCommand
+        confidence: 0.9
+      native_value: 144
+      native_unit: volume units
+    loud_target:
+      value: 255
+      unit: volume units
+      evidence:
+      - kind: decomp_source
+        ref: cvaos:src/code_080D73B8.c:AudioCommand
+        confidence: 0.9
+      native_value: 255
+      native_unit: volume units
+  invariants:
+  - Priority arbitration can reject a requested song on an already-active player.
+  relations:
+  - type: modulates
+    target: sample_audio
+proposed_concepts:
+- id: ui_hud.input.priority_arbitrated_override
+  label: Edge, held and repeated input with priority override
+  definition: Separates physical input from effective gameplay input, allowing prioritized systems to replace the
+    action bitfield.
+- id: frontend.title.idle_story_replay
+  label: Animated title idles into story intro
+  definition: An idle title screen returns to an authored story presentation, without asserting gameplay-demo input
+    playback.
+- id: frontend.save.verified_sram_record
+  label: Verified SRAM records and slot lock bits
+  definition: Persists structured records to SRAM using write verification and explicit per-slot operation markers.
+- id: frontend.game_over.return_to_boot
+  label: Game-over presentation returns to boot logo
+  definition: Defeat presentation returns to the boot/title flow instead of directly restoring gameplay.
+- id: progression.mode.normalized_challenge_loadout
+  label: Boss-rush normalized start configuration
+  definition: A separate challenge mode prepares an authored character/resource loadout before entering a fixed
+    challenge script.
+- id: mechanics.loadout.category_specific_slots
+  label: Independent weapon, armor, accessory and soul equipment slots
+  definition: Equipment is selected independently in separate category slots so different action and passive modifiers
+    can coexist.
+- id: economy.inventory.banked_collectible_counts
+  label: Packed soul inventories with two count banks
+  definition: Collectible quantities have separately stored banks and a combined query, with explicit per-bank limits.
+- id: progression.collection.cumulative_counter
+  label: Cumulative acquisition counter differs from current inventory
+  definition: Tracks cumulative acquisition events separately from the quantity currently held.
+- id: mechanics.loadout.ownership_checked_equipment
+  label: Remove equipped soul when its total becomes zero
+  definition: Equipment availability is checked against ownership, and losing the last owned copy unequips the corresponding
+    action.
+- id: mechanics.ability.resource_costed_entity_cast
+  label: Red-soul cast converts MP to bounded active entities
+  definition: An action consumes a resource only after successful entity allocation, subject to active-count and
+    effect-type constraints.
+- id: mechanics.combat.defense_subtracted_minimum_damage
+  label: Defense subtraction, resistance and minimum incoming damage
+  definition: Incoming damage is derived by subtracting defense, applying conditional resistance/status scaling,
+    and clamping to a positive minimum.
+- id: mechanics.combat.equipment_random_damage_negation
+  label: Armor-specific random damage negation
+  definition: A particular equipment choice adds a random predicate that cancels incoming damage before resource
+    loss.
+- id: mechanics.character.character_specific_initial_stats
+  label: Different base-stat configurations for two character branches
+  definition: Different playable-character branches initialize distinct health, magic and combat-stat vectors.
+- id: progression.start.new_character_bootstrap
+  label: Empty character state initializes starting room and equipment
+  definition: An empty persistent character record triggers authored equipment, statistics and starting-location
+    initialization.
+- id: progression.completion.exploration_bitmap_percentage
+  label: Exploration percentage from discovered map-cell bits
+  definition: World exploration is recorded as discovered cells and converted to a percentage against an authored
+    total.
+- id: progression.structure.authored_room_transition_lookup
+  label: Room graph encoded in map-cell area and room fields
+  definition: World navigation decodes room identifiers from map cells and recognizes authored transition-room entries.
+- id: movement_physics.coordinates.fixed_point_camera_relative
+  label: Entity and camera fixed-point coordinate conversion
+  definition: Entity screen coordinates and camera offsets are combined in a shared fixed-point representation to
+    query world space.
+- id: mechanics.entity.bounded_callback_pool
+  label: Bounded callback-driven entity allocation
+  definition: Gameplay objects occupy a fixed-size pool with explicit allocation failure and separate update/draw
+    callbacks.
+- id: mechanics.random.shifted_recurrence_streams
+  label: Shifted recurrence with alternate RNG stream
+  definition: Random queries can select independently stored recurrence streams whose state transitions differ by
+    an input bit shift.
+- id: rendering.tilemap.queued_wrapping_updates
+  label: Deferred wrapping tilemap writes
+  definition: Tilemap changes are buffered then copied into background maps with explicit wrapping at configured
+    map dimensions.
+- id: ui_hud.text.queued_tile_font
+  label: Tile-font strings and fixed-width numbers
+  definition: Interface strings and numbers are encoded as palette-indexed background tiles and queued for hardware
+    transfer.
+- id: rendering.transfer.queued_dma_upload
+  label: Direct and indirect queued DMA3 uploads
+  definition: Graphics uploads are represented by bounded direct-data or source-pointer DMA requests and drained
+    at the frame boundary.
+- id: rendering.background.affine_title_compositing
+  label: Mode-1 affine title with blending and object window
+  definition: A frontend title composes affine backgrounds, sprite/window masks and hardware blending as an animated
+    presentation.
+- id: setting.style.gothic_pixel_architecture
+  label: Stone courtyard and supernatural title motifs
+  definition: A visual setting vocabulary combining small pixel characters, stone architecture, monumental statuary,
+    cool skies and supernatural celestial motifs.
+- id: audio.control.priority_and_target_volume
+  label: Priority arbitration and stateful song-volume ramps
+  definition: Audio requests arbitrate by priority while per-player state ramps volume toward explicit targets.
+open_questions:
+- 'Extract the actual player movement state machine from remaining anonymous C/ASM: ground speed, acceleration,
+  gravity, jump cut, coyote/buffer behavior, slide/backdash, collision edge cases and animation cancel windows.
+  Fixed-point coordinate helpers are not a recovered physics model.'
+- Enemy AI state/attack graphs, bosses, damage-to-enemy formulas, weakness/resistance catalogue, hitboxes, weapon
+  timings, and exact drop/soul acquisition probabilities remain unmined; no enemy skill/strategy claims are supplied
+  from recall.
+- Trace blue/guardian, yellow/passive and ability soul implementations, equip validation and activation/drain/refresh
+  rules; the persistent slots alone do not establish their complete semantics.
+- Reconcile SoulInventory_GetSoulTotal type-3 double-counting and two-bank role semantics with assembly/runtime
+  evidence; direct low-level setters bypass count clamps. Do not assume a conservation rule for bank transfer when
+  a destination is full.
+- Extract actual gates and route prerequisites, authored room topology, teleport/save rooms, endings and scenario
+  flags. A room lookup and map score are insufficient for the progression graph.
+- Complete resource-flow graphs for gold, shops, consumables, MP regeneration and on-hit conversions; anonymous
+  callees in the incoming-damage handler cannot be assigned item/soul names yet.
+- Capture did not establish interactive control or complete gameplay; many frames labeled gameplay by Qwen/d1 are
+  intro/title scenes. Attract frame1052 is title/eclipse despite d1 p_gameplay=0.679178699175393; frontend866 is
+  mosaic transition despite p=.6513548646660542. Calibrate labels with temporal/control evidence before mining player
+  skills.
+- 'Inspect actual asset catalogues: sprite/animation boundaries, palettes, tilesets, music and sound samples with
+  ROM offsets and dependencies; current style cues describe four viewed keyframes only.'
+- Read dialogue and event scripts for plot/factions/setting constraints and game-specific narrative conditions.
+  No plot recollection was used here.
+- Validate source-derived rules against the pinned USA ROM via executable probes; decomp matching is claimed upstream
+  and hash-identical ROM identity is checked via manifest, but no clean build or symbol-to-ROM trace was run in
+  this extraction.
+- Extraction start/queue/token cost were not instrumented. Only completion timestamp and first clock observation
+  are available; no claim of measured GPT-vs-Claude speedup.

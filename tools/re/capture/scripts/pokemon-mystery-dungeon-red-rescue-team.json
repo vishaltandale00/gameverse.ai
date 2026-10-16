@@ -1,0 +1,98 @@
+{
+ "comment": "Gameplay: New Game; A through the personality quiz; partner Bulbasaur; naming screens loop on a default-'No' confirm, so A/UP alternate (UP selects Yes); player name ends up garbled but valid. Wake-up story, then Tiny Woods B1F dungeon (turn-based roguelike) from ~11000; walk loop with attacks (no B: it opens the menu).",
+ "phases": [
+  {
+   "name": "gameplay",
+   "frames": 14500,
+   "play_starts_frame": 11300,
+   "repeat": [
+    {
+     "from_frame": 180,
+     "until_frame": 2900,
+     "template": "menu_mash"
+    },
+    {
+     "from_frame": 2900,
+     "until_frame": 4760,
+     "template": "a_mash"
+    },
+    {
+     "from_frame": 4760,
+     "until_frame": 11300,
+     "period_frames": 60,
+     "events": [
+      {
+       "offset": 0,
+       "keys": [
+        "A"
+       ],
+       "hold": 6
+      },
+      {
+       "offset": 30,
+       "keys": [
+        "UP"
+       ],
+       "hold": 6
+      }
+     ]
+    },
+    {
+     "from_frame": 11300,
+     "period_frames": 400,
+     "events": [
+      {
+       "offset": 0,
+       "keys": [
+        "RIGHT"
+       ],
+       "hold": 60
+      },
+      {
+       "offset": 70,
+       "keys": [
+        "A"
+       ],
+       "hold": 6
+      },
+      {
+       "offset": 100,
+       "keys": [
+        "DOWN"
+       ],
+       "hold": 60
+      },
+      {
+       "offset": 170,
+       "keys": [
+        "LEFT"
+       ],
+       "hold": 60
+      },
+      {
+       "offset": 240,
+       "keys": [
+        "A"
+       ],
+       "hold": 6
+      },
+      {
+       "offset": 270,
+       "keys": [
+        "UP"
+       ],
+       "hold": 60
+      },
+      {
+       "offset": 340,
+       "keys": [
+        "RIGHT"
+       ],
+       "hold": 40
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

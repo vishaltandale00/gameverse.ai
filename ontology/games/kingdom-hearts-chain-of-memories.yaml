@@ -1,0 +1,3952 @@
+schema_version: 0
+id: kingdom-hearts-chain-of-memories
+game:
+  title: 'Kingdom Hearts: Chain of Memories'
+  platform: gba
+  game_code: B8CE
+  rom_sha1: 10729bd884f8fdca7a310b6d606c52e46657aa48
+  year: 2004
+  developer: Jupiter / Square Enix
+  derived_genres:
+  - action_rpg
+  - card_battle
+  - dungeon_crawler
+  evidence_basis:
+  - decomp_source
+  - capture_telemetry
+  - capture_frame
+  - derived
+  - llm_knowledge
+  sources:
+  - kind: decomp
+    ref: 'https://github.com/Pheenoh/khcom @ 5dc49b75068bfe24e07bdaf365570d64682680c3 (CC0; local/decomps/khcom; matching
+      decomp of USA B8CE, also JP/EU). Code is essentially all C: src/ has 269 .c files (~258k lines incl. data tables);
+      asm/ holds only 7 hand-written files (crt0, header, libagbsyscall, m4a_1 sound driver, movie_codec FMV decoder,
+      transform + veneers, ~5.8k lines). Byte-weighted progress is published on decomp.dev, not in the repo; not measured
+      here.'
+  - kind: rom_header
+    ref: local/re/roms.json id=kingdom-hearts-chain-of-memories (header title KINGDOMHEART, maker GD, version 0, 32 MiB)
+  - kind: captures
+    ref: 'local/captures/kingdom-hearts-chain-of-memories run 20261015T234415-8f46cf (mGBA 0.10.5 HLE BIOS, harness 0.1.0,
+      source commit d431b81 dirty tree): attract 3600 frames idle, frontend 5400 frames alternating Start/A every 90 frames
+      (reaches New Game opening FMV); 9000 frames total, 4.46 s wall'
+  - kind: extraction_run
+    ref: 'claude-opus-5-5, brief v1, 2026-10-16T03:56Z-2026-10-16T04:14Z (~18 min wall), ~100 decomp files opened or grepped
+      (4 parallel read-only research subagents for card system, battle runtime, field/rooms/progression and enemy/boss
+      AI, each listing files opened; ~106 file:symbol citations re-checked by grep), plus capture summary, 2 phase
+      telemetry CSVs, 10 keyframes and 4 repo inputs'
+conventions:
+  units_convention: 'Positions and velocities in battle and field code are s32 fixed point with 8 fractional bits:
+    256 units = 1 px, velocities in 1/256 px per frame, accelerations in 1/256 px per frame per frame. Battle space is
+    (x, y=depth on the ground plane, z=height, negative up); screen y = y + z. Field cells are 32x16 px. Angles are u8
+    (256 = 360 degrees); gSineTable has amplitude 256. Multipliers such as attack power, HP/attack scaling and affine
+    scale are Q8.8 (256 = 1.0). Timers are frames at ~59.73 Hz (60 used for seconds). "1-in-N" intervals are per-frame
+    random odds. Screen is 240x160 px. Params below are converted to px, frames and plain multipliers with the native
+    value kept where it differs.'
+  card_value_convention: Card values are 0-9; a deck card id is group*10 + value with bit 0x8000 marking premium.
+components:
+- id: game_mode_flow
+  facet: frontend
+  label: Mode manager with deferred mode switch, boot repair and soft reset
+  summary: 'AgbMain runs UpdateKeyState then ModeUpdate once per VBlank. Every screen (copyright, title, field map,
+    battle, deck menu, event, movie, staff roll, link battle, Pooh minigame, ...) is a Mode struct {name, init, update,
+    exit}; ModeRequest queues the next mode, which starts after the current one exits, optionally with a heap reset.
+    The first mode is the copyright screen, which also checks and repairs every save block before handing on. A+B+Select+Start
+    (Start or Select newly pressed) soft-resets unless SYSTEM_FLAG_NO_SOFT_RESET is set (link play sets it); the movie
+    player polls the same combo itself.'
+  instantiates:
+  - concept: frontend.flow.mode_state_machine
+  - concept: frontend.soft_reset.button_combo
+  - concept: frontend.boot.publisher_logos
+    weight: 0.5
+  reads:
+  - input.buttons.held
+  - input.buttons.pressed
+  - system.flags.no_soft_reset
+  - frontend.pending_mode
+  writes:
+  - frontend.mode
+  - frontend.pending_mode
+  params:
+    soft_reset_keys:
+      value: A+B+Select+Start
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/mode.c:ModeUpdate
+        confidence: 0.95
+      - kind: decomp_source
+        ref: khcom:include/gba/keys.h:SOFT_RESET_KEYS
+        confidence: 0.95
+    copyright_hold:
+      value: 60
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/title/mode_copyright1.c:sCopyright1Timer
+        confidence: 0.85
+    rng_boot_seed:
+      value: 1234567
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/main.c:InitSystem (SeedRandom(1234567))
+        confidence: 0.95
+  invariants:
+  - At most one mode runs; a requested mode starts only after the current mode's exit hook ran and the display was
+    blanked.
+  - Soft reset is ignored while SYSTEM_FLAG_NO_SOFT_RESET is set.
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/main.c:AgbMain
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:src/mode.c:ModeUpdate
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:include/mode.h:Mode
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:src/title/mode_copyright1.c:mode_copyright1_0 (SaveRepair* calls)
+    confidence: 0.85
+  - kind: capture_telemetry
+    ref: 'capture:attract:frames 10-606 mode 0 BG0 only, three ~200-frame screens (Licensed by Nintendo, Disney
+      Interactive + Square Enix logos, legal/copyright text)'
+    confidence: 0.8
+- id: title_screen
+  facet: frontend
+  label: Affine-zoom title with context-sensitive menu and no attract demo
+  summary: 'The title fades in, then zooms its BG2 logo plate over 100 frames by easing the affine scale and centre
+    (different target X when the Riku title flag is set), white-fades, cross-fades the background in 16 alpha steps
+    and slides in the logo/character sprites. A or Start skips the intro. PRESS START opens a menu whose default entry
+    is chosen from save state: Resume (suspend save present), Continue (a file is valid), New Game; Reverse/Rebirth
+    (Riku) entries appear after a Sora clear, and Link Battle opens the cable versus mode. There is no idle timeout
+    or demo: the capture sits on PRESS START from frame ~1000 to 3600.'
+  instantiates:
+  - concept: frontend.title.press_start_menu
+  - concept: rendering.background.affine_rotscale
+    weight: 0.4
+  - concept: frontend.menu.unlockable_extras
+    weight: 0.3
+  reads:
+  - input.buttons.pressed
+  - save.system.valid
+  - save.files_large[*].valid
+  - game.flags.sora_clear
+  - game.flags.riku_title
+  writes:
+  - frontend.mode
+  - title.menu_choice
+  params:
+    zoom_frames:
+      value: 100
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/title/mode_title.c:mode_title_1 (TITLE_STATE_ZOOM, sTitleTimer=100)
+        confidence: 0.9
+    zoom_target_scale:
+      value: 0.738
+      unit: x (BG2 magnification 0xBD0/16 / 256)
+      native_value: 3024
+      native_unit: gTitleBgScale (Q8.8 x16)
+      evidence:
+      - kind: derived
+        ref: 0xBD0 / 16 / 256
+        inputs:
+        - khcom:src/title/mode_title.c:mode_title_1
+        confidence: 0.7
+    white_fade_frames:
+      value: 70
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/title/mode_title.c:mode_title_1 (FadeStartOut(FADE_MODE_WHITE, 0x46))
+        confidence: 0.85
+    crossfade_steps:
+      value: 16
+      unit: BLDALPHA steps, 4 frames each
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/title/mode_title.c:mode_title_1 (sTitleBlendStep, sTitleTimer=4)
+        confidence: 0.85
+  invariants:
+  - Title never times out to a demo or intro movie.
+  - Default menu choice is Resume if a valid suspend save exists, else Continue if a file is valid, else New Game.
+  relations:
+  - type: part_of
+    target: game_mode_flow
+  - type: requires
+    target: save_system
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/title/mode_title.c:mode_title_1
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:src/title/mode_title.c:TitleExitToChoice
+    confidence: 0.95
+  - kind: capture_telemetry
+    ref: 'capture:attract:frames 608-952 DISPCNT mode 1, BG2 affine pa 0x100->0x15A, then BLDCNT alpha 0x1E41/0x0510'
+    confidence: 0.9
+  - kind: capture_frame
+    ref: capture:attract:f002047 and f003487 (identical PRESS START screen, no demo after 60 s)
+    confidence: 0.9
+- id: save_system
+  facet: frontend
+  label: Mirrored SRAM blocks, suspend save and save rooms
+  summary: 'Battery SRAM holds a header, a "system" suspend block, two large Sora files and two small Riku files, each
+    block stored twice with a signature and 16-bit checksum. At boot each block is checked; if one copy is bad and the
+    other good, the good copy is rewritten over the bad one. The title''s Resume loads the suspend block and immediately
+    clears it (one-shot quick save). Regular saves happen at save points in field rooms, which also restore HP. The card
+    collection (up to 999 cards) and 3 decks are persisted.'
+  instantiates:
+  - concept: frontend.save.redundant_slot_backup
+  - concept: frontend.save.suspend_save
+  - concept: frontend.save.save_station
+  reads:
+  - player.*
+  - cards.collection
+  - decks[*]
+  - world.floors[*]
+  writes:
+  - save.header
+  - save.system
+  - save.files_large[*]
+  - save.files_small[*]
+  - player.hp
+  params:
+    large_file_size:
+      value: 3860
+      unit: bytes
+      native_value: '0xF14'
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/save.h:SAVE_FILE_LARGE_SIZE
+        confidence: 0.95
+    small_file_size:
+      value: 1048
+      unit: bytes
+      native_value: '0x418'
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/save.h:SAVE_FILE_SMALL_SIZE
+        confidence: 0.95
+    copies_per_block:
+      value: 2
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/save.h:SAVE_SLOTS
+        confidence: 0.9
+    max_cards:
+      value: 999
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/save_types.h:SAVE_CARDS
+        confidence: 0.9
+    decks:
+      value: 3
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/save_types.h:SAVE_DECKS
+        confidence: 0.9
+    sram_used:
+      value: 27.5
+      unit: KiB (ends near 0x0E006B70)
+      evidence:
+      - kind: derived
+        ref: block offsets and sizes in save.h (large files at 0x0E002F20, 2 files x 2 copies x 0xF14)
+        inputs:
+        - khcom:include/save.h:SRAM_FILE_SMALL
+        - khcom:include/save.h:SAVE_FILE_LARGE_SIZE
+        confidence: 0.6
+  invariants:
+  - A suspend save is consumed on load (SaveClearSystem right after SaveLoadSystem).
+  - A block is valid only if both signature and checksum match; one good copy repairs the other.
+  relations:
+  - type: part_of
+    target: game_mode_flow
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/save.c:SaveRepairFileLarge
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:src/save.c:SaveChecksum
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/title/mode_title.c:TitleExitToChoice (TITLE_MENU_RESUME)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/lib/agb_sram.c (SRAM_F_V103 library string, SRAM wait states)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/map/map.c:Task_MapSave_0
+    confidence: 0.8
+  - kind: capture_frame
+    ref: capture:frontend:f000934 (file select shows two slots with Sora level and time)
+    confidence: 0.85
+- id: fmv_movie_player
+  facet: rendering
+  label: Mode-3 bitmap FMV player with IWRAM codecs and ADPCM audio stream
+  summary: 'Five pre-rendered movies (opening, 6F goal, 12F, Sora ending, Riku ending) play in a dedicated mode. Each
+    movie header gives width (multiple of 8, at most 288), height, float frame rate, frame count and audio format;
+    hand-written ARM key-frame and delta-frame decoders are copied to IWRAM and patched for the frame width, frames
+    decode into an EWRAM buffer and are blitted to the Mode-3 framebuffer. Audio is IMA-style ADPCM (89-step table)
+    or PCM16 streamed through DirectSound FIFOs with a timer-driven SndStream. Two subtitle lines are drawn with OBJ
+    text and alpha-faded per language.'
+  instantiates:
+  - concept: rendering.bitmap.fmv_playback
+  - concept: audio.stream.compressed_pcm_stream
+    weight: 0.5
+  reads:
+  - movie.data
+  - movie.subtitles
+  writes:
+  - vram.bitmap
+  - io.dispcnt
+  - sound.directsound_fifo
+  params:
+    movie_count:
+      value: 5
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/evt/mode_event.c and src/map/map.c ModeRequestHeapReset(&gModeMovie, MOVIE_*)
+        confidence: 0.85
+    max_width:
+      value: 288
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/lib/movie_player.c:MovieOpen (width check)
+        confidence: 0.9
+    adpcm_step_entries:
+      value: 89
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/lib/movie_player.c:gUnk_09D6D1E4
+        confidence: 0.85
+    stream_rate_observed:
+      value: 31536
+      unit: Hz DirectSound timer rate during movie
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:frontend:directsound_rates_hz 31536 for 4290 frames (frames 1109-5400, mode 3)
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: cutscene_system
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/lib/movie_player.c:MovieSetupVideoCodec
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:include/lib/movie.h:MoviePlayer
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:asm/movie_codec.s (hand-written ARM decoder with row-patch macros)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/evt/mode_movie.c:HandleMovieFrame
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/lib/snd_stream.c:SndStreamInit
+    confidence: 0.85
+  - kind: capture_telemetry
+    ref: capture:frontend:frames 1109-5400 DISPCNT mode 3 (opening movie after New Game)
+    confidence: 0.9
+  - kind: capture_frame
+    ref: capture:frontend:f002200 (pre-rendered Sora footage), f005280
+    confidence: 0.9
+- id: field_bg_stack
+  facet: rendering
+  label: Mode-0 four-layer field renderer with alpha overlay
+  summary: 'Field rooms run in Mode 0: BG3 and BG2 (priority 3) carry the room floor/backdrop, BG1 (priority 1) the
+    raised/occluding layer, BG0 (priority 0, palette bank 14) an overlay layer (the debug field mode sets alpha 6/16 over 10/16). Characters,
+    doors, enemies and props are OBJ sprites; tile animations run as a map task.'
+  instantiates:
+  - concept: rendering.background.tile_layer_stack
+  - concept: rendering.blending.alpha_layer_transparency
+    weight: 0.5
+  reads:
+  - room.def
+  - camera.scroll
+  writes:
+  - io.bgcnt[0..3]
+  - io.bldalpha
+  - oam.*
+  params:
+    overlay_alpha:
+      value: 6/10
+      unit: EVA/EVB of 16
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map.c:Mode_MapDbg_0 (SetBlendAlpha(6, 10); debug field mode, not confirmed for regular field)
+        confidence: 0.5
+    bg_layers:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map.c:Mode_MapFld_0 (SetupBg 0..3)
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: field_projection
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/map/map.c:Mode_MapFld_0
+    confidence: 0.85
+- id: battle_affine_arena_renderer
+  facet: rendering
+  label: Affine battle floor (Mode 2) and Mode-1 boss arenas
+  summary: 'Regular and humanoid battles use Mode 2: BG3 holds a per-world arena map with wrap-around, scrolled, zoomed
+    and (during shakes) rotated through BgAffineSet each frame; BG2 (also affine, no wrap) carries overlays. Boss battles
+    switch to Mode 1 with BG0/BG1 text layers for boss parts or backgrounds and affine BG2 on top. Each of 13 world
+    battle stages loads its own tiles/palette/map.'
+  instantiates:
+  - concept: rendering.background.affine_rotscale
+  - concept: rendering.boss.background_layer_boss
+    weight: 0.3
+  reads:
+  - battle.stage
+  - battle.camera.view
+  - battle.camera.scale
+  - battle.camera.rotation
+  writes:
+  - io.bg3pa_pd
+  - io.bg3x_y
+  - io.dispcnt
+  params:
+    regular_battle_mode:
+      value: 2
+      unit: DISPCNT mode
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/mode_battle.c:mode_battle_0 (SetBgMode2)
+        confidence: 0.9
+    boss_battle_mode:
+      value: 1
+      unit: DISPCNT mode
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/mode_battle.c:mode_battle_0 (BTL_FLAG_BOSS_BATTLE -> SetBgMode1)
+        confidence: 0.9
+    battle_stages:
+      value: 13
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/game_state.h:BattleStage
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: battle_side_projection
+  - type: requires
+    target: battle_camera
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/mode_battle.c:mode_battle_0
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_map.c:task_btl_map_0
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/engine.c:SetBgAffine
+    confidence: 0.9
+- id: battle_camera
+  facet: camera
+  label: Battle camera biased toward arena centre with capped easing, zoom and shake-rotation
+  summary: 'The battle camera target is the midpoint between the player and a fixed arena point, clamped to stay within
+    48 px of the player, raised by the player''s height. Each frame the camera moves 1/8 of the remaining distance,
+    capped at 4 px/frame, then is clamped to the arena bounds (top bound 144 px, bottom extended 32 px). Scripted zooms
+    ease scale and position by half-steps over N frames and tighten the bounds. A 32-step shake pattern also rotates
+    the affine floor slightly.'
+  instantiates:
+  - concept: camera.follow.region_bounded_scroll
+  - concept: camera.follow.eased_target_lerp
+  - concept: camera.effect.screen_shake
+  reads:
+  - player.position
+  - player.height
+  - battle.arena.bounds
+  writes:
+  - battle.camera.view
+  - battle.camera.scale
+  - battle.camera.rotation
+  params:
+    ease_fraction:
+      value: 0.125
+      unit: of remaining distance per frame
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_map.c:task_btl_map_1 (>> 3)
+        confidence: 0.95
+    max_camera_speed:
+      value: 4
+      unit: px/frame
+      native_value: '0x400'
+      native_unit: 1/256 px
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_map.c:task_btl_map_1
+        confidence: 0.95
+    player_leash:
+      value: 48
+      unit: px
+      native_value: '0x3000'
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_map.c:BtlMapFollowPosition
+        confidence: 0.95
+    centre_bias:
+      value: 0.5
+      unit: weight of arena anchor (256, 324 px) vs player
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_map.c:BtlMapFollowPosition ((px + 0x10000) >> 1)
+        confidence: 0.9
+    shake_steps:
+      value: 32
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_map.c:BtlMapUpdateShake
+        confidence: 0.9
+    view_y_min:
+      value: 144
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_map.c:BTL_MAP_VIEW_Y_MIN
+        confidence: 0.95
+  invariants:
+  - The view never leaves the arena bounds.
+  - The camera target never sits more than 48 px from the player on either axis (before easing).
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_map.c:task_btl_map_1
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_map.c:BtlMapFollowPosition
+    confidence: 0.95
+- id: sound_engine
+  facet: audio
+  label: MP2K (m4a) sequencer at 15768 Hz plus streamed PCM paths
+  summary: 'Music and SFX use Nintendo''s m4a/MP2K engine (hand-written m4a_1.s SoundMain/ply_* commands, C m4a2.c)
+    initialised at 15768 Hz, 8 PCM channels, master volume 14, 8-bit DAC. Battle BGM is chosen per battle type (world
+    boss, Organization, Riku, final boss); events schedule sound cues by frame. Separately, the staff roll streams
+    a block-compressed vocal track at 21024 Hz via a dedicated VBlank handler and Timer/DMA, and movies stream their
+    own audio (see fmv_movie_player).'
+  instantiates:
+  - concept: audio.engine.sample_psg_sequencer
+  - concept: audio.music.state_driven_music
+    weight: 0.5
+  - concept: audio.stream.compressed_pcm_stream
+    weight: 0.4
+  reads:
+  - battle.type
+  - world.current
+  writes:
+  - sound.directsound_fifo
+  - sound.psg
+  params:
+    mix_rate:
+      value: 15768
+      unit: Hz
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/lib/m4a2.c:m4aSoundInit (SOUND_MODE_FREQ_15768)
+        confidence: 0.95
+      - kind: capture_telemetry
+        ref: capture:attract:directsound_rates_hz 15768 (7188 frames)
+        confidence: 0.9
+    max_pcm_channels:
+      value: 8
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/lib/m4a2.c:m4aSoundInit (8 << SOUND_MODE_MAXCHN_SHIFT)
+        confidence: 0.95
+    staff_roll_stream_rate:
+      value: 21024
+      unit: Hz
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/sroll/sroll_tmr.c:GetBlockAudioSampleRate
+        confidence: 0.95
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/lib/m4a2.c:m4aSoundInit
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:config/handwritten.txt (SoundMain, ply_* listed as hand-written asm)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/btl/mode_battle.c:mode_battle_0 (m4aSongNumStart per battle type)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/sroll/sroll_tmr.c:BlockAudioUpdate
+    confidence: 0.8
+  - kind: capture_telemetry
+    ref: capture:summary:psg_channels_triggered [1,2,4], DirectSound A and B active
+    confidence: 0.85
+- id: cutscene_system
+  facet: narrative_delivery
+  label: Keyframed in-engine events with portrait dialogue
+  summary: 'Story beats are data-driven events (~197 event scripts named by floor/world, e.g. 1F entrance, per-world
+    e0..e3, boss, end; Riku B12F..B1F). Each event bundles a camera keyframe track (frame, x, y, follow target, shake
+    flags), per-character keyframe tracks (anim, frame, x/y/z position, callback), timed sound cues and a message script
+    whose entries pick a speaker portrait and expression, window position, per-character text delay, yes/no prompts
+    and silhouette/focus flags. Events run in the field engine; five beats escalate to FMV.'
+  instantiates:
+  - concept: narrative_delivery.cutscene.in_engine_cutscene
+  - concept: narrative_delivery.dialogue.typewriter_dialogue
+  - concept: narrative_delivery.structure.predetermined_story
+  reads:
+  - event.id
+  - world.floor
+  - story.flags
+  writes:
+  - camera.position
+  - actors[*].position
+  - story.flags
+  params:
+    event_scripts:
+      value: 197
+      unit: event include files
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/evt/events/ (directory listing)
+        confidence: 0.85
+    text_char_delay:
+      value: 1
+      unit: frames per character
+      variants:
+      - when: version=jp
+        value: 3
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/evt/msg_types.h:EVENT_TEXT_DELAY
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: castle_oblivion_floor_progression
+  evidence:
+  - kind: decomp_source
+    ref: khcom:include/evt/msg_types.h:EventCameraKeyframe
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:include/evt/msg_types.h:MessageScriptEntry
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:src/evt/events/008_1f_battle_guardarmor.inc (camera shake keyframes, sound cues, chara tracks)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:include/evt/evt_types.h:EventState
+    confidence: 0.85
+- id: jiminy_journal
+  facet: ui_hud
+  label: Jiminy's journal (codex of characters, enemies, cards and records)
+  summary: A menu mode lists unlocked journal entries in scrollable categories with hidden rows for entries not yet
+    met, detail pages and numeric records; it complements the card catalog. It is a reference codex, not a quest log.
+  instantiates:
+  - concept: ui_hud.menu.codex_journal
+  reads:
+  - journal.unlocked_entries
+  - records.*
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/menu/mode_jiminy.c:JiminyLoadHiddenRow
+    confidence: 0.75
+  - kind: decomp_source
+    ref: khcom:src/menu/mode_jiminy.c:JiminyDetailUpdate
+    confidence: 0.7
+  - kind: llm_knowledge
+    ref: Jiminy's Journal catalogues characters, enemies and story recaps in KH games
+    confidence: 0.5
+- id: staff_roll
+  facet: frontend
+  label: Staff roll with streamed vocal theme
+  summary: After the final battle the staff-roll mode scrolls credits text with character, scene and logo panels while
+    a block-compressed PCM song streams at 21024 Hz from a dedicated VBlank handler; Sora and Riku endings each roll
+    credits.
+  instantiates:
+  - concept: frontend.ending.credits_roll
+  - concept: audio.stream.compressed_pcm_stream
+    weight: 0.5
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/sroll/mode_staffroll.c:gModeStaffRoll
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/sroll/sroll_tmr.c:BlockAudioUpdate
+    confidence: 0.8
+  - kind: decomp_source
+    ref: khcom:src/lib/audio_block_codec.c:DecodeAudioBlock
+    confidence: 0.8
+- id: real_time_card_battle
+  facet: mechanics
+  label: Real-time action battle where every action is a card play from a cycling deck
+  summary: 'Contact with a field enemy loads a separate battle mode on a small 2.5D arena. The player moves, jumps and
+    dodges freely in real time, but every attack, spell, item, summon or friend is a card: L/R cycle through the hand
+    (a ring of the deck''s remaining cards), A plays the selected card, L+R stocks it for a sleight. Played cards are
+    consumed until the deck is reloaded. Enemies play their own cards; any play can be cancelled by a higher (or 0)
+    card - the card break. Waves of enemies arrive until the formation is exhausted; battle ends on win, escape or
+    death.'
+  instantiates:
+  - concept: mechanics.cards.deck_as_action_set
+  - concept: mechanics.combat.real_time_action_combat
+  - concept: mechanics.cards.card_break_contest
+    weight: 0.5
+  reads:
+  - input.buttons
+  - decks[active]
+  - battle.hand.selected
+  - battle.active_card
+  writes:
+  - battle.hand
+  - battle.active_card
+  - battle.stock
+  - battle.state
+  params:
+    hand_controls:
+      value: L/R cycle, A use, L+R stock, hold A on reload card
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:HandleSoraCardInput
+        confidence: 0.9
+    frame_loop:
+      value: actors update only while hitStop <= 0; hitStop counts down otherwise
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/mode_battle.c:mode_battle_1
+        confidence: 0.9
+  invariants:
+  - No attack can be made without playing an attack card; the deck must contain at least one attack card.
+  - While the player is executing a card action they are HIT_LOCKED (cannot be hit).
+  - Card input is locked during a card break.
+  relations:
+  - type: requires
+    target: card_data_and_cp_cost
+  - type: requires
+    target: card_break_rule
+  - type: requires
+    target: deck_reload
+  - type: requires
+    target: field_encounters
+    note: battles start from field contact
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/mode_battle.c:mode_battle_1
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/btl/battle_runtime.c:HandleSoraCardInput
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/btl/battle_runtime.c:TryStartCardAction
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/card/card_battle.c:CreateSoraCardRing
+    confidence: 0.6
+    note: name only for the ring display
+- id: card_data_and_cp_cost
+  facet: mechanics
+  label: Valued cards (0-9) in CP-limited decks
+  summary: 'Every card has a category (attack, magic, item, enemy) plus friend/summon/gimmick flags and a value 0-9;
+    ids are group x 10 + value (450 valued ids, then enemy and gimmick cards). Up to 3 decks of up to 99 cards are
+    built from a 999-card collection, and a deck''s total CP must not exceed the player''s CP stat (starts at 275).
+    A card''s CP is base + (base div 10) x (value - 1), with value 0 priced as 10 (the most expensive); premium cards
+    cost the flat base regardless of value but are removed from the current battle on use.'
+  instantiates:
+  - concept: mechanics.cards.point_budget_deckbuilding
+  - concept: mechanics.cards.valued_cards
+  reads:
+  - cards.collection
+  - player.cp
+  writes:
+  - decks[*]
+  - decks[*].cp_total
+  params:
+    value_range:
+      value: 0-9
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/card/card_ids.h:CARD_ID
+        confidence: 0.95
+    deck_size_max:
+      value: 99
+      unit: cards
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/card/card_types.h:Deck
+        confidence: 0.9
+    deck_count:
+      value: 3
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/save_types.h:SAVE_DECKS
+        confidence: 0.95
+    starting_cp:
+      value: 275
+      unit: CP
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/player_progression.c:InitPlayerProgression
+        confidence: 0.9
+    cp_formula:
+      value: base + floor(base/10) * (v-1), v=0 -> 10
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_catalog.c:GetCardCpCost
+        confidence: 0.95
+    kingdom_key_cp_range:
+      value: 10-19
+      unit: CP (value 1 -> 10, value 9 -> 18, value 0 -> 19)
+      evidence:
+      - kind: derived
+        ref: cp_formula with base 10
+        inputs:
+        - khcom:src/card/card_catalog.c:GetCardCpCost
+        - khcom:src/card/card_catalog.c:gCardDefs
+        confidence: 0.9
+  invariants:
+  - Deck CP total <= player CP and deck contains at least one attack card (deck exchange checks).
+  - Using a premium card removes it until the deck is restored, unless no attack cards would remain.
+  relations:
+  - type: part_of
+    target: real_time_card_battle
+  - type: modulates
+    target: card_break_rule
+    note: higher values cost more CP, 0 costs most
+  evidence:
+  - kind: decomp_source
+    ref: khcom:include/card/card_types.h:CardDef
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:src/card/card_catalog.c:GetCardCpCost
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:src/card/card_deckexchange.c:CheckDeckExchangeCpCost
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/card/card_battle.c:UseSoraCard
+    confidence: 0.85
+  tables:
+    card_base_cp:
+      description: Base CP (cost of value 1) per card group from gCardDefs.
+      columns:
+      - card
+      - category
+      - base_cp
+      rows:
+      - [Kingdom Key, attack, 10]
+      - [Three Wishes / Pumpkinhead / Olympia / Wishing Star / Lady Luck, attack, 15]
+      - [Crabclaw / Fairy Harp / Spellbinder / Metal Chocobo / Lionheart / Divine Rose, attack, 20]
+      - [Oathkeeper / Oblivion / Diamond Dust / One-Winged Angel, attack, 25]
+      - [Ultima Weapon, attack, 30]
+      - [Fire / Blizzard / Thunder, magic, 15]
+      - [Gravity / Stop / Aero, magic, 20]
+      - [Cure, magic, 25]
+      - [Simba / Genie / Bambi / Dumbo / Tinker Bell (summon), magic, 20]
+      - [Mushu / Cloud (summon), magic, 25]
+      - [Donald / Goofy (friend), item, 20]
+      - [Potion, item, 30]
+      - [Hi-Potion, item, 40]
+      - [Megalixir, item, 50]
+      - [Shadow enemy card, enemy, 25]
+      - [Darkside enemy card, enemy, 99]
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_catalog.c:gCardDefs
+        confidence: 0.9
+- id: card_break_rule
+  facet: mechanics
+  label: Card break - higher or zero value cancels the opponent's play
+  summary: 'The value of the play currently in effect (one card, or the sum of a stocked sleight) is held as activeValue.
+    A new player play succeeds against it if its value n >= activeValue, or n == 0; otherwise the new play is the one
+    broken. Equal values break both. The broken side''s cards are discarded and the actor is staggered (12-frame global
+    hit-stop, then break animation; enemies at least 40 frames). breakDifference = n - activeValue (capped 9; for a 0
+    card, min(activeValue, 9)) feeds Riku''s dark points. In US/JP builds an enemy''s 0 card does not auto-break; only
+    EU applies the 0 rule to enemies. Bracer effects make a play unbreakable.'
+  instantiates:
+  - concept: mechanics.cards.card_break_contest
+  - concept: mechanics.combat.interrupt_priority
+    weight: 0.5
+  reads:
+  - battle.active_value
+  - card.value
+  - effects.bracer
+  writes:
+  - battle.active_card
+  - battle.active_value
+  - battle.break_difference
+  - actor.state
+  params:
+    break_hitstop:
+      value: 12
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:UpdateBtlObjReaction
+        confidence: 0.9
+    enemy_break_stagger_min:
+      value: 40
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_common.c:EmyUpdateCommonStates (EMY_STATE_CARD_BROKEN)
+        confidence: 0.85
+    break_difference_cap:
+      value: 9
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_battle.c:TrySoraCardBreak
+        confidence: 0.85
+  invariants:
+  - A player play fails iff activeValue > n and n != 0.
+  - Ties cancel both plays; neither action executes.
+  - A 0 card always breaks the active play when the player plays it second; played first, its activeValue of 0 is
+    beaten by any card.
+  relations:
+  - type: part_of
+    target: real_time_card_battle
+  - type: modulates
+    target: enemy_card_play_ai
+    note: the same comparison resolves enemy plays
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/card/card_battle.c:TrySoraCardBreak
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:src/card/card_battle.c:TrySoraStockBreak
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/card/card_enemy.c:UseEnemyCard (VERSION_EU 0-card branch)
+    confidence: 0.95
+- id: sleight_combos
+  facet: mechanics
+  label: Three-card stock sleights keyed by card identity and value-sum window
+  summary: 'Up to 3 cards can be stocked; their values sum into one play that is hard to break. If the stocked cards
+    match a learned sleight the result is a special move: the lookup keys on the ordered card catalog groups and count,
+    then checks value-sum windows (e.g. three same keyblades sum 10-15 = Sliding Dash, 20-23 = Stun Impact; three
+    attack cards sum 1-6 = Ars Arcanum, 7-9 = Ragnarok, 24-26 = Strike Raid, 0 or 27 = Zantetsuken; Fire+Fire = Fira,
+    Mushu+Fire+Fire = Mega Flare). Using a sleight permanently removes the first stocked card from this battle unless
+    Sleight Lock is active. 106 sleights exist.'
+  instantiates:
+  - concept: mechanics.cards.combination_sleight
+  - concept: mechanics.combat.combo_move_lookup
+    weight: 0.5
+  reads:
+  - battle.stock[0..2]
+  - progression.learned_sleights
+  writes:
+  - battle.active_card
+  - battle.active_value
+  - deck.slots[*].removed
+  params:
+    stock_max:
+      value: 3
+      unit: cards
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_battle.c:cardbattleSora_1
+        confidence: 0.9
+    sleight_count:
+      value: 106
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/card/card_label_data.h:StockId
+        confidence: 0.85
+    learnable_flags:
+      value: 72
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/player_progression.h:LearnedStock
+        confidence: 0.8
+  invariants:
+  - Enemy and gimmick cards cannot be stocked.
+  - The sleight key is order-sensitive (first card matters).
+  - The first stocked card is lost for the rest of the battle (unless Sleight Lock).
+  relations:
+  - type: part_of
+    target: real_time_card_battle
+  - type: gated_by
+    target: level_up_choice
+    note: many sleights are learned via level-up choice
+  - type: modulates
+    target: card_break_rule
+    note: stocked plays use the summed value
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/card/mode_riku_tutorial.c:LookupStockName
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/card/card_battle.c:UseSoraStock
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/card/card_battle.c:StockSoraCard
+    confidence: 0.75
+  tables:
+    sleight_examples:
+      description: Representative sleight recipes (value windows are sums of the 3 stocked values).
+      columns:
+      - sleight
+      - cards
+      - value_sum
+      rows:
+      - [Fira, Fire + Fire, any]
+      - [Firaga, Fire x3, any]
+      - [Sliding Dash, same keyblade x3, 10-15]
+      - [Stun Impact, same keyblade x3, 20-23]
+      - [Blitz, 3 distinct attack cards, 10-15]
+      - [Sonic Blade, 3 distinct attack cards, 20-23]
+      - [Ars Arcanum, 3 attack cards (no Soul Eater), 1-6]
+      - [Ragnarok, 3 attack cards, 7-9]
+      - [Strike Raid, 3 attack cards, 24-26]
+      - [Zantetsuken, 3 attack cards, 0 or 27]
+      - [Mega Flare, Mushu + Fire + Fire, any]
+      - [Dark Break / Dark Firaga / Dark Aura (Riku), Soul Eater x3, 5-15 / 16-25 / >26]
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/mode_riku_tutorial.c:LookupStockName
+        confidence: 0.85
+- id: deck_reload
+  facet: mechanics
+  label: Deck exhaustion and charge-to-reload with escalating reload time
+  summary: 'When every card has been used the hand shows only the reload card. Holding A on it charges a gauge (+0.1
+    every 2nd frame to 1.0, ~34 frames per cycle). The number of cycles needed grows with each reload in the battle
+    (1, then 2, then 3, capped). Reloading restores used cards except sleight-consumed and premium ones. Some
+    enemy-card effects and Mega items modify the count; Riku reloads instantly.'
+  instantiates:
+  - concept: mechanics.cards.deck_cycle_reload
+  - concept: mechanics.combat.vulnerability_window
+    weight: 0.4
+  reads:
+  - input.buttons.held
+  - battle.reload_count
+  writes:
+  - battle.reload_gauge
+  - battle.hand
+  - battle.reload_count
+  params:
+    gauge_step:
+      value: 0.1
+      unit: of full gauge per 2 frames
+      native_value: 25
+      native_unit: Q8.8 per 2 frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_battle.c:UpdateSoraReloadGauge
+        confidence: 0.9
+    cycle_frames:
+      value: 34
+      unit: frames (approx.)
+      evidence:
+      - kind: derived
+        ref: ~20 frames to fill (10+ steps x 2) plus 6 full-gauge animation ticks
+        inputs:
+        - khcom:src/card/card_battle.c:UpdateSoraReloadGauge
+        confidence: 0.5
+    max_cycles:
+      value: 3
+      unit: gauge cycles per reload
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_battle.c:IncrementReloadCount (cap 2 -> 3 cycles)
+        confidence: 0.85
+    forced_reload_hp_cost:
+      value: 2
+      unit: HP (if HP>3)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_battle.c:cardbattleSora_1
+        confidence: 0.7
+  invariants:
+  - The reload count only increases within a battle (until a Mega item resets it).
+  relations:
+  - type: part_of
+    target: real_time_card_battle
+  - type: conflicts_with
+    target: riku_dark_mode
+    condition: Riku scenario replaces the gauge with an instant reload
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/card/card_battle.c:UpdateSoraReloadGauge
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/card/card_battle.c:IncrementReloadCount
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/card/card_battle.c:ResetSoraReloadGauge
+    confidence: 0.8
+- id: combo_swings_and_hitboxes
+  facet: mechanics
+  label: Three-hit keyblade combo with geometry-chosen swings and box hitboxes
+  summary: 'Each attack card is one swing; consecutive attack cards advance swing 1 -> 2 -> 3 (finisher). The swing set
+    is chosen by where the lock-on target is (above, far in x, far in depth, or player airborne). The hit lands on a
+    keyblade-dependent frame (10-20 frames, Kingdom Key 15), placing an axis-aligned box 36 px ahead (half-extents
+    20x12x32 px) tested against target x/y radius and z height. Hits apply per-attack hit-stop (3 frames for swings
+    1-2, 16 for finishers) and the finisher zooms the camera 1.5x on hit.'
+  instantiates:
+  - concept: mechanics.combat.melee_combo_chain
+  - concept: mechanics.combat.melee_weapon_swing
+    weight: 0.6
+  - concept: mechanics.combat.hitbox_volume_test
+  - concept: mechanics.combat.hit_stop
+  reads:
+  - battle.combo_index
+  - lockon.target
+  - card.keyblade
+  writes:
+  - battle.attack_boxes
+  - battle.hit_stop
+  - battle.camera.zoom
+  params:
+    hit_frames_by_swing_speed:
+      value: '[10, 12, 15, 18, 20]'
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:sBtlSoraSwingHitFrames
+        confidence: 0.9
+    hitbox_forward_offset:
+      value: 36
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:task_btl_sora_1 (COMBO -> ApplyAttackBox)
+        confidence: 0.8
+    hitbox_half_extents:
+      value: 20x12x32
+      unit: px (x, depth, height)
+      variants:
+      - when: effect=wide_attack
+        value: 32x12x32
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:task_btl_sora_1
+        confidence: 0.8
+    hitstop_normal:
+      value: 3
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_collision.c:sBattleAttackDefs
+        confidence: 0.8
+    hitstop_finisher:
+      value: 16
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_collision.c:sBattleAttackDefs
+        confidence: 0.8
+    finisher_zoom:
+      value: 1.5
+      unit: x
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:StartBtlSoraCombo
+        confidence: 0.7
+  invariants:
+  - Hitboxes skip targets that are HIT_LOCKED, intangible, unhittable or have invincibility frames.
+  relations:
+  - type: part_of
+    target: real_time_card_battle
+  - type: requires
+    target: lock_on_targeting
+  - type: modulates
+    target: battle_camera
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_sora.c:GetBtlSoraComboType
+    confidence: 0.8
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_collision.c:CanAttackBoxHitBtlObj
+    confidence: 0.9
+- id: damage_resolution
+  facet: mechanics
+  label: Attack x power damage with element affinities and multiplier effects
+  summary: 'Damage = attacker attack x move power (Q8.8, Kingdom Key swings 1.0/1.0/1.5x AP), optionally x a scale, minimum
+    1. Card value does not affect damage; it only decides breaks. No defence stat, criticals or random spread exist.
+    Element flags on the target: guard/immune block (30 i-frames), absorb heals, resist halves, weak x1.5 (on regular
+    enemies weakness instead stuns). Gravity deals a fraction of current HP; Stop stores damage and applies it when
+    Stop ends. Enemy-card effects multiply (Back Attack x2, Berserk x2 below 25% HP, Element Boost x1.5, Protect/Shell
+    x0.5).'
+  instantiates:
+  - concept: mechanics.combat.multiplicative_damage_formula
+  - concept: mechanics.combat.enemy_weakness_mask
+  - concept: mechanics.combat.invulnerability_frames
+    weight: 0.4
+  reads:
+  - attacker.attack
+  - attack.power
+  - target.element_flags
+  - effects.*
+  writes:
+  - target.hp
+  - target.invincible_timer
+  params:
+    power_kingdom_key:
+      value: '[1.0, 1.0, 1.5]'
+      unit: x attack per swing
+      native_value: '[256, 256, 384]'
+      native_unit: Q8.8
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_collision.c:sBattleAttackDefs
+        confidence: 0.85
+    resist_multiplier:
+      value: 0.5
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_collision.c:ResolveAttackHit
+        confidence: 0.85
+    weak_multiplier:
+      value: 1.5
+      unit: x (bosses and player only)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_collision.c:ResolveAttackHit
+        confidence: 0.8
+    block_iframes:
+      value: 30
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_collision.c:ResolveAttackHit
+        confidence: 0.85
+    gravity_vs_player:
+      value: 0.297
+      unit: x of gravity damage (76/256)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_collision.c:ResolveAttackHit
+        confidence: 0.75
+  invariants:
+  - Damage is at least 1 unless blocked or absorbed.
+  relations:
+  - type: part_of
+    target: real_time_card_battle
+  - type: modulates
+    target: status_effects
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_collision.c:ResolveAttackHit
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_collision.c:sBattleAttackDefs
+    confidence: 0.85
+- id: status_effects
+  facet: mechanics
+  label: Timed status ailments (stun, stop, confuse, terror, bind, gravity squash)
+  summary: 'Hits can apply statuses tracked by a per-actor badstatus task. Stun 240 frames (360 when warped), shortened
+    by 1 frame per button press when the player is stunned; Confuse 300 frames swaps L/R and U/D input; Terror 300
+    frames makes enemies flee at double speed; Bind 600 frames stops movement and dodging; Stop lasts power x 15/64
+    frames and banks damage. Gravity squashes the sprite and holds the enemy 44 frames. Bosses are immune to stop,
+    gravity, terror, warp, confuse and bind.'
+  instantiates:
+  - concept: mechanics.status.timed_status_ailment
+  - concept: mechanics.combat.button_mash_escape
+    weight: 0.4
+  reads:
+  - actor.status_timers
+  - input.buttons.pressed
+  writes:
+  - actor.status_timers
+  - actor.state
+  params:
+    stun_frames:
+      value: 240
+      unit: frames
+      variants:
+      - when: target warped
+        value: 360
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:ApplyBtlObjHit
+        confidence: 0.85
+    confuse_frames:
+      value: 300
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:ApplyBtlObjHit
+        confidence: 0.85
+    terror_frames:
+      value: 300
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:ApplyBtlObjHit
+        confidence: 0.85
+    bind_frames:
+      value: 600
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:ApplyBtlObjHit
+        confidence: 0.85
+    gravity_hold_frames:
+      value: 44
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_common.c:EmyUpdateCommonStates (GRAVITY_HOLD)
+        confidence: 0.8
+  invariants:
+  - Boss-flagged enemies ignore stop, gravity, terror, warp, confuse and bind.
+  relations:
+  - type: part_of
+    target: real_time_card_battle
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_badstatus.c:task_btl_badstatus_1
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_sora.c:SwapBtlSoraKeyBits
+    confidence: 0.8
+  - kind: decomp_source
+    ref: khcom:src/btl/battle_runtime.c:InitEnemyBtlObj
+    confidence: 0.85
+- id: enemy_card_effects
+  facet: mechanics
+  label: Enemy (Heartless) cards as timed passive modifiers
+  summary: 'Defeated enemies rarely drop enemy cards; played in battle, an enemy card grants one of 55 effects (Dash,
+    Bracers, Sleight Lock, damage multipliers, Draw pickup radius, Quick Recovery, Second Chance, etc.) that replaces any
+    current effect and lasts a fixed number of reloads (Dash: card uses). They cannot be stocked and are consumed on
+    use. Bosses drop their enemy card as fixed rewards.'
+  instantiates:
+  - concept: mechanics.cards.effect_card_buff
+  - concept: mechanics.ability.temporary_ability_loss
+    weight: 0.1
+  reads:
+  - card.move
+  - battle.reload_count
+  writes:
+  - player.hc_effect
+  - player.hc_effect_count
+  params:
+    effect_count:
+      value: 55
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/card/card_label_data.h:HcEffectId
+        confidence: 0.9
+    duration_unit:
+      value: reloads (Dash ticks per card use)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_battle.c:TickSoraHcEffectOnReload
+        confidence: 0.85
+  invariants:
+  - Only one enemy-card effect is active at a time.
+  relations:
+  - type: modulates
+    target: damage_resolution
+  - type: modulates
+    target: card_break_rule
+    note: Bracers make plays unbreakable
+  - type: modulates
+    target: battle_locomotion
+    note: Dash doubles run speed
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/card/card_battle.c:UseSoraHeartlessCard
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/card/card_catalog.c:gHcEffectDefs
+    confidence: 0.85
+- id: friend_cards_and_summons
+  facet: mechanics
+  label: Friend cards dropped mid-battle and summon cards
+  summary: 'Each non-lethal hit on an enemy has a 1/8 chance to spawn a friend card pickup (3/4 the current world''s
+    ally if unlocked, else Donald or Goofy; value 0-8; at most one on the field, at most 5 per battle; lasts 360 frames).
+    Picked-up friend cards enter the hand; playing one calls the ally for a scripted attack (e.g. Goofy charge, triple
+    Goofy Tornado orbiting 180 frames) while Sora stays controllable. Summon cards (Simba, Genie, Bambi, Dumbo, Tinker
+    Bell, Mushu, Cloud) take Sora off-screen while the summon acts. Friends are dismissed on card break or battle end.'
+  instantiates:
+  - concept: mechanics.cards.in_battle_card_drop
+  - concept: mechanics.combat.assist_summon
+  reads:
+  - world.ally_unlocked
+  - battle.friend_cards_added
+  writes:
+  - battle.hand
+  - battle.actors
+  params:
+    drop_odds_per_hit:
+      value: 0.125
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:DropFriendCard
+        confidence: 0.85
+    world_ally_share:
+      value: 0.75
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_friend_card.c:CreateFriendCardTask
+        confidence: 0.8
+    pickup_lifetime:
+      value: 360
+      unit: frames (blinks after 280)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_friend_card.c:CreateFriendCardTask
+        confidence: 0.8
+    max_per_battle:
+      value: 5
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:DropFriendCard
+        confidence: 0.75
+    goofy_tornado_frames:
+      value: 180
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/frd_goofy.c:task_frd_goofy_1
+        confidence: 0.8
+  relations:
+  - type: part_of
+    target: real_time_card_battle
+  - type: gated_by
+    target: castle_oblivion_floor_progression
+    note: world allies unlock per world
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/battle_runtime.c:DropFriendCard
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/btl/frd_goofy.c:task_frd_goofy_1
+    confidence: 0.8
+  - kind: decomp_source
+    ref: khcom:src/btl/smn_cloud.c:task_smn_cloud_0
+    confidence: 0.7
+- id: first_strike
+  facet: mechanics
+  label: Field first strike pre-damages and stuns the first wave
+  summary: 'Hitting a field enemy with the keyblade before contact starts the battle with a first-strike flag: every
+    enemy of the first wave spawns having lost 25/256 (~10%) of max HP and stunned. The Strong Initiative room card
+    raises this to 204/256 (~80%); Lasting Daze keeps the flag for all waves.'
+  instantiates:
+  - concept: mechanics.encounter.overworld_first_strike
+  reads:
+  - game.flags.first_strike
+  - room.effect
+  writes:
+  - enemies[*].hp
+  - enemies[*].status.stun
+  params:
+    first_strike_damage:
+      value: 0.098
+      unit: x max HP
+      native_value: 25
+      native_unit: /256
+      variants:
+      - when: room_effect=strong_initiative
+        value: 0.797
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_common.c:EmyFinishSpawn
+        confidence: 0.9
+  relations:
+  - type: requires
+    target: field_encounters
+  - type: modulates
+    target: real_time_card_battle
+  - type: modulates
+    target: battle_wave_formations
+    condition: room_effect=lasting_daze
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/emy_common.c:EmyFinishSpawn
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/map/map_tasks.c:MapEnm00Hit
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_form.c:task_btl_form_1
+    confidence: 0.8
+- id: battle_escape
+  facet: mechanics
+  label: Escape by pushing against the arena edge
+  summary: In regular battles the player escapes by standing on the ground pushing into the left or right arena edge;
+    after a 16-frame delay a gauge fills over 90 frames, then Sora runs off and the battle ends as not-won (enemies
+    stay on the field). Unavailable in boss, humanoid, event and tutorial battles.
+  instantiates:
+  - concept: mechanics.encounter.hold_to_flee
+  reads:
+  - player.on_ground
+  - player.pushing_edge
+  - battle.type
+  writes:
+  - battle.escape_gauge
+  - game.flags.battle_not_won
+  params:
+    escape_delay:
+      value: 16
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_escape.c:task_btl_escape_1
+        confidence: 0.9
+    escape_fill:
+      value: 90
+      unit: frames
+      native_value: '0x5A00 at 256/frame'
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_escape.c:task_btl_escape_1
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: real_time_card_battle
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_escape.c:task_btl_escape_1
+    confidence: 0.9
+- id: battle_wave_formations
+  facet: mechanics
+  label: Battle id -> formation of enemy waves under a sprite tile budget
+  summary: 'The room''s shape gives a battle-id range that is offset per world and indexes 147 formation lists. A formation
+    is a list of waves; each wave places enemies at offsets around a centre halfway between the player and arena centre
+    (mirrored 80/20 by facing). The next wave spawns 100 frames after the current one clears, only if live plus incoming
+    enemy tiles fit the threshold (usually 256 tiles).'
+  instantiates:
+  - concept: ai.spawn.wave_until_cleared
+  reads:
+  - battle.id
+  - player.position
+  - enemies.tile_count
+  writes:
+  - enemies[*]
+  params:
+    formation_lists:
+      value: 147
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/formation_data.c:gBtlFormListByBattleId
+        confidence: 0.85
+    wave_gap:
+      value: 100
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_form.c:task_btl_form_1
+        confidence: 0.8
+    tile_budget:
+      value: 256
+      unit: OBJ tiles (some lists 266)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/btl/formation_types.h:BtlFormList
+        confidence: 0.85
+  invariants:
+  - A wave never spawns if it would exceed the OBJ tile budget.
+  relations:
+  - type: part_of
+    target: real_time_card_battle
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_form.c:task_btl_form_1
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:include/btl/formation_types.h:BtlFormStep
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/map/map.c:GetRandomBattleId
+    confidence: 0.85
+- id: riku_dark_mode
+  facet: mechanics
+  label: Riku scenario - fixed decks, dark points and dark mode
+  summary: 'Reverse/Rebirth (unlocked after Sora''s story) gives Riku a fixed per-world deck (12 decks) plus boss enemy
+    cards, instant reloads and no enemy-card drops. Winning card breaks adds the break difference to dark points (0-999);
+    at 30+ he can transform into dark mode (faster walk 2.5 px/frame, Soul Eater sleights, Dark Leap behind the target),
+    where only lost breaks count and taking hits costs 5 DP (else +1). Dark mode ends at 0 DP. Level-ups offer HP, AP
+    or DP instead of CP/sleights.'
+  instantiates:
+  - concept: mechanics.resource.meter_fueled_transformation
+  - concept: mechanics.cards.fixed_deck_mode
+  reads:
+  - battle.break_difference
+  - player.dark_points
+  writes:
+  - player.dark_points
+  - player.form
+  params:
+    dark_mode_threshold:
+      value: 30
+      unit: DP
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/mode_riku_tutorial.c:ResolveActiveCardsMove (darkPoints > 29)
+        confidence: 0.9
+    hurt_dp:
+      value: 1
+      variants:
+      - when: dark_mode
+        value: -5
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_riku.c:AddDarkPoints
+        confidence: 0.85
+    walk_max:
+      value: 2.0
+      unit: px/frame
+      native_value: 512
+      variants:
+      - when: dark_mode
+        value: 2.5
+      - when: effect=dash
+        value: 3.0
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_riku.c:UpdateBtlRikuDarkWalk
+        confidence: 0.8
+    fixed_decks:
+      value: 12
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_deckmenu2.c:BuildRikuDeck
+        confidence: 0.8
+  relations:
+  - type: variant_of
+    target: real_time_card_battle
+  - type: requires
+    target: card_break_rule
+  - type: gated_by
+    target: title_screen
+    note: Riku entries appear after a Sora clear
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_riku.c:AddDarkPoints
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/card/card_battle.c:AddBreakDarkPoints
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/card/card_deckmenu2.c:InitRikuDeckForWorld
+    confidence: 0.8
+- id: lock_on_targeting
+  facet: ui_hud
+  label: Facing-cone automatic lock-on
+  summary: Outside card actions the game auto-selects the nearest enemy in front within 150 px horizontally, 24 px
+    depth and 100 px height, falling back to one behind within 90 px. The target steers swing choice and some spells.
+  instantiates:
+  - concept: ui_hud.targeting.auto_lock_on
+  reads:
+  - player.position
+  - player.facing
+  - enemies[*].position
+  writes:
+  - lockon.target
+  params:
+    forward_range_x:
+      value: 150
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_lockon.c:SelectLockonTarget
+        confidence: 0.9
+    depth_tolerance:
+      value: 24
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_lockon.c:SelectLockonTarget
+        confidence: 0.9
+    rear_range_x:
+      value: 90
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_lockon.c:SelectLockonTarget
+        confidence: 0.85
+  invariants:
+  - The target does not change during a card action.
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_lockon.c:SelectLockonTarget
+    confidence: 0.9
+- id: field_encounters
+  facet: mechanics
+  label: Visible field enemies, contact battles and room enemy budgets
+  summary: 'Rooms spawn visible Heartless symbols: after 46 frames, each frame has a 20% spawn chance while fewer than
+    the room shape''s max alive are out, the room''s enemy total is not exhausted and the OBJ tile budget (256) holds,
+    with a 30-frame cooldown. Touching one starts a battle (id drawn from the room''s range); striking first sets the
+    first-strike flag. Only winning a battle reduces the room''s remaining enemies; up to 3 survivors are cached and
+    restored afterwards; new spawns are harmless for 30 frames.'
+  instantiates:
+  - concept: mechanics.encounter.symbol_encounter
+  - concept: ai.spawn.budgeted_random_spawner
+  reads:
+  - room.shape
+  - room.enemies_left
+  - player.position
+  writes:
+  - field.enemies
+  - game.flags.map_enemy_battle
+  - battle.id
+  params:
+    spawn_initial_delay:
+      value: 46
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map.c:MapEnmUpdateSpawner
+        confidence: 0.85
+    spawn_chance:
+      value: 0.2
+      unit: per frame
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map.c:MapEnmUpdateSpawner (rand%10000 > 7999)
+        confidence: 0.85
+    spawn_cooldown:
+      value: 30
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map.c:MapEnmUpdateSpawner
+        confidence: 0.85
+    cached_survivors:
+      value: 3
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/game_state.h:GameState.enemyCache
+        confidence: 0.9
+  invariants:
+  - Escaping a battle does not reduce the room's remaining enemy count.
+  relations:
+  - type: requires
+    target: room_synthesis_map_cards
+    note: room shape sets enemy totals and battle ranges
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/map/map.c:MapEnmUpdateSpawner
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/map/map.c:MapEnmStartBattle
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/map/map.c:MapEnmInitRoom
+    confidence: 0.8
+- id: game_over_continue
+  facet: frontend
+  label: Game over rolls back the battle and offers continue
+  summary: When HP hits 0 the battle holds 140 frames, white-fades 100 frames, restores the pre-battle progression
+    snapshot (EXP and levels earned in that battle are lost) and opens the continue screen; Continue returns to the
+    field map, Title soft-resets.
+  instantiates:
+  - concept: frontend.game_over.pre_encounter_rollback
+  writes:
+  - progression
+  - frontend.mode
+  params:
+    death_hold:
+      value: 140
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:UpdateBattleState
+        confidence: 0.75
+    white_fade:
+      value: 100
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:UpdateBattleState
+        confidence: 0.75
+  relations:
+  - type: part_of
+    target: game_mode_flow
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/mode_continue.c:ContinueModeUpdate
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/btl/continue_ui.c:Continue_1
+    confidence: 0.8
+- id: pooh_escort_minigame
+  facet: mechanics
+  label: 100 Acre Wood escort minigame with an autonomous stamina-limited companion
+  summary: 'A separate mode where Sora guides an autonomous Pooh whose energy gauge (0-3) drops by 1 every 1851 frames
+    of walking; at 0 he sits and sleeps, refilling 1 after 1800 frames, and eats honey at levels 1-3. Levels are unlocked
+    by Pooh-area cards and give prizes.'
+  instantiates:
+  - concept: mechanics.minigame.escort_companion
+  reads:
+  - pooh.gauge
+  writes:
+  - pooh.gauge
+  - pooh.state
+  params:
+    gauge_max:
+      value: 3
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/poo/poo.c:UpdatePoohGauge
+        confidence: 0.8
+    gauge_drain_period:
+      value: 1851
+      unit: frames
+      native_value: '0x73B'
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/poo/poo.c:UpdatePoohGauge
+        confidence: 0.8
+    sleep_refill:
+      value: 1800
+      unit: frames per gauge point
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/poo/poo.c:UpdatePoohGauge
+        confidence: 0.75
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/poo/poo.c:UpdatePoohGauge
+    confidence: 0.8
+  - kind: decomp_source
+    ref: khcom:src/poo/mode_pooh.c:gModePooh
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/evt/events/ (100acrewood_lv1..lv6 event scripts)
+    confidence: 0.7
+- id: link_cable_versus
+  facet: mechanics
+  label: Link-cable Sora vs Riku card duel and card trade
+  summary: Two GBAs linked over multiplayer SIO at 115200 bps play a versus card battle (each player's own deck; card
+    plays and breaks resolved symmetrically, lockstep with the main loop waiting on received frames) or trade cards.
+    Soft reset is disabled while linked.
+  instantiates:
+  - concept: mechanics.multiplayer.link_versus
+  reads:
+  - sio.recv
+  writes:
+  - sio.send
+  params:
+    baud:
+      value: 115200
+      unit: bps
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/sio/sio.c:SioInit
+        confidence: 0.85
+  relations:
+  - type: variant_of
+    target: real_time_card_battle
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/sio/btl_vs.c:VsBattleUpdate
+    confidence: 0.8
+  - kind: decomp_source
+    ref: khcom:src/main.c:AgbMain (SYSTEM_FLAG_LINK_ACTIVE lockstep)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/sio/mode_sio.c (SYSTEM_FLAG_NO_SOFT_RESET)
+    confidence: 0.85
+- id: battle_side_projection
+  facet: projection
+  label: Oblique 2.5D battle plane (x, depth, height)
+  summary: 'Battle actors live in (x, y=depth, z=height, negative up). Screen x = x - view x + 120; screen y = (y + z)
+    - view y + 80, so depth and height both map 1:1 onto screen Y. The arena is a wide, shallow strip (regular battles
+    304 x 66 px of ground), giving a side-on brawler view with limited depth; depth movement runs at half speed.
+    Sprites are depth-sorted and drop shadows mark ground position.'
+  instantiates:
+  - concept: projection.oblique.depth_strip_2_5d
+  reads:
+  - actors[*].position
+  - battle.camera.view
+  writes:
+  - oam.*
+  params:
+    arena_x_range:
+      value: 104-408
+      unit: px (regular battles)
+      variants:
+      - when: humanoid battles
+        value: 80-432
+      - when: boss Ursula
+        value: 0-512
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/mode_battle.c:mode_battle_0 (SetBattleBounds)
+        confidence: 0.85
+    arena_depth_range:
+      value: 352-418
+      unit: px (66 px deep)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/mode_battle.c:mode_battle_0 (SetBattleBounds)
+        confidence: 0.85
+    depth_speed_factor:
+      value: 0.5
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:task_btl_sora_1 (speed >> 1 on y)
+        confidence: 0.85
+  relations:
+  - type: requires
+    target: battle_affine_arena_renderer
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/battle_runtime.c:WorldToScreen
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:include/btl/battle_bounds.h
+    confidence: 0.75
+- id: field_projection
+  facet: projection
+  label: Isometric-styled field rooms on a 32x16 px cell grid with height
+  summary: 'Field rooms are built from 2:1 cells (32 x 16 px) with left/right wall cell types and per-cell upper/lower
+    heights, giving an isometric look while positions stay in screen-aligned x/y plus a height z (screen y = y + z).
+    Diagonal movement follows the isometric axes rather than 45 degrees. Doors sit on the room edges in the four
+    isometric directions (up-right, down-left, down-right, up-left).'
+  instantiates:
+  - concept: projection.isometric.pseudo_isometric_grid
+  - concept: projection.top_down.z_height_layering
+    weight: 0.5
+  reads:
+  - room.cells
+  - actors[*].position
+  params:
+    cell_size:
+      value: 32x16
+      unit: px
+      native_value: 0x2000 x 0x1000
+      native_unit: 1/256 px
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map_runtime.c:FieldCellAt
+        confidence: 0.9
+    diagonal_angles:
+      value: '[0x2D, 0x53, 0xAD, 0xD3]'
+      unit: u8 angle (256 = 360 deg); ~63 deg from vertical instead of 45
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/map/fld_types.h:FldAngle
+        confidence: 0.9
+  relations:
+  - type: requires
+    target: field_bg_stack
+  evidence:
+  - kind: decomp_source
+    ref: khcom:include/map/map_types.h:MapCellType
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/map/map.c:MapEnmDraw
+    confidence: 0.8
+- id: field_camera
+  facet: camera
+  label: Room-clamped eased follow camera on the field
+  summary: The field camera targets the player's screen point (x, y+z) offset to centre, moves 1/8 of the remaining
+    distance per frame capped at 8 px/frame, ignores sub-0.2 px moves, and is clamped to the room's tilemap size.
+  instantiates:
+  - concept: camera.follow.eased_target_lerp
+  - concept: camera.follow.region_bounded_scroll
+  reads:
+  - player.position
+  - room.size
+  writes:
+  - camera.scroll
+  params:
+    ease_fraction:
+      value: 0.125
+      unit: per frame
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map_cell.c:MapUpdateCamera
+        confidence: 0.85
+    max_speed:
+      value: 8
+      unit: px/frame
+      native_value: '0x800'
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map_cell.c:MapUpdateCamera
+        confidence: 0.85
+    dead_zone:
+      value: 0.195
+      unit: px (50/256)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map_cell.c:MapUpdateCamera
+        confidence: 0.75
+  relations:
+  - type: variant_of
+    target: battle_camera
+    note: same 1/8 easing; battle caps at 4 px/frame and biases to arena centre
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/map/map_cell.c:MapUpdateCamera
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/map/map_cell.c:MapClampCameraX
+    confidence: 0.8
+- id: battle_locomotion
+  facet: movement_physics
+  label: Battle 8-way run with linear acceleration
+  summary: Sora accelerates 0.5 px/frame^2 to 2.4 px/frame while the d-pad is held and decelerates at the same rate;
+    depth motion is halved. The Dash effect doubles acceleration and raises the cap to 4 px/frame. Knockback velocities
+    decay 17/256 px/frame per frame and reverse at arena edges at half speed.
+  instantiates:
+  - concept: movement_physics.locomotion.accel_to_cap_run
+  - concept: movement_physics.feedback.knockback_iframes
+    weight: 0.4
+  reads:
+  - input.dpad
+  - effects.dash
+  writes:
+  - player.velocity
+  - player.position
+  params:
+    accel:
+      value: 0.5
+      unit: px/frame^2
+      native_value: 128
+      native_unit: 1/256 px/frame per frame
+      variants:
+      - when: effect=dash
+        value: 1.0
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:UpdateBtlSoraWalk
+        confidence: 0.9
+    max_speed:
+      value: 2.4
+      unit: px/frame
+      native_value: 614
+      variants:
+      - when: effect=dash
+        value: 4.0
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:UpdateBtlSoraWalk
+        confidence: 0.95
+    knockback_decay:
+      value: 0.066
+      unit: px/frame^2
+      native_value: 17
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:StartBtlSoraKnockback
+        confidence: 0.8
+    player_body:
+      value: 12x6x32
+      unit: px (radius x, radius depth, height)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:task_btl_sora_0
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: real_time_card_battle
+  - type: requires
+    target: battle_side_projection
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_sora.c:UpdateBtlSoraWalk
+    confidence: 0.95
+- id: battle_jump
+  facet: movement_physics
+  label: Battle jump with crouch, speed doubling and release-cut height
+  summary: 'B starts a 4-frame crouch (speed halved), then launches at 5.25 px/frame upward and doubles horizontal speed.
+    Gravity is 0.258 px/frame^2; releasing B while rising adds another 0.25 px/frame^2, so height ranges ~32-56 px (27-42
+    frames airborne). Air control accelerates 17/256 and decelerates 38/256 px/frame^2 to 2.4 px/frame; reversing kills
+    speed. Landing lag 7 frames, cancellable into jump or dodge. The Float effect lowers gravity to 38.'
+  instantiates:
+  - concept: movement_physics.jump.variable_height
+  - concept: movement_physics.jump.fixed_impulse_gravity_arc
+  - concept: movement_physics.air_control.capped_air_acceleration
+  reads:
+  - input.buttons.held
+  - effects.float
+  writes:
+  - player.vz
+  - player.z
+  - player.speed
+  params:
+    crouch_frames:
+      value: 4
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:task_btl_sora_1 (JUMP)
+        confidence: 0.85
+    jump_velocity:
+      value: 5.25
+      unit: px/frame
+      native_value: -1344
+      native_unit: 1/256 px/frame (negative up)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:task_btl_sora_1
+        confidence: 0.95
+    gravity:
+      value: 0.258
+      unit: px/frame^2
+      native_value: 66
+      variants:
+      - when: effect=float
+        value: 0.148
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:UpdateBattleState
+        confidence: 0.9
+    release_extra_gravity:
+      value: 0.25
+      unit: px/frame^2
+      native_value: 64
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:task_btl_sora_1
+        confidence: 0.85
+    apex_full_hold:
+      value: 56
+      unit: px
+      variants:
+      - when: released immediately
+        value: 32
+      - when: effect=float
+        value: 95
+      evidence:
+      - kind: derived
+        ref: frame-stepped z += vz; vz += 66 (+64 while rising after release)
+        inputs:
+        - jump_velocity
+        - gravity
+        - release_extra_gravity
+        confidence: 0.75
+    airtime_full_hold:
+      value: 42
+      unit: frames
+      evidence:
+      - kind: derived
+        ref: same simulation
+        inputs:
+        - jump_velocity
+        - gravity
+        confidence: 0.75
+    landing_lag:
+      value: 7
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:task_btl_sora_1 (LAND)
+        confidence: 0.8
+  relations:
+  - type: part_of
+    target: real_time_card_battle
+  - type: modulates
+    target: combo_swings_and_hitboxes
+    note: airborne selects air swings
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_sora.c:task_btl_sora_1
+    confidence: 0.9
+- id: dodge_roll
+  facet: movement_physics
+  label: Double-tap dodge roll with invulnerability
+  summary: Double-tapping left or right within 13 frames rolls at 6.5 px/frame decaying linearly to 0 over 32 frames
+    (~107 px) with a small hop; from frame 4 to the end the player passes through enemies and cannot be hit. Cards cannot
+    be played until the roll ends.
+  instantiates:
+  - concept: movement_physics.dash.dodge_roll
+  - concept: mechanics.combat.invulnerability_frames
+    weight: 0.5
+  reads:
+  - input.dpad.taps
+  writes:
+  - player.velocity
+  - player.hit_locked
+  params:
+    double_tap_window:
+      value: 13
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:task_btl_sora_1 (tapTimers)
+        confidence: 0.85
+    initial_speed:
+      value: 6.5
+      unit: px/frame
+      native_value: 1664
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:task_btl_sora_1 (DODGE)
+        confidence: 0.85
+    duration:
+      value: 32
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:task_btl_sora_1 (DODGE)
+        confidence: 0.8
+    distance:
+      value: 107
+      unit: px
+      evidence:
+      - kind: derived
+        ref: linear decay 6.5 -> 0 over 32 frames
+        inputs:
+        - initial_speed
+        - duration
+        confidence: 0.7
+    iframes_start:
+      value: 4
+      unit: frames into roll
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_sora.c:task_btl_sora_1 (HIT_LOCKED)
+        confidence: 0.8
+  invariants:
+  - No card can be used during the roll animation.
+  relations:
+  - type: part_of
+    target: real_time_card_battle
+  - type: conflicts_with
+    target: status_effects
+    condition: bind status
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_sora.c:task_btl_sora_1
+    confidence: 0.85
+- id: field_locomotion
+  facet: movement_physics
+  label: Field 8-way walk with turn penalty and wall sliding
+  summary: 'On the field Sora accelerates 0.5 px/frame^2 to ~2.4 px/frame (Riku 3 px/frame). Turning more than ~140 degrees
+    stops him, smaller turns halve speed; a diagonal is held if the second key was released within 4 frames. Blocked
+    moves probe offsets to slide along walls; bumping props scales speed by 230/256; stair cells start a climb. Pressing
+    A swings the keyblade on the field (20 px hit radius) to open doors, break objects and first-strike enemies.'
+  instantiates:
+  - concept: movement_physics.locomotion.accel_to_cap_run
+  - concept: movement_physics.collision.tile_mask_wall_slide
+  - concept: movement_physics.locomotion.turn_speed_penalty
+  reads:
+  - input.dpad
+  - room.cells
+  writes:
+  - player.position
+  - player.speed
+  - player.angle
+  params:
+    accel:
+      value: 0.5
+      unit: px/frame^2
+      native_value: 128
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/fld_sora.c:task_fld_sora_1
+        confidence: 0.85
+    max_speed:
+      value: 2.4
+      unit: px/frame
+      native_value: '0x266'
+      variants:
+      - when: character=riku
+        value: 3.0
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/fld_sora.c:task_fld_sora_1
+        confidence: 0.95
+    stop_turn_threshold:
+      value: 100
+      unit: u8 angle units (~141 deg)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/fld_sora.c:FldSoraTurn
+        confidence: 0.8
+    diagonal_release_grace:
+      value: 4
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/fld_sora.c:FldSoraSetAngleFromDpad
+        confidence: 0.8
+    bump_speed_scale:
+      value: 0.898
+      unit: x (230/256)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/fld_sora.c:FldSoraCheckBlocked
+        confidence: 0.75
+    field_attack_radius:
+      value: 20
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map_cell.c:IsHitByMapAttack
+        confidence: 0.8
+  relations:
+  - type: requires
+    target: field_projection
+  - type: variant_of
+    target: battle_locomotion
+    note: same acceleration and cap
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/map/fld_sora.c:task_fld_sora_1
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/map/fld_sora.c:FldSoraCheckBlocked
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/map/map_runtime.c:IsFldPosBlocked
+    confidence: 0.85
+- id: field_jump_and_climb
+  facet: movement_physics
+  label: Field jump onto raised cells, ledge catch and climb
+  summary: 'B jumps on the field (take-off 5.2 px/frame, Riku 6 px/frame; gravity 0.258 px/frame^2; release-cut like
+    battle) with horizontal speed doubled at take-off and weak air control (+17, -38 per frame, cap 2 px/frame). Cell
+    upper/lower heights decide what can be jumped onto; field states include ledge catch/hang/climb, stair climbing
+    and an air attack. Full-hold apex ~55 px (Riku ~73 px).'
+  instantiates:
+  - concept: movement_physics.jump.variable_height
+  - concept: movement_physics.ledge.ledge_grab_hang
+  reads:
+  - input.buttons.held
+  - room.cells.heights
+  writes:
+  - player.z
+  - player.vz
+  - player.state
+  params:
+    jump_velocity:
+      value: 5.2
+      unit: px/frame
+      native_value: -1331
+      variants:
+      - when: character=riku
+        value: 6.0
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/fld_sora.c:FldSoraJump
+        confidence: 0.9
+    gravity:
+      value: 0.258
+      unit: px/frame^2
+      native_value: 66
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/fld_sora.c:FldSoraJump
+        confidence: 0.85
+    air_speed_cap:
+      value: 2.0
+      unit: px/frame
+      native_value: 512
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/fld_sora.c:task_fld_sora_1
+        confidence: 0.75
+    apex_full_hold:
+      value: 55
+      unit: px
+      evidence:
+      - kind: derived
+        ref: frame-stepped simulation, vz=-1331, g=66
+        inputs:
+        - jump_velocity
+        - gravity
+        confidence: 0.7
+  relations:
+  - type: variant_of
+    target: battle_jump
+  - type: requires
+    target: field_projection
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/map/fld_sora.c:FldSoraJump
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:include/map/fld_types.h:FldState
+    confidence: 0.85
+- id: field_enemy_chase_ai
+  facet: ai
+  label: Field Heartless wander, sight-cone detect and chase
+  summary: 'Field enemy symbols idle, start wandering with 1/80 odds per frame (0.5 px/frame), spot the player inside a
+    ~+/-34 degree cone on the same ground level, then chase at up to 1.5 px/frame, re-aiming every 8 frames and giving
+    up when sight is lost. Room cards change the policy: Looming Darkness makes them pursue at 2 px/frame, Stagnant Space
+    divides speed by 5, Sleeping Darkness spawns them asleep. While one enemy is being struck, the others freeze;
+    leaving the camera window despawns them.'
+  instantiates:
+  - concept: ai.enemy.patrol_detect_pursue
+  - concept: ai.perception.vision_cone
+  reads:
+  - player.position
+  - player.ground
+  - room.effect
+  writes:
+  - self.angle
+  - self.speed
+  - self.state
+  params:
+    wander_odds:
+      value: 0.0125
+      unit: per frame (1/80)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map_tasks.c:Task_MapEnm00_1
+        confidence: 0.8
+    wander_speed:
+      value: 0.5
+      unit: px/frame
+      native_value: '0x80'
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map_tasks.c:Task_MapEnm00_1
+        confidence: 0.8
+    chase_speed:
+      value: 1.5
+      unit: px/frame
+      native_value: '0x180'
+      variants:
+      - when: room_effect=looming_darkness
+        value: 2.0
+      - when: room_effect=stagnant_space
+        value: 0.3
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map_tasks.c:Task_MapEnm00_1
+        confidence: 0.8
+    sight_half_angle:
+      value: 34
+      unit: degrees (0x18 of 256)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map_tasks.c:Task_MapEnm00_1
+        confidence: 0.75
+    reaim_period:
+      value: 8
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map_tasks.c:Task_MapEnm00_1
+        confidence: 0.75
+  relations:
+  - type: part_of
+    target: field_encounters
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/map/map_tasks.c:Task_MapEnm00_1
+    confidence: 0.8
+  - kind: decomp_source
+    ref: khcom:src/map/map.c:MapEnmApplyRoomFlags
+    confidence: 0.8
+  - kind: decomp_source
+    ref: khcom:src/map/map_data.c:gMapEnmDefs
+    confidence: 0.8
+- id: enemy_task_fsm_framework
+  facet: ai
+  label: Shared enemy task FSM with per-species tuning record
+  summary: 'Every battle enemy is a task (init/update/draw/release) whose update first maps battle reactions (hit,
+    card accepted, status) to states, runs its species-specific states (ids 18+), then the shared states 0-17 (idle,
+    hurt, defeated, walk, card-broken, hover, stunned, warped, stopped, terrified/flee, gravity squash...). An EmyDef
+    record tunes speed, move/turn intervals (expressed as 1-in-N per-frame odds), hitstun, preferred attack offset,
+    attack box ranges and card interval; EmyKind holds HP, height and collision radius. Walk targets are the player x
+    +/- (offset + random range). Lunges are a shared helper parameterised by delay/active/recovery frames, attack id,
+    distance and hop.'
+  instantiates:
+  - concept: ai.framework.pose_fsm_per_entity
+  - concept: ai.decision.per_frame_probability_trigger
+  reads:
+  - player.position
+  - self.def
+  - battle.reaction
+  writes:
+  - self.state
+  - self.position
+  - self.velocity
+  - battle.attack_boxes
+  params:
+    shared_states:
+      value: 18
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/btl/enemy_types.h:EmyState
+        confidence: 0.9
+    walk_retarget_odds:
+      value: 0.01
+      unit: probability per frame (1/100)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_common.c:EmyUpdateCommonStates
+        confidence: 0.85
+    arrive_tolerance:
+      value: 4
+      unit: px per axis
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_common.c:EmyUpdateCommonStates
+        confidence: 0.85
+    knockback_friction:
+      value: 0.066
+      unit: px/frame^2
+      native_value: 17
+      native_unit: 1/256 px/frame per frame
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_common.c:EmyUpdateCommonStates
+        confidence: 0.8
+    hover_bob_amplitude:
+      value: 12
+      unit: px (sin(frame*2))
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_common.c:EmyUpdateCommonStates (HOVER)
+        confidence: 0.8
+    hurt_counter_card_odds:
+      value: 0.25
+      unit: probability when facing player after hitstun
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_common.c:EmyUpdateCommonStates (HURT, RequestEnemyCardUse)
+        confidence: 0.8
+    terror_flee_speed_multiplier:
+      value: 2
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_common.c:EmyUpdateCommonStates (FLEE)
+        confidence: 0.8
+  invariants:
+  - Shared states are handled after species states, so species code can override them.
+  - Walk targets are pushed back from within 32 px of the arena edge.
+  relations:
+  - type: requires
+    target: enemy_card_play_ai
+  - type: part_of
+    target: real_time_card_battle
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/emy_common.c:EmyUpdateCommonStates
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/btl/emy_common.c:EmyLungeAttack
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:include/btl/enemy_types.h:EmyDef
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:include/btl/battle_actor_types.h:EmyKind
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/btl/battle_runtime.c:SpawnEnemy
+    confidence: 0.85
+  tables:
+    emydef_examples:
+      description: Species tuning records (speed in px/frame; intervals are 1-in-N per-frame odds; ranges in px).
+      columns:
+      - enemy
+      - speed_px_per_frame
+      - move_interval
+      - turn_interval
+      - hitstun_frames
+      - attack_offset_px
+      - range_x_px
+      - range_y_px
+      - card_interval
+      rows:
+      - [Shadow (emy_00), 1.5, 130, 10, 20, 64, 32, 16, 10]
+      - [Air Soldier (emy_18), 3.0, 150, 4, null, 40, 24, 16, null]
+      - [Large Body (emy_38), 0.3, null, null, 80, null, null, null, null]
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_00.c:sEmy00Def
+        confidence: 0.95
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_18.c:sEmy18Def
+        confidence: 0.85
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_38.c:sEmy38Def
+        confidence: 0.85
+- id: enemy_card_play_ai
+  facet: ai
+  label: Enemy card play and card-break contest against the player
+  summary: 'Enemies also fight with cards. Each frame an idle enemy rolls 1/(cardInterval x enemyCount) and, if the
+    player is inside its attack box ahead of it, requests a card; the play is refused while another opponent card
+    or a break is in progress. Regular enemies own 3-card decks (bosses 10 cards, values 0-9) and pick the next card
+    pseudo-randomly; room effects shift enemy values (+2 capped at 9, -2 floored at 1). If the player has a card set
+    in play and the enemy value is greater or equal, the player''s set is broken; equal values cancel both.'
+  instantiates:
+  - concept: mechanics.cards.card_break_contest
+    weight: 0.6
+  - concept: ai.decision.per_frame_probability_trigger
+  reads:
+  - player.position
+  - battle.active_card.value
+  - self.deck
+  - room.effects
+  - battle.enemy_count
+  writes:
+  - battle.active_card
+  - battle.card_break
+  params:
+    regular_enemy_deck_size:
+      value: 3
+      unit: cards
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/boss_card_data.c:gEnemyCardCounts
+        confidence: 0.85
+    boss_deck_size:
+      value: 10
+      unit: cards (values 0-9)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/boss_card_data.c:gEnemyCardCounts
+        confidence: 0.8
+    range_slack:
+      value: 4
+      unit: px added to attack box
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:TryEnemyCardUse
+        confidence: 0.85
+    room_value_shift:
+      value: 2
+      unit: card value (+ Almighty Darkness, - Feeble Darkness)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_enemy.c:EnemyUsecard_0
+        confidence: 0.85
+  invariants:
+  - Only one opponent card can be active at a time.
+  - Per-enemy card odds are divided by the number of enemies, keeping group card pressure roughly constant.
+  relations:
+  - type: part_of
+    target: card_break_rule
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/battle_runtime.c:TryEnemyCardUse
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/btl/battle_runtime.c:UpdateEnemyCardUse
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/card/card_enemy.c:UseEnemyCard
+    confidence: 0.9
+- id: shadow_ai
+  facet: ai
+  label: Shadow - sink, drift and lunge
+  summary: 'The basic Heartless walks toward a spot 64 px ahead of the player, occasionally sinks into the floor (1/200
+    per idle frame) and drifts intangible for 100 frames, unable to play cards, before rising (tangible from frame 30).
+    Attacks are a 40 px lunge (31-frame windup, 18 active, 11 recovery, power 1.5x) and a 96 px jumping lunge (power
+    2x, hop at frame 10).'
+  instantiates:
+  - concept: ai.enemy.submerge_ambush
+  - concept: ai.attack.telegraphed_lunge
+  reads:
+  - player.position
+  writes:
+  - self.state
+  - self.intangible
+  params:
+    sink_odds:
+      value: 0.005
+      unit: probability per idle frame
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_00.c:task_emy_00_1
+        confidence: 0.85
+    sunk_frames:
+      value: 100
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_00.c:task_emy_00_1
+        confidence: 0.8
+    lunge_windup:
+      value: 31
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_00.c:task_emy_00_1 (EmyLungeAttack)
+        confidence: 0.85
+    lunge_distance:
+      value: 40
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_00.c:task_emy_00_1 (EmyLungeAttack)
+        confidence: 0.85
+    jump_lunge_distance:
+      value: 96
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_00.c:task_emy_00_1
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: enemy_task_fsm_framework
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/emy_00.c:task_emy_00_1
+    confidence: 0.85
+- id: flier_ai
+  facet: ai
+  label: Air Soldier - hover, straight flight and dive lunge
+  summary: 'Fliers idle in a hover state at 32-48 px altitude with a sinusoidal bob, fly straight at a chosen target
+    (3 px/frame, decelerating 25/256 px/frame^2, stopping within ~16 px or at the arena edge), and attack with a dive
+    lunge from 53 px up (30-frame rise, 30-frame windup, 32 px) or a rising lunge.'
+  instantiates:
+  - concept: ai.enemy.hover_and_dive
+  - concept: ai.attack.telegraphed_lunge
+  params:
+    cruise_speed:
+      value: 3
+      unit: px/frame
+      native_value: 768
+      native_unit: 1/256 px/frame
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_18.c:sEmy18Def
+        confidence: 0.85
+    hover_height:
+      value: 32-48
+      unit: px above floor
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_18.c:task_emy_18_0
+        confidence: 0.8
+    dive_start_height:
+      value: 53
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_18.c:task_emy_18_1
+        confidence: 0.75
+  relations:
+  - type: part_of
+    target: enemy_task_fsm_framework
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/emy_18.c:task_emy_18_1
+    confidence: 0.8
+- id: heavy_guard_ai
+  facet: ai
+  label: Large Body - slow walker with frontal physical guard and stomp
+  summary: 'Heavy enemy moving at 0.3 px/frame with 80-frame hitstun and radius 25 px. Each frame it recomputes a
+    frontal guard flag that blocks physical attacks from the front, forcing the player to hit from behind or use magic.
+    Attacks are a 50 px hopping lunge (30/20/45 frames) and a stomp whose area attack lands at frame 63 and shakes the
+    screen.'
+  instantiates:
+  - concept: ai.enemy.directional_guard
+  - concept: mechanics.combat.enemy_weakness_mask
+    weight: 0.4
+  params:
+    walk_speed:
+      value: 0.3
+      unit: px/frame
+      native_value: 76
+      native_unit: 1/256 px/frame
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_38.c:sEmy38Def
+        confidence: 0.85
+    hitstun:
+      value: 80
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_38.c:sEmy38Def
+        confidence: 0.85
+    stomp_frame:
+      value: 63
+      unit: frames into attack
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/emy_38.c:task_emy_38_1
+        confidence: 0.8
+  invariants:
+  - Physical hits from the guarded side deal no damage.
+  relations:
+  - type: part_of
+    target: enemy_task_fsm_framework
+  - type: modulates
+    target: battle_camera
+    note: stomp starts screen shake
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/emy_38.c:task_emy_38_1 (BTLOBJ_FLAG_GUARD_PHYSICAL)
+    confidence: 0.85
+- id: multi_part_boss_guard_armor
+  facet: ai
+  label: Guard Armor - six-part boss with distance-banded card odds
+  summary: 'Guard Armor is six separately damageable parts (torso, head, two hands, two feet). Its state machine uses
+    ENTER/UPDATE/EXIT phases per state. In idle it waits 15 frames then chooses card vs walk with odds by distance band
+    (<=60 px, <=100 px, farther: 2/3, 1/2, 1/3) inverted by an attack toggle that flips with p=2/3. On a card action
+    it thrusts/orbits its hands when close (70%), else jumps or stomps; once all limbs are destroyed the torso alone
+    chases, dashes and jumps.'
+  instantiates:
+  - concept: ai.boss.multi_part_boss
+  - concept: ai.decision.distance_banded_action_odds
+  params:
+    parts:
+      value: 6
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/bos/bos_ga.c:BosGaPart
+        confidence: 0.85
+    idle_wait:
+      value: 15
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/bos/bos_ga.c:BosGaUpdateIdle
+        confidence: 0.85
+    distance_bands:
+      value: '[60, 100]'
+      unit: px
+      native_value: '[3599, 9999]'
+      native_unit: px^2
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/bos/bos_ga.c:BosGaUpdateIdle
+        confidence: 0.85
+    base_hp:
+      value: 200
+      unit: HP (per-part base before scale)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/player_progression.c:sEnemyBaseStats
+        confidence: 0.75
+  relations:
+  - type: requires
+    target: enemy_card_play_ai
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/bos/bos_ga.c:BosGaUpdateIdle
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/bos/bos_ga.c:BosGaEntryUpdate
+    confidence: 0.8
+  - kind: decomp_source
+    ref: khcom:src/bos/bos_ga.c:BosGaRequestState
+    confidence: 0.8
+- id: hp_phase_boss_ursula
+  facet: ai
+  label: Ursula - HP-phase-dependent card rate and range-banded attack choice
+  summary: 'Ursula''s behaviour switches on HP thirds. Card-attempt odds rise from 1/150 to 1/120 to 1/100 per frame
+    and attacks are chosen by player distance and airborne state (bubbles at range, thunder close or against airborne
+    players, charge mid-range); bubble volleys grow 3/6/10 by phase. She only plays cards while no tentacle gimmick
+    is active.'
+  instantiates:
+  - concept: ai.boss.hp_phase_escalation
+  - concept: ai.decision.distance_banded_action_odds
+  params:
+    card_odds_by_phase:
+      value: '[1/150, 1/120, 1/100]'
+      unit: per frame (high, mid, low HP)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/bos/bos_ursula.c:BosUrsulaGetCardInterval
+        confidence: 0.85
+    phase_thresholds:
+      value: '[2/3, 1/3]'
+      unit: of max HP
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/bos/bos_ursula.c:BosUrsulaGetHpPhase
+        confidence: 0.85
+    bubbles_by_phase:
+      value: '[3, 6, 10]'
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/bos/bos_ursula_bubble.c
+        confidence: 0.75
+    move_speed:
+      value: 1
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/bos/bos_ursula.c
+        confidence: 0.7
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/bos/bos_ursula.c:BosUrsulaChooseAttackPhase0
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/bos/bos_ursula.c:BosUrsulaGetHpPhase
+    confidence: 0.85
+- id: dice_gimmick_boss_oogie
+  facet: ai
+  label: Oogie Boogie - dice roll effects and card-break-to-open cage
+  summary: 'Oogie sits behind a cage. Rolled dice land with one of four equally likely faces (heal Oogie, knives, disk,
+    summon two minions). Card-breaking a die adds 180 frames to the cage-open timer; after more than two dice are broken
+    the cage opens and Oogie can be hit while the player stands past it.'
+  instantiates:
+  - concept: ai.boss.weak_point_window
+  - concept: ai.boss.random_effect_roll
+  params:
+    face_count:
+      value: 4
+      unit: equiprobable faces
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/bos/bos_boogie_dice.c:RollBoogieDice
+        confidence: 0.85
+    open_time_per_break:
+      value: 180
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/bos/bos_boogie.c:gBosBoogieSakuOpenTime
+        confidence: 0.8
+    breaks_to_open:
+      value: 3
+      unit: dice broken (more than 2)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/bos/bos_boogie.c:task_bos_boogie_saku_1
+        confidence: 0.75
+  relations:
+  - type: requires
+    target: card_break_rule
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/bos/bos_boogie.c:BosBoogieApplyDiceFace
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/bos/bos_boogie_dice.c:RollBoogieDice
+    confidence: 0.85
+- id: humanoid_card_duelist_ai
+  facet: ai
+  label: Organization/Riku opponents as virtual-input card duelists
+  summary: 'Humanoid bosses (Axel, Larxene, Vexen, Lexaeus, Marluxia, Riku Replica, Ansem, Leon, Cloud, Hades, Hook)
+    run on the same deck/stock/sleight battle system as the player: the AI presses virtual keys (use, next card, stock,
+    switch list) each frame. HumChooseCardAction acts with 1/interval odds, uses items, occasionally switches to its
+    enemy-card list (1/60), stocks toward authored sleight patterns, and deliberately counter-breaks when the player
+    is mid-card in reach and it holds an equal-or-higher or 0 card. Larxene acts with 1/15 odds per frame (first fight)
+    or 1/5 (second) and upgrades thunder to a combo below 50% HP.'
+  instantiates:
+  - concept: ai.opponent.symmetric_rules_virtual_input
+  - concept: ai.boss.hp_phase_escalation
+    weight: 0.4
+  reads:
+  - self.deck
+  - player.active_card
+  - player.position
+  writes:
+  - ai.virtual_keys
+  params:
+    larxene_action_interval:
+      value: 15
+      unit: 1-in-N per frame
+      variants:
+      - when: battle=LARXENE_2
+        value: 5
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/bos/hum_laxene.c:task_hum_laxene_1
+        confidence: 0.8
+    switch_list_odds:
+      value: 0.0167
+      unit: per decision (1/60)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/bos/hum_common.c:HumChooseCardAction
+        confidence: 0.8
+  invariants:
+  - Humanoid opponents obey the same card-break rule and deck exhaustion/reload as the player.
+  relations:
+  - type: requires
+    target: card_break_rule
+  - type: requires
+    target: sleight_combos
+  - type: variant_of
+    target: real_time_card_battle
+    note: same rules, AI-driven input
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/bos/hum_common.c:HumChooseCardAction
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/bos/hum_common.c:HandleRikuAiCardInput
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/card/card_battle_riku.c:sRikuDecks
+    confidence: 0.8
+  - kind: decomp_source
+    ref: khcom:src/bos/hum_laxene.c:task_hum_laxene_1
+    confidence: 0.8
+- id: floor_difficulty_scaling
+  facet: mechanics
+  label: Floor-linear enemy stat scaling
+  summary: 'Regular enemy HP, attack and EXP are base stats multiplied by (floor x rate + 256)/256. Floors 1-9 use
+    rates 25/102/384 (+9.8% HP, +40% attack, +150% EXP per floor); from floor 10 rates 51/76/640. Bosses and
+    Organization members use fixed per-battle stats instead. Element affinities (absorb/weak/resist) are set per
+    species.'
+  instantiates:
+  - concept: mechanics.difficulty.linear_stat_scaling_by_stage
+  - concept: mechanics.combat.enemy_weakness_mask
+    weight: 0.5
+  reads:
+  - world.floor
+  - enemy.base_stats
+  writes:
+  - enemy.max_hp
+  - enemy.attack
+  - enemy.exp
+  params:
+    hp_rate:
+      value: 0.098
+      unit: x base per floor
+      native_value: 25
+      native_unit: /256 per floor
+      variants:
+      - when: floor>9
+        value: 0.199
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:InitEnemyBtlObj
+        confidence: 0.95
+    attack_rate:
+      value: 0.398
+      unit: x base per floor
+      native_value: 102
+      native_unit: /256 per floor
+      variants:
+      - when: floor>9
+        value: 0.297
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:InitEnemyBtlObj
+        confidence: 0.95
+    exp_rate:
+      value: 1.5
+      unit: x base per floor
+      native_value: 384
+      native_unit: /256 per floor
+      variants:
+      - when: floor>9
+        value: 2.5
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:InitEnemyBtlObj
+        confidence: 0.95
+  relations:
+  - type: modulates
+    target: real_time_card_battle
+  - type: requires
+    target: castle_oblivion_floor_progression
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/battle_runtime.c:InitEnemyBtlObj
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:src/btl/battle_runtime.c:SetEnemyKindFlags
+    confidence: 0.85
+  tables:
+    enemy_base_stats:
+      description: Base stats before floor scaling (sEnemyBaseStats, 54 entries) and the enemy's battle card values.
+      columns:
+      - enemy
+      - hp
+      - attack
+      - exp
+      - card_values
+      rows:
+      - [Shadow, 33, 2, 3, '1/1/1']
+      - [Red Nocturne, 35, 3, 3, '1/2/4']
+      - [Soldier, 60, 3, 5, '1/2/2']
+      - [Air Soldier, 80, 3, 5, null]
+      - [Large Body, 100, 4, 10, '1/3/4']
+      - [Fat Bandit, 120, 5, 10, null]
+      - [Defender, 90, 4, 13, null]
+      - [White Mushroom, 198, 0, 3, null]
+      - [Guard Armor, 200, 5, 48, null]
+      - [Darkside, 600, 6, 195, null]
+      - [Axel (base entry), 313, 2, 75, null]
+      - [Marluxia final, 660, 6, 313, null]
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/player_progression.c:sEnemyBaseStats
+        confidence: 0.85
+      - kind: decomp_source
+        ref: khcom:src/card/card_catalog.c:gCardDefs
+        confidence: 0.7
+    element_affinities:
+      description: Selected per-species element flags.
+      columns:
+      - enemy
+      - absorbs
+      - weak
+      - resists
+      rows:
+      - [Red Nocturne, fire, blizzard, thunder]
+      - [Blue Rhapsody, blizzard, fire, null]
+      - [Sea Neon, null, thunder, null]
+      - [Black Fungus, null, null, all elements; immune to terror/warp/confuse]
+      - [Oogie Boogie, null, physical, null]
+      - [Axel, fire, null, null]
+      - [Larxene, thunder, null, null]
+      - [Vexen, blizzard, null, null]
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:SetEnemyKindFlags
+        confidence: 0.85
+- id: room_synthesis_map_cards
+  facet: progression
+  label: Room synthesis - the player builds each floor's rooms by spending map cards at doors
+  summary: 'Each floor is a fixed graph of up to 32 rooms with 4 door links each, but room contents are not authored:
+    striking a closed door opens a card picker, and the map card spent there creates the room behind it. The card''s
+    kind selects a room type whose shape row sets room form/size, max simultaneous enemies, total enemies, battle-id
+    range, a room effect and prize cards; colour families are red (enemy quantity/strength/behaviour), green (battle
+    modifiers such as first-strike strength, friend drops, magic/attack/item boosts) and blue (treasure, save/Moogle
+    rooms, card shops). Mingling Worlds picks a random type. Rooms persist for the floor visit and are rebuilt from
+    cards on return.'
+  instantiates:
+  - concept: progression.structure.player_constructed_level
+  - concept: mechanics.cards.card_as_level_modifier
+  reads:
+  - cards.map_cards
+  - floor.rooms[*]
+  - door.requirement
+  writes:
+  - floor.rooms[*].type
+  - room.shape
+  - room.effect
+  - room.card_value
+  params:
+    map_card_kinds:
+      value: 26
+      unit: kinds x values 0-9 (260 map card ids), incl. 4 key cards
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_worldselect.c:gMapCardDefs
+        confidence: 0.9
+    room_types:
+      value: 24
+      unit: room types + RANDOM
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/map/map_types.h:RoomType
+        confidence: 0.95
+    max_rooms_per_floor:
+      value: 32
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/map/map_types.h:MapFloorState
+        confidence: 0.85
+    door_links_per_room:
+      value: 4
+      unit: links (UR, DL, DR, UL)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:config/assets/map_room_tables.yaml:gMapFloorDefs
+        confidence: 0.85
+    door_open_sequence:
+      value: 30 approach + select + 20 pose, door opens at frame 40
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/roomcreate.c:task_roomcreate_1
+        confidence: 0.75
+  invariants:
+  - The floor topology (which rooms connect) is fixed per floor; only room contents are player-chosen.
+  - A room created from a card keeps that card's value as the room's cardValue, which raises the bar for the next door
+    (see door_card_gate).
+  relations:
+  - type: requires
+    target: door_card_gate
+  - type: modulates
+    target: field_encounters
+  - type: modulates
+    target: field_enemy_chase_ai
+    note: Looming/Stagnant/Sleeping Darkness change chase policy
+  - type: modulates
+    target: enemy_card_play_ai
+    note: Almighty/Feeble Darkness shift enemy card values
+  - type: modulates
+    target: first_strike
+    note: Strong Initiative, Lasting Daze
+  - type: requires
+    target: map_card_prizes
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/map/map_runtime.c:CreateMapRoom
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/map/map_runtime.c:GetRandomRoomType
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/map/map.c:MapDoorWaitCard
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:config/assets/map_room_tables.yaml:gMapRoomShapes
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/map/map.c:MapEnmApplyRoomFlags
+    confidence: 0.8
+  tables:
+    room_shapes:
+      description: gMapRoomShapes rows by RoomType (form, max enemies alive, enemy total, battle-id min/max offset, room
+        effect id, prize cards).
+      columns:
+      - room_type
+      - colour
+      - form
+      - max_alive
+      - enemies_total
+      - battle_min
+      - battle_max
+      - room_effect_id
+      - prize_cards
+      rows:
+      - [Plain (key cards), gold, 0, 1, 5, 0, 4, 0, 2]
+      - [Teeming Darkness, red, 1, 3, 8, 3, 7, 10, 4]
+      - [Tranquil Darkness, red, 2, 1, 5, 0, 4, 0, 2]
+      - [Guarded Trove, blue, 3, 2, 5, 5, 9, 0, 2]
+      - [Looming Darkness, red, 4, 2, 8, 0, 4, 10, 4]
+      - [Sleeping Darkness, red, 6, 3, 3, 0, 9, 0, 2]
+      - [Moment's Reprieve (save room), blue, 5, 0, 0, 0, 0, 0, 1]
+      - [Feeble Darkness, red, 7, 2, 5, 0, 4, 2, 2]
+      - [Almighty Darkness, red, 8, 2, 8, 5, 9, 1, 4]
+      - [Calm Bounty, blue, 5, 0, 0, 0, 0, 0, 0]
+      - [False Bounty, blue, 3, 2, 5, 7, 9, 0, 2]
+      - [Moogle Room, blue, 5, 0, 0, 0, 0, 0, 0]
+      - [Sorcerous Waking, green, 0, 2, 6, 0, 9, 7, 3]
+      - [Premium Room, red, 0, 2, 3, 7, 9, 6, 1]
+      - [White Room, red, 12, 2, 2, 0, 0, 0, 0]
+      - [Black Room, red, 13, 2, 2, 0, 0, 0, 0]
+      evidence:
+      - kind: decomp_source
+        ref: khcom:config/assets/map_room_tables.yaml:gMapRoomShapes
+        confidence: 0.85
+        note: column meanings from CreateMapRoom/LoadMapRoomState/MapEnmUpdateSpawner (subagent-traced); colours from
+          MapCardColor
+- id: door_card_gate
+  facet: progression
+  label: Value-threshold doors and event key doors
+  summary: 'A normal door accepts any non-key map card whose value is 0 or strictly greater than the current room''s
+    card value, so value chains push the player to hold a spread of high cards (0 is a wildcard). Story doors carry
+    EventKey requirements - kind, colour, rule (at least, at most, exact, or TOTAL where several cards'' values add up)
+    and value - and the floor''s key rooms need the story key cards (Key of Beginnings, Key of Guidance, Key to Truth)
+    that are granted by events. Key to Rewards opens treasure rooms.'
+  instantiates:
+  - concept: progression.gating.typed_lock_and_key
+  - concept: progression.gating.value_threshold_door
+  reads:
+  - room.card_value
+  - card.kind
+  - card.value
+  - door.event_key
+  writes:
+  - door.flags.open
+  - cards.map_cards
+  params:
+    normal_door_rule:
+      value: card.value == 0 or card.value > room.card_value
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map.c:DoorAcceptsMapCard
+        confidence: 0.95
+    event_key_rules:
+      value: '[AT_LEAST, AT_MOST, EXACT, TOTAL]'
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map.c:PayEventKey
+        confidence: 0.85
+  invariants:
+  - Key cards can never be spent on normal doors (kind must be <= Black Room).
+  - The exit room stays locked until the floor's last story event step.
+  relations:
+  - type: part_of
+    target: room_synthesis_map_cards
+  - type: gated_by
+    target: cutscene_system
+    note: key cards come from story events
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/map/map.c:DoorAcceptsMapCard
+    confidence: 0.95
+  - kind: decomp_source
+    ref: khcom:config/assets/map_room_tables.yaml:gEventKeys00
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/map/map_runtime.c:AdvanceFloorStory
+    confidence: 0.8
+- id: castle_oblivion_floor_progression
+  facet: progression
+  label: Tower of 13 floors, each themed by a chosen Disney/FF world card
+  summary: 'Progress is a climb through Castle Oblivion: each floor''s world is chosen by spending a world card from
+    a set unlocked by story events (after 1F: Agrabah, Olympus Coliseum, Wonderland, Monstro, Halloween Town; after 6F:
+    Atlantica, Never Land, Hollow Bastion, 100 Acre Wood; then Twilight Town, Destiny Islands, Castle Oblivion). A
+    floor plays its world''s story in key-card-gated event rooms ending in a boss, then opens the exit. Enemy stats
+    scale with floor. Riku''s scenario descends 12 basement floors with fixed decks.'
+  instantiates:
+  - concept: progression.structure.tower_floor_climb
+  - concept: progression.structure.player_ordered_worlds
+  - concept: progression.world.persistent_world_flags
+    weight: 0.5
+  reads:
+  - game.available_worlds
+  - floors[*].flags
+  writes:
+  - game.world
+  - game.floor
+  - floors[*].flags
+  params:
+    sora_floors:
+      value: 13
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/game_state.h:GameState.floors
+        confidence: 0.95
+    riku_floors:
+      value: 12
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/evt/events/ (riku_b12f..riku_b1f scripts)
+        confidence: 0.75
+    world_count:
+      value: 13
+      evidence:
+      - kind: decomp_source
+        ref: khcom:include/menu/world_types.h:WorldId
+        confidence: 0.9
+  invariants:
+  - Each world card can be used once (its availability bit is cleared when chosen).
+  - Floors unlock in story order; world order within an unlock set is the player's choice.
+  relations:
+  - type: requires
+    target: room_synthesis_map_cards
+  - type: modulates
+    target: floor_difficulty_scaling
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/evt/mode_event.c:GrantRewardsAfterEvent
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/menu/mode_worldselect.c:sWorldselectWorldDefs
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/map/map_runtime.c:GetProgressFloor
+    confidence: 0.8
+  - kind: decomp_source
+    ref: khcom:include/save_types.h:FloorFlag
+    confidence: 0.85
+  tables:
+    world_unlocks:
+      description: availableWorlds bits granted after story events.
+      columns:
+      - after_event
+      - worlds_offered
+      rows:
+      - [opening (EVENT_000), Traverse Town]
+      - [1F goal, 'Agrabah, Olympus Coliseum, Wonderland, Monstro, Halloween Town']
+      - [6F goal, 'Atlantica, Never Land, Hollow Bastion, 100 Acre Wood']
+      - [10F goal, Twilight Town]
+      - [11F goal, Destiny Islands]
+      - [12F goal, Castle Oblivion]
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/evt/mode_event.c:GrantRewardsAfterEvent
+        confidence: 0.85
+- id: level_up_choice
+  facet: progression
+  label: Level-up choice between HP, CP and sleights
+  summary: 'EXP orbs raise the level (next threshold grows by 3(lv+1)^2, max 99). Each level-up asks the player to
+    pick one: +15 max HP (cap 560), +25 CP (cap 9999) or, at levels 2, 7, 12, ... 52, a new sleight (Sliding Dash first,
+    Mega Flare last). Riku chooses HP, +1 AP at fixed levels, or +2 DP. HP is restored to max on level-up.'
+  instantiates:
+  - concept: progression.character.choice_level_up
+  reads:
+  - player.exp
+  - player.level
+  writes:
+  - player.max_hp
+  - player.cp
+  - progression.learned_sleights
+  params:
+    exp_curve:
+      value: next += 3 * (lv+1)^2
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/player_progression.c (level-up EXP update)
+        confidence: 0.8
+    hp_gain:
+      value: 15
+      unit: HP
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_level_up.c:UpdateLevelUpResult
+        confidence: 0.85
+    cp_gain:
+      value: 25
+      unit: CP
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_level_up.c:UpdateLevelUpResult
+        confidence: 0.85
+    sleight_levels:
+      value: 2, 7, 12, ..., 52 (every 5)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_stock_info.c:sLevelUpStockLevels
+        confidence: 0.9
+    starting_stats:
+      value: HP 80, CP 275, AP 10, DP 8, next EXP 25
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/player_progression.c:InitPlayerProgression
+        confidence: 0.9
+  invariants:
+  - A choice is greyed out once its stat is at cap.
+  relations:
+  - type: modulates
+    target: card_data_and_cp_cost
+    note: CP grows deck budget
+  - type: modulates
+    target: sleight_combos
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/card/card_level_up.c:UpdateLevelUpResult
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/card/card_stock_info.c:StockInfo_0
+    confidence: 0.8
+- id: map_card_prizes
+  facet: economy
+  label: Battle and field map-card prizes with weighted values and caps
+  summary: 'Winning battles drops map cards (or, rarely, enemy cards from the last enemy once the player holds more than
+    4 map cards: 1/50-1/25 by species, x2.5 under enemy-card room effects). The kind is drawn from per-world tier tables
+    and the value by weights {0:10, 1:5, 2:5, 3-6:15 each, 7:10, 8:5, 9:5}, so mid values dominate and 0/high values
+    are scarce. Collection caps: 98 regular map cards, 89 per kind, under 9 of one exact card. With 4 or fewer map
+    cards the drop is always a map card, so the player cannot soft-lock on doors.'
+  instantiates:
+  - concept: economy.source.enemy_drop_table
+  - concept: economy.source.need_aware_drop_substitution
+  - concept: economy.resource.capped_pool
+    weight: 0.4
+  reads:
+  - cards.map_cards.count
+  - world.current
+  - room.effect
+  writes:
+  - cards.map_cards
+  - cards.collection
+  params:
+    value_weights:
+      value: '[10, 5, 5, 15, 15, 15, 15, 10, 5, 5]'
+      unit: relative weight for values 0..9
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_prize_card_init.c:PickPrizeMapCardValue (sPrizeMapCardValueChances)
+        confidence: 0.9
+    map_card_cap:
+      value: 98
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_prize_card_init.c
+        confidence: 0.8
+    min_map_cards_before_enemy_cards:
+      value: 5
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:DropEnemyPrizes
+        confidence: 0.85
+    premium_drop_odds:
+      value: 0.001
+      unit: per kill
+      variants:
+      - when: room=premium_room
+        value: 0.1
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/battle_runtime.c:TryDropPremireCard
+        confidence: 0.8
+  invariants:
+  - Holding <= 4 regular map cards forces the battle prize to be a map card.
+  relations:
+  - type: requires
+    target: real_time_card_battle
+  - type: modulates
+    target: room_synthesis_map_cards
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/card/card_prize_card_init.c:PickPrizeMapCardForWorld
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/btl/battle_runtime.c:DropEnemyPrizes
+    confidence: 0.9
+- id: exp_orbs_and_pickups
+  facet: economy
+  label: EXP orbs, HP balls and Moogle points as timed pickups
+  summary: 'Defeated enemies burst into EXP orbs (denominations 1400/199/60/30/10/5/1, greedily split, max 3 orbs for
+    regular enemies) that must be collected within 420 frames (blink from 360) inside a small radius (40x20x50 px, much
+    larger with the Draw effect). On the field, smashing props yields Moogle points (4 or 10) and HP balls (5% or 3%
+    max HP). Moogle points cap at 99999.'
+  instantiates:
+  - concept: economy.source.timed_pickup_drop
+  - concept: economy.resource.capped_pool
+  reads:
+  - player.position
+  - effects.draw
+  writes:
+  - player.exp
+  - player.hp
+  - player.moogle_points
+  params:
+    orb_lifetime:
+      value: 420
+      unit: frames (blink from 360)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_prize.c:task_btl_prize_1
+        confidence: 0.9
+    pickup_delay:
+      value: 10
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_prize.c:task_btl_prize_1
+        confidence: 0.8
+    pickup_box:
+      value: 40x20x50
+      unit: px half-extents (x, depth, height)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_prize.c:task_btl_prize_1
+        confidence: 0.8
+    moogle_point_pickups:
+      value: '[4, 10]'
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/map/map_tasks.c:Task_MapPrize_0
+        confidence: 0.8
+  relations:
+  - type: modulates
+    target: level_up_choice
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_prize.c:task_btl_prize_1
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/map/map_tasks.c:Task_MapPrize_0
+    confidence: 0.8
+- id: moogle_shop_packs
+  facet: economy
+  label: Moogle shop - buy random card packs, sell cards for points
+  summary: 'In Moogle Rooms Moogle points buy 5-card packs in 4 categories x 4 tiers (100-500 points), with values weighted
+    {5,15,15,16,14,10,10,6,5,4} and a 10% premium chance for attack/magic cards; tiers on sale depend on the floor.
+    Cards sell back for CP/5 x 2 points (+10 if premium). Overflowing the collection converts cards to points.'
+  instantiates:
+  - concept: economy.trade.random_pack_shop
+  - concept: economy.converter.sell_back
+  reads:
+  - player.moogle_points
+  - world.floor
+  writes:
+  - player.moogle_points
+  - cards.collection
+  params:
+    pack_size:
+      value: 5
+      unit: cards
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/menu/mode_ms.c:RollMooglePackCards
+        confidence: 0.9
+    pack_value_weights:
+      value: '[5, 15, 15, 16, 14, 10, 10, 6, 5, 4]'
+      unit: weights for values 0..9
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/menu/mode_ms.c:RollMooglePackCards
+        confidence: 0.85
+    premium_chance:
+      value: 0.1
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/menu/mode_ms.c:RollMooglePackCards
+        confidence: 0.8
+    sell_value:
+      value: floor(CP/5) * 2 (+10 premium)
+      unit: Moogle points
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/card/card_catalog.c:GetCardMooglePointValue
+        confidence: 0.95
+  relations:
+  - type: gated_by
+    target: room_synthesis_map_cards
+    note: requires a Moogle Room card
+  - type: requires
+    target: exp_orbs_and_pickups
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/menu/mode_ms.c:RollMooglePackCards
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/card/card_catalog.c:GetCardMooglePointValue
+    confidence: 0.95
+- id: battle_hud
+  facet: ui_hud
+  label: Card ring hand, reload gauge and layered HP gauges
+  summary: 'The battle HUD shows the hand as a ring of card faces with values at the bottom-left (cycling with L/R), the
+    stocked cards and the reload card with its charge counter. The player HP gauge eases 3 HP/frame with a 280 HP main
+    bar and an extension above it, and sounds a low-HP alarm at 25%; enemy gauges ease 5 HP/frame and stack coloured
+    560-HP layers. Start pauses battle with SFX muted and BGM halved.'
+  instantiates:
+  - concept: ui_hud.hud.resource_counters
+  - concept: ui_hud.alert.low_health_warning
+  - concept: ui_hud.hud.card_hand_display
+  reads:
+  - player.hp
+  - enemies[*].hp
+  - battle.hand
+  - battle.reload_gauge
+  params:
+    player_gauge_ease:
+      value: 3
+      unit: HP/frame
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_hpply.c:task_btl_hpply_1
+        confidence: 0.85
+    low_hp_threshold:
+      value: 0.246
+      unit: x max HP (63/256)
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_hpply.c:task_btl_hpply_1
+        confidence: 0.8
+    enemy_gauge_layer:
+      value: 560
+      unit: HP per colour layer
+      evidence:
+      - kind: decomp_source
+        ref: khcom:src/btl/btl_hpenm.c:task_btl_hpenm_1
+        confidence: 0.8
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_hpply.c:task_btl_hpply_1
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_hpenm.c:task_btl_hpenm_1
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/card/card_battle.c:CreateSoraCardRing
+    confidence: 0.6
+    note: name only
+  - kind: decomp_source
+    ref: khcom:src/btl/btl_pause.c:task_btl_pause_1
+    confidence: 0.85
+- id: floor_map_screen
+  facet: ui_hud
+  label: Floor map screen with door requirements
+  summary: A separate all-map mode shows the floor's room grid, room names, cursor and, for visited rooms whose event
+    is not done, the card or key requirement of each door. There is no in-field minimap.
+  instantiates:
+  - concept: ui_hud.menu.pause_map_screen
+  reads:
+  - floor.rooms[*]
+  - door.requirements
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/menu/allmap.c:AllmapDoorHasKeyInfo
+    confidence: 0.85
+  - kind: decomp_source
+    ref: khcom:src/menu/mode_allmap.c:gModeAllmap
+    confidence: 0.85
+- id: memory_story_structure
+  facet: narrative_delivery
+  label: Twin scenarios with world episodes recalled from memory
+  summary: 'The story is told as two sequential scenarios: Sora''s 13-floor climb, where each Disney world is a memory-built
+    episode with fixed beats (entrance, e0-e3 events, boss, end) and Organization encounters between floors, then the
+    unlockable Riku scenario descending the basement. World episodes are self-contained and can be visited in a
+    player-chosen order within each unlock set.'
+  instantiates:
+  - concept: narrative_delivery.structure.predetermined_story
+  - concept: narrative_delivery.structure.episodic_world_vignettes
+  relations:
+  - type: requires
+    target: cutscene_system
+  - type: part_of
+    target: castle_oblivion_floor_progression
+  evidence:
+  - kind: decomp_source
+    ref: khcom:src/evt/events/ (per-floor and per-world e0..e3/boss/end event scripts)
+    confidence: 0.85
+  - kind: llm_knowledge
+    ref: worlds are recreated from Sora's memories inside Castle Oblivion, which erode as he climbs
+    confidence: 0.55
+- id: castle_oblivion_setting
+  facet: setting
+  label: Disney and Final Fantasy crossover worlds inside a memory castle
+  summary: 'A fantasy crossover: Square Enix''s Kingdom Hearts cast (Sora, Donald, Goofy, Riku, Organization XIII) climb
+    Castle Oblivion, whose floors recreate Disney worlds (Agrabah, Atlantica, Olympus Coliseum, Wonderland, Monstro,
+    Halloween Town, Never Land, 100 Acre Wood, Hollow Bastion) and original ones (Traverse Town, Twilight Town, Destiny
+    Islands), with Final Fantasy guests (Cloud, Leon). Tone is bright adventure with a melancholic memory-loss theme.'
+  instantiates:
+  - concept: setting.theme.licensed_crossover_fantasy
+  - concept: setting.location.memory_construct_tower
+  evidence:
+  - kind: decomp_source
+    ref: khcom:include/menu/world_types.h:WorldId
+    confidence: 0.9
+  - kind: decomp_source
+    ref: khcom:src/btl/mode_battle.c:mode_battle_0 (BATTLE_* ids for Disney villains, Organization members, Leon, Cloud)
+    confidence: 0.85
+  - kind: capture_frame
+    ref: capture:attract:f000533 (Disney / Touchstone / Final Fantasy copyright screen)
+    confidence: 0.9
+  - kind: llm_knowledge
+    ref: tone and memory theme of Chain of Memories
+    confidence: 0.55
+proposed_concepts:
+- id: ai.attack.telegraphed_lunge
+  label: Telegraphed lunge
+  definition: Enemy attack with a fixed windup, an active dash over a set distance with a hitbox, and a recovery window.
+  seed_source: 'game_ai_taxonomy: Scripted / pattern-based AI'
+- id: ai.boss.hp_phase_escalation
+  label: HP-phase escalation
+  definition: Boss behaviour parameters (attack odds, attack set, projectile counts) switch at health thresholds.
+  seed_source: 'gdp: Boss Monsters'
+- id: ai.boss.random_effect_roll
+  label: Random effect roll
+  definition: Boss produces a randomly chosen effect (heal, attack, summon) from an equiprobable set, often shown as dice
+    or a roulette.
+- id: ai.decision.distance_banded_action_odds
+  label: Distance-banded action odds
+  definition: Action selection probabilities depend on which distance band the target is in.
+  seed_source: 'game_ai_taxonomy: Utility AI'
+- id: ai.decision.per_frame_probability_trigger
+  label: Per-frame probability trigger
+  definition: Behaviours start with a fixed 1-in-N chance each frame instead of explicit timers, giving memoryless pacing.
+- id: ai.enemy.directional_guard
+  label: Directional guard
+  definition: Enemy blocks a damage type from one side, forcing the player to attack from behind or switch damage type.
+  seed_source: 'gdp: Guard'
+- id: ai.enemy.hover_and_dive
+  label: Hover and dive
+  definition: Flying enemy idles at altitude with a bob, repositions in straight flights and attacks with a diving lunge.
+  seed_source: VGDL Chaser (aerial)
+- id: ai.enemy.submerge_ambush
+  label: Submerge ambush
+  definition: Enemy sinks into the ground, moves untouchable and resurfaces to attack.
+- id: ai.opponent.symmetric_rules_virtual_input
+  label: Symmetric-rules virtual-input opponent
+  definition: AI opponent plays under the same rules and resources as the player by emitting virtual button presses into the
+    player-side game logic.
+  seed_source: 'game_ai_taxonomy: Artificial player'
+- id: ai.perception.vision_cone
+  label: Vision cone
+  definition: Enemy perceives the player only inside an angular sector in front of it, optionally limited to the same height
+    level.
+  seed_source: 'game_ai_taxonomy: Aggro / detection range / line of sight'
+- id: ai.spawn.budgeted_random_spawner
+  label: Budgeted random spawner
+  definition: Spawner adds enemies with a random per-frame chance while caps on simultaneous count, total count and sprite
+    memory allow.
+- id: audio.stream.compressed_pcm_stream
+  label: Compressed PCM stream
+  definition: Long audio (voice, licensed song, movie sound) decoded from a compressed sample stream and fed to the DAC by
+    timer/DMA, bypassing the sequencer.
+- id: camera.follow.eased_target_lerp
+  label: Eased target lerp
+  definition: Camera moves a fixed fraction of the remaining distance to its target each frame, with a speed cap.
+  seed_source: 'movement_physics_game_feel: Polish'
+- id: economy.converter.sell_back
+  label: Sell-back converter
+  definition: Owned items can be converted back into currency at a value derived from their cost.
+  seed_source: 'machinations: Converter'
+- id: economy.source.timed_pickup_drop
+  label: Timed pickup drop
+  definition: Defeated enemies or broken objects release collectibles that must be picked up before they expire.
+  seed_source: 'gdp: Pick-Ups'
+- id: economy.trade.random_pack_shop
+  label: Random pack shop
+  definition: Currency buys packs whose contents are drawn randomly from weighted tables (booster packs).
+  seed_source: 'gdp: Trading / Loot'
+- id: frontend.ending.credits_roll
+  label: Credits roll
+  definition: Scrolling staff credits shown after the ending, often with music and illustration panels.
+- id: frontend.game_over.pre_encounter_rollback
+  label: Pre-encounter rollback
+  definition: On defeat the game restores the state from just before the fatal encounter, discarding gains made during it,
+    and returns the player to the field.
+  seed_source: 'gdp: Death Consequences'
+- id: frontend.save.suspend_save
+  label: Suspend save
+  definition: Single-use quick save that resumes play exactly where it was suspended and is deleted when loaded.
+  seed_source: 'progression_structure: Save Files'
+- id: frontend.title.press_start_menu
+  label: Press-start title menu
+  definition: Title screen waits for Start, then shows a menu whose default and available entries depend on existing saves
+    and unlocks.
+  seed_source: 'front_end_flow: Title screen'
+- id: mechanics.cards.card_as_level_modifier
+  label: Card as level modifier
+  definition: Cards are spent to set or alter level/room properties (enemy count, strength, rewards, special rooms) rather
+    than to act in combat.
+- id: mechanics.cards.card_break_contest
+  label: Card break contest
+  definition: Played cards carry values; a later play with a higher (or special wildcard) value cancels and stuns an opponent's
+    play in progress.
+- id: mechanics.cards.combination_sleight
+  label: Combination sleight
+  definition: Several held cards are played together as one action; specific card combinations and value-sum windows map to
+    special moves.
+  seed_source: 'gdp: Combos'
+- id: mechanics.cards.deck_as_action_set
+  label: Deck as action set
+  definition: The player's available actions in real-time play are exactly the cards remaining in a deck/hand, consumed on
+    use.
+  seed_source: 'ludii: equipment / moves'
+- id: mechanics.cards.deck_cycle_reload
+  label: Deck cycle reload
+  definition: When the deck is exhausted the player must spend vulnerable time reloading it, with reload time growing per
+    cycle.
+  seed_source: 'gdp: Cooldown'
+- id: mechanics.cards.effect_card_buff
+  label: Effect card buff
+  definition: A card that grants a timed passive modifier instead of an action; one active at a time.
+  seed_source: 'gdp: Power-Ups'
+- id: mechanics.cards.fixed_deck_mode
+  label: Fixed deck mode
+  definition: Mode in which the player's deck is preset per stage instead of being built.
+- id: mechanics.cards.in_battle_card_drop
+  label: In-battle card drop
+  definition: New cards drop during an encounter and can be picked up and used immediately.
+  seed_source: 'gdp: Pick-Ups'
+- id: mechanics.cards.point_budget_deckbuilding
+  label: Point-budget deckbuilding
+  definition: Decks are limited by a total cost budget; card cost depends on card strength and the budget grows with progression.
+  seed_source: 'gdp: Resource Management'
+- id: mechanics.cards.valued_cards
+  label: Valued cards
+  definition: Each card has a numeric value (e.g. 0-9) separate from its effect, used for contests and combinations.
+- id: mechanics.combat.assist_summon
+  label: Assist summon
+  definition: Calling an ally or summoned creature to perform a scripted attack sequence for a limited time.
+  seed_source: 'gdp: Companions'
+- id: mechanics.combat.combo_move_lookup
+  label: Combo move lookup
+  definition: An input or resource combination is looked up in a table to produce a special move.
+  seed_source: 'gdp: Combos'
+- id: mechanics.combat.hit_stop
+  label: Hit stop
+  definition: Brief freeze of actor updates on impact to sell hits, with per-attack duration.
+  seed_source: 'movement_physics_game_feel: Knockback / hit-stop'
+- id: mechanics.combat.hitbox_volume_test
+  label: Hitbox volume test
+  definition: Attacks spawn axis-aligned boxes in world space tested against target radii and height ranges.
+- id: mechanics.combat.interrupt_priority
+  label: Interrupt priority
+  definition: Actions in progress can be cancelled by an opposing action of higher priority, staggering the loser.
+- id: mechanics.combat.melee_combo_chain
+  label: Melee combo chain
+  definition: Consecutive attacks advance through a fixed swing sequence ending in a finisher.
+  seed_source: 'gdp: Combos'
+- id: mechanics.combat.multiplicative_damage_formula
+  label: Multiplicative damage formula
+  definition: Damage = attacker stat x move power x situational multipliers, clamped to a minimum.
+- id: mechanics.combat.real_time_action_combat
+  label: Real-time action combat
+  definition: Combat with continuous movement and timing, as opposed to turn-based resolution.
+  seed_source: 'igdb genre: Hack and slash'
+- id: mechanics.combat.vulnerability_window
+  label: Vulnerability window
+  definition: A required action (reload, recovery) leaves the player exposed for a period.
+- id: mechanics.difficulty.linear_stat_scaling_by_stage
+  label: Linear stat scaling by stage
+  definition: Enemy stats are multiplied by a factor linear in the stage/floor index.
+  seed_source: 'gdp: Ever Increasing Difficulty'
+- id: mechanics.encounter.hold_to_flee
+  label: Hold to flee
+  definition: Escaping an encounter requires holding against the arena edge while a gauge fills.
+- id: mechanics.encounter.overworld_first_strike
+  label: Overworld first strike
+  definition: Hitting a map enemy before contact gives an advantage (damage, stun) at the start of the encounter.
+- id: mechanics.encounter.symbol_encounter
+  label: Symbol encounter
+  definition: Enemies are visible on the field map and touching one starts a separate battle.
+- id: mechanics.minigame.escort_companion
+  label: Escort companion
+  definition: Minigame where the player guides an autonomous companion with its own needs (stamina, hunger) toward goals.
+  seed_source: 'gdp: Minigames'
+- id: mechanics.multiplayer.link_versus
+  label: Link versus
+  definition: Two players on linked devices play a head-to-head match with their own saved resources.
+  seed_source: 'igdb: Multiplayer'
+- id: mechanics.resource.meter_fueled_transformation
+  label: Meter-fueled transformation
+  definition: A meter filled by play lets the character transform into a stronger mode that drains the meter until it ends.
+  seed_source: 'gdp: Power-Ups'
+- id: mechanics.status.timed_status_ailment
+  label: Timed status ailment
+  definition: Hits inflict temporary states (stun, confuse, bind, stop) that alter control or behaviour for a fixed duration.
+  seed_source: 'gdp: Status effects'
+- id: movement_physics.locomotion.turn_speed_penalty
+  label: Turn speed penalty
+  definition: Changing direction sharply reduces or zeroes current speed.
+  seed_source: 'movement_physics_game_feel: Response'
+- id: narrative_delivery.structure.episodic_world_vignettes
+  label: Episodic world vignettes
+  definition: The story is a sequence of self-contained episodes in themed worlds, framed by an overarching plot.
+  seed_source: 'narrative: Narration Structures'
+- id: progression.character.choice_level_up
+  label: Choice level-up
+  definition: On each level-up the player chooses one of several stat or ability rewards.
+  seed_source: 'gdp: Character Levels'
+- id: progression.gating.value_threshold_door
+  label: Value-threshold door
+  definition: A door or gate accepts a key item only if its numeric value meets a rule relative to a threshold.
+  seed_source: 'dormans: Lock and key'
+- id: progression.structure.player_constructed_level
+  label: Player-constructed level
+  definition: The player decides room contents or layout as part of play by spending resources at transitions.
+- id: progression.structure.player_ordered_worlds
+  label: Player-ordered worlds
+  definition: Sets of levels unlock together and the player chooses their order.
+  seed_source: 'progression_structure: Hub'
+- id: progression.structure.tower_floor_climb
+  label: Tower floor climb
+  definition: Progress is a linear climb through floors of a tower, each floor a self-contained stage.
+  seed_source: 'progression_structure: Levels'
+- id: projection.isometric.pseudo_isometric_grid
+  label: Pseudo-isometric grid
+  definition: 2:1 diamond-style tile grid with diagonal walls rendered as 2D tiles, giving an isometric look without true
+    3D.
+  seed_source: 'perspective_camera_render: Isometric (axonometric)'
+- id: projection.oblique.depth_strip_2_5d
+  label: Depth-strip 2.5D
+  definition: Side-on view of a shallow ground plane where depth and height both map to screen Y, as in brawlers.
+  seed_source: 'perspective_camera_render: 2.5D / 3/4 view'
+- id: rendering.bitmap.fmv_playback
+  label: FMV playback
+  definition: Pre-rendered video decoded in software into a bitmap framebuffer, with streamed audio.
+  seed_source: 'perspective_camera_render: GBA bitmap modes'
+- id: setting.location.memory_construct_tower
+  label: Memory-construct tower
+  definition: A building whose floors recreate places from characters' memories.
+- id: setting.theme.licensed_crossover_fantasy
+  label: Licensed crossover fantasy
+  definition: Fantasy setting combining characters and worlds from several existing franchises.
+  seed_source: 'igdb theme: Fantasy'
+- id: ui_hud.hud.card_hand_display
+  label: Card hand display
+  definition: HUD showing the playable cards in hand with values and the currently selected card.
+- id: ui_hud.menu.codex_journal
+  label: Codex journal
+  definition: Menu cataloguing encountered characters, enemies and items, filled as the player discovers them.
+  seed_source: 'gdp: Collecting'
+- id: ui_hud.targeting.auto_lock_on
+  label: Auto lock-on
+  definition: Game automatically selects an enemy target by facing and distance, used to aim attacks.
+  seed_source: 'gdp: Auto-Aim'
+open_questions:
+- 'Exact break-stagger and hurt-animation lengths for Sora live in animation data (47 + breakAnim), not in code constants;
+  not converted to frames.'
+- Reload cycle length (~34 frames) is an estimate from the gauge step and animation ticks; a frame-stepped capture of a
+  reload would confirm it.
+- The capture never reached field or battle gameplay (frontend input script stops at the opening FMV), so field/battle
+  BG modes, affine floor transforms and sprite counts are from code only.
+- Field enemy stun/faint duration after a first strike on the field was not found (map_faint.c only draws the icon).
+- The regular field mode's BG0 blend setting was only seen in the debug field mode (Mode_MapDbg_0 SetBlendAlpha 6/10).
+- Room form table gMapFormDefs units (presumably cells) and the exact effect of each green/blue room card (e.g. Sorcerous
+  Waking magic boost, Guarded Trove treasure) were not traced; room_effect ids in the room shape table are listed raw.
+- Only Shadow, Air Soldier and Large Body (regular) and Guard Armor, Ursula, Oogie Boogie, Larxene (bosses) were read
+  in depth; Trickmaster, Jafar, Darkside, Dragon Maleficent, Parasite Cage, Marluxia final form and the other humanoids
+  are known only from file names/headers.
+- Moogle shop pack contents per tier (sMooglePackTiers) and per-world prize tier tables were sampled, not tabulated.
+- The 106 sleight recipes were sampled (12 rows); the full LookupStockName switch was not exported.
+- Movie frame rate and resolution are per-movie header data (MovieOpen) and were not read from ROM; the capture shows
+  31536 Hz movie audio.
+- Byte-weighted decomp completion percentage was not measured locally (published on decomp.dev only).

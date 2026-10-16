@@ -1,0 +1,26 @@
+{
+ "comment": "Gameplay: New Game, A through the opening text and Magitek scenes; control of Terra in Narshe from ~10560, then explore north.",
+ "phases": [
+  {
+   "name": "gameplay",
+   "frames": 13500,
+   "play_starts_frame": 10560,
+   "repeat": [
+    {
+     "from_frame": 180,
+     "until_frame": 900,
+     "template": "menu_mash"
+    },
+    {
+     "from_frame": 900,
+     "until_frame": 10560,
+     "template": "a_mash"
+    },
+    {
+     "from_frame": 10560,
+     "template": "move_north"
+    }
+   ]
+  }
+ ]
+}

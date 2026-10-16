@@ -1,0 +1,3 @@
+{"comment":"Gameplay: title START -> One Player Adventure (A); Kirby is controllable from ~750; side-scrolling movement from 900.",
+ "phases":[{"name":"gameplay","frames":5400,"play_starts_frame":900,
+ "repeat":[{"from_frame":180,"until_frame":800,"template":"menu_mash"},{"from_frame":900,"template":"move_side"}]}]}

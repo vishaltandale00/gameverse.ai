@@ -1,0 +1,698 @@
+schema_version: 0
+id: mario-kart-super-circuit
+game:
+  title: 'Mario Kart: Super Circuit'
+  platform: gba
+  game_code: AMKE
+  rom_sha1: 9d327c030c3e2d9007990518594f70c3340ac56f
+  evidence_basis:
+  - decomp_source
+  - capture_telemetry
+  - capture_frame
+  sources:
+  - kind: decomp
+    ref: https://github.com/jellees/mksc @ 3df8932105c91f8e9e1ad72801ea13ff74339fe1; README lists exact corpus USA
+      ROM SHA1; not rebuilt. Read src collision.c/h, actor.h, scene.h/c, main.c, title.c/h, map.c/h, vcount.c, dmaQueue.c,
+      palette.c, oam.O3.c excerpts, save.h, sound.h, script.c.
+  - kind: excluded_version
+    ref: local/decomps/mksc-decompilation @31b953f0b9e297c83331071ecd6d84eb3445a96b targets Japanese Mobile Adapter
+      functionality; README consulted only; no Japanese-only rules transferred into USA ontology.
+  - kind: capture
+    ref: local/captures/mario-kart-super-circuit/summary.json run_id=20261015T234415-8f46cf; source d431b8183f1001722d7bc9a326da28088930c344
+      dirty; harness0.1.0 tree c7b44c806b6e; libmgba0.10.5; default.json; two frontend frames viewed directly.
+  - kind: extraction_run
+    ref: Codex/GPT subagent (exact model revision unavailable), brief v1; authoring stage 2026-10-16T04:41:51.751181Z
+      to 2026-10-16T04:43:23.818401+00:00; earlier research wall time unavailable; no provider request, game build
+      or recapture. Partial source-and-capture extraction.
+conventions:
+  scope: 'Partial extraction: evidence depth over component quota. Collision, input and graphics helpers recovered;
+    core kart physics, item effects, AI and race progression remain unextracted. Engine resource limits are not
+    gameplay quantities.'
+  coordinate_units: Actor positions are int; collision compares absolute separation with summed u8 sizes <<14. These
+    fixed-point scales are retained natively; physical meter/pixel conversion was not established.
+  source_status: Some source files contain NONMATCHING branches. This extraction avoids claiming the script interpreter
+    or broad oam renderer reconstruction has been independently proved matching. Specific unguarded helpers cited
+    were read directly.
+  time: Input delays and title counters are updates, not assumed wall seconds. Capture uses libmgba frame timing.
+    No fresh extraction latency baseline exists.
+  strategy: Racing skill, route choice, drifting and item strategy were not inferred from familiar franchise behavior.
+    Such knowledge is outside inspected evidence.
+components:
+- id: scene_callbacks
+  facet: frontend
+  label: Scene callback lifecycle
+  summary: Startup initializes graphics, input, audio, interrupts and save handling before selecting title_main.
+    Each scene main callback controls whether the loop continues; scene completion resets the scanline scheduler
+    and DMA queue before the next frame-processing transition.
+  instantiates:
+  - concept: frontend.flow.mode_state_machine
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/main.c:AgbMain
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/scene.h:scene_setMainFunc
+    confidence: 0.93
+  reads:
+  - gSceneState.sceneMainFunc:function pointer
+  writes:
+  - gSceneState.sceneMainFunc:function pointer
+  - gSceneState.byte_3002E28:u8 modulo8
+  invariants:
+  - A null or false-returning scene callback terminates the scene loop.
+- id: title_press_start
+  facet: frontend
+  label: Title-to-menu transition
+  summary: A or Start advances selected title phases, including an early phase that waits until its counter exceeds
+    thirty-two. Transition state twenty-two brightens the screen across ten updates before arranging the main menu;
+    exact title phase timing depends on music-state signals.
+  instantiates:
+  - concept: frontend.title.press_start_menu
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/title.c:title_main
+    confidence: 0.93
+  reads:
+  - title.stateId:u32
+  - title.counter:int
+  - input.triggered:u16
+  - gMPlayMemAccArea[0]:u8
+  writes:
+  - title.stateId:u32
+  - title.counter:int
+  - title.bldY:u16
+  invariants:
+  - The inspected early title phase requires counter >32 before accepting A/Start.
+  params:
+    brightness_updates:
+      value: 10
+      unit: updates
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/title.c:title_main
+        confidence: 0.93
+- id: nested_title_menu
+  facet: frontend
+  label: Clamped main and link submenu selection
+  summary: The main menu has three entries and the link submenu has two. Up/down repeats clamp selection to valid
+    bounds; A/Start accepts an enabled item and B restores the parent cursor from the link submenu.
+  instantiates:
+  - concept: frontend.menu.clamped_nested_selection
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/title.c:title_main
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/title.h:title_state_t
+    confidence: 0.93
+  reads:
+  - input.repeat_triggered:u16
+  - input.triggered:u16
+  - title.mainMenuItems[]:idk_t
+  - title.linkSubMenuItems[]:idk_t
+  writes:
+  - title.cursorPos:int
+  - title.inLinkSubMenu:bool32
+  - title.selectedOption:int
+  invariants:
+  - Selection is clamped to [0,itemCount-1].
+  - Disabled entries play a rejection sound instead of completing selection.
+  params:
+    main_entries:
+      value: 3
+      unit: entries
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/title.c:title_main
+        confidence: 0.93
+    link_entries:
+      value: 2
+      unit: entries
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/title.c:title_main
+        confidence: 0.93
+    main_confirmation_delay:
+      value: 70
+      unit: updates
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/title.c:title_main
+        confidence: 0.93
+- id: save_title_variant
+  facet: progression
+  label: Save flags select title appearance
+  summary: Title initialization begins with sunset and night flags true, then clears each when any corresponding
+    entry in a saved five-by-three matrix is nonzero. This proves save-conditioned presentation; the meaning of
+    those opaque matrix fields and their gameplay completion requirements have not been established.
+  instantiates:
+  - concept: frontend.title.save_conditioned_variant
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/title.c:title_main
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/save.h:save_t
+    confidence: 0.93
+  reads:
+  - save.field28[5][3]:s8
+  - save.field46[5][3]:u8
+  writes:
+  - title.isSunset:bool32
+  - title.isNight:bool32
+  invariants:
+  - Each inspected matrix has fifteen entries; any nonzero member clears its associated flag.
+- id: held_repeat
+  facet: ui_hud
+  label: Input edges and held-mask repetition
+  summary: Each of four input slots converts active-low button bits into held and newly triggered masks. An unchanged
+    held mask repeats after a default twenty-four updates and then every six; changing or releasing the held mask
+    resets the delay.
+  instantiates:
+  - concept: ui_hud.input.delayed_repeat
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/main.c:updateKeys
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/main.c:initKeys
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/main.c:main_getKeys
+    confidence: 0.93
+  reads:
+  - sio2_sKeyBuf[4]:u16 active-low mask
+  - gKeyBuf[4]:u16 previous-held mask
+  - sKeyRepeatCounters[4]:s16
+  writes:
+  - gKeyBuf[4]:u16
+  - gKeyTriggerBuf[4]:u16
+  - gKeyRepeatTriggerBuf[4]:u16
+  invariants:
+  - Newly triggered keys equal current held keys with previous held keys removed.
+  params:
+    initial_wait:
+      value: 24
+      unit: updates
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/main.c:initKeys
+        confidence: 0.93
+    repeat_wait:
+      value: 6
+      unit: updates
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/main.c:initKeys
+        confidence: 0.93
+    input_slots:
+      value: 4
+      unit: slots
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/main.c:updateKeys
+        confidence: 0.93
+- id: collision_roles
+  facet: mechanics
+  label: Bounded active/passive actor contact lists
+  summary: Active actors are tested against active and passive actors, while passive/passive pairs are absent. Insertion
+    returns false once the active or passive capacity is reached, exposing a concrete resource limit rather than
+    an inferred enemy count.
+  instantiates:
+  - concept: mechanics.collision.active_passive_sets
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/collision.c:col_addActive
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/collision.c:col_addPassive
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/collision.h:col_list_t
+    confidence: 0.93
+  reads:
+  - collision.activeCount:u8
+  - collision.passiveCount:u8
+  writes:
+  - collision.activeList[]:actor_t*
+  - collision.passiveList[]:actor_t*
+  - collision.activeCount:u8
+  - collision.passiveCount:u8
+  invariants:
+  - Passive/passive pairs are not considered by this module.
+  params:
+    active_capacity:
+      value: 24
+      unit: actors
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/collision.c:col_addActive
+        confidence: 0.93
+    passive_capacity:
+      value: 64
+      unit: actors
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/collision.c:col_addPassive
+        confidence: 0.93
+- id: checkpoint_broadphase
+  facet: mechanics
+  label: Cyclic checkpoint neighborhood collision filtering
+  summary: The normal path sorts both collision lists by checkpoint and checks a window from checkpoint minus two
+    to checkpoint plus three with wraparound. Actors with checkpoint ID 127 are skipped by the fast path; a mode-bit
+    branch instead uses all active/active and active/passive pairs, so checkpoint locality is an assumption of the
+    optimization rather than a universal physical rule.
+  instantiates:
+  - concept: mechanics.collision.checkpoint_partition
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/collision.c:col_collide
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/collision.c:sortByCheckpoint
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/collision.c:collideActiveActiveFast
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/collision.c:collideActivePassiveFast
+    confidence: 0.93
+  reads:
+  - gSceneState.raceState.nrCheckpoints:u16
+  - actor.checkpointId:u8
+  - gSceneState.raceState.curRaceStateUnknown:u16
+  writes:
+  - collision.sorted_active:actor_t*[]
+  - collision.sorted_passive:actor_t*[]
+  - col_sCpoiStartIndicesActive[128]:u8
+  - col_sCpoiStartIndicesPassive[128]:u8
+  invariants:
+  - Fast-path collision candidates depend on valid cyclic checkpoint ordering.
+  - The alternate mode-bit path does not apply this checkpoint filter.
+  params:
+    skipped_checkpoint_id:
+      value: 127
+      unit: checkpoint code
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/collision.c:collideActiveActiveFast
+        confidence: 0.93
+    alternate_path_mask:
+      value: 2048
+      unit: bitmask
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/scene.h:RACE_CUR_RACE_STATE_UNKNOWN_MG_MODE
+        confidence: 0.93
+  relations:
+  - type: requires
+    target: collision_roles
+- id: box_collision
+  facet: mechanics
+  label: Three-coordinate overlap dispatches both actor callbacks
+  summary: Collision first rejects self-pairs and compares absolute X/Y/Z separation against summed per-axis sizes
+    shifted left by fourteen. Surviving pairs invoke both nonnull callbacks only when the bitwise OR of their field_38
+    values is at most one; physical responses and item effects live in the callbacks and remain unextracted.
+  instantiates:
+  - concept: mechanics.collision.axis_aligned_three_axis
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/collision.c:collide
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/collision.c:somethingField38
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/actor.h:actor_t
+    confidence: 0.93
+  reads:
+  - actor.posX:int
+  - actor.posY:int
+  - actor.posZ:int
+  - actor.sizeX:u8
+  - actor.sizeY:u8
+  - actor.sizeZ:u8
+  - actor.field_38:u16
+  writes:
+  - actor.custom_callback_state:unresolved
+  invariants:
+  - A self-pair never triggers callbacks.
+  - Each axis passes when separation <= (sizeA+sizeB)<<14.
+  - No universal bounce, damage or impulse formula is implemented by this dispatcher.
+  params:
+    bounds_shift:
+      value: 14
+      unit: binary shift bits
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/collision.c:collide
+        confidence: 0.93
+  relations:
+  - type: requires
+    target: checkpoint_broadphase
+    condition: normal checkpoint-filtered collision path
+- id: race_hud
+  facet: ui_hud
+  label: Lap, position, timer and course map
+  summary: The directly viewed race image shows LAP 1/3, eighth position, five coins, a timer, racer-order portraits,
+    an empty item box and a small course map. These are observed display elements; lap advancement, coin handling,
+    item distribution and ranking algorithms have not yet been read.
+  instantiates:
+  - concept: ui_hud.race.lap_rank_course_status
+  evidence:
+  - kind: capture_frame
+    ref: capture:frontend:keyframes/f005311_scene.png
+    confidence: 0.98
+- id: race_retry_menu
+  facet: frontend
+  label: Continue, try again and quit over race scene
+  summary: The directly viewed overlay offers Continue, Try Again and Quit while preserving the race image behind
+    it. Input behavior, whether race simulation is paused and the exact restart/reset scope require tracing before
+    operational rules are assigned.
+  instantiates:
+  - concept: frontend.race.result_retry_menu
+  evidence:
+  - kind: capture_frame
+    ref: capture:frontend:keyframes/f005254_scene.png
+    confidence: 0.98
+- id: behind_projection
+  facet: projection
+  label: Behind-kart road-plane presentation
+  summary: The directly viewed race image presents a kart from behind with a road narrowing toward the horizon and
+    billboard-like opponents and scenery. Combined with the affine scanline capture, this supports a pseudo-3D presentation
+    interpretation, but not a recovered camera projection matrix.
+  instantiates:
+  - concept: projection.pseudo_3d.scaled_sprite_depth
+  evidence:
+  - kind: capture_frame
+    ref: capture:frontend:keyframes/f005311_scene.png
+    confidence: 0.96
+- id: scanline_track
+  facet: rendering
+  label: Per-line affine background DMA in captured racing session
+  summary: The capture records DMA0 targeting address 0x04000020 in the affine-background register group, with at
+    least thirty-two affected scanlines in 4090 frames. This is evidence of per-line affine rendering during the
+    recorded session; correlating exact coefficients and individual race frames remains necessary before claiming
+    a recovered road projection model.
+  instantiates:
+  - concept: rendering.raster.hblank_dma_affine_projection
+  evidence:
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.hblank_dma_targets, derived.raster_frames.bg_affine and derived.video_modes_frames
+    confidence: 0.97
+- id: vcount_schedule
+  facet: rendering
+  label: Ordered scanline interrupt callbacks
+  summary: Callbacks are inserted in scanline order, and the compare register is set to the first callback scanline.
+    The interrupt handler executes the current callback and advances or wraps to the next entry; title code uses
+    a callback to change WINOUT at a particular scanline.
+  instantiates:
+  - concept: rendering.raster.vcount_callback_schedule
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/vcount.c:vcount_register
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/vcount.c:vcount_irqHandler
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/title.c:vcount70
+    confidence: 0.93
+  reads:
+  - gVCountState.list:list
+  - gVCountState.curEntry:vcount_entry_t*
+  writes:
+  - REG_DISPSTAT.vcountCmp:u8 scanline
+  - REG_DISPSTAT.vcountIrq:bool
+  - gVCountState.curEntry:vcount_entry_t*
+  invariants:
+  - Registering a callback fails if the scheduler heap allocation fails.
+- id: vblank_pipeline
+  facet: rendering
+  label: VBlank coordinates DMA, sprites, palettes and maps
+  summary: The VBlank handler stops DMA0, transfers buffered OAM, processes the queued DMA3 requests and uploads
+    dirty palette and map buffers. The scene callback then writes scene-specific registers before link processing
+    and the frame-complete flag; this establishes a concrete display lifecycle.
+  instantiates:
+  - concept: rendering.transfer.vblank_obj_dma
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/main.c:vblankHandler
+    confidence: 0.93
+- id: dma_chunks
+  facet: rendering
+  label: Deferred graphics copies split into 2048-byte DMA chunks
+  summary: Queued transfer entries retain source, destination and hardware configuration. Processing splits each
+    entry into chunks of at most 2048 bytes, applies increment/decrement addressing modes and resets the queue heap
+    after completion.
+  instantiates:
+  - concept: rendering.transfer.chunked_dma_queue
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/dmaQueue.c:dmaq_process
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/dmaQueue.c:dmaq_enqueue
+    confidence: 0.93
+  reads:
+  - dma.queue:list
+  - dma.entry.config:u32
+  - dma.entry.src:byte*
+  - dma.entry.dst:byte*
+  writes:
+  - display.memory:byte[]
+  - dma.queue:list
+  - dma.queue.inUse:bool32
+  invariants:
+  - An in-use queue is not processed recursively.
+  params:
+    maximum_chunk:
+      value: 2048
+      unit: bytes
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/dmaQueue.c:dmaq_process
+        confidence: 0.93
+- id: dirty_tilemaps
+  facet: rendering
+  label: Two dirty tilemap buffers
+  summary: Two 1024-entry maps expose 32-wide coordinate indexing. A bitmask marks changed buffers and each selected
+    map is copied to its configured hardware destination before the dirty bit is cleared.
+  instantiates:
+  - concept: rendering.transfer.dirty_tilemap_buffers
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/map.c:map_copyBuffersToHw
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/map.c:map_getBufferPtr2d
+    confidence: 0.93
+  reads:
+  - map.sBuffer[2][1024]:u16
+  - map.sBufferDirtyMask:u16
+  writes:
+  - display.map_memory:u16[]
+  - map.sBufferDirtyMask:u16
+  invariants:
+  - A clean buffer is not copied by this function.
+  params:
+    buffers:
+      value: 2
+      unit: buffers
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/map.c:map_copyBuffersToHw
+        confidence: 0.93
+    entries_per_buffer:
+      value: 1024
+      unit: u16 entries
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/map.c:map_copyBuffersToHw
+        confidence: 0.93
+    row_stride:
+      value: 32
+      unit: entries
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/map.c:map_getBufferPtr2d
+        confidence: 0.93
+- id: dirty_palette
+  facet: rendering
+  label: Buffered palette upload
+  summary: Palette storage consists of two 256-color banks and a shared dirty flag. When dirty, the buffer is copied
+    to palette RAM and the flag is cleared, otherwise the upload is skipped.
+  instantiates:
+  - concept: rendering.palette.dirty_upload
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/palette.c:pltt_copyBufferToHw
+    confidence: 0.93
+  reads:
+  - palette.sBuffer[2][256]:u16
+  - palette.sDirtyFlag:bool32
+  writes:
+  - PLTT:u16[]
+  - palette.sDirtyFlag:bool32
+  invariants:
+  - No palette upload occurs while clean.
+- id: affine_objects
+  facet: rendering
+  label: Thirty-two buffered sprite transform slots
+  summary: The affine helper writes four coefficients into the OAM transform layout and returns an incrementing
+    slot index. It rejects allocation after slot thirty-one, while capture telemetry independently observed twenty-six
+    affine sprites at peak.
+  instantiates:
+  - concept: rendering.sprite.affine_rotscale
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/oam.O3.c:oam_bufferCellAffineMtx
+    confidence: 0.93
+  params:
+    affine_slots:
+      value: 32
+      unit: matrix slots
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/oam.O3.c:oam_bufferCellAffineMtx
+        confidence: 0.93
+- id: sprite_detail
+  facet: rendering
+  label: Scale selects one of four sprite detail levels
+  summary: A scale input chooses level zero through three and the selected level shift adjusts the scale passed
+    to the common cell renderer. The thresholds are native scale values; their relation to scene distance and game-world
+    size was not recovered.
+  instantiates:
+  - concept: rendering.sprite.scale_selected_detail
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/oam.O3.c:oam_renderMipmapCellDataUniform
+    confidence: 0.93
+  - kind: decomp_source
+    ref: mksc:src/oam.O3.c:oam_renderMipmapCellData
+    confidence: 0.93
+  params:
+    detail_level_boundaries:
+      value:
+      - 511
+      - 1023
+      - 2047
+      unit: native scale units
+      evidence:
+      - kind: decomp_source
+        ref: mksc:src/oam.O3.c:oam_renderMipmapCellDataUniform
+        confidence: 0.93
+- id: captured_modes
+  facet: rendering
+  label: Mode zero and affine mode one across capture
+  summary: The retained capture reports 3880 mode-zero frames and 4988 mode-one frames from a 9000-frame request.
+    Because those counts sum to 8868, 132 requested frames are not represented in the mode histogram; no rendering
+    mode is invented for the missing observations.
+  instantiates:
+  - concept: rendering.pipeline.multimode_display
+  evidence:
+  - kind: capture_telemetry
+    ref: capture:summary.json:frames_emulated and derived.video_modes_frames
+    confidence: 0.97
+- id: mixed_audio
+  facet: audio
+  label: Captured DirectSound A plus four PSG channels
+  summary: The capture recorded DirectSound A on 8996 frames and no DirectSound B frames, with a predominant timer-derived
+    10512 Hz rate. All four PSG channels were triggered; these are bounded observations and do not establish the
+    full soundtrack instrumentation.
+  instantiates:
+  - concept: audio.engine.sample_psg_sequencer
+  evidence:
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.sound
+    confidence: 0.97
+- id: menu_audio
+  facet: audio
+  label: Separate move, accept, reject and cancel sounds
+  summary: Title navigation plays one song ID on cursor change, separate IDs on accepted or disabled selections,
+    and a distinct cancel ID when leaving the link submenu. The source therefore distinguishes these interface events
+    audibly without needing to infer which musical timbres the samples contain.
+  instantiates:
+  - concept: audio.sfx.contextual_action_sfx
+  evidence:
+  - kind: decomp_source
+    ref: mksc:src/title.c:title_main
+    confidence: 0.93
+- id: circuit_setting
+  facet: setting
+  label: Bright castle-bordered track
+  summary: The directly viewed race shows a bounded gray circuit, grassy margins, checkered start markings, rounded
+    trees and a large colorful castle. This is a visual motif record for one course, not a characterization of every
+    circuit or the broader fiction.
+  instantiates:
+  - concept: setting.environment.colorful_circuit
+  evidence:
+  - kind: capture_frame
+    ref: capture:frontend:keyframes/f005311_scene.png
+    confidence: 0.97
+proposed_concepts:
+- id: mechanics.collision.checkpoint_partition
+  label: Checkpoint-partitioned contact candidates
+  definition: Actors are partitioned by cyclic course checkpoint before nearby partitions are tested for contact.
+- id: mechanics.collision.axis_aligned_three_axis
+  label: Three-axis box contact dispatch
+  definition: Entity callbacks run when coordinate separations fit the sum of per-axis bounds and collision masks
+    allow contact.
+- id: mechanics.collision.active_passive_sets
+  label: Active and passive collision sets
+  definition: Entities are assigned collision roles that determine which pairs are considered for contact callbacks.
+- id: ui_hud.input.delayed_repeat
+  label: Delayed held-button repeat
+  definition: An unchanged held button mask repeats after an initial delay and then at a shorter fixed cadence.
+- id: frontend.menu.clamped_nested_selection
+  label: Clamped nested menu selection
+  definition: A cursor stays within the option range, opens a submenu and restores the parent selection on cancel.
+- id: frontend.title.save_conditioned_variant
+  label: Save-conditioned title variant
+  definition: Saved state selects alternate title presentation without changing the fundamental navigation interface.
+- id: rendering.raster.vcount_callback_schedule
+  label: Scanline callback schedule
+  definition: Callbacks are ordered by vertical display scanline and invoked through vertical-count interrupts.
+- id: rendering.transfer.chunked_dma_queue
+  label: Chunked deferred DMA queue
+  definition: Graphics transfers are queued and executed in bounded byte chunks while preserving source/destination
+    addressing modes.
+- id: rendering.transfer.dirty_tilemap_buffers
+  label: Dirty tilemap transfer buffers
+  definition: Tilemap edits mark buffers dirty so only changed buffered maps are copied to display memory.
+- id: rendering.palette.dirty_upload
+  label: Dirty palette upload
+  definition: Palette edits are buffered and a dirty flag controls copying palette memory to the display.
+- id: rendering.sprite.scale_selected_detail
+  label: Scale-selected sprite detail
+  definition: A sprite renderer selects among authored detail levels according to scale before drawing the cell
+    data.
+- id: ui_hud.race.lap_rank_course_status
+  label: Race status display
+  definition: The interface simultaneously exposes lap progress, elapsed time, current placing and course layout.
+- id: frontend.race.result_retry_menu
+  label: Race continuation and retry choices
+  definition: A menu over a race scene offers continuation, retry and quitting.
+- id: setting.environment.colorful_circuit
+  label: Colorful authored race circuit
+  definition: A racing setting presents bounded road circuits within stylized environmental backdrops.
+- id: rendering.raster.hblank_dma_affine_projection
+  label: Per-scanline affine projection
+  definition: A display engine changes background affine coefficients across scanlines using horizontal-blank DMA.
+open_questions:
+- 'PARTIAL: kart acceleration, braking, steering, drift/hop, boost, terrain traction, gravity, collision response,
+  AI, item tables, coin economy, lap/checkpoint completion rules and championship unlocks require further source
+  recovery. These are absent rather than reconstructed from model recall.'
+- The narrow-phase module invokes both actor callbacks and does not establish damage/impulse rules. Recover callback
+  targets before composing physical systems.
+- Validate checkpoint bucket boundaries, ID127 handling and alternate mode semantics against the actual USA binary;
+  names in the community source are not independent proof.
+- Recover camera projection and road scanline coefficients from race code; the observed DMA address alone does not
+  supply the mathematical projection.
+- Map opaque title save matrices to actual completion achievements before calling them unlock conditions.
+- Capture includes menu/result overlays and possibly demos; no model gameplay score is treated as evidence of responsive
+  human-controlled play.
+- 132 of the requested 9000 frames lack representation in the video-mode histogram. Determine whether forced blank
+  or capture instrumentation explains the gap.
+- No complete narrative, asset inventory, opponent policy, economy or progression extraction is claimed. Two directly
+  inspected frames cover one course and one menu only.

@@ -1,0 +1,764 @@
+schema_version: 0
+id: final-fantasy-tactics-advance
+game:
+  title: Final Fantasy Tactics Advance
+  platform: gba
+  game_code: AFXE
+  rom_sha1: 4ac05441f4de70a4ec3dd932116346c61b8783d9
+  evidence_basis:
+  - decomp_source
+  - capture_telemetry
+  - capture_frame
+  sources:
+  - kind: decomp
+    ref: https://github.com/jcollingj/ffta-decomp @7f0e9ad222eb7b04f7c87beeefa36965a6e5d476; README lists exact
+      USA ROM SHA1; not independently rebuilt. Actual recovered src consulted, not opaque incbin regions. Read unit_property,
+      unit_status, unit_fields, unit_counters, job_property, ability_state, ability_list, item, random_item_count,
+      item_abilities, game_flags, save_access, random, ability_state_setter/query, ability_slots, job_ability_progress,
+      ability, job_item_eligibility, item_amount, item_adjustment, equipment_inspect; include ability/ability_state/unit/item/item_abilities;
+      data/jobs macro header; docs/ABILITY_TEXT.md.
+  - kind: capture
+    ref: local/captures/final-fantasy-tactics-advance/summary.json run_id=20261015T234415-8f46cf; source d431b8183f1001722d7bc9a326da28088930c344
+      dirty; harness0.1.0 tree c7b44c806b6e; libmgba0.10.5; default.json. Viewed frontend f005188_scene.png and
+      f005344.png.
+  - kind: extraction_run
+    ref: Codex/GPT subagent (exact revision unavailable), brief v1; authoring stage2026-10-16T04:43:49.969219Z to
+      2026-10-16T04:45:31.789514+00:00; earlier research time unavailable. No provider requests, build or recapture.
+      Partial extraction; no composition proposals.
+  - kind: extraction_review
+    ref: Codex/GPT 2026-10-16; added instruction/source-checked inventory byte arithmetic from src/inventory.c, include/inventory.h and inventory_internal.h; exact served model unavailable. See local/re/experiments/20261016-corpus-decompile/shard-c/semantic_spotcheck.json.
+conventions:
+  scope: PARTIAL recovered-rule extraction. Tactical combat, grid movement, turn ordering, laws/judges, hit/damage
+    formulas, AI, narrative scripts and full economy are not recovered here. Status names and item numerical property
+    meanings remain provisional.
+  ability_indices: Unit ability-state indices and global gAbilities definition IDs are distinct namespaces. Item
+    ability pairs address unit state; do not identify these with global skill IDs or user-visible names without
+    a proven mapping.
+  units: Packed fields use native byte/bit/counter units. No status tick is assumed to mean a battle turn or video
+    frame until callers are traced.
+  state_types: Source byte offsets remain explicit to avoid assigning unproven HP, race, haste/slow or combat-stat
+    meanings. Named source functions may themselves be provisional.
+  matching_status: A source README byte-identical rebuild may retain incbin payloads. Only opened recovered functions
+    are used as mechanics evidence; no complete decompilation is claimed. No representative GPT/local-model extraction
+    timing comparison exists.
+components:
+- id: job_inheritance
+  facet: mechanics
+  label: Job properties resolve record inheritance
+  summary: 'Most selectors follow an inherit byte: zero resolves locally, 255 chooses the caller fallback, and other
+    nonzero values redirect to a different record. Selector two reads the inheritance byte itself; invalid selectors
+    and cyclic chains are not protected by this routine.'
+  instantiates:
+  - concept: mechanics.data.inherited_job_properties
+  evidence:
+  - kind: decomp_source
+    ref: ffta-decomp:src/job_property.c:GetJobProperty
+    confidence: 0.93
+  - kind: decomp_source
+    ref: ffta-decomp:src/unit_property.c:GetUnitProperty
+    confidence: 0.93
+  reads:
+  - job_id:u8
+  - fallback_job:u8
+  - property:u8
+  - gJobs[]:Job
+  invariants:
+  - Do not author cycles when using this unbounded resolver.
+  - Unit property zero can instead use the nonzero override at unit offset0x100.
+  params:
+    fallback_sentinel:
+      value: 255
+      unit: job byte code
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:src/job_property.c:GetJobProperty
+        confidence: 0.93
+- id: ability_records
+  facet: mechanics
+  label: Structured ability parameters and flag selectors
+  summary: The recovered record layout exposes name, category, MP cost, range, area, power, effect bytes and flags.
+    Property selector nine returns an address of effect bytes, while selectors eleven through thirty-one return
+    individual flag bits; effect semantics and actual resource consumption belong to unresolved callers.
+  instantiates:
+  - concept: mechanics.ability.data_driven_definition
+  evidence:
+  - kind: decomp_source
+    ref: ffta-decomp:src/ability.c:GetAbilityProperty
+    confidence: 0.93
+  - kind: decomp_source
+    ref: ffta-decomp:include/ability.h:Ability
+    confidence: 0.93
+  reads:
+  - ability_id:u16
+  - property:u8
+  - gAbilities[346]:Ability
+  invariants:
+  - The reader performs no ability-ID bounds check.
+  - An effect pointer is not itself an effect enum.
+  params:
+    definition_count:
+      value: 346
+      unit: records
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:include/ability.h:gAbilities
+        confidence: 0.93
+    record_stride:
+      value: 28
+      unit: bytes
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:include/ability.h:AbilitySizeMustBe28
+        confidence: 0.93
+- id: equipment_ability_source
+  facet: progression
+  label: Equipment grants available ability indices
+  summary: Item property eighteen selects a linked ability set whose job/index pairs are scanned. A pair matching
+    unit byte seven marks that ability state available; a nonmatching pair with job255 writes the special slot at
+    offset0x3D, without proving that this is a global ability ID.
+  instantiates:
+  - concept: progression.skills.equipment_available_mastered
+  evidence:
+  - kind: decomp_source
+    ref: ffta-decomp:src/item_abilities.c:ApplyItemAbilityFlags
+    confidence: 0.93
+  - kind: decomp_source
+    ref: ffta-decomp:include/item_abilities.h:ItemAbilitySet
+    confidence: 0.93
+  - kind: decomp_source
+    ref: ffta-decomp:include/ability_state.h:MarkAbilityAvailable
+    confidence: 0.93
+  reads:
+  - item_id:u16
+  - unit[7]:u8 job-related selector
+  - gItemAbilitySets[]:ItemAbilitySet
+  writes:
+  - unit[0x40+ability]:u8 availability and progress
+  - unit[0x3d]:u8 special slot
+  invariants:
+  - Item zero makes no changes.
+  - Availability sets bit0x80 without overwriting the lower progress bits.
+  params:
+    special_job_code:
+      value: 255
+      unit: job selector
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:src/item_abilities.c:ApplyItemAbilityFlags
+        confidence: 0.93
+    max_pairs_in_record:
+      value: 9
+      unit: job/index pairs
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:include/item_abilities.h:ItemAbilitySet
+        confidence: 0.93
+- id: job_mastery
+  facet: progression
+  label: Mastery compares progress against per-ability requirements
+  summary: The job exposes an inclusive ability-index range through properties37 and38. Each entry with a nonzero
+    category must have low-seven-bit progress at least its requirement; the availability high bit does not satisfy
+    mastery.
+  instantiates:
+  - concept: progression.skills.equipment_available_mastered
+  evidence:
+  - kind: decomp_source
+    ref: ffta-decomp:src/job_ability_progress.c:HasMasteredJobAbilities
+    confidence: 0.93
+  - kind: decomp_source
+    ref: ffta-decomp:include/ability_state.h:UnitAbilityStateView
+    confidence: 0.93
+  reads:
+  - unit[6]:u8 ability-list index
+  - unit.states[]:u8
+  - AbilityListEntry.requirement:u8
+  - AbilityListEntry.category:u8
+  - job.properties37_38:u8
+  invariants:
+  - Any qualifying entry below its requirement returns false.
+  - The high availability bit is masked out of the mastery comparison.
+  params:
+    progress_mask:
+      value: 127
+      unit: bitmask
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:src/job_ability_progress.c:HasMasteredJobAbilities
+        confidence: 0.93
+  relations:
+  - type: modulates
+    target: equipment_ability_source
+- id: equipment_loss_preview
+  facet: mechanics
+  label: Equipment replacement checks unmastered selected ability loss
+  summary: Inspection temporarily removes the old item, then checks abilities that remain unmastered and are not
+    supplied by other equipment. It records flags for three selected slots, restores the actual equipment and validates
+    the proposed five-item set; this is a preview transaction rather than immediate equipment commitment.
+  instantiates:
+  - concept: mechanics.loadout.ability_loss_preview
+  evidence:
+  - kind: decomp_source
+    ref: ffta-decomp:src/equipment_inspect.c:InspectEquipment
+    confidence: 0.93
+  reads:
+  - unit.items[5]:u16
+  - unit.states[]:u8
+  - unit.selected_ability_slots:u8[3]
+  - gItemAbilitySets[]:ItemAbilitySet
+  writes:
+  - unit.items[slot]:u16 temporarily changed then restored
+  - preview.result:u8 flags
+  invariants:
+  - The original item is restored before calling final proposed-set validation.
+  params:
+    equipment_slots:
+      value: 5
+      unit: slots
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:src/equipment_inspect.c:InspectEquipment
+        confidence: 0.93
+  relations:
+  - type: requires
+    target: job_mastery
+  - type: requires
+    target: equipment_ability_source
+- id: job_item_restrictions
+  facet: mechanics
+  label: Equipment category masks with explicit group exceptions
+  summary: The rule uses job properties to choose an equipment category mask and reads the item category. Category22
+    is restricted to group4; categories23 and25 also apply group4 restrictions to item IDs311,316 and287, without
+    resolving those IDs into names here.
+  instantiates:
+  - concept: mechanics.loadout.job_category_restrictions
+  evidence:
+  - kind: decomp_source
+    ref: ffta-decomp:src/job_item_eligibility.c:JobAllowsItem
+    confidence: 0.93
+  reads:
+  - job.properties1_36:u32
+  - gEquipmentClassMasks[]:u32
+  - item.category:u8
+  - item_id:u16
+  invariants:
+  - Most item categories require their category-minus-one mask bit.
+  - Category22 returns the group test directly.
+- id: job_flag_unlock
+  facet: progression
+  label: Ability range enables a job-related persistent flag
+  summary: The routine selects a candidate job interval from a unit field, then finds the first job whose inclusive
+    ability range contains the supplied index. It sets game flag job+3, unless either of two unit exclusion bits
+    is set; this does not recover every job availability prerequisite.
+  instantiates:
+  - concept: progression.skills.job_ability_range_unlock
+  evidence:
+  - kind: decomp_source
+    ref: ffta-decomp:src/job_ability_progress.c:EnableJobFlagForAbility
+    confidence: 0.93
+  reads:
+  - unit.field3:u32
+  - unit.field27:flags
+  - job.properties37_38:u8
+  - ability_index:u8
+  writes:
+  - gGameFlags[job+3]:bit
+  invariants:
+  - The first matching job ends the search.
+  - Excluded unit states produce no flag writes.
+  relations:
+  - type: requires
+    target: persistent_flags
+- id: paired_abilities
+  facet: mechanics
+  label: Conditional paired ability state copy
+  summary: For units whose field3 equals four, indices26 and33 mirror the full state byte when synchronization is
+    requested. Other field values and ability indices leave state unchanged; copying the full byte includes both
+    availability and low-bit progress.
+  instantiates:
+  - concept: mechanics.ability.synchronized_pair
+  evidence:
+  - kind: decomp_source
+    ref: ffta-decomp:src/ability_slots.c:SyncPairedAbilityState
+    confidence: 0.93
+  reads:
+  - unit.field3:u32
+  - ability_index:u8
+  - unit.states[]:u8
+  writes:
+  - unit.states[26 or33]:u8
+  invariants:
+  - Only the specific field3 condition enables this pairing.
+  relations:
+  - type: modulates
+    target: equipment_ability_source
+- id: opposing_status
+  facet: mechanics
+  label: Two opposing status counters cancel each other
+  summary: Setting the two quantities subtracts the lesser from the greater and stores only the residual side. Flag
+    bits0x20 and0x40 at unit offset0xEA track whether counters0xDA and0xDB are nonzero; their named gameplay effects
+    are intentionally unresolved.
+  instantiates:
+  - concept: mechanics.status.opposing_counters
+  evidence:
+  - kind: decomp_source
+    ref: ffta-decomp:src/unit_status.c:SetOpposingStateCounters
+    confidence: 0.93
+  - kind: decomp_source
+    ref: ffta-decomp:src/unit_counters.c:AddOpposingStateCounter
+    confidence: 0.93
+  reads:
+  - status.request_first:u8
+  - status.request_second:u8
+  - unit[0xda]:u8
+  - unit[0xdb]:u8
+  writes:
+  - unit[0xda]:u8
+  - unit[0xdb]:u8
+  - unit[0xea]:u8 flags
+  invariants:
+  - After SetOpposingStateCounters, at least one opposing counter is zero.
+  params:
+    ordinary_add:
+      value: 3
+      unit: counter units
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:src/unit_counters.c:AddOpposingStateCounter
+        confidence: 0.93
+    ordinary_cap:
+      value: 6
+      unit: counter units
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:src/unit_counters.c:AddOpposingStateCounter
+        confidence: 0.93
+- id: status_tick
+  facet: mechanics
+  label: Duration decrement with an indefinite sentinel
+  summary: Ticking checks the first opposing state before the second, reduces a nonzero ordinary counter by one
+    and clears the corresponding flag at zero. A high-bit sentinel returns without decrement; the function call
+    cadence is not known, so these units are not labelled turns or frames.
+  instantiates:
+  - concept: mechanics.status.indefinite_counter_bit
+  evidence:
+  - kind: decomp_source
+    ref: ffta-decomp:src/unit_status.c:TickOpposingStateCounters
+    confidence: 0.93
+  reads:
+  - unit[0xea]:u8 flags
+  - unit[0xda]:u8
+  - unit[0xdb]:u8
+  writes:
+  - unit[0xda]:u8
+  - unit[0xdb]:u8
+  - unit[0xea]:u8 flags
+  invariants:
+  - A selected counter with high bit set is preserved.
+  params:
+    indefinite_mask:
+      value: 128
+      unit: bitmask
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:src/unit_status.c:TickOpposingStateCounters
+        confidence: 0.93
+    tick_amount:
+      value: 1
+      unit: counter unit/call
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:src/unit_status.c:TickOpposingStateCounters
+        confidence: 0.93
+  relations:
+  - type: modulates
+    target: opposing_status
+- id: persistent_flags
+  facet: progression
+  label: Packed global flags and buffered save counterpart
+  summary: World-related flags are packed by byte index flag/8 and mask1<<(flag&7). The alternate-buffer helper
+    accesses the same bit organization at save-buffer offset0x1F70; flag meaning, allocation extent and durable
+    write protocol remain unextracted.
+  instantiates:
+  - concept: progression.world.persistent_world_flags
+  evidence:
+  - kind: decomp_source
+    ref: ffta-decomp:src/game_flags.c:SetGameFlag
+    confidence: 0.93
+  - kind: decomp_source
+    ref: ffta-decomp:src/game_flags.c:GetGameFlag
+    confidence: 0.93
+  - kind: decomp_source
+    ref: ffta-decomp:src/save_access.c:SetGameFlagInBuffer
+    confidence: 0.93
+  reads:
+  - flag_id:u16
+  - new_value:u16
+  writes:
+  - gGameFlags[]:u8
+  - save_buffer[0x1f70+flag/8]:u8
+  invariants:
+  - Only the addressed bit changes; no bounds check protects an invalid flag ID.
+- id: persistent_item_modifier
+  facet: economy
+  label: Selected item modifiers incorporate save bytes
+  summary: When save byte13 is zero, properties10 through13 apply selected save adjustments to item IDs51,302,148
+    and286, then use an unsigned upper clamp. The item modifiers are signed bytes, so the exact promotion and clamp
+    behavior is retained rather than redescribed as a generic stat buff; which combat stats these fields represent
+    is not established here.
+  instantiates:
+  - concept: economy.item.save_dependent_modifier
+  evidence:
+  - kind: decomp_source
+    ref: ffta-decomp:src/item.c:GetItemProperty
+    confidence: 0.93
+  - kind: decomp_source
+    ref: ffta-decomp:include/item.h:Item
+    confidence: 0.93
+  reads:
+  - item_id:u16
+  - item.modifiers[8]:s8
+  - save.bytes[1..4]:u8
+  - save.bytes[13]:u8
+  invariants:
+  - The alternate save-byte13 path returns the original signed modifier converted to u32.
+  params:
+    modified_path_upper_bound:
+      value: 255
+      unit: unsigned property units
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:src/item.c:GetItemProperty
+        confidence: 0.93
+- id: item_amount
+  facet: economy
+  label: Conditional percentage amount with lower floor
+  summary: An item property bit enables a table-selected percentage reduction, with another adjustment adding ten
+    reduction units. The amount is floored by a record field and a final zero result becomes one; without caller
+    evidence this numeric amount is not asserted to be a purchase price, resale value or reward count.
+  instantiates:
+  - concept: economy.item.adjusted_positive_amount
+  evidence:
+  - kind: decomp_source
+    ref: ffta-decomp:src/item_amount.c:CalculateItemAmount
+    confidence: 0.93
+  - kind: decomp_source
+    ref: ffta-decomp:src/item_adjustment.c:ItemAmountAdjustmentApplies
+    confidence: 0.93
+  reads:
+  - item.property02:u16
+  - item.half06:u16
+  - item.properties03[4]:u8 flags
+  - gAmountRecords10[].reduction:u8
+  - gSaveData.value:index
+  invariants:
+  - The routine never returns zero.
+  - For the adjusted path, the final result is at least item.half06 unless unsigned arithmetic assumptions are violated
+    upstream.
+  params:
+    additional_reduction:
+      value: 10
+      unit: percentage points
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:src/item_amount.c:CalculateItemAmount
+        confidence: 0.93
+    zero_result_replacement:
+      value: 1
+      unit: amount unit
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:src/item_amount.c:CalculateItemAmount
+        confidence: 0.93
+- id: random_stream
+  facet: mechanics
+  label: Deterministic fifteen-bit LCG output
+  summary: A shared 32-bit state advances by a multiply-add recurrence and returns bits16 through30. Explicit state
+    setter and state-address functions make deterministic replay possible, but this extraction does not assert which
+    item, combat or AI outcomes consume the stream.
+  instantiates:
+  - concept: mechanics.randomness.lcg_prng
+    weight: 0.6
+  evidence:
+  - kind: decomp_source
+    ref: ffta-decomp:src/random.c:NextRandom15
+    confidence: 0.93
+  reads:
+  - gRandomState:u32
+  writes:
+  - gRandomState:u32
+  invariants:
+  - Arithmetic wraps in the u32 state.
+  params:
+    multiplier:
+      value: 1103515245
+      unit: integer
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:src/random.c:NextRandom15
+        confidence: 0.93
+    increment:
+      value: 12345
+      unit: integer
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:src/random.c:NextRandom15
+        confidence: 0.93
+    output_bits:
+      value: 15
+      unit: bits
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:src/random.c:NextRandom15
+        confidence: 0.93
+- id: palette_raster
+  facet: rendering
+  label: Per-scanline palette updates
+  summary: The retained capture recorded derived.hblank_dma_targets ch2->0x05000000; derived.raster_frames.palette=4683
+    frames with >=32 lines. This identifies the destination and affected-line coverage, without attributing the
+    effect to a specific combat mechanic or claiming the complete coefficient schedule is recovered.
+  instantiates:
+  - concept: rendering.raster.hblank_dma_palette
+  evidence:
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.hblank_dma_targets ch2->0x05000000; derived.raster_frames.palette=4683 frames
+      with >=32 lines
+    confidence: 0.97
+- id: blend_raster
+  facet: rendering
+  label: Per-scanline blend coefficient updates
+  summary: The retained capture recorded derived.hblank_dma_targets ch0->0x04000052; derived.raster_frames.blend=162
+    frames with >=32 lines. This identifies the destination and affected-line coverage, without attributing the
+    effect to a specific combat mechanic or claiming the complete coefficient schedule is recovered.
+  instantiates:
+  - concept: rendering.raster.hblank_dma_blend
+  evidence:
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.hblank_dma_targets ch0->0x04000052; derived.raster_frames.blend=162 frames
+      with >=32 lines
+    confidence: 0.97
+- id: display_raster
+  facet: rendering
+  label: Per-scanline display-control updates
+  summary: The retained capture recorded derived.hblank_dma_targets ch3->0x04000000; derived.raster_frames.dispcnt_bgcnt=243
+    frames with >=32 lines. This identifies the destination and affected-line coverage, without attributing the
+    effect to a specific combat mechanic or claiming the complete coefficient schedule is recovered.
+  instantiates:
+  - concept: rendering.raster.hblank_dma_display_control
+  evidence:
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.hblank_dma_targets ch3->0x04000000; derived.raster_frames.dispcnt_bgcnt=243
+      frames with >=32 lines
+    confidence: 0.97
+- id: mode0_pipeline
+  facet: rendering
+  label: Tile mode zero throughout retained capture
+  summary: The capture mode histogram records mode zero for all9000 frames, with up to124 visible sprites and seven
+    affine sprites. This bounds the observed intro/front-end renderer; it does not establish that every later battle
+    and cinematic uses the same effects.
+  instantiates:
+  - concept: rendering.pipeline.tile_mode0
+  evidence:
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.video_modes_frames, max_sprites_visible, max_affine_sprites
+    confidence: 0.96
+- id: audio_channels
+  facet: audio
+  label: Captured PCM A and PSG activity
+  summary: The retained capture records DirectSound A on8500 frames, no B frames and a predominant15768 Hz timer-derived
+    rate. All PSG channels triggered but only channels two and three had nonzero playing-frame counts, distinguishing
+    triggers from sustained activity.
+  instantiates:
+  - concept: audio.engine.sample_psg_sequencer
+  evidence:
+  - kind: capture_telemetry
+    ref: capture:summary.json:derived.sound
+    confidence: 0.97
+- id: portrait_dialogue
+  facet: narrative_delivery
+  label: Portrait-bearing speech balloons in an in-engine scene
+  summary: The directly inspected frame shows a portrait and speech balloon over a snowy town scene occupied by
+    multiple characters. This grounds the presentation mechanism, while full dialogue scripts, emotion triggers
+    and the game-wide plot were not read.
+  instantiates:
+  - concept: narrative_delivery.dialogue.speaker_portrait
+  evidence:
+  - kind: capture_frame
+    ref: capture:frontend:keyframes/f005344.png
+    confidence: 0.97
+- id: isometric_projection
+  facet: projection
+  label: Oblique tile-like town presentation
+  summary: The directly inspected scene depicts a building whose two visible faces and oblique ground axes convey
+    depth, with upright sprite characters. No movement range, height traversal, camera rotation or tactical targeting
+    rules can be inferred solely from this intro image.
+  instantiates:
+  - concept: projection.isometric.pseudo_isometric_grid
+  evidence:
+  - kind: capture_frame
+    ref: capture:frontend:keyframes/f005188_scene.png
+    confidence: 0.96
+- id: snowy_setting
+  facet: setting
+  label: Snow-covered schoolyard-like settlement
+  summary: The viewed images show snow, a brick building, piled snow and bundled humanoid characters. The schoolyard-like
+    reading is visual inference; no named location, faction or narrative event is assigned from model recall.
+  instantiates:
+  - concept: setting.environment.snowy_settlement
+  evidence:
+  - kind: capture_frame
+    ref: capture:frontend:keyframes/f005344.png
+    confidence: 0.88
+  - kind: capture_frame
+    ref: capture:frontend:keyframes/f005188_scene.png
+    confidence: 0.88
+- id: inventory_byte_counts
+  facet: economy
+  label: Partitioned inventory with byte arithmetic before count cap
+  summary: Addition searches the item partition for an existing item, then an empty slot, and rejects zero item/quantity
+    or no available slot. The quantity addition wraps in the native byte before a99 cap is applied; this differs
+    from saturating an unbounded sum. Removal reduces the count to zero when exhausted but leaves the item ID stored,
+    so an empty count is not itself an empty slot. Caller limits on quantities and valid IDs remain unresolved.
+  instantiates:
+  - concept: economy.inventory.byte_count_before_cap
+  reads:
+  - argument.item_id:u16
+  - argument.quantity:u8
+  - inventory.entries[].item_id:u16
+  - inventory.entries[].quantity:u8
+  writes:
+  - inventory.entries[].item_id:u16 (only assigning an empty slot on add)
+  - inventory.entries[].quantity:u8
+  - return:i32 (0, failure-1, or native signed-byte excess)
+  params:
+    entry_bytes:
+      value: 4
+      unit: bytes
+      native_value: 4
+      native_unit: sizeof InventoryEntry
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:include/inventory.h:InventoryEntry
+        confidence: 0.95
+    count_cap:
+      value: 99
+      unit: items per entry after byte wrapping
+      native_value: 99
+      native_unit: u8 count
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:src/inventory.c:AddInventoryItem
+        confidence: 0.95
+    partition_slots:
+      value:
+      - 361
+      - 14
+      unit: entry slots (ordinary, special IDs362..375)
+      evidence:
+      - kind: decomp_source
+        ref: ffta-decomp:include/inventory_internal.h:InventoryForItem
+        confidence: 0.95
+  invariants:
+  - For addition, cap testing observes (old_count+quantity) modulo256, not an unbounded sum; e.g90+200 becomes34.
+    Caller reachability of that input is not established.
+  - A count reduced to zero does not clear item ID in RemoveInventoryItem. Slot vacancy in AddInventoryItem is tested
+    by item ID==0.
+  - The special partition is selected only for item IDs362 through375. Other IDs use the ordinary partition; this
+    helper is not a valid-item-ID validator.
+  - The overflow result uses native signed-byte conversion, so a positive mathematical excess is not guaranteed
+    to be a positive returned integer.
+  - No acquisition strategy or inventory exploit is established without callers and gameplay trajectories.
+  evidence:
+  - kind: decomp_source
+    ref: ffta-decomp:src/inventory.c:AddInventoryItem
+    confidence: 0.95
+  - kind: decomp_source
+    ref: ffta-decomp:src/inventory.c:RemoveInventoryItem
+    confidence: 0.95
+  - kind: decomp_source
+    ref: ffta-decomp:include/inventory_internal.h:InventoryForItem
+    confidence: 0.95
+  - kind: ghidra_function
+    ref: ghidra:0x080ca900 (run20261016T005416-27dd13); direct Thumb comparison in shard-c/semantic_spotcheck.json
+    confidence: 0.85
+    note: Byte wrap/cap behavior cross-checked against source and ROM. Original generated signature incorrectly
+      says void; do not infer return ABI from it.
+proposed_concepts:
+- id: economy.inventory.byte_count_before_cap
+  label: Byte count with wrap before cap
+  definition: Inventory counts are stored in bytes, so arithmetic wraps before a separate count cap is tested; slot
+    identity and zero quantity are distinct state.
+- id: progression.skills.equipment_available_mastered
+  label: Equipment availability distinct from mastery
+  definition: Equipment can make an ability available while permanent mastery is tracked separately by progress
+    toward a requirement.
+- id: progression.skills.job_ability_range_unlock
+  label: Ability-range job flag unlock
+  definition: An acquired ability within a job-specific index range enables a corresponding persistent job flag.
+- id: mechanics.loadout.job_category_restrictions
+  label: Job-conditioned equipment eligibility
+  definition: Job properties, item categories and explicit exceptions determine whether equipment is allowed.
+- id: mechanics.loadout.ability_loss_preview
+  label: Equipment change previews ability loss
+  definition: A tentative equipment replacement checks whether selected unmastered abilities lose their remaining
+    source.
+- id: mechanics.data.inherited_job_properties
+  label: Inherited job properties
+  definition: A job-property lookup can redirect to another job record or a caller-provided fallback before resolving
+    a value.
+- id: mechanics.status.opposing_counters
+  label: Opposing state counters cancel
+  definition: Two status quantities subtract from each other and leave at most one active residual counter.
+- id: mechanics.status.indefinite_counter_bit
+  label: Sentinel bit suppresses status ticking
+  definition: A status duration counter with a sentinel bit is preserved while ordinary counters decrement.
+- id: mechanics.ability.data_driven_definition
+  label: Data-driven ability definitions
+  definition: Ability definitions expose cost, range, area, power, effects and flags through an indexed property
+    API.
+- id: mechanics.ability.synchronized_pair
+  label: Paired ability state synchronization
+  definition: A conditional ability relationship copies availability and progress state between linked indices.
+- id: economy.item.save_dependent_modifier
+  label: Save-conditioned item modifier
+  definition: An item property incorporates a persistent adjustment subject to a selected rule and clamp.
+- id: economy.item.adjusted_positive_amount
+  label: Adjusted positive item amount
+  definition: An item-associated numeric amount applies a percentage reduction and a minimum bound before returning
+    a positive result.
+- id: rendering.raster.hblank_dma_palette
+  label: Per-scanline palette DMA
+  definition: Horizontal-blank DMA changes palette entries across scanlines to produce scanline-dependent colors.
+- id: rendering.raster.hblank_dma_blend
+  label: Per-scanline blend DMA
+  definition: Horizontal-blank DMA changes blend coefficients across scanlines.
+- id: rendering.raster.hblank_dma_display_control
+  label: Per-scanline display-control DMA
+  definition: Horizontal-blank DMA changes display or background control registers across scanlines.
+- id: setting.environment.snowy_settlement
+  label: Snow-covered settlement
+  definition: The visible setting presents a settlement whose outdoor ground and structures include snow.
+- id: rendering.pipeline.tile_mode0
+  label: Hardware tile mode zero
+  definition: A captured display pipeline uses hardware tile mode zero, without implying every layer is enabled.
+- id: narrative_delivery.dialogue.speaker_portrait
+  label: Speaker portrait dialogue
+  definition: Dialogue text is accompanied by a portrait identifying or depicting the speaker.
+open_questions:
+- 'PARTIAL: trace tactical turn order, movement/range/height rules, law enforcement, combat outcomes, AI, victory/loss,
+  mission unlocks and narrative before claiming a full game ontology.'
+- Recover global ability IDs to per-unit state indices and editable list semantics; shared numeric values alone
+  do not prove equivalence.
+- Map the opposing0xDA/0xDB counters and their sentinel to named effects only after tracing callers; no haste/slow
+  labels or duration-in-turns guesses were made.
+- Trace item amount callers to determine whether the formula is a buy/sell/resource quantity, then recover actual
+  item stats, equipment abilities and job table values.
+- The equipment preview temporarily mutates the unit and restores it. Review all callers before treating its response
+  flags as a player-visible UI guarantee.
+- Ability name text has documented edit tooling but full dialogue/story and UI layout were not extracted. No original
+  ROM strings or code were copied into this ontology.
+- Retained capture contains an introductory snowy settlement and dialogue. Gameplay classification from a local
+  model does not prove that the frame shows tactical combat or controllable exploration.
+- No post-intro combat frame or audio waveform was personally inspected/listened to; hardware audio facts are capture
+  telemetry only.
+- Validate per-byte unsigned/signed promotion edge cases against compiled source before changing numerical rules.
+  Original routines often omit bounds checks.

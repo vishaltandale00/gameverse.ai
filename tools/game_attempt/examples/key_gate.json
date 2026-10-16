@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "candidate_id": "ontology-key-gate-reference",
+  "title": "Field Key Expedition",
+  "intent": "Create a small top-down exploration reference game combining simplified Emerald-like tile movement and Zero Mission-like equipment gates. Collect an upgrade, return to a barrier, open it and reach a new area. Use original abstract geometry, with no copied game assets.",
+  "components": [
+    {
+      "game_id": "pokemon-emerald-version",
+      "component_id": "grid_step_locomotion",
+      "adaptation": "A simplified four-direction one-cell movement template. It does not reproduce Emerald's turn-in-place, frame timing or speed variants."
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "component_id": "ability_gating_graph",
+      "adaptation": "A simplified collectible key unlocks a typed barrier. It does not reproduce Zero Mission's owned/active equipment flags or native movement gates."
+    }
+  ],
+  "constraints": {"max_width": 12, "max_height": 8, "max_episode_steps": 80}
+}

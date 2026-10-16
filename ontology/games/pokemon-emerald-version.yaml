@@ -1,0 +1,4562 @@
+schema_version: 0
+id: pokemon-emerald-version
+game:
+  title: Pokémon Emerald Version
+  platform: gba
+  game_code: BPEE
+  rom_sha1: f3ae088181bf583e55daf962a92bb46f4f1d07b7
+  year: 2004
+  developer: Game Freak
+  derived_genres:
+  - monster_collecting_rpg
+  - turn_based_rpg
+  - top_down_adventure
+  evidence_basis:
+  - decomp_source
+  - capture_telemetry
+  - capture_frame
+  - derived
+  - llm_knowledge
+  sources:
+  - kind: decomp
+    ref: https://github.com/pret/pokeemerald @ 731ad5bfd6e6f265508d0efcca0ba42f9dcf5881 (local/decomps/pokeemerald; rom.sha1
+      in repo matches this ROM's SHA1 f3ae0881...; symbols/pokeemerald.sym present)
+  - kind: rom_header
+    ref: local/re/roms.json id=pokemon-emerald-version (header title POKEMON EMER, maker 01, version 0, 16 MiB)
+  - kind: captures
+    ref: local/captures/pokemon-emerald-version/ run 20261015T234415-8f46cf (attract 3600 frames no input; frontend
+      5400 frames with START x2 then A every 60 frames; RTC fixed at 2024-01-01T00:00Z); never reaches the overworld
+  - kind: extraction_run
+    ref: claude-opus-5-5, brief v1, 2026-10-16T03:56Z-2026-10-16T04:21Z (~25 min wall), ~45 decomp files opened or
+      grepped (~30 read at function level), capture summary/phase/telemetry for 2 phases, 24 keyframes viewed
+  - kind: extraction_review
+    ref: Codex/GPT source audit 2026-10-16; exact model revision unavailable. Reviewed GetWhoStrikesFirst, random.c/random.h and ITEM_QUICK_CLAW; corrected and expanded turn-order evidence. See ontology/research/gpt-source-pilot-2026-10-16.json. No win-rate or strategy validation.
+conventions:
+  units_convention: 'Overworld positions are in pixels on a grid of 16x16 px metatiles ("tiles"); sprites move in
+    whole pixels per frame (no sub-pixel accumulation). Durations are frames at ~59.73 Hz (the decomp fanfare comment
+    uses 59.7275 fps); seconds = frames / 59.73. Screen is 240x160 px = 15x10 metatiles. Battle quantities are integers
+    with truncating division at every step (order of operations matters; multipliers are written as N/10 or N/100
+    as in the source). Probabilities from Random() are u16 draws (0..65535); "x % N" draws are treated as uniform.'
+  rng_convention: 'Random() is a 32-bit LCG x = 1103515245*x + 24691 returning the high 16 bits; it advances once
+    per VBlank outside link/frontier/recorded battles in addition to every call site.'
+  component_scope: 'Gen-3 engine components shared with Ruby/Sapphire/FireRed/LeafGreen (pending their own decomposition):
+    main_loop_and_callbacks, flash_save_system, whiteout_respawn, bg_window_sprite_engine, metatile_map_renderer, overworld_weather_effects,
+    scanline_effects_and_transitions, player_locked_tile_camera, top_down_oblique_projection, grid_step_locomotion,
+    tile_collision_and_elevation, ledge_jump, forced_movement_tiles, mach_bike, acro_bike, water_traversal, script_engine,
+    rng_lcg, monster_data_model, stat_calculation, battle_engine_core, turn_order, damage_formula, type_chart, stat_stages_accuracy_crit,
+    status_conditions, abilities_and_held_items, battle_weather, double_battles, catch_formula, wild_encounter_tables,
+    breeding_daycare, rtc_time_events, pokemon_contests, secret_bases, trainer_ai_move_scoring, trainer_ai_switch_and_items,
+    contest_ai, trainer_line_of_sight, npc_movement_types, exp_and_leveling, evolution_rules, gym_badge_progression,
+    hm_field_move_gating, pokedex_completion, money_and_prize, inventory_and_storage, berry_farming, battle_interface,
+    start_menu_hub, input_controls, dialogue_text_printer, m4a_sound_engine, map_music_and_fanfares. Emerald-specific
+    content or variants: copyright_and_intro_cinematic, title_screen, main_menu_and_new_game (Birch/Lotad version),
+    battle_frontier, battle_palace_nature_ai, trainer_rematches_match_call, scripted_story_events, hoenn_setting (Hoenn
+    shared with R/S). Engine components are still extracted from Emerald code, so Emerald-only branches are called
+    out in variants or invariants.'
+  stat_notation: 'Stats: HP, Atk, Def, Spe, SpA, SpD. Stat stages run -6..+6 (stored 0..12, 6 = neutral). Types 0-8
+    (Normal..Steel) are physical, 10-17 (Fire..Dark) special; type 9 is the ??? (Mystery) type.'
+components:
+- id: main_loop_and_callbacks
+  facet: frontend
+  label: Two-callback main loop with task scheduler and soft reset
+  summary: 'AgbMain reads keys, checks the soft-reset chord, then calls gMain.callback1 and callback2 each frame and
+    waits for VBlank; every screen (copyright, title, menus, overworld, battle) is a callback2 with its own gMain.state
+    machine, and cooperative work runs as up to 16 tasks. VBlank copies buffered GPU registers, services DMA3 requests,
+    runs the m4a sound mixer and advances the RNG once. A VCount interrupt is armed at line 150. Key repeat starts after
+    40 frames and repeats every 5.'
+  instantiates:
+  - concept: frontend.flow.mode_state_machine
+  - concept: frontend.soft_reset.button_combo
+  reads:
+  - input.buttons.held
+  - main.callback1
+  - main.callback2
+  - save.soft_reset_disabled
+  writes:
+  - main.callback2
+  - main.state
+  - rng.state
+  - io.*
+  params:
+    soft_reset_keys:
+      value: A+B+Start+Select
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/main.c:AgbMain (JOY_HELD_RAW(A_BUTTON) && B_START_SELECT)
+        confidence: 0.95
+    task_slots:
+      value: 16
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/task.h:NUM_TASKS
+        confidence: 0.95
+    key_repeat_start_delay:
+      value: 40
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/main.c:InitKeys (gKeyRepeatStartDelay)
+        confidence: 0.95
+    key_repeat_continue_delay:
+      value: 5
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/main.c:InitKeys (gKeyRepeatContinueDelay)
+        confidence: 0.95
+    vcount_irq_line:
+      value: 150
+      unit: scanline
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/main.c:EnableVCountIntrAtLine150
+        confidence: 0.95
+      - kind: capture_telemetry
+        ref: capture:attract:raster.vcount_irq_frames=3598/3600; capture:frontend:vcount_irq_frames=5398/5400
+        confidence: 0.9
+  invariants:
+  - Soft reset is ignored while gSoftResetDisabled is set (save writes).
+  - SetMainCallback2 always resets gMain.state to 0, so every screen starts its init state machine from scratch.
+  - Without flash memory present the game sets callback2 to NULL and stops.
+  relations:
+  - type: requires
+    target: rng_lcg
+    note: VBlankIntr advances Random() every frame
+  - type: requires
+    target: m4a_sound_engine
+    note: m4aSoundMain runs in VBlank
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/main.c:AgbMain
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/main.c:VBlankIntr
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/main.c:SetMainCallback2
+    confidence: 0.95
+- id: copyright_and_intro_cinematic
+  facet: frontend
+  label: Copyright screen and three-scene skippable intro cinematic
+  summary: 'Boot shows a copyright screen (which also listens for a GameCube multiboot link for Colosseum/Box) and
+    then the intro: scene 1 Game Freak logo over dripping leaves with a Flygon silhouette, scene 2 the player cycling
+    with Torchic, Manectric, Volbeat and Flygon, scene 3 Groudon vs Kyogre ending with Rayquaza, then the title. Any
+    new key press (once no palette fade is active) jumps to the title. In the capture the full cinematic runs ~3230
+    frames (~54 s) before the title appears.'
+  instantiates:
+  - concept: frontend.intro.skippable_story_intro
+  - concept: frontend.boot.publisher_logos
+  - concept: narrative_delivery.cutscene.in_engine_cutscene
+    weight: 0.4
+  reads:
+  - input.buttons.pressed
+  - palette_fade.active
+  - intro.frame_counter
+  writes:
+  - main.callback2
+  - intro.frame_counter
+  params:
+    scene_count:
+      value: 3
+      unit: scenes after the copyright screen
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/intro.c (file header comment, Task_Scene1_Load..Task_Scene3_Rayquaza)
+        confidence: 0.95
+    scene2_start:
+      value: 1026
+      unit: frames into intro
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/intro.c:TIMER_START_SCENE_2
+        confidence: 0.95
+    scene3_start:
+      value: 2068
+      unit: frames into intro
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/intro.c:TIMER_START_SCENE_3
+        confidence: 0.95
+    copyright_screen_duration:
+      value: 191
+      unit: frames (capture, ~3.2 s)
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:attract:frames 13-204 DISPCNT 0x0140 (mode 0, BG0 only) then 208+ GF-logo scene
+        confidence: 0.7
+    attract_to_title:
+      value: 3238
+      unit: frames from power-on until title DISPCNT appears (no input)
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:attract:frame 3238 DISPCNT 0xB441 (mode 1, BG0/BG2 + OBJ + WIN0/OBJWIN)
+        confidence: 0.85
+  invariants:
+  - Input during an active palette fade is ignored by the skip check.
+  - Scenes 1-2 render in mode 0; scene 3 legendaries switch to mode 1 with an affine BG2.
+  relations:
+  - type: part_of
+    target: main_loop_and_callbacks
+  - type: requires
+    target: scanline_effects_and_transitions
+    condition: scene 3 (HBlank DMA scroll on BG scroll registers during the legendary fight)
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/intro.c:MainCB2_Intro
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/intro.c:CB2_InitCopyrightScreenAfterBootup
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokeemerald:src/intro.c:SetUpCopyrightScreen (GameCubeMultiBoot_Main)
+    confidence: 0.85
+  - kind: capture_frame
+    ref: capture:attract:keyframes f000150 (copyright), f000366 (GF logo), f001850 (bike scene), f002358/f002776 (Groudon/clouds)
+    confidence: 0.85
+  - kind: capture_telemetry
+    ref: capture:attract:frames 2285-2719 DISPCNT mode 1 with BG2CNT affine, HDMA bg_scroll group active
+    confidence: 0.75
+- id: title_screen
+  facet: frontend
+  label: Mode-1 title with affine logo, wavy clouds and intro loop
+  summary: 'Title setup fades from white, slides the Pokémon logo (256-colour affine BG2) up, shines it, alpha-fades
+    in the EMERALD VERSION banner, then shows PRESS START over Rayquaza (BG0) and clouds (BG1) whose horizontal scroll
+    is rippled per scanline by an HBlank-DMA sine wave. A/B/Start/Select skip each phase; A or Start opens the main
+    menu. There is no gameplay demo: when the non-looping title BGM ends the game fades back to the copyright screen
+    and replays the intro. Held combos open maintenance screens (B+Select+Up clear save, B+Select+Left reset RTC,
+    B+Select berry-glitch fix).'
+  instantiates:
+  - concept: frontend.title.press_start_menu
+    weight: 0.5
+  - concept: frontend.title.idle_loop_to_logos
+  - concept: frontend.title.hidden_maintenance_combos
+  - concept: rendering.background.affine_rotscale
+    weight: 0.5
+  - concept: rendering.raster.hblank_dma_scroll_distortion
+    weight: 0.5
+  reads:
+  - input.buttons.pressed
+  - input.buttons.held
+  - bgm.status
+  writes:
+  - main.callback2
+  - io.bg2x
+  - io.bg2y
+  - io.bg1hofs
+  - io.bldalpha
+  params:
+    phase1_logo_shine:
+      value: 256
+      unit: frames (shines at counter 176 and 64)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/title_screen.c:CB2_InitTitleScreen (tCounter = 256) / Task_TitleScreenPhase1
+        confidence: 0.95
+    phase2_banner_delay:
+      value: 144
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/title_screen.c:Task_TitleScreenPhase1 (tCounter = 144)
+        confidence: 0.95
+    cloud_wave:
+      value: 'ScanlineEffect_InitWave(lines 0-160, frequency 4, amplitude 4) on BG1HOFS'
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/title_screen.c:CB2_InitTitleScreen (case 5)
+        confidence: 0.95
+      - kind: capture_telemetry
+        ref: capture:attract:hblank_dma_targets ch0->0x04000014 (BG1HOFS), bg_scroll hdma_frames_ge32=697, hdma_max_lines=160
+        confidence: 0.9
+    cloud_vertical_scroll:
+      value: 0.25
+      unit: px/frame (BG1 Y = counter/2 incremented every other frame)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/title_screen.c:Task_TitleScreenPhase3
+        confidence: 0.85
+    clear_save_combo:
+      value: B+Select+Up
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/title_screen.c:CLEAR_SAVE_BUTTON_COMBO
+        confidence: 0.95
+    reset_rtc_combo:
+      value: B+Select+Left
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/title_screen.c:RESET_RTC_BUTTON_COMBO
+        confidence: 0.95
+    title_mode1_frames:
+      value: 193
+      unit: frames of mode 1 in the frontend phase (title shown ~3 s before START)
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:frontend:video.mode_frames [5195, 193, ...]
+        confidence: 0.8
+  invariants:
+  - Returning to the intro is triggered by the title BGM finishing, not by an idle counter.
+  - The logo layer is a 256-colour affine BG; clouds and Rayquaza are 16-colour text BGs.
+  relations:
+  - type: part_of
+    target: main_loop_and_callbacks
+  - type: requires
+    target: scanline_effects_and_transitions
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/title_screen.c:CB2_InitTitleScreen
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/title_screen.c:Task_TitleScreenPhase2
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/title_screen.c:Task_TitleScreenPhase3
+    confidence: 0.95
+  - kind: capture_frame
+    ref: capture:frontend:keyframe f000451_scene (title with Rayquaza silhouette, clouds, PRESS START)
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: capture:frontend:frames 309-502 DISPCNT 0xB441/0x1741 mode 1, BLDCNT 0x2142 BLDALPHA 0x0F06, HDMA bg_scroll
+    confidence: 0.85
+- id: main_menu_and_new_game
+  facet: frontend
+  label: Continue/New Game menu, professor introduction and character creation
+  summary: 'The main menu offers CONTINUE (if a valid save exists), NEW GAME, OPTION and, when unlocked, MYSTERY GIFT
+    and MYSTERY EVENTS. New Game runs Professor Birch''s speech on a spotlight platform with Lotad, a boy/girl choice,
+    the naming keyboard and a yes/no confirmation, then shrinks the player sprite into the truck intro. The trainer
+    ID is the value of hardware Timer 1, started when the naming screen opens and read when it closes. New saves start
+    with 3000 money and the player in the moving truck.'
+  instantiates:
+  - concept: frontend.intro.new_game_prologue
+    weight: 0.5
+  - concept: frontend.menu.main_menu
+  - concept: frontend.menu.name_entry_grid
+  - concept: narrative_delivery.dialogue.typewriter_dialogue
+    weight: 0.4
+  reads:
+  - save.status
+  - input.buttons.pressed
+  - timer1.counter
+  writes:
+  - player.gender
+  - player.name
+  - player.trainer_id
+  - rng.state
+  - save.*
+  params:
+    menu_layouts:
+      value: 4
+      unit: 'layouts: no save / save / +mystery gift / +mystery events'
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/main_menu.c (HAS_NO_SAVED_GAME..HAS_MYSTERY_EVENTS)
+        confidence: 0.95
+    starting_money:
+      value: 3000
+      unit: money
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/new_game.c:NewGameInitData (SetMoney 3000)
+        confidence: 0.95
+    birch_speech_steps:
+      value: 32
+      unit: task states
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/main_menu.c (Task_NewGameBirchSpeech_* functions)
+        confidence: 0.8
+  invariants:
+  - The trainer ID and the RNG seed come from the same Timer 1 read (SeedRngAndSetTrainerId), so time spent naming
+    determines both.
+  - New Game resets the RTC only when the save is empty or corrupt.
+  relations:
+  - type: requires
+    target: flash_save_system
+  - type: modulates
+    target: rng_lcg
+    note: naming-screen exit seeds the RNG
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/main_menu.c:Task_MainMenuCheckSaveFile
+    confidence: 0.8
+  - kind: decomp_source
+    ref: pokeemerald:src/main.c:SeedRngAndSetTrainerId
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/naming_screen.c (StartTimer1 / SeedRngAndSetTrainerId call sites)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/new_game.c:NewGameInitData
+    confidence: 0.95
+  - kind: capture_frame
+    ref: capture:frontend:keyframes f000694..f005385 (Birch, Lotad, gender sprite, name prompt, LITTLEROOT dialogue)
+    confidence: 0.9
+  - kind: capture_telemetry
+    ref: capture:frontend:frames 504-681 DISPCNT 0x3140 + WIN0 menu highlight; 683-4165 BLDCNT 0x0250 sprite fades; 4172 all four BGs (naming screen)
+    confidence: 0.75
+- id: flash_save_system
+  facet: frontend
+  label: Save-anywhere 128 KiB flash with rotating two-slot sector saves
+  summary: 'The player saves anywhere from the start menu. Flash is 32 sectors of 4 KiB: two 14-sector save slots
+    (SaveBlock2, four SaveBlock1 sectors, nine PC-storage sectors) that alternate on each save, plus Hall of Fame (2),
+    Trainer Hill and recorded-battle sectors. Each sector has a 3968-byte payload, a 16-bit folded checksum, a signature
+    and a save counter; the slot with the higher valid counter loads. The sector order inside a slot rotates by one
+    per save to spread flash wear, and the save blocks are relocated at a random RAM offset with a random encryption
+    key for money/items (anti-memory-editing).'
+  instantiates:
+  - concept: frontend.save.checksummed_flash_record
+    weight: 0.5
+  - concept: frontend.save.redundant_slot_backup
+  - concept: frontend.save.save_anywhere
+  reads:
+  - save.counter
+  - save.sectors[*]
+  writes:
+  - save.sectors[*]
+  - save.counter
+  - save.encryption_key
+  params:
+    sector_count:
+      value: 32
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/save.h:SECTORS_COUNT
+        confidence: 0.95
+    sectors_per_slot:
+      value: 14
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/save.h:NUM_SECTORS_PER_SLOT
+        confidence: 0.95
+    sector_payload:
+      value: 3968
+      unit: bytes (plus 128-byte footer)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/save.h:SECTOR_DATA_SIZE
+        confidence: 0.95
+    checksum:
+      value: sum of u32 words, then (sum >> 16) + sum truncated to u16
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/save.c:CalculateChecksum
+        confidence: 0.95
+  invariants:
+  - A failed write restores the previous sector rotation and save counter so the older slot stays authoritative.
+  - Soft reset is disabled while sectors are written.
+  relations:
+  - type: part_of
+    target: main_loop_and_callbacks
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/save.c:WriteSaveSectorOrSlot
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/save.c:UpdateSaveAddresses
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/load_save.c (SaveBlock ASLR offset = (offset + Random()) & mask; encryptionKey from Random)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/start_menu.c:sStartMenuItems (MENU_ACTION_SAVE)
+    confidence: 0.9
+- id: whiteout_respawn
+  facet: frontend
+  label: Whiteout to last heal point with half-money penalty
+  summary: 'When every party Pokémon faints (or the player loses a trainer battle) there is no game over screen: the
+    whiteout script runs, money is halved, the party is fully healed and the player warps to the last Pokémon Center
+    or home used as a heal location. Progress since the last save is kept because nothing is reloaded.'
+  instantiates:
+  - concept: frontend.game_over.respawn_at_checkpoint_with_penalty
+  reads:
+  - party[*].hp
+  - player.last_heal_location
+  writes:
+  - player.money
+  - party[*].hp
+  - party[*].status
+  - player.position
+  params:
+    money_penalty:
+      value: 0.5
+      unit: fraction of money kept (integer halving)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/overworld.c:DoWhiteOut
+        confidence: 0.95
+  invariants:
+  - Whiteout never reloads the save file; world state persists.
+  relations:
+  - type: modulates
+    target: money_and_prize
+  - type: requires
+    target: battle_engine_core
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/overworld.c:DoWhiteOut
+    confidence: 0.95
+- id: bg_window_sprite_engine
+  facet: rendering
+  label: Mode-0 four-BG tile engine with text windows, 64-sprite OAM and palette fades
+  summary: 'Nearly everything renders in mode 0 with four text backgrounds managed through buffered BG templates,
+    up to 32 text windows drawn into BG tilemaps, and a 64-slot sprite system with animation and affine command scripts
+    that builds OAM each frame. A global palette-fade engine blends the buffered palettes toward a colour (typically
+    black or white) and BLDY/BLDALPHA are used for screen and sprite fades. Battle animations and the intro lean on
+    affine sprites (ObjAffineSet is the second most frequent BIOS call in the capture). Mode 1 is used only for affine
+    title/intro layers and a few special screens.'
+  instantiates:
+  - concept: rendering.background.tile_layer_stack
+  - concept: rendering.sprite.affine_rotscale
+    weight: 0.6
+  - concept: rendering.blending.brightness_fade
+    weight: 0.6
+  - concept: rendering.blending.alpha_layer_transparency
+    weight: 0.4
+  reads:
+  - sprites[*]
+  - windows[*]
+  - palette.unfaded
+  writes:
+  - oam.*
+  - io.bgcnt[0..3]
+  - io.dispcnt
+  - palette.faded
+  - io.bldcnt
+  - io.bldy
+  params:
+    sprite_slots:
+      value: 64
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/sprite.h:MAX_SPRITES
+        confidence: 0.95
+    text_windows:
+      value: 32
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/window.h:WINDOWS_MAX
+        confidence: 0.95
+    mode0_frame_share:
+      value: 0.89
+      unit: fraction of captured frames in mode 0 (7991 of 8976 non-blank)
+      evidence:
+      - kind: derived
+        ref: capture summary video_modes_frames {0:7991, 1:985}
+        inputs:
+        - capture:summary.derived.video_modes_frames
+        confidence: 0.8
+    max_sprites_visible:
+      value: 33
+      unit: sprites (front-end only)
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:summary.derived.max_sprites_visible=33, max_affine_sprites=13
+        confidence: 0.8
+    obj_affine_bios_calls:
+      value: 6159
+      unit: ObjAffineSet SWI calls over 9000 frames
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:summary.derived.swi_top10 (CpuSet 11177, ObjAffineSet 6159, BgAffineSet 415)
+        confidence: 0.85
+  invariants:
+  - GPU register writes are buffered and copied in VBlank, so mid-frame register state changes only through HBlank
+    DMA (scanline effects) or VCount handlers.
+  relations:
+  - type: part_of
+    target: main_loop_and_callbacks
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/overworld.c (overworld BgTemplates bg0-3 priority 0-3, mapBase 31/29/28/30)
+    confidence: 0.85
+  - kind: capture_telemetry
+    ref: capture:attract+frontend video.mode_frames, blend_frames (alpha 4026, brighten 401, darken 155), obj_affine_frames 692
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/title_screen.c:CB2_InitTitleScreen (BeginNormalPaletteFade from white)
+    confidence: 0.8
+- id: metatile_map_renderer
+  facet: rendering
+  label: Three-layer 16x16 metatile map renderer with paired tilesets and animated tiles
+  summary: 'Maps are grids of u16 blocks: 10-bit metatile id, 2-bit collision and 4-bit elevation. Each metatile is
+    eight 8x8 tiles (bottom and top 2x2 layers) plus an attribute word holding an 8-bit behaviour and a layer type
+    that decides which of BG1 (above sprites), BG2 and BG3 receive the layers: NORMAL draws bottom to BG2 and top to
+    BG1 so treetops and roofs cover the player; COVERED draws to BG3/BG2 (both under sprites); SPLIT uses BG3 and
+    BG1. A layout pairs a primary tileset (shared, 512 tiles/metatiles, 6 palettes) with a secondary per-town tileset
+    (512 more, 7 palettes); tileset callbacks DMA new tile graphics on a 16-frame cycle to animate water, flowers and
+    waterfalls. Outside the layout, border metatiles repeat; connected maps are stitched in at edges.'
+  instantiates:
+  - concept: rendering.background.metatile_occlusion_layers
+  - concept: rendering.background.metatile_streaming
+  - concept: rendering.tiles.animated_tile_swap
+  - concept: rendering.background.tile_layer_stack
+    weight: 0.5
+  reads:
+  - map.layout.blocks
+  - map.tilesets.primary
+  - map.tilesets.secondary
+  - map.connections
+  - frame_counter
+  writes:
+  - bg_tilemap[1..3]
+  - vram.tiles
+  params:
+    metatile_size:
+      value: 16
+      unit: px (2x2 tiles per layer, 2 layers)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/field_camera.c:DrawMetatile
+        confidence: 0.95
+    metatile_id_bits:
+      value: 10
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/global.fieldmap.h:MAPGRID_METATILE_ID_MASK
+        confidence: 0.95
+    primary_tileset_capacity:
+      value: 512
+      unit: tiles and metatiles (secondary adds 512; 6 + 7 palettes)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/fieldmap.h:NUM_TILES_IN_PRIMARY, NUM_PALS_IN_PRIMARY, NUM_PALS_TOTAL
+        confidence: 0.95
+    max_map_blocks:
+      value: 10240
+      unit: blocks (layout plus border padding)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/fieldmap.h:MAX_MAP_DATA_SIZE
+        confidence: 0.9
+    tile_anim_period:
+      value: 16
+      unit: frames per animation step (General tileset staggers flower, water, sand edge, waterfall, land edge on frames 0-4)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/tileset_anims.c:TilesetAnim_General
+        confidence: 0.95
+    map_count:
+      value: 518
+      unit: map folders in data/maps
+      evidence:
+      - kind: derived
+        ref: ls data/maps (519 entries incl. map_groups.json)
+        inputs:
+        - pokeemerald:data/maps
+        confidence: 0.7
+  invariants:
+  - BG1 (priority 1) is always above overworld sprites, so the NORMAL layer type is how foreground occlusion is authored.
+  - Metatile ids below 512 come from the primary tileset, others from the secondary.
+  relations:
+  - type: part_of
+    target: bg_window_sprite_engine
+  - type: requires
+    target: player_locked_tile_camera
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:include/global.fieldmap.h (MAPGRID_* and METATILE_ATTR_* masks, METATILE_LAYER_TYPE_*)
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/field_camera.c:DrawMetatile
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:include/global.fieldmap.h:struct MapLayout, struct Tileset, struct MapHeader, struct MapConnection
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/tileset_anims.c:TilesetAnim_General
+    confidence: 0.9
+- id: overworld_weather_effects
+  facet: rendering
+  label: Map weather with particle sprites, palette colour maps and blend layers
+  summary: 'Each map header names a weather; coordinate events can change it. Weather is a callback set (init, main,
+    finish) per type: rain/thunderstorm/downpour spawn rain sprites and darken palettes via colour-map index 3 (thunder
+    adds flashes), snow and volcanic ash spawn particles, fog and sandstorm draw a semi-transparent BG/sprite layer,
+    shade darkens, drought brightens with a pulsing BLDY lighten and dedicated colour tables, underwater bubbles
+    rise. Route 119/123 cycle weathers and the "abnormal" weather alternates rain and drought during the Groudon/Kyogre
+    crisis. Rain/sandstorm/drought carry into battle as battle weather.'
+  instantiates:
+  - concept: mechanics.environment.weather_states
+  - concept: rendering.palette.runtime_palette_effects
+  - concept: rendering.blending.alpha_layer_transparency
+    weight: 0.5
+  reads:
+  - map.header.weather
+  - weather.current
+  writes:
+  - weather.current
+  - palette.faded
+  - io.bldcnt
+  - io.bldalpha
+  - io.bldy
+  - sprites[weather]
+  params:
+    weather_types:
+      value: 16
+      unit: weather ids 0-15 (+2 cycling route ids); SNOW, FOG_DIAGONAL, UNDERWATER marked unused
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/weather.h
+        confidence: 0.95
+    rain_color_map_index:
+      value: 3
+      unit: darker colour-map step (0 = normal)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/field_weather_effect.c (targetColorMapIndex = 3 in rain/thunder/shade inits)
+        confidence: 0.7
+  relations:
+  - type: modulates
+    target: battle_weather
+    condition: rain, thunderstorm, downpour, sandstorm or drought map weather at battle start
+  - type: part_of
+    target: metatile_map_renderer
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/field_weather.c:sWeatherFuncs
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/field_weather.c:ApplyDroughtColorMapWithBlend
+    confidence: 0.8
+  - kind: decomp_source
+    ref: pokeemerald:src/field_weather_effect.c:UpdateDroughtBlend (BLDCNT lighten + BLDY ramp)
+    confidence: 0.8
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_util.c (GetCurrentWeather switch at battle start)
+    confidence: 0.9
+- id: scanline_effects_and_transitions
+  facet: rendering
+  label: HBlank-DMA scanline effects and battle-entry screen transitions
+  summary: 'A shared scanline-effect module double-buffers 160 per-line values and streams them by DMA0 on each HBlank
+    (16- or 32-bit, dest reload) into a BG scroll register, with a helper that generates animated sine waves. The title
+    clouds, intro, and many of the ~42 battle transitions use it (swirl and shuffle add per-line sine offsets to BG
+    scroll); other transitions animate windows (WIN0) or blit to BG0. Transition choice depends on map type (normal,
+    cave, flash-dark, water), wild vs trainer, and whether the foe''s first mon is lower level than the player''s
+    lead, plus special transitions for Frontier facilities, Aqua/Magma, legendaries and Elite Four.'
+  instantiates:
+  - concept: rendering.raster.hblank_dma_scroll_distortion
+  - concept: rendering.transition.screen_wipe_effect
+  reads:
+  - map.type
+  - enemy_party[0].level
+  - player_party[0].level
+  - battle.type_flags
+  writes:
+  - io.bg0hofs..bg3vofs
+  - io.win0h
+  - io.win0v
+  - dma0.*
+  params:
+    buffer_lines:
+      value: 160
+      unit: scanlines
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_transition.c (SetSinWave(..., DISPLAY_HEIGHT) into gScanlineEffectRegBuffers)
+        confidence: 0.9
+    transition_count:
+      value: 42
+      unit: B_TRANSITION_* ids
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/battle_transition.h (enum up to B_TRANSITION_COUNT)
+        confidence: 0.8
+    hdma_capture_frames:
+      value: 860
+      unit: frames with >=32 lines of HBlank-DMA BG scroll writes (attract 697 + frontend 163), target BG1HOFS/BG1VOFS
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:summary.derived.raster_frames.bg_scroll.hdma_frames_ge32=860; hblank_dma_targets ch0->0x04000014, 0x04000016
+        confidence: 0.9
+  tables:
+    wild_vs_trainer_transitions:
+      description: Default transition by map transition type; column 1 when foe lead level < player lead level, else column 2.
+      columns:
+      - map_type
+      - wild_weaker_foe
+      - wild_stronger_foe
+      - trainer_weaker_foe
+      - trainer_stronger_foe
+      rows:
+      - [normal, SLICE, WHITE_BARS_FADE, POKEBALLS_TRAIL, ANGLED_WIPES]
+      - [cave, CLOCKWISE_WIPE, GRID_SQUARES, SHUFFLE, BIG_POKEBALL]
+      - [flash_dark, BLUR, GRID_SQUARES, BLUR, GRID_SQUARES]
+      - [water, WAVE, RIPPLE, SWIRL, RIPPLE]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_setup.c:sBattleTransitionTable_Wild, sBattleTransitionTable_Trainer
+        confidence: 0.95
+  relations:
+  - type: part_of
+    target: bg_window_sprite_engine
+  - type: requires
+    target: battle_engine_core
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/scanline_effect.c:ScanlineEffect_InitWave
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokeemerald:include/scanline_effect.h (SCANLINE_EFFECT_DMACNT_16BIT = HBlank, repeat, dest reload)
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_transition.c (Swirl/Shuffle HBlank callbacks)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_setup.c (wild/trainer transition selection by level comparison)
+    confidence: 0.9
+- id: player_locked_tile_camera
+  facet: camera
+  label: Player-locked camera scrolling in step with tile movement
+  summary: 'The field camera tracks the player object: each frame it adds the player''s per-frame movement speed to a
+    0-15 px sub-tile offset and, when a tile boundary is crossed, shifts the map origin by one metatile, moves all
+    object events, and redraws only the newly exposed row/column into the 32x32 tilemap ring buffer. Sprites are offset
+    by a pan that defaults to 32 px vertically so the player sits slightly below centre. A bike pan-ahead callback exists
+    but is unreachable. If the camera cannot move (map edge without connection) the step is treated as impassable.'
+  instantiates:
+  - concept: camera.follow.player_centered_tile_camera
+  reads:
+  - player.movement_speed
+  - player.tile_position
+  writes:
+  - camera.offset
+  - camera.map_origin
+  - bg_tilemap[1..3]
+  - sprite_coord_offset
+  params:
+    redraw_unit:
+      value: 16
+      unit: px (one metatile row/column per boundary crossing)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/field_camera.c:CameraUpdate (x %= 16, RedrawMapSlicesForCameraUpdate)
+        confidence: 0.95
+    vertical_pan_default:
+      value: 32
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/field_camera.c:InstallCameraPanAheadCallback (sVerticalCameraPan = 32)
+        confidence: 0.85
+    view_size:
+      value: 15x10
+      unit: metatiles visible (240x160 px)
+      evidence:
+      - kind: derived
+        ref: GBA screen size / 16 px metatiles
+        inputs:
+        - pokeemerald:include/fieldmap.h:MAP_OFFSET_W
+        confidence: 0.8
+  invariants:
+  - There is no lag or easing; camera and player move in lockstep at every movement speed.
+  relations:
+  - type: requires
+    target: grid_step_locomotion
+  - type: part_of
+    target: metatile_map_renderer
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/field_camera.c:CameraUpdate
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/field_camera.c:CameraPanningCB_PanAhead (unreachable branch)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/event_object_movement.c:GetCollisionAtCoords (CanCameraMoveInDirection)
+    confidence: 0.9
+- id: top_down_oblique_projection
+  facet: projection
+  label: Top-down three-quarter view with elevation layering
+  summary: 'The overworld is an orthographic top-down view with three-quarter (oblique) art: building fronts and
+    character sprites show their south face, and depth is faked by drawing tall metatile tops on the above-sprite BG
+    layer and by per-object elevation that selects sprite priority (bridges, multi-level areas). Battles switch to a
+    separate staged side-on view of the two sides.'
+  instantiates:
+  - concept: projection.top_down.z_height_layering
+    weight: 0.5
+  - concept: projection.top_down.three_quarter_view
+  reads:
+  - objects[*].elevation
+  - metatile.layer_type
+  writes:
+  - sprites[*].priority
+  params:
+    elevation_levels:
+      value: 16
+      unit: 4-bit elevation (0 transition, 1 surf, 3 default, 15 multi-level)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/global.fieldmap.h (ELEVATION_* enum, MAPGRID_ELEVATION_MASK)
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: metatile_map_renderer
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/field_camera.c:DrawMetatile
+    confidence: 0.85
+  - kind: llm_knowledge
+    ref: three-quarter art convention of Gen-3 overworld sprites
+    confidence: 0.6
+- id: grid_step_locomotion
+  facet: movement_physics
+  label: Tile-locked stepping with turn-in-place and hold-B running
+  summary: 'The player and NPCs move exactly one 16 px metatile per step along four directions; input is read only
+    between steps. Pressing a new direction while standing turns in place (a short walk-in-place animation) instead
+    of stepping, so taps reorient. Speeds come from a per-speed table of whole-pixel step functions: walking 1 px/frame
+    (16 frames/tile), running (B held after the Running Shoes flag, not on no-running tiles, not underwater) and surfing
+    2 px/frame (8 frames), currents/acro bike ~2.67 px/frame (6 frames), mach bike top speed 4 px/frame (4 frames),
+    and an 8 px/frame speed for scripted movement. There is no acceleration except on the Mach Bike.'
+  instantiates:
+  - concept: movement_physics.grid.interpolated_tile_animation
+    weight: 0.6
+  - concept: movement_physics.grid.four_direction_tile_step
+  - concept: movement_physics.speed.hold_to_run
+    weight: 0.6
+  reads:
+  - input.dpad
+  - input.buttons.held
+  - player.facing
+  - world.flags.running_shoes
+  - metatile.behavior
+  writes:
+  - player.tile_position
+  - player.facing
+  - player.running_state
+  params:
+    walk_speed:
+      value: 1
+      unit: px/frame (16 frames per tile, 0.27 s)
+      native_value: MOVE_SPEED_NORMAL (16 x Step1)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/event_object_movement.c:sStep1Funcs, sStepTimes
+        confidence: 0.95
+    run_speed:
+      value: 2
+      unit: px/frame (8 frames per tile)
+      native_value: MOVE_SPEED_FAST_1 (8 x Step2)
+      variants:
+      - when: surfing
+        value: 2
+        unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/event_object_movement.c:sStep2Funcs
+        confidence: 0.95
+      - kind: decomp_source
+        ref: pokeemerald:src/field_player_avatar.c:PlayerNotOnBikeMoving (surf uses PlayerWalkFast, B+FLAG_SYS_B_DASH -> PlayerRun)
+        confidence: 0.95
+    fast2_speed:
+      value: 2.67
+      unit: px/frame (6 frames per tile, steps 2,3,3,2,3,3)
+      native_value: MOVE_SPEED_FAST_2
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/event_object_movement.c:sStep3Funcs
+        confidence: 0.95
+    faster_speed:
+      value: 4
+      unit: px/frame (4 frames per tile)
+      native_value: MOVE_SPEED_FASTER
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/event_object_movement.c:sStep4Funcs
+        confidence: 0.95
+    fastest_speed:
+      value: 8
+      unit: px/frame (2 frames per tile)
+      native_value: MOVE_SPEED_FASTEST
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/event_object_movement.c:sStep8Funcs
+        confidence: 0.95
+    tile_size:
+      value: 16
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/field_camera.c:CameraUpdate
+        confidence: 0.9
+  invariants:
+  - Objects are always tile-aligned between steps; a step, once started, completes.
+  - Turning in place happens only when not already in the MOVING running state.
+  - Running is suppressed underwater and on metatiles flagged as no-running.
+  relations:
+  - type: requires
+    target: tile_collision_and_elevation
+  - type: gated_by
+    target: script_engine
+    note: running requires FLAG_SYS_B_DASH, set by a story script when the Running Shoes are received
+    condition: running only
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/field_player_avatar.c:CheckMovementInputNotOnBike
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/field_player_avatar.c:PlayerNotOnBikeMoving
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/event_object_movement.c:NpcTakeStep
+    confidence: 0.95
+- id: tile_collision_and_elevation
+  facet: movement_physics
+  label: Per-tile collision bits, directional blocks, elevation and object collision
+  summary: 'Before every step the destination tile is tested in order: outside the object''s wander range, the
+    block''s 2-bit collision value, map edge without connection, directional impassability from the metatile behaviour
+    (e.g. blocked only when entering from the north), whether the camera can scroll, elevation mismatch (a 4-bit level;
+    0 and 15 match anything), and occupancy by another object. Special outcomes override a plain bump: walking off
+    water onto land at a matching elevation stops surfing, jump behaviours trigger ledge hops, a Strength-boulder
+    object gets pushed, rotating-gate puzzles and Acro Bike rails have their own codes.'
+  instantiates:
+  - concept: movement_physics.collision.tile_collision_grid
+  - concept: projection.top_down.z_height_layering
+    weight: 0.6
+  reads:
+  - map.blocks[x,y].collision
+  - map.blocks[x,y].elevation
+  - metatile.behavior
+  - objects[*].tile_position
+  - camera.can_move
+  writes:
+  - player.collision_result
+  - game_stats.ledges_jumped
+  params:
+    collision_bits:
+      value: 2
+      unit: bits per block (nonzero = impassable)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/global.fieldmap.h:MAPGRID_COLLISION_MASK
+        confidence: 0.95
+    collision_results:
+      value: 14
+      unit: result codes (none, outside range, impassable, elevation mismatch, object, stop surfing, ledge, boulder,
+        rotating gate, wheelie hop, four rail kinds)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/global.fieldmap.h (COLLISION_* enum)
+        confidence: 0.95
+    metatile_behaviors:
+      value: 240
+      unit: behaviour ids (many unused); covers grass, water depths, ice, currents, arrows, warps, doors, ledges, secret-base
+        spots, rails
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/metatile_behaviors.h
+        confidence: 0.9
+  invariants:
+  - Two objects never occupy the same tile; collision is resolved before the step starts, never mid-step.
+  - Elevation 0 and 15 tiles are compatible with any object elevation.
+  relations:
+  - type: part_of
+    target: grid_step_locomotion
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/event_object_movement.c:GetCollisionAtCoords
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/field_player_avatar.c:CheckForObjectEventCollision
+    confidence: 0.95
+- id: ledge_jump
+  facet: movement_physics
+  label: One-way ledge hop over a tile
+  summary: 'Moving into a jump-behaviour metatile in its allowed direction plays the ledge sound and performs a scripted
+    two-tile hop: 32 frames, 1 px/frame horizontal, with a lookup-table arc (high jump, peak 12 px) applied as a sprite
+    y-offset only. Ledges cannot be climbed from below, which makes them one-way shortcuts back toward towns.'
+  instantiates:
+  - concept: movement_physics.ledge.one_way_ledge_hop
+  reads:
+  - metatile.behavior
+  - player.facing
+  writes:
+  - player.tile_position
+  - player.sprite.y_offset
+  params:
+    distance:
+      value: 32
+      unit: px (2 tiles)
+      native_value: JUMP_DISTANCE_FAR
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/event_object_movement.c:MovementAction_Jump2Down_Step0 (JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH)
+        confidence: 0.95
+    duration:
+      value: 32
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/event_object_movement.c:DoJumpSpriteMovement (distanceToTime FAR = 32)
+        confidence: 0.95
+    peak_height:
+      value: 12
+      unit: px
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/event_object_movement.c:sJumpY_High
+        confidence: 0.95
+  invariants:
+  - The arc is cosmetic; collision and position are tile-based and the landing tile is fixed.
+  relations:
+  - type: part_of
+    target: tile_collision_and_elevation
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/field_player_avatar.c:PlayerJumpLedge
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/event_object_movement.c:DoJumpSpriteMovement
+    confidence: 0.95
+- id: forced_movement_tiles
+  facet: movement_physics
+  label: Behaviour tiles that take control (ice, arrows, currents, slides, mats, muddy slopes, cracked floors)
+  summary: 'After each step the player''s current metatile behaviour is checked against an ordered table; a match
+    takes over movement: ice and the Trick House slippery floor slip the player forward until a non-ice tile or wall;
+    walk/arrow tiles force walking in a direction; water currents push at the faster speed; slide tiles slide; secret-base
+    jump and spin mats animate; muddy slopes push the player back south unless moving north at Mach Bike top speed.
+    Cracked floors in Sky Pillar and Granite Cave break after being stepped on and drop the player through unless crossed
+    on the Mach Bike.'
+  instantiates:
+  - concept: movement_physics.surface.ice_slide_until_blocked
+  - concept: movement_physics.surface.conveyor_push
+  reads:
+  - metatile.behavior
+  - player.movement_direction
+  - player.bike_speed
+  writes:
+  - player.tile_position
+  - player.controllable
+  - map.blocks
+  params:
+    forced_movement_kinds:
+      value: 18
+      unit: behaviour tests (slip x2, walk x4, current x4, slide x4, waterfall, jump mat, spin mat, muddy slope)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/field_player_avatar.c:sForcedMovementTestFuncs
+        confidence: 0.95
+    muddy_slope_push_speed:
+      value: 2
+      unit: px/frame southward (PlayerWalkFast)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/field_player_avatar.c:ForcedMovement_MuddySlope
+        confidence: 0.95
+  invariants:
+  - Muddy slopes can only be ascended when moving north at PLAYER_SPEED_FASTEST (Mach Bike third gear).
+  - Forced movement runs only while the player is not under free control (PLAYER_AVATAR_FLAG_CONTROLLABLE clear).
+  relations:
+  - type: part_of
+    target: grid_step_locomotion
+  - type: gated_by
+    target: mach_bike
+    condition: muddy slopes and cracked floors
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/field_player_avatar.c:GetForcedMovementByMetatileBehavior
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/field_tasks.c:CrackedFloorPerStepCallback
+    confidence: 0.8
+- id: mach_bike
+  facet: movement_physics
+  label: Mach Bike three-gear momentum
+  summary: 'The Mach Bike accelerates while the d-pad is held in one direction: the first step uses walking speed,
+    the second running speed, and from the third step on it moves 4 px/frame. Releasing or turning drops speed one
+    gear per step; hitting a wall stops dead (bonk). Top speed is required to climb muddy slopes and to cross cracked
+    floors. Bike movement reduces the wild encounter rate to 80%. Bikes are allowed only on maps whose header permits
+    cycling.'
+  instantiates:
+  - concept: movement_physics.vehicle.momentum_bike
+  - concept: movement_physics.locomotion.accel_to_cap_run
+    weight: 0.5
+  reads:
+  - input.dpad
+  - player.bike_frame_counter
+  - map.header.allow_cycling
+  writes:
+  - player.bike_speed
+  - player.bike_frame_counter
+  - player.tile_position
+  params:
+    gear_speeds:
+      value: [1, 2, 4]
+      unit: px/frame for gears 0,1,2 (16, 8, 4 frames per tile)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/bike.c:sMachBikeSpeedCallbacks (PlayerWalkNormal, PlayerWalkFast, PlayerWalkFaster)
+        confidence: 0.95
+    tiles_to_top_speed:
+      value: 2
+      unit: steps before gear 2 (third step at 4 px/frame)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/bike.c:MachBikeTransition_TrySpeedUp (bikeFrameCounter++ up to 2)
+        confidence: 0.9
+    encounter_rate_factor:
+      value: 0.8
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/wild_encounter.c:WildEncounterCheck (MACH|ACRO bike -> *80/100)
+        confidence: 0.95
+  invariants:
+  - Deceleration is one gear per step (bikeFrameCounter = --bikeSpeed), so stopping from top speed takes steps.
+  relations:
+  - type: conflicts_with
+    target: acro_bike
+    note: one bike is held at a time (chosen in Mauville, swappable at the shop); each gates different terrain
+  - type: modulates
+    target: wild_encounter_tables
+  - type: part_of
+    target: grid_step_locomotion
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/bike.c:MachBikeTransition_TrySpeedUp
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/bike.c:MachBikeTransition_TrySlowDown
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:include/global.fieldmap.h:struct MapHeader (allowCycling)
+    confidence: 0.9
+- id: acro_bike
+  facet: movement_physics
+  label: Acro Bike tricks (wheelie, bunny hop, side jumps, rails)
+  summary: 'The Acro Bike moves at a constant 6 frames/tile and has a trick state machine driven by B and the d-pad
+    history: hold B to pop a wheelie, keep holding to bunny-hop in place or while moving, tap B with a direction to
+    side-jump or turn-jump. Hopping crosses rail and white-rail metatiles and stepping-stone gaps that block normal
+    movement; bumpy slopes need a wheelie.'
+  instantiates:
+  - concept: movement_physics.vehicle.trick_bike
+  reads:
+  - input.buttons.held
+  - input.dpad
+  - bike.input_history
+  - metatile.behavior
+  writes:
+  - player.acro_state
+  - player.tile_position
+  params:
+    move_speed:
+      value: 2.67
+      unit: px/frame (6 frames per tile, PlayerRideWaterCurrent speed)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/bike.c:AcroBikeTransition_Moving
+        confidence: 0.95
+    trick_states:
+      value: 7
+      unit: input handlers (normal, turning, wheelie standing, bunny hop, wheelie moving, side jump, turn jump)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/bike.c:sAcroBikeInputHandlers
+        confidence: 0.95
+  relations:
+  - type: part_of
+    target: grid_step_locomotion
+  - type: modulates
+    target: wild_encounter_tables
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/bike.c:AcroBikeHandleInputNormal
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/bike.c:sAcroBikeTricksList
+    confidence: 0.8
+  - kind: decomp_source
+    ref: pokeemerald:include/global.fieldmap.h (COLLISION_WHEELIE_HOP, *_RAIL)
+    confidence: 0.85
+- id: water_traversal
+  facet: movement_physics
+  label: Surf, Dive and Waterfall water traversal modes
+  summary: 'Surf turns the avatar into a rider on a Pokémon over water-elevation tiles at 2 px/frame and is ended
+    by stepping onto land at a matching elevation. On deep-water tiles Dive warps to a parallel underwater map (and
+    back up where surfacing is allowed), where running is disabled. Waterfall tiles force upward climbing when
+    surfing with the move. Currents in the open sea push the surfer. Surf/water tiles use their own encounter table.'
+  instantiates:
+  - concept: movement_physics.mode.water_traversal_mode
+  reads:
+  - player.avatar_flags
+  - metatile.behavior
+  - map.dive_warps
+  writes:
+  - player.avatar_flags
+  - player.tile_position
+  - map.current
+  params:
+    surf_speed:
+      value: 2
+      unit: px/frame
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/field_player_avatar.c:PlayerNotOnBikeMoving (surfing -> PlayerWalkFast)
+        confidence: 0.95
+  invariants:
+  - Leaving water requires a land tile whose elevation matches (COLLISION_STOP_SURFING path).
+  relations:
+  - type: gated_by
+    target: hm_field_move_gating
+    note: Surf (badge 5), Dive (badge 7), Waterfall (badge 8)
+  - type: part_of
+    target: grid_step_locomotion
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/field_player_avatar.c:CheckForObjectEventCollision (CanStopSurfing)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokeemerald:src/field_player_avatar.c:sForcedMovementTestFuncs (MetatileBehavior_IsWaterfall)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/wild_encounter.c:StandardWildEncounter (water branch)
+    confidence: 0.85
+- id: script_engine
+  facet: mechanics
+  label: Bytecode event-script VM with flags, vars and specials
+  summary: 'World logic (NPC dialogue, cutscenes, item balls, trainers, warps, map setup) is bytecode run by a script
+    context: one opcode byte indexes a 228-entry command table, with a 20-deep call stack, native-callback mode for
+    waits, and 528 "special" C functions callable by id. Commands can yield (wait for message, movement, fade). Map headers
+    carry script tables run on load, transition, resume, frame and warp-in. State lives in ~2400 bit flags (temporary,
+    per-trainer, system, daily) and 256 16-bit vars (0x4000-0x40FF) plus special vars 0x8000+. A RAM script slot lets
+    Mystery Event data inject scripts. Running a script locks player field controls.'
+  instantiates:
+  - concept: narrative_delivery.engine.bytecode_script_vm
+  - concept: progression.world.persistent_world_flags
+    weight: 0.6
+  reads:
+  - script.bytecode
+  - world.flags.*
+  - world.vars.*
+  writes:
+  - world.flags.*
+  - world.vars.*
+  - player.field_controls_locked
+  - objects[*].movement
+  params:
+    command_count:
+      value: 228
+      unit: opcodes (approx., entries in script_cmd_table.inc)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:data/script_cmd_table.inc
+        confidence: 0.8
+    specials_count:
+      value: 528
+      unit: callable C specials (approx.)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:data/specials.inc (def_special count)
+        confidence: 0.8
+    call_stack_depth:
+      value: 20
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/script.h:struct ScriptContext (stack[20])
+        confidence: 0.95
+    flag_count:
+      value: 2400
+      unit: bit flags (0x000-0x95F incl. 864 trainer flags at 0x500, system flags at 0x860, daily flags last)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/flags.h (TRAINER_FLAGS_START 0x500, SYSTEM_FLAGS 0x860, DAILY_FLAGS_END)
+        confidence: 0.75
+    var_count:
+      value: 256
+      unit: saved 16-bit vars 0x4000-0x40FF
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/vars.h (VARS_START 0x4000, VARS_END 0x40FF)
+        confidence: 0.95
+  invariants:
+  - Hitting gNullScriptPtr halts the CPU (deliberate trap); unknown opcodes stop the script.
+  - Temporary flags/vars are cleared on map change; daily flags are cleared by the RTC day rollover.
+  relations:
+  - type: requires
+    target: dialogue_text_printer
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/script.c:RunScriptCommand
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/script.c:ScriptContext_RunScript
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/script.c (MapHeaderRunScriptType, InitRamScript)
+    confidence: 0.85
+- id: rng_lcg
+  facet: mechanics
+  label: Global LCG random generator with per-frame advance
+  summary: 'Random() steps a 32-bit LCG (multiplier 1103515245, increment 24691) and returns the high 16 bits; a second
+    independent generator exists for some subsystems. The main generator also advances once per VBlank outside link,
+    Frontier and recorded battles, so outcomes depend on frame timing. In the retail build the boot seed is not taken
+    from the RTC (that code is compiled only under BUGFIX), so the state starts at 0 at power-on and is first reseeded
+    from Timer 1 when a new game''s name entry finishes.'
+  instantiates:
+  - concept: mechanics.randomness.lcg_prng
+  reads:
+  - rng.state
+  - timer1.counter
+  writes:
+  - rng.state
+  params:
+    multiplier:
+      value: 1103515245
+      native_value: '0x41C64E6D'
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/random.h:ISO_RANDOMIZE1
+        confidence: 0.95
+    increment:
+      value: 24691
+      native_value: '0x6073'
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/random.h:ISO_RANDOMIZE1
+        confidence: 0.95
+    output_bits:
+      value: 16
+      unit: high half of state
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/random.c:Random
+        confidence: 0.95
+    frame_advance:
+      value: 1
+      unit: extra Random() call per VBlank (not in link/frontier/recorded battles)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/main.c:VBlankIntr
+        confidence: 0.95
+  invariants:
+  - With no BUGFIX the power-on seed is 0 (SeedRngWithRtc is compiled out); only Timer 1 at new-game naming seeds it.
+  relations:
+  - type: part_of
+    target: main_loop_and_callbacks
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/random.c:Random
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/main.c:AgbMain (#ifdef BUGFIX SeedRngWithRtc)
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/main.c:SeedRngAndSetTrainerId
+    confidence: 0.95
+- id: monster_data_model
+  facet: mechanics
+  label: Personality-seeded, encrypted creature records
+  summary: 'Each Pokémon is a 32-bit personality value plus original-trainer ID, nickname and four 12-byte substructs
+    (growth, attacks, EVs/condition, misc) whose order is personality mod 24 and whose words are XOR-encrypted with
+    personality ^ OT ID, guarded by a checksum. Personality alone fixes nature (mod 25), ability slot (bit 0), gender
+    (low byte vs species gender ratio) and Wurmple''s branch; personality xor OT ID decides shininess (8 in 65536).
+    Party records add level, status and computed stats. Contest condition (cool, beauty, cute, smart, tough, sheen
+    0-255) is stored per mon.'
+  instantiates:
+  - concept: mechanics.entity.personality_seeded_attributes
+  - concept: mechanics.collection.creature_collection
+    weight: 0.5
+  reads:
+  - mon.personality
+  - mon.ot_id
+  writes:
+  - mon.*
+  params:
+    shiny_odds:
+      value: 0.000122
+      unit: probability (8/65536 = 1/8192)
+      native_value: 8
+      native_unit: shiny value threshold out of 65536
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/pokemon.h:SHINY_ODDS; pokeemerald:include/pokemon.h:GET_SHINY_VALUE
+        confidence: 0.95
+    substruct_orders:
+      value: 24
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/pokemon.c:GetSubstruct (personality % 24)
+        confidence: 0.95
+    natures:
+      value: 25
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/pokemon.c:GetNature (personality % NUM_NATURES)
+        confidence: 0.95
+    species_count:
+      value: 386
+      unit: National Dex species (412 internal slots incl. placeholders and egg)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/pokedex.h:NATIONAL_DEX_COUNT; include/constants/species.h:SPECIES_EGG
+        confidence: 0.9
+    party_size:
+      value: 6
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/global.h:PARTY_SIZE
+        confidence: 0.95
+    moves_per_mon:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/global.h:MAX_MON_MOVES
+        confidence: 0.95
+  invariants:
+  - Gender is female when species genderRatio > (personality & 0xFF).
+  - Silcoon vs Cascoon evolution depends on (personality >> 16) % 10 <= 4.
+  relations:
+  - type: requires
+    target: rng_lcg
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:include/pokemon.h:struct BoxPokemon, struct Pokemon
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/pokemon.c:EncryptBoxMon
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/pokemon.c:IsShinyOtIdPersonality
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/pokemon.c:GetGenderFromSpeciesAndPersonality
+    confidence: 0.85
+- id: stat_calculation
+  facet: mechanics
+  label: Base stats + IVs + EVs + nature stat formula
+  summary: 'Stats are recomputed from species base stats, per-stat individual values (0-31), effort values (0-255 per
+    stat, 510 total, gained from defeating species) and level: HP = floor((2*Base + IV + floor(EV/4)) * L / 100) + L
+    + 10; other stats = floor((2*Base + IV + floor(EV/4)) * L / 100) + 5, then x1.1 or x0.9 if the nature raises or
+    lowers that stat. Shedinja always has 1 HP. Level comes from total experience on the growth curve.'
+  instantiates:
+  - concept: mechanics.progression.stat_formula_iv_ev
+  reads:
+  - species.base_stats
+  - mon.ivs
+  - mon.evs
+  - mon.level
+  - mon.nature
+  writes:
+  - mon.stats.*
+  params:
+    iv_max:
+      value: 31
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/pokemon.h:MAX_PER_STAT_IVS
+        confidence: 0.95
+    ev_max_per_stat:
+      value: 255
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/pokemon.h:MAX_PER_STAT_EVS
+        confidence: 0.95
+    ev_max_total:
+      value: 510
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/pokemon.h:MAX_TOTAL_EVS
+        confidence: 0.95
+    nature_modifier:
+      value: 0.1
+      unit: +/- fraction on one stat each (5 neutral natures)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/pokemon.c:gNatureStatTable, ModifyStatByNature
+        confidence: 0.9
+    max_level:
+      value: 100
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/pokemon.h:MAX_LEVEL
+        confidence: 0.95
+  invariants:
+  - Stats are pure functions of species, IV, EV, level and nature; they are recomputed on level-up and after EV gain.
+  relations:
+  - type: part_of
+    target: monster_data_model
+  - type: modulates
+    target: damage_formula
+  - type: requires
+    target: exp_and_leveling
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/pokemon.c:CalculateMonStats
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/pokemon.c:CALC_STAT
+    confidence: 0.95
+- id: battle_engine_core
+  facet: mechanics
+  label: Turn-based party battle engine with battle-script VM and controllers
+  summary: 'Battles pit parties of up to six in singles, doubles (four battlers) or multi formats. Each turn every
+    battler''s controller (player input, AI, link, recorded playback, Safari, Wally tutorial) chooses FIGHT (one of
+    four PP-limited moves), BAG, POKÉMON (switch) or RUN; actions are ordered (switches and items before moves, then
+    by priority and speed), then each move executes as a script on a battle-script VM of 249 commands (accuracy, crit,
+    damage, type, effects, messages, animations). End-of-turn effects (weather, status damage, leech seed, items)
+    resolve in a fixed order. Fainted mons must be replaced; a side with no usable mon loses. Wild battles can be fled
+    with a speed-based escape roll.'
+  instantiates:
+  - concept: mechanics.combat.turn_based_party_battle
+  - concept: narrative_delivery.engine.bytecode_script_vm
+    weight: 0.3
+  reads:
+  - battle.type_flags
+  - battlers[*].*
+  - party[*].*
+  - input.battle_choice
+  writes:
+  - battlers[*].hp
+  - battlers[*].status
+  - battle.turn_order
+  - battle.outcome
+  params:
+    battle_script_commands:
+      value: 249
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:gBattleScriptingCommandsTable (count of Cmd_ entries)
+        confidence: 0.8
+    move_effects:
+      value: 214
+      unit: EFFECT_* ids
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/battle_move_effects.h
+        confidence: 0.8
+    move_count:
+      value: 354
+      unit: moves (MOVES_COUNT 355 incl. none)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/moves.h:MOVES_COUNT
+        confidence: 0.95
+    escape_odds:
+      value: 'if own Spe < foe Spe: escape when (Spe*128/FoeSpe + 30*attempts) > rand(0..255); faster or equal always escapes'
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_util.c:TryRunFromBattle
+        confidence: 0.9
+  invariants:
+  - Trainer battles cannot be fled; Smoke Ball and Run Away always escape wild battles.
+  - Action order is computed once per turn before any move executes.
+  relations:
+  - type: requires
+    target: turn_order
+  - type: requires
+    target: damage_formula
+  - type: requires
+    target: status_conditions
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_main.c:SetActionsAndBattlersTurnOrder
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_util.c:TryRunFromBattle
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_util.c (end-turn ENDTURN_* sequence)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_controller_player.c, battle_controller_opponent.c, battle_controller_safari.c, battle_controller_wally.c (file list)
+    confidence: 0.6
+    note: controller set established from file names only
+- id: turn_order
+  facet: mechanics
+  label: Priority-then-speed turn order with modifiers
+  summary: 'For two move users, higher move priority goes first; with equal priority the higher effective speed goes
+    first and exact ties are a coin flip. Effective speed = Spe * stage ratio, doubled by Swift Swim in rain or Chlorophyll
+    in sun, x1.1 for the player with the third badge (not in link/Frontier), halved by Macho Brace, quartered by paralysis;
+    Quick Claw sets effective speed to UINT_MAX when the shared per-turn random value is below floor(65535*holdEffectParam/100),
+    with a native item parameter of 20. This does not bypass move priority; two ordinary Quick Claw holders share the
+    same activation test rather than rolling independently. Each integer division truncates at its position in the calculation.'
+  instantiates:
+  - concept: mechanics.combat.speed_priority_turn_order
+  reads:
+  - battlers[*].speed
+  - battlers[*].stat_stages.speed
+  - battlers[*].status
+  - moves[*].priority
+  - battle.weather
+  - world.flags.badge03
+  - battlers[*].item.hold_effect
+  - battlers[*].item.hold_effect_param
+  - battle.random_turn_number:u16
+  - rng.state:u32
+  writes:
+  - battle.turn_order
+  - rng.state:u32 (only when equal priority and equal effective speed require a Random call)
+  params:
+    paralysis_speed_factor:
+      value: 0.25
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_main.c:GetWhoStrikesFirst
+        confidence: 0.95
+    badge3_speed_boost:
+      value: 1.1
+      variants:
+      - when: link, recorded link or Frontier battle, or opponent side
+        value: 1.0
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_main.c:GetWhoStrikesFirst (FLAG_BADGE03_GET)
+        confidence: 0.95
+    weather_speed_ability:
+      value: 2.0
+      unit: multiplier (Swift Swim in rain, Chlorophyll in sun)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_main.c:GetWhoStrikesFirst
+        confidence: 0.95
+    macho_brace_speed_divisor:
+      value: 2
+      unit: integer divisor applied after badge boost and before paralysis
+      native_value: 2
+      native_unit: integer divisor
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_main.c:GetWhoStrikesFirst
+        confidence: 0.95
+    quick_claw_item_parameter:
+      value: 20
+      unit: nominal percent parameter (not an exact measured activation frequency)
+      native_value: 20
+      native_unit: holdEffectParam
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/data/items.h:ITEM_QUICK_CLAW
+        confidence: 0.95
+    quick_claw_activation_threshold:
+      value: 13107
+      unit: exclusive upper bound on shared u16 battle.random_turn_number
+      native_value: 13107
+      native_unit: u16 draw threshold
+      evidence:
+      - kind: derived
+        ref: floor(65535 * 20 / 100); activation tests random_turn_number < threshold
+        inputs:
+        - pokeemerald:src/battle_main.c:GetWhoStrikesFirst
+        - pokeemerald:src/data/items.h:ITEM_QUICK_CLAW holdEffectParam=20
+        confidence: 0.95
+  invariants:
+  - For the compared moves, priority dominates effective speed, including a Quick Claw override.
+  - Integer operations occur in order; computing a combined floating-point speed multiplier need not preserve the result.
+  - Two ordinary Quick Claw holders use the same random value and parameter; their activation events are correlated.
+  - Equal priorities and effective speeds consume Random() and return 2 when its low bit is set, otherwise 0.
+  - ignoreChosenMoves substitutes MOVE_NONE for both chosen moves; this function alone does not establish the priority of MOVE_NONE.
+  relations:
+  - type: part_of
+    target: battle_engine_core
+  - type: modulates
+    target: trainer_ai_move_scoring
+    note: AI scripts read who moves first
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_main.c:GetWhoStrikesFirst
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/data/items.h:ITEM_QUICK_CLAW
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/random.c:Random
+    confidence: 0.95
+- id: damage_formula
+  facet: mechanics
+  label: Gen-3 damage formula
+  summary: 'Base damage = floor(floor(floor(A_eff * Power * (floor(2*L/5) + 2)) / D_eff) / 50), where A/D are Atk/Def
+    for physical types or SpA/SpD for special types after stage ratios and modifiers; burn halves physical damage (not
+    with Guts); Reflect/Light Screen halve it (2/3 in doubles with two targets); spread moves halve it in doubles;
+    rain/sun scale Water/Fire x1.5 or x0.5; then +2. The script then multiplies by the crit multiplier (x2), Charge
+    (x2 Electric) and Helping Hand (x1.5), applies STAB x1.5 and each defending type''s effectiveness in turn, and
+    finally a random factor of (100 - rand%16)/100 (0.85-1.00). Every step truncates, and damage is at least 1 unless
+    immune. Crits ignore the attacker''s negative and the defender''s positive stat stages and the screens.'
+  instantiates:
+  - concept: mechanics.combat.stat_ratio_damage_formula
+  reads:
+  - attacker.level
+  - attacker.stats
+  - attacker.stat_stages
+  - attacker.ability
+  - attacker.item
+  - defender.stats
+  - defender.stat_stages
+  - move.power
+  - move.type
+  - side.screens
+  - battle.weather
+  writes:
+  - battle.move_damage
+  params:
+    level_factor:
+      value: floor(2*L/5) + 2
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/pokemon.c:CalculateBaseDamage
+        confidence: 0.95
+    random_roll:
+      value: 0.85-1.00
+      unit: (100 - Random()%16)/100, 16 equally likely values
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:ApplyRandomDmgMultiplier
+        confidence: 0.95
+    stab:
+      value: 1.5
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:Cmd_typecalc
+        confidence: 0.95
+    crit_multiplier:
+      value: 2
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:Cmd_damagecalc (gCritMultiplier)
+        confidence: 0.95
+    screen_factor:
+      value: 0.5
+      variants:
+      - when: double battle with two live defenders
+        value: 0.667
+      - when: critical hit
+        value: 1.0
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/pokemon.c:CalculateBaseDamage (SIDE_STATUS_REFLECT / LIGHTSCREEN)
+        confidence: 0.95
+    badge_stat_boost:
+      value: 1.1
+      unit: Atk (badge 1), Def (badge 5), SpA and SpD (badge 7) for the player's side outside link/Frontier/e-Reader
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/pokemon.c:ShouldGetStatBadgeBoost
+        confidence: 0.95
+    flat_addend:
+      value: 2
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/pokemon.c:CalculateBaseDamage (return damage + 2)
+        confidence: 0.95
+  tables:
+    attack_modifiers:
+      description: Multipliers applied inside CalculateBaseDamage (stat or power) before the level/power product.
+      columns:
+      - source
+      - condition
+      - target
+      - multiplier
+      rows:
+      - [Huge Power / Pure Power, always, Atk, 2.0]
+      - [Hustle, always, Atk, 1.5]
+      - [Guts, attacker has any status, Atk, 1.5]
+      - [Marvel Scale, defender has any status, Def, 1.5]
+      - [Plus/Minus, partner has the other ability, SpA, 1.5]
+      - [Thick Fat, Fire or Ice move, SpA, 0.5]
+      - [Overgrow/Blaze/Torrent/Swarm, own HP <= 1/3 and matching type, Power, 1.5]
+      - [Choice Band, held, Atk, 1.5]
+      - [type-boost held item (e.g. Charcoal), matching move type, Atk or SpA, '1 + param/100 (1.1)']
+      - [Soul Dew, Latias/Latios outside Frontier, SpA and SpD, 1.5]
+      - [Light Ball / Thick Club / Deep Sea Tooth, Pikachu / Cubone-Marowak / Clamperl, SpA / Atk / SpA, 2.0]
+      - [Metal Powder / Deep Sea Scale, Ditto / Clamperl, Def / SpD, 2.0]
+      - [Mud Sport / Water Sport, Electric / Fire move, Power, 0.5]
+      - [Explosion / Self-Destruct, always, target Def, 0.5]
+      - [Flash Fire activated, Fire move, final special damage, 1.5]
+      - [Rain, Water / Fire, final special damage, 1.5 / 0.5]
+      - [Sun, Fire / Water, final special damage, 1.5 / 0.5]
+      - [Rain/Sand/Hail, Solar Beam, final damage, 0.5]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/pokemon.c:CalculateBaseDamage
+        confidence: 0.95
+  invariants:
+  - Type 9 (???) moves deal 0 base damage.
+  - Weather damage modifiers live only in the special branch, which is where Fire and Water moves fall in Gen 3.
+  - Damage after type effectiveness is at least 1 unless the multiplier is 0.
+  relations:
+  - type: part_of
+    target: battle_engine_core
+  - type: requires
+    target: type_chart
+  - type: requires
+    target: stat_stages_accuracy_crit
+  - type: modulates
+    target: trainer_ai_move_scoring
+    note: AI simulates this formula with a per-move pre-rolled random factor
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/pokemon.c:CalculateBaseDamage
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_script_commands.c:Cmd_damagecalc
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_script_commands.c:Cmd_typecalc
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_script_commands.c:Cmd_adjustnormaldamage
+    confidence: 0.95
+- id: type_chart
+  facet: mechanics
+  label: 17-type effectiveness matrix
+  summary: 'Moves and Pokémon carry types from 17 real types (plus ???). A move''s damage is multiplied by the matrix
+    entry for each distinct defending type in turn (so dual types stack to x4, x0.25 or x0), stored as a sparse list
+    of (attacker, defender, x0/x0.5/x2) triples; unlisted pairs are x1. Normal and Fighting vs Ghost immunities sit
+    after a Foresight marker so Foresight/Odor Sleuth can skip them. Levitate blocks Ground and Wonder Guard blocks any
+    damaging move that is not super effective.'
+  instantiates:
+  - concept: mechanics.pokemon.elemental_type_chart
+  reads:
+  - move.type
+  - defender.types
+  - defender.status2.foresight
+  writes:
+  - battle.move_damage
+  - battle.move_result_flags
+  params:
+    type_count:
+      value: 17
+      unit: types (+ ??? type 9)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_main.c:gTypeEffectiveness
+        confidence: 0.9
+    nondefault_pairs:
+      value: 110
+      unit: listed attacker/defender pairs
+      evidence:
+      - kind: derived
+        ref: count of triples in gTypeEffectiveness excluding FORESIGHT/ENDTABLE markers
+        inputs:
+        - pokeemerald:src/battle_main.c:gTypeEffectiveness
+        confidence: 0.9
+  tables:
+    type_effectiveness:
+      description: Every non-neutral entry (attacking type, defending type, multiplier); all other pairs are 1.0.
+      columns:
+      - attacking_type
+      - defending_type
+      - multiplier
+      rows:
+          - [normal, rock, 0.5]
+          - [normal, steel, 0.5]
+          - [fire, fire, 0.5]
+          - [fire, water, 0.5]
+          - [fire, grass, 2.0]
+          - [fire, ice, 2.0]
+          - [fire, bug, 2.0]
+          - [fire, rock, 0.5]
+          - [fire, dragon, 0.5]
+          - [fire, steel, 2.0]
+          - [water, fire, 2.0]
+          - [water, water, 0.5]
+          - [water, grass, 0.5]
+          - [water, ground, 2.0]
+          - [water, rock, 2.0]
+          - [water, dragon, 0.5]
+          - [electric, water, 2.0]
+          - [electric, electric, 0.5]
+          - [electric, grass, 0.5]
+          - [electric, ground, 0.0]
+          - [electric, flying, 2.0]
+          - [electric, dragon, 0.5]
+          - [grass, fire, 0.5]
+          - [grass, water, 2.0]
+          - [grass, grass, 0.5]
+          - [grass, poison, 0.5]
+          - [grass, ground, 2.0]
+          - [grass, flying, 0.5]
+          - [grass, bug, 0.5]
+          - [grass, rock, 2.0]
+          - [grass, dragon, 0.5]
+          - [grass, steel, 0.5]
+          - [ice, water, 0.5]
+          - [ice, grass, 2.0]
+          - [ice, ice, 0.5]
+          - [ice, ground, 2.0]
+          - [ice, flying, 2.0]
+          - [ice, dragon, 2.0]
+          - [ice, steel, 0.5]
+          - [ice, fire, 0.5]
+          - [fighting, normal, 2.0]
+          - [fighting, ice, 2.0]
+          - [fighting, poison, 0.5]
+          - [fighting, flying, 0.5]
+          - [fighting, psychic, 0.5]
+          - [fighting, bug, 0.5]
+          - [fighting, rock, 2.0]
+          - [fighting, dark, 2.0]
+          - [fighting, steel, 2.0]
+          - [poison, grass, 2.0]
+          - [poison, poison, 0.5]
+          - [poison, ground, 0.5]
+          - [poison, rock, 0.5]
+          - [poison, ghost, 0.5]
+          - [poison, steel, 0.0]
+          - [ground, fire, 2.0]
+          - [ground, electric, 2.0]
+          - [ground, grass, 0.5]
+          - [ground, poison, 2.0]
+          - [ground, flying, 0.0]
+          - [ground, bug, 0.5]
+          - [ground, rock, 2.0]
+          - [ground, steel, 2.0]
+          - [flying, electric, 0.5]
+          - [flying, grass, 2.0]
+          - [flying, fighting, 2.0]
+          - [flying, bug, 2.0]
+          - [flying, rock, 0.5]
+          - [flying, steel, 0.5]
+          - [psychic, fighting, 2.0]
+          - [psychic, poison, 2.0]
+          - [psychic, psychic, 0.5]
+          - [psychic, dark, 0.0]
+          - [psychic, steel, 0.5]
+          - [bug, fire, 0.5]
+          - [bug, grass, 2.0]
+          - [bug, fighting, 0.5]
+          - [bug, poison, 0.5]
+          - [bug, flying, 0.5]
+          - [bug, psychic, 2.0]
+          - [bug, ghost, 0.5]
+          - [bug, dark, 2.0]
+          - [bug, steel, 0.5]
+          - [rock, fire, 2.0]
+          - [rock, ice, 2.0]
+          - [rock, fighting, 0.5]
+          - [rock, ground, 0.5]
+          - [rock, flying, 2.0]
+          - [rock, bug, 2.0]
+          - [rock, steel, 0.5]
+          - [ghost, normal, 0.0]
+          - [ghost, psychic, 2.0]
+          - [ghost, dark, 0.5]
+          - [ghost, steel, 0.5]
+          - [ghost, ghost, 2.0]
+          - [dragon, dragon, 2.0]
+          - [dragon, steel, 0.5]
+          - [dark, fighting, 0.5]
+          - [dark, psychic, 2.0]
+          - [dark, ghost, 2.0]
+          - [dark, dark, 0.5]
+          - [dark, steel, 0.5]
+          - [steel, fire, 0.5]
+          - [steel, water, 0.5]
+          - [steel, electric, 0.5]
+          - [steel, ice, 2.0]
+          - [steel, rock, 2.0]
+          - [steel, steel, 0.5]
+          - [normal, ghost, 0.0]
+          - [fighting, ghost, 0.0]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_main.c:gTypeEffectiveness
+        confidence: 0.95
+  invariants:
+  - The second defending type is skipped if it equals the first (mono-types are stored with type1 == type2).
+  - Struggle bypasses type calculation entirely.
+  relations:
+  - type: part_of
+    target: damage_formula
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_main.c:gTypeEffectiveness
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_script_commands.c:Cmd_typecalc
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_script_commands.c:ModulateDmgByType
+    confidence: 0.95
+- id: stat_stages_accuracy_crit
+  facet: mechanics
+  label: Stat stages, accuracy/evasion check and critical-hit stages
+  summary: 'Battle-only stat stages run -6..+6. Atk/Def/Spe/SpA/SpD use ratios (2+n)/2 for boosts and 2/(2-n) for drops
+    (x0.25..x4). Accuracy uses the move accuracy times a separate ratio table indexed by (attacker accuracy stage - target
+    evasion stage), then Compound Eyes x1.3, Sand Veil in sandstorm x0.8, Hustle (physical) x0.8 and BrightPowder/Lax
+    Incense; the move hits if rand(1..100) <= result. Critical hits use a stage count (Focus Energy +2, high-crit moves
+    +1, Scope Lens +1, Lucky Punch/Stick +2 for their species) into chances 1/16, 1/8, 1/4, 1/3, 1/2; Battle Armor and
+    Shell Armor prevent crits, and the tutorial battles never crit.'
+  instantiates:
+  - concept: mechanics.pokemon.stat_stage_multipliers
+  - concept: mechanics.combat.critical_hit
+  reads:
+  - battlers[*].stat_stages
+  - move.accuracy
+  - attacker.ability
+  - attacker.item
+  - battle.weather
+  writes:
+  - battle.move_result_flags
+  - battle.crit_multiplier
+  params:
+    stage_range:
+      value: [-6, 6]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/pokemon.c:gStatStageRatios
+        confidence: 0.95
+  tables:
+    stage_ratios:
+      description: Multiplier by stage. Stat ratios from gStatStageRatios; accuracy ratios from sAccuracyStageRatios.
+      columns:
+      - stage
+      - stat_multiplier
+      - accuracy_multiplier
+      rows:
+      - [-6, 0.25, 0.33]
+      - [-5, 0.286, 0.36]
+      - [-4, 0.333, 0.43]
+      - [-3, 0.4, 0.5]
+      - [-2, 0.5, 0.6]
+      - [-1, 0.667, 0.75]
+      - [0, 1.0, 1.0]
+      - [1, 1.5, 1.33]
+      - [2, 2.0, 1.66]
+      - [3, 2.5, 2.0]
+      - [4, 3.0, 2.33]
+      - [5, 3.5, 2.66]
+      - [6, 4.0, 3.0]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/pokemon.c:gStatStageRatios; pokeemerald:src/battle_script_commands.c:sAccuracyStageRatios
+        confidence: 0.95
+    crit_chance:
+      description: Critical-hit chance by summed crit stage (capped at 4).
+      columns:
+      - crit_stage
+      - chance
+      rows:
+      - [0, 1/16]
+      - [1, 1/8]
+      - [2, 1/4]
+      - [3, 1/3]
+      - [4, 1/2]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:sCriticalHitChance, Cmd_critcalc
+        confidence: 0.95
+  invariants:
+  - Thunder's accuracy becomes 50 in sun.
+  - Combined accuracy stage is clamped to -6..+6 before lookup.
+  relations:
+  - type: part_of
+    target: battle_engine_core
+  - type: modulates
+    target: damage_formula
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_script_commands.c:Cmd_accuracycheck
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_script_commands.c:Cmd_critcalc
+    confidence: 0.95
+- id: status_conditions
+  facet: mechanics
+  label: Persistent status ailments and volatile confusion
+  summary: 'One major status per mon persists outside battle: sleep (2-5 turns, cannot act), poison (1/8 max HP per
+    turn), bad poison (n/16 growing each turn up to 15/16), burn (1/8 per turn and halves physical damage), paralysis
+    (speed /4, 25% chance each turn to be fully paralysed) and freeze (80% chance per turn to stay frozen; fire moves
+    thaw). Volatile confusion makes the user hit itself 50% of the time with a typeless 40-power physical attack.
+    Status also doubles (sleep/freeze) or x1.5 (others) catch odds and enables Guts/Marvel Scale.'
+  instantiates:
+  - concept: mechanics.status.persistent_status_ailments
+  - concept: mechanics.status.turn_counted_status_effects
+  reads:
+  - battlers[*].status1
+  - battlers[*].status2
+  writes:
+  - battlers[*].status1
+  - battlers[*].hp
+  params:
+    sleep_turns:
+      value: [2, 5]
+      unit: turns ((Random()&3)+2)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c (STATUS1_SLEEP_TURN((Random() & 3) + 2))
+        confidence: 0.95
+    poison_damage:
+      value: 0.125
+      unit: fraction of max HP per turn
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_util.c (ENDTURN_POISON maxHP / 8)
+        confidence: 0.95
+    toxic_damage:
+      value: n/16
+      unit: fraction of max HP on the n-th turn (n capped at 15)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_util.c (ENDTURN_BAD_POISON)
+        confidence: 0.95
+    burn_damage:
+      value: 0.125
+      unit: fraction of max HP per turn
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_util.c (ENDTURN_BURN maxHP / 8)
+        confidence: 0.85
+    full_paralysis_chance:
+      value: 0.25
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_util.c (STATUS1_PARALYSIS && Random() % 4 == 0)
+        confidence: 0.95
+    freeze_stays_chance:
+      value: 0.8
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_util.c (CANCELER_FROZEN Random() % 5)
+        confidence: 0.95
+    confusion_self_hit:
+      value: 0.5
+      unit: chance; self-damage uses power 40 typeless
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_util.c (CANCELER_CONFUSED, CalculateBaseDamage(..., MOVE_POUND, 0, 40, ...))
+        confidence: 0.95
+  invariants:
+  - A mon has at most one major status at a time.
+  - Status damage is at least 1 HP.
+  relations:
+  - type: part_of
+    target: battle_engine_core
+  - type: modulates
+    target: catch_formula
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_util.c:DoBattlerEndTurnEffects
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_util.c:AtkCanceler_UnableToUseMove
+    confidence: 0.85
+- id: abilities_and_held_items
+  facet: mechanics
+  label: Passive abilities and held-item hold effects
+  summary: 'Every species has one or two abilities (slot picked by personality bit 0), 77 in all, and any mon can hold
+    one item. Both are passive hooks checked at fixed points (switch-in, before/after a move, end of turn, damage calc,
+    accuracy, speed, encounter generation): e.g. Intimidate lowers foe Atk on entry, Levitate grants Ground immunity,
+    Swift Swim doubles speed in rain, Sitrus/Oran berries heal at low HP, Leftovers heal 1/16 per turn, Focus Band survives
+    a KO at 1 HP 10% of the time, Choice Band x1.5 Atk, Amulet Coin doubles prize money. Several abilities also act
+    in the overworld when the lead mon has them (encounter rate, wild level, nature sync, match-call rate).'
+  instantiates:
+  - concept: mechanics.inventory.held_item_passive
+    weight: 0.5
+  - concept: mechanics.combat.passive_trait_modifiers
+  reads:
+  - battlers[*].ability
+  - battlers[*].item
+  - party[0].ability
+  writes:
+  - battlers[*].*
+  - battle.money_multiplier
+  params:
+    ability_count:
+      value: 77
+      unit: abilities (ABILITIES_COUNT 78 incl. none)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/abilities.h:ABILITIES_COUNT
+        confidence: 0.95
+    quick_claw_chance:
+      value: 0.2
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/data/items.h (Quick Claw holdEffectParam 20)
+        confidence: 0.8
+  relations:
+  - type: modulates
+    target: damage_formula
+  - type: modulates
+    target: turn_order
+  - type: modulates
+    target: wild_encounter_tables
+    condition: ability of the lead party mon
+  - type: part_of
+    target: battle_engine_core
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_util.c:AbilityBattleEffects
+    confidence: 0.75
+    note: function located by name; only the call sites in damage/speed/encounter code were read in detail
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_util.c:ItemBattleEffects (HOLD_EFFECT_DOUBLE_PRIZE sets moneyMultiplier 2)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_script_commands.c:Cmd_adjustnormaldamage (Focus Band)
+    confidence: 0.9
+- id: battle_weather
+  facet: mechanics
+  label: Battle weather (rain, sun, sandstorm, hail)
+  summary: 'Weather is a field-wide battle state set by moves for 5 turns, permanently by Drizzle/Drought/Sand Stream
+    abilities, or permanently from the overworld weather at battle start (rain types, sandstorm, drought). Rain boosts
+    Water and weakens Fire x1.5/x0.5, sun the reverse, rain/sand/hail halve Solar Beam, sun makes Thunder 50% accurate,
+    sandstorm and hail deal 1/16 max HP to non-immune types each turn, and Swift Swim/Chlorophyll/Sand Veil key off
+    it. Cloud Nine and Air Lock suppress all weather effects.'
+  instantiates:
+  - concept: mechanics.environment.weather_states
+  reads:
+  - battle.weather
+  - overworld.weather
+  writes:
+  - battle.weather
+  - battle.weather_duration
+  params:
+    move_weather_duration:
+      value: 5
+      unit: turns
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c (gWishFutureKnock.weatherDuration = 5)
+        confidence: 0.95
+    water_fire_modifier:
+      value: 1.5
+      unit: boost (0.5 for the opposed type)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/pokemon.c:CalculateBaseDamage (WEATHER_HAS_EFFECT2 branch)
+        confidence: 0.95
+    residual_damage:
+      value: 0.0625
+      unit: fraction of max HP per turn (sandstorm spares Rock/Steel/Ground and Sand Veil; hail spares Ice)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:Cmd_weatherdamage
+        confidence: 0.95
+  relations:
+  - type: modulates
+    target: damage_formula
+  - type: modulates
+    target: turn_order
+  - type: part_of
+    target: battle_engine_core
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_util.c (switch GetCurrentWeather() at battle start)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_main.c:GetWhoStrikesFirst
+    confidence: 0.9
+- id: double_battles
+  facet: mechanics
+  label: Double and multi battle formats
+  summary: 'Doubles put two battlers per side. Spread moves (target both foes) deal half damage while two targets
+    remain, screens cut damage to 2/3 instead of 1/2, AI picks a random foe as default target and adds a double-battle
+    script that avoids hitting its partner. In Emerald the overworld can trigger doubles three ways: a double-battle
+    trainer pair, two separate trainers spotting the player at once (if the player has two usable mons), and the Steven
+    tag battle with an AI partner, plus Frontier multi battles.'
+  instantiates:
+  - concept: mechanics.combat.double_battle_format
+  reads:
+  - battle.type_flags
+  - party.usable_count
+  writes:
+  - battle.targets
+  params:
+    battlers_max:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_ai_script_commands.c:BattleAI_SetupAIData (BIT_FLANK random target)
+        confidence: 0.85
+    spread_move_factor:
+      value: 0.5
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/pokemon.c:CalculateBaseDamage (MOVE_TARGET_BOTH in doubles)
+        confidence: 0.95
+    doubles_prize_factor:
+      value: 2
+      unit: prize-money multiplier for a single double-battle trainer
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:GetTrainerMoneyToGive
+        confidence: 0.95
+  relations:
+  - type: variant_of
+    target: battle_engine_core
+    note: same engine with 4 battler slots
+  - type: requires
+    target: trainer_line_of_sight
+    condition: two-trainer spotted doubles
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/trainer_see.c:CheckTrainer (TRAINER_BATTLE_DOUBLE requires two usable mons; gNoOfApproachingTrainers)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokeemerald:data/battle_ai_scripts.s:AI_DoubleBattle
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_util.c:IsMonDisobedient (BATTLE_TYPE_INGAME_PARTNER)
+    confidence: 0.7
+- id: catch_formula
+  facet: mechanics
+  label: Ball-throw capture formula with four shake checks
+  summary: 'Throwing a ball at a wild mon computes a = floor(catchRate * ballBonus/10 * (3*MaxHP - 2*HP) / (3*MaxHP)),
+    x2 for sleep/freeze or x1.5 for poison/burn/paralysis. If a > 254 the catch succeeds; otherwise b = floor(1048560
+    / floor(sqrt(floor(sqrt(floor(16711680 / a)))))) and up to four checks Random() < b each add a shake; four passes
+    catch the mon (shown as three shakes then success). Master Ball always catches. Trainer-owned mons cannot be caught;
+    the Wally tutorial always succeeds.'
+  instantiates:
+  - concept: mechanics.collection.capture_probability
+  reads:
+  - target.species.catch_rate
+  - target.hp
+  - target.max_hp
+  - target.status1
+  - item.ball_type
+  - battle.turn_counter
+  - pokedex.caught
+  - map.type
+  writes:
+  - party
+  - pc_storage
+  - pokedex.caught
+  params:
+    shake_checks:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:Cmd_handleballthrow (shakes < BALL_3_SHAKES_SUCCESS)
+        confidence: 0.95
+    sleep_freeze_bonus:
+      value: 2.0
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:Cmd_handleballthrow
+        confidence: 0.95
+    other_status_bonus:
+      value: 1.5
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:Cmd_handleballthrow
+        confidence: 0.95
+  tables:
+    ball_bonus:
+      description: Ball multiplier (x10 in source).
+      columns:
+      - ball
+      - bonus
+      - condition
+      rows:
+      - [Poke Ball, 1.0, always]
+      - [Great Ball, 1.5, always]
+      - [Ultra Ball, 2.0, always]
+      - [Safari Ball, 1.5, Safari Zone; catch rate replaced by safari factor * 12.75]
+      - [Net Ball, 3.0, target Water or Bug type (else 1.0)]
+      - [Dive Ball, 3.5, underwater map (else 1.0)]
+      - [Nest Ball, '(40 - level)/10, min 1.0', target level < 40]
+      - [Repeat Ball, 3.0, species already caught (else 1.0)]
+      - [Timer Ball, '(turns + 10)/10, max 4.0', grows each turn]
+      - [Luxury / Premier Ball, 1.0, always]
+      - [Master Ball, guaranteed, always]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:sBallCatchBonuses, Cmd_handleballthrow
+        confidence: 0.95
+    catch_probability_examples:
+      description: Derived single-throw catch probability (MaxHP 300) by species catch rate.
+      columns:
+      - catch_rate
+      - poke_full_hp
+      - poke_1pct_hp
+      - great_1pct_hp
+      - ultra_1pct_hp
+      - ultra_1pct_hp_asleep
+      - poke_full_hp_asleep
+      rows:
+      - [3, 0.004, 0.008, 0.012, 0.021, 0.044, 0.008]
+      - [45, 0.062, 0.198, 0.28, 0.41, 0.785, 0.123]
+      - [120, 0.168, 0.503, 0.785, 1.0, 1.0, 0.337]
+      - [190, 0.28, 0.785, 1.0, 1.0, 1.0, 0.503]
+      - [255, 0.337, 1.0, 1.0, 1.0, 1.0, 0.785]
+      evidence:
+      - kind: derived
+        ref: evaluated Cmd_handleballthrow with integer sqrt and (b/65536)^4, MaxHP=300, 1% HP = 3 HP
+        inputs:
+        - pokeemerald:src/battle_script_commands.c:Cmd_handleballthrow
+        confidence: 0.85
+  invariants:
+  - Lower HP and status always raise catch odds; at full HP the HP factor is 1/3.
+  relations:
+  - type: part_of
+    target: battle_engine_core
+  - type: requires
+    target: rng_lcg
+  - type: modulates
+    target: pokedex_completion
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_script_commands.c:Cmd_handleballthrow
+    confidence: 0.95
+- id: wild_encounter_tables
+  facet: mechanics
+  label: Per-step random encounters from slot-weighted tables (with roamers and outbreaks)
+  summary: 'Each map may define land (12 slots), water (5), rock-smash (5) and fishing (old/good/super rod: 2/3/5 slots)
+    tables with an encounter rate. On each step onto a grass/water/cave tile the chance is rate*16/2880, modified by
+    bike (x0.8), White/Black Flute (x0.5/x1.5), Cleanse Tag (x2/3) and lead abilities (Stench/White Smoke x0.5, Illuminate/Arena
+    Trap x2, Sand Veil in sandstorm x0.5); when the step changes metatile behaviour (e.g. entering grass) a 60% pre-check
+    applies first. A slot is then rolled from fixed weights and a level from its min-max range; Repel blocks foes below
+    the lead''s level, Keen Eye/Intimidate skip low-level foes half the time, Static/Magnet Pull bias toward
+    Electric/Steel, Synchronize copies nature 50%. A roaming Latias or Latios (1/4 when on the same map) and TV-announced
+    mass outbreaks preempt the table.'
+  instantiates:
+  - concept: mechanics.encounter.slot_weighted_encounter_table
+  - concept: mechanics.encounter.random_step_encounter
+  - concept: mechanics.encounter.roaming_encounter
+    weight: 0.5
+  reads:
+  - map.wild_header
+  - metatile.behavior
+  - player.avatar_flags
+  - party[0].ability
+  - party[0].held_item
+  - world.vars.repel_steps
+  - roamer.location
+  - world.outbreak
+  writes:
+  - battle.wild_mon
+  - world.vars.repel_steps
+  params:
+    max_encounter_rate:
+      value: 2880
+      unit: denominator; per-step chance = rate*16/2880
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/wild_encounter.c:MAX_ENCOUNTER_RATE, WildEncounterCheck
+        confidence: 0.95
+    per_step_chance_rate20:
+      value: 0.111
+      unit: probability per qualifying step (rate 20, no modifiers)
+      evidence:
+      - kind: derived
+        ref: 20*16/2880
+        inputs:
+        - pokeemerald:src/wild_encounter.c:WildEncounterCheck
+        confidence: 0.9
+    new_metatile_precheck:
+      value: 0.6
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/wild_encounter.c:AllowWildCheckOnNewMetatile
+        confidence: 0.95
+    roamer_chance:
+      value: 0.25
+      unit: per triggered encounter when the roamer is on the current map
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/roamer.c:TryStartRoamerEncounter
+        confidence: 0.95
+    roamer_relocate_chance:
+      value: 0.0625
+      unit: chance per map change to jump to another route set (else moves within its set, never back to the map of
+        2 moves ago)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/roamer.c:RoamerMove
+        confidence: 0.95
+    map_rates_observed:
+      value: [1, 4, 7, 9, 10, 15, 20, 25, 30, 35]
+      unit: distinct encounter_rate values across all tables
+      evidence:
+      - kind: derived
+        ref: parsed src/data/wild_encounters.json
+        inputs:
+        - pokeemerald:src/data/wild_encounters.json
+        confidence: 0.9
+  tables:
+    slot_weights:
+      description: Slot probabilities (percent) per table type.
+      columns:
+      - table
+      - slot_weights_percent
+      rows:
+      - [land, '20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1']
+      - [water, '60, 30, 5, 4, 1']
+      - [rock_smash, '60, 30, 5, 4, 1']
+      - [old_rod, '70, 30']
+      - [good_rod, '60, 20, 20']
+      - [super_rod, '40, 40, 15, 4, 1']
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/data/wild_encounters.json (fields.encounter_rates)
+        confidence: 0.95
+    example_route101_land:
+      description: Route 101 land table (rate 20) as a concrete instance.
+      columns:
+      - slot
+      - species
+      - level
+      rows:
+      - [0, Wurmple, 2]
+      - [1, Poochyena, 2]
+      - [2, Wurmple, 2]
+      - [3, Wurmple, 3]
+      - [4, Poochyena, 3]
+      - [5, Poochyena, 3]
+      - [6, Wurmple, 3]
+      - [7, Poochyena, 3]
+      - [8, Zigzagoon, 2]
+      - [9, Zigzagoon, 2]
+      - [10, Zigzagoon, 3]
+      - [11, Zigzagoon, 3]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/data/wild_encounters.json (gRoute101)
+        confidence: 0.95
+  invariants:
+  - Repel only lets through wild mons whose level is >= the first healthy party mon's level.
+  - Encounters only roll on metatiles whose behaviour is a land or water encounter type.
+  relations:
+  - type: requires
+    target: rng_lcg
+  - type: requires
+    target: battle_engine_core
+  - type: modulates
+    target: catch_formula
+    note: Dive Ball/Repeat Ball/Nest Ball context
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/wild_encounter.c:StandardWildEncounter
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/wild_encounter.c:ChooseWildMonIndex_Land
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/wild_encounter.c:ChooseWildMonLevel
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokeemerald:src/wild_encounter.c:IsWildLevelAllowedByRepel
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/wild_encounter.c:PickWildMonNature
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokeemerald:src/wild_encounter.c:DoMassOutbreakEncounterTest
+    confidence: 0.9
+- id: breeding_daycare
+  facet: mechanics
+  label: Day Care breeding with compatibility, IV/nature inheritance and step-hatched eggs
+  summary: 'Two Pokémon left at the Day Care gain 1 exp per step. Every 256 steps an egg is rolled with probability
+    equal to compatibility: 70 same species different OT, 50 same species same OT or different species different OT
+    (or Ditto with a different OT), 20 different species same OT (or Ditto same OT), 0 if same gender, genderless, no
+    shared egg group or Undiscovered group. The egg is the mother''s (or non-Ditto parent''s) base species, inherits
+    3 IVs from random parents, the Everstone holder''s nature 50% of the time, and egg/TM moves from the father. Eggs
+    hatch after their species'' egg cycles, one cycle per 255 steps (two with Magma Armor or Flame Body in the party).'
+  instantiates:
+  - concept: mechanics.collection.breeding_inheritance
+  reads:
+  - daycare.mons[2]
+  - daycare.steps
+  - party[*].ability
+  writes:
+  - daycare.pending_egg
+  - party[*].egg_cycles
+  params:
+    egg_roll_interval:
+      value: 256
+      unit: steps (when step counter low byte == 0xFF)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/daycare.c:TryProduceOrHatchEgg
+        confidence: 0.95
+    hatch_cycle_steps:
+      value: 255
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/daycare.c:TryProduceOrHatchEgg (stepCounter == 255)
+        confidence: 0.95
+    inherited_ivs:
+      value: 3
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/daycare.h:INHERITED_IV_COUNT
+        confidence: 0.95
+    everstone_nature_chance:
+      value: 0.5
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/daycare.c:GetParentToInheritNature
+        confidence: 0.95
+  tables:
+    compatibility:
+      description: Egg chance per 256-step roll.
+      columns:
+      - pairing
+      - percent
+      rows:
+      - [same species, different OT, 70]
+      - [same species, same OT, 50]
+      - [different species sharing egg group, different OT, 50]
+      - [different species sharing egg group, same OT, 20]
+      - [Ditto + other, different OT, 50]
+      - [Ditto + other, same OT, 20]
+      - [same gender / genderless pair / no shared group / Undiscovered / two Ditto, n/a, 0]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/daycare.c:GetDaycareCompatibilityScore; include/constants/daycare.h
+        confidence: 0.95
+  relations:
+  - type: part_of
+    target: monster_data_model
+  - type: requires
+    target: grid_step_locomotion
+    note: steps drive egg rolls and hatching
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/daycare.c:GetDaycareCompatibilityScore
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/daycare.c:InheritIVs
+    confidence: 0.8
+  - kind: decomp_source
+    ref: pokeemerald:src/daycare.c:BuildEggMoveset
+    confidence: 0.7
+  - kind: decomp_source
+    ref: pokeemerald:src/egg_hatch.c:GetEggCyclesToSubtract
+    confidence: 0.7
+- id: rtc_time_events
+  facet: mechanics
+  label: Cartridge real-time clock driving daily and per-minute world updates
+  summary: 'The cartridge RTC gives a day count and time (offset by the player''s clock setting). Gen 3 has no visual
+    day/night: time drives systems instead. On a day rollover the game clears daily flags and advances Dewford trends,
+    TV shows, weather, Pokérus, the Mirage Island seed, Birch state, Frontier NPCs, the Shoal Cave item flag and the
+    lottery number; elapsed minutes advance berry trees. Shoal Cave tide is high 09-14 and 21-02. Friendship evolutions
+    split at 12:00 (day 12-23, night 0-11). Mirage Island appears when any party mon''s low personality half matches
+    the daily random value.'
+  instantiates:
+  - concept: mechanics.time.real_time_clock_events
+  reads:
+  - rtc.local_time
+  - world.vars.days
+  - save.last_berry_update
+  writes:
+  - world.flags.daily
+  - world.vars.days
+  - world.flags.shoal_tide
+  - berry_trees[*]
+  params:
+    evolution_day_hours:
+      value: 12-23
+      unit: local hours for day evolutions (night 0-11)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/pokemon.c (DAY_EVO_HOUR_BEGIN 12, NIGHT_EVO_HOUR_END 12)
+        confidence: 0.95
+    high_tide_hours:
+      value: '0-2, 9-14, 21-23'
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/time_events.c:UpdateShoalTideFlag
+        confidence: 0.95
+    mirage_island_match:
+      value: party mon (personality & 0xFFFF) == daily random high half
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/time_events.c:IsMirageIslandPresent
+        confidence: 0.95
+  invariants:
+  - Time-based updates are skipped inside Pokémon Centers and before the clock is set.
+  - Turning the clock back never un-grows berries (negative minute deltas are ignored).
+  relations:
+  - type: modulates
+    target: berry_farming
+  - type: modulates
+    target: evolution_rules
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/clock.c:DoTimeBasedEvents
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/clock.c:UpdatePerDay
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/rtc.c:RtcCalcLocalTime
+    confidence: 0.8
+- id: pokemon_contests
+  facet: mechanics
+  label: Pokémon Contests (condition judging plus five-round appeal minigame)
+  summary: 'Four contestants compete in one of five categories (Cool, Beauty, Cute, Smart, Tough) at Normal/Super/Hyper/Master
+    rank. Round 1 points = main condition + (the two adjacent conditions + sheen)/2, where conditions are raised by feeding
+    Pokéblocks made from berries. Round 2 is five appeal turns: each move has a category, hearts (up to 8) and an effect
+    (jam others, startle, combos, order changes); using moves matching the contest category raises a 5-level applause
+    meter and filling it grants a +60 appeal bonus (else +10). Final score = round 1 + 2 x appeal total; winners earn
+    ribbons and a painting.'
+  instantiates:
+  - concept: mechanics.minigame.appeal_contest
+  reads:
+  - mon.condition.*
+  - mon.sheen
+  - mon.moves
+  - contest.applause_level
+  writes:
+  - contest.appeal[*]
+  - mon.ribbons
+  params:
+    contestants:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/contest.c (CONTESTANT_COUNT loops)
+        confidence: 0.85
+    appeal_rounds:
+      value: 5
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/contest.h:CONTEST_NUM_APPEALS
+        confidence: 0.95
+    applause_meter_size:
+      value: 5
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/contest.h:APPLAUSE_METER_SIZE
+        confidence: 0.95
+    excitement_bonus:
+      value: 60
+      unit: appeal points when the meter fills (10 otherwise)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/contest.c (excitementAppealBonus = 60 / 10)
+        confidence: 0.95
+    max_condition:
+      value: 255
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/pokemon.h:MAX_CONDITION, MAX_SHEEN
+        confidence: 0.95
+  tables:
+    round1_condition_weights:
+      description: Condition used as main and the two halved sub-conditions per category.
+      columns:
+      - category
+      - main
+      - sub_1
+      - sub_2
+      rows:
+      - [cool, cool, tough, beauty]
+      - [beauty, beauty, cool, cute]
+      - [cute, cute, beauty, smart]
+      - [smart, smart, cute, tough]
+      - [tough, tough, smart, cool]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/contest.c:CalculateContestantRound1Points
+        confidence: 0.95
+  relations:
+  - type: requires
+    target: berry_farming
+    note: Pokéblocks are blended from berries
+  - type: requires
+    target: monster_data_model
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/contest.c:CalculateContestantRound1Points
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/contest.c:GetContestantRound2Points
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/contest.c:sContestExcitementTable
+    confidence: 0.9
+- id: secret_bases
+  facet: mechanics
+  label: Secret bases with decorations and record-mixed rival bases
+  summary: 'Secret Power opens a base in marked trees, shrubs and cave walls. The player places up to 16 decorations
+    (mats with jump/spin/sound behaviours, dolls, posters, furniture) and the base stores a party snapshot. Bases from
+    other players arrive by record mixing (20 slots kept, registrable), appear in the world, and their owners can be
+    battled once a day using the stored party.'
+  instantiates:
+  - concept: mechanics.customization.player_base_decoration
+  reads:
+  - metatile.behavior
+  - decorations.inventory
+  writes:
+  - secret_bases[*]
+  - map.blocks
+  params:
+    stored_bases:
+      value: 20
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/global.h:SECRET_BASES_COUNT
+        confidence: 0.95
+    decorations_per_base:
+      value: 16
+      unit: (12 in the player's room)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/global.h:DECOR_MAX_SECRET_BASE, DECOR_MAX_PLAYERS_HOUSE
+        confidence: 0.95
+  relations:
+  - type: gated_by
+    target: hm_field_move_gating
+    note: Secret Power TM opens base spots
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:include/global.h:struct SecretBase (battledOwnerToday, decorations, party)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokeemerald:src/secret_base.c (EnterSecretBase, SetPlayerSecretBaseParty, registry menu)
+    confidence: 0.8
+  - kind: decomp_source
+    ref: pokeemerald:include/constants/metatile_behaviors.h (MB_SECRET_BASE_*_MAT, MB_SECRET_BASE_SPOT_*)
+    confidence: 0.85
+- id: trainer_ai_move_scoring
+  facet: ai
+  label: Flag-selected script modules that score each move, then pick the max
+  summary: 'Each opponent turn every usable move starts at score 100 (unusable moves 0). The trainer''s AI flags select
+    script modules from a 32-entry table, run in bit order over every move; each module adds or subtracts points via
+    conditionals over the real battle state (the AI sees the player''s exact HP, types, ability and last move). After
+    all modules the AI picks uniformly among the moves with the highest score. Damage queries (can this KO? is this the
+    strongest move?) re-run the damage formula with a random factor pre-rolled per move at setup. Special flags replace
+    move choice with an action: roamers flee unless trapped, Safari mons flee or watch, and the first-battle Zigzagoon
+    flees at <=20 HP. Gym leaders and Elite Four use BAD_MOVE+TRY_TO_FAINT+VIABILITY (+SETUP_FIRST_TURN for some);
+    most route trainers only CHECK_BAD_MOVE.'
+  instantiates:
+  - concept: ai.decision.utility_scoring_scripts
+  reads:
+  - battlers[*].hp
+  - battlers[*].types
+  - battlers[*].ability
+  - battlers[*].status
+  - battle.weather
+  - battle.turn_count
+  - ai.move_history
+  - trainer.ai_flags
+  writes:
+  - ai.scores[4]
+  - ai.chosen_move
+  - ai.action
+  params:
+    base_score:
+      value: 100
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_ai_script_commands.c:BattleAI_SetupAIData
+        confidence: 0.95
+    simulated_damage_roll:
+      value: 85-100
+      unit: percent, one roll per move per turn (100 - Random()%16)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_ai_script_commands.c:BattleAI_SetupAIData (simulatedRNG)
+        confidence: 0.95
+    random_branch_scale:
+      value: 256
+      unit: if_random_less_than N fires with probability N/256
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_ai_script_commands.c:Cmd_if_random_less_than
+        confidence: 0.95
+    score_floor:
+      value: 0
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_ai_script_commands.c:Cmd_score
+        confidence: 0.95
+  tables:
+    ai_modules:
+      description: AI flag modules (bit order) and their main scoring rules, paraphrased from data/battle_ai_scripts.s.
+      columns:
+      - bit
+      - module
+      - rules
+      rows:
+      - [0, CHECK_BAD_MOVE, '-10 if target immune by type, Levitate, Wonder Guard (non-SE), Soundproof; -12 if absorbed
+          by Volt/Water Absorb/Flash Fire; per-effect penalties for redundant status, maxed stats, failing setup']
+      - [1, TRY_TO_FAINT, '+4 if the move can KO (+2 more if it is a priority move, not for Explosion); -1 if not the
+          strongest damaging move; +2 for 4x effective with 176/256 chance']
+      - [2, CHECK_VIABILITY, 'per-effect heuristics on HP, speed order, stats and status (largest module)']
+      - [3, SETUP_FIRST_TURN, '+2 (176/256) for stat-change moves on turn 0']
+      - [4, RISKY, '+2 (128/256) for sleep, Explosion, OHKO, high-crit, confuse, Metronome, Counter, Destiny Bond, Swagger,
+          Attract, Present...']
+      - [5, PREFER_POWER_EXTREMES, '+2 (156/256) for non-damaging or ignored-power moves']
+      - [6, PREFER_BATON_PASS, 'favour setup then Baton Pass; +5 setup on turn 0, -10 below 60% HP']
+      - [7, DOUBLE_BATTLE, 'auto-added in doubles: avoid hitting partner, account for Earthquake, Helping Hand, Lightning Rod/Flash
+          Fire partners']
+      - [8, HP_AWARE, '-2 (206/256) for effects listed as poor at the user''s or target''s HP band (>70%, 30-70%, <30%)']
+      - [9, TRY_SUNNY_DAY_START, '+5 Sunny Day on the user''s first turn']
+      - [29, ROAMING, flee unless wrapped/trapped/Shadow Tag/Arena Trap (Levitate ignores Arena Trap)]
+      - [30, SAFARI, random flee else watch]
+      - [31, FIRST_BATTLE, flee when target HP <= 20]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:data/battle_ai_scripts.s:gBattleAI_ScriptsTable, AI_CheckBadMove, AI_TryToFaint, AI_SetupFirstTurn,
+          AI_Risky, AI_PreferPowerExtremes, AI_PreferBatonPass, AI_DoubleBattle, AI_HPAware, AI_TrySunnyDayStart, AI_Roaming,
+          AI_Safari, AI_FirstBattle
+        confidence: 0.9
+    trainer_flag_usage:
+      description: Count of gTrainers entries per AI flag combination.
+      columns:
+      - flags
+      - trainers
+      rows:
+      - [CHECK_BAD_MOVE, 640]
+      - [CHECK_BAD_MOVE + TRY_TO_FAINT + CHECK_VIABILITY, 173]
+      - [none, 16]
+      - [CHECK_BAD_MOVE + TRY_TO_FAINT + SETUP_FIRST_TURN, 13]
+      - [CHECK_BAD_MOVE + TRY_TO_FAINT, 7]
+      - [CHECK_BAD_MOVE + TRY_TO_FAINT + CHECK_VIABILITY + RISKY, 5]
+      - [CHECK_BAD_MOVE + TRY_TO_FAINT + CHECK_VIABILITY + SETUP_FIRST_TURN, 1]
+      evidence:
+      - kind: derived
+        ref: grep/uniq of .aiFlags in src/data/trainers.h
+        inputs:
+        - pokeemerald:src/data/trainers.h
+        confidence: 0.9
+  invariants:
+  - Ties at the top score are broken uniformly at random; scores never go negative.
+  - The AI does not simulate critical hits when evaluating damage.
+  - Frontier, Trainer Hill, secret-base and e-Reader opponents always use BAD_MOVE + VIABILITY + TRY_TO_FAINT; Battle
+    Factory picks flags by streak.
+  relations:
+  - type: requires
+    target: damage_formula
+  - type: requires
+    target: type_chart
+  - type: part_of
+    target: battle_engine_core
+  - type: modulates
+    target: double_battles
+    condition: double battles
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_ai_script_commands.c:BattleAI_SetupAIData
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_ai_script_commands.c:ChooseMoveOrAction_Singles
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_ai_script_commands.c:Cmd_get_how_powerful_move_is
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_ai_script_commands.c:Cmd_if_can_faint
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:include/constants/battle_ai.h (AI_SCRIPT_* bits)
+    confidence: 0.95
+- id: trainer_ai_switch_and_items
+  facet: ai
+  label: Rule-based trainer switching and item use
+  summary: 'Before move scoring, trainer AI may switch or use an item. It switches (if another healthy mon exists) when
+    Perish Song is about to KO it, when it cannot touch a Wonder Guard foe, when a party mon absorbs the foe''s last move
+    type, or to cure a status via Natural Cure; it stays in if it has a super-effective move or raised stats; otherwise
+    it may switch to a party mon resistant/immune to the foe''s last move with 1/2 or 1/3 chance. The replacement is the
+    mon with the best type matchup against the foe. Trainers carry up to 4 items: Full Restore below 1/4 HP, potions when
+    below 1/4 or the heal would not overflow, status cures, X items and Guard Spec on early turns.'
+  instantiates:
+  - concept: ai.items.situational_item_use
+    weight: 0.5
+  - concept: ai.decision.rule_based_switching
+  reads:
+  - battlers[*].hp
+  - battlers[*].status
+  - battlers[*].stat_stages
+  - foe.last_move_type
+  - trainer.items
+  - enemy_party[*]
+  writes:
+  - ai.switch_target
+  - trainer.items
+  params:
+    trainer_item_slots:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/data.h:struct Trainer (items[MAX_TRAINER_ITEMS])
+        confidence: 0.9
+    full_restore_threshold:
+      value: 0.25
+      unit: fraction of max HP
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_ai_switch_items.c:ShouldUseItem (AI_ITEM_FULL_RESTORE)
+        confidence: 0.95
+    resist_switch_odds:
+      value: 1/2 (immune) or 1/3 (resists)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_ai_switch_items.c:ShouldSwitch (FindMonWithFlagsAndSuperEffective moduloPercent 2/3)
+        confidence: 0.85
+  relations:
+  - type: part_of
+    target: trainer_ai_move_scoring
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_ai_switch_items.c:ShouldSwitch
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_ai_switch_items.c:AI_TrySwitchOrUseItem
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_ai_switch_items.c:ShouldUseItem
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_ai_switch_items.c:GetMostSuitableMonToSwitchInto
+    confidence: 0.7
+- id: battle_palace_nature_ai
+  facet: ai
+  label: Nature-driven autonomous move choice (Battle Palace)
+  summary: 'In the Battle Palace (and Verdanturf Tent) neither side picks moves: each Pokémon''s nature gives percentage
+    odds of choosing from its Attack, Defense or Support move groups, with a different distribution once it is at or
+    below 50% HP; a flavour line describes its mood. This turns natures into a behaviour personality, e.g. Lax: 35/10/55
+    healthy but 29/6/65 when hurt.'
+  instantiates:
+  - concept: ai.combat.weighted_action_selection
+    weight: 0.5
+  - concept: ai.decision.personality_weighted_action
+  reads:
+  - mon.nature
+  - mon.hp_fraction
+  - mon.moves
+  writes:
+  - battle.chosen_move
+  params:
+    low_hp_threshold:
+      value: 0.5
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c (comment above gBattlePalaceNatureToMoveGroupLikelihood)
+        confidence: 0.9
+  tables:
+    nature_move_group_odds:
+      description: Percent chance of Attack / Defense / Support group, healthy vs <=50% HP (selected natures).
+      columns:
+      - nature
+      - atk
+      - def
+      - support
+      - atk_low_hp
+      - def_low_hp
+      - support_low_hp
+      rows:
+      - [hardy, 61, 7, 32, 61, 7, 32]
+      - [lonely, 20, 25, 55, 84, 8, 8]
+      - [brave, 70, 15, 15, 32, 60, 8]
+      - [adamant, 38, 31, 31, 70, 15, 15]
+      - [bold, 30, 20, 50, 32, 58, 10]
+      - [lax, 35, 10, 55, 29, 6, 65]
+      - [timid, 62, 10, 28, 30, 20, 50]
+      - [hasty, 58, 37, 5, 88, 6, 6]
+      - [jolly, 35, 5, 60, 35, 60, 5]
+      - [modest, 35, 45, 20, 34, 60, 6]
+      - [calm, 40, 50, 10, 25, 62, 13]
+      - [gentle, 18, 70, 12, 90, 5, 5]
+      - [sassy, 88, 6, 6, 22, 20, 58]
+      - [careful, 42, 50, 8, 42, 5, 53]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:gBattlePalaceNatureToMoveGroupLikelihood
+        confidence: 0.95
+  relations:
+  - type: part_of
+    target: battle_frontier
+  - type: requires
+    target: monster_data_model
+    note: nature comes from personality
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_script_commands.c:gBattlePalaceNatureToMoveGroupLikelihood
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_gfx_sfx_util.c (palace move selection reads the likelihood table)
+    confidence: 0.8
+- id: contest_ai
+  facet: ai
+  label: Contest opponent move scoring
+  summary: 'NPC contestants run contest-AI script modules selected by flag bits (check bad move, combos, boring/repeat,
+    excitement, turn order, good move, erratic) that adjust four move scores starting at 100; the move is then chosen
+    by repeatedly drawing a random move index until it lands on a top-scoring move.'
+  instantiates:
+  - concept: ai.decision.utility_scoring_scripts
+  reads:
+  - contest.applause_level
+  - contest.turn_order
+  - contestants[*].moves
+  writes:
+  - contest_ai.move_scores
+  params:
+    base_score:
+      value: 100
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/contest_ai.c:ContestAI_ResetAI
+        confidence: 0.95
+    module_flags:
+      value: 7
+      unit: live modules (bad move, combo, boring, excitement, order, good move, erratic)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/contest.h (CONTEST_AI_* bits)
+        confidence: 0.95
+  relations:
+  - type: part_of
+    target: pokemon_contests
+  - type: variant_of
+    target: trainer_ai_move_scoring
+    note: same score-by-script architecture applied to contest appeals
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/contest_ai.c:ContestAI_GetActionToUse
+    confidence: 0.95
+- id: trainer_line_of_sight
+  facet: ai
+  label: Trainer sight lines, approach and forced battle
+  summary: 'After each player step, undefeated trainer NPCs test whether the player stands within their sight range
+    (per-object, in tiles) straight ahead in their facing direction (or in any of the four directions for "see all"
+    and buried trainers) with no blocking tile or object between. A spotting trainer shows an exclamation mark, walks
+    up to the adjacent tile, the player turns to face them, and the battle script runs; disguised (tree/rock) and buried
+    trainers reveal first. Two trainers can spot the player at once, producing a double battle if the player has two
+    usable mons. Each trainer''s flag records the defeat.'
+  instantiates:
+  - concept: ai.perception.tile_raycast_line_of_sight
+  - concept: ai.enemy.line_of_sight_charge
+    weight: 0.5
+  reads:
+  - player.tile_position
+  - trainer.facing
+  - trainer.sight_range
+  - world.flags.trainer_defeated.*
+  - map.collision
+  writes:
+  - trainer.tile_position
+  - player.facing
+  - battle.pending_trainers
+  params:
+    max_simultaneous_spotters:
+      value: 2
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/trainer_see.c:CheckForTrainersWantingBattle (gNoOfApproachingTrainers)
+        confidence: 0.85
+    trainer_count:
+      value: 864
+      unit: trainer ids / defeat flags
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/opponents.h:MAX_TRAINERS_COUNT
+        confidence: 0.95
+  invariants:
+  - Defeated trainers (flag set) never re-trigger unless a rematch is armed.
+  - Sight is a straight tile line; walls or objects in between block it.
+  relations:
+  - type: requires
+    target: tile_collision_and_elevation
+  - type: requires
+    target: script_engine
+  - type: part_of
+    target: npc_movement_types
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/trainer_see.c:GetTrainerApproachDistance
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/trainer_see.c:CheckTrainer
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/trainer_see.c:CheckPathBetweenTrainerAndPlayer
+    confidence: 0.8
+- id: npc_movement_types
+  facet: ai
+  label: Data-driven NPC ambient movement types
+  summary: 'Every object event template names one of ~80 movement types, each a small per-object state machine: stand
+    facing a direction, look around or turn between 2-3 facings, wander within a rectangular range, walk back and forth,
+    walk a fixed 4-direction sequence, rotate, copy the player''s movement (mirror or same direction), or follow scripted
+    movement. Wanderers wait a random delay (32/64/96/128 frames), pick a random direction and step if not blocked.
+    Up to 16 objects are live at once from 64 templates per map.'
+  instantiates:
+  - concept: ai.npc.ambient_movement_patterns
+  reads:
+  - objects[*].movement_type
+  - objects[*].range
+  - player.movement
+  writes:
+  - objects[*].tile_position
+  - objects[*].facing
+  params:
+    movement_types:
+      value: 80
+      unit: MOVEMENT_TYPE_* ids (approx.)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/event_object_movement.h
+        confidence: 0.8
+    wander_delays:
+      value: [32, 64, 96, 128]
+      unit: frames (uniform pick)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/event_object_movement.c:sMovementDelaysMedium
+        confidence: 0.95
+    live_objects:
+      value: 16
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/global.h:OBJECT_EVENTS_COUNT
+        confidence: 0.95
+  relations:
+  - type: requires
+    target: grid_step_locomotion
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/event_object_movement.c:MovementType_WanderAround_Step4
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/event_object_movement.c:sMovementDelaysMedium
+    confidence: 0.95
+- id: exp_and_leveling
+  facet: progression
+  label: Experience yield, sharing and six growth curves
+  summary: 'Defeating a mon yields floor(baseExpYield * foeLevel / 7) experience, split evenly among participating
+    healthy mons; if anyone holds Exp. Share, half goes to participants and half is split among holders. Trainer battles,
+    traded mons (OT differs) and Lucky Egg each multiply by 1.5. Defeated species also award EVs. Level is looked up
+    from total experience on one of six growth curves (level 100 at 600,000 to 1,640,000 exp). Level-ups recompute
+    stats, teach level-up moves and check evolution.'
+  instantiates:
+  - concept: progression.character.exp_levels
+  reads:
+  - foe.species.exp_yield
+  - foe.level
+  - party[*].held_item
+  - party[*].ot_id
+  - battle.type_flags
+  writes:
+  - party[*].experience
+  - party[*].level
+  - party[*].evs
+  params:
+    exp_formula:
+      value: floor(base_exp * foe_level / 7) / participants
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:Cmd_getexp (case 1)
+        confidence: 0.95
+    trainer_bonus:
+      value: 1.5
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:Cmd_getexp (BATTLE_TYPE_TRAINER *150/100)
+        confidence: 0.95
+    traded_bonus:
+      value: 1.5
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:Cmd_getexp (IsTradedMon)
+        confidence: 0.95
+    lucky_egg_bonus:
+      value: 1.5
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:Cmd_getexp (HOLD_EFFECT_LUCKY_EGG)
+        confidence: 0.95
+  tables:
+    growth_curves:
+      description: Total experience for level n by growth rate; level-50 and level-100 values derived from the macros.
+      columns:
+      - curve
+      - formula
+      - exp_at_50
+      - exp_at_100
+      rows:
+      - [medium_fast, n^3, 125000, 1000000]
+      - [erratic, 'piecewise: (100-n)n^3/50 to n<=50, (150-n)n^3/100 to 68, ((1911-10n)/3)n^3/500 to 98, (160-n)n^3/100', 125000, 600000]
+      - [fluctuating, 'piecewise: ((n+1)/3+24)n^3/50 to 15, (n+14)n^3/50 to 36, (n/2+32)n^3/50', 142500, 1640000]
+      - [medium_slow, 6n^3/5 - 15n^2 + 100n - 140, 117360, 1059860]
+      - [fast, 4n^3/5, 100000, 800000]
+      - [slow, 5n^3/4, 156250, 1250000]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/data/pokemon/experience_tables.h (EXP_* macros, gExperienceTables)
+        confidence: 0.95
+      - kind: derived
+        ref: evaluated macros at n=50 and n=100
+        inputs:
+        - pokeemerald:src/data/pokemon/experience_tables.h
+        confidence: 0.9
+  invariants:
+  - Every participant or Exp. Share holder gets at least 1 exp; level 100 mons gain none.
+  relations:
+  - type: modulates
+    target: stat_calculation
+  - type: requires
+    target: battle_engine_core
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_script_commands.c:Cmd_getexp
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/data/pokemon/experience_tables.h
+    confidence: 0.95
+- id: evolution_rules
+  facet: progression
+  label: Multi-trigger evolution table
+  summary: 'Each species lists up to five evolutions with a method and parameter: level reached, friendship >= 220 (any
+    time, day 12-23 or night 0-11 by the RTC), trade, trade holding an item, item use (stones), level with Atk >,
+    = or < Def, Wurmple''s personality split, Nincada''s Ninjask + Shedinja split (Shedinja appears in a free party slot),
+    and beauty >= value (Feebas). An Everstone blocks evolution. Level evolutions run after battle; the player can cancel
+    with B.'
+  instantiates:
+  - concept: progression.character.conditional_evolution
+  reads:
+  - mon.level
+  - mon.friendship
+  - mon.held_item
+  - mon.beauty
+  - mon.stats
+  - rtc.local_time
+  writes:
+  - mon.species
+  params:
+    friendship_threshold:
+      value: 220
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/pokemon.c:FRIENDSHIP_EVO_THRESHOLD
+        confidence: 0.95
+    evolution_methods:
+      value: 15
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/pokemon.h (EVO_FRIENDSHIP..EVO_BEAUTY)
+        confidence: 0.95
+  invariants:
+  - An Everstone holder never evolves (except item-check previews).
+  relations:
+  - type: requires
+    target: exp_and_leveling
+  - type: part_of
+    target: monster_data_model
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/pokemon.c:GetEvolutionTargetSpecies
+    confidence: 0.95
+- id: gym_badge_progression
+  facet: progression
+  label: Eight-gym badge ladder to the Pokémon League
+  summary: 'The critical path is eight gyms in a fixed geographic order, each badge a world flag that gates the next
+    region via HM use (badge N unlocks one field move outside battle), raises the level up to which traded mons obey
+    (10 base; 30, 50, 70 at badges 2/4/6; all at 8), and grants hidden 10% stat boosts (Atk at badge 1, Speed at 3,
+    Def at 5, SpA/SpD at 7) to the player''s side in normal battles. After the eighth badge Victory Road leads to the
+    Elite Four and Champion; clearing them sets the game-clear flag and opens the postgame (Battle Frontier access,
+    National Dex, Sky Pillar etc.). Five badges also arm trainer rematches.'
+  instantiates:
+  - concept: progression.structure.gym_badge_ladder
+  - concept: progression.gating.ability_gating
+    weight: 0.6
+  reads:
+  - world.flags.badge01..badge08
+  writes:
+  - world.flags.badge*
+  - world.flags.game_clear
+  params:
+    badge_count:
+      value: 8
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/flags.h:NUM_BADGES
+        confidence: 0.95
+    obedience_level_caps:
+      value: [10, 30, 50, 70, 100]
+      unit: max obedient level for traded mons with 0-1, 2-3, 4-5, 6-7, 8 badges
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_util.c:IsMonDisobedient
+        confidence: 0.95
+    badge_stat_boost:
+      value: 1.1
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/pokemon.c:CalculateBaseDamage (ShouldGetStatBadgeBoost); src/battle_main.c:GetWhoStrikesFirst
+        confidence: 0.95
+  tables:
+    gyms:
+      description: Emerald gym order (leader names and types from model knowledge; badge-to-field-move mapping from code).
+      columns:
+      - badge
+      - city
+      - leader
+      - type
+      - unlocks_field_move
+      rows:
+      - [1 Stone, Rustboro, Roxanne, rock, Cut]
+      - [2 Knuckle, Dewford, Brawly, fighting, Flash]
+      - [3 Dynamo, Mauville, Wattson, electric, Rock Smash]
+      - [4 Heat, Lavaridge, Flannery, fire, Strength]
+      - [5 Balance, Petalburg, Norman, normal, Surf]
+      - [6 Feather, Fortree, Winona, flying, Fly]
+      - [7 Mind, Mossdeep, Tate & Liza (double battle), psychic, Dive]
+      - [8 Rain, Sootopolis, Juan (Wallace in Ruby/Sapphire), water, Waterfall]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/party_menu.c (field move per FLAG_BADGE0N_GET comments)
+        confidence: 0.95
+      - kind: llm_knowledge
+        ref: gym leaders, cities and types in Pokémon Emerald
+        confidence: 0.6
+  invariants:
+  - Badges are never lost; each is a single persistent flag.
+  relations:
+  - type: requires
+    target: battle_engine_core
+  - type: modulates
+    target: damage_formula
+  - type: modulates
+    target: turn_order
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_util.c:IsMonDisobedient
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/party_menu.c (fieldMove <= FIELD_MOVE_WATERFALL && !FlagGet(FLAG_BADGE01_GET + fieldMove))
+    confidence: 0.95
+  - kind: llm_knowledge
+    ref: Elite Four / Champion and postgame structure
+    confidence: 0.55
+- id: hm_field_move_gating
+  facet: progression
+  label: HM field moves as world keys
+  summary: 'Overworld obstacles are typed locks opened by a party Pokémon knowing a field move and the matching badge:
+    Cut trees, Flash for dark caves, Rock Smash boulders (with their own encounter table), Strength push-boulders, Surf
+    water, Fly to visited towns (fast travel), Dive into deep water, Waterfall climbing; plus Secret Power for base
+    spots and Teleport/Dig/Sweet Scent utilities. HMs cannot be forgotten normally, so slots on the team become a
+    resource.'
+  instantiates:
+  - concept: progression.gating.typed_lock_and_key
+  - concept: progression.travel.unlockable_fast_travel_points
+    weight: 0.4
+  reads:
+  - party[*].moves
+  - world.flags.badge*
+  - metatile.behavior
+  writes:
+  - map.objects
+  - player.avatar_flags
+  params:
+    gated_field_moves:
+      value: 8
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/party_menu.c (FIELD_MOVE_CUT..FIELD_MOVE_WATERFALL badge table)
+        confidence: 0.95
+  relations:
+  - type: gated_by
+    target: gym_badge_progression
+  - type: modulates
+    target: water_traversal
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/party_menu.c (field-move badge check)
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/field_player_avatar.c:TryPushBoulder (via CheckForObjectEventCollision)
+    confidence: 0.8
+  - kind: decomp_source
+    ref: pokeemerald:src/wild_encounter.c:RockSmashWildEncounter
+    confidence: 0.8
+- id: trainer_rematches_match_call
+  facet: progression
+  label: PokéNav Match Call and step-gated trainer rematches
+  summary: 'Registered trainers can phone the player through the PokéNav: every 10 steps, if at least 10 minutes passed
+    since the last check, a call fires 30% of the time (60% with a Lightning Rod lead). With five badges, a rematch step
+    counter fills to 255; after that, entering a map gives each rematchable trainer there a 31% chance to want a rematch
+    with a stronger party, and gym leaders get rematches too.'
+  instantiates:
+  - concept: progression.replay.trainer_rematch
+  reads:
+  - player.step_count
+  - rtc.local_time
+  - world.flags.badge*
+  - party[0].ability
+  writes:
+  - match_call.state
+  - trainers.rematch_armed
+  params:
+    call_check_steps:
+      value: 10
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/match_call.c:UpdateMatchCallStepCounter
+        confidence: 0.95
+    call_min_interval:
+      value: 10
+      unit: minutes (RTC)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/match_call.c:UpdateMatchCallMinutesCounter
+        confidence: 0.9
+    call_chance:
+      value: 0.3
+      variants:
+      - when: lead ability Lightning Rod
+        value: 0.6
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/match_call.c:CheckMatchCallChance
+        confidence: 0.95
+    rematch_step_counter:
+      value: 255
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_setup.c:IncrementRematchStepCounter
+        confidence: 0.95
+    rematch_chance:
+      value: 0.31
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_setup.c:UpdateRandomTrainerRematches
+        confidence: 0.95
+  relations:
+  - type: gated_by
+    target: gym_badge_progression
+    condition: five badges
+  - type: modulates
+    target: trainer_line_of_sight
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/match_call.c:CheckMatchCallChance
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_setup.c:UpdateRandomTrainerRematches
+    confidence: 0.95
+- id: pokedex_completion
+  facet: progression
+  label: Pokédex seen/caught collection goal (Hoenn then National)
+  summary: 'The Pokédex records species seen and caught; the Hoenn dex covers 202 species and the National dex (386)
+    unlocks after the game is cleared. Completion is an optional collection goal that requires catching, evolving,
+    breeding and trading (some species are version exclusives).'
+  instantiates:
+  - concept: ui_hud.menu.codex_journal
+    weight: 0.4
+  - concept: progression.completion.collection_log
+  reads:
+  - pokedex.seen
+  - pokedex.caught
+  writes:
+  - pokedex.seen
+  - pokedex.caught
+  params:
+    hoenn_dex:
+      value: 202
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/pokedex.h:HOENN_DEX_COUNT (HOENN_DEX_DEOXYS)
+        confidence: 0.9
+    national_dex:
+      value: 386
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/pokedex.h:NATIONAL_DEX_COUNT
+        confidence: 0.9
+  relations:
+  - type: requires
+    target: catch_formula
+  - type: gated_by
+    target: gym_badge_progression
+    condition: National dex after game clear
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:include/constants/pokedex.h
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokeemerald:include/constants/flags.h:FLAG_SYS_NATIONAL_DEX
+    confidence: 0.8
+- id: battle_frontier
+  facet: progression
+  label: Battle Frontier postgame challenge facilities with streaks and Battle Points
+  summary: 'Emerald''s postgame island hosts seven facilities with rule twists: Tower (straight battles; singles, doubles,
+    multis), Dome (tournament), Palace (nature-driven moves), Arena (3-turn bouts judged on Mind, Skill and Body), Factory
+    (rental mons), Pike (room-choice gauntlet) and Pyramid (dark maze floors with wild encounters and a restricted bag).
+    Each challenge is 7 battles at Level 50 or Open level, opponents use smart AI, streaks are tracked up to 9999, and
+    wins pay Battle Points from a per-facility table that grows with challenge number; Frontier Brains award silver
+    and gold symbols. Badge stat boosts, Soul Dew and normal obedience rules are disabled there.'
+  instantiates:
+  - concept: progression.postgame.challenge_facilities
+  - concept: economy.currency.challenge_points
+    weight: 0.5
+  reads:
+  - frontier.streaks
+  - frontier.symbols
+  - frontier.level_mode
+  writes:
+  - frontier.streaks
+  - frontier.battle_points
+  - frontier.symbols
+  params:
+    facilities:
+      value: 7
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/battle_frontier.h:NUM_FRONTIER_FACILITIES
+        confidence: 0.95
+    battles_per_challenge:
+      value: 7
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/battle_frontier.h:FRONTIER_STAGES_PER_CHALLENGE
+        confidence: 0.85
+    max_streak:
+      value: 9999
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/battle_frontier.h:MAX_STREAK
+        confidence: 0.95
+    level_modes:
+      value: [50, 100]
+      unit: Level 50 / Open
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/battle_frontier.h:FRONTIER_MAX_LEVEL_50, FRONTIER_MAX_LEVEL_OPEN
+        confidence: 0.95
+    arena_body_score:
+      value: 100 * hp_now / hp_at_start
+      unit: per side, compared after 3 turns with Mind (move ratings) and Skill (accuracy/effectiveness)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_arena.c (ARENA_CATEGORY_BODY)
+        confidence: 0.85
+  tables:
+    battle_point_awards:
+      description: BP per cleared challenge (first rows); tower columns are singles/doubles/multi/link multi.
+      columns:
+      - challenge_number
+      - tower
+      - dome
+      - palace
+      - arena
+      - factory
+      - pike
+      - pyramid
+      rows:
+      - [1, '1/2/3/3', '1/1', '4/5', 1, '3/4', 1, 5]
+      - [2, '2/3/4/4', '1/1', '4/5', 1, '3/4', 1, 5]
+      - [3, '3/4/5/5', '2/2', '5/6', 1, '4/5', 2, 6]
+      - [5, '5/6/7/7', '3/3', '6/7', 2, '5/6', 2, 7]
+      - [10, '10/11/12/12', '5/5', '8/9', 4, '7/8', 8, 9]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/frontier_util.c:sBattlePointAwards
+        confidence: 0.95
+  relations:
+  - type: gated_by
+    target: gym_badge_progression
+    condition: game clear (postgame)
+  - type: requires
+    target: trainer_ai_move_scoring
+  - type: modulates
+    target: wild_encounter_tables
+    condition: Battle Pike and Battle Pyramid use their own encounter headers
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:include/constants/battle_frontier.h
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/frontier_util.c:sBattlePointAwards
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_arena.c (Mind/Skill/Body judging)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/wild_encounter.c:StandardWildEncounter (Pike/Pyramid branches)
+    confidence: 0.9
+  - kind: llm_knowledge
+    ref: facility rules summary (Dome tournament, Factory rentals, Pike rooms, Pyramid floors)
+    confidence: 0.6
+- id: money_and_prize
+  facet: economy
+  label: Single currency with level-scaled trainer prizes and shops
+  summary: 'Money (cap 999,999, start 3,000) is the main currency. Beating a trainer pays 4 x (level of their last
+    party mon) x class base value (e.g. Youngster 4, Gym Leader/Elite Four 25, Champion/Rich Boy 50, default 5), x2
+    for a lone double-battle trainer and x2 with Amulet Coin. Money buys items at Poké Marts (sell price is half the
+    buy price) and is halved on whiteout. Side currencies exist: Game Corner coins, Battle Points and Pokéblocks/berries.'
+  instantiates:
+  - concept: economy.currency.capped_wallet
+    weight: 0.5
+  - concept: economy.converter.sell_back
+    weight: 0.3
+  - concept: economy.trade.fixed_price_shop
+  - concept: economy.source.battle_reward
+  reads:
+  - trainer.class
+  - trainer.party[last].level
+  - battle.money_multiplier
+  writes:
+  - player.money
+  params:
+    money_cap:
+      value: 999999
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/money.c:MAX_MONEY
+        confidence: 0.95
+    prize_formula:
+      value: 4 * last_mon_level * class_value * multiplier
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_script_commands.c:GetTrainerMoneyToGive
+        confidence: 0.95
+    sell_ratio:
+      value: 0.5
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/item_menu.c (AddMoney GetItemPrice / 2 on sell)
+        confidence: 0.85
+  tables:
+    class_prize_values:
+      description: Selected trainer-class base values from gTrainerMoneyTable.
+      columns:
+      - trainer_class
+      - value
+      rows:
+      - [Youngster, 4]
+      - [Bug Catcher, 4]
+      - [Tuber, 1]
+      - [Team Aqua grunt, 5]
+      - [Aqua/Magma Admin, 10]
+      - [Aqua/Magma Leader, 20]
+      - [Cooltrainer, 12]
+      - [Gym Leader, 25]
+      - [Elite Four, 25]
+      - [Champion, 50]
+      - [Rich Boy, 50]
+      - [unlisted classes, 5]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_main.c:gTrainerMoneyTable
+        confidence: 0.95
+  invariants:
+  - Money never exceeds 999,999.
+  relations:
+  - type: requires
+    target: battle_engine_core
+  - type: modulates
+    target: inventory_and_storage
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_script_commands.c:GetTrainerMoneyToGive
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_util.c:ItemBattleEffects (HOLD_EFFECT_DOUBLE_PRIZE)
+    confidence: 0.9
+  - kind: decomp_source
+    ref: pokeemerald:src/new_game.c:NewGameInitData
+    confidence: 0.95
+- id: inventory_and_storage
+  facet: economy
+  label: Pocketed bag, PC item storage and 14-box Pokémon storage
+  summary: 'Items live in five bag pockets with fixed slot counts (Items 30, Key Items 30, Poké Balls 16, TMs/HMs 64,
+    Berries 46), overflow goes to the PC item box, and one key item can be registered to Select. Pokémon beyond the
+    party of six go to the PC storage system of 14 boxes x 30. The Battle Pyramid swaps in a separate 10-slot bag.'
+  instantiates:
+  - concept: economy.inventory.categorized_pockets
+  - concept: economy.inventory.creature_storage_boxes
+  reads:
+  - bag.pockets
+  - pc.boxes
+  writes:
+  - bag.pockets
+  - pc.boxes
+  params:
+    pocket_slots:
+      value:
+        items: 30
+        key_items: 30
+        poke_balls: 16
+        tm_hm: 64
+        berries: 46
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/global.h (BAG_*_COUNT)
+        confidence: 0.95
+    storage_boxes:
+      value: 14
+      unit: boxes of 30 (420 mons)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/pokemon_storage_system.h:TOTAL_BOXES_COUNT, IN_BOX_COUNT
+        confidence: 0.95
+    pyramid_bag_slots:
+      value: 10
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/global.h:PYRAMID_BAG_ITEMS_COUNT
+        confidence: 0.95
+  relations:
+  - type: part_of
+    target: flash_save_system
+    note: PC boxes occupy nine of the fourteen sectors per slot
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:include/constants/global.h
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:include/save.h (SECTOR_ID_PKMN_STORAGE_START..END)
+    confidence: 0.9
+- id: berry_farming
+  facet: economy
+  label: Real-time berry tree farming with watering-based yield
+  summary: 'Berries planted in soft soil grow through planted, sprouted, taller and flowering stages, each lasting the
+    berry''s stage duration in real hours; the fruit stage lasts four times as long before the berries fall and the tree
+    regrows from the sprout stage (up to 10 regrowths). Watering in each stage raises yield: with w watered stages the
+    yield is min + round((max-min) * random share of w/4). If the elapsed time exceeds 71 stage durations the tree
+    vanishes. Berries feed Pokéblock blending (flavours map to contest conditions) and many are held battle items.'
+  instantiates:
+  - concept: economy.source.renewable_crop_growth
+  reads:
+  - berry_trees[*]
+  - rtc.elapsed_minutes
+  writes:
+  - berry_trees[*].stage
+  - berry_trees[*].yield
+  - bag.berries
+  params:
+    tree_slots:
+      value: 128
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/berry.h:BERRY_TREES_COUNT
+        confidence: 0.95
+    berry_stage_multiplier:
+      value: 4
+      unit: x stage duration for the fruit stage
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/berry.c:BerryTreeTimeUpdate (minutesUntilNextStage *= 4)
+        confidence: 0.95
+    max_regrowths:
+      value: 10
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/berry.c:BerryTreeGrow (regrowthCount == 10)
+        confidence: 0.95
+    water_stages:
+      value: 4
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:include/constants/berry.h:NUM_WATER_STAGES
+        confidence: 0.95
+  tables:
+    berries:
+      description: Per-berry growth and flavour data (stage hours; fruit stage = 4 x; yield range; flavours spicy/dry/sweet/bitter/sour;
+        smoothness).
+      columns:
+      - berry
+      - stage_hours
+      - fruit_stage_hours
+      - min_yield
+      - max_yield
+      - spicy
+      - dry
+      - sweet
+      - bitter
+      - sour
+      - smoothness
+      rows:
+          - [cheri, 3, 12, 2, 3, 10, 0, 0, 0, 0, 25]
+          - [chesto, 3, 12, 2, 3, 0, 10, 0, 0, 0, 25]
+          - [pecha, 3, 12, 2, 3, 0, 0, 10, 0, 0, 25]
+          - [rawst, 3, 12, 2, 3, 0, 0, 0, 10, 0, 25]
+          - [aspear, 3, 12, 2, 3, 0, 0, 0, 0, 10, 25]
+          - [leppa, 4, 16, 2, 3, 10, 0, 10, 10, 10, 20]
+          - [oran, 3, 12, 2, 3, 10, 10, 10, 10, 10, 20]
+          - [persim, 3, 12, 2, 3, 10, 10, 10, 10, 10, 20]
+          - [lum, 12, 48, 1, 2, 10, 10, 10, 10, 10, 20]
+          - [sitrus, 6, 24, 2, 3, 10, 10, 10, 10, 10, 20]
+          - [figy, 6, 24, 2, 3, 10, 0, 0, 0, 0, 25]
+          - [wiki, 6, 24, 2, 3, 0, 10, 0, 0, 0, 25]
+          - [mago, 6, 24, 2, 3, 0, 0, 10, 0, 0, 25]
+          - [aguav, 6, 24, 2, 3, 0, 0, 0, 10, 0, 25]
+          - [iapapa, 6, 24, 2, 3, 0, 0, 0, 0, 10, 25]
+          - [razz, 1, 4, 3, 6, 10, 10, 0, 0, 0, 20]
+          - [bluk, 1, 4, 3, 6, 0, 10, 10, 0, 0, 20]
+          - [nanab, 1, 4, 3, 6, 0, 0, 10, 10, 0, 20]
+          - [wepear, 1, 4, 3, 6, 0, 0, 0, 10, 10, 20]
+          - [pinap, 1, 4, 3, 6, 10, 0, 0, 0, 10, 20]
+          - [pomeg, 3, 12, 2, 6, 10, 0, 10, 10, 0, 20]
+          - [kelpsy, 3, 12, 2, 6, 0, 10, 0, 10, 10, 20]
+          - [qualot, 3, 12, 2, 6, 10, 0, 10, 0, 10, 20]
+          - [hondew, 3, 12, 2, 6, 10, 10, 0, 10, 0, 20]
+          - [grepa, 3, 12, 2, 6, 0, 10, 10, 0, 10, 20]
+          - [tamato, 6, 24, 2, 4, 20, 10, 0, 0, 0, 30]
+          - [cornn, 6, 24, 2, 4, 0, 20, 10, 0, 0, 30]
+          - [magost, 6, 24, 2, 4, 0, 0, 20, 10, 0, 30]
+          - [rabuta, 6, 24, 2, 4, 0, 0, 0, 20, 10, 30]
+          - [nomel, 6, 24, 2, 4, 10, 0, 0, 0, 20, 30]
+          - [spelon, 18, 72, 1, 2, 40, 10, 0, 0, 0, 70]
+          - [pamtre, 18, 72, 1, 2, 0, 40, 10, 0, 0, 70]
+          - [watmel, 18, 72, 1, 2, 0, 0, 40, 10, 0, 70]
+          - [durin, 18, 72, 1, 2, 0, 0, 0, 40, 10, 70]
+          - [belue, 18, 72, 1, 2, 10, 0, 0, 0, 40, 70]
+          - [liechi, 24, 96, 1, 2, 40, 0, 40, 0, 10, 80]
+          - [ganlon, 24, 96, 1, 2, 0, 40, 0, 40, 0, 80]
+          - [salac, 24, 96, 1, 2, 0, 0, 40, 0, 40, 80]
+          - [petaya, 24, 96, 1, 2, 40, 0, 0, 40, 0, 80]
+          - [apicot, 24, 96, 1, 2, 0, 40, 0, 0, 40, 80]
+          - [lansat, 24, 96, 1, 2, 10, 10, 10, 10, 10, 30]
+          - [starf, 24, 96, 1, 2, 10, 10, 10, 10, 10, 30]
+          - [enigma, 24, 96, 1, 2, 40, 40, 40, 40, 40, 40]
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/berry.c:gBerries
+        confidence: 0.95
+  invariants:
+  - Growth is computed from elapsed RTC minutes, so it continues while the game is off.
+  relations:
+  - type: requires
+    target: rtc_time_events
+  - type: modulates
+    target: pokemon_contests
+  - type: modulates
+    target: abilities_and_held_items
+    note: berries are held battle items
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/berry.c:BerryTreeTimeUpdate
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/berry.c:CalcBerryYieldInternal
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/berry.c:GetStageDurationByBerryType
+    confidence: 0.95
+- id: battle_interface
+  facet: ui_hud
+  label: Battle health boxes and FIGHT/BAG/POKéMON/RUN command menu
+  summary: 'Battles show a health box per battler (name, gender, level, status, HP bar; the player''s also shows HP
+    numbers and an EXP bar) and a text box with the command menu FIGHT, BAG, POKéMON, RUN; FIGHT opens a four-move grid
+    with PP and type. HP bars drain over frames and change colour: green above 50%, yellow above 20%, red below. Messages
+    print through the shared text printer.'
+  instantiates:
+  - concept: ui_hud.hud.resource_counters
+    weight: 0.6
+  - concept: ui_hud.menu.battle_command_menu
+  reads:
+  - battlers[*].hp
+  - battlers[*].status
+  - party[*].experience
+  writes:
+  - ui.healthbox[*]
+  params:
+    hp_bar_green_threshold:
+      value: 0.5
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_interface.c:GetHPBarLevel
+        confidence: 0.95
+    hp_bar_yellow_threshold:
+      value: 0.2
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/battle_interface.c:GetHPBarLevel
+        confidence: 0.95
+  relations:
+  - type: part_of
+    target: battle_engine_core
+  - type: requires
+    target: dialogue_text_printer
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/battle_interface.c:GetHPBarLevel
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:include/constants/battle.h (B_ACTION_* choices)
+    confidence: 0.6
+    note: action names from constants grep; menu layout from model knowledge
+- id: start_menu_hub
+  facet: ui_hud
+  label: Start-menu hub (Pokédex, Pokémon, Bag, PokéNav, Trainer, Save, Option)
+  summary: 'Start opens a vertical menu that hubs all out-of-battle screens: Pokédex, party (with field moves and item
+    use), bag, PokéNav (region map, condition, Match Call, ribbons), trainer card, save and options; context variants
+    replace entries in the Safari Zone (Retire) and Battle Pyramid (Pyramid Bag, Rest/Retire). No HUD is shown during
+    overworld play.'
+  instantiates:
+  - concept: ui_hud.menu.pause_menu_hub
+  reads:
+  - input.buttons.pressed
+  - world.flags.has_pokedex
+  - world.flags.has_pokenav
+  writes:
+  - main.callback2
+  params:
+    entries:
+      value: 13
+      unit: menu actions incl. Safari/Frontier/link variants
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/start_menu.c:sStartMenuItems
+        confidence: 0.95
+  relations:
+  - type: requires
+    target: flash_save_system
+  - type: requires
+    target: inventory_and_storage
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/start_menu.c:sStartMenuItems
+    confidence: 0.95
+- id: input_controls
+  facet: ui_hud
+  label: Context button mapping
+  summary: 'D-pad moves (tap to turn), A interacts with the faced tile/object or confirms, B cancels and, once the
+    Running Shoes are owned, is held to run (Acro Bike tricks on the bike), Start opens the menu, Select uses the registered
+    key item (bike, rod). L/R scroll lists; an option makes L act as A. Menus repeat held directions after 40 frames
+    then every 5.'
+  instantiates:
+  - concept: ui_hud.input.context_button_mapping
+  reads:
+  - input.buttons
+  writes:
+  - player.intent
+  params:
+    run_button:
+      value: B (held)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/field_player_avatar.c:PlayerNotOnBikeMoving
+        confidence: 0.95
+  relations:
+  - type: modulates
+    target: grid_step_locomotion
+  - type: part_of
+    target: main_loop_and_callbacks
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/main.c:ReadKeys
+    confidence: 0.85
+  - kind: llm_knowledge
+    ref: A/Start/Select/L-R roles and the L=A option
+    confidence: 0.55
+- id: dialogue_text_printer
+  facet: narrative_delivery
+  label: Typewriter text boxes driven by scripts
+  summary: 'NPCs, signs and battles speak through framed text windows printed character by character at the chosen
+    text speed (slow 8, mid 4, fast 1 frame per character); A/B advance or speed up, with scroll and wait-for-button
+    control codes and yes/no or multichoice menus for choices. Strings use the game''s own charset and placeholders for
+    player/rival/mon names.'
+  instantiates:
+  - concept: narrative_delivery.dialogue.typewriter_dialogue
+  reads:
+  - options.text_speed
+  - input.buttons.pressed
+  writes:
+  - windows[*]
+  params:
+    text_speed_delays:
+      value:
+        slow: 8
+        mid: 4
+        fast: 1
+      unit: frames per character
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/menu.c:sTextSpeedFrameDelays
+        confidence: 0.95
+  relations:
+  - type: requires
+    target: bg_window_sprite_engine
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/menu.c:sTextSpeedFrameDelays, GetPlayerTextSpeedDelay
+    confidence: 0.9
+  - kind: capture_frame
+    ref: capture:frontend:keyframes f001157..f005385 (Birch dialogue windows, typewriter mid-line frames "To unrave", "So it's")
+    confidence: 0.85
+- id: scripted_story_events
+  facet: narrative_delivery
+  label: Scripted in-engine story with rival, two villain teams and weather legendaries
+  summary: 'The story is told with event scripts that move NPCs, play music cues and print dialogue: the player moves
+    to Littleroot, rescues Professor Birch, picks a starter, races a rival (Brendan/May) and the eight gyms, and crosses
+    paths with both Team Magma and Team Aqua, whose awakening of Groudon and Kyogre creates the "abnormal" alternating
+    weather over Sootopolis until Rayquaza is called down from Sky Pillar. Story state lives in event flags and per-area
+    state vars.'
+  instantiates:
+  - concept: narrative_delivery.cutscene.in_engine_cutscene
+  - concept: narrative_delivery.structure.predetermined_story
+  reads:
+  - world.flags.*
+  - world.vars.*
+  writes:
+  - world.flags.*
+  - world.vars.*
+  relations:
+  - type: requires
+    target: script_engine
+  - type: modulates
+    target: overworld_weather_effects
+    note: WEATHER_ABNORMAL during the Groudon/Kyogre crisis
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:include/constants/weather.h (WEATHER_ABNORMAL comment)
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/match_call.c:MapAllowsMatchCall (Sootopolis Rayquaza / Mt. Chimney story flags)
+    confidence: 0.7
+  - kind: llm_knowledge
+    ref: Emerald plot outline (Birch rescue, rival, Magma and Aqua, Groudon/Kyogre/Rayquaza)
+    confidence: 0.6
+- id: hoenn_setting
+  facet: setting
+  label: Tropical Hoenn region of creatures and trainers
+  summary: 'A cheerful contemporary-fantasy region of islands, volcano, desert and ocean routes where people coexist with
+    and battle alongside Pokémon; tone is adventurous and bright, with an environmental-crisis plot about land versus sea.'
+  instantiates:
+  - concept: setting.theme.creature_companions
+  - concept: setting.location.tropical_island_region
+  evidence:
+  - kind: capture_frame
+    ref: capture:attract:keyframes f001183, f001850 (grassland/route scenery, player on bike with Pokémon)
+    confidence: 0.6
+  - kind: llm_knowledge
+    ref: Hoenn region setting
+    confidence: 0.6
+- id: m4a_sound_engine
+  facet: audio
+  label: MP2K (m4a) sequenced engine with DirectSound mixing and PSG
+  summary: 'Audio uses Nintendo''s MusicPlayer2000 (m4a) driver: m4aSoundMain mixes up to 5 DirectSound sample voices
+    at 13,379 Hz into both FIFOs (refilled by sound DMA) alongside the four PSG channels, from MIDI-derived sequences
+    with voice groups, key-split tables, direct-sound samples and programmable waveforms. Four music players run at
+    once: BGM (10 tracks), SE1 (3), SE2 (9) and SE3 (1); species cries are separate PCM tone data that duck the BGM.'
+  instantiates:
+  - concept: audio.engine.sample_psg_sequencer
+  reads:
+  - song_table
+  - mplay.*
+  writes:
+  - io.fifo_a
+  - io.fifo_b
+  - io.sound_psg
+  params:
+    mix_rate:
+      value: 13379
+      unit: Hz
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/m4a.c:m4aSoundInit (SOUND_MODE_FREQ_13379)
+        confidence: 0.95
+      - kind: capture_telemetry
+        ref: capture:summary.derived.sound.directsound_rates_hz 13379 Hz on 18000 frame-channels; DMA1 -> 0x040000A0 sound FIFO
+        confidence: 0.95
+    max_pcm_channels:
+      value: 5
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/m4a.c:m4aSoundInit (5 << SOUND_MODE_MAXCHN_SHIFT)
+        confidence: 0.9
+    music_players:
+      value: 4
+      unit: BGM 10 tracks, SE1 3, SE2 9, SE3 1
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:sound/music_player_table.inc
+        confidence: 0.95
+    song_entries:
+      value: 610
+      unit: song table entries (approx.)
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:sound/song_table.inc
+        confidence: 0.75
+    psg_channels_used:
+      value: 4
+      evidence:
+      - kind: capture_telemetry
+        ref: capture:summary.derived.sound.psg_channels_triggered [1,2,3,4]; psg_playing_frames [8292, 8292, 4631, 4568]
+        confidence: 0.9
+  relations:
+  - type: part_of
+    target: main_loop_and_callbacks
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/m4a.c:m4aSoundInit
+    confidence: 0.95
+  - kind: decomp_source
+    ref: pokeemerald:src/main.c:VBlankIntr (m4aSoundMain)
+    confidence: 0.95
+  - kind: capture_telemetry
+    ref: capture:attract+frontend audio_flags directsound_A/B true, 13379 Hz throughout
+    confidence: 0.95
+- id: map_music_and_fanfares
+  facet: audio
+  label: Map-header music with fades, fanfare interrupts and cry ducking
+  summary: 'Each map header names a BGM; a map-music state machine fades out and fades in only when the new map''s
+    track differs, and surfing/biking override tracks. Fanfares (level up, item, badge, evolution, heal...) pause the
+    BGM for a fixed frame length then resume it, and Pokémon cries temporarily lower BGM volume. Trainer classes have
+    encounter themes that start when spotted; battles and the title use their own tracks (the title track does not
+    loop, which ends the title screen).'
+  instantiates:
+  - concept: audio.music.room_based_tracks
+  - concept: audio.music.jingle_interrupt_queue
+  - concept: audio.music.state_driven_music
+    weight: 0.5
+  reads:
+  - map.header.music
+  - player.avatar_flags
+  - trainer.encounter_music
+  writes:
+  - music.current
+  - music.state
+  params:
+    fanfare_lengths:
+      value:
+        level_up: 80
+        obtain_item: 160
+        heal: 160
+        obtain_badge: 340
+        evolved: 220
+        awaken_legend: 710
+      unit: frames
+      evidence:
+      - kind: decomp_source
+        ref: pokeemerald:src/sound.c:sFanfares
+        confidence: 0.95
+  relations:
+  - type: part_of
+    target: m4a_sound_engine
+  - type: modulates
+    target: title_screen
+    note: title BGM end returns to the intro
+  evidence:
+  - kind: decomp_source
+    ref: pokeemerald:src/sound.c:MapMusicMain
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:src/sound.c:PlayFanfare
+    confidence: 0.85
+  - kind: decomp_source
+    ref: pokeemerald:include/data.h:TRAINER_ENCOUNTER_MUSIC
+    confidence: 0.8
+proposed_concepts:
+- id: ai.decision.utility_scoring_scripts
+  label: Script-scored action utility
+  definition: Each candidate action starts from a base score; a chain of rule modules selected per opponent adds or
+    subtracts points from game-state conditions (some randomised), and the highest-scoring action is chosen with random
+    tie-breaking.
+  seed_source: 'game_ai_taxonomy: Utility AI'
+- id: ai.decision.personality_weighted_action
+  label: Personality-weighted action choice
+  definition: An agent's persistent personality trait sets the probabilities of choosing among action categories, with
+    a different distribution under a condition such as low health.
+  is_a:
+  - ai.combat.weighted_action_selection
+- id: ai.decision.rule_based_switching
+  label: Rule-based unit switching
+  definition: Before acting, an agent checks ordered rules (imminent loss, immunity, counters, status cure) to swap
+    its active unit for a better-matched reserve.
+- id: ai.npc.ambient_movement_patterns
+  label: Ambient NPC movement patterns
+  definition: Non-hostile characters follow a per-instance pattern (stand, look around, wander in a box, pace, fixed
+    route, mirror the player) chosen from a library and set in level data.
+  seed_source: 'vgdl: RandomNPC'
+- id: camera.follow.player_centered_tile_camera
+  label: Player-locked tile camera
+  definition: The camera stays rigidly centred on the avatar and scrolls in lockstep with its tile-to-tile movement,
+    streaming new map rows/columns at each tile boundary.
+- id: economy.currency.challenge_points
+  label: Challenge-earned side currency
+  definition: A separate currency earned only by clearing challenge runs, scaled by streak or difficulty, and spent
+    on exclusive rewards.
+- id: economy.inventory.categorized_pockets
+  label: Categorised inventory pockets
+  definition: The inventory is split into per-category pockets, each with its own fixed slot count and sorting.
+  seed_source: 'gdp: Inventories'
+- id: economy.inventory.creature_storage_boxes
+  label: Creature storage boxes
+  definition: Collected creatures beyond the active team are kept in a large paged storage system that the player
+    accesses at terminals.
+- id: economy.source.battle_reward
+  label: Battle reward payout
+  definition: Winning a battle pays currency computed from the opponent's class and strength, optionally multiplied
+    by held items or formats.
+  seed_source: 'gdp: Rewards'
+- id: economy.source.renewable_crop_growth
+  label: Real-time crop growth
+  definition: Planted resources grow through stages on a timer (often real time), with care actions such as watering
+    increasing yield, and regrow or wither afterwards.
+  seed_source: 'gdp: Renewable Resources'
+- id: frontend.game_over.respawn_at_checkpoint_with_penalty
+  label: Respawn at checkpoint with penalty
+  definition: Defeat does not end or reload the game; the player is restored at the last rest point with a resource
+    penalty while world progress is kept.
+  seed_source: 'gdp: Death Consequences'
+- id: frontend.title.hidden_maintenance_combos
+  label: Hidden title-screen maintenance combos
+  definition: Held button chords on the title screen open maintenance screens such as save erase, clock reset or data
+    repair.
+- id: mechanics.collection.breeding_inheritance
+  label: Breeding with inheritance
+  definition: Two compatible creatures produce offspring over time whose species, stats, traits and moves are partly
+    inherited from the parents by rule and chance.
+- id: mechanics.collection.capture_probability
+  label: Capture probability roll
+  definition: Weakened or disabled opponents can be captured by a probabilistic roll that improves with lower health,
+    status effects and better capture tools.
+- id: mechanics.collection.creature_collection
+  label: Creature collection
+  definition: The core loop is acquiring and keeping many distinct creature species/individuals, each a persistent
+    unit with its own stats and moves.
+  seed_source: 'gdp: Collecting'
+- id: mechanics.combat.critical_hit
+  label: Critical hits
+  definition: Attacks have a small, modifiable chance to deal multiplied damage and bypass some defensive modifiers.
+  seed_source: 'gdp: Critical Hits'
+- id: mechanics.combat.double_battle_format
+  label: Double battle format
+  definition: Battles where each side fields two units at once, adding targeting choices, spread attacks and ally
+    interactions.
+- id: mechanics.combat.passive_trait_modifiers
+  label: Passive trait and held-item modifiers
+  definition: Units carry an innate trait and an equipped item that hook fixed points of the combat rules (entry,
+    damage, accuracy, turn end) to modify outcomes.
+- id: mechanics.combat.speed_priority_turn_order
+  label: Priority-then-speed turn order
+  definition: All participants choose actions simultaneously, then actions resolve by action priority and, within a
+    priority, by a speed stat with random tie-breaking.
+- id: mechanics.combat.stat_ratio_damage_formula
+  label: Stat-ratio damage formula
+  definition: Damage scales with attacker level and move power times the ratio of attacking to defending stat, followed
+    by multiplicative modifiers (same-type bonus, type effectiveness, critical, random spread).
+- id: mechanics.combat.turn_based_party_battle
+  label: Turn-based party battle
+  definition: Separate battle mode where sides each field units from a reserve party, choose one action per turn
+    (attack, item, switch, flee) and resolve them in order until one side has no usable units.
+  seed_source: 'igdb genre: Turn-based / RPG'
+- id: mechanics.customization.player_base_decoration
+  label: Decoratable player base
+  definition: The player claims a personal space in the world and arranges collected decorations in it; bases may
+    be shared with and visited by other players.
+  seed_source: 'gdp: Bases'
+- id: mechanics.encounter.random_step_encounter
+  label: Random step encounter
+  definition: Moving on designated terrain rolls a per-step chance to start a battle with an opponent drawn from that
+    area's table, without the opponent being visible beforehand.
+- id: mechanics.encounter.slot_weighted_encounter_table
+  label: Slot-weighted encounter table
+  definition: Each area lists fixed slots with species and level ranges; encounters pick a slot from a fixed probability
+    ladder so some entries are rare.
+- id: mechanics.encounter.roaming_encounter
+  label: Roaming encounter
+  definition: A unique opponent moves between areas on its own schedule and can only be met by chance where it currently
+    is, usually fleeing when found.
+- id: mechanics.entity.personality_seeded_attributes
+  label: Seed-derived individual attributes
+  definition: A single random value stored per individual deterministically derives several of its traits (gender,
+    temperament, rare variant, ability), making each individual unique.
+- id: mechanics.minigame.appeal_contest
+  label: Appeal contest
+  definition: A non-combat judged competition where units score points from prepared condition stats and from performing
+    moves over several rounds, with crowd and combo modifiers.
+  seed_source: 'gdp: Minigames'
+- id: mechanics.progression.stat_formula_iv_ev
+  label: Hidden-potential stat formula
+  definition: Stats are computed from species base values plus per-individual hidden potentials and trainable effort
+    points, scaled by level and a temperament modifier.
+- id: mechanics.randomness.lcg_prng
+  label: Linear congruential PRNG
+  definition: A global linear congruential generator supplies all random rolls; its state advances per call and often
+    per frame, making outcomes depend on timing.
+  seed_source: 'gdp: Randomness'
+- id: mechanics.status.persistent_status_ailments
+  label: Persistent status ailments
+  definition: A single major ailment (sleep, poison, burn, paralysis, freeze) stays on a unit across battles until cured,
+    affecting actions, speed or damage over time.
+  is_a:
+  - mechanics.status.turn_counted_status_effects
+- id: mechanics.time.real_time_clock_events
+  label: Real-time clock events
+  definition: A battery clock drives world changes by real elapsed time (daily resets, growth, tides, time-of-day conditions)
+    even while the game is off.
+- id: movement_physics.collision.tile_collision_grid
+  label: Tile collision grid
+  definition: Passability is stored per map tile (plus directional and occupancy rules) and checked before each discrete
+    move.
+- id: movement_physics.grid.four_direction_tile_step
+  label: Four-direction tile stepping
+  definition: The avatar occupies one grid cell and moves exactly one cell per step in one of four cardinal directions,
+    with input sampled only between steps.
+  seed_source: 'vgdl: GridPhysics'
+- id: movement_physics.mode.water_traversal_mode
+  label: Water traversal mode
+  definition: A transport mode entered by an ability that lets the avatar move over water tiles, with its own speed,
+    encounters and exit rules, often extended by diving and climbing waterfalls.
+- id: movement_physics.speed.hold_to_run
+  label: Hold to run
+  definition: Holding a button multiplies movement speed with no acceleration phase, possibly disabled on some terrain.
+- id: movement_physics.surface.ice_slide_until_blocked
+  label: Ice slide until blocked
+  definition: On slippery tiles the avatar keeps moving in its direction, one tile at a time, until it reaches non-slippery
+    ground or an obstacle; used for sliding puzzles.
+  seed_source: 'vgdl: slipForward'
+- id: movement_physics.vehicle.momentum_bike
+  label: Momentum vehicle
+  definition: A rideable vehicle that accelerates through discrete speed tiers while input is held and decelerates
+    tier by tier, with top speed required by some terrain.
+  seed_source: 'gdp: Vehicles'
+- id: movement_physics.vehicle.trick_bike
+  label: Trick vehicle
+  definition: A rideable vehicle with trick states (wheelie, hops, side jumps) driven by button history that cross
+    special terrain such as rails and gaps.
+  seed_source: 'gdp: Vehicles'
+- id: progression.completion.collection_log
+  label: Collection log goal
+  definition: An in-game catalogue records which members of a large set have been seen and obtained, making full
+    completion an optional long-term goal.
+  seed_source: 'gdp: Collecting'
+- id: progression.postgame.challenge_facilities
+  label: Postgame challenge facilities
+  definition: After the main story, rule-variant battle venues offer repeatable runs with win streaks, records and
+    exclusive rewards.
+- id: progression.replay.trainer_rematch
+  label: Opponent rematches
+  definition: Defeated opponents become available again later, triggered by time, steps or calls, with stronger teams.
+- id: progression.structure.gym_badge_ladder
+  label: Gym badge ladder
+  definition: The main path is a fixed sequence of leader battles whose badges unlock traversal abilities, control
+    and stat bonuses before a final league.
+- id: rendering.background.metatile_occlusion_layers
+  label: Metatile occlusion layers
+  definition: Each metatile is drawn on two of three background layers chosen by a per-metatile layer type, so that
+    authored parts of the map draw above characters for depth.
+  is_a:
+  - rendering.background.tile_layer_stack
+- id: rendering.tiles.animated_tile_swap
+  label: Animated tile swap
+  definition: Map animation (water, flowers) is done by periodically copying new graphics into shared tile slots so
+    every use of that tile animates at once.
+- id: rendering.transition.screen_wipe_effect
+  label: Screen wipe transition
+  definition: A short full-screen effect (wipes, swirls, shatter, iris) masks the switch from exploration to another
+    mode such as battle, often chosen by context.
+- id: setting.location.tropical_island_region
+  label: Tropical island region
+  definition: A world of islands, coastlines, volcano and sea routes with a warm, tropical feel.
+- id: setting.theme.creature_companions
+  label: Creature companions
+  definition: Fiction in which people live with, collect and battle alongside wild creatures as partners.
+  seed_source: 'igdb theme: Fantasy'
+- id: ui_hud.input.context_button_mapping
+  label: Context button mapping
+  definition: A small fixed button set whose meaning depends on context (interact/confirm, cancel/run, menu, registered
+    item).
+- id: ui_hud.menu.battle_command_menu
+  label: Battle command menu
+  definition: Turn-based battle UI listing top-level commands (fight, items, party, run) that open sub-menus such as
+    a move grid with remaining uses.
+- id: ui_hud.menu.pause_menu_hub
+  label: Pause menu hub
+  definition: A pause menu that hubs every out-of-play screen (party, inventory, encyclopedia, map, save, options).
+open_questions:
+- Overworld gameplay was not captured (the frontend capture loops on the naming/Birch speech); grid stepping speeds,
+  camera and weather rendering are from code only. A capture into Littleroot/Route 101 would confirm frames per tile
+  and BG layer usage in play.
+- Mach Bike top-speed timing is inferred from step-count gears; whether gear advance happens per step or per frame
+  of held input when a step is blocked was not traced.
+- AI_CheckViability (largest AI module) was summarised, not decomposed effect by effect; per-effect score deltas
+  are in data/battle_ai_scripts.s for a later pass.
+- The Battle Factory flag schedule (GetAiScriptsInBattleFactory), Dome tournament seeding, Pike room odds and Pyramid
+  floor generation were not read.
+- Contest move effects (jam, startle, combos) and the per-move appeal/jam table were not extracted; only scoring
+  totals and the applause meter were.
+- Trainer-ID / RNG behaviour on Continue (no reseed found besides naming) should be confirmed in a capture; the claim
+  that retail power-on seed is 0 relies on the BUGFIX guard around SeedRngWithRtc.
+- 'Number of usable script opcodes (228) and specials (528) are line counts of the tables and may include aliases.'
+- Capture keyframes show the Birch dialogue repeating because the input script mashes A; the naming screen telemetry
+  (frame 4172) was not verified against a keyframe.
+- Day/night tinting does not exist in Emerald's overworld per the code read (time only affects events and evolution);
+  confirm no palette time tint exists in field_weather or overworld palette code.
+- Ruby/Sapphire/FireRed/LeafGreen differences (no Frontier, no Match Call, different AI score reset order noted in
+  BattleAI_SetupAIData comments, FRLG removing RTC) should be recorded as variants against these component ids.

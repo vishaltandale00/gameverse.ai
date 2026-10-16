@@ -1,0 +1,446 @@
+schema_version: 0
+id: megaman-zero
+game:
+  title: Mega Man Zero
+  platform: gba
+  game_code: AZCE
+  rom_sha1: 193b14120119162518a73c70876f0b8bffdbd96e
+  evidence_basis:
+  - ghidra_function
+  - static_signature
+  sources:
+  - kind: ghidra_export
+    ref: local/re/experiments/20261016-corpus-decompile/shard-b/megaman-zero/functions.jsonl; SHA256 eb9d28283211959f23d14376711914ee8d1e04df8c619200a9ec9b81548ae8aa;
+      run20261016T005524-478941; capture-observed ROM call targets only; no automatic analysis, odd-pointer discovery,
+      matching source build or return repair.
+  - kind: rom_instruction_verification
+    ref: Direct Thumb disassembly with GNU arm-none-eabi-objdump2.47 of the indexed ROM, SHA1 193b14120119162518a73c70876f0b8bffdbd96e.
+      Exact instruction ranges, ROM-range hashes, PC-literal values/hashes and disassembly hashes in local/scratch/rom_pipeline_audit/mining-v2/evidence_manifest.json
+      (SHA256 4ebc9fb668b1b2d9cda42f4c94e25a1441709ac0472be0ceb8db331e363d1fd6). No ROM bytes or raw code copied
+      into this ontology.
+  - kind: extraction_run
+    ref: Codex GPT-6-family agent, exact serving model ID unavailable; brief v2. Instruction acquisition recorded
+      from 2026-10-16T05:10:39.391167+00:00; writing/review completed 2026-10-16T05:20:49+00:00. Work was explicitly
+      paused/resumed for another user task, so uninterrupted active wall time and provider queue/inference are unavailable.
+      Read unrepaired shard-b pseudo-C for6 selected entries, direct Thumb disassembly and literal-pool words, fresh
+      capture summaries where cited; no source decomp/game recall or additional provider API call used.
+conventions:
+  coverage_scope: PARTIAL instruction-grounded engine/data operators. Entity roles, combat, progression, player
+    movement, economy, assets and story are not comprehensively recovered. Component count is not completeness.
+    No player skill or strategy is claimed.
+  state_types: u8/u16/u32 mean instruction access widths, ptr32 means a 32-bit address. Semantic paths containing
+    offsets identify unknown layouts, not reverse-engineered actor names. Caller-owned memory validity and table
+    extents remain preconditions.
+  units: Offsets, record strides and allocation counts use bytes or raw scalar counts. No raw number is converted
+    to pixels, seconds or player-physics units without evidence.
+  proof_scope: Consequential loads/stores, shifts, comparisons and return instructions were read directly from ROM
+    disassembly. Decompiler types, return signatures and IO-direction hints remain untrusted where not confirmed.
+    Literal-pool data printed by objdump is not treated as executed instructions.
+  inference_scope: Names such as record, pool and mask describe operations, not known gameplay meaning. Potential
+    reuse follows from the operator algebra; no gameplay trajectory or successful composition has been tested.
+components:
+- id: three_record_initialization
+  facet: mechanics
+  label: Three fixed-stride records enter state1
+  summary: Instruction-verified helper zeroes words at 0x03001740 and 0x02000000, stores its argument at 0x03001744,
+    then sets three state bytes at 0x03001748+i*24 to 1. The three records are an observed initialization span;
+    allocation capacity and whether they are tasks, channels or actors remain unknown.
+  instantiates:
+  - concept: mechanics.data.fixed_stride_record_initialization
+  reads:
+  - arg.context:word32
+  writes:
+  - ram[0x03001740]:u32
+  - ram[0x03001744]:u32
+  - ram[0x02000000]:u32
+  - records[i].offset_0:u8
+  invariants:
+  - Exactly three byte stores occur, for i=0,1,2.
+  - Other record fields are not cleared by this helper.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x08000c28
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/megaman-zero/functions.jsonl:22; pseudo-C SHA256
+      485d32de50bcb3fa788930faf47a40de9ae300d5805cd213210e2bb3439dd650; semantics checked against ROM instructions,
+      not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08000c28..0x8000c4a
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 0194e08e99c37e2c14589354d5451f00ddfdc827141e82d1c539d8fb811399b1; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08000c28.asm.txt
+      SHA256 2640d6da1b7b81e4b5186a6c3fe9302ea1dd134dd6c1e90caf1823a9b32e31ac; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    record_count:
+      value: 3
+      unit: records
+      native_value: 3
+      native_unit: records
+      evidence:
+      - kind: static_signature
+        ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08000c28..0x8000c4a
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 0194e08e99c37e2c14589354d5451f00ddfdc827141e82d1c539d8fb811399b1; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08000c28.asm.txt
+          SHA256 2640d6da1b7b81e4b5186a6c3fe9302ea1dd134dd6c1e90caf1823a9b32e31ac; PC-relative literal words separately
+          recorded in the evidence manifest.
+    record_stride:
+      value: 24
+      unit: bytes
+      native_value: 24
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08000c28..0x8000c4a
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 0194e08e99c37e2c14589354d5451f00ddfdc827141e82d1c539d8fb811399b1; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08000c28.asm.txt
+          SHA256 2640d6da1b7b81e4b5186a6c3fe9302ea1dd134dd6c1e90caf1823a9b32e31ac; PC-relative literal words separately
+          recorded in the evidence manifest.
+    initial_state:
+      value: 1
+      unit: raw state code
+      native_value: 1
+      native_unit: raw state code
+      evidence:
+      - kind: static_signature
+        ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08000c28..0x8000c4a
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 0194e08e99c37e2c14589354d5451f00ddfdc827141e82d1c539d8fb811399b1; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08000c28.asm.txt
+          SHA256 2640d6da1b7b81e4b5186a6c3fe9302ea1dd134dd6c1e90caf1823a9b32e31ac; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: selected_record_activation
+  facet: mechanics
+  label: Indexed record gets state2 and a work-buffer address
+  summary: For raw index i, the helper addresses a24-byte record at 0x03001748+i*24, stores the second argument
+    at+4 and a work-buffer address 0x03000b20+i*1536 at+8, clears+1 and+2, then writes state 2 at+0. There is no
+    local index check; pairing it with the three-record initializer requires caller enforcement of 0<=i<3, which
+    is not proven here.
+  instantiates:
+  - concept: mechanics.data.indexed_record_activation
+  reads:
+  - arg.index:u32
+  - arg.payload:word32
+  writes:
+  - record.offset_4:u32
+  - record.offset_8:ptr32
+  - record.offset_2:u16
+  - record.offset_1:u8
+  - record.offset_0:u8
+  invariants:
+  - The state 2 store occurs after payload/workspace/counter stores.
+  - No local index bound, buffer capacity or wrap prevention is established.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x08000d10
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/megaman-zero/functions.jsonl:24; pseudo-C SHA256
+      268fedcb4d488b0ac1f65cf5945731a0446888d5a91e5039b128a03340358c82; semantics checked against ROM instructions,
+      not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08000d10..0x8000d34
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 e0db47c8a3162c0318659fd4afda356463f848e62113299480ab3965d3456670; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08000d10.asm.txt
+      SHA256 30c1588ac8ff2e7b1ce2190975144839f3232242fe8702ba45d1ef1720a673f7; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    record_stride:
+      value: 24
+      unit: bytes
+      native_value: 24
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08000d10..0x8000d34
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 e0db47c8a3162c0318659fd4afda356463f848e62113299480ab3965d3456670; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08000d10.asm.txt
+          SHA256 30c1588ac8ff2e7b1ce2190975144839f3232242fe8702ba45d1ef1720a673f7; PC-relative literal words separately
+          recorded in the evidence manifest.
+    workspace_stride:
+      value: 1536
+      unit: bytes
+      native_value: 1536
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08000d10..0x8000d34
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 e0db47c8a3162c0318659fd4afda356463f848e62113299480ab3965d3456670; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08000d10.asm.txt
+          SHA256 30c1588ac8ff2e7b1ce2190975144839f3232242fe8702ba45d1ef1720a673f7; PC-relative literal words separately
+          recorded in the evidence manifest.
+    active_state:
+      value: 2
+      unit: raw state code
+      native_value: 2
+      native_unit: raw state code
+      evidence:
+      - kind: static_signature
+        ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08000d10..0x8000d34
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 e0db47c8a3162c0318659fd4afda356463f848e62113299480ab3965d3456670; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08000d10.asm.txt
+          SHA256 30c1588ac8ff2e7b1ce2190975144839f3232242fe8702ba45d1ef1720a673f7; PC-relative literal words separately
+          recorded in the evidence manifest.
+  relations:
+  - type: modulates
+    target: three_record_initialization
+    condition: Caller uses an index in the initialized three-record span.
+    note: The shared base/stride are verified; lifecycle meaning of states1/2 is unknown.
+- id: free_head_to_linked_node
+  facet: mechanics
+  label: Conditional pool-node transfer with16-bit count decrement
+  summary: The helper loads pool+0x10 as a candidate node. If nonzero, it pops the next pointer from node+0, decrements
+    pool+0x0a as a16-bit quantity, rewires node links and pool+0x18 through an existing writable link, and clears
+    node+0x0a,+0x0c,+0x10; otherwise it returns zero without these writes. This resembles pool allocation, but node
+    role and pool invariants are not supplied by names.
+  instantiates:
+  - concept: mechanics.pool.free_head_to_linked_node
+  reads:
+  - pool.offset_10:ptr32
+  - pool.offset_0a:u16
+  - pool.offset_18:ptr32
+  - node.offset_0:ptr32
+  writes:
+  - pool.offset_10:ptr32
+  - pool.offset_0a:u16
+  - pool.offset_18:ptr32
+  - node.offset_0:ptr32
+  - node.offset_4:ptr32
+  - old_pool18.deref:ptr32
+  - node.offset_0a:u16
+  - node.offset_0c:u32
+  - node.offset_10:u32
+  - return:ptr32
+  invariants:
+  - Null free head returns 0 and skips all node/count mutations.
+  - The count decrement wraps modulo65536 if a malformed pool has count0 with a nonnull free head; this helper does
+    not clamp.
+  - Caller must supply valid pool/node/link memory; ownership and allocation capacity remain unknown.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x08005428
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/megaman-zero/functions.jsonl:114; pseudo-C SHA256
+      528730e5ac7d1697e38d84404edafada91267866695e289729d1a9a83552aa3b; semantics checked against ROM instructions,
+      not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08005428..0x8005456
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 acc5e57733f06af7a25702106f3017ffe15c35398b2d231f22497f031a884b90; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08005428.asm.txt
+      SHA256 c4c716c60e6df48984751a2f54b9128f3e35dfeff9f59210381fc85b4e9a24f8; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    node_clear_offsets:
+      value: &id001
+      - 10
+      - 12
+      - 16
+      unit: bytes from node base
+      native_value: *id001
+      native_unit: bytes from node base
+      evidence:
+      - kind: static_signature
+        ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08005428..0x8005456
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 acc5e57733f06af7a25702106f3017ffe15c35398b2d231f22497f031a884b90; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08005428.asm.txt
+          SHA256 c4c716c60e6df48984751a2f54b9128f3e35dfeff9f59210381fc85b4e9a24f8; PC-relative literal words separately
+          recorded in the evidence manifest.
+    count_width:
+      value: 16
+      unit: bits
+      native_value: 16
+      native_unit: bits
+      evidence:
+      - kind: static_signature
+        ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08005428..0x8005456
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 acc5e57733f06af7a25702106f3017ffe15c35398b2d231f22497f031a884b90; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08005428.asm.txt
+          SHA256 c4c716c60e6df48984751a2f54b9128f3e35dfeff9f59210381fc85b4e9a24f8; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: indexed_head_prepend
+  facet: mechanics
+  label: Prepend one node through an indexed head slot
+  summary: Instructions multiply the raw index by 4, read the selected head word, store that prior value in the
+    first word of the supplied node and then replace the head with the node pointer. No traversal, allocation or
+    bounds checking occurs; the surrounding indexing meaning remains unknown.
+  instantiates:
+  - concept: mechanics.data.indexed_intrusive_prepend
+  reads:
+  - arg.head_table:ptr32
+  - arg.index:u32
+  - arg.node:ptr32
+  - head_table[index]:ptr32
+  writes:
+  - node.offset_0:ptr32
+  - head_table[index]:ptr32
+  invariants:
+  - For distinct valid node/head-slot storage, the new node points to the old head.
+  - Aliasing and invalid indexes are not guarded by this helper.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x08003380
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/megaman-zero/functions.jsonl:97; pseudo-C SHA256
+      a49442f33336a5242dc9edc5a511a0e047d9bb9248973248ff218b5409a16efb; semantics checked against ROM instructions,
+      not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08003380..0x800338c
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 975b621a01fb866d2b9a47db72cd2a7902f3c6b6f4da01d4e84f4f781a56bfe4; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08003380.asm.txt
+      SHA256 3cca491610aee7fce20943ca954a8193fa261978de43d61fa57abf7f3f12fe5c; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    head_stride:
+      value: 4
+      unit: bytes
+      native_value: 4
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08003380..0x800338c
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 975b621a01fb866d2b9a47db72cd2a7902f3c6b6f4da01d4e84f4f781a56bfe4; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08003380.asm.txt
+          SHA256 3cca491610aee7fce20943ca954a8193fa261978de43d61fa57abf7f3f12fe5c; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: guarded_record_lookup
+  facet: mechanics
+  label: Cross-table key equality gates a16-bit value
+  summary: The helper truncates its input to 16 bits and selects an8-byte descriptor at 0x080d2c04. Its u16 selector
+    at+4 indexes a12-byte table at 0x080d2b5c whose first word is a record pointer; the pointed record key must
+    equal the descriptor key before the helper returns the halfword at record+4, otherwise it returns 0. The value
+    is a halfword load, even though generated C misleadingly casts a word expression.
+  instantiates:
+  - concept: mechanics.data.key_guarded_indirect_lookup
+  reads:
+  - arg.index:u16
+  - descriptor.key:u32
+  - descriptor.offset_4:u16
+  - pointer_table[selector].offset_0:ptr32
+  - record.offset_0:u32
+  - record.offset_4:u16
+  writes:
+  - return:u16
+  invariants:
+  - A key mismatch returns 0.
+  - No bounds, null-pointer guard or interpretation of key/value is established.
+  - A legitimate matched value 0 is indistinguishable from mismatch through this return alone.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x08001e7c
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/megaman-zero/functions.jsonl:72; pseudo-C SHA256
+      779cda486c1ed714650d9c9fba9186575f2b5ca4494434355222ea8cdf33f1d0; semantics checked against ROM instructions,
+      not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08001e7c..0x8001eac
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 9bcc1aa5e8ccd31994abc05f04b6a530e2b2cacc21da9f8e2142fd3c92659052; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08001e7c.asm.txt
+      SHA256 35d76dd344c5f0d01273d41aca30d931283b12e1470da5e8bc56b1c4e04a9a75; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    descriptor_stride:
+      value: 8
+      unit: bytes
+      native_value: 8
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08001e7c..0x8001eac
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 9bcc1aa5e8ccd31994abc05f04b6a530e2b2cacc21da9f8e2142fd3c92659052; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08001e7c.asm.txt
+          SHA256 35d76dd344c5f0d01273d41aca30d931283b12e1470da5e8bc56b1c4e04a9a75; PC-relative literal words separately
+          recorded in the evidence manifest.
+    pointer_record_stride:
+      value: 12
+      unit: bytes
+      native_value: 12
+      native_unit: bytes
+      evidence:
+      - kind: static_signature
+        ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08001e7c..0x8001eac
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 9bcc1aa5e8ccd31994abc05f04b6a530e2b2cacc21da9f8e2142fd3c92659052; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08001e7c.asm.txt
+          SHA256 35d76dd344c5f0d01273d41aca30d931283b12e1470da5e8bc56b1c4e04a9a75; PC-relative literal words separately
+          recorded in the evidence manifest.
+    input_width:
+      value: 16
+      unit: bits
+      native_value: 16
+      native_unit: bits
+      evidence:
+      - kind: static_signature
+        ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08001e7c..0x8001eac
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 9bcc1aa5e8ccd31994abc05f04b6a530e2b2cacc21da9f8e2142fd3c92659052; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08001e7c.asm.txt
+          SHA256 35d76dd344c5f0d01273d41aca30d931283b12e1470da5e8bc56b1c4e04a9a75; PC-relative literal words separately
+          recorded in the evidence manifest.
+- id: blend_register_shadow_commit
+  facet: rendering
+  label: Commit three halfword shadows to blend registers
+  summary: Direct halfword loads/stores copy 0x02004f72 to 0x04000052,0x02004f74 to 0x04000054 and 0x02004f70 to
+    0x04000050, in that order. These are BLDALPHA, BLDY and BLDCNT hardware registers, so the local transfer directions
+    are established by instructions rather than exporter hints; no gameplay trigger is identified.
+  instantiates:
+  - concept: rendering.registers.blend_shadow_commit
+  reads:
+  - ram[0x02004f70..0x02004f74]:u16[]
+  writes:
+  - io.BLDALPHA:u16
+  - io.BLDY:u16
+  - io.BLDCNT:u16
+  invariants:
+  - Coefficient writes occur before the blend-control write.
+  - No local coefficient clamp or frame-boundary synchronization is present.
+  evidence:
+  - kind: ghidra_function
+    ref: ghidra:0x08001c98
+    confidence: 0.8
+    note: local/re/experiments/20261016-corpus-decompile/shard-b/megaman-zero/functions.jsonl:61; pseudo-C SHA256
+      c611984fade86bb5b4e9ad14076a2d3c8aa26797aca67fe954842fee250d7754; semantics checked against ROM instructions,
+      not trusted from decomp_ok.
+  - kind: static_signature
+    ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08001c98..0x8001cae
+    confidence: 0.95
+    note: Thumb instruction-range SHA256 70a595fb978f3bb77da224e4d43073a183d5aed3cfcfb72ab0fad1a24b7c97fb; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08001c98.asm.txt
+      SHA256 aad55a765895b897e7ea861254ad394ee009bb745c507e8372c9244720e6d5ba; PC-relative literal words separately
+      recorded in the evidence manifest.
+  params:
+    copy_width:
+      value: 16
+      unit: bits
+      native_value: 16
+      native_unit: bits
+      evidence:
+      - kind: static_signature
+        ref: rom:193b14120119162518a73c70876f0b8bffdbd96e:0x08001c98..0x8001cae
+        confidence: 0.95
+        note: Thumb instruction-range SHA256 70a595fb978f3bb77da224e4d43073a183d5aed3cfcfb72ab0fad1a24b7c97fb; local/scratch/rom_pipeline_audit/mining-v2/megaman-zero/0x08001c98.asm.txt
+          SHA256 aad55a765895b897e7ea861254ad394ee009bb745c507e8372c9244720e6d5ba; PC-relative literal words separately
+          recorded in the evidence manifest.
+proposed_concepts:
+- id: mechanics.data.fixed_stride_record_initialization
+  label: Fixed stride record initialization
+  definition: Initialize selected fields in a fixed number of strided records.
+- id: mechanics.data.indexed_record_activation
+  label: Indexed record activation
+  definition: Activate an indexed record after initializing its payload, workspace pointer and counters.
+- id: mechanics.pool.free_head_to_linked_node
+  label: Free head to linked node
+  definition: Transfer a node from a free-head chain into an intrusive linked structure with explicit initialization.
+- id: mechanics.data.indexed_intrusive_prepend
+  label: Indexed intrusive prepend
+  definition: Prepend a caller-supplied node to a pointer chain selected by index.
+- id: mechanics.data.key_guarded_indirect_lookup
+  label: Key guarded indirect lookup
+  definition: Return a small value from an indirectly selected record only when its key matches a descriptor.
+- id: rendering.registers.blend_shadow_commit
+  label: Blend shadow commit
+  definition: Copy a small blend-register shadow block to hardware in a defined order.
+open_questions:
+- Identify callers, actual object/entity ownership, valid index ranges, memory extents and update cadence before
+  binding these operators to player or enemy behavior.
+- Extract combat, resource meanings, AI, traversal, story, assets and progression from further source/disassembly
+  and controlled trajectories; do not substitute model recall.
+- These exports cover observed call targets only. Unknown indirect branches, ABI recovery and unexecuted ROM regions
+  limit discovery completeness.
+- The key-guarded lookup uses LDRH at pointed record+4; generated pointer/word types must not override this16-bit
+  width.
+- Find callers tying the three fixed-stride records, pool nodes and index tables to actual systems before calling
+  them player, enemy, audio or UI state.

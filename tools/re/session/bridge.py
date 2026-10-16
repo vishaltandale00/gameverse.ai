@@ -1,0 +1,191 @@
+"""JSONL v1 isolated playtester adapter over a private persistent libmgba core."""
+from __future__ import annotations
+
+import argparse
+import copy
+import hashlib
+import json
+from pathlib import Path
+import select
+import shutil
+import struct
+import subprocess
+import sys
+import uuid
+import zlib
+
+KEYS = {key: 1 << i for i, key in enumerate(
+    ('A', 'B', 'SELECT', 'START', 'RIGHT', 'LEFT', 'UP', 'DOWN', 'R', 'L'))}
+VERSION = 'mgba-session/1'
+
+
+def png(rgba):
+    def chunk(kind, data):
+        return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data))
+    rows = b''.join(b'\0' + rgba[y * 960:(y + 1) * 960] for y in range(160))
+    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', 240, 160, 8, 6, 0, 0, 0))
+            + chunk(b'IDAT', zlib.compress(rows)) + chunk(b'IEND', b''))
+
+
+class NativeSession:
+    def __init__(self, rom, out, binary, *, max_frames=120, timeout=10, initial_state=None):
+        self.out = Path(out).resolve()
+        # Require a fresh output directory: never reuse another run's saves.
+        self.out.mkdir(parents=True, exist_ok=False)
+        self.rom = Path(rom).resolve()
+        self.game_version = hashlib.sha256(self.rom.read_bytes()).hexdigest()
+        self.session_id = uuid.uuid4().hex
+        self.max_frames, self.timeout = max_frames, timeout
+        self.frame, self.sequence, self.checkpoints = 0, 0, {}
+        self.process = subprocess.Popen([str(Path(binary).resolve()), str(self.rom), str(self.out)],
+                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                        bufsize=0)
+        try:
+            self._read()
+            if initial_state:
+                source = Path(initial_state).resolve()
+                shutil.copyfile(source, self.out / 'checkpoint-0.ss')
+                self._command('load 0')
+                # A raw state contains no framebuffer. Render one real frame;
+                # include it in relative frame accounting, rather than show blank pixels.
+                self._command('step 0 1')
+                self.frame = 1
+                self.initial_state = {'path': str(source), 'sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
+                                      'source_frame': None, 'provenance': 'explicit caller input; native format checked'}
+            else:
+                self.initial_state = None
+        except BaseException:
+            self.close()
+            raise
+
+    def _read(self):
+        if not select.select([self.process.stdout], [], [], self.timeout)[0]:
+            raise ValueError('native_timeout')
+        line = self.process.stdout.readline(4096)
+        if not line.startswith(b'OK '):
+            raise ValueError('native_failed')
+        return line[3:].decode().strip()
+
+    def _command(self, text):
+        self.process.stdin.write((text + '\n').encode())
+        self.process.stdin.flush()
+        return self._read()
+
+    def observe(self):
+        self._command('frame')
+        raw = (self.out / 'frame.rgba').read_bytes()
+        if len(raw) != 240 * 160 * 4:
+            raise ValueError('invalid_frame')
+        self.sequence += 1
+        target = self.out / ('observation-%06d.png' % self.sequence)
+        target.write_bytes(png(raw))
+        # Quantized 30x20 screen sample. Animation can still cause false novelty.
+        coarse = bytes((raw[(y * 240 + x) * 4 + c] // 32)
+                       for y in range(4, 160, 8) for x in range(4, 240, 8) for c in range(3))
+        return {'frame': self.frame, 'state_key': hashlib.sha256(coarse).hexdigest(),
+                'image': str(target), 'phase': 'unknown', 'facts': {}, 'progress': {},
+                'terminal': False, 'success': False,
+                'evidence': {'image_sha256': hashlib.sha256(target.read_bytes()).hexdigest(),
+                             'state_key_basis': 'quantized_screen_only; animation is not objective progress',
+                             'frame_basis': 'session-relative advanced frames', 'initial_state': self.initial_state}}
+
+    def act(self, action, limit):
+        frames, keys = action.get('frames'), action.get('keys', [])
+        if (type(frames) is not int or not 1 <= frames <= min(limit, self.max_frames)
+                or not isinstance(keys, list) or any(key not in KEYS for key in keys)):
+            raise ValueError('invalid_action')
+        mask = 0
+        for key in keys:
+            mask |= KEYS[key]
+        self._command('step %d %d' % (mask, frames))
+        self.frame += frames
+        return {'frames': frames}
+
+    def close(self):
+        process = getattr(self, 'process', None)
+        if process is None:
+            return
+        try:
+            if process.poll() is None:
+                process.stdin.write(b'close\n'); process.stdin.flush()
+                process.wait(timeout=2)
+        except (OSError, subprocess.TimeoutExpired):
+            process.kill(); process.wait(timeout=2)
+        finally:
+            process.stdin.close(); process.stdout.close()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--rom', type=Path, required=True)
+    parser.add_argument('--game-id', help='Stable corpus ID, independent of ROM filename')
+    parser.add_argument('--out', type=Path, required=True, help='Fresh private directory; must not already exist')
+    parser.add_argument('--binary', type=Path, default=Path(__file__).parent / 'build/gba-session')
+    parser.add_argument('--initial-state', type=Path)
+    parser.add_argument('--max-action-frames', type=int, default=120)
+    parser.add_argument('--command-timeout', type=float, default=10)
+    args = parser.parse_args()
+    if not 1 <= args.max_action_frames <= 120 or not 0 < args.command_timeout <= 30:
+        parser.error('invalid bounded session limits')
+    session = None
+    try:
+        session = NativeSession(args.rom, args.out, args.binary, max_frames=args.max_action_frames,
+                                timeout=args.command_timeout, initial_state=args.initial_state)
+        while True:
+            raw = sys.stdin.buffer.readline(65537)
+            if not raw:
+                break
+            identity = None
+            close = False
+            try:
+                if len(raw) > 65536:
+                    raise ValueError('request_size_limit')
+                request = json.loads(raw)
+                identity = request.get('id')
+                op = request.get('op')
+                if op == 'hello':
+                    result = {'schema_version': 1, 'adapter_version': VERSION, 'session_id': session.session_id,
+                              'isolated': True, 'game_id': args.game_id or args.rom.stem, 'game_version': session.game_version,
+                              'capabilities': ['observe', 'act', 'checkpoint', 'restore'], 'max_action_frames': session.max_frames,
+                              'source_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                              'native_sha256': hashlib.sha256(args.binary.read_bytes()).hexdigest()}
+                elif op == 'observe':
+                    result = copy.deepcopy(session.restored_observation) if getattr(session, 'restored_observation', None) else session.observe()
+                elif op == 'act':
+                    limit = request.get('max_frames', session.max_frames)
+                    if type(limit) is not int or limit < 1:
+                        raise ValueError('invalid_action_limit')
+                    result = session.act(request['action'], limit)
+                    session.restored_observation = None
+                elif op == 'checkpoint':
+                    slot = len(session.checkpoints) + 1
+                    if slot >= 32:
+                        raise ValueError('checkpoint_limit')
+                    session._command('save %d' % slot)
+                    token = uuid.uuid4().hex
+                    observation = session.observe()
+                    session.checkpoints[token] = (slot, session.frame, observation)
+                    result = {'checkpoint': token, 'frame': session.frame}
+                elif op == 'restore':
+                    slot, frame, observation = session.checkpoints[request['checkpoint']]
+                    session._command('load %d' % slot)
+                    session.frame = frame
+                    session.restored_observation = copy.deepcopy(observation)
+                    result = {'frame': frame}
+                elif op == 'close':
+                    result, close = {}, True
+                else:
+                    raise ValueError('unsupported_operation')
+                response = {'id': identity, 'ok': True, 'result': result}
+            except Exception:
+                response = {'id': identity, 'ok': False, 'error': 'invalid_request_or_session_failure'}
+            print(json.dumps(response), flush=True)
+            if close:
+                break
+    finally:
+        if session:
+            session.close()
+
+
+if __name__ == '__main__':
+    main()

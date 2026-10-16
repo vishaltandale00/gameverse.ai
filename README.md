@@ -2,7 +2,26 @@
 
 A single-player browser environment for playing games and developing them through conversation, using a controller.
 
-**Status:** product contracts and research. There is no runnable Gameverse app, integrated FireRed runtime or improvement worker yet. There is no app installation or development command to run from this repository today.
+**Status:** this research branch contains a partial game ontology, ROM evidence tools, shared decision providers, a headless play tester and a basic candidate-generation attempt. Vishal's browser ROM player lives on `main`; these bot tools use isolated test sessions. The complete game creation/improvement product is still in development.
+
+## Run an initial generation and playtest attempt
+
+```sh
+# Python 3.10+; no model key, emulator or extra Python packages required.
+python3 -m tools.game_attempt --output-root local/game-attempts
+```
+
+This generates a small source-linked reference game, then plays it through the
+same bounded tester used for external adapters. It retains the request, selected
+ontology components, candidate, transitions, barriers, failures and timings.
+The default is a hand-authored mechanic template; opt-in LLM generation is
+supported. It does not automatically compile a ROM ontology into a new GBA game.
+
+- [Game generation attempt](tools/game_attempt/README.md): natural-language intent, component selections and constraints.
+- [Play tester](tools/playtester/README.md): game profiles, targets/actions, cheap decisions and LLM escalation; based on sidbot's transferable design.
+- [Headless GBA sessions](tools/re/session/README.md): real ROM stepping, observation and private checkpoints without browser automation.
+- [Decision providers](tools/decisions/README.md): local d1 by default, explicit native OpenAI Decisions support.
+- [Ontology and extraction](ontology/README.md), [current research handoff](ontology/RESEARCH_HANDOFF.md): incomplete evidence-backed corpus and next mining work.
 
 ## Start here
 
@@ -26,7 +45,7 @@ A single-player browser environment for playing games and developing them throug
 
 1. **Vishal — game environment harness:** start with one simple reused world, configured and replaceable through adapters; own base-game discovery, subgame play/navigation, progress and host-controlled activation. This journey works without an AI worker.
 2. **Vishal — complete FireRed baseline integration:** reproduce the pinned baseline, integrate a browser runtime and qualify controls, progress and campaign coverage through the shared host interface.
-3. **Shishir ([tandalesc](https://github.com/tandalesc)) — build/improvement harness:** config-defined and independently versioned; operates during initial game creation and later improvement for base games and subgames. Simulate pinned versions with isolated state and submit verified new games, updates or forks. Work is underway externally per Vishal; repository integration remains unimplemented.
+3. **Shishir ([tandalesc](https://github.com/tandalesc)) — build/improvement harness:** config-defined and independently versioned; operates during initial game creation and later improvement for base games and subgames. Simulate pinned versions with isolated state and submit verified new games, updates or forks. This branch provides the first bounded generation/playtest attempt; host registration and activation remain separate integration work.
 
 The shared handoff pins game/config/artifact references and both harness versions, exposes adapter/session capabilities, and exchanges candidate submissions/results and timing reports. Base-specific discovery/session policy and Shishir's internal algorithm remain separately configurable. See [the parallel contract](contracts/PARALLEL_DEVELOPMENT.md) and [TASKS.md](TASKS.md); exact schemas still need joint review.
 
