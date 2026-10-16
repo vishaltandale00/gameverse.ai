@@ -117,3 +117,23 @@ The isolated provider bootstrap was also exercised against the existing authoriz
 The follow-up source fixes successful-objective handling before a requested pause, complete standalone continuation-policy comparison, early actionable missing-tool errors, and durable authenticated local worker ownership across API restarts. Normal server shutdown stops owned workers; unreachable ownership fails closed. Focused owner-reported checks and exact source hashes are retained in [the review-fix receipt](../verification/pr12-review-fixes-20261016.json).
 
 The RPG adapter is now `sid-rpg-navigation/2`, with source-backed wait/text classification and retained key-release guards. Its [zero-new-model offline replay](../verification/rpg-source-event-local-20261016.json) reaches arrival stage 1; this does not establish live v2 quest completion. The original live stage-0 partial remains pinned to its old source. A fresh same-save model comparison uses the new provider descriptor and runtime identity; earlier checkpoints are not silently repinned.
+
+## Fresh RPG v2 same-save comparison
+
+[The independently validated v2 receipt](../verification/rpg-weekend-v2-prefix-20261016.json) pins source commit `a88e321` and its exact request, provider, profile and runtime. The original-save prefix advanced source quest stages 0→1→2 with no battle. It made 14 provider attempts: five D1 requests (one successful response and four HTTP 413 failures) and nine successful System 2 responses. It executed 99 actions, including 90 deterministic actions, and 5,490 native frames: 1,692 setup and 3,798 play. Worker execution took 40.118160 s.
+
+The prefix remained partial because its 510 remaining frames could not cover the next 600-frame option bound. No 100-call campaign was launched. The earlier same-save prefix stayed at stage 0 with 439 play frames in 51.563291 s worker time. Measured whole-worker simulated-play ratios were 0.14254× and 1.5850× nominal respectively; these are bounded-prefix measurements with different decisions and provider failures, not a full-quest performance guarantee. The four D1 failures remain counted and retained. A later context-size correction needs a fresh source identity and cannot repin this checkpoint.
+
+## Separate assets with an admitted IR bundle
+
+The generic `tools.roundtrip.ir_bundle` rebuild command accepts `--asset-partition` for a separately supplied admitted asset partition. [The tooling receipt](../verification/ir-assets-bundle-tooling-20261016.json) records three typed assets totaling 2,067 bytes alongside three actual L1 components; other native or mixed regions remain explicit. Rebuild regenerated the admitted payload and veneers and matched the same full candidate hash. The same guarded bundle replay improved from 9.800882 s to 0.419803 s worker time (9.841032 s to 0.456081 s parent time), retaining 11 negative controls and 765 guard denials. These stages overlap. No payload, L1 or asset file is shipped in Git, and this command is not an API upload route.
+
+The source classifier is a Python API: `from tools.roundtrip.bundle_assets import create_asset_overlay, rebuild_with_asset_overlay`. Call `create_asset_overlay(bundle_dir, profile_json, new_overlay_dir)` with the explicit pinned source/ELF/map/consumer profile, then `rebuild_with_asset_overlay(bundle_dir, overlay_dir, new_rom_path)`. Its supported proof categories are a source-typed u16 palette copy and source-bound voice-pointer incbins; filenames or object-section names alone do not establish assets. Other regions retain their native/mixed/unknown classification.
+
+To combine a supplied private IR bundle and asset partition, run:
+
+```sh
+python3 -B -m tools.roundtrip.ir_bundle rebuild --bundle /path/to/private-bundle --asset-partition /path/to/private-asset-overlay --output /path/to/new-attempt
+```
+
+These generic sources support replay of admitted, sealed input snapshots. New admission requires the compatible authoring snapshot helpers described above; the public subset does not provide arbitrary game extraction or a complete game decompiler.

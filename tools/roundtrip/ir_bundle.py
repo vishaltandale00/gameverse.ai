@@ -153,14 +153,90 @@ def load_recipe(bundle):
     return recipe
 
 
-def install_read_guard(bundle,output,recipe):
+def load_asset_partition(overlay,bundle,recipe):
+    """Admit a sealed separated-data layout without reopening source/ELF inputs."""
+    overlay=Path(overlay).resolve()
+    raw=(overlay/'asset-overlay.json').read_bytes();record=json.loads(raw)
+    receipt_raw=(overlay/'asset-rebuild-receipt.json').read_bytes();receipt=json.loads(receipt_raw)
+    if (record.get('schema')!='gameverse.private-bundle-assets/1' or record.get('status')!='passed'
+            or record.get('bundle_manifest_sha256')!=recipe['container']['sha256']
+            or receipt.get('schema')!='gameverse.private-assets-rebuild/1' or receipt.get('status')!='passed'
+            or receipt.get('consumed_by_rebuild') is not True or receipt.get('asset_overlay_sha256')!=sha(raw)
+            or receipt.get('artifact',{}).get('sha256')!=recipe['expected_artifact']['sha256']):
+        raise ValueError('asset partition is not admitted for this exact IR container')
+    layout_path=Path(receipt['layout']['path']).resolve()
+    if not layout_path.is_relative_to(overlay):raise ValueError('asset partition layout escapes its root')
+    layout_ref={'path':str(layout_path.relative_to(overlay)),'sha256':receipt['layout']['sha256']}
+    layout=json.loads(read_ref(overlay,layout_ref))
+    if layout.get('artifact',{}).get('sha256')!=recipe['expected_artifact']['sha256'] or layout['artifact']['size']!=recipe['expected_artifact']['size']:
+        raise ValueError('asset partition candidate identity mismatch')
+    assets=record.get('assets');rows=layout.get('components')
+    if not isinstance(assets,list) or not 0<len(assets)<=32 or not isinstance(rows,list) or len(rows)>4096:
+        raise ValueError('bounded explicit asset partition required')
+    if len({a.get('id') for a in assets})!=len(assets):raise ValueError('duplicate asset identity')
+    extents={};last=0
+    for a in sorted(assets,key=lambda a:a['original_offset']):
+        start,size=a['original_offset'],a['size']
+        if (type(start) is not int or type(size) is not int or start<last or size<=0
+                or start+size>recipe['expected_artifact']['size'] or a.get('type')!='asset_data'
+                or not a.get('source_pins') or not a.get('consumers') or not a.get('elf_symbol')):
+            raise ValueError('asset partition lacks exact nonoverlapping proven extents')
+        extents[(start,size)]=a;last=start+size
+    seen=set();cursor=0
+    for row in sorted(rows,key=lambda r:r['offset']):
+        if (type(row.get('offset')) is not int or type(row.get('size')) is not int
+                or row['offset']!=cursor or row['size']<=0):
+            raise ValueError('asset partition coverage gap or overlap')
+        cursor+=row['size']
+        if row.get('content_type')=='asset_data':
+            key=(row['offset'],row['size']);a=extents.get(key)
+            if a is None or row.get('sha256')!=a['sha256'] or key in seen:
+                raise ValueError('asset partition differs from authoritative asset records')
+            seen.add(key)
+        elif any(row['offset']<start+size and start<cursor for start,size in extents):
+            raise ValueError('asset partition left an asset hidden in mixed host bytes')
+    total=sum(size for _,size in extents)
+    if (seen!=set(extents) or cursor!=recipe['expected_artifact']['size'] or total!=record.get('asset_data_bytes')
+            or total!=receipt.get('asset_bytes')):raise ValueError('asset partition typed byte coverage mismatch')
+    final_pin=None
+    final_path=overlay/'asset-final-validation.json'
+    if final_path.is_file():
+        final_raw=final_path.read_bytes();final=json.loads(final_raw)
+        if (final.get('schema')!='gameverse.private-assets-final-validation/1' or final.get('status')!='passed'
+                or final.get('consumed_overlay',{}).get('sha256')!=sha(raw)
+                or final.get('consumed_layout',{}).get('sha256')!=layout_ref['sha256']
+                or final.get('actual_artifact_rebuild',{}).get('sha256')!=sha(receipt_raw)):
+            raise ValueError('asset strict-validation supplement differs from consumed partition')
+        final_pin={'path':str(final_path),'sha256':sha(final_raw)}
+    return {'root':str(overlay),'assembly_root':str(layout_path.parent),'layout':layout,
+            'strict_validation':final_pin,
+            'pins':{'overlay':{'path':str(overlay/'asset-overlay.json'),'sha256':sha(raw)},
+                    'receipt':{'path':str(overlay/'asset-rebuild-receipt.json'),'sha256':sha(receipt_raw)},
+                    'layout':{'path':str(layout_path),'sha256':layout_ref['sha256']}},
+            'asset_bytes':total,'asset_ids':[a['id'] for a in assets],'assets':assets}
+
+
+def install_read_guard(bundle,output,recipe,partition=None):
     """Inspectable Python-process allowlist, not a claim of OS confinement."""
     allowed=[bundle.resolve(),output.resolve(),Path(sys.base_prefix).resolve(),Path('/System'),Path('/usr'),Path('/Library/Developer'),Path('/opt/homebrew')]
     denied=[Path(p).resolve() for p in recipe['access_policy']['denied_roots']+recipe['access_policy']['denied_files']]
+    if partition:allowed.append(Path(partition['root']).resolve())
     # Old emitted payload bytes and generated veneers are expected hashes only.
     layout=json.loads(read_ref(bundle,recipe['layout']))
     denied.extend((bundle/r['artifact']['path']).resolve() for r in layout['components'] if r.get('providerKind')=='ir_generated')
     denied.extend([bundle/'retained-c.json'])
+    if partition:
+        # The combined proof must consume separated assets/fragments, never the
+        # old unsplit host component or copied old generated payload/veneers.
+        denied.extend((bundle/r['artifact']['path']).resolve() for r in layout['components'])
+        generated_offsets={r['offset'] for r in layout['components'] if r.get('providerKind')=='ir_generated'}
+        denied.extend((Path(partition['assembly_root'])/r['artifact']['path']).resolve() for r in partition['layout']['components'] if r['offset'] in generated_offsets)
+    # Canonical file denials retain the previous prefix semantics through the
+    # resolved incoming path's ancestor lineage (including hypothetical children
+    # beneath a denied file path). Work is O(path depth), not O(component count).
+    denied_roots=frozenset(Path(p).resolve() for p in recipe['access_policy']['denied_roots'])
+    denied_files=frozenset(denied)-denied_roots
+    allowed_roots=frozenset(allowed)
     def guard(event,args):
         if event!='open' or isinstance(args[0],int):return
         path=Path(os.fsdecode(args[0])).resolve()
@@ -168,11 +244,17 @@ def install_read_guard(bundle,output,recipe):
         reading=not isinstance(mode,str) or 'r' in mode or '+' in mode
         if isinstance(mode,str) and mode in ('w','wb','x','xb','a','ab'):reading=False
         if not reading:return
-        if any(path==d or path.is_relative_to(d) for d in denied) or not any(path==a or path.is_relative_to(a) for a in allowed):
+        lineage=(path,*path.parents)
+        if not denied_files.isdisjoint(lineage) or not denied_roots.isdisjoint(lineage) or allowed_roots.isdisjoint(lineage):
             raise PermissionError('IR bundle read policy denied: '+str(path))
     sys.addaudithook(guard)
     controls=[]
-    for name in recipe['access_policy']['negative_controls']:
+    control_names=list(recipe['access_policy']['negative_controls'])
+    if partition:
+        for row in layout['components']:
+            if row.get('providerKind')=='ir_generated' or any(row['offset']<=a['original_offset']<row['offset']+row['size'] for a in partition['assets']):
+                control_names.append(str((bundle/row['artifact']['path']).resolve()))
+    for name in control_names:
         try:Path(name).read_bytes()
         except PermissionError:controls.append({'path':name,'result':'denied'})
         else:raise ValueError('forbidden-read control was allowed')
@@ -180,7 +262,7 @@ def install_read_guard(bundle,output,recipe):
     for ref in recipe['compiler'].values():read_ref(bundle,ref)
     return {'mechanism':'Python audit hook allowlist plus inspected fixed compiler recipe',
             'operating_system_sandbox':'unavailable: sandbox-exec sandbox_apply Operation not permitted (exit 71)',
-            'compiler_subprocess_os_confined':False,'allowed_roots':[str(p) for p in allowed],
+            'compiler_subprocess_os_confined':False,'lookup':'precomputed canonical file/root sets checked against resolved path ancestor lineage','allowed_roots':[str(p) for p in allowed],
             'denied_paths':[str(p) for p in denied],'negative_controls':controls}
 
 
@@ -197,9 +279,10 @@ def binding_from_snapshot(source):
     return namespace['binding']
 
 
-def worker(bundle,output):
+def worker(bundle,output,asset_partition=None):
     started=time.perf_counter();bundle=Path(bundle).resolve();output=Path(output).resolve()
     recipe=load_recipe(bundle);stages=[]
+    partition=load_asset_partition(asset_partition,bundle,recipe) if asset_partition else None
     receipt={'schema':'gameverse.qualified-ir-replay-result/1','status':'failed','queue_seconds':None,'stages':stages,
              'native_qualification_rerun':False,'new_l0_lifting':False,'model_calls':0,
              'scope':'Three qualified unchanged IR modules plus retained mixed native host; not whole-game IR reconstruction'}
@@ -209,7 +292,8 @@ def worker(bundle,output):
         (output/(name+'.stdout')).write_text(p.stdout);(output/(name+'.stderr')).write_text(p.stderr)
         p.check_returncode();return p.stdout
     try:
-        receipt['read_policy']=install_read_guard(bundle,output,recipe)
+        receipt['input_recipe_sha256']=sha((bundle/'ir-bundle.json').read_bytes())
+        receipt['read_policy']=install_read_guard(bundle,output,recipe,partition)
         # Snapshot compiler modules are the only semantic lowering dependency.
         compiler=bundle/recipe['compiler']['lower.py']['path'];sys.path.insert(0,str(compiler.parent))
         lower=import_snapshot('qualified_bundle_lower',compiler).lower
@@ -237,16 +321,28 @@ def worker(bundle,output):
         payload=(output/'native.bin').read_bytes()
         if sha(payload)!=recipe['expected_payload']['sha256'] or len(payload)!=recipe['expected_payload']['size']:raise ValueError('IR-native payload changed; native qualification closure missing')
         if any(entries.get(k)!=v for k,v in recipe['native_entries'].items()):raise ValueError('fresh native entry layout differs from qualified identity')
-        layout=json.loads(read_ref(bundle,recipe['layout']));parts=output/'components';parts.mkdir()
+        original_layout=json.loads(read_ref(bundle,recipe['layout']))
+        layout=copy.deepcopy(partition['layout']) if partition else original_layout
+        input_root=Path(partition['assembly_root']) if partition else bundle
+        parts=output/'components';parts.mkdir()
+        if partition:(output/'assets').mkdir()
+        payload_offsets={r['offset'] for r in original_layout['components'] if r.get('role')=='generated-output'}
         hooks={int(m['entry'],16)-0x08000000:struct.pack('<HHI',0x4b00,0x4718,entries['native_'+m['label']]|1) for m in recipe['modules']}
-        copied=0
+        copied=0;asset_copied=0;typed_rows=[]
         for index,row in enumerate(layout['components']):
-            if row.get('role')=='generated-output':data=payload
+            if row['offset'] in payload_offsets:data=payload
             elif row['offset'] in hooks:data=hooks[row['offset']]
             elif row.get('providerKind')=='ir_generated':raise ValueError('missing IR-generated placement closure')
-            else:data=read_ref(bundle,row['artifact']);copied+=len(data)
+            else:
+                data=read_ref(input_root,row['artifact'])
+                if row.get('content_type')=='asset_data':asset_copied+=len(data)
+                else:copied+=len(data)
             if len(data)!=row['size'] or sha(data)!=row['sha256']:raise ValueError('fresh payload/hook does not match admitted placement')
-            relative='components/'+str(index)+'.bin';(output/relative).write_bytes(data);row['artifact']={'path':relative,'sha256':sha(data)}
+            relative=('assets/' if row.get('content_type')=='asset_data' else 'components/')+str(index)+'.bin'
+            (output/relative).write_bytes(data);row['artifact']={'path':relative,'sha256':sha(data)}
+            typed_rows.append({'id':row['id'],'offset':row['offset'],'size':len(data),'sha256':sha(data),'artifact':row['artifact'],
+                'type':'executable_ir_and_mechanical_binding' if row['offset'] in payload_offsets or row['offset'] in hooks else 'asset_data' if row.get('content_type')=='asset_data' else 'mixed_unknown'})
+        if partition and asset_copied!=partition['asset_bytes']:raise ValueError('combined IR replay did not consume every separated asset byte')
         write_json(output/'layout.json',layout)
         assembler=import_snapshot('qualified_bundle_assembler',bundle/recipe['compiler']['assembler_source']['path'])
         assembled=assembler.assemble_native_layout(output/'layout.json',output/'rebuilt.gba')
@@ -256,6 +352,13 @@ def worker(bundle,output):
                        byte_accounting=dict(recipe['byte_accounting'],fresh_payload_bytes=len(payload),fresh_entry_veneer_bytes=sum(map(len,hooks.values())),copied_mixed_host_bytes=copied),
                        original_rom_read=False,old_generated_c_read=False,original_source_read=False,whole_game_ir_only=False,
                        toolchain=recipe['tools'],machine=platform.platform())
+        if partition:
+            receipt['asset_partition']={k:v for k,v in partition.items() if k in ('pins','asset_bytes','asset_ids','strict_validation')}
+            receipt['byte_accounting']['separated_asset_data_bytes']=asset_copied
+            receipt['typed_manifest']={'placements':typed_rows,'known_asset_source_records':partition['assets'],
+                'unresolved_dependencies':recipe['typed_manifest']['unresolved_dependencies'],
+                'whole_game_ir_only':False,'complete_ir_assets_game':False}
+            write_json(output/'typed-manifest.json',receipt['typed_manifest'])
     except BaseException as error:
         receipt.update(error=str(error),error_type=type(error).__name__);raise
     finally:
@@ -264,12 +367,13 @@ def worker(bundle,output):
     return receipt
 
 
-def rebuild_ir(bundle,output):
+def rebuild_ir(bundle,output,asset_partition=None):
     bundle=Path(bundle).resolve();output=Path(output).resolve()
-    if output.is_relative_to(bundle):raise ValueError('IR rebuild output must be isolated from input bundle')
+    if output.is_relative_to(bundle) or asset_partition and output.is_relative_to(Path(asset_partition).resolve()):raise ValueError('IR rebuild output must be isolated from input bundle/asset partition')
     output.mkdir(parents=True,exist_ok=False)
     harness=output/'audit-harness.py';harness.write_bytes(Path(__file__).read_bytes())
     began=time.perf_counter();command=[sys.executable,'-B',str(harness),'worker','--bundle',str(bundle),'--output',str(output)]
+    if asset_partition:command.extend(['--asset-partition',str(Path(asset_partition).resolve())])
     process=subprocess.run(command,capture_output=True,text=True,timeout=60,env=dict(os.environ,PYTHONDONTWRITEBYTECODE='1'))
     (output/'worker.stdout').write_text(process.stdout);(output/'worker.stderr').write_text(process.stderr)
     parent={'schema':'gameverse.qualified-ir-isolation/1','command':command,'harness_sha256':sha(harness.read_bytes()),'returncode':process.returncode,
@@ -282,8 +386,9 @@ def rebuild_ir(bundle,output):
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('command',choices=('admit','rebuild','worker'))
     parser.add_argument('--bundle',type=Path,required=True);parser.add_argument('--packet',type=Path);parser.add_argument('--output',type=Path)
+    parser.add_argument('--asset-partition',type=Path,help='Admitted separated-asset overlay directory; consumes derived layout asset files')
     a=parser.parse_args(argv)
-    result=admit_ir(a.packet,a.bundle) if a.command=='admit' else rebuild_ir(a.bundle,a.output) if a.command=='rebuild' else worker(a.bundle,a.output)
+    result=admit_ir(a.packet,a.bundle) if a.command=='admit' else rebuild_ir(a.bundle,a.output,a.asset_partition) if a.command=='rebuild' else worker(a.bundle,a.output,a.asset_partition)
     print(json.dumps({'status':result.get('status','admitted'),'schema':result['schema'],'artifact':result.get('artifact'),'capability':result.get('capability')},sort_keys=True))
 
 
