@@ -1,0 +1,137 @@
+{
+  "schema": "gameverse.mario.character-profile-evidence/0.1",
+  "game": "super-mario-advance",
+  "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+  "producer": {
+    "entry": "080ac954",
+    "meaning": "Loads ROMu32table08368898[player+28] into character-parameter root03005cf4",
+    "instruction_span": {
+      "address": "0x080ac954",
+      "size": 38,
+      "sha256": "71a9394f028882c89585e1cc22148f6091703fdd8694397db84b928c41eb1c5c"
+    }
+  },
+  "table": {
+    "address": "0x08368898",
+    "size": 16,
+    "sha256": "aa2d44002b81dc234fcb458256e64c339570bbd27f427637df079a3b10dcfb60",
+    "element_type": "readonly_character_record_pointer_u32",
+    "selector": "player+0x28 u8",
+    "domain": [
+      0,
+      3
+    ],
+    "precondition": "Bounded source-character constructor/adapter must enforce selector0..3; no assumption for arbitrary inputbyte"
+  },
+  "profiles": [
+    {
+      "source_selector": 0,
+      "identity": "Mario",
+      "identity_evidence": "research/deep-extraction/mario/context-observations.json",
+      "record": {
+        "address": "0x8368838",
+        "size": 24,
+        "sha256": "932f67e87b8f901d8e16d3a5a1ff633f3b7a5043bc01f1ed097a5b2bc7172be3"
+      },
+      "configuration": {
+        "jump_onset_signed_bytes": [
+          -80,
+          -80,
+          -104,
+          -104,
+          -90,
+          -86
+        ],
+        "special_jump_signed_byte": -32,
+        "hover_frames": 0,
+        "gravity_unheld_signed_byte": 7,
+        "gravity_held_signed_byte": 4,
+        "gravity_special_signed_byte": 8
+      },
+      "configuration_evidence": "Original jump080a9808/gravity080a7618 accesses these exact offsets; automatic pipeline binds extracted values rather than handwritten behavior."
+    },
+    {
+      "source_selector": 1,
+      "identity": "Peach",
+      "identity_evidence": "research/deep-extraction/mario/context-observations.json",
+      "record": {
+        "address": "0x8368880",
+        "size": 24,
+        "sha256": "c770672a31213aed18977eac00d4c50cc8880d72f783025b6efb536cf3b9f20f"
+      },
+      "configuration": {
+        "jump_onset_signed_bytes": [
+          -77,
+          -77,
+          -104,
+          -104,
+          -84,
+          -77
+        ],
+        "special_jump_signed_byte": -32,
+        "hover_frames": 48,
+        "gravity_unheld_signed_byte": 7,
+        "gravity_held_signed_byte": 4,
+        "gravity_special_signed_byte": 8
+      },
+      "configuration_evidence": "Original jump080a9808/gravity080a7618 accesses these exact offsets; automatic pipeline binds extracted values rather than handwritten behavior."
+    },
+    {
+      "source_selector": 2,
+      "identity": "unverified_character_identity",
+      "identity_evidence": null,
+      "record": {
+        "address": "0x8368850",
+        "size": 24,
+        "sha256": "a8f2caf107713ec32852d6969287533494033eba5450fe2e1227dede3b1e1879"
+      },
+      "configuration": {
+        "jump_onset_signed_bytes": [
+          -78,
+          -78,
+          -104,
+          -104,
+          -83,
+          -83
+        ],
+        "special_jump_signed_byte": -32,
+        "hover_frames": 0,
+        "gravity_unheld_signed_byte": 7,
+        "gravity_held_signed_byte": 4,
+        "gravity_special_signed_byte": 8
+      },
+      "configuration_evidence": "Original jump080a9808/gravity080a7618 accesses these exact offsets; automatic pipeline binds extracted values rather than handwritten behavior."
+    },
+    {
+      "source_selector": 3,
+      "identity": "unverified_character_identity",
+      "identity_evidence": null,
+      "record": {
+        "address": "0x8368868",
+        "size": 24,
+        "sha256": "a107ddbdec642eccfd713bc12933ad92d3845035591becb5f8fc5d4275591374"
+      },
+      "configuration": {
+        "jump_onset_signed_bytes": [
+          -42,
+          -42,
+          -55,
+          -55,
+          -48,
+          -44
+        ],
+        "special_jump_signed_byte": -32,
+        "hover_frames": 0,
+        "gravity_unheld_signed_byte": 2,
+        "gravity_held_signed_byte": 1,
+        "gravity_special_signed_byte": 8
+      },
+      "configuration_evidence": "Original jump080a9808/gravity080a7618 accesses these exact offsets; automatic pipeline binds extracted values rather than handwritten behavior."
+    }
+  ],
+  "limits": [
+    "Profile configuration discovery is not complete character abilities/terrain/carry/health recovery",
+    "Only Mario0 andPeach1 identities have retained native selection evidence",
+    "Physical velocity/gravity units use separate pinned calibration; storage width is not worldunit"
+  ]
+}

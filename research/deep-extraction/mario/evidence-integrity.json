@@ -5,5 +5,11 @@
   "games": 5,
   "families": 44,
   "wall_s": 0.140369625,
-  "scope": "Distinct IDs, original-ROM/export/L0 pins and truthful incomplete flags; not gameplay qualification."
+  "scope": "Distinct IDs, original-ROM/export/L0 pins and truthful incomplete flags; not gameplay qualification.",
+  "additional_checks": {
+    "outcome": "pass_metadata_integrity_only",
+    "new_target_instruction_spans": 14,
+    "total_target_spans": 57,
+    "scope": "New enemy scheduler/pair/lifecycle targets; own-ROM hashes and distinct IDs. No new native gameplay qualification implied."
+  }
 }

@@ -1544,9 +1544,14 @@
               "coverage_complete": false
             }
           ],
-          "evidence_refs": [],
+          "evidence_refs": [
+            "research/deep-extraction/mario/sma4-actor-dispatch.json"
+          ],
           "discovery_target_ids": [
-            "sma4.actor_player_contact_dispatch"
+            "sma4.actor_player_contact_dispatch",
+            "sma4.species_update_dispatch",
+            "sma4.walking_hopping_ai",
+            "sma4.actor_pair_contact_phase"
           ],
           "remaining_unknowns": []
         },
@@ -1556,7 +1561,7 @@
           "coverage_complete": false,
           "obligations": [
             {
-              "description": "Normal actor pool15slots, reset from species and full-returnff",
+              "description": "Normal allocation first15 slots; actual scheduler18 slots including3 reserved, reset from type and explicit full failure",
               "state": "unresolved_or_unknown",
               "coverage_complete": false
             },
@@ -1580,7 +1585,11 @@
           "discovery_target_ids": [
             "sma4.normal_actor_pool_allocate",
             "sma4.actor_reset_from_species",
-            "sma4.visual_reward_pool_select"
+            "sma4.visual_reward_pool_select",
+            "sma4.actor_state_update_dispatch",
+            "sma4.actor_type_initialize",
+            "sma4.dead_actor_class_dispatch",
+            "sma4.retire_actor_and_spawn_marker"
           ],
           "remaining_unknowns": []
         },
@@ -1590,7 +1599,7 @@
           "coverage_complete": false,
           "obligations": [
             {
-              "description": "Scorecode>12 increments world resource+cd3",
+              "description": "Score code>12 increments reward accumulator world+cd3; persistence/lives meaning unqualified",
               "state": "unresolved_or_unknown",
               "coverage_complete": false
             },

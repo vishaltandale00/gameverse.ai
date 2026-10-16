@@ -1,0 +1,146 @@
+{
+  "schema": "gameverse.mario.collision-service-evidence/0.1",
+  "game": "super-mario-advance-4-super-mario-bros-3",
+  "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+  "source_export": {
+    "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+    "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+  },
+  "qualification_status": "static_causal_dependency_contract; not emitted_collision_or_terrain_qualification",
+  "instruction_spans": [
+    {
+      "entry": "080460fc",
+      "size": 78,
+      "sha256": "1fce88646657701bc465d663cbc480d59793c0c3c5311e574debeabed5836669",
+      "callees": []
+    },
+    {
+      "entry": "08046154",
+      "size": 78,
+      "sha256": "3424e89531a9341192db03b2ee892404da8b7b829b5e2e541f53ba5ca9ef38a1",
+      "callees": []
+    },
+    {
+      "entry": "08046320",
+      "size": 112,
+      "sha256": "a65427e4c99ea44b9c9aa4d63aa2e4ed5b43fd2acb9ec776440c8b518316b325",
+      "callees": []
+    },
+    {
+      "entry": "08046568",
+      "size": 306,
+      "sha256": "001406b3e27a75252afe29ff05af782f85e5c2d455dd98724e852815e3851055",
+      "callees": [
+        "0x080460fc",
+        "0x080461ac",
+        "0x08046264",
+        "0x08046320",
+        "0x080464ec",
+        "0x08046720"
+      ]
+    },
+    {
+      "entry": "08075fc8",
+      "size": 176,
+      "sha256": "986e8fae3059bef5ed7820d895ff945f708180d78d436d48fb2b7dc761d5735d",
+      "callees": [
+        "0x0809e0b0"
+      ]
+    },
+    {
+      "entry": "080436f0",
+      "size": 694,
+      "sha256": "740649248f8b3447619d3154408f1eae0f739267214913c0ab713ac788dde2f7",
+      "callees": [
+        "0x0804301c",
+        "0x08043064",
+        "0x08043090",
+        "0x080430cc",
+        "0x080431e0",
+        "0x08043200",
+        "0x08043448",
+        "0x08043f8c"
+      ]
+    },
+    {
+      "entry": "08043a34",
+      "size": 12,
+      "sha256": "9ff0f9c5fded3b7b4dfb9fc464c71604e79e4644e4070675f444d1da26d13e75",
+      "callees": [
+        "0x080436f0"
+      ]
+    }
+  ],
+  "aabb": {
+    "producer_A": "080460fc",
+    "producer_B": "08046154",
+    "overlap_entry": "08046320",
+    "body_shape_table": {
+      "address": "0x08154cdc",
+      "size": 256,
+      "sha256": "d8b545e39329dd4883f4d5d744dd51d62dd41697d19c22fdece0f5b228c6fba2",
+      "index": "4*(actor.u8+64 &63)",
+      "records": 64,
+      "record_layout": "x offset,width,y offset,height; original functions preserve exact signed/unsigned8bit arithmetic"
+    },
+    "state_inputs": {
+      "0x03003ad4": "A centerX encoded8bits",
+      "0x03003ad5": "A width u8",
+      "0x03003ad6": "B centerX encoded8bits",
+      "0x03003ad7": "B width u8",
+      "0x03003ad8": "A centerY encoded8bits",
+      "0x03003ad9": "A height u8",
+      "0x03003ada": "B centerY encoded8bits",
+      "0x03003adb": "B height u8"
+    },
+    "state_outputs": {
+      "0x03003adc": "Conditional X penetration from difference minus selected width",
+      "0x03003add": "Conditional Y penetration from difference minus selected height",
+      "0x03003ade": "Magnitude scratch; X orY according branch reached",
+      "0x03003adf": "Axis direction bits; X sign becomesbit1 ifXoverlap thenYsign becomesbit0",
+      "0x03003ad4": "Overwritten with selectedYheight on overlap success"
+    },
+    "return": "predicate overlap; failed branches leave different conditional scratch effects",
+    "units": {
+      "center_and_extent": "pixel u8 in local modulo256 collision frame, not unrestricted absolute world position",
+      "penetration": "signed8 pixels with branch validity"
+    },
+    "eligibility_wrapper": "08046568 additionally checks player death/mode/immunity, actor flags and true full-position proximity (X/Y<128px except explicit specialcases). That guard prevents modulo256 false overlap across distant actors.",
+    "unknowns": [
+      "Original actor pixel mirrors+c/+e synchronization phase needs closure",
+      "Special player shape producers461ac/46264 and contact action46720/464ec remain required",
+      "Per-species shape IDs and dynamic sizing only partly named; preserve explicit IDs"
+    ]
+  },
+  "terrain_query": {
+    "entry": "08075fc8",
+    "parameters": [
+      "x u16 in source world pixels",
+      "y u16 in source world pixels"
+    ],
+    "return": "tile/category byte,0xff on rejected bounds",
+    "explicit_domain_for_portable_adapter": "Initially restrict queryX0..4095 and queryY within declared map height; negative/wrapped coordinates and all special modes require original instruction/native qualification.",
+    "mutable_context": {
+      "root": "global pointer0300781c contact",
+      "fields": {
+        "+34 u16": "requestedX",
+        "+36 u16": "requestedY",
+        "+3e u8": "reset atentry",
+        "+3f u8,+40 u8": "zero for ordinary tile plane; special mapping path may change via0809e0b0"
+      }
+    },
+    "dependencies": [
+      "Player map-height field+ca",
+      "Normal-mode page pointer tables ROM081248a4/081248e4 plus dynamic EWRAM tile/attribute pages",
+      "Special-mode EWRAM planes0202e000/02032000",
+      "0809e0b0 tile/metadata transform"
+    ],
+    "adapter_obligation": "This query is stateful. A replacement geometry service must preserve metadata/query sideeffects and category semantics, or explicitly reject unsupported modes. Returning a visual solid boolean alone is insufficient."
+  },
+  "composition_obligations": [
+    "The actor moves before native terrain/contact phase; keep graph ordering and velocity restoration from08047ac8",
+    "Current terrain/rotation frame must accompany pendingY correction+33",
+    "Actor/world state may alias; one shared collection view is required",
+    "No renderer service may silently consume collision, allocation or reward semantics"
+  ]
+}

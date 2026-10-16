@@ -1,0 +1,199 @@
+{
+  "schema": "gameverse.mario.pair-reaction-semantic-evidence/0.1",
+  "game": "super-mario-advance-4-super-mario-bros-3",
+  "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+  "automatic_package": "sma4.actor_pair_reaction",
+  "existing_native_proof": {
+    "ref": "local/ir/packages/sma4.actor_pair_reaction/receipt.json",
+    "sha256": "4268c2a1c9c0668f13373f056c8f3ec48dbe783bf688dcecd2c3f2700275d1f3",
+    "outcome": "pass",
+    "scope": "Original/emitted function parity only; no complete actorAI or worldpool alias closure."
+  },
+  "adapter_sha256": "b378d8484dc8fe35d6e6eb837077d5c9b894f0240d09d87f54bb6e6313c3be28",
+  "field_annotations": [
+    {
+      "field": "field_0",
+      "native_role": "r0",
+      "native_offset": "0x1a",
+      "storage_width": 8,
+      "semantic_type": {
+        "quantity": "orientation_flags",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.orientation"
+      },
+      "signed_encoding": "unsigned_categorical_or_flags",
+      "evidence": "Directionbit0x40; reaction computes from signed relativeX delta, other type-specific flags are not globally enumerated."
+    },
+    {
+      "field": "field_1",
+      "native_role": "r0",
+      "native_offset": "0x33",
+      "storage_width": 8,
+      "semantic_type": {
+        "quantity": "pending_position_correction",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.terrain.y"
+      },
+      "signed_encoding": "twos_complement_i8",
+      "evidence": "Signed8 pixel correction; consumers080431e0/08043090 add value*256 to actorY(+8) thenzero correction."
+    },
+    {
+      "field": "field_2",
+      "native_role": "r1",
+      "native_offset": "0x10",
+      "storage_width": 8,
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 16
+        },
+        "frame": "world.x.right"
+      },
+      "signed_encoding": "twos_complement_i8",
+      "evidence": "Signed8; original080479c0 adds value*16 to actorX Q24.8 position."
+    },
+    {
+      "field": "field_3",
+      "native_role": "r1",
+      "native_offset": "0x16",
+      "storage_width": 8,
+      "semantic_type": {
+        "quantity": "lifecycle_state_id",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.lifecycle"
+      },
+      "signed_encoding": "unsigned_categorical_or_flags",
+      "evidence": "State selector for9entry dispatcher08154224; known1init,2normal,6dead; other modes not fully labeled."
+    },
+    {
+      "field": "field_4",
+      "native_role": "r1",
+      "native_offset": "0x18",
+      "storage_width": 16,
+      "semantic_type": {
+        "quantity": "type_id",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.type"
+      },
+      "signed_encoding": "unsigned_categorical_or_flags",
+      "evidence": "U16 index into candidate301type init/update and trait tables; normal gameplay adapter mustenforce0..300."
+    },
+    {
+      "field": "field_5",
+      "native_role": "r1",
+      "native_offset": "0x1a",
+      "storage_width": 8,
+      "semantic_type": {
+        "quantity": "orientation_flags",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.orientation"
+      },
+      "signed_encoding": "unsigned_categorical_or_flags",
+      "evidence": "Other actor direction/type flags; selected species reverse bit0x40."
+    },
+    {
+      "field": "field_6",
+      "native_role": "r1",
+      "native_offset": "0x33",
+      "storage_width": 8,
+      "semantic_type": {
+        "quantity": "pending_position_correction",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.terrain.y"
+      },
+      "signed_encoding": "twos_complement_i8",
+      "evidence": "Same pending signed8 correction as self; contact negates it."
+    },
+    {
+      "field": "field_7",
+      "native_role": "r1",
+      "native_offset": "0x3a",
+      "storage_width": 8,
+      "semantic_type": {
+        "quantity": "behavior_phase_id",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor.behavior"
+      },
+      "signed_encoding": "unsigned_categorical_or_flags",
+      "evidence": "Opaque species-specific phase/animation state; type00d6 remaps through readonlytable08159304. Do not call it a universal timer."
+    }
+  ],
+  "parameter_annotations": [
+    {
+      "name": "param_0",
+      "register": "r2",
+      "storage_type": "u16",
+      "meaning": "relative position: other.x - self.x in whole pixels, encoded signed16",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "world.x.right.relative",
+      "caller_domain": {
+        "signed_min": -128,
+        "signed_max": 127
+      },
+      "evidence": "Original08051232..124c computes u16(deltaX>>8) inr2; proximity guard then call."
+    }
+  ],
+  "instruction_spans": [
+    {
+      "entry": "080510b8",
+      "size": 136,
+      "sha256": "c48723f9ae3726974ddab281f85baf53a27f0cf4bb9f83bce11a50915b447946"
+    },
+    {
+      "entry": "08051144",
+      "size": 268,
+      "sha256": "afc22ad8dd342719a0bdcbf84bb9bd32403c300903a8db9c19618821dd51fd79"
+    },
+    {
+      "entry": "080479c0",
+      "size": 32,
+      "sha256": "cd4b9202cc437988c4e6fdb20a000bb6fa787733233576133246317b096f1a25"
+    },
+    {
+      "entry": "080431e0",
+      "size": 32,
+      "sha256": "df324cbec8e61d3c7e6988a1076505ac3a7333e6e55e7fc8726c11a51b6a5f8d"
+    },
+    {
+      "entry": "08043090",
+      "size": 50,
+      "sha256": "4483d2acbf8eb20ee3ef8723f2aaa497334a7a6f15d8cbb6ba3e69b992ea7e00"
+    },
+    {
+      "entry": "080425a0",
+      "size": 304,
+      "sha256": "f36e09b81a933460f661f8c12b42a214928d9d4eae373caa399d3246ae107b62"
+    }
+  ],
+  "ownership_precondition": "r0self/r1other are distinct nonoverlapping accessed112B actor views, as original caller51144 checks while traversing preceding pool slots. Both may belong to same world allocation. This function alone touches neither external world root nor allocator.",
+  "limits": [
+    "Fields are typed effects of this pair transaction, not whole AI prefab",
+    "Behavior phase and orientation bits require type-compatible domains; no universal crossgame enum mapping implied",
+    "Actorpool alias and native scheduler remain separate components/contracts"
+  ]
+}

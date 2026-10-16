@@ -6,9 +6,13 @@ This lane maps missing mechanic families and their actual own-ROM dependency cha
 
 | File | Actual scope |
 | --- | --- |
-| `mechanics-targets.json` | 43 causal gameplay targets, own-ROM instruction/export hashes, callers, dependencies, state roles, acceptance obligations and two bounded indirect dispatch maps |
+| `mechanics-targets.json` | 57 causal gameplay targets, own-ROM instruction/export hashes, callers, dependencies, state roles, acceptance obligations and two bounded indirect dispatch maps |
 | `l0-context-evidence.json` | Three hash-pinned L0 context/domain profiles used to resolve original player/character/engine references; no behavior implementation |
-| `context-observations.json` | Read-only object roots from three retained native checkpoints; one rendered restore frame each, 0.0923 s total |
+| `context-observations.json` | Read-only roots from three retained checkpoints (0.0923 s), plus a separate stock Mario 3 actor-view snapshot (0.03095 s); one rendered restore frame each |
+| `sma4-collision-service-contracts.json` | Local collision-frame domain, conditional scratch outputs and stateful tile-query service requirements |
+| `sma4-pair-reaction-semantics.json` | Eight typed pair-contact state fields plus relative-position argument, pinned to original machine dataflow and consumers |
+| `sma4-actor-dispatch.json` | Actor collection/handle ownership, walking/hopping AI phase closure and instruction-confirmed pair-reaction ABI; other actor types remain discovery targets |
+| `sma1-character-profile-selection.json` | Own-ROM selector-to-parameter constructor and four source configurations, with only two character identities natively witnessed |
 | `sma1-unit-calibration.json` | Six retained original-ROM adjacent-frame witnesses, establishing velocity units independently of storage names; no new gameplay run |
 
 ## What is already recovered, and what still needs closure
@@ -25,9 +29,9 @@ Mario & Luigi and Mario Kart have independent ROM exports and observed presentat
 
 - **SMA1 carry, damage and death:** grounded interaction → 12-slot plucked-object creation → held attachment → clearance-tested release → collision/hurt → carried-reference release on death → timer → life decrement → retry selector. Original functions identify real state ownership; thrown-hit and retry consumer/persistence remain to be closed.
 - **Mario World contact, form and lives:** contact dispatch chooses top/side response → powered downgrade or small-form death → native state table chooses hurt recovery/death → death countdown decrements lives and selects retry/game-over events. Reserve-item drops and carried release are additional dependencies, not optional discarded visual effects.
-- **Mario 3 contact and forms:** eligibility → top/side policy → accepted stomp or damage → pending form downgrade → next player-tick commit → actual ability update. Death has its own state dispatch and stage-event consumer. Normal actors and visual rewards have distinct 15-slot pools; allocation failure behavior is explicit.
+- **Mario 3 contact and forms:** eligibility → top/side policy → accepted stomp or damage → pending form downgrade → next player-tick commit → actual ability update. Death has its own state dispatch and stage-event consumer. Normal allocation uses 15 slots, while the actual actor scheduler updates 18 records including three reserved slots. Visual rewards have a separate 15-slot pool. Failure and retirement behavior are explicit.
 
-The packet separates notifications from services that affect mechanics. For example, Mario 3's score service changes world-owned resource state before allocating a visual reward, while its death phase waits for audio completion. Neither can be replaced by an ignored renderer callback without preserving those causal effects.
+The packet separates notifications from services that affect mechanics. For example, Mario 3's score service changes a world-owned reward accumulator before allocating a visual reward; its persistence/resource meaning remains unqualified, while its death phase waits for audio completion. Neither can be replaced by an ignored renderer callback without preserving those causal effects.
 
 ## Context and unit constraints
 
