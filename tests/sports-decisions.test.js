@@ -46,7 +46,8 @@ test('observation retains possession stamina power and only six recent executed 
 
 test('Decisions asks move skill and sport-specific action, rejecting invalid or refused answers', () => {
   for (const game of ['soccer', 'football']) {
-    const request = decisionsRequest(observeSports(game, createSession(game).state));
+    const session = createSession(game); applyDecision(session, decision('confirm'));
+    const request = decisionsRequest(observeSports(game, session.state));
     assert.equal(request.model, 'gpt-6-luna'); assert.equal(typeof request.input, 'string');
     assert.deepEqual(request.questions.map(q => [q.type, q.name]), [['choice', 'move'], ['choice', 'skill'], ['choice', 'action']]);
     assert.equal(request.questions[0].choices.length, 9); assert.equal(request.questions[1].choices.length, 9);
@@ -124,4 +125,21 @@ test('status follows actual HUD expiry and includes visible skill cues', () => {
   assert.equal(observation.message, 'ALDER IN POSSESSION'); assert.equal(observation.skillReady, true);
   assert.deepEqual(observation.players[3].facing, { x: 1, y: 0 }); assert.equal(observation.nearbyOpponents.length, 3);
   assert.ok(observation.nearbyOpponents[0].distance <= observation.nearbyOpponents[1].distance);
+});
+
+
+test('ready and play-selection requests expose usable menu actions and still let the API wait', () => {
+  for (const game of ['soccer', 'football']) {
+    const session = createSession(game), request = decisionsRequest(observeSports(game, session.state));
+    const actions = request.questions.find(q => q.name === 'action').choices.map(c => c.value);
+    assert.ok(actions.includes('confirm')); assert.ok(actions.includes('neutral'));
+    assert.ok(!actions.includes('shot')); assert.ok(!actions.includes('receiverA_tap'));
+    assert.equal(actions.includes('play_left'), game === 'football');
+    assert.throws(() => decodeDecision({ answers: Object.entries(decision('shot')).map(([name, choice]) => ({ type: 'choice', name, choice })) }, request));
+    const selected = decodeDecision({ answers: Object.entries(decision('confirm')).map(([name, choice]) => ({ type: 'choice', name, choice })) }, request);
+    applyDecision(session, selected);
+    assert.equal(session.state.phase, game === 'soccer' ? 'play' : 'live');
+    const live = decisionsRequest(observeSports(game, session.state));
+    assert.ok(live.questions[2].choices.some(c => c.value === (game === 'soccer' ? 'shot' : 'receiverB')));
+  }
 });
