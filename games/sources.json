@@ -1,11 +1,15 @@
 {
   "schemaVersion": 1,
-  "initialGames": ["firered", "mzm-emerald-encounters-v1"],
+  "initialGames": [
+    "firered",
+    "mzm-emerald-encounters-v1",
+    "mzm-emerald-wilds-v2"
+  ],
   "games": {
     "mzm-emerald-encounters-v1": {
       "kind": "gba",
-      "name": "Metroid × Emerald",
-      "subtitle": "Zero Mission campaign · native three-Pokémon encounters",
+      "name": "Metroid \u00d7 Emerald",
+      "subtitle": "Zero Mission campaign \u00b7 native three-Pok\u00e9mon encounters",
       "repository": "https://github.com/metroidret/mzm.git",
       "commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
       "directory": "local/decomps/mzm",
@@ -16,7 +20,7 @@
       "buildRecipe": "tools/gba_mashup/recipes/mzm-emerald-encounters-v1.json"
     },
     "firered": {
-      "name": "Pokémon FireRed",
+      "name": "Pok\u00e9mon FireRed",
       "repository": "https://github.com/pret/pokefirered.git",
       "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
       "directory": "vendor/pokefirered",
@@ -36,6 +40,19 @@
       "baseDataSha256": "53ec98fc672d94e3962ba854805ce5005e07e10a4c7ed4e7dbec7a2ca7846562",
       "sourceKind": "ARM/Thumb assembly disassembly (USA revision 1)",
       "gameCode": "AX4E"
+    },
+    "mzm-emerald-wilds-v2": {
+      "kind": "gba",
+      "name": "Metroid \u00d7 Emerald: Wilds",
+      "subtitle": "Zebes exploration with wild Pok\u00e9mon and a persistent three-member party.",
+      "repository": "https://github.com/metroidret/mzm.git",
+      "commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+      "directory": "local/decomps/mzm",
+      "artifact": "mzm_us.gba",
+      "baselineSha1": "5de8536afe1f0078ee6fe1089f890e8c7aa0a6e8",
+      "sourceKind": "Native GBA composition from pinned decompiled source",
+      "gameCode": "BMXE",
+      "buildRecipe": "tools/gba_mashup/recipes/mzm-emerald-wilds-v2.json"
     }
   },
   "tools": {

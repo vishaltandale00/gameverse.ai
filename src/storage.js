@@ -56,9 +56,15 @@ export async function commitCheckpoint(key, expectedRevision, checkpoint, batter
 export async function acquireSessionLock(key) {
   if (!navigator.locks) throw Error('This browser cannot protect progress from concurrent writers. Use a current Chrome browser on localhost.');
   return new Promise((resolve, reject) => {
-    navigator.locks.request(key, { ifAvailable: true }, async lock => {
+    const completion = navigator.locks.request(key, { ifAvailable: true }, async lock => {
       if (!lock) { reject(Error('This profile and game are already open in another tab. Return there before continuing.')); return; }
-      await new Promise(release => resolve(release));
-    }).catch(reject);
+      await new Promise(release => resolve(() => {
+        release();
+        // Resolving the callback's hold does not synchronously release the Web Lock.
+        // Callers may reacquire only after the request itself has completed.
+        return completion;
+      }));
+    });
+    completion.catch(reject);
   });
 }

@@ -1,0 +1,47 @@
+{
+  "runId": "firered-audio-exit-2026-10-16",
+  "observed": {
+    "tabs": 2,
+    "olderTab": {
+      "id": "3",
+      "url": "http://127.0.0.1:4173/",
+      "playerVisible": true,
+      "pauseMenuOpen": false,
+      "documentHasFocus": true,
+      "visibility": "visible"
+    },
+    "otherTab": {
+      "id": "8",
+      "playerHidden": true,
+      "world": "suspended",
+      "dialog": "profile-dialog"
+    }
+  },
+  "diagnosis": "An older browser tab retained an active FireRed session while another tab displayed the world. Both in-app documents could report focus/visibility; switching this UI did not imply exit.",
+  "actions": [
+    "Paused the older session",
+    "Saved and returned through the existing checkpoint flow",
+    "Navigated the saved tab to the updated /v0 page without reloading the other tab profile form"
+  ],
+  "pauseProof": {
+    "allowAudio": false,
+    "voices": 0,
+    "disposed": false,
+    "audioState": "running",
+    "pending": 0
+  },
+  "exitProof": {
+    "allowAudio": false,
+    "voices": 0,
+    "disposed": true,
+    "audioState": "closed",
+    "pending": 0
+  },
+  "adapterReview": {
+    "normalDispose": "Mocked actual adapter seam stops scheduled/late audio, terminates worker and closes context",
+    "separateRace": "Overlapping resume/pause can reenable audio after pause for a queued buffer; reproduced as a bounded 31ms source, not a disposed-session leak",
+    "sourceEdited": false,
+    "probeTiming": null
+  },
+  "qualification": "No audible recording made; closed AudioContext and zero voices are the shutdown evidence. Cross-tab foreground ownership was not implemented."
+}

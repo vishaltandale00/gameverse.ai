@@ -30,8 +30,11 @@ const server = http.createServer(async (req, res) => {
     let file;
     if (/^\/artifacts\/[a-f0-9]{64}\.gba$/.test(path)) file = new URL(`local-data/games/${path.split('/').pop()}`, root);
     else if (/^\/runtime\/mgba\.(js|wasm)$/.test(path)) file = new URL(path.split('/').pop(), runtimeDirectory);
-    else if (path === '/') file = new URL('index.html', root);
-    else if (path === '/style.css' || path === '/workshop.css' || path === '/games/research.json' || /^\/src\/[a-z-]+\.js$/.test(path)) file = new URL(path.slice(1), root);
+    else if (/^\/runtime\/three\/three\.(module|core)\.js$/.test(path)) file = new URL(`node_modules/three/build/${path.split('/').pop()}`, root);
+    else if (path === '/runtime/three/LICENSE') file = new URL('node_modules/three/LICENSE', root);
+    else if (['/', '/v0', '/v0/', '/v1', '/v1/'].includes(path)) file = new URL('index.html', root);
+    else if (/^\/games\/configs\/gameverse-v[01]\.json$/.test(path)) file = new URL(path.slice(1), root);
+    else if (path === '/style.css' || path === '/workshop.css' || /^\/src\/[a-z-]+\.js$/.test(path)) file = new URL(path.slice(1), root);
     else { res.writeHead(404).end('Not found'); return; }
     const actual = await realpath(file);
     if (!actual.startsWith(resolve(appRoot) + sep)) throw Error('Path outside workspace');

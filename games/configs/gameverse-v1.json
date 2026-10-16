@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "gameverse",
+  "version": "v1",
+  "title": "Gameverse",
+  "base": {
+    "kind": "neighborhood",
+    "entryPath": "/v1",
+    "location": "Alder District"
+  },
+  "subgames": [
+    {
+      "id": "firered",
+      "catalogId": "firered",
+      "adapter": "gameverse-gba-worker/0.1.0"
+    }
+  ]
+}

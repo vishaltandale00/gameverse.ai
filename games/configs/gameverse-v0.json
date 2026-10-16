@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "gameverse",
+  "version": "v0",
+  "title": "Gameverse",
+  "base": {
+    "kind": "collection",
+    "entryPath": "/v0"
+  },
+  "subgames": [
+    {
+      "id": "firered",
+      "catalogId": "firered",
+      "adapter": "gameverse-gba-worker/0.1.0"
+    },
+    {
+      "id": "mzm-emerald-encounters-v1",
+      "catalogId": "mzm-emerald-encounters-v1",
+      "adapter": "gameverse-gba-worker/0.1.0"
+    },
+    {
+      "id": "mzm-emerald-wilds-v2",
+      "catalogId": "mzm-emerald-wilds-v2",
+      "adapter": "gameverse-gba-worker/0.1.0"
+    }
+  ]
+}

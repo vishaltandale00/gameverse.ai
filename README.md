@@ -60,3 +60,7 @@ FireRed is the sole initial game and uses an editable source build. Mario is def
 ## License
 
 Original Gameverse material is available under the [MIT license](LICENSE). Third-party research excerpts retain their original rights; see [third-party notices](THIRD_PARTY_NOTICES.md). Publishing this planning repository does not distribute FireRed or grant rights to package third-party games, runtimes or assets.
+
+## App versions and the neighborhood
+
+The default `/` and `/v1` preserve Vishal’s Alder District neighborhood and FireRed arcade. `/v0` opens the collection with Explore, Mashup and Play. The world menu links to each collection view; the arcade remains bound to FireRed. Controller Y opens the host menu while Start/Back remain native game buttons. App presentation versions do not change cartridge/core/profile save identity. See [CITY_DEVELOPMENT.md](CITY_DEVELOPMENT.md) for upstream world details and [FRONTEND_WORKSHOP.md](FRONTEND_WORKSHOP.md) for the research workspace.
