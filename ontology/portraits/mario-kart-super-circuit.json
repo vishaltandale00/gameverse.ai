@@ -1,0 +1,753 @@
+{
+  "schema_version": 1,
+  "game_id": "mario-kart-super-circuit",
+  "title": "Mario Kart: Super Circuit",
+  "identity": {
+    "tagline": "A behind-kart circuit frames racing as position, route and recoverable mistakes.",
+    "categories": [
+      "kart racer",
+      "arcade competition"
+    ],
+    "view": {
+      "label": "behind-kart pseudo 3D",
+      "status": "observed_or_source_backed_presentation",
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f001558_scene.png",
+            "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f005390.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ]
+    },
+    "vibe": [
+      "bright",
+      "competitive",
+      "toy-like"
+    ],
+    "vibe_status": "editorial_interpretation_of_observed_scenes",
+    "grounded_examples": [
+      "A kart faces a castle-lined road at a start grid; another view shows it on grass with lap, timer, course map and an eighth-place indicator."
+    ],
+    "gameplay_prior": {
+      "text": "Steer and drift through laps, use items and exploit route knowledge to recover position.",
+      "status": "model_prior_unverified_unless_piece_links_source"
+    },
+    "evidence": [
+      {
+        "kind": "capture_contact_sheet_inspection",
+        "refs": [
+          "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f001558_scene.png",
+          "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f005390.png"
+        ],
+        "confidence": 0.85,
+        "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+      }
+    ],
+    "category_basis": "Editorial taxonomy from mixed source, observed scenes and explicitly unverified prior; categories are not proof of implemented or extracted rules.",
+    "tagline_status": "editorial_summary_mixed_evidence"
+  },
+  "pieces": [
+    {
+      "id": "mario-kart-super-circuit:movement_view",
+      "label": "Read the race from behind the kart",
+      "slot": "movement_view",
+      "effect": "Project a narrowing road and scale sprites with distance; recovered presentation does not yet identify tire friction or drift physics.",
+      "flavor": "A behind-kart circuit frames racing as position, route and recoverable mistakes.",
+      "knobs": [
+        {
+          "name": "perspective",
+          "meaning": "Keep or bridge the observed source view.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "cadence",
+          "meaning": "Choose frame updates, tile actions or mode transitions explicitly.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "mario-kart-super-circuit",
+          "component_id": "behind_projection"
+        },
+        {
+          "game_id": "mario-kart-super-circuit",
+          "component_id": "scanline_track"
+        },
+        {
+          "game_id": "mario-kart-super-circuit",
+          "component_id": "sprite_detail"
+        }
+      ],
+      "requires": [
+        "world coordinates",
+        "collision or terrain rules",
+        "input semantics"
+      ],
+      "exposes": [
+        "position",
+        "facing",
+        "grounded or traversal state"
+      ],
+      "conflicts": [
+        {
+          "when": "A host uses tile turns but this controller uses continuous frame updates.",
+          "issue": "One input cannot mean both a whole turn and a physics tick.",
+          "bridge": "Keep a fixed simulation clock and convert a completed movement action into a turn event."
+        }
+      ],
+      "bridge_options": [
+        "Keep side-view stages and a top-down world as separate modes.",
+        "Use a shared height axis rather than interpreting northward movement as a jump."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-kart-super-circuit.yaml#behind_projection",
+          "canonical_file_sha256": "cff21a232cc7fa5e8d2a1e08597277839b38c2ef5692074023da13335c1cad47",
+          "source_evidence": [
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:keyframes/f005311_scene.png",
+              "confidence": 0.96
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-kart-super-circuit.yaml#scanline_track",
+          "canonical_file_sha256": "cff21a232cc7fa5e8d2a1e08597277839b38c2ef5692074023da13335c1cad47",
+          "source_evidence": [
+            {
+              "kind": "capture_telemetry",
+              "ref": "capture:summary.json:derived.hblank_dma_targets, derived.raster_frames.bg_affine and derived.video_modes_frames",
+              "confidence": 0.97
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-kart-super-circuit.yaml#sprite_detail",
+          "canonical_file_sha256": "cff21a232cc7fa5e8d2a1e08597277839b38c2ef5692074023da13335c1cad47",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mksc:src/oam.O3.c:oam_renderMipmapCellDataUniform",
+              "confidence": 0.93
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mksc:src/oam.O3.c:oam_renderMipmapCellData",
+              "confidence": 0.93
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "mario-kart-super-circuit:progression",
+      "label": "A lap is a spatial contract",
+      "slot": "progression",
+      "effect": "Expose lap, position, time and map together, and keep retry/continue decisions tied to the race scene.",
+      "flavor": "A behind-kart circuit frames racing as position, route and recoverable mistakes.",
+      "knobs": [
+        {
+          "name": "persistence",
+          "meaning": "Choose session, checkpoint, room or save lifetime.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "unlock_meaning",
+          "meaning": "Choose capability, inventory key or event prerequisite.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "mario-kart-super-circuit",
+          "component_id": "race_hud"
+        },
+        {
+          "game_id": "mario-kart-super-circuit",
+          "component_id": "race_retry_menu"
+        },
+        {
+          "game_id": "mario-kart-super-circuit",
+          "component_id": "checkpoint_broadphase"
+        }
+      ],
+      "requires": [
+        "persistent state",
+        "gate or objective predicates",
+        "reward events"
+      ],
+      "exposes": [
+        "unlocked route",
+        "completion state",
+        "new capability"
+      ],
+      "conflicts": [
+        {
+          "when": "A key consumable is substituted for a permanent capability.",
+          "issue": "Backtracking and recoverability can change even if the first door opens.",
+          "bridge": "Choose explicitly between persistent ability ownership and per-door key consumption."
+        }
+      ],
+      "bridge_options": [
+        "Keep source gate semantics and reskin their fiction.",
+        "Connect battle rewards to traversal capabilities through a named unlock rule."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-kart-super-circuit.yaml#race_hud",
+          "canonical_file_sha256": "cff21a232cc7fa5e8d2a1e08597277839b38c2ef5692074023da13335c1cad47",
+          "source_evidence": [
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:keyframes/f005311_scene.png",
+              "confidence": 0.98
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-kart-super-circuit.yaml#race_retry_menu",
+          "canonical_file_sha256": "cff21a232cc7fa5e8d2a1e08597277839b38c2ef5692074023da13335c1cad47",
+          "source_evidence": [
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:keyframes/f005254_scene.png",
+              "confidence": 0.98
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-kart-super-circuit.yaml#checkpoint_broadphase",
+          "canonical_file_sha256": "cff21a232cc7fa5e8d2a1e08597277839b38c2ef5692074023da13335c1cad47",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mksc:src/collision.c:col_collide",
+              "confidence": 0.93
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mksc:src/collision.c:sortByCheckpoint",
+              "confidence": 0.93
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mksc:src/collision.c:collideActiveActiveFast",
+              "confidence": 0.93
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mksc:src/collision.c:collideActivePassiveFast",
+              "confidence": 0.93
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "mario-kart-super-circuit:presentation",
+      "label": "A colorful circuit with compact depth cues",
+      "slot": "presentation",
+      "effect": "Use affine scanlines, scaled opponents and castle/grass scenery to make speed readable on a small screen.",
+      "flavor": "A behind-kart circuit frames racing as position, route and recoverable mistakes.",
+      "knobs": [
+        {
+          "name": "feedback_density",
+          "meaning": "Balance HUD information against scene readability.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "render_budget",
+          "meaning": "Choose palette, animation and layer costs for the target runtime.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "mario-kart-super-circuit",
+          "component_id": "circuit_setting"
+        },
+        {
+          "game_id": "mario-kart-super-circuit",
+          "component_id": "scanline_track"
+        },
+        {
+          "game_id": "mario-kart-super-circuit",
+          "component_id": "affine_objects"
+        },
+        {
+          "game_id": "mario-kart-super-circuit",
+          "component_id": "race_hud"
+        }
+      ],
+      "requires": [
+        "camera/projection contract",
+        "asset/palette budget",
+        "rendering clock"
+      ],
+      "exposes": [
+        "legible feedback",
+        "scene transitions",
+        "audio cues"
+      ],
+      "conflicts": [
+        {
+          "when": "Different projections share the same screen without a transition rule.",
+          "issue": "Objects can appear to occupy incompatible coordinate spaces.",
+          "bridge": "Use separate scenes/modes or define one consistent projection adapter."
+        }
+      ],
+      "bridge_options": [
+        "Keep source rendering while adding a separate battle mode.",
+        "Translate atmosphere into a coherent new palette and motif set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-kart-super-circuit.yaml#circuit_setting",
+          "canonical_file_sha256": "cff21a232cc7fa5e8d2a1e08597277839b38c2ef5692074023da13335c1cad47",
+          "source_evidence": [
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:keyframes/f005311_scene.png",
+              "confidence": 0.97
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-kart-super-circuit.yaml#scanline_track",
+          "canonical_file_sha256": "cff21a232cc7fa5e8d2a1e08597277839b38c2ef5692074023da13335c1cad47",
+          "source_evidence": [
+            {
+              "kind": "capture_telemetry",
+              "ref": "capture:summary.json:derived.hblank_dma_targets, derived.raster_frames.bg_affine and derived.video_modes_frames",
+              "confidence": 0.97
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-kart-super-circuit.yaml#affine_objects",
+          "canonical_file_sha256": "cff21a232cc7fa5e8d2a1e08597277839b38c2ef5692074023da13335c1cad47",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mksc:src/oam.O3.c:oam_bufferCellAffineMtx",
+              "confidence": 0.93
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-kart-super-circuit.yaml#race_hud",
+          "canonical_file_sha256": "cff21a232cc7fa5e8d2a1e08597277839b38c2ef5692074023da13335c1cad47",
+          "source_evidence": [
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:keyframes/f005311_scene.png",
+              "confidence": 0.98
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "mario-kart-super-circuit:setting",
+      "label": "A concrete place, not just a genre",
+      "slot": "setting",
+      "effect": "A kart faces a castle-lined road at a start grid; another view shows it on grass with lap, timer, course map and an eighth-place indicator.",
+      "flavor": "A behind-kart circuit frames racing as position, route and recoverable mistakes.",
+      "knobs": [
+        {
+          "name": "scale",
+          "meaning": "Choose the world and object scale relationship.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "motif_palette",
+          "meaning": "Choose which observed motifs define the adaptation.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "world/content vocabulary"
+      ],
+      "exposes": [
+        "region identities",
+        "spatial motifs"
+      ],
+      "conflicts": [
+        {
+          "when": "Two settings imply different world scales or technologies.",
+          "issue": "Literal asset mixing can obscure the intended place.",
+          "bridge": "Choose a unifying art/world rule and map each motif into it."
+        }
+      ],
+      "bridge_options": [
+        "Retain mechanics while authoring original scenery.",
+        "Make a deliberate crossing between region styles rather than random per-object mixing."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f001558_scene.png",
+            "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f005390.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "mario-kart-super-circuit:story",
+      "label": "Story premise awaiting event extraction",
+      "slot": "story",
+      "effect": "Unverified premise: Race cups and rivals are the organizing premise; no campaign plot is established.",
+      "flavor": "A behind-kart circuit frames racing as position, route and recoverable mistakes.",
+      "knobs": [
+        {
+          "name": "beat_graph",
+          "meaning": "Choose prerequisites and resulting world-state changes.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "delivery",
+          "meaning": "Choose scene, dialogue, environmental cue or playable sequence.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "event/state flags",
+        "actor and dialogue staging"
+      ],
+      "exposes": [
+        "story milestone",
+        "new objective",
+        "changed world state"
+      ],
+      "conflicts": [
+        {
+          "when": "Two plots both assume exclusive control of campaign milestones.",
+          "issue": "Their original sequence prerequisites may deadlock or contradict each other.",
+          "bridge": "Map selected beats onto one explicit milestone graph; preserve required predecessors."
+        }
+      ],
+      "bridge_options": [
+        "Borrow a beat pattern such as rescue then gift without copying dialogue.",
+        "Treat a vulnerable chapter as a temporary controller/resource contract."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f001558_scene.png",
+            "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f005390.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        },
+        {
+          "kind": "model_prior_unverified",
+          "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+          "confidence": 0.35,
+          "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+        }
+      ],
+      "status": "candidate_unverified",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "mario-kart-super-circuit:tone",
+      "label": "Emotional register",
+      "slot": "tone",
+      "effect": "Bright, competitive, toy-like. This is a reading of the retained scenes, not a complete tone audit.",
+      "flavor": "A behind-kart circuit frames racing as position, route and recoverable mistakes.",
+      "knobs": [
+        {
+          "name": "contrast",
+          "meaning": "Decide where tonal contrast is intentional.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "pacing",
+          "meaning": "Choose recovery versus pressure intervals.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "editorial direction",
+        "consistent audiovisual treatment"
+      ],
+      "exposes": [
+        "emotional register",
+        "contrast between scenes"
+      ],
+      "conflicts": [
+        {
+          "when": "Comic reactions and horror tension occur in the same scene.",
+          "issue": "Their feedback can cancel the intended emotional effect.",
+          "bridge": "Assign tones to acts, regions or feedback layers, with a deliberate transition."
+        }
+      ],
+      "bridge_options": [
+        "Use tonal contrast as a story beat.",
+        "Borrow pacing or vulnerability without copying character identities."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f001558_scene.png",
+            "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f005390.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    }
+  ],
+  "story": {
+    "beats": [
+      {
+        "id": "retained_scene",
+        "description": "A kart faces a castle-lined road at a start grid; another view shows it on grass with lap, timer, course map and an eighth-place indicator.",
+        "status": "observed_scene_without_causal_order_claim",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f001558_scene.png",
+              "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f005390.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      },
+      {
+        "id": "premise_candidate",
+        "description": "Race cups and rivals are the organizing premise; no campaign plot is established.",
+        "status": "model_prior_unverified",
+        "evidence": [
+          {
+            "kind": "model_prior_unverified",
+            "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+            "confidence": 0.35,
+            "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+          }
+        ]
+      }
+    ],
+    "delivery": [
+      {
+        "description": "Observed scene/GUI staging; specific source script and dialogue links are below when available.",
+        "status": "observed_partial",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f001558_scene.png",
+              "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f005390.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      }
+    ],
+    "gaps": [
+      "Two retained scenes do not establish the complete narrative or player agency.",
+      "Resolve beat prerequisites, event flags, dialogue text and ending variants from source."
+    ]
+  },
+  "coverage": {
+    "status": "partial",
+    "depth": "source_partial",
+    "canonical_component_count": 23,
+    "canonical_facets": [
+      "audio",
+      "frontend",
+      "mechanics",
+      "progression",
+      "projection",
+      "rendering",
+      "setting",
+      "ui_hud"
+    ],
+    "source_supported_piece_count": 3,
+    "missing": [
+      "Kart handling, drifting, item effects and opponent racing policy remain largely unextracted",
+      "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+      "Complete plot/event dependency graph",
+      "Calibrated user skill and strategy evidence",
+      "Full asset-to-source/address reuse catalogue"
+    ],
+    "granular_records_not_summarized": [
+      {
+        "component_id": "scene_callbacks",
+        "label": "Scene callback lifecycle",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "title_press_start",
+        "label": "Title-to-menu transition",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "nested_title_menu",
+        "label": "Clamped main and link submenu selection",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "save_title_variant",
+        "label": "Save flags select title appearance",
+        "facet": "progression"
+      },
+      {
+        "component_id": "held_repeat",
+        "label": "Input edges and held-mask repetition",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "collision_roles",
+        "label": "Bounded active/passive actor contact lists",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "box_collision",
+        "label": "Three-coordinate overlap dispatches both actor callbacks",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "vcount_schedule",
+        "label": "Ordered scanline interrupt callbacks",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "vblank_pipeline",
+        "label": "VBlank coordinates DMA, sprites, palettes and maps",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "dma_chunks",
+        "label": "Deferred graphics copies split into 2048-byte DMA chunks",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "dirty_tilemaps",
+        "label": "Two dirty tilemap buffers",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "dirty_palette",
+        "label": "Buffered palette upload",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "captured_modes",
+        "label": "Mode zero and affine mode one across capture",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "mixed_audio",
+        "label": "Captured DirectSound A plus four PSG channels",
+        "facet": "audio"
+      },
+      {
+        "component_id": "menu_audio",
+        "label": "Separate move, accept, reject and cancel sounds",
+        "facet": "audio"
+      }
+    ],
+    "not_claimed": [
+      "All mechanics extracted",
+      "Full ROM decompiled",
+      "Complete plot recovered",
+      "Every proposed bundle assembled or playtested"
+    ]
+  },
+  "provenance": {
+    "recorded_at": "2026-10-16T06:22:36.193456+00:00",
+    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "rom_sha1": "9d327c030c3e2d9007990518594f70c3340ac56f",
+    "canonical": {
+      "kind": "canonical_ontology",
+      "ref": "ontology/games/mario-kart-super-circuit.yaml",
+      "sha256": "cff21a232cc7fa5e8d2a1e08597277839b38c2ef5692074023da13335c1cad47",
+      "scope": "Existing component extraction; inherited evidence and limitations, not a fresh independent verification."
+    },
+    "source_repositories": [
+      {
+        "path": "local/decomps/mksc",
+        "commit": "3df8932105c91f8e9e1ad72801ea13ff74339fe1",
+        "source_dirty": false,
+        "file_counts": {
+          ".aif": 168,
+          ".bin": 6,
+          ".c": 23,
+          ".h": 36,
+          ".inc": 4,
+          ".s": 458
+        },
+        "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+      },
+      {
+        "path": "local/decomps/mksc-decompilation",
+        "commit": "31b953f0b9e297c83331071ecd6d84eb3445a96b",
+        "source_dirty": false,
+        "file_counts": {
+          ".4bpp": 2,
+          ".c": 14,
+          ".h": 24,
+          ".pal": 1,
+          ".png": 2,
+          ".s": 19
+        },
+        "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+      }
+    ],
+    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "capture_run_id": "20261016T004328-0e248f",
+    "capture_frame_sha256": {
+      "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f001558_scene.png": "d1f7ca1eea016ef171ca529c96bbe20afba2ce0885cb4d18b2cb545d213ffd3c",
+      "local/captures-experiments/20261016-current-scripts/mario-kart-super-circuit/gameplay/keyframes/f005390.png": "71c497a63ddf2aa27cbbb57f4e2961ee24146f52493084adba5e407bd67ef218"
+    },
+    "source_inspection_notes": "Canonical component evidence is inherited; direct new source story anchors, when present, are marked separately."
+  }
+}

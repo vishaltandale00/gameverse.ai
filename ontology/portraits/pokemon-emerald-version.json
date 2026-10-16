@@ -1,0 +1,1807 @@
+{
+  "schema_version": 1,
+  "game_id": "pokemon-emerald-version",
+  "title": "Pokémon Emerald Version",
+  "identity": {
+    "tagline": "Party-building choices unlock a journey whose weather crisis reshapes familiar places.",
+    "categories": [
+      "party RPG",
+      "creature collection",
+      "world keys"
+    ],
+    "view": {
+      "label": "top down / oblique",
+      "status": "field_view_source_inference_not_observed_in_retained_pair",
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/pokemon-emerald-version/gameplay/keyframes/f002352.png",
+            "local/captures-experiments/20261016-current-scripts/pokemon-emerald-version/gameplay/keyframes/f005362.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#grid_step_locomotion",
+          "scope": "Field tile-step coordinate semantics, not visual proof from the retained intro screenshots."
+        }
+      ],
+      "observed_in_retained_pair": "Presenter staging and naming interface; field movement is not shown in this pair."
+    },
+    "vibe": [
+      "bright adventure",
+      "ecological tension",
+      "social travel"
+    ],
+    "vibe_status": "editorial_interpretation_of_observed_scenes",
+    "grounded_examples": [
+      "A presenter introduces a creature on a spotlight stage; later name entry uses a framed text window and character grid."
+    ],
+    "gameplay_prior": {
+      "text": "Collect a party, compare typed moves, earn badges and use learned field moves to traverse Hoenn.",
+      "status": "model_prior_unverified_unless_piece_links_source"
+    },
+    "evidence": [
+      {
+        "kind": "capture_contact_sheet_inspection",
+        "refs": [
+          "local/captures-experiments/20261016-current-scripts/pokemon-emerald-version/gameplay/keyframes/f002352.png",
+          "local/captures-experiments/20261016-current-scripts/pokemon-emerald-version/gameplay/keyframes/f005362.png"
+        ],
+        "confidence": 0.85,
+        "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+      }
+    ],
+    "category_basis": "Editorial taxonomy from mixed source, observed scenes and explicitly unverified prior; categories are not proof of implemented or extracted rules.",
+    "tagline_status": "editorial_summary_mixed_evidence"
+  },
+  "pieces": [
+    {
+      "id": "pokemon-emerald-version:movement_view",
+      "label": "Tile travel with special traversal modes",
+      "slot": "movement_view",
+      "effect": "Combine turn-in-place tile steps, terrain/elevation checks, bikes, one-way hops and water modes; each changes which routes are legal.",
+      "flavor": "Party-building choices unlock a journey whose weather crisis reshapes familiar places.",
+      "knobs": [
+        {
+          "name": "perspective",
+          "meaning": "Keep or bridge the observed source view.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "cadence",
+          "meaning": "Choose frame updates, tile actions or mode transitions explicitly.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "grid_step_locomotion"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "tile_collision_and_elevation"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "mach_bike"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "acro_bike"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "water_traversal"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "top_down_oblique_projection"
+        }
+      ],
+      "requires": [
+        "world coordinates",
+        "collision or terrain rules",
+        "input semantics"
+      ],
+      "exposes": [
+        "position",
+        "facing",
+        "grounded or traversal state"
+      ],
+      "conflicts": [
+        {
+          "when": "A host uses tile turns but this controller uses continuous frame updates.",
+          "issue": "One input cannot mean both a whole turn and a physics tick.",
+          "bridge": "Keep a fixed simulation clock and convert a completed movement action into a turn event."
+        }
+      ],
+      "bridge_options": [
+        "Keep side-view stages and a top-down world as separate modes.",
+        "Use a shared height axis rather than interpreting northward movement as a jump."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#grid_step_locomotion",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/field_player_avatar.c:CheckMovementInputNotOnBike",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/field_player_avatar.c:PlayerNotOnBikeMoving",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/event_object_movement.c:NpcTakeStep",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#tile_collision_and_elevation",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/event_object_movement.c:GetCollisionAtCoords",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/field_player_avatar.c:CheckForObjectEventCollision",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#mach_bike",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/bike.c:MachBikeTransition_TrySpeedUp",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/bike.c:MachBikeTransition_TrySlowDown",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:include/global.fieldmap.h:struct MapHeader (allowCycling)",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#acro_bike",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/bike.c:AcroBikeHandleInputNormal",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/bike.c:sAcroBikeTricksList",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:include/global.fieldmap.h (COLLISION_WHEELIE_HOP, *_RAIL)",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#water_traversal",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/field_player_avatar.c:CheckForObjectEventCollision (CanStopSurfing)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/field_player_avatar.c:sForcedMovementTestFuncs (MetatileBehavior_IsWaterfall)",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/wild_encounter.c:StandardWildEncounter (water branch)",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#top_down_oblique_projection",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/field_camera.c:DrawMetatile",
+              "confidence": 0.85
+            },
+            {
+              "kind": "llm_knowledge",
+              "ref": "three-quarter art convention of Gen-3 overworld sprites",
+              "confidence": 0.6
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-emerald-version:combat",
+      "label": "A party and move ecosystem",
+      "slot": "combat",
+      "effect": "Resolve selected moves through priority/speed, typed damage, abilities, resources and statuses; catching makes opponents potential future party members.",
+      "flavor": "Party-building choices unlock a journey whose weather crisis reshapes familiar places.",
+      "knobs": [
+        {
+          "name": "encounter_boundary",
+          "meaning": "Decide whether field movement continues during combat.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "supported_rules",
+          "meaning": "Declare the move/status/item capability subset.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "battle_engine_core"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "turn_order"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "damage_formula"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "type_chart"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "abilities_and_held_items"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "catch_formula"
+        }
+      ],
+      "requires": [
+        "combatant state",
+        "legal actions",
+        "damage and resource rules"
+      ],
+      "exposes": [
+        "damage events",
+        "resource expenditure",
+        "win or loss"
+      ],
+      "conflicts": [
+        {
+          "when": "Real-time field action meets a turn-based battle system.",
+          "issue": "Input cadence and simultaneous enemy updates disagree.",
+          "bridge": "Create an explicit encounter boundary, freeze the field and restore its state after battle."
+        }
+      ],
+      "bridge_options": [
+        "Share attack types across real-time and turn-based attacks.",
+        "Preserve the source damage rules while declaring a smaller supported move/effect set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#battle_engine_core",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_main.c:SetActionsAndBattlersTurnOrder",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_util.c:TryRunFromBattle",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_util.c (end-turn ENDTURN_* sequence)",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_controller_player.c, battle_controller_opponent.c, battle_controller_safari.c, battle_controller_wally.c (file list)",
+              "confidence": 0.6,
+              "note": "controller set established from file names only"
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#turn_order",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_main.c:GetWhoStrikesFirst",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/data/items.h:ITEM_QUICK_CLAW",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/random.c:Random",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#damage_formula",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/pokemon.c:CalculateBaseDamage",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_script_commands.c:Cmd_damagecalc",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_script_commands.c:Cmd_typecalc",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_script_commands.c:Cmd_adjustnormaldamage",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#type_chart",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_main.c:gTypeEffectiveness",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_script_commands.c:Cmd_typecalc",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_script_commands.c:ModulateDmgByType",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#abilities_and_held_items",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_util.c:AbilityBattleEffects",
+              "confidence": 0.75,
+              "note": "function located by name; only the call sites in damage/speed/encounter code were read in detail"
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_util.c:ItemBattleEffects (HOLD_EFFECT_DOUBLE_PRIZE sets moneyMultiplier 2)",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_script_commands.c:Cmd_adjustnormaldamage (Focus Band)",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#catch_formula",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_script_commands.c:Cmd_handleballthrow",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification.",
+      "preserve_order": [
+        "Compare action priority before modified speed.",
+        "Keep integer multiplication/division order in speed and damage formulas.",
+        "Resolve type/ability/status context explicitly rather than replacing it with a genre-level damage multiplier."
+      ]
+    },
+    {
+      "id": "pokemon-emerald-version:ai",
+      "label": "Choose a useful move or change the matchup",
+      "slot": "ai",
+      "effect": "Trainer flag modules score moves; switching and items have their own ordered eligibility/rule checks before a move action.",
+      "flavor": "Party-building choices unlock a journey whose weather crisis reshapes familiar places.",
+      "knobs": [
+        {
+          "name": "information_budget",
+          "meaning": "Choose visible versus privileged state.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "decision_cadence",
+          "meaning": "Separate every-frame reactions from slower objective decisions.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "trainer_ai_move_scoring"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "trainer_ai_switch_and_items"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "trainer_line_of_sight"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "npc_movement_types"
+        }
+      ],
+      "requires": [
+        "observed state contract",
+        "legal actions",
+        "update cadence"
+      ],
+      "exposes": [
+        "chosen action",
+        "target",
+        "decision reason"
+      ],
+      "conflicts": [
+        {
+          "when": "An AI reads hidden battle state but the desired bot sees only screenshots.",
+          "issue": "The policy would gain information unavailable in the target interface.",
+          "bridge": "Expose a typed observation adapter and declare privileged versus visible fields."
+        }
+      ],
+      "bridge_options": [
+        "Use deterministic rules for supported choices; escalate ambiguous goals to an LLM.",
+        "Keep enemy AI and external playtester policies as separate components."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#trainer_ai_move_scoring",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_ai_script_commands.c:BattleAI_SetupAIData",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_ai_script_commands.c:ChooseMoveOrAction_Singles",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_ai_script_commands.c:Cmd_get_how_powerful_move_is",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_ai_script_commands.c:Cmd_if_can_faint",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:include/constants/battle_ai.h (AI_SCRIPT_* bits)",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#trainer_ai_switch_and_items",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_ai_switch_items.c:ShouldSwitch",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_ai_switch_items.c:AI_TrySwitchOrUseItem",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_ai_switch_items.c:ShouldUseItem",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_ai_switch_items.c:GetMostSuitableMonToSwitchInto",
+              "confidence": 0.7
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#trainer_line_of_sight",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/trainer_see.c:GetTrainerApproachDistance",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/trainer_see.c:CheckTrainer",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/trainer_see.c:CheckPathBetweenTrainerAndPlayer",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#npc_movement_types",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/event_object_movement.c:MovementType_WanderAround_Step4",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/event_object_movement.c:sMovementDelaysMedium",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification.",
+      "preserve_order": [
+        "Switch checks precede item use and ordinary move action.",
+        "Full restore eligibility is 0 < HP < floor(maxHP/4). Ordinary healing also accepts missingHP > healAmount; equality alone does not qualify.",
+        "AI modules run in flag-bit order over native signed-byte scores; a reduced damage-only policy is an adaptation, not this complete component."
+      ]
+    },
+    {
+      "id": "pokemon-emerald-version:progression",
+      "label": "The roster is a set of world keys",
+      "slot": "progression",
+      "effect": "Field move plus badge gates link team composition to travel; collection, evolution and postgame formats provide other goals.",
+      "flavor": "Party-building choices unlock a journey whose weather crisis reshapes familiar places.",
+      "knobs": [
+        {
+          "name": "persistence",
+          "meaning": "Choose session, checkpoint, room or save lifetime.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "unlock_meaning",
+          "meaning": "Choose capability, inventory key or event prerequisite.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "hm_field_move_gating"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "gym_badge_progression"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "evolution_rules"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "pokedex_completion"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "battle_frontier"
+        }
+      ],
+      "requires": [
+        "persistent state",
+        "gate or objective predicates",
+        "reward events"
+      ],
+      "exposes": [
+        "unlocked route",
+        "completion state",
+        "new capability"
+      ],
+      "conflicts": [
+        {
+          "when": "A key consumable is substituted for a permanent capability.",
+          "issue": "Backtracking and recoverability can change even if the first door opens.",
+          "bridge": "Choose explicitly between persistent ability ownership and per-door key consumption."
+        }
+      ],
+      "bridge_options": [
+        "Keep source gate semantics and reskin their fiction.",
+        "Connect battle rewards to traversal capabilities through a named unlock rule."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#hm_field_move_gating",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/party_menu.c (field-move badge check)",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/field_player_avatar.c:TryPushBoulder (via CheckForObjectEventCollision)",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/wild_encounter.c:RockSmashWildEncounter",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#gym_badge_progression",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_util.c:IsMonDisobedient",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/party_menu.c (fieldMove <= FIELD_MOVE_WATERFALL && !FlagGet(FLAG_BADGE01_GET + fieldMove))",
+              "confidence": 0.95
+            },
+            {
+              "kind": "llm_knowledge",
+              "ref": "Elite Four / Champion and postgame structure",
+              "confidence": 0.55
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#evolution_rules",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/pokemon.c:GetEvolutionTargetSpecies",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#pokedex_completion",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:include/constants/pokedex.h",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:include/constants/flags.h:FLAG_SYS_NATIONAL_DEX",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#battle_frontier",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:include/constants/battle_frontier.h",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/frontier_util.c:sBattlePointAwards",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_arena.c (Mind/Skill/Body judging)",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/wild_encounter.c:StandardWildEncounter (Pike/Pyramid branches)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "llm_knowledge",
+              "ref": "facility rules summary (Dome tournament, Factory rentals, Pike rooms, Pyramid floors)",
+              "confidence": 0.6
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-emerald-version:setting",
+      "label": "Regions carry weather into encounters",
+      "slot": "setting",
+      "effect": "Map weather, cycling routes and event-driven abnormal weather attach local identity to places; only selected field weather maps into battle.",
+      "flavor": "Party-building choices unlock a journey whose weather crisis reshapes familiar places.",
+      "knobs": [
+        {
+          "name": "scale",
+          "meaning": "Choose the world and object scale relationship.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "motif_palette",
+          "meaning": "Choose which observed motifs define the adaptation.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "overworld_weather_effects"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "battle_weather"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "hoenn_setting"
+        }
+      ],
+      "requires": [
+        "world/content vocabulary"
+      ],
+      "exposes": [
+        "region identities",
+        "spatial motifs"
+      ],
+      "conflicts": [
+        {
+          "when": "Two settings imply different world scales or technologies.",
+          "issue": "Literal asset mixing can obscure the intended place.",
+          "bridge": "Choose a unifying art/world rule and map each motif into it."
+        }
+      ],
+      "bridge_options": [
+        "Retain mechanics while authoring original scenery.",
+        "Make a deliberate crossing between region styles rather than random per-object mixing."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#overworld_weather_effects",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/field_weather.c:sWeatherFuncs",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/field_weather.c:ApplyDroughtColorMapWithBlend",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/field_weather_effect.c:UpdateDroughtBlend (BLDCNT lighten + BLDY ramp)",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_util.c (GetCurrentWeather switch at battle start)",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#battle_weather",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_util.c (switch GetCurrentWeather() at battle start)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_main.c:GetWhoStrikesFirst",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#hoenn_setting",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "capture_frame",
+              "ref": "capture:attract:keyframes f001183, f001850 (grassland/route scenery, player on bike with Pokémon)",
+              "confidence": 0.6
+            },
+            {
+              "kind": "llm_knowledge",
+              "ref": "Hoenn region setting",
+              "confidence": 0.6
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification.",
+      "preserve_order": [
+        "Map-header weather IDs and coordinate-event weather IDs are not one universal mapping.",
+        "Current/next weather have initialization and cleanup callbacks.",
+        "Only designated overworld weather carries into battle; visual weather and mechanical weather remain distinct contracts."
+      ]
+    },
+    {
+      "id": "pokemon-emerald-version:story",
+      "label": "A personal journey meets a regional crisis",
+      "slot": "story",
+      "effect": "Map scripts synchronize actor movement, dialogue, flags and weather; a starter rescue and legendary confrontation become concrete reusable beat structures.",
+      "flavor": "Party-building choices unlock a journey whose weather crisis reshapes familiar places.",
+      "knobs": [
+        {
+          "name": "beat_graph",
+          "meaning": "Choose prerequisites and resulting world-state changes.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "delivery",
+          "meaning": "Choose scene, dialogue, environmental cue or playable sequence.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "script_engine"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "scripted_story_events"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "dialogue_text_printer"
+        }
+      ],
+      "requires": [
+        "event/state flags",
+        "actor and dialogue staging"
+      ],
+      "exposes": [
+        "story milestone",
+        "new objective",
+        "changed world state"
+      ],
+      "conflicts": [
+        {
+          "when": "Two plots both assume exclusive control of campaign milestones.",
+          "issue": "Their original sequence prerequisites may deadlock or contradict each other.",
+          "bridge": "Map selected beats onto one explicit milestone graph; preserve required predecessors."
+        }
+      ],
+      "bridge_options": [
+        "Borrow a beat pattern such as rescue then gift without copying dialogue.",
+        "Treat a vulnerable chapter as a temporary controller/resource contract."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#script_engine",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/script.c:RunScriptCommand",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/script.c:ScriptContext_RunScript",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/script.c (MapHeaderRunScriptType, InitRamScript)",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#scripted_story_events",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:include/constants/weather.h (WEATHER_ABNORMAL comment)",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/match_call.c:MapAllowsMatchCall (Sootopolis Rayquaza / Mt. Chimney story flags)",
+              "confidence": 0.7
+            },
+            {
+              "kind": "llm_knowledge",
+              "ref": "Emerald plot outline (Birch rescue, rival, Magma and Aqua, Groudon/Kyogre/Rayquaza)",
+              "confidence": 0.6
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#dialogue_text_printer",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/menu.c:sTextSpeedFrameDelays, GetPlayerTextSpeedDelay",
+              "confidence": 0.9
+            },
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:keyframes f001157..f005385 (Birch dialogue windows, typewriter mid-line frames \"To unrave\", \"So it's\")",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "direct_source_inspection",
+          "ref": "local/decomps/pokeemerald/data/maps/Route101/scripts.inc",
+          "symbol": "Route101_EventScript_StartBirchRescue",
+          "line_start": 19,
+          "line_end": 43,
+          "file_sha256": "8188d24a837d971f5d64bb48074dc714400929d5903006ba24a84892c72c95ed",
+          "span_sha256": "8f0a34610832e3f95a6a47354c0e714a6535fab157bfe5f7b928dd23972f6d89",
+          "confidence": 0.95,
+          "scope": "Locks input, starts help music, stages Birch and Zigzagoon chase paths, displays help text and advances the route state."
+        },
+        {
+          "kind": "direct_source_inspection",
+          "ref": "local/decomps/pokeemerald/data/maps/Route101/scripts.inc",
+          "symbol": "Route101_EventScript_BirchsBag",
+          "line_start": 214,
+          "line_end": 239,
+          "file_sha256": "8188d24a837d971f5d64bb48074dc714400929d5903006ba24a84892c72c95ed",
+          "span_sha256": "4e5940a831a297d92ab0d49a86ee150774f08fd780959bc9098068d3e0b185cc",
+          "confidence": 0.95,
+          "scope": "Flags Pokemon ownership/rescue, invokes starter choice, heals party, updates actor visibility/state and warps to the lab."
+        },
+        {
+          "kind": "direct_source_inspection",
+          "ref": "local/decomps/pokeemerald/data/maps/SkyPillar_Top/scripts.inc",
+          "symbol": "Rayquaza fly-off scene completion",
+          "line_start": 108,
+          "line_end": 125,
+          "file_sha256": "1a92c58dec06482a342189e4f273d0120642bb5de1ff225ac5a48061ac436b65",
+          "span_sha256": "e67433d624dea4cb1082f07bd631fc2906fb16c561e79fe13cd3bceee7981c96",
+          "confidence": 0.95,
+          "scope": "Fly-off, text and camera reset advance Sootopolis and Sky Pillar state variables; this is a local graph edge."
+        },
+        {
+          "kind": "direct_source_inspection",
+          "ref": "local/decomps/pokeemerald/data/maps/SootopolisCity/scripts.inc",
+          "symbol": "SootopolisCity_EventScript_RayquazaSceneFromPokeCenter",
+          "line_start": 463,
+          "line_end": 514,
+          "file_sha256": "eaf6cddc0b89f6f6092030bae0363d99e4da1f9376cbb731a2a055077295ea2a",
+          "span_sha256": "e352733273c3daa7460bb093823f34a0063ab644ec602704faa55f8a1ff89ff6",
+          "confidence": 0.95,
+          "scope": "Camera/creature/sound sequence removes Groudon/Kyogre actors, adds Rayquaza, clears weather control and legendary presence, advances Sky Pillar state and returns to city."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-emerald-version:presentation",
+      "label": "Readable travel, explicit choices",
+      "slot": "presentation",
+      "effect": "Use metatile layers, animated weather, framed text, health boxes and the four-way battle menu to make a large ruleset approachable.",
+      "flavor": "Party-building choices unlock a journey whose weather crisis reshapes familiar places.",
+      "knobs": [
+        {
+          "name": "feedback_density",
+          "meaning": "Balance HUD information against scene readability.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "render_budget",
+          "meaning": "Choose palette, animation and layer costs for the target runtime.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "metatile_map_renderer"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "overworld_weather_effects"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "battle_interface"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "dialogue_text_printer"
+        },
+        {
+          "game_id": "pokemon-emerald-version",
+          "component_id": "map_music_and_fanfares"
+        }
+      ],
+      "requires": [
+        "camera/projection contract",
+        "asset/palette budget",
+        "rendering clock"
+      ],
+      "exposes": [
+        "legible feedback",
+        "scene transitions",
+        "audio cues"
+      ],
+      "conflicts": [
+        {
+          "when": "Different projections share the same screen without a transition rule.",
+          "issue": "Objects can appear to occupy incompatible coordinate spaces.",
+          "bridge": "Use separate scenes/modes or define one consistent projection adapter."
+        }
+      ],
+      "bridge_options": [
+        "Keep source rendering while adding a separate battle mode.",
+        "Translate atmosphere into a coherent new palette and motif set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#metatile_map_renderer",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:include/global.fieldmap.h (MAPGRID_* and METATILE_ATTR_* masks, METATILE_LAYER_TYPE_*)",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/field_camera.c:DrawMetatile",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:include/global.fieldmap.h:struct MapLayout, struct Tileset, struct MapHeader, struct MapConnection",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/tileset_anims.c:TilesetAnim_General",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#overworld_weather_effects",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/field_weather.c:sWeatherFuncs",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/field_weather.c:ApplyDroughtColorMapWithBlend",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/field_weather_effect.c:UpdateDroughtBlend (BLDCNT lighten + BLDY ramp)",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_util.c (GetCurrentWeather switch at battle start)",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#battle_interface",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/battle_interface.c:GetHPBarLevel",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:include/constants/battle.h (B_ACTION_* choices)",
+              "confidence": 0.6,
+              "note": "action names from constants grep; menu layout from model knowledge"
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#dialogue_text_printer",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/menu.c:sTextSpeedFrameDelays, GetPlayerTextSpeedDelay",
+              "confidence": 0.9
+            },
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:keyframes f001157..f005385 (Birch dialogue windows, typewriter mid-line frames \"To unrave\", \"So it's\")",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-emerald-version.yaml#map_music_and_fanfares",
+          "canonical_file_sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/sound.c:MapMusicMain",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:src/sound.c:PlayFanfare",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokeemerald:include/data.h:TRAINER_ENCOUNTER_MUSIC",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-emerald-version:tone",
+      "label": "Emotional register",
+      "slot": "tone",
+      "effect": "Bright adventure, ecological tension, social travel. This is a reading of the retained scenes, not a complete tone audit.",
+      "flavor": "Party-building choices unlock a journey whose weather crisis reshapes familiar places.",
+      "knobs": [
+        {
+          "name": "contrast",
+          "meaning": "Decide where tonal contrast is intentional.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "pacing",
+          "meaning": "Choose recovery versus pressure intervals.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "editorial direction",
+        "consistent audiovisual treatment"
+      ],
+      "exposes": [
+        "emotional register",
+        "contrast between scenes"
+      ],
+      "conflicts": [
+        {
+          "when": "Comic reactions and horror tension occur in the same scene.",
+          "issue": "Their feedback can cancel the intended emotional effect.",
+          "bridge": "Assign tones to acts, regions or feedback layers, with a deliberate transition."
+        }
+      ],
+      "bridge_options": [
+        "Use tonal contrast as a story beat.",
+        "Borrow pacing or vulnerability without copying character identities."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/pokemon-emerald-version/gameplay/keyframes/f002352.png",
+            "local/captures-experiments/20261016-current-scripts/pokemon-emerald-version/gameplay/keyframes/f005362.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    }
+  ],
+  "story": {
+    "beats": [
+      {
+        "id": "help_request_stages_a_rescue",
+        "description": "Route101 temporarily locks control, plays help music and stages a pursuit around Birch before returning control with a new route-state value.",
+        "status": "source_backed_local_beat",
+        "requires": [
+          "Route101 rescue event invocation"
+        ],
+        "exposes": [
+          "VAR_ROUTE101_STATE = 2",
+          "Visible help request"
+        ],
+        "evidence": [
+          {
+            "kind": "direct_source_inspection",
+            "ref": "local/decomps/pokeemerald/data/maps/Route101/scripts.inc",
+            "symbol": "Route101_EventScript_StartBirchRescue",
+            "line_start": 19,
+            "line_end": 43,
+            "file_sha256": "8188d24a837d971f5d64bb48074dc714400929d5903006ba24a84892c72c95ed",
+            "span_sha256": "8f0a34610832e3f95a6a47354c0e714a6535fab157bfe5f7b928dd23972f6d89",
+            "confidence": 0.95,
+            "scope": "Locks input, starts help music, stages Birch and Zigzagoon chase paths, displays help text and advances the route state."
+          }
+        ]
+      },
+      {
+        "id": "starter_choice_changes_future_world",
+        "description": "Interacting with the bag invokes starter choice, sets ownership/rescue flags, heals the party, hides the route actors and sends the player to Birch’s lab.",
+        "status": "source_backed_local_beat",
+        "requires": [
+          "Bag interaction event"
+        ],
+        "exposes": [
+          "FLAG_SYS_POKEMON_GET",
+          "FLAG_RESCUED_BIRCH",
+          "VAR_BIRCH_LAB_STATE = 2",
+          "VAR_ROUTE101_STATE = 3"
+        ],
+        "evidence": [
+          {
+            "kind": "direct_source_inspection",
+            "ref": "local/decomps/pokeemerald/data/maps/Route101/scripts.inc",
+            "symbol": "Route101_EventScript_BirchsBag",
+            "line_start": 214,
+            "line_end": 239,
+            "file_sha256": "8188d24a837d971f5d64bb48074dc714400929d5903006ba24a84892c72c95ed",
+            "span_sha256": "4e5940a831a297d92ab0d49a86ee150774f08fd780959bc9098068d3e0b185cc",
+            "confidence": 0.95,
+            "scope": "Flags Pokemon ownership/rescue, invokes starter choice, heals party, updates actor visibility/state and warps to the lab."
+          }
+        ]
+      },
+      {
+        "id": "summon_help_from_another_place",
+        "description": "The Sky Pillar scene flies Rayquaza off, finishes dialogue/camera work and advances the city state. This connects a remote action to the next urban set piece.",
+        "status": "source_backed_local_beat",
+        "requires": [
+          "Sky Pillar fly-off scene reached"
+        ],
+        "exposes": [
+          "VAR_SOOTOPOLIS_CITY_STATE = 5",
+          "VAR_SKY_PILLAR_STATE = 1"
+        ],
+        "evidence": [
+          {
+            "kind": "direct_source_inspection",
+            "ref": "local/decomps/pokeemerald/data/maps/SkyPillar_Top/scripts.inc",
+            "symbol": "Rayquaza fly-off scene completion",
+            "line_start": 108,
+            "line_end": 125,
+            "file_sha256": "1a92c58dec06482a342189e4f273d0120642bb5de1ff225ac5a48061ac436b65",
+            "span_sha256": "e67433d624dea4cb1082f07bd631fc2906fb16c561e79fe13cd3bceee7981c96",
+            "confidence": 0.95,
+            "scope": "Fly-off, text and camera reset advance Sootopolis and Sky Pillar state variables; this is a local graph edge."
+          }
+        ]
+      },
+      {
+        "id": "crisis_resolution_changes_weather",
+        "description": "The Sootopolis scene replaces the opposed legendary actors with Rayquaza, stages cries/shakes, clears the weather, clears system weather control and records the crisis transition.",
+        "status": "source_backed_local_beat",
+        "requires": [
+          "Rayquaza city scene event; entry path selects camera staging"
+        ],
+        "exposes": [
+          "WEATHER_NONE",
+          "FLAG_SYS_WEATHER_CTRL cleared",
+          "FLAG_LEGENDARIES_IN_SOOTOPOLIS cleared",
+          "VAR_SKY_PILLAR_STATE = 3"
+        ],
+        "evidence": [
+          {
+            "kind": "direct_source_inspection",
+            "ref": "local/decomps/pokeemerald/data/maps/SootopolisCity/scripts.inc",
+            "symbol": "SootopolisCity_EventScript_RayquazaSceneFromPokeCenter",
+            "line_start": 463,
+            "line_end": 514,
+            "file_sha256": "eaf6cddc0b89f6f6092030bae0363d99e4da1f9376cbb731a2a055077295ea2a",
+            "span_sha256": "e352733273c3daa7460bb093823f34a0063ab644ec602704faa55f8a1ff89ff6",
+            "confidence": 0.95,
+            "scope": "Camera/creature/sound sequence removes Groudon/Kyogre actors, adds Rayquaza, clears weather control and legendary presence, advances Sky Pillar state and returns to city."
+          }
+        ]
+      }
+    ],
+    "delivery": [
+      {
+        "description": "Map scripts combine lock/release, actor paths, message boxes, music/cries, camera objects, flags and vars; a reusable beat is a state transition with synchronized staging.",
+        "status": "direct_source_supported",
+        "evidence": [
+          {
+            "kind": "direct_source_inspection",
+            "ref": "local/decomps/pokeemerald/data/maps/Route101/scripts.inc",
+            "symbol": "Route101_EventScript_StartBirchRescue",
+            "line_start": 19,
+            "line_end": 43,
+            "file_sha256": "8188d24a837d971f5d64bb48074dc714400929d5903006ba24a84892c72c95ed",
+            "span_sha256": "8f0a34610832e3f95a6a47354c0e714a6535fab157bfe5f7b928dd23972f6d89",
+            "confidence": 0.95,
+            "scope": "Locks input, starts help music, stages Birch and Zigzagoon chase paths, displays help text and advances the route state."
+          },
+          {
+            "kind": "direct_source_inspection",
+            "ref": "local/decomps/pokeemerald/data/maps/Route101/scripts.inc",
+            "symbol": "Route101_EventScript_BirchsBag",
+            "line_start": 214,
+            "line_end": 239,
+            "file_sha256": "8188d24a837d971f5d64bb48074dc714400929d5903006ba24a84892c72c95ed",
+            "span_sha256": "4e5940a831a297d92ab0d49a86ee150774f08fd780959bc9098068d3e0b185cc",
+            "confidence": 0.95,
+            "scope": "Flags Pokemon ownership/rescue, invokes starter choice, heals party, updates actor visibility/state and warps to the lab."
+          },
+          {
+            "kind": "direct_source_inspection",
+            "ref": "local/decomps/pokeemerald/data/maps/SkyPillar_Top/scripts.inc",
+            "symbol": "Rayquaza fly-off scene completion",
+            "line_start": 108,
+            "line_end": 125,
+            "file_sha256": "1a92c58dec06482a342189e4f273d0120642bb5de1ff225ac5a48061ac436b65",
+            "span_sha256": "e67433d624dea4cb1082f07bd631fc2906fb16c561e79fe13cd3bceee7981c96",
+            "confidence": 0.95,
+            "scope": "Fly-off, text and camera reset advance Sootopolis and Sky Pillar state variables; this is a local graph edge."
+          },
+          {
+            "kind": "direct_source_inspection",
+            "ref": "local/decomps/pokeemerald/data/maps/SootopolisCity/scripts.inc",
+            "symbol": "SootopolisCity_EventScript_RayquazaSceneFromPokeCenter",
+            "line_start": 463,
+            "line_end": 514,
+            "file_sha256": "eaf6cddc0b89f6f6092030bae0363d99e4da1f9376cbb731a2a055077295ea2a",
+            "span_sha256": "e352733273c3daa7460bb093823f34a0063ab644ec602704faa55f8a1ff89ff6",
+            "confidence": 0.95,
+            "scope": "Camera/creature/sound sequence removes Groudon/Kyogre actors, adds Rayquaza, clears weather control and legendary presence, advances Sky Pillar state and returns to city."
+          }
+        ]
+      },
+      {
+        "description": "Text printer speed and player-name/creature placeholders make the script delivery context dependent.",
+        "status": "canonical_source_supported_partial",
+        "evidence": [
+          {
+            "kind": "canonical_component",
+            "ref": "ontology/games/pokemon-emerald-version.yaml#dialogue_text_printer"
+          }
+        ]
+      }
+    ],
+    "gaps": [
+      "Only selected rescue and weather-crisis edges were read directly; no complete rival/team/gym/endgame graph is claimed.",
+      "Sequence ordering across all maps, conditional branches and alternate arrival routes still needs extraction.",
+      "The lexical presence of a flag does not establish every prerequisite or player-reachable path."
+    ]
+  },
+  "coverage": {
+    "status": "partial",
+    "depth": "deep_partial",
+    "canonical_component_count": 62,
+    "canonical_facets": [
+      "ai",
+      "audio",
+      "camera",
+      "economy",
+      "frontend",
+      "mechanics",
+      "movement_physics",
+      "narrative_delivery",
+      "progression",
+      "projection",
+      "rendering",
+      "setting",
+      "ui_hud"
+    ],
+    "source_supported_piece_count": 7,
+    "missing": [
+      "Complete plot/event dependency graph",
+      "Calibrated user skill and strategy evidence",
+      "Full asset-to-source/address reuse catalogue"
+    ],
+    "granular_records_not_summarized": [
+      {
+        "component_id": "main_loop_and_callbacks",
+        "label": "Two-callback main loop with task scheduler and soft reset",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "copyright_and_intro_cinematic",
+        "label": "Copyright screen and three-scene skippable intro cinematic",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "title_screen",
+        "label": "Mode-1 title with affine logo, wavy clouds and intro loop",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "main_menu_and_new_game",
+        "label": "Continue/New Game menu, professor introduction and character creation",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "flash_save_system",
+        "label": "Save-anywhere 128 KiB flash with rotating two-slot sector saves",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "whiteout_respawn",
+        "label": "Whiteout to last heal point with half-money penalty",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "bg_window_sprite_engine",
+        "label": "Mode-0 four-BG tile engine with text windows, 64-sprite OAM and palette fades",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "scanline_effects_and_transitions",
+        "label": "HBlank-DMA scanline effects and battle-entry screen transitions",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "player_locked_tile_camera",
+        "label": "Player-locked camera scrolling in step with tile movement",
+        "facet": "camera"
+      },
+      {
+        "component_id": "ledge_jump",
+        "label": "One-way ledge hop over a tile",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "forced_movement_tiles",
+        "label": "Behaviour tiles that take control (ice, arrows, currents, slides, mats, muddy slopes, cracked floors)",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "rng_lcg",
+        "label": "Global LCG random generator with per-frame advance",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "monster_data_model",
+        "label": "Personality-seeded, encrypted creature records",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "stat_calculation",
+        "label": "Base stats + IVs + EVs + nature stat formula",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "stat_stages_accuracy_crit",
+        "label": "Stat stages, accuracy/evasion check and critical-hit stages",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "status_conditions",
+        "label": "Persistent status ailments and volatile confusion",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "double_battles",
+        "label": "Double and multi battle formats",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "wild_encounter_tables",
+        "label": "Per-step random encounters from slot-weighted tables (with roamers and outbreaks)",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "breeding_daycare",
+        "label": "Day Care breeding with compatibility, IV/nature inheritance and step-hatched eggs",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "rtc_time_events",
+        "label": "Cartridge real-time clock driving daily and per-minute world updates",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "pokemon_contests",
+        "label": "Pokémon Contests (condition judging plus five-round appeal minigame)",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "secret_bases",
+        "label": "Secret bases with decorations and record-mixed rival bases",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "battle_palace_nature_ai",
+        "label": "Nature-driven autonomous move choice (Battle Palace)",
+        "facet": "ai"
+      },
+      {
+        "component_id": "contest_ai",
+        "label": "Contest opponent move scoring",
+        "facet": "ai"
+      },
+      {
+        "component_id": "exp_and_leveling",
+        "label": "Experience yield, sharing and six growth curves",
+        "facet": "progression"
+      },
+      {
+        "component_id": "trainer_rematches_match_call",
+        "label": "PokéNav Match Call and step-gated trainer rematches",
+        "facet": "progression"
+      },
+      {
+        "component_id": "money_and_prize",
+        "label": "Single currency with level-scaled trainer prizes and shops",
+        "facet": "economy"
+      },
+      {
+        "component_id": "inventory_and_storage",
+        "label": "Pocketed bag, PC item storage and 14-box Pokémon storage",
+        "facet": "economy"
+      },
+      {
+        "component_id": "berry_farming",
+        "label": "Real-time berry tree farming with watering-based yield",
+        "facet": "economy"
+      },
+      {
+        "component_id": "start_menu_hub",
+        "label": "Start-menu hub (Pokédex, Pokémon, Bag, PokéNav, Trainer, Save, Option)",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "input_controls",
+        "label": "Context button mapping",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "m4a_sound_engine",
+        "label": "MP2K (m4a) sequenced engine with DirectSound mixing and PSG",
+        "facet": "audio"
+      }
+    ],
+    "not_claimed": [
+      "All mechanics extracted",
+      "Full ROM decompiled",
+      "Complete plot recovered",
+      "Every proposed bundle assembled or playtested"
+    ]
+  },
+  "provenance": {
+    "recorded_at": "2026-10-16T06:22:36.193456+00:00",
+    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "rom_sha1": "f3ae088181bf583e55daf962a92bb46f4f1d07b7",
+    "canonical": {
+      "kind": "canonical_ontology",
+      "ref": "ontology/games/pokemon-emerald-version.yaml",
+      "sha256": "4ce2f6b5fcb978c93542f38223aa50ac1e4aa8ac8770ea0aaba31ddc4575d0a5",
+      "scope": "Existing component extraction; inherited evidence and limitations, not a fresh independent verification."
+    },
+    "source_repositories": [
+      {
+        "path": "local/decomps/pokeemerald",
+        "commit": "731ad5bfd6e6f265508d0efcca0ba42f9dcf5881",
+        "source_dirty": false,
+        "file_counts": {
+          ".bin": 1457,
+          ".c": 325,
+          ".h": 517,
+          ".inc": 794,
+          ".mid": 530,
+          ".pal": 2641,
+          ".png": 4076,
+          ".s": 21,
+          ".wav": 544
+        },
+        "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+      },
+      {
+        "path": "local/decomps/pokeemerald-jp",
+        "commit": "6806c3e507da87a883b437f048969a45b38250c8",
+        "source_dirty": false,
+        "file_counts": {
+          ".c": 16,
+          ".h": 38,
+          ".inc": 24,
+          ".s": 287
+        },
+        "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+      }
+    ],
+    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "capture_run_id": "20261016T004328-0e248f",
+    "capture_frame_sha256": {
+      "local/captures-experiments/20261016-current-scripts/pokemon-emerald-version/gameplay/keyframes/f002352.png": "2c22e4c56408c6ca6bdc134d4f8f87f96ce0e1476eeca94a9cbe8a34997f990f",
+      "local/captures-experiments/20261016-current-scripts/pokemon-emerald-version/gameplay/keyframes/f005362.png": "6e2e1d51ee9d0653a4f939894505cf3cd11d7532fa67705619c18b5529c0c857"
+    },
+    "source_inspection_notes": "Canonical component evidence is inherited; direct new source story anchors, when present, are marked separately.",
+    "direct_new_story_anchors": [
+      {
+        "kind": "direct_source_inspection",
+        "ref": "local/decomps/pokeemerald/data/maps/Route101/scripts.inc",
+        "symbol": "Route101_EventScript_StartBirchRescue",
+        "line_start": 19,
+        "line_end": 43,
+        "file_sha256": "8188d24a837d971f5d64bb48074dc714400929d5903006ba24a84892c72c95ed",
+        "span_sha256": "8f0a34610832e3f95a6a47354c0e714a6535fab157bfe5f7b928dd23972f6d89",
+        "confidence": 0.95,
+        "scope": "Locks input, starts help music, stages Birch and Zigzagoon chase paths, displays help text and advances the route state."
+      },
+      {
+        "kind": "direct_source_inspection",
+        "ref": "local/decomps/pokeemerald/data/maps/Route101/scripts.inc",
+        "symbol": "Route101_EventScript_BirchsBag",
+        "line_start": 214,
+        "line_end": 239,
+        "file_sha256": "8188d24a837d971f5d64bb48074dc714400929d5903006ba24a84892c72c95ed",
+        "span_sha256": "4e5940a831a297d92ab0d49a86ee150774f08fd780959bc9098068d3e0b185cc",
+        "confidence": 0.95,
+        "scope": "Flags Pokemon ownership/rescue, invokes starter choice, heals party, updates actor visibility/state and warps to the lab."
+      },
+      {
+        "kind": "direct_source_inspection",
+        "ref": "local/decomps/pokeemerald/data/maps/SkyPillar_Top/scripts.inc",
+        "symbol": "Rayquaza fly-off scene completion",
+        "line_start": 108,
+        "line_end": 125,
+        "file_sha256": "1a92c58dec06482a342189e4f273d0120642bb5de1ff225ac5a48061ac436b65",
+        "span_sha256": "e67433d624dea4cb1082f07bd631fc2906fb16c561e79fe13cd3bceee7981c96",
+        "confidence": 0.95,
+        "scope": "Fly-off, text and camera reset advance Sootopolis and Sky Pillar state variables; this is a local graph edge."
+      },
+      {
+        "kind": "direct_source_inspection",
+        "ref": "local/decomps/pokeemerald/data/maps/SootopolisCity/scripts.inc",
+        "symbol": "SootopolisCity_EventScript_RayquazaSceneFromPokeCenter",
+        "line_start": 463,
+        "line_end": 514,
+        "file_sha256": "eaf6cddc0b89f6f6092030bae0363d99e4da1f9376cbb731a2a055077295ea2a",
+        "span_sha256": "e352733273c3daa7460bb093823f34a0063ab644ec602704faa55f8a1ff89ff6",
+        "confidence": 0.95,
+        "scope": "Camera/creature/sound sequence removes Groudon/Kyogre actors, adds Rayquaza, clears weather control and legendary presence, advances Sky Pillar state and returns to city."
+      }
+    ]
+  }
+}

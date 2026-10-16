@@ -1,0 +1,1899 @@
+{
+  "schema_version": 1,
+  "game_id": "metroid-zero-mission",
+  "title": "Metroid: Zero Mission",
+  "identity": {
+    "tagline": "New abilities turn old obstacles into routes through a connected alien world.",
+    "categories": [
+      "action exploration",
+      "ability gates",
+      "platformer"
+    ],
+    "view": {
+      "label": "side view",
+      "status": "observed_or_source_backed_presentation",
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/metroid-zero-mission/gameplay/keyframes/f002988_scene.png",
+            "local/captures-experiments/20261016-current-scripts/metroid-zero-mission/gameplay/keyframes/f005374_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ]
+    },
+    "vibe": [
+      "isolated sci-fi",
+      "ancient ruins",
+      "predatory technology"
+    ],
+    "vibe_status": "editorial_interpretation_of_observed_scenes",
+    "grounded_examples": [
+      "Dark organic caverns, metallic doors and an armored figure establish a compact side-view world with energy and minimap HUD."
+    ],
+    "gameplay_prior": {
+      "text": "Acceleration, variable jump height, morph form and weapon-specific locks build an ability-gated exploration loop.",
+      "status": "model_prior_unverified_unless_piece_links_source"
+    },
+    "evidence": [
+      {
+        "kind": "capture_contact_sheet_inspection",
+        "refs": [
+          "local/captures-experiments/20261016-current-scripts/metroid-zero-mission/gameplay/keyframes/f002988_scene.png",
+          "local/captures-experiments/20261016-current-scripts/metroid-zero-mission/gameplay/keyframes/f005374_scene.png"
+        ],
+        "confidence": 0.85,
+        "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+      }
+    ],
+    "category_basis": "Editorial taxonomy from mixed source, observed scenes and explicitly unverified prior; categories are not proof of implemented or extracted rules.",
+    "tagline_status": "editorial_summary_mixed_evidence"
+  },
+  "pieces": [
+    {
+      "id": "metroid-zero-mission:movement_view",
+      "label": "Samus movement and spatial mastery",
+      "slot": "movement_view",
+      "effect": "Preserve acceleration, jump-release height control, air/spin states, ledge grabs and optional wall jumps as one coherent controller.",
+      "flavor": "New abilities turn old obstacles into routes through a connected alien world.",
+      "knobs": [
+        {
+          "name": "perspective",
+          "meaning": "Keep or bridge the observed source view.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "cadence",
+          "meaning": "Choose frame updates, tile actions or mode transitions explicitly.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "run_acceleration",
+          "value": 0.25,
+          "unit": "px/frame^2",
+          "status": "extracted_native_value",
+          "component_ref": "ground_locomotion"
+        },
+        {
+          "name": "run_cap",
+          "value": 3,
+          "unit": "px/frame",
+          "status": "extracted_native_value",
+          "component_ref": "ground_locomotion"
+        },
+        {
+          "name": "gravity",
+          "value": 0.3125,
+          "unit": "px/frame^2",
+          "status": "extracted_native_value",
+          "component_ref": "jump_and_gravity"
+        },
+        {
+          "name": "rise_fall_displacement_caps",
+          "value": [
+            6,
+            4
+          ],
+          "unit": "px/frame",
+          "status": "extracted_native_value",
+          "component_ref": "jump_and_gravity"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "ground_locomotion"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "jump_and_gravity"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "air_control_and_spin"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "wall_jump"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "ledge_grab"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "side_view_projection"
+        }
+      ],
+      "requires": [
+        "world coordinates",
+        "collision or terrain rules",
+        "input semantics"
+      ],
+      "exposes": [
+        "position",
+        "facing",
+        "grounded or traversal state"
+      ],
+      "conflicts": [
+        {
+          "when": "A host uses tile turns but this controller uses continuous frame updates.",
+          "issue": "One input cannot mean both a whole turn and a physics tick.",
+          "bridge": "Keep a fixed simulation clock and convert a completed movement action into a turn event."
+        }
+      ],
+      "bridge_options": [
+        "Keep side-view stages and a top-down world as separate modes.",
+        "Use a shared height axis rather than interpreting northward movement as a jump."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#ground_locomotion",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusRunning",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusUpdatePhysics",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusUpdateVelocityPosition",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusSkidding",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#jump_and_gravity",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusSetMidAir",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusMidAir",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusUpdateVelocityPosition",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusCheckJumping",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#air_control_and_spin",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusSpinning",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusMidAir",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusSetMidAir (spin break case)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusSetSpinningPose",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#wall_jump",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusSpinning",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusStartingWallJump",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusSetMidAir (SPOSE_STARTING_WALL_JUMP case)",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#ledge_grab",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusCheckCollisions",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusHangingOnLedge",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/scroll.c:ScrollProcessGeneral (slow scroll)",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#side_view_projection",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:include/types.h",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:include/constants/samus.h:SamusPose (SPOSE_FACING_THE_FOREGROUND)",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification.",
+      "preserve_order": [
+        "Ground acceleration clamps only the accelerated direction; opposite-facing ground displacement can be clamped independently of stored velocity.",
+        "A newly pressed jump starts the impulse; releasing while rising cuts velocity before integration.",
+        "Apply capped vertical displacement from current velocity, then subtract gravity; native shifts quantize subpixel movement."
+      ]
+    },
+    {
+      "id": "metroid-zero-mission:combat",
+      "label": "Weapons are also world tools",
+      "slot": "combat",
+      "effect": "Stack beam modifiers, arm finite missile pools and freeze enemies into platforms; body attacks turn skilled movement into offense.",
+      "flavor": "New abilities turn old obstacles into routes through a connected alien world.",
+      "knobs": [
+        {
+          "name": "encounter_boundary",
+          "meaning": "Decide whether field movement continues during combat.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "supported_rules",
+          "meaning": "Declare the move/status/item capability subset.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "beam_stacking"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "missiles_and_arming"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "bombs_and_power_bombs"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "ice_freeze"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "body_attacks"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "damage_and_iframes"
+        }
+      ],
+      "requires": [
+        "combatant state",
+        "legal actions",
+        "damage and resource rules"
+      ],
+      "exposes": [
+        "damage events",
+        "resource expenditure",
+        "win or loss"
+      ],
+      "conflicts": [
+        {
+          "when": "Real-time field action meets a turn-based battle system.",
+          "issue": "Input cadence and simultaneous enemy updates disagree.",
+          "bridge": "Create an explicit encounter boundary, freeze the field and restore its state after battle."
+        }
+      ],
+      "bridge_options": [
+        "Share attack types across real-time and turn-based attacks.",
+        "Preserve the source damage rules while declaring a smaller supported move/effect set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#beam_stacking",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusCheckFireBeamMissile",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:include/constants/projectile.h",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:include/constants/samus.h:BeamBombFlags",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/projectile.c:ProjectileCheckWaveBeamHittingBlocks",
+              "confidence": 0.7,
+              "note": "name only"
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#missiles_and_arming",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusSetHighlightedWeapon",
+              "confidence": 0.95,
+              "note": "source comments on toggle branches appear swapped; behaviour read from code"
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusCheckFireBeamMissile",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/projectile.c:ProjectileDecrementMissileCounter",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#bombs_and_power_bombs",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusCheckNewProjectile",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/projectile.c:ProjectileProcessBomb",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/power_bomb_explosion.c:PowerBombExplosion",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/projectile_util.c:ProjectilePowerBombDealDamage",
+              "confidence": 0.75
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#ice_freeze",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/projectile_util.c:ProjectileIceBeamHittingSprite",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/projectile_util.c:ProjectileFreezeSprite",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprite_util.c:SpriteUtilUpdateFreezeTimer",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/skree.c:Skree (freeze check before AI)",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#body_attacks",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprite_util.c:SpriteUtilSpriteTakeDamageFromSamusContact",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusCheckScrewSpeedboosterAffectingEnvironment",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/block.c:BlockSamusApplyScrewSpeedboosterDamageToEnvironment",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#damage_and_iframes",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprite_util.c:SpriteUtilTakeDamageFromSprite",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusChangeToHurtPose",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusChangeToKnockbackPose",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/projectile_util.c:ProjectileDealDamage",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metroid-zero-mission:ai",
+      "label": "Readable creatures and alerting patrols",
+      "slot": "ai",
+      "effect": "Use surface-followers, proximity divers and a sight/alarm patrol system to make enemy placement part of route planning.",
+      "flavor": "New abilities turn old obstacles into routes through a connected alien world.",
+      "knobs": [
+        {
+          "name": "information_budget",
+          "meaning": "Choose visible versus privileged state.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "decision_cadence",
+          "meaning": "Separate every-frame reactions from slower objective decisions.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "surface_crawler_ai"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "ceiling_diver_ai"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "space_pirate_ai"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "metroid_latch_ai"
+        }
+      ],
+      "requires": [
+        "observed state contract",
+        "legal actions",
+        "update cadence"
+      ],
+      "exposes": [
+        "chosen action",
+        "target",
+        "decision reason"
+      ],
+      "conflicts": [
+        {
+          "when": "An AI reads hidden battle state but the desired bot sees only screenshots.",
+          "issue": "The policy would gain information unavailable in the target interface.",
+          "bridge": "Expose a typed observation adapter and declare privileged versus visible fields."
+        }
+      ],
+      "bridge_options": [
+        "Use deterministic rules for supported choices; escalate ambiguous goals to an LLM.",
+        "Keep enemy AI and external playtester policies as separate components."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#surface_crawler_ai",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/zoomer.c:ZoomerCrawling",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/zoomer.c:ZoomerFalling",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#ceiling_diver_ai",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/skree.c:SkreeDetectSamus",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/skree.c:SkreeGoDown",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/skree.c:SkreeCrashGround",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#space_pirate_ai",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/space_pirate.c:SpacePirateSamusDetection",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/space_pirate.c:SpacePirateCheckSamusInShootingRange",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/space_pirate.c:SpawnWaitingPirates",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/space_pirate.c:SpacePirateClimbingUp",
+              "confidence": 0.7,
+              "note": "name only"
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#metroid_latch_ai",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/metroid.c:MetroidMovement",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/metroid.c:MetroidSamusGrabbed",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/metroid.c:MetroidBombDetection",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusUpdatePhysics (grabbedByMetroid)",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metroid-zero-mission:progression",
+      "label": "Return with a capability, not just a key",
+      "slot": "progression",
+      "effect": "Equipment activation, typed locks, permanent events and statue hints form a revisitable world; unknown items delay payoff until the suit changes.",
+      "flavor": "New abilities turn old obstacles into routes through a connected alien world.",
+      "knobs": [
+        {
+          "name": "persistence",
+          "meaning": "Choose session, checkpoint, room or save lifetime.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "unlock_meaning",
+          "meaning": "Choose capability, inventory key or event prerequisite.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "ability_gating_graph"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "typed_locks"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "event_flags_and_sequence_breaks"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "chozo_statue_items_and_hints"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "unknown_items_suit_gate"
+        }
+      ],
+      "requires": [
+        "persistent state",
+        "gate or objective predicates",
+        "reward events"
+      ],
+      "exposes": [
+        "unlocked route",
+        "completion state",
+        "new capability"
+      ],
+      "conflicts": [
+        {
+          "when": "A key consumable is substituted for a permanent capability.",
+          "issue": "Backtracking and recoverability can change even if the first door opens.",
+          "bridge": "Choose explicitly between persistent ability ownership and per-door key consumption."
+        }
+      ],
+      "bridge_options": [
+        "Keep source gate semantics and reskin their fiction.",
+        "Connect battle rewards to traversal capabilities through a named unlock rule."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#ability_gating_graph",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:include/structs/samus.h:struct Equipment",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusCheckCollisions (SMF_POWER_GRIP)",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusRolling (SMF_HIGH_JUMP)",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/menus/status_screen.c:StatusScreenToggleItem",
+              "confidence": 0.75
+            },
+            {
+              "kind": "llm_knowledge",
+              "ref": "general area layout/backtracking order of Zebes",
+              "confidence": 0.5
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#typed_locks",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/bg_clip.c:BgClipCheckOpeningHatch",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/data/block_data.c:sHatchBehaviors",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/connection.c:ConnectionCheckHatchLockEvents",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/connection.c:ConnectionCheckUnlockDoors",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/data/block_data.c:sBlockBehaviors",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/block.c:BlockStoreSingleNeverReformBlock",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#event_flags_and_sequence_breaks",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:include/constants/event.h",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/event.c:EventFunction",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/color_fading.c (EVENT_SKIPPED_VARIA_SUIT)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/menus/pause_screen.c:PauseScreenGetMinimapData",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#chozo_statue_items_and_hints",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/chozo_statue.c:ChozoStatueRegisterItem",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/chozo_statue.c:ChozoStatueRegisterHint",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/chozo_statue.c:ChozoStatueGetBehavior",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/unknown_item_chozo_statue.c:UnknownItemChozoStatuePartArmRefill",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#unknown_items_suit_gate",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/menus/status_screen.c:UpdateSuitType",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/menus/status_screen.c:PauseDebugToggleAbility",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/menus/status_screen.c:StatusScreenEnableUnknownItem",
+              "confidence": 0.7,
+              "note": "name only"
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/message_banner.c:MessageBannerPopUp (MUSIC_GETTING_UNKNOWN_ITEM_JINGLE)",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification.",
+      "preserve_order": [
+        "Distinguish owned equipment from active equipment flags.",
+        "Typed blocks/hatches and persistent event gates are separate predicates.",
+        "Unknown items can be owned before their activation becomes useful."
+      ]
+    },
+    {
+      "id": "metroid-zero-mission:setting",
+      "label": "Ancient ruins beside predatory machinery",
+      "slot": "setting",
+      "effect": "Use the named Zebes areas and observed organic/industrial contrast as world vocabulary; specific fiction beyond code identifiers remains partly model prior.",
+      "flavor": "New abilities turn old obstacles into routes through a connected alien world.",
+      "knobs": [
+        {
+          "name": "scale",
+          "meaning": "Choose the world and object scale relationship.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "motif_palette",
+          "meaning": "Choose which observed motifs define the adaptation.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "zebes_setting"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "side_view_projection"
+        }
+      ],
+      "requires": [
+        "world/content vocabulary"
+      ],
+      "exposes": [
+        "region identities",
+        "spatial motifs"
+      ],
+      "conflicts": [
+        {
+          "when": "Two settings imply different world scales or technologies.",
+          "issue": "Literal asset mixing can obscure the intended place.",
+          "bridge": "Choose a unifying art/world rule and map each motif into it."
+        }
+      ],
+      "bridge_options": [
+        "Retain mechanics while authoring original scenery.",
+        "Make a deliberate crossing between region styles rather than random per-object mixing."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#zebes_setting",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:include/constants/connection.h:Area",
+              "confidence": 0.9,
+              "note": "area identifiers only"
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/menus/file_select.c:OptionsNesMetroidHandler",
+              "confidence": 0.85
+            },
+            {
+              "kind": "llm_knowledge",
+              "ref": "plot, characters and tone of Metroid: Zero Mission",
+              "confidence": 0.6
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#side_view_projection",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:include/types.h",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:include/constants/samus.h:SamusPose (SPOSE_FACING_THE_FOREGROUND)",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metroid-zero-mission:story",
+      "label": "Power, escape and vulnerability",
+      "slot": "story",
+      "effect": "Short story-text/cutscene beats can punctuate exploration; the suitless controller and alarm system create a real change of agency.",
+      "flavor": "New abilities turn old obstacles into routes through a connected alien world.",
+      "knobs": [
+        {
+          "name": "beat_graph",
+          "meaning": "Choose prerequisites and resulting world-state changes.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "delivery",
+          "meaning": "Choose scene, dialogue, environmental cue or playable sequence.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "cutscenes"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "zero_suit_segment"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "timed_escapes"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "banners_and_area_text"
+        }
+      ],
+      "requires": [
+        "event/state flags",
+        "actor and dialogue staging"
+      ],
+      "exposes": [
+        "story milestone",
+        "new objective",
+        "changed world state"
+      ],
+      "conflicts": [
+        {
+          "when": "Two plots both assume exclusive control of campaign milestones.",
+          "issue": "Their original sequence prerequisites may deadlock or contradict each other.",
+          "bridge": "Map selected beats onto one explicit milestone graph; preserve required predecessors."
+        }
+      ],
+      "bridge_options": [
+        "Borrow a beat pattern such as rescue then gift without copying dialogue.",
+        "Treat a vulnerable chapter as a temporary controller/resource contract."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#cutscenes",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:include/constants/cutscene.h",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/cutscenes/story_text_cutscene.c:StoryTextCutsceneProcessText",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/in_game_cutscene.c:InGameCutsceneSamusCloseUp",
+              "confidence": 0.8
+            },
+            {
+              "kind": "llm_knowledge",
+              "ref": "first-person narration content and tone",
+              "confidence": 0.55
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#zero_suit_segment",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/menus/status_screen.c:UpdateSuitType",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusCheckFirePistol",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/space_pirate.c:DecrementChozodiaAlarm",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/searchlight.c (gAlarmTimer = ALARM_TIMER_ACTIVE_TIMER)",
+              "confidence": 0.8
+            },
+            {
+              "kind": "llm_knowledge",
+              "ref": "story placement of the suitless chapter after the Zebes escape",
+              "confidence": 0.6
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#timed_escapes",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/escape.c:EscapeSetTimer",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/escape.c:EscapeUpdateTimer",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/escape.c:EscapeCheckHasEscaped",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#banners_and_area_text",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/message_banner.c:MessageBannerPopUp",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/message_banner.c:SaveYesNoCursor",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/location_text.c:LocationTextGetBrinstar",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "direct_source_inspection",
+          "ref": "local/decomps/mzm/src/sprites_ai/mother_brain.c",
+          "symbol": "Mother Brain dying branch",
+          "line_start": 249,
+          "line_end": 270,
+          "file_sha256": "c1c489755cfe9c23d68267327a05fdd27b26686e5f70a1d4309659ca9f7beb69",
+          "span_sha256": "a5690ffbe468300d050a2b9e05b5c7b7d271b9f3b3ed8cff6424a26d9cbd3237",
+          "confidence": 0.95,
+          "scope": "Dying fight-state transition sets the persistent Mother Brain killed event and dying sound."
+        },
+        {
+          "kind": "direct_source_inspection",
+          "ref": "local/decomps/mzm/src/sprites_ai/ruins_test.c",
+          "symbol": "RUINS_TEST_FIGHT_STAGE_STARTING_CUTSCENE_FADE branch",
+          "line_start": 1122,
+          "line_end": 1138,
+          "file_sha256": "6ec08b153265501bea668673a566c26a0ac8291ee729094b9b57f0adc6e7e79c",
+          "span_sha256": "5a5981a5ec21b2f7ba2a23369220ede635c9d5d34e167ca8b37079c43d79b662",
+          "confidence": 0.95,
+          "scope": "Stops the trial entity, removes ceiling collision, sets fully-powered-suit event and starts the suit cutscene effect."
+        },
+        {
+          "kind": "direct_source_inspection",
+          "ref": "local/decomps/mzm/src/sprites_ai/mecha_ridley.c",
+          "symbol": "Mecha Ridley death completion branch",
+          "line_start": 1449,
+          "line_end": 1467,
+          "file_sha256": "8f631237f7ad723b11c4e032ca5fbd7ac16fe1bede2cc67ae5f7597b357b0210",
+          "span_sha256": "451d4893384ba54a73b4b6c0b8691ace6a9677da710f81acfe459f42d748bcc4",
+          "confidence": 0.95,
+          "scope": "On delay completion: set killed event, spawn Chozodia escape banner, record boss time and unlock doors."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metroid-zero-mission:presentation",
+      "label": "Dense rooms with atmospheric layers",
+      "slot": "presentation",
+      "effect": "Combine room-clamped follow, parallax, heat haze, palette overlays, map status and room/alarm music while retaining player readability.",
+      "flavor": "New abilities turn old obstacles into routes through a connected alien world.",
+      "knobs": [
+        {
+          "name": "feedback_density",
+          "meaning": "Balance HUD information against scene readability.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "render_budget",
+          "meaning": "Choose palette, animation and layer costs for the target runtime.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "scroll_camera"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "parallax_layers"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "hblank_raster_effects"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "blend_and_palette_effects"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "adaptive_music"
+        },
+        {
+          "game_id": "metroid-zero-mission",
+          "component_id": "pause_map_and_status"
+        }
+      ],
+      "requires": [
+        "camera/projection contract",
+        "asset/palette budget",
+        "rendering clock"
+      ],
+      "exposes": [
+        "legible feedback",
+        "scene transitions",
+        "audio cues"
+      ],
+      "conflicts": [
+        {
+          "when": "Different projections share the same screen without a transition rule.",
+          "issue": "Objects can appear to occupy incompatible coordinate spaces.",
+          "bridge": "Use separate scenes/modes or define one consistent projection adapter."
+        }
+      ],
+      "bridge_options": [
+        "Keep source rendering while adding a separate battle mode.",
+        "Translate atmosphere into a coherent new palette and motif set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#scroll_camera",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/scroll.c:ScrollProcessGeneral",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/scroll.c:ScrollProcess",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/scroll.c:ScrollScreen",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/scroll.c:ScrollProcessX",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/screen_shake.c:ScreenShakeStartVertical",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#parallax_layers",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/scroll.c:ScrollGetBg3Scroll",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/scroll.c:ScrollAutoBg0",
+              "confidence": 0.75
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#hblank_raster_effects",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/haze.c:HazeSetupCode",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/haze.c:HazeTransferAndDeactivate (DMA0 dest reload)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/haze.c:HazeSetBackgroundEffect",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/haze.c:Haze_PowerBombExpanding",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#blend_and_palette_effects",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/bg_clip.c:BgClipApplyClipdataChangingTransparency",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/transparency.c:TransparencyCheckIsDarkRoom",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/color_effects.c:ApplyMonochromeToPalette",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/samus.c:SamusChangeToHurtPose (gMonochromeBgFading on death)",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#adaptive_music",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/room_music.c:CheckPlayRoomMusicTrack",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/room_music.c:UpdateMusicWhenPausing",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/room_music.c:UpdateMusicAfterPause",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/music_wrappers.c:InsertMusicAndQueueCurrent",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/music_wrappers.c:DetermineNewMusicTrack",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/space_pirate.c:DecrementChozodiaAlarm (MUSIC_ALARM_ACTIVATED)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/kraid.c (FadeCurrentMusicAndQueueNextMusic MUSIC_BOSS_KILLED)",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-zero-mission.yaml#pause_map_and_status",
+          "canonical_file_sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/menus/pause_screen.c:PauseScreenInit",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/menus/pause_screen_map.c:PauseScreenMapDownload",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/menus/status_screen.c:StatusScreenToggleItem",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/menus/pause_screen.c:PauseScreenEasySleepInit",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mzm:src/sprites_ai/map_station.c:MapStationDownloading",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metroid-zero-mission:tone",
+      "label": "Emotional register",
+      "slot": "tone",
+      "effect": "Isolated sci-fi, ancient ruins, predatory technology. This is a reading of the retained scenes, not a complete tone audit.",
+      "flavor": "New abilities turn old obstacles into routes through a connected alien world.",
+      "knobs": [
+        {
+          "name": "contrast",
+          "meaning": "Decide where tonal contrast is intentional.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "pacing",
+          "meaning": "Choose recovery versus pressure intervals.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "editorial direction",
+        "consistent audiovisual treatment"
+      ],
+      "exposes": [
+        "emotional register",
+        "contrast between scenes"
+      ],
+      "conflicts": [
+        {
+          "when": "Comic reactions and horror tension occur in the same scene.",
+          "issue": "Their feedback can cancel the intended emotional effect.",
+          "bridge": "Assign tones to acts, regions or feedback layers, with a deliberate transition."
+        }
+      ],
+      "bridge_options": [
+        "Use tonal contrast as a story beat.",
+        "Borrow pacing or vulnerability without copying character identities."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/metroid-zero-mission/gameplay/keyframes/f002988_scene.png",
+            "local/captures-experiments/20261016-current-scripts/metroid-zero-mission/gameplay/keyframes/f005374_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    }
+  ],
+  "story": {
+    "beats": [
+      {
+        "id": "boss_defeat_changes_world_state",
+        "description": "Mother Brain enters a dying fight stage, records a persistent defeat event and plays its death sound.",
+        "status": "source_backed_local_beat",
+        "requires": [
+          "Source boss-death branch reached"
+        ],
+        "exposes": [
+          "EVENT_MOTHER_BRAIN_KILLED"
+        ],
+        "evidence": [
+          {
+            "kind": "direct_source_inspection",
+            "ref": "local/decomps/mzm/src/sprites_ai/mother_brain.c",
+            "symbol": "Mother Brain dying branch",
+            "line_start": 249,
+            "line_end": 270,
+            "file_sha256": "c1c489755cfe9c23d68267327a05fdd27b26686e5f70a1d4309659ca9f7beb69",
+            "span_sha256": "a5690ffbe468300d050a2b9e05b5c7b7d271b9f3b3ed8cff6424a26d9cbd3237",
+            "confidence": 0.95,
+            "scope": "Dying fight-state transition sets the persistent Mother Brain killed event and dying sound."
+          }
+        ]
+      },
+      {
+        "id": "vulnerable_chapter",
+        "description": "A separate suitless controller and Pirate sight/alarm system create a loss-of-power chapter. Its complete entry/exit route is not re-traced by this portrait.",
+        "status": "canonical_source_supported_partial",
+        "requires": [
+          "Suitless state transition"
+        ],
+        "exposes": [
+          "Restricted movement/combat capabilities",
+          "Detection/alarm pressure"
+        ],
+        "evidence": [
+          {
+            "kind": "canonical_component",
+            "ref": "ontology/games/metroid-zero-mission.yaml#zero_suit_segment"
+          }
+        ]
+      },
+      {
+        "id": "trial_restores_power",
+        "description": "The Ruins Test completion branch removes its ceiling collision, sets the fully-powered-suit event and starts the associated cutscene effect.",
+        "status": "source_backed_local_beat",
+        "requires": [
+          "RUINS_TEST_FIGHT_STAGE_STARTING_CUTSCENE_FADE"
+        ],
+        "exposes": [
+          "EVENT_FULLY_POWERED_SUIT_OBTAINED",
+          "Suit-power cutscene effect"
+        ],
+        "evidence": [
+          {
+            "kind": "direct_source_inspection",
+            "ref": "local/decomps/mzm/src/sprites_ai/ruins_test.c",
+            "symbol": "RUINS_TEST_FIGHT_STAGE_STARTING_CUTSCENE_FADE branch",
+            "line_start": 1122,
+            "line_end": 1138,
+            "file_sha256": "6ec08b153265501bea668673a566c26a0ac8291ee729094b9b57f0adc6e7e79c",
+            "span_sha256": "5a5981a5ec21b2f7ba2a23369220ede635c9d5d34e167ca8b37079c43d79b662",
+            "confidence": 0.95,
+            "scope": "Stops the trial entity, removes ceiling collision, sets fully-powered-suit event and starts the suit cutscene effect."
+          }
+        ]
+      },
+      {
+        "id": "boss_death_becomes_escape",
+        "description": "Mecha Ridley death completion sets a defeat event, spawns the Chozodia escape banner, records boss time and unlocks doors.",
+        "status": "source_backed_local_beat",
+        "requires": [
+          "Death countdown reaches zero"
+        ],
+        "exposes": [
+          "EVENT_MECHA_RIDLEY_KILLED",
+          "MESSAGE_CHOZODIA_ESCAPE",
+          "Unlocked doors"
+        ],
+        "evidence": [
+          {
+            "kind": "direct_source_inspection",
+            "ref": "local/decomps/mzm/src/sprites_ai/mecha_ridley.c",
+            "symbol": "Mecha Ridley death completion branch",
+            "line_start": 1449,
+            "line_end": 1467,
+            "file_sha256": "8f631237f7ad723b11c4e032ca5fbd7ac16fe1bede2cc67ae5f7597b357b0210",
+            "span_sha256": "451d4893384ba54a73b4b6c0b8691ace6a9677da710f81acfe459f42d748bcc4",
+            "confidence": 0.95,
+            "scope": "On delay completion: set killed event, spawn Chozodia escape banner, record boss time and unlock doors."
+          }
+        ]
+      }
+    ],
+    "delivery": [
+      {
+        "description": "Named story-text, close-up, boss entrance, ruins-test and suit-power cutscenes form an authored presentation vocabulary.",
+        "status": "direct_source_named_scene_inventory",
+        "evidence": [
+          {
+            "kind": "direct_source_inspection",
+            "ref": "local/decomps/mzm/include/constants/cutscene.h",
+            "symbol": "Cutscene",
+            "line_start": 10,
+            "line_end": 31,
+            "file_sha256": "a084a467325351bc5e098f86acfb1e35b86216227903d33db75fd3cdcbd88f6c",
+            "span_sha256": "8074b47b66908632db7abda9057150526c2b675d1aa1664b59a25198132574cd",
+            "confidence": 0.95,
+            "scope": "Named cutscene inventory; enum order alone does not prove chronological prerequisites."
+          }
+        ]
+      },
+      {
+        "description": "Item/location banners and first-person line-by-line story text punctuate the source campaign.",
+        "status": "canonical_source_supported_partial",
+        "evidence": [
+          {
+            "kind": "canonical_component",
+            "ref": "ontology/games/metroid-zero-mission.yaml#cutscenes"
+          },
+          {
+            "kind": "canonical_component",
+            "ref": "ontology/games/metroid-zero-mission.yaml#banners_and_area_text"
+          }
+        ]
+      }
+    ],
+    "gaps": [
+      "These local causal branches do not reconstruct the entire room/event graph or every sequence break.",
+      "Plot/character interpretation in the setting component still contains explicitly labeled prior knowledge.",
+      "No full campaign playthrough was used to validate chronology."
+    ]
+  },
+  "coverage": {
+    "status": "partial",
+    "depth": "deep_partial",
+    "canonical_component_count": 55,
+    "canonical_facets": [
+      "ai",
+      "audio",
+      "camera",
+      "economy",
+      "frontend",
+      "mechanics",
+      "movement_physics",
+      "narrative_delivery",
+      "progression",
+      "projection",
+      "rendering",
+      "setting",
+      "ui_hud"
+    ],
+    "source_supported_piece_count": 7,
+    "missing": [
+      "Complete plot/event dependency graph",
+      "Calibrated user skill and strategy evidence",
+      "Full asset-to-source/address reuse catalogue"
+    ],
+    "granular_records_not_summarized": [
+      {
+        "component_id": "game_mode_flow",
+        "label": "Top-level game-mode state machine and soft reset",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "intro_sequence",
+        "label": "Skippable story intro before title",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "title_and_attract_demo",
+        "label": "Title screen with idle-timed attract demo using recorded input",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "file_select_and_extras",
+        "label": "Three-slot file select with difficulty choice and unlockable extras",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "save_and_continue",
+        "label": "Save stations, redundant SRAM slots and game-over continue",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "bg_layer_stack",
+        "label": "Mode-0 four-layer tilemap room renderer with OBJ actors",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "affine_rotscale",
+        "label": "Affine BG (cutscene) and rotating/scaling OBJ",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "space_jump",
+        "label": "Space Jump re-jump with fall-speed window",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "speed_booster",
+        "label": "Speed Booster sustained-run speed mode",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "shinespark",
+        "label": "Stored shinespark dash",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "morph_ball_and_bomb_jump",
+        "label": "Morph Ball form with spring jump and bomb jump",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "liquid_physics",
+        "label": "Liquid drag (halved physics) negated by Gravity Suit",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "environmental_hazards",
+        "label": "Suit-dependent environmental damage over time",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "difficulty_modes",
+        "label": "Easy/Normal/Hard scaling of damage, expansions and timers",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "sprite_fsm_framework",
+        "label": "Per-sprite pose state machines on a shared sprite runtime",
+        "facet": "ai"
+      },
+      {
+        "component_id": "kraid_boss",
+        "label": "Kraid - giant background-layer boss with mouth weak point",
+        "facet": "ai"
+      },
+      {
+        "component_id": "mother_brain_boss",
+        "label": "Mother Brain - eye-open damage window behind breakable glass",
+        "facet": "ai"
+      },
+      {
+        "component_id": "ranked_ending",
+        "label": "Completion- and time-ranked ending images and unlocks",
+        "facet": "progression"
+      },
+      {
+        "component_id": "resource_pools",
+        "label": "Energy and three ammo pools with tank capacity expansions",
+        "facet": "economy"
+      },
+      {
+        "component_id": "enemy_drops",
+        "label": "Need-aware enemy drop tables",
+        "facet": "economy"
+      },
+      {
+        "component_id": "obj_hud",
+        "label": "Sprite-built HUD with energy tanks, ammo counters, minimap and low-health beep",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "controls_and_aiming",
+        "label": "Shoulder-modifier control scheme with 5-way aiming",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "sound_engine",
+        "label": "Custom sequenced engine mixing DirectSound samples and PSG channels",
+        "facet": "audio"
+      }
+    ],
+    "not_claimed": [
+      "All mechanics extracted",
+      "Full ROM decompiled",
+      "Complete plot recovered",
+      "Every proposed bundle assembled or playtested"
+    ]
+  },
+  "provenance": {
+    "recorded_at": "2026-10-16T06:22:36.193456+00:00",
+    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "rom_sha1": "5de8536afe1f0078ee6fe1089f890e8c7aa0a6e8",
+    "canonical": {
+      "kind": "canonical_ontology",
+      "ref": "ontology/games/metroid-zero-mission.yaml",
+      "sha256": "05a22db180dfb04d67d9da543bef9e58f0381008daaf190f54ee86f4af5aa52b",
+      "scope": "Existing component extraction; inherited evidence and limitations, not a fresh independent verification."
+    },
+    "source_repositories": [
+      {
+        "path": "local/decomps/mzm",
+        "commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+        "source_dirty": false,
+        "file_counts": {
+          ".c": 663,
+          ".h": 453,
+          ".inc": 34,
+          ".s": 664
+        },
+        "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+      },
+      {
+        "path": "local/decomps/gwimm-mzm",
+        "commit": "0b1d66a09e6b9f0beea41787eb57704edec9d071",
+        "source_dirty": false,
+        "file_counts": {
+          ".c": 2,
+          ".inc": 2,
+          ".s": 10
+        },
+        "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+      }
+    ],
+    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "capture_run_id": "20261016T004328-0e248f",
+    "capture_frame_sha256": {
+      "local/captures-experiments/20261016-current-scripts/metroid-zero-mission/gameplay/keyframes/f002988_scene.png": "9ae16fa2930f38a634bdf42f6271a42f74ee6d16a3885b181d280eb4df3c7b28",
+      "local/captures-experiments/20261016-current-scripts/metroid-zero-mission/gameplay/keyframes/f005374_scene.png": "dc9288dbce8b7c1c30a6c8882d05acf641b8d28844ff5aaf3f3032a206639234"
+    },
+    "source_inspection_notes": "Canonical component evidence is inherited; direct new source story anchors, when present, are marked separately.",
+    "direct_new_story_anchors": [
+      {
+        "kind": "direct_source_inspection",
+        "ref": "local/decomps/mzm/include/constants/cutscene.h",
+        "symbol": "Cutscene",
+        "line_start": 10,
+        "line_end": 31,
+        "file_sha256": "a084a467325351bc5e098f86acfb1e35b86216227903d33db75fd3cdcbd88f6c",
+        "span_sha256": "8074b47b66908632db7abda9057150526c2b675d1aa1664b59a25198132574cd",
+        "confidence": 0.95,
+        "scope": "Named cutscene inventory; enum order alone does not prove chronological prerequisites."
+      },
+      {
+        "kind": "direct_source_inspection",
+        "ref": "local/decomps/mzm/src/sprites_ai/mother_brain.c",
+        "symbol": "Mother Brain dying branch",
+        "line_start": 249,
+        "line_end": 270,
+        "file_sha256": "c1c489755cfe9c23d68267327a05fdd27b26686e5f70a1d4309659ca9f7beb69",
+        "span_sha256": "a5690ffbe468300d050a2b9e05b5c7b7d271b9f3b3ed8cff6424a26d9cbd3237",
+        "confidence": 0.95,
+        "scope": "Dying fight-state transition sets the persistent Mother Brain killed event and dying sound."
+      },
+      {
+        "kind": "direct_source_inspection",
+        "ref": "local/decomps/mzm/src/sprites_ai/ruins_test.c",
+        "symbol": "RUINS_TEST_FIGHT_STAGE_STARTING_CUTSCENE_FADE branch",
+        "line_start": 1122,
+        "line_end": 1138,
+        "file_sha256": "6ec08b153265501bea668673a566c26a0ac8291ee729094b9b57f0adc6e7e79c",
+        "span_sha256": "5a5981a5ec21b2f7ba2a23369220ede635c9d5d34e167ca8b37079c43d79b662",
+        "confidence": 0.95,
+        "scope": "Stops the trial entity, removes ceiling collision, sets fully-powered-suit event and starts the suit cutscene effect."
+      },
+      {
+        "kind": "direct_source_inspection",
+        "ref": "local/decomps/mzm/src/sprites_ai/mecha_ridley.c",
+        "symbol": "Mecha Ridley death completion branch",
+        "line_start": 1449,
+        "line_end": 1467,
+        "file_sha256": "8f631237f7ad723b11c4e032ca5fbd7ac16fe1bede2cc67ae5f7597b357b0210",
+        "span_sha256": "451d4893384ba54a73b4b6c0b8691ace6a9677da710f81acfe459f42d748bcc4",
+        "confidence": 0.95,
+        "scope": "On delay completion: set killed event, spawn Chozodia escape banner, record boss time and unlock doors."
+      }
+    ]
+  }
+}

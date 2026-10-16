@@ -1,0 +1,492 @@
+{
+  "schema_version": 1,
+  "game_id": "crash-bandicoot-the-huge-adventure",
+  "title": "Crash Bandicoot: The Huge Adventure",
+  "identity": {
+    "tagline": "A character platformer organized around obstacles and collectible-filled routes.",
+    "categories": [
+      "platformer",
+      "collectathon"
+    ],
+    "view": {
+      "label": "side view",
+      "status": "observed_or_source_backed_presentation",
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f003396_scene.png",
+            "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f005345_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ]
+    },
+    "vibe": [
+      "cartoon industrial",
+      "energetic",
+      "bright"
+    ],
+    "vibe_status": "editorial_interpretation_of_observed_scenes",
+    "grounded_examples": [
+      "An orange character stands in metallic corridors with crates, glowing pickups and persistent collection counters."
+    ],
+    "gameplay_prior": {
+      "text": "Run, jump and spin through stages, breaking crates and revisiting for missed collectibles.",
+      "status": "model_prior_unverified_unless_piece_links_source"
+    },
+    "evidence": [
+      {
+        "kind": "capture_contact_sheet_inspection",
+        "refs": [
+          "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f003396_scene.png",
+          "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f005345_scene.png"
+        ],
+        "confidence": 0.85,
+        "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+      }
+    ],
+    "category_basis": "Editorial taxonomy from mixed source, observed scenes and explicitly unverified prior; categories are not proof of implemented or extracted rules.",
+    "tagline_status": "editorial_summary_mixed_evidence"
+  },
+  "pieces": [
+    {
+      "id": "crash-bandicoot-the-huge-adventure:movement_view",
+      "label": "Spatial framing and controller candidate",
+      "slot": "movement_view",
+      "effect": "Observed framing: side view. Candidate rules, not verified mechanics: Run, jump and spin through stages, breaking crates and revisiting for missed collectibles.",
+      "flavor": "A character platformer organized around obstacles and collectible-filled routes.",
+      "knobs": [
+        {
+          "name": "perspective",
+          "meaning": "Keep or bridge the observed source view.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "cadence",
+          "meaning": "Choose frame updates, tile actions or mode transitions explicitly.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "world coordinates",
+        "collision or terrain rules",
+        "input semantics"
+      ],
+      "exposes": [
+        "position",
+        "facing",
+        "grounded or traversal state"
+      ],
+      "conflicts": [
+        {
+          "when": "A host uses tile turns but this controller uses continuous frame updates.",
+          "issue": "One input cannot mean both a whole turn and a physics tick.",
+          "bridge": "Keep a fixed simulation clock and convert a completed movement action into a turn event."
+        }
+      ],
+      "bridge_options": [
+        "Keep side-view stages and a top-down world as separate modes.",
+        "Use a shared height axis rather than interpreting northward movement as a jump."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f003396_scene.png",
+            "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f005345_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        },
+        {
+          "kind": "model_prior_unverified",
+          "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+          "confidence": 0.35,
+          "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+        }
+      ],
+      "status": "candidate_unverified",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "crash-bandicoot-the-huge-adventure:progression",
+      "label": "Journey and replay candidate",
+      "slot": "progression",
+      "effect": "Proposed high-level loop from unverified recall: Run, jump and spin through stages, breaking crates and revisiting for missed collectibles.",
+      "flavor": "A character platformer organized around obstacles and collectible-filled routes.",
+      "knobs": [
+        {
+          "name": "persistence",
+          "meaning": "Choose session, checkpoint, room or save lifetime.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "unlock_meaning",
+          "meaning": "Choose capability, inventory key or event prerequisite.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "persistent state",
+        "gate or objective predicates",
+        "reward events"
+      ],
+      "exposes": [
+        "unlocked route",
+        "completion state",
+        "new capability"
+      ],
+      "conflicts": [
+        {
+          "when": "A key consumable is substituted for a permanent capability.",
+          "issue": "Backtracking and recoverability can change even if the first door opens.",
+          "bridge": "Choose explicitly between persistent ability ownership and per-door key consumption."
+        }
+      ],
+      "bridge_options": [
+        "Keep source gate semantics and reskin their fiction.",
+        "Connect battle rewards to traversal capabilities through a named unlock rule."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f003396_scene.png",
+            "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f005345_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        },
+        {
+          "kind": "model_prior_unverified",
+          "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+          "confidence": 0.35,
+          "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+        }
+      ],
+      "status": "candidate_unverified",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "crash-bandicoot-the-huge-adventure:setting",
+      "label": "A concrete place, not just a genre",
+      "slot": "setting",
+      "effect": "An orange character stands in metallic corridors with crates, glowing pickups and persistent collection counters.",
+      "flavor": "A character platformer organized around obstacles and collectible-filled routes.",
+      "knobs": [
+        {
+          "name": "scale",
+          "meaning": "Choose the world and object scale relationship.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "motif_palette",
+          "meaning": "Choose which observed motifs define the adaptation.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "world/content vocabulary"
+      ],
+      "exposes": [
+        "region identities",
+        "spatial motifs"
+      ],
+      "conflicts": [
+        {
+          "when": "Two settings imply different world scales or technologies.",
+          "issue": "Literal asset mixing can obscure the intended place.",
+          "bridge": "Choose a unifying art/world rule and map each motif into it."
+        }
+      ],
+      "bridge_options": [
+        "Retain mechanics while authoring original scenery.",
+        "Make a deliberate crossing between region styles rather than random per-object mixing."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f003396_scene.png",
+            "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f005345_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "crash-bandicoot-the-huge-adventure:story",
+      "label": "Story premise awaiting event extraction",
+      "slot": "story",
+      "effect": "Unverified premise: A cartoon villain crisis sends the hero through a sequence of themed stages.",
+      "flavor": "A character platformer organized around obstacles and collectible-filled routes.",
+      "knobs": [
+        {
+          "name": "beat_graph",
+          "meaning": "Choose prerequisites and resulting world-state changes.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "delivery",
+          "meaning": "Choose scene, dialogue, environmental cue or playable sequence.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "event/state flags",
+        "actor and dialogue staging"
+      ],
+      "exposes": [
+        "story milestone",
+        "new objective",
+        "changed world state"
+      ],
+      "conflicts": [
+        {
+          "when": "Two plots both assume exclusive control of campaign milestones.",
+          "issue": "Their original sequence prerequisites may deadlock or contradict each other.",
+          "bridge": "Map selected beats onto one explicit milestone graph; preserve required predecessors."
+        }
+      ],
+      "bridge_options": [
+        "Borrow a beat pattern such as rescue then gift without copying dialogue.",
+        "Treat a vulnerable chapter as a temporary controller/resource contract."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f003396_scene.png",
+            "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f005345_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        },
+        {
+          "kind": "model_prior_unverified",
+          "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+          "confidence": 0.35,
+          "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+        }
+      ],
+      "status": "candidate_unverified",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "crash-bandicoot-the-huge-adventure:presentation",
+      "label": "Visible style and feedback",
+      "slot": "presentation",
+      "effect": "An orange character stands in metallic corridors with crates, glowing pickups and persistent collection counters.",
+      "flavor": "A character platformer organized around obstacles and collectible-filled routes.",
+      "knobs": [
+        {
+          "name": "feedback_density",
+          "meaning": "Balance HUD information against scene readability.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "render_budget",
+          "meaning": "Choose palette, animation and layer costs for the target runtime.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "camera/projection contract",
+        "asset/palette budget",
+        "rendering clock"
+      ],
+      "exposes": [
+        "legible feedback",
+        "scene transitions",
+        "audio cues"
+      ],
+      "conflicts": [
+        {
+          "when": "Different projections share the same screen without a transition rule.",
+          "issue": "Objects can appear to occupy incompatible coordinate spaces.",
+          "bridge": "Use separate scenes/modes or define one consistent projection adapter."
+        }
+      ],
+      "bridge_options": [
+        "Keep source rendering while adding a separate battle mode.",
+        "Translate atmosphere into a coherent new palette and motif set."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f003396_scene.png",
+            "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f005345_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "crash-bandicoot-the-huge-adventure:tone",
+      "label": "Emotional register",
+      "slot": "tone",
+      "effect": "Cartoon industrial, energetic, bright. This is a reading of the retained scenes, not a complete tone audit.",
+      "flavor": "A character platformer organized around obstacles and collectible-filled routes.",
+      "knobs": [
+        {
+          "name": "contrast",
+          "meaning": "Decide where tonal contrast is intentional.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "pacing",
+          "meaning": "Choose recovery versus pressure intervals.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "editorial direction",
+        "consistent audiovisual treatment"
+      ],
+      "exposes": [
+        "emotional register",
+        "contrast between scenes"
+      ],
+      "conflicts": [
+        {
+          "when": "Comic reactions and horror tension occur in the same scene.",
+          "issue": "Their feedback can cancel the intended emotional effect.",
+          "bridge": "Assign tones to acts, regions or feedback layers, with a deliberate transition."
+        }
+      ],
+      "bridge_options": [
+        "Use tonal contrast as a story beat.",
+        "Borrow pacing or vulnerability without copying character identities."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f003396_scene.png",
+            "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f005345_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    }
+  ],
+  "story": {
+    "beats": [
+      {
+        "id": "retained_scene",
+        "description": "An orange character stands in metallic corridors with crates, glowing pickups and persistent collection counters.",
+        "status": "observed_scene_without_causal_order_claim",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f003396_scene.png",
+              "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f005345_scene.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      },
+      {
+        "id": "premise_candidate",
+        "description": "A cartoon villain crisis sends the hero through a sequence of themed stages.",
+        "status": "model_prior_unverified",
+        "evidence": [
+          {
+            "kind": "model_prior_unverified",
+            "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+            "confidence": 0.35,
+            "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+          }
+        ]
+      }
+    ],
+    "delivery": [
+      {
+        "description": "Observed scene/GUI staging; specific source script and dialogue links are below when available.",
+        "status": "observed_partial",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f003396_scene.png",
+              "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f005345_scene.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      }
+    ],
+    "gaps": [
+      "Two retained scenes do not establish the complete narrative or player agency.",
+      "Resolve beat prerequisites, event flags, dialogue text and ending variants from source."
+    ]
+  },
+  "coverage": {
+    "status": "partial",
+    "depth": "helper_only",
+    "canonical_component_count": 1,
+    "canonical_facets": [
+      "mechanics"
+    ],
+    "source_supported_piece_count": 0,
+    "missing": [
+      "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+      "Complete plot/event dependency graph",
+      "Calibrated user skill and strategy evidence",
+      "Full asset-to-source/address reuse catalogue"
+    ],
+    "granular_records_not_summarized": [
+      {
+        "component_id": "paired_target_approach",
+        "label": "Two target-approach increments integrated into paired state",
+        "facet": "mechanics"
+      }
+    ],
+    "not_claimed": [
+      "All mechanics extracted",
+      "Full ROM decompiled",
+      "Complete plot recovered",
+      "Every proposed bundle assembled or playtested"
+    ]
+  },
+  "provenance": {
+    "recorded_at": "2026-10-16T06:22:36.193456+00:00",
+    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "rom_sha1": "5a2651c78bb8a1d707e3c3af1f46fb64e2104198",
+    "canonical": {
+      "kind": "canonical_ontology",
+      "ref": "ontology/games/crash-bandicoot-the-huge-adventure.yaml",
+      "sha256": "5dd7e614c117f30093f7a802f113f18d1262420b4e3df1626f4b9613af912649",
+      "scope": "Existing component extraction; inherited evidence and limitations, not a fresh independent verification."
+    },
+    "source_repositories": [],
+    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "capture_run_id": "20261016T004328-0e248f",
+    "capture_frame_sha256": {
+      "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f003396_scene.png": "9bb3255a78d8dff94ed58a7ec4683126f31d83a3e643f8b4a233bed8092b9235",
+      "local/captures-experiments/20261016-current-scripts/crash-bandicoot-the-huge-adventure/gameplay/keyframes/f005345_scene.png": "d185fcae24220b172063cc77c28e9a982dc4fce26ce4c9b9473876d3c88c3c0c"
+    },
+    "source_inspection_notes": "Canonical component evidence is inherited; direct new source story anchors, when present, are marked separately."
+  }
+}

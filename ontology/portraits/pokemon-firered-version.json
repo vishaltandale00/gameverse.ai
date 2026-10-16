@@ -1,0 +1,952 @@
+{
+  "schema_version": 1,
+  "game_id": "pokemon-firered-version",
+  "title": "Pokémon FireRed Version",
+  "identity": {
+    "tagline": "A creature-collecting journey links a party roster to a structured regional route.",
+    "categories": [
+      "party RPG",
+      "creature collection"
+    ],
+    "view": {
+      "label": "top down / oblique",
+      "status": "field_view_source_inference_not_observed_in_retained_pair",
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/pokemon-firered-version/gameplay/keyframes/f002369_scene.png",
+            "local/captures-experiments/20261016-current-scripts/pokemon-firered-version/gameplay/keyframes/f005324.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#grid_step_locomotion",
+          "scope": "Field tile-step coordinate semantics, not visual proof from the retained intro screenshots."
+        }
+      ],
+      "observed_in_retained_pair": "Presenter staging and naming interface; field movement is not shown in this pair."
+    },
+    "vibe": [
+      "welcoming",
+      "ordered adventure",
+      "portrait-like creatures"
+    ],
+    "vibe_status": "editorial_interpretation_of_observed_scenes",
+    "grounded_examples": [
+      "An elderly presenter and pale creature appear above a framed dialogue panel, followed by a naming keyboard."
+    ],
+    "gameplay_prior": {
+      "text": "Catch and train a party, battle through typed move choices and use field abilities to pass obstacles.",
+      "status": "model_prior_unverified_unless_piece_links_source"
+    },
+    "evidence": [
+      {
+        "kind": "capture_contact_sheet_inspection",
+        "refs": [
+          "local/captures-experiments/20261016-current-scripts/pokemon-firered-version/gameplay/keyframes/f002369_scene.png",
+          "local/captures-experiments/20261016-current-scripts/pokemon-firered-version/gameplay/keyframes/f005324.png"
+        ],
+        "confidence": 0.85,
+        "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+      }
+    ],
+    "category_basis": "Editorial taxonomy from mixed source, observed scenes and explicitly unverified prior; categories are not proof of implemented or extracted rules.",
+    "tagline_status": "editorial_summary_mixed_evidence"
+  },
+  "pieces": [
+    {
+      "id": "pokemon-firered-version:movement_view",
+      "label": "Structured tile travel",
+      "slot": "movement_view",
+      "effect": "Use source-specific step state, forced terrain movement and a player-locked camera; do not assume every Emerald traversal mode is present.",
+      "flavor": "A creature-collecting journey links a party roster to a structured regional route.",
+      "knobs": [
+        {
+          "name": "perspective",
+          "meaning": "Keep or bridge the observed source view.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "cadence",
+          "meaning": "Choose frame updates, tile actions or mode transitions explicitly.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "grid_step_locomotion"
+        },
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "forced_movement_tiles"
+        },
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "player_locked_tile_camera"
+        }
+      ],
+      "requires": [
+        "world coordinates",
+        "collision or terrain rules",
+        "input semantics"
+      ],
+      "exposes": [
+        "position",
+        "facing",
+        "grounded or traversal state"
+      ],
+      "conflicts": [
+        {
+          "when": "A host uses tile turns but this controller uses continuous frame updates.",
+          "issue": "One input cannot mean both a whole turn and a physics tick.",
+          "bridge": "Keep a fixed simulation clock and convert a completed movement action into a turn event."
+        }
+      ],
+      "bridge_options": [
+        "Keep side-view stages and a top-down world as separate modes.",
+        "Use a shared height axis rather than interpreting northward movement as a jump."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#grid_step_locomotion",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/field_player_avatar.c:CheckMovementInputNotOnBike",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/field_player_avatar.c:PlayerNotOnBikeMoving",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#forced_movement_tiles",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/field_player_avatar.c:sForcedMovementFuncs",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#player_locked_tile_camera",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/field_camera.c:CameraUpdate",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-firered-version:combat",
+      "label": "A bounded party with timed turns",
+      "slot": "combat",
+      "effect": "Party/move capacity, source stat calculation, turn order and encounter tables provide real rules, while broader battle effects need further extraction.",
+      "flavor": "A creature-collecting journey links a party roster to a structured regional route.",
+      "knobs": [
+        {
+          "name": "encounter_boundary",
+          "meaning": "Decide whether field movement continues during combat.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "supported_rules",
+          "meaning": "Declare the move/status/item capability subset.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "party_and_move_capacity"
+        },
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "stat_calculation"
+        },
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "turn_order"
+        },
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "wild_encounter_tables"
+        }
+      ],
+      "requires": [
+        "combatant state",
+        "legal actions",
+        "damage and resource rules"
+      ],
+      "exposes": [
+        "damage events",
+        "resource expenditure",
+        "win or loss"
+      ],
+      "conflicts": [
+        {
+          "when": "Real-time field action meets a turn-based battle system.",
+          "issue": "Input cadence and simultaneous enemy updates disagree.",
+          "bridge": "Create an explicit encounter boundary, freeze the field and restore its state after battle."
+        }
+      ],
+      "bridge_options": [
+        "Share attack types across real-time and turn-based attacks.",
+        "Preserve the source damage rules while declaring a smaller supported move/effect set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#party_and_move_capacity",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:include/constants/global.h:PARTY_SIZE",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:include/constants/global.h:MAX_MON_MOVES",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#stat_calculation",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/pokemon.c:CalculateMonStats",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/pokemon.c:CALC_STAT",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#turn_order",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/battle_main.c:GetWhoStrikesFirst",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#wild_encounter_tables",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/wild_encounter.c:ChooseWildMonIndex_Land",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/wild_encounter.c:StandardWildEncounter",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/data/wild_encounters.json:gWildMonHeaders",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-firered-version:ai",
+      "label": "Score trainer move options",
+      "slot": "ai",
+      "effect": "Reuse this version's flag-driven scoring entry points after checking the surrounding battle context.",
+      "flavor": "A creature-collecting journey links a party roster to a structured regional route.",
+      "knobs": [
+        {
+          "name": "information_budget",
+          "meaning": "Choose visible versus privileged state.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "decision_cadence",
+          "meaning": "Separate every-frame reactions from slower objective decisions.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "trainer_ai_move_scoring"
+        }
+      ],
+      "requires": [
+        "observed state contract",
+        "legal actions",
+        "update cadence"
+      ],
+      "exposes": [
+        "chosen action",
+        "target",
+        "decision reason"
+      ],
+      "conflicts": [
+        {
+          "when": "An AI reads hidden battle state but the desired bot sees only screenshots.",
+          "issue": "The policy would gain information unavailable in the target interface.",
+          "bridge": "Expose a typed observation adapter and declare privileged versus visible fields."
+        }
+      ],
+      "bridge_options": [
+        "Use deterministic rules for supported choices; escalate ambiguous goals to an LLM.",
+        "Keep enemy AI and external playtester policies as separate components."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#trainer_ai_move_scoring",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/battle_ai_script_commands.c:BattleAI_SetupAIData",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/battle_ai_script_commands.c:BattleAI_ChooseMoveOrAction",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-firered-version:progression",
+      "label": "A roster that grows and opens routes",
+      "slot": "progression",
+      "effect": "Evolution and storage are source-backed; version-specific field gates and rematches must stay distinct.",
+      "flavor": "A creature-collecting journey links a party roster to a structured regional route.",
+      "knobs": [
+        {
+          "name": "persistence",
+          "meaning": "Choose session, checkpoint, room or save lifetime.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "unlock_meaning",
+          "meaning": "Choose capability, inventory key or event prerequisite.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "evolution_rules"
+        },
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "inventory_and_storage"
+        },
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "field_move_badge_gate"
+        },
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "trainer_rematches_vs_seeker"
+        }
+      ],
+      "requires": [
+        "persistent state",
+        "gate or objective predicates",
+        "reward events"
+      ],
+      "exposes": [
+        "unlocked route",
+        "completion state",
+        "new capability"
+      ],
+      "conflicts": [
+        {
+          "when": "A key consumable is substituted for a permanent capability.",
+          "issue": "Backtracking and recoverability can change even if the first door opens.",
+          "bridge": "Choose explicitly between persistent ability ownership and per-door key consumption."
+        }
+      ],
+      "bridge_options": [
+        "Keep source gate semantics and reskin their fiction.",
+        "Connect battle rewards to traversal capabilities through a named unlock rule."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#evolution_rules",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/pokemon.c:GetEvolutionTargetSpecies",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#inventory_and_storage",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:include/constants/global.h:BAG_ITEMS_COUNT",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:include/constants/global.h:BAG_TMHM_COUNT",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#field_move_badge_gate",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/party_menu.c:CursorCB_FieldMove",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#trainer_rematches_vs_seeker",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/vs_seeker.c:UpdateVsSeekerStepCounter",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-firered-version:story",
+      "label": "Introduce, name and enter the world",
+      "slot": "story",
+      "effect": "Presenter staging and a script engine support dialogue-led onboarding, but the complete regional plot is not yet mined.",
+      "flavor": "A creature-collecting journey links a party roster to a structured regional route.",
+      "knobs": [
+        {
+          "name": "beat_graph",
+          "meaning": "Choose prerequisites and resulting world-state changes.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "delivery",
+          "meaning": "Choose scene, dialogue, environmental cue or playable sequence.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "intro_host_staging"
+        },
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "script_engine"
+        }
+      ],
+      "requires": [
+        "event/state flags",
+        "actor and dialogue staging"
+      ],
+      "exposes": [
+        "story milestone",
+        "new objective",
+        "changed world state"
+      ],
+      "conflicts": [
+        {
+          "when": "Two plots both assume exclusive control of campaign milestones.",
+          "issue": "Their original sequence prerequisites may deadlock or contradict each other.",
+          "bridge": "Map selected beats onto one explicit milestone graph; preserve required predecessors."
+        }
+      ],
+      "bridge_options": [
+        "Borrow a beat pattern such as rescue then gift without copying dialogue.",
+        "Treat a vulnerable chapter as a temporary controller/resource contract."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#intro_host_staging",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:frame 1293 keyframe f001293_scene.png inspected",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#script_engine",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/script.c:RunScriptCommand",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/script.c:ScriptCall",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/script.c:ScriptReturn",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-firered-version:presentation",
+      "label": "A compact map and menu language",
+      "slot": "presentation",
+      "effect": "Metatile scenes, a central menu hub and map music organize a broad roster without presenting every rule on screen.",
+      "flavor": "A creature-collecting journey links a party roster to a structured regional route.",
+      "knobs": [
+        {
+          "name": "feedback_density",
+          "meaning": "Balance HUD information against scene readability.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "render_budget",
+          "meaning": "Choose palette, animation and layer costs for the target runtime.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "metatile_map_renderer"
+        },
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "start_menu_hub"
+        },
+        {
+          "game_id": "pokemon-firered-version",
+          "component_id": "map_music_and_fanfares"
+        }
+      ],
+      "requires": [
+        "camera/projection contract",
+        "asset/palette budget",
+        "rendering clock"
+      ],
+      "exposes": [
+        "legible feedback",
+        "scene transitions",
+        "audio cues"
+      ],
+      "conflicts": [
+        {
+          "when": "Different projections share the same screen without a transition rule.",
+          "issue": "Objects can appear to occupy incompatible coordinate spaces.",
+          "bridge": "Use separate scenes/modes or define one consistent projection adapter."
+        }
+      ],
+      "bridge_options": [
+        "Keep source rendering while adding a separate battle mode.",
+        "Translate atmosphere into a coherent new palette and motif set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#metatile_map_renderer",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/field_camera.c:DrawMetatile",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#start_menu_hub",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/start_menu.c:SetUpStartMenu_NormalField",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-firered-version.yaml#map_music_and_fanfares",
+          "canonical_file_sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pokefirered:src/sound.c:MapMusicMain",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-firered-version:setting",
+      "label": "A concrete place, not just a genre",
+      "slot": "setting",
+      "effect": "An elderly presenter and pale creature appear above a framed dialogue panel, followed by a naming keyboard.",
+      "flavor": "A creature-collecting journey links a party roster to a structured regional route.",
+      "knobs": [
+        {
+          "name": "scale",
+          "meaning": "Choose the world and object scale relationship.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "motif_palette",
+          "meaning": "Choose which observed motifs define the adaptation.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "world/content vocabulary"
+      ],
+      "exposes": [
+        "region identities",
+        "spatial motifs"
+      ],
+      "conflicts": [
+        {
+          "when": "Two settings imply different world scales or technologies.",
+          "issue": "Literal asset mixing can obscure the intended place.",
+          "bridge": "Choose a unifying art/world rule and map each motif into it."
+        }
+      ],
+      "bridge_options": [
+        "Retain mechanics while authoring original scenery.",
+        "Make a deliberate crossing between region styles rather than random per-object mixing."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/pokemon-firered-version/gameplay/keyframes/f002369_scene.png",
+            "local/captures-experiments/20261016-current-scripts/pokemon-firered-version/gameplay/keyframes/f005324.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-firered-version:tone",
+      "label": "Emotional register",
+      "slot": "tone",
+      "effect": "Welcoming, ordered adventure, portrait-like creatures. This is a reading of the retained scenes, not a complete tone audit.",
+      "flavor": "A creature-collecting journey links a party roster to a structured regional route.",
+      "knobs": [
+        {
+          "name": "contrast",
+          "meaning": "Decide where tonal contrast is intentional.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "pacing",
+          "meaning": "Choose recovery versus pressure intervals.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "editorial direction",
+        "consistent audiovisual treatment"
+      ],
+      "exposes": [
+        "emotional register",
+        "contrast between scenes"
+      ],
+      "conflicts": [
+        {
+          "when": "Comic reactions and horror tension occur in the same scene.",
+          "issue": "Their feedback can cancel the intended emotional effect.",
+          "bridge": "Assign tones to acts, regions or feedback layers, with a deliberate transition."
+        }
+      ],
+      "bridge_options": [
+        "Use tonal contrast as a story beat.",
+        "Borrow pacing or vulnerability without copying character identities."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/pokemon-firered-version/gameplay/keyframes/f002369_scene.png",
+            "local/captures-experiments/20261016-current-scripts/pokemon-firered-version/gameplay/keyframes/f005324.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    }
+  ],
+  "story": {
+    "beats": [
+      {
+        "id": "retained_scene",
+        "description": "An elderly presenter and pale creature appear above a framed dialogue panel, followed by a naming keyboard.",
+        "status": "observed_scene_without_causal_order_claim",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/pokemon-firered-version/gameplay/keyframes/f002369_scene.png",
+              "local/captures-experiments/20261016-current-scripts/pokemon-firered-version/gameplay/keyframes/f005324.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      },
+      {
+        "id": "premise_candidate",
+        "description": "A regional trainer journey with a rival and villain encounters; exact map-event chain remains unextracted here.",
+        "status": "model_prior_unverified",
+        "evidence": [
+          {
+            "kind": "model_prior_unverified",
+            "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+            "confidence": 0.35,
+            "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+          }
+        ]
+      }
+    ],
+    "delivery": [
+      {
+        "description": "Observed scene/GUI staging; specific source script and dialogue links are below when available.",
+        "status": "observed_partial",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/pokemon-firered-version/gameplay/keyframes/f002369_scene.png",
+              "local/captures-experiments/20261016-current-scripts/pokemon-firered-version/gameplay/keyframes/f005324.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      }
+    ],
+    "gaps": [
+      "Two retained scenes do not establish the complete narrative or player agency.",
+      "Resolve beat prerequisites, event flags, dialogue text and ending variants from source."
+    ]
+  },
+  "coverage": {
+    "status": "partial",
+    "depth": "source_partial",
+    "canonical_component_count": 28,
+    "canonical_facets": [
+      "ai",
+      "audio",
+      "camera",
+      "economy",
+      "frontend",
+      "mechanics",
+      "movement_physics",
+      "narrative_delivery",
+      "progression",
+      "rendering",
+      "ui_hud"
+    ],
+    "source_supported_piece_count": 6,
+    "missing": [
+      "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+      "Complete plot/event dependency graph",
+      "Calibrated user skill and strategy evidence",
+      "Full asset-to-source/address reuse catalogue"
+    ],
+    "granular_records_not_summarized": [
+      {
+        "component_id": "main_loop_and_callbacks",
+        "label": "Key-sampling frame loop with reset guard",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "input_controls",
+        "label": "Physical, edge and repeated keys with L=A remapping",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "rng_lcg",
+        "label": "Global high-word LCG also advances at VBlank",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "flash_save_system",
+        "label": "Rotating checksummed sector save slots",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "whiteout_respawn",
+        "label": "Defeat heals and warps with badge/level-dependent money loss",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "measured_video_modes",
+        "label": "Mode-0/1 frontend video with phase-limited evidence",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "measured_raster_targets",
+        "label": "Observed per-line brightness DMA writes",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "m4a_sound_engine",
+        "label": "m4a software mixer and observed dual-DirectSound rate",
+        "facet": "audio"
+      },
+      {
+        "component_id": "context_help",
+        "label": "Context-sensitive help with replay suppression",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "title_version_mascot",
+        "label": "Version-specific title mascot selection",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "dialogue_text_printer",
+        "label": "Text speed controls in-game printer delays",
+        "facet": "narrative_delivery"
+      }
+    ],
+    "not_claimed": [
+      "All mechanics extracted",
+      "Full ROM decompiled",
+      "Complete plot recovered",
+      "Every proposed bundle assembled or playtested"
+    ]
+  },
+  "provenance": {
+    "recorded_at": "2026-10-16T06:22:36.193456+00:00",
+    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "rom_sha1": "dd5945db9b930750cb39d00c84da8571feebf417",
+    "canonical": {
+      "kind": "canonical_ontology",
+      "ref": "ontology/games/pokemon-firered-version.yaml",
+      "sha256": "97e721f4d02447399f5d3bb1b1a2b2c52719bed859c7db2aa733f1937c2417ac",
+      "scope": "Existing component extraction; inherited evidence and limitations, not a fresh independent verification."
+    },
+    "source_repositories": [
+      {
+        "path": "local/decomps/pokefirered",
+        "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+        "source_dirty": false,
+        "file_counts": {
+          ".bin": 1162,
+          ".c": 298,
+          ".h": 422,
+          ".inc": 811,
+          ".mid": 347,
+          ".pal": 2612,
+          ".png": 3154,
+          ".s": 20,
+          ".wav": 477
+        },
+        "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+      }
+    ],
+    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "capture_run_id": "20261016T004328-0e248f",
+    "capture_frame_sha256": {
+      "local/captures-experiments/20261016-current-scripts/pokemon-firered-version/gameplay/keyframes/f002369_scene.png": "2ba4298a9b1672d14be2cc460fece710aabb6379e18280049bc323213a563026",
+      "local/captures-experiments/20261016-current-scripts/pokemon-firered-version/gameplay/keyframes/f005324.png": "6c6246c210078cf69f79d72ee49b1db1dfcbacc6d2fddda083e225a473bfec81"
+    },
+    "source_inspection_notes": "Canonical component evidence is inherited; direct new source story anchors, when present, are marked separately."
+  }
+}

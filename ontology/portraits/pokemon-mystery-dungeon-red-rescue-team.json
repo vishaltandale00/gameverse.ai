@@ -1,0 +1,1391 @@
+{
+  "schema_version": 1,
+  "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+  "title": "Pokémon Mystery Dungeon: Red Rescue Team",
+  "identity": {
+    "tagline": "A rescue partnership turns each dungeon step into a team decision.",
+    "categories": [
+      "grid roguelike",
+      "partner tactics",
+      "rescue jobs"
+    ],
+    "view": {
+      "label": "top down tile grid",
+      "status": "observed_or_source_backed_presentation",
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/pokemon-mystery-dungeon-red-rescue-team/gameplay/keyframes/f005097_scene.png",
+            "local/captures-experiments/20261016-current-scripts/pokemon-mystery-dungeon-red-rescue-team/gameplay/keyframes/f014492_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ]
+    },
+    "vibe": [
+      "warm companionship",
+      "vulnerability",
+      "colorful wilderness"
+    ],
+    "vibe_status": "editorial_interpretation_of_observed_scenes",
+    "grounded_examples": [
+      "A naming confirmation precedes a flower-lined clearing where two creature sprites share the scene; level, HP and belly appear in the HUD."
+    ],
+    "gameplay_prior": {
+      "text": "Leader movement advances turns, partners act on tactics, and hunger makes route length matter.",
+      "status": "model_prior_unverified_unless_piece_links_source"
+    },
+    "evidence": [
+      {
+        "kind": "capture_contact_sheet_inspection",
+        "refs": [
+          "local/captures-experiments/20261016-current-scripts/pokemon-mystery-dungeon-red-rescue-team/gameplay/keyframes/f005097_scene.png",
+          "local/captures-experiments/20261016-current-scripts/pokemon-mystery-dungeon-red-rescue-team/gameplay/keyframes/f014492_scene.png"
+        ],
+        "confidence": 0.85,
+        "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+      }
+    ],
+    "category_basis": "Editorial taxonomy from mixed source, observed scenes and explicitly unverified prior; categories are not proof of implemented or extracted rules.",
+    "tagline_status": "editorial_summary_mixed_evidence"
+  },
+  "pieces": [
+    {
+      "id": "pokemon-mystery-dungeon-red-rescue-team:movement_view",
+      "label": "A step is a turn for the whole floor",
+      "slot": "movement_view",
+      "effect": "Use eight-direction grid moves with corner/terrain rules and a fractional scheduler; interpolation is presentation, not another combat turn.",
+      "flavor": "A rescue partnership turns each dungeon step into a team decision.",
+      "knobs": [
+        {
+          "name": "perspective",
+          "meaning": "Keep or bridge the observed source view.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "cadence",
+          "meaning": "Choose frame updates, tile actions or mode transitions explicitly.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "grid_step_movement"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "fractional_turn_speed_scheduler"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "walk_animation_and_dash"
+        }
+      ],
+      "requires": [
+        "world coordinates",
+        "collision or terrain rules",
+        "input semantics"
+      ],
+      "exposes": [
+        "position",
+        "facing",
+        "grounded or traversal state"
+      ],
+      "conflicts": [
+        {
+          "when": "A host uses tile turns but this controller uses continuous frame updates.",
+          "issue": "One input cannot mean both a whole turn and a physics tick.",
+          "bridge": "Keep a fixed simulation clock and convert a completed movement action into a turn event."
+        }
+      ],
+      "bridge_options": [
+        "Keep side-view stages and a top-down world as separate modes.",
+        "Use a shared height axis rather than interpreting northward movement as a jump."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#grid_step_movement",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_logic.c:CanMoveInDirection",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_map_access.c:sub_8049BB0",
+              "confidence": 0.9,
+              "note": "computes the four walkable-neighbour masks with the diagonal both-sides-open rule"
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:include/structs/map.h:Tile",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#fractional_turn_speed_scheduler",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_engine.c:RunLeaderTurn_Async",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_engine.c:sub_8044820_Async",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_logic.c:CalcSpeedStage",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:include/structs/str_dungeon.h:DUNGEON_MAX_WILD_POKEMON",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#walk_animation_and_dash",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_entity_movement.c:sub_8075050",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-mystery-dungeon-red-rescue-team:combat",
+      "label": "Survival depends on time and supplies",
+      "slot": "combat",
+      "effect": "Tie attacks, status, hunger, regeneration and thrown items to the turn system; floor weather changes the resource pressure.",
+      "flavor": "A rescue partnership turns each dungeon step into a team decision.",
+      "knobs": [
+        {
+          "name": "encounter_boundary",
+          "meaning": "Decide whether field movement continues during combat.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "supported_rules",
+          "meaning": "Declare the move/status/item capability subset.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "dungeon_damage_formula"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "belly_hunger_clock"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "natural_hp_regen"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "status_conditions"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "thrown_projectiles"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "dungeon_weather"
+        }
+      ],
+      "requires": [
+        "combatant state",
+        "legal actions",
+        "damage and resource rules"
+      ],
+      "exposes": [
+        "damage events",
+        "resource expenditure",
+        "win or loss"
+      ],
+      "conflicts": [
+        {
+          "when": "Real-time field action meets a turn-based battle system.",
+          "issue": "Input cadence and simultaneous enemy updates disagree.",
+          "bridge": "Create an explicit encounter boundary, freeze the field and restore its state after battle."
+        }
+      ],
+      "bridge_options": [
+        "Share attack types across real-time and turn-based attacks.",
+        "Preserve the source damage rules while declaring a smaller supported move/effect set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#dungeon_damage_formula",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_damage.c:CalcDamage",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_config.c:gTypeEffectivenessChart",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_config.c:gEffectivenessChart",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_config.c:gDefStatStageMultipliers",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#belly_hunger_clock",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_turn_effects.c:DoEndOfTurnEffects_Async",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_config.c:gBellyGoDownValues",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_damage.c:CalcDamage",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#natural_hp_regen",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_turn_effects.c:TickStatusAndHealthRegen",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#status_conditions",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_turn_effects.c:TickStatusAndHealthRegen",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_config.c:gConfusionTurnRange",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_logic.c:CannotAttack",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#thrown_projectiles",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_projectile_throw.c",
+              "confidence": 0.6,
+              "note": "file located; throw logic summarised from subagent reads of dungeon_action_handler.c and dungeon_config.c"
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_config.c:gStickPPValue",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#dungeon_weather",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/weather.c:GetApparentWeather",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_turn_effects.c:DoEndOfTurnEffects_Async",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_config.c:gSynthesisHealValueByWeather",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-mystery-dungeon-red-rescue-team:ai",
+      "label": "A partner that can be directed",
+      "slot": "ai",
+      "effect": "Separate ally tactics from enemy sight/chase/wander, and filter weighted move/item choices through target conditions.",
+      "flavor": "A rescue partnership turns each dungeon step into a team decision.",
+      "knobs": [
+        {
+          "name": "information_budget",
+          "meaning": "Choose visible versus privileged state.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "decision_cadence",
+          "meaning": "Separate every-frame reactions from slower objective decisions.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "ally_follow_and_tactics_ai"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "enemy_chase_and_wander_ai"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "monster_ai_pipeline"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "ai_move_selection"
+        }
+      ],
+      "requires": [
+        "observed state contract",
+        "legal actions",
+        "update cadence"
+      ],
+      "exposes": [
+        "chosen action",
+        "target",
+        "decision reason"
+      ],
+      "conflicts": [
+        {
+          "when": "An AI reads hidden battle state but the desired bot sees only screenshots.",
+          "issue": "The policy would gain information unavailable in the target interface.",
+          "bridge": "Expose a typed observation adapter and declare privileged versus visible fields."
+        }
+      ],
+      "bridge_options": [
+        "Use deterministic rules for supported choices; escalate ambiguous goals to an LLM.",
+        "Keep enemy AI and external playtester policies as separate components."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#ally_follow_and_tactics_ai",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_ai_leader.c:TargetLeader",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/pokemon_3.c:TacticsTargetLeader",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_ai_movement.c:AIMovement",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/strings.c:gTacticsNames",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#enemy_chase_and_wander_ai",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_ai_movement.c:ChooseTargetPosition",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_ai_movement.c:Wander",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_ai_movement.c:DecideMovement",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_logic.c:IsAtJunction",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#monster_ai_pipeline",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_ai.c:RunMonsterAI",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/status_checks.c:HasStatusThatPreventsActing",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#ai_move_selection",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_ai_attack.c:ChooseAIMove",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_ai_attack.c:AIConsiderMove",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_ai_attack.c:WeightMove",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-mystery-dungeon-red-rescue-team:progression",
+      "label": "Generate a rescue run with an exit",
+      "slot": "progression",
+      "effect": "Build rooms and repaired hallways, place reachable stairs, add authored boss floors and attach rescue jobs/ranks to successful returns.",
+      "flavor": "A rescue partnership turns each dungeon step into a team decision.",
+      "knobs": [
+        {
+          "name": "persistence",
+          "meaning": "Choose session, checkpoint, room or save lifetime.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "unlock_meaning",
+          "meaning": "Choose capability, inventory key or event prerequisite.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "floor_generation_pipeline"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "hallway_connectivity"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "spawn_placement"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "fixed_rooms_and_boss_floors"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "rescue_job_board"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "rescue_rank"
+        }
+      ],
+      "requires": [
+        "persistent state",
+        "gate or objective predicates",
+        "reward events"
+      ],
+      "exposes": [
+        "unlocked route",
+        "completion state",
+        "new capability"
+      ],
+      "conflicts": [
+        {
+          "when": "A key consumable is substituted for a permanent capability.",
+          "issue": "Backtracking and recoverability can change even if the first door opens.",
+          "bridge": "Choose explicitly between persistent ability ownership and per-door key consumption."
+        }
+      ],
+      "bridge_options": [
+        "Keep source gate semantics and reskin their fiction.",
+        "Connect battle rewards to traversal capabilities through a named unlock rule."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#floor_generation_pipeline",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_generation.c:GenerateFloor",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_generation.c:StairsAlwaysReachable",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_generation.c:FinalizeJunctions",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_generation.c:GenerateSecondaryTerrainFormations",
+              "confidence": 0.6,
+              "note": "matching build keeps this as inline asm; summary from the header comment and the NONMATCHING C variant"
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_random.c:DungeonRandRange",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#hallway_connectivity",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_generation.c:AssignGridCellConnections",
+              "confidence": 0.95,
+              "note": "decomp comment documents a validity-check bug (always checks the right-hand cell) that makes generation occasionally inconsistent for the same seed"
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_generation.c:CreateHallway",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_generation.c:EnsureConnectedGrid",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_generation.c:GenerateExtraHallways",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#spawn_placement",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_generation.c:SpawnNonEnemies",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_generation.c:SpawnEnemies",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_generation.c:ShuffleSpawnPositions",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#fixed_rooms_and_boss_floors",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_generation.c:ProcessFixedRoom",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:include/constants/fixed_rooms.h:FixedRoomID",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#rescue_job_board",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/code_80958E8.c:GenerateMailJobInfo",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/code_803C1B4.c:sub_803C1B4",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_jobs.c",
+              "confidence": 0.7
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/mission_reward.c",
+              "confidence": 0.75
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/code_80958E8.c:sub_8096BD0",
+              "confidence": 0.8,
+              "note": "on a lost run, jobs in the in-progress/done states are reset"
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#rescue_rank",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/rescue_team_info.c:GetRescueTeamRank",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-mystery-dungeon-red-rescue-team:story",
+      "label": "A community between risky expeditions",
+      "slot": "story",
+      "effect": "Scenario flags open new jobs and functions; ground scripts coordinate partners, portraits and town-story beats.",
+      "flavor": "A rescue partnership turns each dungeon step into a team decision.",
+      "knobs": [
+        {
+          "name": "beat_graph",
+          "meaning": "Choose prerequisites and resulting world-state changes.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "delivery",
+          "meaning": "Choose scene, dialogue, environmental cue or playable sequence.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "story_scenario_flags"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "ground_script_engine"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "portrait_dialogue"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "pokemon_world_setting"
+        }
+      ],
+      "requires": [
+        "event/state flags",
+        "actor and dialogue staging"
+      ],
+      "exposes": [
+        "story milestone",
+        "new objective",
+        "changed world state"
+      ],
+      "conflicts": [
+        {
+          "when": "Two plots both assume exclusive control of campaign milestones.",
+          "issue": "Their original sequence prerequisites may deadlock or contradict each other.",
+          "bridge": "Map selected beats onto one explicit milestone graph; preserve required predecessors."
+        }
+      ],
+      "bridge_options": [
+        "Borrow a beat pattern such as rescue then gift without copying dialogue.",
+        "Treat a vulnerable chapter as a temporary controller/resource contract."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#story_scenario_flags",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/event_flag.c",
+              "confidence": 0.6,
+              "note": "CheckQuest thresholds per delegated read"
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/ground_main.c:xxx_script_related_8098468_Async",
+              "confidence": 0.75
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#ground_script_engine",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/ground_script.c:ExecuteScriptCommand",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:include/data_script.h",
+              "confidence": 0.75
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#portrait_dialogue",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:include/constants/emotions.h",
+              "confidence": 0.85
+            },
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:f003062, f002942 (text on black), f004330 (textbox with choice menu)",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#pokemon_world_setting",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "llm_knowledge",
+              "ref": "plot and setting summary",
+              "confidence": 0.6
+            },
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:f003062 (\"portal that leads to the world of Pokemon\"), f002792 (Charmander, Bulbasaur, Pelipper)",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-mystery-dungeon-red-rescue-team:presentation",
+      "label": "Friendly portraits beside consequential turns",
+      "slot": "presentation",
+      "effect": "Emotional species portraits and a readable message log soften a dungeon system whose hunger and defeat losses matter.",
+      "flavor": "A rescue partnership turns each dungeon step into a team decision.",
+      "knobs": [
+        {
+          "name": "feedback_density",
+          "meaning": "Balance HUD information against scene readability.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "render_budget",
+          "meaning": "Choose palette, animation and layer costs for the target runtime.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "portrait_dialogue"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "message_log_and_map"
+        },
+        {
+          "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+          "component_id": "dungeon_hud_and_controls"
+        }
+      ],
+      "requires": [
+        "camera/projection contract",
+        "asset/palette budget",
+        "rendering clock"
+      ],
+      "exposes": [
+        "legible feedback",
+        "scene transitions",
+        "audio cues"
+      ],
+      "conflicts": [
+        {
+          "when": "Different projections share the same screen without a transition rule.",
+          "issue": "Objects can appear to occupy incompatible coordinate spaces.",
+          "bridge": "Use separate scenes/modes or define one consistent projection adapter."
+        }
+      ],
+      "bridge_options": [
+        "Keep source rendering while adding a separate battle mode.",
+        "Translate atmosphere into a coherent new palette and motif set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#portrait_dialogue",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:include/constants/emotions.h",
+              "confidence": 0.85
+            },
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:f003062, f002942 (text on black), f004330 (textbox with choice menu)",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#message_log_and_map",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_message_log.c",
+              "confidence": 0.75
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_map.c",
+              "confidence": 0.75
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml#dungeon_hud_and_controls",
+          "canonical_file_sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_main.c:DungeonHandlePlayerInput",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "pmd-red:src/dungeon_tilemap.c:sub_803FB74",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-mystery-dungeon-red-rescue-team:setting",
+      "label": "A concrete place, not just a genre",
+      "slot": "setting",
+      "effect": "A naming confirmation precedes a flower-lined clearing where two creature sprites share the scene; level, HP and belly appear in the HUD.",
+      "flavor": "A rescue partnership turns each dungeon step into a team decision.",
+      "knobs": [
+        {
+          "name": "scale",
+          "meaning": "Choose the world and object scale relationship.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "motif_palette",
+          "meaning": "Choose which observed motifs define the adaptation.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "world/content vocabulary"
+      ],
+      "exposes": [
+        "region identities",
+        "spatial motifs"
+      ],
+      "conflicts": [
+        {
+          "when": "Two settings imply different world scales or technologies.",
+          "issue": "Literal asset mixing can obscure the intended place.",
+          "bridge": "Choose a unifying art/world rule and map each motif into it."
+        }
+      ],
+      "bridge_options": [
+        "Retain mechanics while authoring original scenery.",
+        "Make a deliberate crossing between region styles rather than random per-object mixing."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/pokemon-mystery-dungeon-red-rescue-team/gameplay/keyframes/f005097_scene.png",
+            "local/captures-experiments/20261016-current-scripts/pokemon-mystery-dungeon-red-rescue-team/gameplay/keyframes/f014492_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "pokemon-mystery-dungeon-red-rescue-team:tone",
+      "label": "Emotional register",
+      "slot": "tone",
+      "effect": "Warm companionship, vulnerability, colorful wilderness. This is a reading of the retained scenes, not a complete tone audit.",
+      "flavor": "A rescue partnership turns each dungeon step into a team decision.",
+      "knobs": [
+        {
+          "name": "contrast",
+          "meaning": "Decide where tonal contrast is intentional.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "pacing",
+          "meaning": "Choose recovery versus pressure intervals.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "editorial direction",
+        "consistent audiovisual treatment"
+      ],
+      "exposes": [
+        "emotional register",
+        "contrast between scenes"
+      ],
+      "conflicts": [
+        {
+          "when": "Comic reactions and horror tension occur in the same scene.",
+          "issue": "Their feedback can cancel the intended emotional effect.",
+          "bridge": "Assign tones to acts, regions or feedback layers, with a deliberate transition."
+        }
+      ],
+      "bridge_options": [
+        "Use tonal contrast as a story beat.",
+        "Borrow pacing or vulnerability without copying character identities."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/pokemon-mystery-dungeon-red-rescue-team/gameplay/keyframes/f005097_scene.png",
+            "local/captures-experiments/20261016-current-scripts/pokemon-mystery-dungeon-red-rescue-team/gameplay/keyframes/f014492_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    }
+  ],
+  "story": {
+    "beats": [
+      {
+        "id": "retained_scene",
+        "description": "A naming confirmation precedes a flower-lined clearing where two creature sprites share the scene; level, HP and belly appear in the HUD.",
+        "status": "observed_scene_without_causal_order_claim",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/pokemon-mystery-dungeon-red-rescue-team/gameplay/keyframes/f005097_scene.png",
+              "local/captures-experiments/20261016-current-scripts/pokemon-mystery-dungeon-red-rescue-team/gameplay/keyframes/f014492_scene.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      },
+      {
+        "id": "premise_candidate",
+        "description": "Becoming a creature leads to rescue work, a community and escalating disasters.",
+        "status": "model_prior_unverified",
+        "evidence": [
+          {
+            "kind": "model_prior_unverified",
+            "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+            "confidence": 0.35,
+            "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+          }
+        ]
+      }
+    ],
+    "delivery": [
+      {
+        "description": "Observed scene/GUI staging; specific source script and dialogue links are below when available.",
+        "status": "observed_partial",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/pokemon-mystery-dungeon-red-rescue-team/gameplay/keyframes/f005097_scene.png",
+              "local/captures-experiments/20261016-current-scripts/pokemon-mystery-dungeon-red-rescue-team/gameplay/keyframes/f014492_scene.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      }
+    ],
+    "gaps": [
+      "Two retained scenes do not establish the complete narrative or player agency.",
+      "Resolve beat prerequisites, event flags, dialogue text and ending variants from source."
+    ]
+  },
+  "coverage": {
+    "status": "partial",
+    "depth": "source_partial",
+    "canonical_component_count": 57,
+    "canonical_facets": [
+      "ai",
+      "audio",
+      "camera",
+      "economy",
+      "frontend",
+      "mechanics",
+      "movement_physics",
+      "narrative_delivery",
+      "progression",
+      "projection",
+      "rendering",
+      "setting",
+      "ui_hud"
+    ],
+    "source_supported_piece_count": 6,
+    "missing": [
+      "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+      "Complete plot/event dependency graph",
+      "Calibrated user skill and strategy evidence",
+      "Full asset-to-source/address reuse catalogue"
+    ],
+    "granular_records_not_summarized": [
+      {
+        "component_id": "game_mode_flow",
+        "label": "Ground-dungeon dispatcher driven by script return codes",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "boot_and_title",
+        "label": "Warning, logo, attract intro and randomised title screen",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "personality_quiz",
+        "label": "Personality quiz as character creation (nature to starter species)",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "save_and_quicksave",
+        "label": "Duplicated flash save plus consumable in-dungeon quicksave",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "dungeon_tile_renderer",
+        "label": "Mode-0 dungeon renderer with 24 px metatiles streamed into BG3",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "window_hdma_vision",
+        "label": "Per-scanline WIN0H/WIN1H via HBlank DMA for text-box shapes and darkness vision",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "ground_mode_renderer",
+        "label": "Overworld (ground) maps from chunked BG data with scripted actors",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "leader_lock_camera",
+        "label": "Hard-locked leader camera on the tile grid",
+        "facet": "camera"
+      },
+      {
+        "component_id": "top_down_tile_projection",
+        "label": "Top-down (slightly oblique) tile grid",
+        "facet": "projection"
+      },
+      {
+        "component_id": "m4a_sound_engine",
+        "label": "MP2K/m4a sequencer at 18,157 Hz with priority-overridden dungeon music",
+        "facet": "audio"
+      },
+      {
+        "component_id": "floor_grid_room_layout",
+        "label": "Grid-of-cells room placement for procedural dungeon floors",
+        "facet": "progression"
+      },
+      {
+        "component_id": "special_rooms_generation",
+        "label": "Monster house, Kecleon shop, maze and secondary-structure room variants",
+        "facet": "progression"
+      },
+      {
+        "component_id": "floor_layout_presets",
+        "label": "Per-floor layout archetypes and FloorProperties parameter record",
+        "facet": "progression"
+      },
+      {
+        "component_id": "floor_turn_limit_wind",
+        "label": "Per-floor turn limit enforced by an escalating \"wind\" ejection",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "faint_and_item_loss",
+        "label": "Run failure rule - leader faint loses money, held items and half the bag",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "wild_respawn_and_monster_house",
+        "label": "Periodic wild respawns and ambush monster houses",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "ai_item_use",
+        "label": "Probability-table item use and throwing by AI",
+        "facet": "ai"
+      },
+      {
+        "component_id": "flee_behaviour",
+        "label": "Flee to the farthest room exit",
+        "facet": "ai"
+      },
+      {
+        "component_id": "iq_skill_system",
+        "label": "IQ points unlocking passive skills (gummi-fed)",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "items_and_inventory",
+        "label": "20-slot shared team bag, held items, stacking throwables and sticky items",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "trap_system",
+        "label": "Hidden floor traps with 20 effects",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "kecleon_shop_and_theft",
+        "label": "In-dungeon Kecleon shop with pay-on-exit and thief state",
+        "facet": "economy"
+      },
+      {
+        "component_id": "money_and_shops",
+        "label": "Poke currency, town shops and service prices",
+        "facet": "economy"
+      },
+      {
+        "component_id": "storage_and_bank",
+        "label": "Kangaskhan storage and Persian bank as defeat-proof stores",
+        "facet": "economy"
+      },
+      {
+        "component_id": "dungeon_floor_descent",
+        "label": "Multi-floor mystery dungeons with stairs and per-dungeon rule sets",
+        "facet": "progression"
+      },
+      {
+        "component_id": "team_leader_and_party",
+        "label": "Player-controlled leader with up to three AI partners (body-size budget)",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "recruitment_roll",
+        "label": "Defeat-to-recruit roll gated by friend-area ownership",
+        "facet": "progression"
+      },
+      {
+        "component_id": "friend_areas",
+        "label": "Purchasable friend areas as recruitment licences and roster storage",
+        "facet": "progression"
+      },
+      {
+        "component_id": "leveling_and_evolution",
+        "label": "Shared full exp per KO, levels to 100, story-gated evolution",
+        "facet": "progression"
+      },
+      {
+        "component_id": "wonder_mail_passwords",
+        "label": "Wonder Mail 24-character job passwords",
+        "facet": "progression"
+      },
+      {
+        "component_id": "friend_rescue_mail",
+        "label": "Asynchronous friend rescue via SOS / A-OK / Thank-You passwords or link",
+        "facet": "progression"
+      },
+      {
+        "component_id": "boss_and_legendary_encounters",
+        "label": "Boss floors and legendary encounters at dungeon ends",
+        "facet": "progression"
+      }
+    ],
+    "not_claimed": [
+      "All mechanics extracted",
+      "Full ROM decompiled",
+      "Complete plot recovered",
+      "Every proposed bundle assembled or playtested"
+    ]
+  },
+  "provenance": {
+    "recorded_at": "2026-10-16T06:22:36.193456+00:00",
+    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "rom_sha1": "9f4cfc5b5f4859d17169a485462e977c7aac2b89",
+    "canonical": {
+      "kind": "canonical_ontology",
+      "ref": "ontology/games/pokemon-mystery-dungeon-red-rescue-team.yaml",
+      "sha256": "a04c5e0c2e0f71947e20f876977629d979fe7ad5e7f9a0a45b74ab0fb539909f",
+      "scope": "Existing component extraction; inherited evidence and limitations, not a fresh independent verification."
+    },
+    "source_repositories": [
+      {
+        "path": "local/decomps/pmd-red",
+        "commit": "013475aa04f5be3191e5527c186d9bfceae7cae0",
+        "source_dirty": true,
+        "file_counts": {
+          ".bin": 283,
+          ".c": 715,
+          ".h": 1135,
+          ".inc": 131,
+          ".pal": 212,
+          ".png": 35382,
+          ".s": 827
+        },
+        "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+      }
+    ],
+    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "capture_run_id": "20261016T004328-0e248f",
+    "capture_frame_sha256": {
+      "local/captures-experiments/20261016-current-scripts/pokemon-mystery-dungeon-red-rescue-team/gameplay/keyframes/f005097_scene.png": "7c59dfde2020cd2449690e533d76d40acad8f4a7bd6b40eab82089f360aa6710",
+      "local/captures-experiments/20261016-current-scripts/pokemon-mystery-dungeon-red-rescue-team/gameplay/keyframes/f014492_scene.png": "e73befce1490f7fff22f130d99fa5646566e3e865072f2dd727d3115330c11ed"
+    },
+    "source_inspection_notes": "Canonical component evidence is inherited; direct new source story anchors, when present, are marked separately."
+  }
+}

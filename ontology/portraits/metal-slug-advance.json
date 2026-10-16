@@ -1,0 +1,522 @@
+{
+  "schema_version": 1,
+  "game_id": "metal-slug-advance",
+  "title": "Metal Slug Advance",
+  "identity": {
+    "tagline": "An expressive military action scene fills a side-scrolling jungle.",
+    "categories": [
+      "run and gun",
+      "action platformer"
+    ],
+    "view": {
+      "label": "side view",
+      "status": "observed_or_source_backed_presentation",
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f002888_scene.png",
+            "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f005374_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ]
+    },
+    "vibe": [
+      "cartoon military",
+      "dense jungle",
+      "kinetic"
+    ],
+    "vibe_status": "editorial_interpretation_of_observed_scenes",
+    "grounded_examples": [
+      "Armed soldiers occupy a layered jungle trench under a LIFE and ammunition HUD."
+    ],
+    "gameplay_prior": {
+      "text": "Run, jump, shoot and collect weapons or vehicles through mission stages.",
+      "status": "model_prior_unverified_unless_piece_links_source"
+    },
+    "evidence": [
+      {
+        "kind": "capture_contact_sheet_inspection",
+        "refs": [
+          "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f002888_scene.png",
+          "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f005374_scene.png"
+        ],
+        "confidence": 0.85,
+        "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+      }
+    ],
+    "category_basis": "Editorial taxonomy from mixed source, observed scenes and explicitly unverified prior; categories are not proof of implemented or extracted rules.",
+    "tagline_status": "editorial_summary_mixed_evidence"
+  },
+  "pieces": [
+    {
+      "id": "metal-slug-advance:movement_view",
+      "label": "Spatial framing and controller candidate",
+      "slot": "movement_view",
+      "effect": "Observed framing: side view. Candidate rules, not verified mechanics: Run, jump, shoot and collect weapons or vehicles through mission stages.",
+      "flavor": "An expressive military action scene fills a side-scrolling jungle.",
+      "knobs": [
+        {
+          "name": "perspective",
+          "meaning": "Keep or bridge the observed source view.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "cadence",
+          "meaning": "Choose frame updates, tile actions or mode transitions explicitly.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "world coordinates",
+        "collision or terrain rules",
+        "input semantics"
+      ],
+      "exposes": [
+        "position",
+        "facing",
+        "grounded or traversal state"
+      ],
+      "conflicts": [
+        {
+          "when": "A host uses tile turns but this controller uses continuous frame updates.",
+          "issue": "One input cannot mean both a whole turn and a physics tick.",
+          "bridge": "Keep a fixed simulation clock and convert a completed movement action into a turn event."
+        }
+      ],
+      "bridge_options": [
+        "Keep side-view stages and a top-down world as separate modes.",
+        "Use a shared height axis rather than interpreting northward movement as a jump."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f002888_scene.png",
+            "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f005374_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        },
+        {
+          "kind": "model_prior_unverified",
+          "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+          "confidence": 0.35,
+          "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+        }
+      ],
+      "status": "candidate_unverified",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metal-slug-advance:progression",
+      "label": "Journey and replay candidate",
+      "slot": "progression",
+      "effect": "Proposed high-level loop from unverified recall: Run, jump, shoot and collect weapons or vehicles through mission stages.",
+      "flavor": "An expressive military action scene fills a side-scrolling jungle.",
+      "knobs": [
+        {
+          "name": "persistence",
+          "meaning": "Choose session, checkpoint, room or save lifetime.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "unlock_meaning",
+          "meaning": "Choose capability, inventory key or event prerequisite.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "persistent state",
+        "gate or objective predicates",
+        "reward events"
+      ],
+      "exposes": [
+        "unlocked route",
+        "completion state",
+        "new capability"
+      ],
+      "conflicts": [
+        {
+          "when": "A key consumable is substituted for a permanent capability.",
+          "issue": "Backtracking and recoverability can change even if the first door opens.",
+          "bridge": "Choose explicitly between persistent ability ownership and per-door key consumption."
+        }
+      ],
+      "bridge_options": [
+        "Keep source gate semantics and reskin their fiction.",
+        "Connect battle rewards to traversal capabilities through a named unlock rule."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f002888_scene.png",
+            "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f005374_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        },
+        {
+          "kind": "model_prior_unverified",
+          "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+          "confidence": 0.35,
+          "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+        }
+      ],
+      "status": "candidate_unverified",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metal-slug-advance:setting",
+      "label": "A concrete place, not just a genre",
+      "slot": "setting",
+      "effect": "Armed soldiers occupy a layered jungle trench under a LIFE and ammunition HUD.",
+      "flavor": "An expressive military action scene fills a side-scrolling jungle.",
+      "knobs": [
+        {
+          "name": "scale",
+          "meaning": "Choose the world and object scale relationship.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "motif_palette",
+          "meaning": "Choose which observed motifs define the adaptation.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "world/content vocabulary"
+      ],
+      "exposes": [
+        "region identities",
+        "spatial motifs"
+      ],
+      "conflicts": [
+        {
+          "when": "Two settings imply different world scales or technologies.",
+          "issue": "Literal asset mixing can obscure the intended place.",
+          "bridge": "Choose a unifying art/world rule and map each motif into it."
+        }
+      ],
+      "bridge_options": [
+        "Retain mechanics while authoring original scenery.",
+        "Make a deliberate crossing between region styles rather than random per-object mixing."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f002888_scene.png",
+            "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f005374_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metal-slug-advance:story",
+      "label": "Story premise awaiting event extraction",
+      "slot": "story",
+      "effect": "Unverified premise: A military training or survival mission escalates into combat; exact scene order is unverified.",
+      "flavor": "An expressive military action scene fills a side-scrolling jungle.",
+      "knobs": [
+        {
+          "name": "beat_graph",
+          "meaning": "Choose prerequisites and resulting world-state changes.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "delivery",
+          "meaning": "Choose scene, dialogue, environmental cue or playable sequence.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "event/state flags",
+        "actor and dialogue staging"
+      ],
+      "exposes": [
+        "story milestone",
+        "new objective",
+        "changed world state"
+      ],
+      "conflicts": [
+        {
+          "when": "Two plots both assume exclusive control of campaign milestones.",
+          "issue": "Their original sequence prerequisites may deadlock or contradict each other.",
+          "bridge": "Map selected beats onto one explicit milestone graph; preserve required predecessors."
+        }
+      ],
+      "bridge_options": [
+        "Borrow a beat pattern such as rescue then gift without copying dialogue.",
+        "Treat a vulnerable chapter as a temporary controller/resource contract."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f002888_scene.png",
+            "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f005374_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        },
+        {
+          "kind": "model_prior_unverified",
+          "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+          "confidence": 0.35,
+          "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+        }
+      ],
+      "status": "candidate_unverified",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metal-slug-advance:presentation",
+      "label": "Visible style and feedback",
+      "slot": "presentation",
+      "effect": "Armed soldiers occupy a layered jungle trench under a LIFE and ammunition HUD.",
+      "flavor": "An expressive military action scene fills a side-scrolling jungle.",
+      "knobs": [
+        {
+          "name": "feedback_density",
+          "meaning": "Balance HUD information against scene readability.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "render_budget",
+          "meaning": "Choose palette, animation and layer costs for the target runtime.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "camera/projection contract",
+        "asset/palette budget",
+        "rendering clock"
+      ],
+      "exposes": [
+        "legible feedback",
+        "scene transitions",
+        "audio cues"
+      ],
+      "conflicts": [
+        {
+          "when": "Different projections share the same screen without a transition rule.",
+          "issue": "Objects can appear to occupy incompatible coordinate spaces.",
+          "bridge": "Use separate scenes/modes or define one consistent projection adapter."
+        }
+      ],
+      "bridge_options": [
+        "Keep source rendering while adding a separate battle mode.",
+        "Translate atmosphere into a coherent new palette and motif set."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f002888_scene.png",
+            "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f005374_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metal-slug-advance:tone",
+      "label": "Emotional register",
+      "slot": "tone",
+      "effect": "Cartoon military, dense jungle, kinetic. This is a reading of the retained scenes, not a complete tone audit.",
+      "flavor": "An expressive military action scene fills a side-scrolling jungle.",
+      "knobs": [
+        {
+          "name": "contrast",
+          "meaning": "Decide where tonal contrast is intentional.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "pacing",
+          "meaning": "Choose recovery versus pressure intervals.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "editorial direction",
+        "consistent audiovisual treatment"
+      ],
+      "exposes": [
+        "emotional register",
+        "contrast between scenes"
+      ],
+      "conflicts": [
+        {
+          "when": "Comic reactions and horror tension occur in the same scene.",
+          "issue": "Their feedback can cancel the intended emotional effect.",
+          "bridge": "Assign tones to acts, regions or feedback layers, with a deliberate transition."
+        }
+      ],
+      "bridge_options": [
+        "Use tonal contrast as a story beat.",
+        "Borrow pacing or vulnerability without copying character identities."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f002888_scene.png",
+            "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f005374_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    }
+  ],
+  "story": {
+    "beats": [
+      {
+        "id": "retained_scene",
+        "description": "Armed soldiers occupy a layered jungle trench under a LIFE and ammunition HUD.",
+        "status": "observed_scene_without_causal_order_claim",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f002888_scene.png",
+              "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f005374_scene.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      },
+      {
+        "id": "premise_candidate",
+        "description": "A military training or survival mission escalates into combat; exact scene order is unverified.",
+        "status": "model_prior_unverified",
+        "evidence": [
+          {
+            "kind": "model_prior_unverified",
+            "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+            "confidence": 0.35,
+            "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+          }
+        ]
+      }
+    ],
+    "delivery": [
+      {
+        "description": "Observed scene/GUI staging; specific source script and dialogue links are below when available.",
+        "status": "observed_partial",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f002888_scene.png",
+              "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f005374_scene.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      }
+    ],
+    "gaps": [
+      "Two retained scenes do not establish the complete narrative or player agency.",
+      "Resolve beat prerequisites, event flags, dialogue text and ending variants from source."
+    ]
+  },
+  "coverage": {
+    "status": "partial",
+    "depth": "helper_only",
+    "canonical_component_count": 7,
+    "canonical_facets": [
+      "mechanics"
+    ],
+    "source_supported_piece_count": 0,
+    "missing": [
+      "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+      "Complete plot/event dependency graph",
+      "Calibrated user skill and strategy evidence",
+      "Full asset-to-source/address reuse catalogue"
+    ],
+    "granular_records_not_summarized": [
+      {
+        "component_id": "paired_halfword_banks",
+        "label": "Write a pair of indexed halfword values",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "dual_indexed_field_clear",
+        "label": "Clear one halfword and one word in differently strided banks",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "packed_pair_bit_query",
+        "label": "Read one bit from an indexed packed halfword",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "monotone_bitset_insert",
+        "label": "Set a bit in a16-bit-word bitset",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "two_byte_stream_decode",
+        "label": "Consume two bytes into an indirect context",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "state_code_table_projection",
+        "label": "Project one raw state byte into two related fields",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "three_word_template_application",
+        "label": "Apply a ROM-selected three-word template",
+        "facet": "mechanics"
+      }
+    ],
+    "not_claimed": [
+      "All mechanics extracted",
+      "Full ROM decompiled",
+      "Complete plot recovered",
+      "Every proposed bundle assembled or playtested"
+    ]
+  },
+  "provenance": {
+    "recorded_at": "2026-10-16T06:22:36.193456+00:00",
+    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "rom_sha1": "067e1511ab6becf797f1bbd321a858e96a0349af",
+    "canonical": {
+      "kind": "canonical_ontology",
+      "ref": "ontology/games/metal-slug-advance.yaml",
+      "sha256": "51f0674343820876fab5f179381d9fcc262462cee6f9533bdc852501d6dce19e",
+      "scope": "Existing component extraction; inherited evidence and limitations, not a fresh independent verification."
+    },
+    "source_repositories": [],
+    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "capture_run_id": "20261016T004328-0e248f",
+    "capture_frame_sha256": {
+      "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f002888_scene.png": "6ce3de33f83c47bd63a49e8ed7e147c27263afe893691c69f15383790ab35a11",
+      "local/captures-experiments/20261016-current-scripts/metal-slug-advance/gameplay/keyframes/f005374_scene.png": "00d87fa738966e43657b071ca402fa479c501c241eef6100163f05ba8572ad2b"
+    },
+    "source_inspection_notes": "Canonical component evidence is inherited; direct new source story anchors, when present, are marked separately."
+  }
+}

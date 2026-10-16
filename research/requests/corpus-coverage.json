@@ -1,0 +1,1059 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-16T06:22:36.193456+00:00",
+  "scope": "All33 indexed USA/local ROM entries; design portraits are partial and evidence graded",
+  "rom_count": 33,
+  "portrait_count": 33,
+  "canonical_game_count": 19,
+  "source_supported_game_count": 15,
+  "no_new_campaigns": true,
+  "games": [
+    {
+      "game_id": "castlevania-aria-of-sorrow",
+      "title": "Castlevania: Aria of Sorrow",
+      "rom_sha1": "abd71fe01ebb201bcc133074db1dd8c5253776c7",
+      "portrait": "ontology/portraits/castlevania-aria-of-sorrow.json",
+      "depth": "source_partial",
+      "canonical_components": 39,
+      "source_supported_pieces": 5,
+      "piece_count": 7,
+      "source_repositories": [
+        {
+          "path": "local/decomps/cvaos",
+          "commit": "bc23d849d578c35ae12a5cec4e66549c3021a5be",
+          "source_dirty": false,
+          "file_counts": {
+            ".c": 38,
+            ".h": 73,
+            ".inc": 13,
+            ".s": 26
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        }
+      ],
+      "retained_rom_export": {
+        "present": false,
+        "path": null
+      },
+      "next_actions": [
+        "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "crash-bandicoot-the-huge-adventure",
+      "title": "Crash Bandicoot: The Huge Adventure",
+      "rom_sha1": "5a2651c78bb8a1d707e3c3af1f46fb64e2104198",
+      "portrait": "ontology/portraits/crash-bandicoot-the-huge-adventure.json",
+      "depth": "helper_only",
+      "canonical_components": 1,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/crash-bandicoot-the-huge-adventure/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "dragon-ball-advanced-adventure",
+      "title": "Dragon Ball: Advanced Adventure",
+      "rom_sha1": "1338584d8cfa57402603197e65d2e2ff0184d24f",
+      "portrait": "ontology/portraits/dragon-ball-advanced-adventure.json",
+      "depth": "scene_and_prior_only",
+      "canonical_components": 0,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/dragon-ball-advanced-adventure/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "driv3r",
+      "title": "Driv3r",
+      "rom_sha1": "df2238fc239bdd0226a1b39deef06fa521eae48e",
+      "portrait": "ontology/portraits/driv3r.json",
+      "depth": "scene_and_prior_only",
+      "canonical_components": 0,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/driv3r/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "final-fantasy-i-and-ii-dawn-of-souls",
+      "title": "Final Fantasy I & II: Dawn of Souls",
+      "rom_sha1": "6472695d69661490f78245e2982e1e676c080be7",
+      "portrait": "ontology/portraits/final-fantasy-i-and-ii-dawn-of-souls.json",
+      "depth": "scene_and_prior_only",
+      "canonical_components": 0,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/final-fantasy-i-and-ii-dawn-of-souls/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "final-fantasy-tactics-advance",
+      "title": "Final Fantasy Tactics Advance",
+      "rom_sha1": "4ac05441f4de70a4ec3dd932116346c61b8783d9",
+      "portrait": "ontology/portraits/final-fantasy-tactics-advance.json",
+      "depth": "source_partial",
+      "canonical_components": 23,
+      "source_supported_pieces": 5,
+      "piece_count": 7,
+      "source_repositories": [
+        {
+          "path": "local/decomps/ffta-decomp",
+          "commit": "7f0e9ad222eb7b04f7c87beeefa36965a6e5d476",
+          "source_dirty": false,
+          "file_counts": {
+            ".c": 144,
+            ".h": 39,
+            ".s": 49
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        }
+      ],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-c/final-fantasy-tactics-advance/functions.jsonl"
+      },
+      "next_actions": [
+        "Tactical movement, action resolution, laws and complete story script semantics are not recovered by ability-property helpers",
+        "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+        "Complete plot/event dependency graph"
+      ]
+    },
+    {
+      "game_id": "final-fantasy-vi-advance",
+      "title": "Final Fantasy VI Advance",
+      "rom_sha1": "e9a2a58bc56ace26cb56d0cf5cdad1a10aa5dedf",
+      "portrait": "ontology/portraits/final-fantasy-vi-advance.json",
+      "depth": "scene_and_prior_only",
+      "canonical_components": 0,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/final-fantasy-vi-advance/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "grand-theft-auto",
+      "title": "Grand Theft Auto Advance",
+      "rom_sha1": "742fc0062ad930253ffea449953061381577649e",
+      "portrait": "ontology/portraits/grand-theft-auto.json",
+      "depth": "scene_and_prior_only",
+      "canonical_components": 0,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/grand-theft-auto/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "kingdom-hearts-chain-of-memories",
+      "title": "Kingdom Hearts: Chain of Memories",
+      "rom_sha1": "10729bd884f8fdca7a310b6d606c52e46657aa48",
+      "portrait": "ontology/portraits/kingdom-hearts-chain-of-memories.json",
+      "depth": "source_partial",
+      "canonical_components": 60,
+      "source_supported_pieces": 6,
+      "piece_count": 8,
+      "source_repositories": [
+        {
+          "path": "local/decomps/khcom",
+          "commit": "5dc49b75068bfe24e07bdaf365570d64682680c3",
+          "source_dirty": false,
+          "file_counts": {
+            ".c": 269,
+            ".h": 274,
+            ".inc": 200,
+            ".s": 7
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        }
+      ],
+      "retained_rom_export": {
+        "present": false,
+        "path": null
+      },
+      "next_actions": [
+        "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "kirby-and-the-amazing-mirror",
+      "title": "Kirby & the Amazing Mirror",
+      "rom_sha1": "274b102b6d940f46861a92b4e65f89a51815c12c",
+      "portrait": "ontology/portraits/kirby-and-the-amazing-mirror.json",
+      "depth": "scene_and_prior_only",
+      "canonical_components": 0,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-and-the-amazing-mirror/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "kirby-nightmare-in-dream-land",
+      "title": "Kirby: Nightmare in Dream Land",
+      "rom_sha1": "37a476567d133c146fee6b5e2eb0b07a215da6b0",
+      "portrait": "ontology/portraits/kirby-nightmare-in-dream-land.json",
+      "depth": "scene_and_prior_only",
+      "canonical_components": 0,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-nightmare-in-dream-land/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "legend-of-zelda-the-a-link-to-the-past-and-four-swords",
+      "title": "The Legend of Zelda: A Link to the Past & Four Swords",
+      "rom_sha1": "a272055abbbf6c26b0cd54c87395d01699589161",
+      "portrait": "ontology/portraits/legend-of-zelda-the-a-link-to-the-past-and-four-swords.json",
+      "depth": "scene_and_prior_only",
+      "canonical_components": 0,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/legend-of-zelda-the-a-link-to-the-past-and-four-swords/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "legend-of-zelda-the-the-minish-cap",
+      "title": "The Legend of Zelda: The Minish Cap",
+      "rom_sha1": "b4bd50e4131b027c334547b4524e2dbbd4227130",
+      "portrait": "ontology/portraits/legend-of-zelda-the-the-minish-cap.json",
+      "depth": "source_partial",
+      "canonical_components": 59,
+      "source_supported_pieces": 6,
+      "piece_count": 8,
+      "source_repositories": [
+        {
+          "path": "local/decomps/tmc",
+          "commit": "6fb6dfb4a7efbe24d0fd1dda5097af6131faacde",
+          "source_dirty": false,
+          "file_counts": {
+            ".c": 632,
+            ".h": 198,
+            ".inc": 592,
+            ".pal": 1,
+            ".png": 1,
+            ".s": 304
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        }
+      ],
+      "retained_rom_export": {
+        "present": false,
+        "path": null
+      },
+      "next_actions": [
+        "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "mario-and-luigi-superstar-saga",
+      "title": "Mario & Luigi: Superstar Saga",
+      "rom_sha1": "7c303cdde5061ee329296948060b875cb50ba410",
+      "portrait": "ontology/portraits/mario-and-luigi-superstar-saga.json",
+      "depth": "source_partial",
+      "canonical_components": 33,
+      "source_supported_pieces": 3,
+      "piece_count": 6,
+      "source_repositories": [
+        {
+          "path": "local/decomps/mlss",
+          "commit": "b03634c2c700a3ae78f39e576cc88a45c3a724fd",
+          "source_dirty": false,
+          "file_counts": {
+            ".c": 5,
+            ".h": 18,
+            ".inc": 1,
+            ".s": 16
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        },
+        {
+          "path": "local/decomps/MLSuperstarSaga",
+          "commit": "baae10311925d1f498ff0ad3c43a748b453be239",
+          "source_dirty": false,
+          "file_counts": {},
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        }
+      ],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-c/mario-and-luigi-superstar-saga/functions.jsonl"
+      },
+      "next_actions": [
+        "Two-brother traversal and timed combat are model-prior candidates; current extraction concentrates on frontend/presentation",
+        "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+        "Complete plot/event dependency graph"
+      ]
+    },
+    {
+      "game_id": "mario-kart-super-circuit",
+      "title": "Mario Kart: Super Circuit",
+      "rom_sha1": "9d327c030c3e2d9007990518594f70c3340ac56f",
+      "portrait": "ontology/portraits/mario-kart-super-circuit.json",
+      "depth": "source_partial",
+      "canonical_components": 23,
+      "source_supported_pieces": 3,
+      "piece_count": 6,
+      "source_repositories": [
+        {
+          "path": "local/decomps/mksc",
+          "commit": "3df8932105c91f8e9e1ad72801ea13ff74339fe1",
+          "source_dirty": false,
+          "file_counts": {
+            ".aif": 168,
+            ".bin": 6,
+            ".c": 23,
+            ".h": 36,
+            ".inc": 4,
+            ".s": 458
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        },
+        {
+          "path": "local/decomps/mksc-decompilation",
+          "commit": "31b953f0b9e297c83331071ecd6d84eb3445a96b",
+          "source_dirty": false,
+          "file_counts": {
+            ".4bpp": 2,
+            ".c": 14,
+            ".h": 24,
+            ".pal": 1,
+            ".png": 2,
+            ".s": 19
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        }
+      ],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-c/mario-kart-super-circuit/functions.jsonl"
+      },
+      "next_actions": [
+        "Kart handling, drifting, item effects and opponent racing policy remain largely unextracted",
+        "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+        "Complete plot/event dependency graph"
+      ]
+    },
+    {
+      "game_id": "megaman-zero",
+      "title": "Mega Man Zero",
+      "rom_sha1": "193b14120119162518a73c70876f0b8bffdbd96e",
+      "portrait": "ontology/portraits/megaman-zero.json",
+      "depth": "helper_only",
+      "canonical_components": 6,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/megaman-zero/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "metal-slug-advance",
+      "title": "Metal Slug Advance",
+      "rom_sha1": "067e1511ab6becf797f1bbd321a858e96a0349af",
+      "portrait": "ontology/portraits/metal-slug-advance.json",
+      "depth": "helper_only",
+      "canonical_components": 7,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/metal-slug-advance/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "metroid-fusion",
+      "title": "Metroid Fusion",
+      "rom_sha1": "ca33f4348c2c05dd330d37b97e2c5a69531dfe87",
+      "portrait": "ontology/portraits/metroid-fusion.json",
+      "depth": "source_partial",
+      "canonical_components": 69,
+      "source_supported_pieces": 6,
+      "piece_count": 8,
+      "source_repositories": [
+        {
+          "path": "local/decomps/mf",
+          "commit": "55b1a54bd20c0daf5a64859850b6ebc1322bf514",
+          "source_dirty": false,
+          "file_counts": {
+            ".c": 702,
+            ".h": 394,
+            ".inc": 1,
+            ".s": 677
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        }
+      ],
+      "retained_rom_export": {
+        "present": false,
+        "path": null
+      },
+      "next_actions": [
+        "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "title": "Metroid: Zero Mission",
+      "rom_sha1": "5de8536afe1f0078ee6fe1089f890e8c7aa0a6e8",
+      "portrait": "ontology/portraits/metroid-zero-mission.json",
+      "depth": "deep_partial",
+      "canonical_components": 55,
+      "source_supported_pieces": 7,
+      "piece_count": 8,
+      "source_repositories": [
+        {
+          "path": "local/decomps/mzm",
+          "commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+          "source_dirty": false,
+          "file_counts": {
+            ".c": 663,
+            ".h": 453,
+            ".inc": 34,
+            ".s": 664
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        },
+        {
+          "path": "local/decomps/gwimm-mzm",
+          "commit": "0b1d66a09e6b9f0beea41787eb57704edec9d071",
+          "source_dirty": false,
+          "file_counts": {
+            ".c": 2,
+            ".inc": 2,
+            ".s": 10
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        }
+      ],
+      "retained_rom_export": {
+        "present": false,
+        "path": null
+      },
+      "next_actions": [
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence",
+        "Full asset-to-source/address reuse catalogue"
+      ]
+    },
+    {
+      "game_id": "need-for-speed-underground",
+      "title": "Need for Speed: Underground",
+      "rom_sha1": "ddd304481617a748aa9f37535908a37452dd2f03",
+      "portrait": "ontology/portraits/need-for-speed-underground.json",
+      "depth": "scene_and_prior_only",
+      "canonical_components": 0,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/need-for-speed-underground/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "pokemon-emerald-version",
+      "title": "Pokémon Emerald Version",
+      "rom_sha1": "f3ae088181bf583e55daf962a92bb46f4f1d07b7",
+      "portrait": "ontology/portraits/pokemon-emerald-version.json",
+      "depth": "deep_partial",
+      "canonical_components": 62,
+      "source_supported_pieces": 7,
+      "piece_count": 8,
+      "source_repositories": [
+        {
+          "path": "local/decomps/pokeemerald",
+          "commit": "731ad5bfd6e6f265508d0efcca0ba42f9dcf5881",
+          "source_dirty": false,
+          "file_counts": {
+            ".bin": 1457,
+            ".c": 325,
+            ".h": 517,
+            ".inc": 794,
+            ".mid": 530,
+            ".pal": 2641,
+            ".png": 4076,
+            ".s": 21,
+            ".wav": 544
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        },
+        {
+          "path": "local/decomps/pokeemerald-jp",
+          "commit": "6806c3e507da87a883b437f048969a45b38250c8",
+          "source_dirty": false,
+          "file_counts": {
+            ".c": 16,
+            ".h": 38,
+            ".inc": 24,
+            ".s": 287
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        }
+      ],
+      "retained_rom_export": {
+        "present": false,
+        "path": null
+      },
+      "next_actions": [
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence",
+        "Full asset-to-source/address reuse catalogue"
+      ]
+    },
+    {
+      "game_id": "pokemon-firered-version",
+      "title": "Pokémon FireRed Version",
+      "rom_sha1": "dd5945db9b930750cb39d00c84da8571feebf417",
+      "portrait": "ontology/portraits/pokemon-firered-version.json",
+      "depth": "source_partial",
+      "canonical_components": 28,
+      "source_supported_pieces": 6,
+      "piece_count": 8,
+      "source_repositories": [
+        {
+          "path": "local/decomps/pokefirered",
+          "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+          "source_dirty": false,
+          "file_counts": {
+            ".bin": 1162,
+            ".c": 298,
+            ".h": 422,
+            ".inc": 811,
+            ".mid": 347,
+            ".pal": 2612,
+            ".png": 3154,
+            ".s": 20,
+            ".wav": 477
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        }
+      ],
+      "retained_rom_export": {
+        "present": false,
+        "path": null
+      },
+      "next_actions": [
+        "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "pokemon-leafgreen-version",
+      "title": "Pokémon LeafGreen Version",
+      "rom_sha1": "7862c67bdecbe21d1d69ce082ce34327e1c6ed5e",
+      "portrait": "ontology/portraits/pokemon-leafgreen-version.json",
+      "depth": "source_partial",
+      "canonical_components": 28,
+      "source_supported_pieces": 6,
+      "piece_count": 8,
+      "source_repositories": [
+        {
+          "path": "local/decomps/pokefirered",
+          "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+          "source_dirty": false,
+          "file_counts": {
+            ".bin": 1162,
+            ".c": 298,
+            ".h": 422,
+            ".inc": 811,
+            ".mid": 347,
+            ".pal": 2612,
+            ".png": 3154,
+            ".s": 20,
+            ".wav": 477
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        }
+      ],
+      "retained_rom_export": {
+        "present": false,
+        "path": null
+      },
+      "next_actions": [
+        "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+      "title": "Pokémon Mystery Dungeon: Red Rescue Team",
+      "rom_sha1": "9f4cfc5b5f4859d17169a485462e977c7aac2b89",
+      "portrait": "ontology/portraits/pokemon-mystery-dungeon-red-rescue-team.json",
+      "depth": "source_partial",
+      "canonical_components": 57,
+      "source_supported_pieces": 6,
+      "piece_count": 8,
+      "source_repositories": [
+        {
+          "path": "local/decomps/pmd-red",
+          "commit": "013475aa04f5be3191e5527c186d9bfceae7cae0",
+          "source_dirty": true,
+          "file_counts": {
+            ".bin": 283,
+            ".c": 715,
+            ".h": 1135,
+            ".inc": 131,
+            ".pal": 212,
+            ".png": 35382,
+            ".s": 827
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        }
+      ],
+      "retained_rom_export": {
+        "present": false,
+        "path": null
+      },
+      "next_actions": [
+        "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "pokemon-ruby-version",
+      "title": "Pokémon Ruby Version",
+      "rom_sha1": "5b64eacf892920518db4ec664e62a086dd5f5bc8",
+      "portrait": "ontology/portraits/pokemon-ruby-version.json",
+      "depth": "source_partial",
+      "canonical_components": 26,
+      "source_supported_pieces": 6,
+      "piece_count": 8,
+      "source_repositories": [
+        {
+          "path": "local/decomps/pokeruby",
+          "commit": "5784633ce4ef7ade1a7f2d2d0c288e3d5e6cdd7f",
+          "source_dirty": false,
+          "file_counts": {
+            ".bin": 1088,
+            ".c": 367,
+            ".h": 438,
+            ".inc": 1069,
+            ".mid": 417,
+            ".pal": 2057,
+            ".png": 3265,
+            ".s": 33,
+            ".wav": 506
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        }
+      ],
+      "retained_rom_export": {
+        "present": false,
+        "path": null
+      },
+      "next_actions": [
+        "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "prince-of-persia-the-sands-of-time",
+      "title": "Prince of Persia: The Sands of Time",
+      "rom_sha1": "3f379cd2e598ca69ba68649c81cf425ed284ae27",
+      "portrait": "ontology/portraits/prince-of-persia-the-sands-of-time.json",
+      "depth": "helper_only",
+      "canonical_components": 7,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/prince-of-persia-the-sands-of-time/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "shaman-king-master-of-spirits",
+      "title": "Shaman King: Master of Spirits",
+      "rom_sha1": "4a0fecdf90055fe1934b54d10e47b46ac399aecd",
+      "portrait": "ontology/portraits/shaman-king-master-of-spirits.json",
+      "depth": "scene_and_prior_only",
+      "canonical_components": 0,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/shaman-king-master-of-spirits/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "title": "Sonic Advance",
+      "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+      "portrait": "ontology/portraits/sonic-advance.json",
+      "depth": "source_partial",
+      "canonical_components": 51,
+      "source_supported_pieces": 6,
+      "piece_count": 8,
+      "source_repositories": [
+        {
+          "path": "local/decomps/sa2",
+          "commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+          "source_dirty": false,
+          "file_counts": {
+            ".aif": 470,
+            ".bin": 99,
+            ".c": 955,
+            ".h": 485,
+            ".inc": 284,
+            ".mid": 474,
+            ".pal": 1716,
+            ".png": 12118,
+            ".s": 65
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        }
+      ],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-c/sonic-advance/functions.jsonl"
+      },
+      "next_actions": [
+        "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "super-mario-advance",
+      "title": "Super Mario Advance",
+      "rom_sha1": "f071d45d8f5cb05b48d7d2b804c6cb6a79ad96fb",
+      "portrait": "ontology/portraits/super-mario-advance.json",
+      "depth": "scene_and_prior_only",
+      "canonical_components": 0,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/super-mario-advance/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "super-mario-advance-2-super-mario-world",
+      "title": "Super Mario Advance 2: Super Mario World",
+      "rom_sha1": "5101ddf223d1d918928fe1f306b63a42ada14a5e",
+      "portrait": "ontology/portraits/super-mario-advance-2-super-mario-world.json",
+      "depth": "scene_and_prior_only",
+      "canonical_components": 0,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/super-mario-advance-2-super-mario-world/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "super-mario-advance-4-super-mario-bros-3",
+      "title": "Super Mario Advance 4: Super Mario Bros.3",
+      "rom_sha1": "69e81f41394f02d64cad206adb26b3cd43690770",
+      "portrait": "ontology/portraits/super-mario-advance-4-super-mario-bros-3.json",
+      "depth": "scene_and_prior_only",
+      "canonical_components": 0,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/super-mario-advance-4-super-mario-bros-3/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "tekken-advance",
+      "title": "Tekken Advance",
+      "rom_sha1": "8b21cd57cacf172f963dfc7ead4fa127a8a63870",
+      "portrait": "ontology/portraits/tekken-advance.json",
+      "depth": "scene_and_prior_only",
+      "canonical_components": 0,
+      "source_supported_pieces": 0,
+      "piece_count": 6,
+      "source_repositories": [],
+      "retained_rom_export": {
+        "present": true,
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/tekken-advance/functions.jsonl"
+      },
+      "next_actions": [
+        "Player-facing movement, combat and progression source semantics; helpers do not establish these",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    },
+    {
+      "game_id": "wario-land-4",
+      "title": "Wario Land 4",
+      "rom_sha1": "b9fe05a8080e124b67bce6a623234ee3b518a2c1",
+      "portrait": "ontology/portraits/wario-land-4.json",
+      "depth": "source_partial",
+      "canonical_components": 42,
+      "source_supported_pieces": 6,
+      "piece_count": 8,
+      "source_repositories": [
+        {
+          "path": "local/decomps/warioland4",
+          "commit": "abb7800a8d8fa6d7f7f003627893e06bc2879329",
+          "source_dirty": false,
+          "file_counts": {
+            ".c": 35,
+            ".h": 143,
+            ".inc": 4,
+            ".s": 151
+          },
+          "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+        }
+      ],
+      "retained_rom_export": {
+        "present": false,
+        "path": null
+      },
+      "next_actions": [
+        "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+        "Complete plot/event dependency graph",
+        "Calibrated user skill and strategy evidence"
+      ]
+    }
+  ],
+  "parallel_queues": [
+    {
+      "id": "sparse_player_rules",
+      "games": [
+        "crash-bandicoot-the-huge-adventure",
+        "dragon-ball-advanced-adventure",
+        "driv3r",
+        "final-fantasy-i-and-ii-dawn-of-souls",
+        "final-fantasy-vi-advance",
+        "grand-theft-auto",
+        "kirby-and-the-amazing-mirror",
+        "kirby-nightmare-in-dream-land",
+        "legend-of-zelda-the-a-link-to-the-past-and-four-swords",
+        "megaman-zero",
+        "metal-slug-advance",
+        "need-for-speed-underground",
+        "prince-of-persia-the-sands-of-time",
+        "shaman-king-master-of-spirits",
+        "super-mario-advance",
+        "super-mario-advance-2-super-mario-world",
+        "super-mario-advance-4-super-mario-bros-3",
+        "tekken-advance"
+      ],
+      "task": "Link actual controller, collision, encounter/action and unlock routines; interpret ROM instruction-backed functions with caller context. Do not promote helper semantics into player mechanics."
+    },
+    {
+      "id": "partial_rule_depth",
+      "games": [
+        "castlevania-aria-of-sorrow",
+        "final-fantasy-tactics-advance",
+        "kingdom-hearts-chain-of-memories",
+        "legend-of-zelda-the-the-minish-cap",
+        "mario-and-luigi-superstar-saga",
+        "mario-kart-super-circuit",
+        "metroid-fusion",
+        "pokemon-firered-version",
+        "pokemon-leafgreen-version",
+        "pokemon-mystery-dungeon-red-rescue-team",
+        "pokemon-ruby-version",
+        "sonic-advance",
+        "wario-land-4"
+      ],
+      "task": "Mine underrepresented player rules and caller contracts; prioritize MLSS combat/traversal, Mario Kart handling/items and FFTA tactical resolution."
+    },
+    {
+      "id": "story_graph_all_games",
+      "games": [
+        "castlevania-aria-of-sorrow",
+        "crash-bandicoot-the-huge-adventure",
+        "dragon-ball-advanced-adventure",
+        "driv3r",
+        "final-fantasy-i-and-ii-dawn-of-souls",
+        "final-fantasy-tactics-advance",
+        "final-fantasy-vi-advance",
+        "grand-theft-auto",
+        "kingdom-hearts-chain-of-memories",
+        "kirby-and-the-amazing-mirror",
+        "kirby-nightmare-in-dream-land",
+        "legend-of-zelda-the-a-link-to-the-past-and-four-swords",
+        "legend-of-zelda-the-the-minish-cap",
+        "mario-and-luigi-superstar-saga",
+        "mario-kart-super-circuit",
+        "megaman-zero",
+        "metal-slug-advance",
+        "metroid-fusion",
+        "metroid-zero-mission",
+        "need-for-speed-underground",
+        "pokemon-emerald-version",
+        "pokemon-firered-version",
+        "pokemon-leafgreen-version",
+        "pokemon-mystery-dungeon-red-rescue-team",
+        "pokemon-ruby-version",
+        "prince-of-persia-the-sands-of-time",
+        "shaman-king-master-of-spirits",
+        "sonic-advance",
+        "super-mario-advance",
+        "super-mario-advance-2-super-mario-world",
+        "super-mario-advance-4-super-mario-bros-3",
+        "tekken-advance",
+        "wario-land-4"
+      ],
+      "task": "Find event scripts, dialogue/scene labels, milestone flags and endings; record local causality, branches and unresolved text, keeping prior summaries separate."
+    },
+    {
+      "id": "composition_contracts",
+      "games": [
+        "castlevania-aria-of-sorrow",
+        "final-fantasy-tactics-advance",
+        "kingdom-hearts-chain-of-memories",
+        "legend-of-zelda-the-the-minish-cap",
+        "mario-and-luigi-superstar-saga",
+        "mario-kart-super-circuit",
+        "metroid-fusion",
+        "metroid-zero-mission",
+        "pokemon-emerald-version",
+        "pokemon-firered-version",
+        "pokemon-leafgreen-version",
+        "pokemon-mystery-dungeon-red-rescue-team",
+        "pokemon-ruby-version",
+        "sonic-advance",
+        "wario-land-4"
+      ],
+      "task": "Turn selected piece/source links into explicit target-specific native build recipes, RAM/VRAM budgets and bounded qualification, rather than assuming fine-grained records are interchangeable."
+    }
+  ],
+  "reference_validation": {
+    "recorded_at": "2026-10-16T06:26:18.328149+00:00",
+    "scope": "Static identity/reference/hash resolution only; no semantic truth tests, ROM runs or campaigns",
+    "portraits": 33,
+    "pieces": 222,
+    "source_linked_pieces": 84,
+    "component_links": 305,
+    "retained_frame_hashes": 66,
+    "new_source_span_hashes": 8,
+    "absolute_workspace_paths": 0,
+    "errors": []
+  }
+}

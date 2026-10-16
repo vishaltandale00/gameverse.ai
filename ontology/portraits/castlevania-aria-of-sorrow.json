@@ -1,0 +1,1010 @@
+{
+  "schema_version": 1,
+  "game_id": "castlevania-aria-of-sorrow",
+  "title": "Castlevania: Aria of Sorrow",
+  "identity": {
+    "tagline": "A haunted castle becomes a collection of rooms, equipment and monster powers.",
+    "categories": [
+      "action adventure",
+      "exploration",
+      "RPG loadouts"
+    ],
+    "view": {
+      "label": "side view",
+      "status": "observed_or_source_backed_presentation",
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/castlevania-aria-of-sorrow/gameplay/keyframes/f004066.png",
+            "local/captures-experiments/20261016-current-scripts/castlevania-aria-of-sorrow/gameplay/keyframes/f007961_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ]
+    },
+    "vibe": [
+      "gothic",
+      "eerie",
+      "ornate"
+    ],
+    "vibe_status": "editorial_interpretation_of_observed_scenes",
+    "grounded_examples": [
+      "Gray masonry, statues and a purple sky frame a courtyard conversation and a later enemy encounter."
+    ],
+    "gameplay_prior": {
+      "text": "Equip enemy-derived soul powers alongside weapons and explore an interconnected castle.",
+      "status": "model_prior_unverified_unless_piece_links_source"
+    },
+    "evidence": [
+      {
+        "kind": "capture_contact_sheet_inspection",
+        "refs": [
+          "local/captures-experiments/20261016-current-scripts/castlevania-aria-of-sorrow/gameplay/keyframes/f004066.png",
+          "local/captures-experiments/20261016-current-scripts/castlevania-aria-of-sorrow/gameplay/keyframes/f007961_scene.png"
+        ],
+        "confidence": 0.85,
+        "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+      }
+    ],
+    "category_basis": "Editorial taxonomy from mixed source, observed scenes and explicitly unverified prior; categories are not proof of implemented or extracted rules.",
+    "tagline_status": "editorial_summary_mixed_evidence"
+  },
+  "pieces": [
+    {
+      "id": "castlevania-aria-of-sorrow:movement_view",
+      "label": "Rooms read from the side",
+      "slot": "movement_view",
+      "effect": "Keep character silhouettes and room boundaries easy to read while exploring.",
+      "flavor": "A haunted castle becomes a collection of rooms, equipment and monster powers.",
+      "knobs": [
+        {
+          "name": "perspective",
+          "meaning": "Keep or bridge the observed source view.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "cadence",
+          "meaning": "Choose frame updates, tile actions or mode transitions explicitly.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "side_view_scene"
+        },
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "room_transition_lookup"
+        },
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "map_completion"
+        }
+      ],
+      "requires": [
+        "world coordinates",
+        "collision or terrain rules",
+        "input semantics"
+      ],
+      "exposes": [
+        "position",
+        "facing",
+        "grounded or traversal state"
+      ],
+      "conflicts": [
+        {
+          "when": "A host uses tile turns but this controller uses continuous frame updates.",
+          "issue": "One input cannot mean both a whole turn and a physics tick.",
+          "bridge": "Keep a fixed simulation clock and convert a completed movement action into a turn event."
+        }
+      ],
+      "bridge_options": [
+        "Keep side-view stages and a top-down world as separate modes.",
+        "Use a shared height axis rather than interpreting northward movement as a jump."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#side_view_scene",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:frames 1899 and 4959 keyframes inspected",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08001194.c:GetEntityRoomXPositionInteger",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08001194.c:GetEntityRoomYPositionInteger",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#room_transition_lookup",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08001194.c:CheckRoomTransition",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#map_completion",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08011DD0.c:sub_08011E24",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08011DD0.c:sub_08011E88",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "castlevania-aria-of-sorrow:combat",
+      "label": "Equip a monster-power loadout",
+      "slot": "combat",
+      "effect": "Combine weapon, armor and soul slots; a red soul casts only when its MP and active-entity constraints permit.",
+      "flavor": "A haunted castle becomes a collection of rooms, equipment and monster powers.",
+      "knobs": [
+        {
+          "name": "encounter_boundary",
+          "meaning": "Decide whether field movement continues during combat.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "supported_rules",
+          "meaning": "Declare the move/status/item capability subset.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "character_equipment_state"
+        },
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "red_soul_cast"
+        },
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "soul_equipment_validity"
+        },
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "incoming_damage"
+        }
+      ],
+      "requires": [
+        "combatant state",
+        "legal actions",
+        "damage and resource rules"
+      ],
+      "exposes": [
+        "damage events",
+        "resource expenditure",
+        "win or loss"
+      ],
+      "conflicts": [
+        {
+          "when": "Real-time field action meets a turn-based battle system.",
+          "issue": "Input cadence and simultaneous enemy updates disagree.",
+          "bridge": "Create an explicit encounter boundary, freeze the field and restore its state after battle."
+        }
+      ],
+      "bridge_options": [
+        "Share attack types across real-time and turn-based attacks.",
+        "Preserve the source damage rules while declaring a smaller supported move/effect set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#character_equipment_state",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:include/structs/ewram.h:EwramData_unk1325C",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#red_soul_cast",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08033CAC.c:sub_08034624",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08033CAC.c:sub_080347AC",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:include/structs/ewram.h:EwramData_unk1325C",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#soul_equipment_validity",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08032444.c:sub_08032D58",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08032444.c:SoulInventory_GetSoulTotal",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#incoming_damage",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code/code_080211F0.c:sub_08021654",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "castlevania-aria-of-sorrow:progression",
+      "label": "Collect powers, not just duplicates",
+      "slot": "progression",
+      "effect": "Track distinct souls and discovered rooms separately from lifetime acquisition and RPG levels.",
+      "flavor": "A haunted castle becomes a collection of rooms, equipment and monster powers.",
+      "knobs": [
+        {
+          "name": "persistence",
+          "meaning": "Choose session, checkpoint, room or save lifetime.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "unlock_meaning",
+          "meaning": "Choose capability, inventory key or event prerequisite.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "soul_completion"
+        },
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "soul_collection_counter"
+        },
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "level_growth"
+        },
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "map_completion"
+        }
+      ],
+      "requires": [
+        "persistent state",
+        "gate or objective predicates",
+        "reward events"
+      ],
+      "exposes": [
+        "unlocked route",
+        "completion state",
+        "new capability"
+      ],
+      "conflicts": [
+        {
+          "when": "A key consumable is substituted for a permanent capability.",
+          "issue": "Backtracking and recoverability can change even if the first door opens.",
+          "bridge": "Choose explicitly between persistent ability ownership and per-door key consumption."
+        }
+      ],
+      "bridge_options": [
+        "Keep source gate semantics and reskin their fiction.",
+        "Connect battle rewards to traversal capabilities through a named unlock rule."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#soul_completion",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08032444.c:sub_08032DF0",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08032444.c:sUnk_080E1CD4",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#soul_collection_counter",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08032444.c:SoulInventory_AddAmountToFirstGroupTotal",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08032444.c:sub_08032DBC",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08032444.c:SoulInventory_AddAmountToSoulTotal",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#level_growth",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08033CAC.c:sub_08033CAC",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08033CAC.c:sub_08033DFC",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08033CAC.c:sUnk_080E1E08",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:include/structs/ewram.h:EwramData_unk1325C",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#map_completion",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08011DD0.c:sub_08011E24",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08011DD0.c:sub_08011E88",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "castlevania-aria-of-sorrow:story",
+      "label": "Stage a courtyard conversation",
+      "slot": "story",
+      "effect": "Introduce the situation through characters, dialogue and an authored room scene rather than a disconnected exposition page.",
+      "flavor": "A haunted castle becomes a collection of rooms, equipment and monster powers.",
+      "knobs": [
+        {
+          "name": "beat_graph",
+          "meaning": "Choose prerequisites and resulting world-state changes.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "delivery",
+          "meaning": "Choose scene, dialogue, environmental cue or playable sequence.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "intro_scene_delivery"
+        }
+      ],
+      "requires": [
+        "event/state flags",
+        "actor and dialogue staging"
+      ],
+      "exposes": [
+        "story milestone",
+        "new objective",
+        "changed world state"
+      ],
+      "conflicts": [
+        {
+          "when": "Two plots both assume exclusive control of campaign milestones.",
+          "issue": "Their original sequence prerequisites may deadlock or contradict each other.",
+          "bridge": "Map selected beats onto one explicit milestone graph; preserve required predecessors."
+        }
+      ],
+      "bridge_options": [
+        "Borrow a beat pattern such as rescue then gift without copying dialogue.",
+        "Treat a vulnerable chapter as a temporary controller/resource contract."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#intro_scene_delivery",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08008750.c:GameModeIntroCutsceneUpdate",
+              "confidence": 0.9
+            },
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:frames 1899 and 4959 keyframes inspected",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "castlevania-aria-of-sorrow:presentation",
+      "label": "Gothic space with raster atmosphere",
+      "slot": "presentation",
+      "effect": "Layer stone environments, scroll distortion and scene windows to build a theatrical room.",
+      "flavor": "A haunted castle becomes a collection of rooms, equipment and monster powers.",
+      "knobs": [
+        {
+          "name": "feedback_density",
+          "meaning": "Balance HUD information against scene readability.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "render_budget",
+          "meaning": "Choose palette, animation and layer costs for the target runtime.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "pixel_gothic_courtyard"
+        },
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "hblank_scroll"
+        },
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "circular_window"
+        },
+        {
+          "game_id": "castlevania-aria-of-sorrow",
+          "component_id": "sample_audio"
+        }
+      ],
+      "requires": [
+        "camera/projection contract",
+        "asset/palette budget",
+        "rendering clock"
+      ],
+      "exposes": [
+        "legible feedback",
+        "scene transitions",
+        "audio cues"
+      ],
+      "conflicts": [
+        {
+          "when": "Different projections share the same screen without a transition rule.",
+          "issue": "Objects can appear to occupy incompatible coordinate spaces.",
+          "bridge": "Use separate scenes/modes or define one consistent projection adapter."
+        }
+      ],
+      "bridge_options": [
+        "Keep source rendering while adding a separate battle mode.",
+        "Translate atmosphere into a coherent new palette and motif set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#pixel_gothic_courtyard",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:frame 1899; attract:frame 1052 keyframes inspected",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#hblank_scroll",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/main.c:VblankInterrupt",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/main.c:AgbMain",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08001194.c:HBlankEffectSetup",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_0800CB00.c:sub_0800CB8C",
+              "confidence": 0.9
+            },
+            {
+              "kind": "capture_telemetry",
+              "ref": "capture:summary.json:derived.raster_frames.bg_scroll.hdma_frames_ge32=1308; hblank_dma_targets BG1HOFS/BG1VOFS",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#circular_window",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08001194.c:sub_08002324",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_08001194.c:sub_08002400",
+              "confidence": 0.9
+            },
+            {
+              "kind": "capture_telemetry",
+              "ref": "capture:summary.json:derived.raster_frames.window.hdma_frames_ge32=0",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#sample_audio",
+          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_080D73B8.c:InitializeAudio",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "cvaos:src/code_080D73B8.c:AudioVSync",
+              "confidence": 0.9
+            },
+            {
+              "kind": "capture_telemetry",
+              "ref": "capture:summary.json:derived.sound directsound_frames and psg_playing_frames",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "castlevania-aria-of-sorrow:setting",
+      "label": "A concrete place, not just a genre",
+      "slot": "setting",
+      "effect": "Gray masonry, statues and a purple sky frame a courtyard conversation and a later enemy encounter.",
+      "flavor": "A haunted castle becomes a collection of rooms, equipment and monster powers.",
+      "knobs": [
+        {
+          "name": "scale",
+          "meaning": "Choose the world and object scale relationship.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "motif_palette",
+          "meaning": "Choose which observed motifs define the adaptation.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "world/content vocabulary"
+      ],
+      "exposes": [
+        "region identities",
+        "spatial motifs"
+      ],
+      "conflicts": [
+        {
+          "when": "Two settings imply different world scales or technologies.",
+          "issue": "Literal asset mixing can obscure the intended place.",
+          "bridge": "Choose a unifying art/world rule and map each motif into it."
+        }
+      ],
+      "bridge_options": [
+        "Retain mechanics while authoring original scenery.",
+        "Make a deliberate crossing between region styles rather than random per-object mixing."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/castlevania-aria-of-sorrow/gameplay/keyframes/f004066.png",
+            "local/captures-experiments/20261016-current-scripts/castlevania-aria-of-sorrow/gameplay/keyframes/f007961_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "castlevania-aria-of-sorrow:tone",
+      "label": "Emotional register",
+      "slot": "tone",
+      "effect": "Gothic, eerie, ornate. This is a reading of the retained scenes, not a complete tone audit.",
+      "flavor": "A haunted castle becomes a collection of rooms, equipment and monster powers.",
+      "knobs": [
+        {
+          "name": "contrast",
+          "meaning": "Decide where tonal contrast is intentional.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "pacing",
+          "meaning": "Choose recovery versus pressure intervals.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "editorial direction",
+        "consistent audiovisual treatment"
+      ],
+      "exposes": [
+        "emotional register",
+        "contrast between scenes"
+      ],
+      "conflicts": [
+        {
+          "when": "Comic reactions and horror tension occur in the same scene.",
+          "issue": "Their feedback can cancel the intended emotional effect.",
+          "bridge": "Assign tones to acts, regions or feedback layers, with a deliberate transition."
+        }
+      ],
+      "bridge_options": [
+        "Use tonal contrast as a story beat.",
+        "Borrow pacing or vulnerability without copying character identities."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/castlevania-aria-of-sorrow/gameplay/keyframes/f004066.png",
+            "local/captures-experiments/20261016-current-scripts/castlevania-aria-of-sorrow/gameplay/keyframes/f007961_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    }
+  ],
+  "story": {
+    "beats": [
+      {
+        "id": "retained_scene",
+        "description": "Gray masonry, statues and a purple sky frame a courtyard conversation and a later enemy encounter.",
+        "status": "observed_scene_without_causal_order_claim",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/castlevania-aria-of-sorrow/gameplay/keyframes/f004066.png",
+              "local/captures-experiments/20261016-current-scripts/castlevania-aria-of-sorrow/gameplay/keyframes/f007961_scene.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      },
+      {
+        "id": "premise_candidate",
+        "description": "An outsider enters a supernatural castle and learns why its powers answer him.",
+        "status": "model_prior_unverified",
+        "evidence": [
+          {
+            "kind": "model_prior_unverified",
+            "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+            "confidence": 0.35,
+            "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+          }
+        ]
+      }
+    ],
+    "delivery": [
+      {
+        "description": "Observed scene/GUI staging; specific source script and dialogue links are below when available.",
+        "status": "observed_partial",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/castlevania-aria-of-sorrow/gameplay/keyframes/f004066.png",
+              "local/captures-experiments/20261016-current-scripts/castlevania-aria-of-sorrow/gameplay/keyframes/f007961_scene.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      }
+    ],
+    "gaps": [
+      "Two retained scenes do not establish the complete narrative or player agency.",
+      "Resolve beat prerequisites, event flags, dialogue text and ending variants from source."
+    ]
+  },
+  "coverage": {
+    "status": "partial",
+    "depth": "source_partial",
+    "canonical_component_count": 39,
+    "canonical_facets": [
+      "audio",
+      "camera",
+      "economy",
+      "frontend",
+      "mechanics",
+      "movement_physics",
+      "narrative_delivery",
+      "progression",
+      "projection",
+      "rendering",
+      "setting",
+      "ui_hud"
+    ],
+    "source_supported_piece_count": 5,
+    "missing": [
+      "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+      "Complete plot/event dependency graph",
+      "Calibrated user skill and strategy evidence",
+      "Full asset-to-source/address reuse catalogue"
+    ],
+    "granular_records_not_summarized": [
+      {
+        "component_id": "mode_dispatch",
+        "label": "Discrete game modes with reset substate on transition",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "soft_reset",
+        "label": "Reset chord with one-update suppression",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "input_repeat_and_override",
+        "label": "Edge, held and repeated input with priority override",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "publisher_logo",
+        "label": "Skippable timed publisher logo",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "title_idle_intro",
+        "label": "Animated title idles into story intro",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "sram_records",
+        "label": "Verified SRAM records and slot lock bits",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "game_over_return",
+        "label": "Game-over presentation returns to boot logo",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "boss_rush_setup",
+        "label": "Boss-rush normalized start configuration",
+        "facet": "progression"
+      },
+      {
+        "component_id": "inventory_categories",
+        "label": "Separate fixed arrays for consumables and equipment",
+        "facet": "economy"
+      },
+      {
+        "component_id": "soul_inventory_banks",
+        "label": "Packed soul inventories with two count banks",
+        "facet": "economy"
+      },
+      {
+        "component_id": "armor_avoidance",
+        "label": "Armor-specific random damage negation",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "hp_pool",
+        "label": "Health gains saturate at maximum",
+        "facet": "economy"
+      },
+      {
+        "component_id": "mp_pool",
+        "label": "Magic gains and drains use asymmetric clamps",
+        "facet": "economy"
+      },
+      {
+        "component_id": "character_initial_stats",
+        "label": "Different base-stat configurations for two character branches",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "new_game_bootstrap",
+        "label": "Empty character state initializes starting room and equipment",
+        "facet": "progression"
+      },
+      {
+        "component_id": "fixed_point_room_coordinates",
+        "label": "Entity and camera fixed-point coordinate conversion",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "entity_pool",
+        "label": "Bounded callback-driven entity allocation",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "rng_streams",
+        "label": "Shifted recurrence with alternate RNG stream",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "screen_shake",
+        "label": "Mask-sampled temporary background shake",
+        "facet": "camera"
+      },
+      {
+        "component_id": "tiled_bg_transfer",
+        "label": "Deferred wrapping tilemap writes",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "numeric_text_renderer",
+        "label": "Tile-font strings and fixed-width numbers",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "dma_upload_queue",
+        "label": "Direct and indirect queued DMA3 uploads",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "affine_title",
+        "label": "Mode-1 affine title with blending and object window",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "audio_priority_and_fade",
+        "label": "Priority arbitration and stateful song-volume ramps",
+        "facet": "audio"
+      }
+    ],
+    "not_claimed": [
+      "All mechanics extracted",
+      "Full ROM decompiled",
+      "Complete plot recovered",
+      "Every proposed bundle assembled or playtested"
+    ]
+  },
+  "provenance": {
+    "recorded_at": "2026-10-16T06:22:36.193456+00:00",
+    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "rom_sha1": "abd71fe01ebb201bcc133074db1dd8c5253776c7",
+    "canonical": {
+      "kind": "canonical_ontology",
+      "ref": "ontology/games/castlevania-aria-of-sorrow.yaml",
+      "sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+      "scope": "Existing component extraction; inherited evidence and limitations, not a fresh independent verification."
+    },
+    "source_repositories": [
+      {
+        "path": "local/decomps/cvaos",
+        "commit": "bc23d849d578c35ae12a5cec4e66549c3021a5be",
+        "source_dirty": false,
+        "file_counts": {
+          ".c": 38,
+          ".h": 73,
+          ".inc": 13,
+          ".s": 26
+        },
+        "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+      }
+    ],
+    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "capture_run_id": "20261016T004328-0e248f",
+    "capture_frame_sha256": {
+      "local/captures-experiments/20261016-current-scripts/castlevania-aria-of-sorrow/gameplay/keyframes/f004066.png": "83f3583d7e0839794974b9e7ec3e7884804e13425605531b302d16bfb27dc1f0",
+      "local/captures-experiments/20261016-current-scripts/castlevania-aria-of-sorrow/gameplay/keyframes/f007961_scene.png": "846b28c4048bf4fe4c48a3742e8bd22dad9a90b1602eca9f7c2142695cde7128"
+    },
+    "source_inspection_notes": "Canonical component evidence is inherited; direct new source story anchors, when present, are marked separately."
+  }
+}

@@ -1,0 +1,1292 @@
+{
+  "schema_version": 1,
+  "game_id": "sonic-advance",
+  "title": "Sonic Advance",
+  "identity": {
+    "tagline": "Speed is built from terrain, momentum and the choice of route.",
+    "categories": [
+      "momentum platformer",
+      "arcade stages"
+    ],
+    "view": {
+      "label": "side view",
+      "status": "observed_or_source_backed_presentation",
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f003126_scene.png",
+            "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f005389_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ]
+    },
+    "vibe": [
+      "upbeat",
+      "tropical",
+      "fast"
+    ],
+    "vibe_status": "editorial_interpretation_of_observed_scenes",
+    "grounded_examples": [
+      "A blue spiky character, rings, beach, palm trees and distant mountains establish a vivid side-view course."
+    ],
+    "gameplay_prior": {
+      "text": "Build momentum, roll through slopes and preserve rings across fast branching stages.",
+      "status": "model_prior_unverified_unless_piece_links_source"
+    },
+    "evidence": [
+      {
+        "kind": "capture_contact_sheet_inspection",
+        "refs": [
+          "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f003126_scene.png",
+          "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f005389_scene.png"
+        ],
+        "confidence": 0.85,
+        "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+      }
+    ],
+    "category_basis": "Editorial taxonomy from mixed source, observed scenes and explicitly unverified prior; categories are not proof of implemented or extracted rules.",
+    "tagline_status": "editorial_summary_mixed_evidence"
+  },
+  "pieces": [
+    {
+      "id": "sonic-advance:movement_view",
+      "label": "Speed comes from surfaces",
+      "slot": "movement_view",
+      "effect": "Combine momentum, terrain angles, slopes, rolling and jump/air control; different characters supply distinct ways to cross space.",
+      "flavor": "Speed is built from terrain, momentum and the choice of route.",
+      "knobs": [
+        {
+          "name": "perspective",
+          "meaning": "Keep or bridge the observed source view.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "cadence",
+          "meaning": "Choose frame updates, tile actions or mode transitions explicitly.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "sonic-advance",
+          "component_id": "ground_momentum"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "slope_physics"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "terrain_sensors_and_angles"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "rolling"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "spin_dash"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "jump_and_gravity"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "character_ability_matrix"
+        }
+      ],
+      "requires": [
+        "world coordinates",
+        "collision or terrain rules",
+        "input semantics"
+      ],
+      "exposes": [
+        "position",
+        "facing",
+        "grounded or traversal state"
+      ],
+      "conflicts": [
+        {
+          "when": "A host uses tile turns but this controller uses continuous frame updates.",
+          "issue": "One input cannot mean both a whole turn and a physics tick.",
+          "bridge": "Keep a fixed simulation clock and convert a completed movement action into a turn event."
+        }
+      ],
+      "bridge_options": [
+        "Keep side-view stages and a top-down world as separate modes.",
+        "Use a shared height axis rather than interpreting northward movement as a jump."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#ground_momentum",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:Player_8043970",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:Player_8043A2C",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:Player_8044F7C",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/stage/player_sonic.c:Player_Sonic_80473AC",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#slope_physics",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:sa2__sub_8029CA0",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:sa2__sub_8029D14",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:sa2__sub_8029ED8",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#terrain_sensors_and_angles",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:include/core.h:struct Collision",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:sa2__sub_8023128",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:sa2__sub_80232D0",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/terrain_collision.c",
+              "confidence": 0.6,
+              "note": "sensor internals (sub_801E4E4 etc.) not traced"
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#rolling",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:Player_8043DDC",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:Player_80447D8",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#spin_dash",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:Player_TrySpindash",
+              "confidence": 0.9
+            },
+            {
+              "kind": "static_signature",
+              "ref": "rom:ASOE 0x4A6F04 gPlayerCharacterIdleAnims {0,99,199,298} anchor",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#jump_and_gravity",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:Player_TryJump",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:Player_8044670",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/stage/player_sonic.c:Player_Sonic_80473AC",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#character_ability_matrix",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:Task_PlayerMain",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/stage/player_sonic.c:Player_Sonic_80473AC",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/stage/player_tails.c:Player_Tails_8047BA0",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/stage/player_knuckles.c:Player_Knuckles_8049000",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/stage/player_amy.c:Player_Amy_80497AC",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "sonic-advance:combat",
+      "label": "Momentum and rings absorb mistakes",
+      "slot": "combat",
+      "effect": "Attack through contact states, scatter rings on damage and choose whether to recover them or preserve forward motion.",
+      "flavor": "Speed is built from terrain, momentum and the choice of route.",
+      "knobs": [
+        {
+          "name": "encounter_boundary",
+          "meaning": "Decide whether field movement continues during combat.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "supported_rules",
+          "meaning": "Declare the move/status/item capability subset.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "sonic-advance",
+          "component_id": "enemy_contact_combat"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "ring_damage_rule"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "scattered_ring_physics"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "ring_economy"
+        }
+      ],
+      "requires": [
+        "combatant state",
+        "legal actions",
+        "damage and resource rules"
+      ],
+      "exposes": [
+        "damage events",
+        "resource expenditure",
+        "win or loss"
+      ],
+      "conflicts": [
+        {
+          "when": "Real-time field action meets a turn-based battle system.",
+          "issue": "Input cadence and simultaneous enemy updates disagree.",
+          "bridge": "Create an explicit encounter boundary, freeze the field and restore its state after battle."
+        }
+      ],
+      "bridge_options": [
+        "Share attack types across real-time and turn-based attacks.",
+        "Preserve the source damage rules while declaring a smaller supported move/effect set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#enemy_contact_combat",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/collision_3.c:Coll_Player_Enemy_Attack",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/entities_manager.c:CreateEnemyDefeatScoreAndManageLives",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c (defeatScoreIndex = 0 on landing)",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#ring_damage_rule",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/collision_3.c:Coll_DamagePlayer",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/collision_3.c:Coll_Player_Enemy",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#scattered_ring_physics",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/rings_scatter.c:InitScatteringRings",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/rings_scatter.c:RingsScatterSingleplayer_NormalGravity",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#ring_economy",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:include/game/globals.h:INCREMENT_RINGS",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/rings_manager.c:Task_RingsMgrMain",
+              "confidence": 0.7
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "sonic-advance:ai",
+      "label": "Simple threats on a fast route",
+      "slot": "ai",
+      "effect": "Use patrol/charge or patrol/shoot patterns and CPU partner following, tuned around terrain and player speed.",
+      "flavor": "Speed is built from terrain, momentum and the choice of route.",
+      "knobs": [
+        {
+          "name": "information_budget",
+          "meaning": "Choose visible versus privileged state.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "decision_cadence",
+          "meaning": "Separate every-frame reactions from slower objective decisions.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "sonic-advance",
+          "component_id": "badnik_patrol_charge"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "badnik_patrol_shooter"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "cpu_partner_follow_ai"
+        }
+      ],
+      "requires": [
+        "observed state contract",
+        "legal actions",
+        "update cadence"
+      ],
+      "exposes": [
+        "chosen action",
+        "target",
+        "decision reason"
+      ],
+      "conflicts": [
+        {
+          "when": "An AI reads hidden battle state but the desired bot sees only screenshots.",
+          "issue": "The policy would gain information unavailable in the target interface.",
+          "bridge": "Expose a typed observation adapter and declare privileged versus visible fields."
+        }
+      ],
+      "bridge_options": [
+        "Use deterministic rules for supported choices; escalate ambiguous goals to an LLM.",
+        "Keep enemy AI and external playtester policies as separate components."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#badnik_patrol_charge",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/stage/enemies/rhinotank.c",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#badnik_patrol_shooter",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/stage/enemies/buzzer.c:CreateBuzzerProjectile",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/stage/enemies/kiki.c:CreateKikiProjectile",
+              "confidence": 0.75
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#cpu_partner_follow_ai",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:sub_8045DF0",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:Player_Tails_804571C",
+              "confidence": 0.6,
+              "note": "non-matching; respawn/fly-in path"
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/stage/player_controls.c:sub_804D13C",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "sonic-advance:progression",
+      "label": "Stages with a second mastery goal",
+      "slot": "progression",
+      "effect": "Act/zone progression, checkpoints and a Chaos Emerald ending gate provide a route beyond merely reaching a finish.",
+      "flavor": "Speed is built from terrain, momentum and the choice of route.",
+      "knobs": [
+        {
+          "name": "persistence",
+          "meaning": "Choose session, checkpoint, room or save lifetime.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "unlock_meaning",
+          "meaning": "Choose capability, inventory key or event prerequisite.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "sonic-advance",
+          "component_id": "zone_act_progression"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "checkpoints"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "chaos_emerald_true_ending_gate"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "special_stage"
+        }
+      ],
+      "requires": [
+        "persistent state",
+        "gate or objective predicates",
+        "reward events"
+      ],
+      "exposes": [
+        "unlocked route",
+        "completion state",
+        "new capability"
+      ],
+      "conflicts": [
+        {
+          "when": "A key consumable is substituted for a permanent capability.",
+          "issue": "Backtracking and recoverability can change even if the first door opens.",
+          "bridge": "Choose explicitly between persistent ability ownership and per-door key consumption."
+        }
+      ],
+      "bridge_options": [
+        "Keep source gate semantics and reskin their fiction.",
+        "Connect battle rewards to traversal capabilities through a named unlock rule."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#zone_act_progression",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:include/constants/zones.h",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:include/constants/sa1/songs.h (zone names via MUS_* ids)",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/ui/stage_results.c:CreateStageResults (unlockedLevels update, Egg Rocket countdown)",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#checkpoints",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/stage/interactables/checkpoint.c",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/stage/interactables/special_spring.c:Task_TransitionSpStage (gSpecialStageReturnX/Y)",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#chaos_emerald_true_ending_gate",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/stage/enemies/boss_x3_egg_x.c (chaosEmeralds == ALL_ZONE_CHAOS_EMERALDS and unlockedLevels[0..3] > 12)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/ui/stage_results.c:CreateStageResults (isInFinalStage)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/ui/staff_credits.c",
+              "confidence": 0.6
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#special_stage",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/special_stage/main.c:CreateSpecialStage",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/special_stage/main.c:Task_80299B0",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/ui/game_2_1.c (SetBit chaosEmeralds)",
+              "confidence": 0.8
+            },
+            {
+              "kind": "llm_knowledge",
+              "ref": "the character rides a pseudo-3D track collecting rings while bombs cost rings",
+              "confidence": 0.4
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "sonic-advance:story",
+      "label": "Let transitions carry the plot",
+      "slot": "story",
+      "effect": "Use wordless stage transitions and an ending conditioned on collection state.",
+      "flavor": "Speed is built from terrain, momentum and the choice of route.",
+      "knobs": [
+        {
+          "name": "beat_graph",
+          "meaning": "Choose prerequisites and resulting world-state changes.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "delivery",
+          "meaning": "Choose scene, dialogue, environmental cue or playable sequence.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "sonic-advance",
+          "component_id": "story_delivery"
+        }
+      ],
+      "requires": [
+        "event/state flags",
+        "actor and dialogue staging"
+      ],
+      "exposes": [
+        "story milestone",
+        "new objective",
+        "changed world state"
+      ],
+      "conflicts": [
+        {
+          "when": "Two plots both assume exclusive control of campaign milestones.",
+          "issue": "Their original sequence prerequisites may deadlock or contradict each other.",
+          "bridge": "Map selected beats onto one explicit milestone graph; preserve required predecessors."
+        }
+      ],
+      "bridge_options": [
+        "Borrow a beat pattern such as rescue then gift without copying dialogue.",
+        "Treat a vulnerable chapter as a temporary controller/resource contract."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#story_delivery",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/ui/intro_animation.c",
+              "confidence": 0.6
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/ui/staff_credits.c (chaosEmeralds != ALL_ZONE_CHAOS_EMERALDS branch)",
+              "confidence": 0.7
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:include/constants/sa1/songs.h (MUS_CUTSCENE_TORNADO_RESCUE, MUS_CUTSCENE_A_FEW_DAYS_LATER)",
+              "confidence": 0.6
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "sonic-advance:presentation",
+      "label": "Keep a fast player readable",
+      "slot": "presentation",
+      "effect": "Combine a movement-aware camera, parallax and state-based music with strong rings/platform silhouettes.",
+      "flavor": "Speed is built from terrain, momentum and the choice of route.",
+      "knobs": [
+        {
+          "name": "feedback_density",
+          "meaning": "Balance HUD information against scene readability.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "render_budget",
+          "meaning": "Choose palette, animation and layer costs for the target runtime.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "sonic-advance",
+          "component_id": "stage_camera"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "hblank_line_scroll_parallax"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "stage_hud"
+        },
+        {
+          "game_id": "sonic-advance",
+          "component_id": "state_driven_music"
+        }
+      ],
+      "requires": [
+        "camera/projection contract",
+        "asset/palette budget",
+        "rendering clock"
+      ],
+      "exposes": [
+        "legible feedback",
+        "scene transitions",
+        "audio cues"
+      ],
+      "conflicts": [
+        {
+          "when": "Different projections share the same screen without a transition rule.",
+          "issue": "Objects can appear to occupy incompatible coordinate spaces.",
+          "bridge": "Use separate scenes/modes or define one consistent projection adapter."
+        }
+      ],
+      "bridge_options": [
+        "Keep source rendering while adding a separate battle mode.",
+        "Translate atmosphere into a coherent new palette and motif set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#stage_camera",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/camera.c:UpdateCamera",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/camera.c:InitCamera",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/player.c:sub_80448D0",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#hblank_line_scroll_parallax",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/stage/backgrounds/zone_1.inc.c:StageBgUpdate_Zone1Acts12",
+              "confidence": 0.95
+            },
+            {
+              "kind": "capture_telemetry",
+              "ref": "capture:frontend:hblank_dma_targets ch0->0x04000018 and ch0->0x0400001C (BG2/BG3 HOFS), bg_scroll hdma_frames_ge32=4268",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#stage_hud",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:frame 2200 keyframe (ring icon, 0:04:37 timer, lives 2)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/stage/stage_ui.c",
+              "confidence": 0.75
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/sonic-advance.yaml#state_driven_music",
+          "canonical_file_sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:include/constants/sa1/songs.h",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/sa1/ui/stage_results.c (MUS_EXTRA_CLEAR / MUS_FINAL_CLEAR / MUS_BOSS_CLEAR / MUS_ACT_CLEAR)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "sa2:src/game/shared/stage/music_manager.c",
+              "confidence": 0.5
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "sonic-advance:setting",
+      "label": "A concrete place, not just a genre",
+      "slot": "setting",
+      "effect": "A blue spiky character, rings, beach, palm trees and distant mountains establish a vivid side-view course.",
+      "flavor": "Speed is built from terrain, momentum and the choice of route.",
+      "knobs": [
+        {
+          "name": "scale",
+          "meaning": "Choose the world and object scale relationship.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "motif_palette",
+          "meaning": "Choose which observed motifs define the adaptation.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "world/content vocabulary"
+      ],
+      "exposes": [
+        "region identities",
+        "spatial motifs"
+      ],
+      "conflicts": [
+        {
+          "when": "Two settings imply different world scales or technologies.",
+          "issue": "Literal asset mixing can obscure the intended place.",
+          "bridge": "Choose a unifying art/world rule and map each motif into it."
+        }
+      ],
+      "bridge_options": [
+        "Retain mechanics while authoring original scenery.",
+        "Make a deliberate crossing between region styles rather than random per-object mixing."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f003126_scene.png",
+            "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f005389_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "sonic-advance:tone",
+      "label": "Emotional register",
+      "slot": "tone",
+      "effect": "Upbeat, tropical, fast. This is a reading of the retained scenes, not a complete tone audit.",
+      "flavor": "Speed is built from terrain, momentum and the choice of route.",
+      "knobs": [
+        {
+          "name": "contrast",
+          "meaning": "Decide where tonal contrast is intentional.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "pacing",
+          "meaning": "Choose recovery versus pressure intervals.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "editorial direction",
+        "consistent audiovisual treatment"
+      ],
+      "exposes": [
+        "emotional register",
+        "contrast between scenes"
+      ],
+      "conflicts": [
+        {
+          "when": "Comic reactions and horror tension occur in the same scene.",
+          "issue": "Their feedback can cancel the intended emotional effect.",
+          "bridge": "Assign tones to acts, regions or feedback layers, with a deliberate transition."
+        }
+      ],
+      "bridge_options": [
+        "Use tonal contrast as a story beat.",
+        "Borrow pacing or vulnerability without copying character identities."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f003126_scene.png",
+            "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f005389_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    }
+  ],
+  "story": {
+    "beats": [
+      {
+        "id": "retained_scene",
+        "description": "A blue spiky character, rings, beach, palm trees and distant mountains establish a vivid side-view course.",
+        "status": "observed_scene_without_causal_order_claim",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f003126_scene.png",
+              "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f005389_scene.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      },
+      {
+        "id": "premise_candidate",
+        "description": "A wordless escalation from island stages to launch and space sequences.",
+        "status": "model_prior_unverified",
+        "evidence": [
+          {
+            "kind": "model_prior_unverified",
+            "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+            "confidence": 0.35,
+            "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+          }
+        ]
+      }
+    ],
+    "delivery": [
+      {
+        "description": "Observed scene/GUI staging; specific source script and dialogue links are below when available.",
+        "status": "observed_partial",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f003126_scene.png",
+              "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f005389_scene.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      }
+    ],
+    "gaps": [
+      "Two retained scenes do not establish the complete narrative or player agency.",
+      "Resolve beat prerequisites, event flags, dialogue text and ending variants from source."
+    ]
+  },
+  "coverage": {
+    "status": "partial",
+    "depth": "source_partial",
+    "canonical_component_count": 51,
+    "canonical_facets": [
+      "ai",
+      "audio",
+      "camera",
+      "economy",
+      "frontend",
+      "mechanics",
+      "movement_physics",
+      "narrative_delivery",
+      "progression",
+      "projection",
+      "rendering",
+      "setting",
+      "ui_hud"
+    ],
+    "source_supported_piece_count": 6,
+    "missing": [
+      "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+      "Complete plot/event dependency graph",
+      "Calibrated user skill and strategy evidence",
+      "Full asset-to-source/address reuse catalogue"
+    ],
+    "granular_records_not_summarized": [
+      {
+        "component_id": "boot_and_mode_flow",
+        "label": "Language select, SEGA logo, title and task-driven mode flow",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "title_and_attract_demo",
+        "label": "Title idle timer and rotating recorded-input attract demos",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "character_and_course_select",
+        "label": "Four-character select, per-character course unlocks and CPU-Tails secret code",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "flash_save",
+        "label": "Single flash save with emeralds, per-character progress, settings and records",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "lives_and_game_over",
+        "label": "Lives, time-over and game over",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "extra_modes",
+        "label": "Time attack, link multiplayer modes and Tiny Chao Garden",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "stage_bg_layer_stack",
+        "label": "Mode-0 stage stack of two metatile collision layers plus scenery BG",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "affine_title_zoom",
+        "label": "Title emblem zoom with mode-1 affine BG2",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "special_stage_renderer",
+        "label": "Sprite-scaled pseudo-3D special stage over palette-cycled backgrounds",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "fades_and_transitions",
+        "label": "Brightness fades and zig-zag title-card wipe",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "side_view_projection",
+        "label": "Side-view orthographic stages with rotating-surface character",
+        "facet": "projection"
+      },
+      {
+        "component_id": "loops_and_collision_layers",
+        "label": "Loops via two collision layers and layer-toggle triggers",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "air_control",
+        "label": "Double-rate air acceleration capped at run speed",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "springs_and_boosters",
+        "label": "Springs, dash panels and special springs as speed injectors",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "water_physics",
+        "label": "Underwater constant set, surface splash and drowning countdown",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "grind_rails",
+        "label": "Rail grinding on a second layer",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "sonic_moveset",
+        "label": "Sonic: insta-shield, double-tap air dash and B-button ground combo",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "tails_flight",
+        "label": "Tails: flap-to-rise flight with an 8 s stamina timer",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "knuckles_glide_climb",
+        "label": "Knuckles: accelerating glide, steerable turn, wall climb and wall jump",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "amy_hammer_moveset",
+        "label": "Amy: hammer attacks, hammer jump and no rolling",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "item_boxes",
+        "label": "Monitor power-ups",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "difficulty_modes",
+        "label": "Easy/Normal difficulty that thins enemies and shortens bosses",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "super_sonic_extra_stage",
+        "label": "Super Sonic flight with draining ring timer in the extra stage",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "boss_framework",
+        "label": "Hit-counter Eggman bosses with post-hit invulnerability and pinch phase",
+        "facet": "ai"
+      },
+      {
+        "component_id": "score_and_bonuses",
+        "label": "Score from enemy chains and end-of-act time and ring bonuses",
+        "facet": "economy"
+      },
+      {
+        "component_id": "pause_and_controls",
+        "label": "Start pause and two-layout button mapping",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "sonic_setting",
+        "label": "Bright cartoon island-to-space Eggman story",
+        "facet": "setting"
+      },
+      {
+        "component_id": "sound_engine",
+        "label": "MP2K (m4a) sequencer at a 10.5 kHz mix rate with PSG",
+        "facet": "audio"
+      }
+    ],
+    "not_claimed": [
+      "All mechanics extracted",
+      "Full ROM decompiled",
+      "Complete plot recovered",
+      "Every proposed bundle assembled or playtested"
+    ]
+  },
+  "provenance": {
+    "recorded_at": "2026-10-16T06:22:36.193456+00:00",
+    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+    "canonical": {
+      "kind": "canonical_ontology",
+      "ref": "ontology/games/sonic-advance.yaml",
+      "sha256": "d30d101b232f21752cedd558befdee3db3b9aaa3b3bf591ade293b514d8eac13",
+      "scope": "Existing component extraction; inherited evidence and limitations, not a fresh independent verification."
+    },
+    "source_repositories": [
+      {
+        "path": "local/decomps/sa2",
+        "commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+        "source_dirty": false,
+        "file_counts": {
+          ".aif": 470,
+          ".bin": 99,
+          ".c": 955,
+          ".h": 485,
+          ".inc": 284,
+          ".mid": 474,
+          ".pal": 1716,
+          ".png": 12118,
+          ".s": 65
+        },
+        "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+      }
+    ],
+    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "capture_run_id": "20261016T004328-0e248f",
+    "capture_frame_sha256": {
+      "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f003126_scene.png": "a8243954ea699a85ce6b27e38a5312f5f1445b20bee316209735a3b06f3dfd8d",
+      "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f005389_scene.png": "89d03557ed8652fa881da9923000001d207c9299e8a8d5dbc69637ad235e43ee"
+    },
+    "source_inspection_notes": "Canonical component evidence is inherited; direct new source story anchors, when present, are marked separately."
+  }
+}

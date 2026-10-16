@@ -1,0 +1,1588 @@
+{
+  "schema_version": 1,
+  "game_id": "metroid-fusion",
+  "title": "Metroid Fusion",
+  "identity": {
+    "tagline": "A mission-controlled station becomes a hunting ground for the hunter.",
+    "categories": [
+      "action exploration",
+      "survival tension"
+    ],
+    "view": {
+      "label": "side view",
+      "status": "observed_or_source_backed_presentation",
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/metroid-fusion/gameplay/keyframes/f009603_scene.png",
+            "local/captures-experiments/20261016-current-scripts/metroid-fusion/gameplay/keyframes/f020934.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ]
+    },
+    "vibe": [
+      "isolated sci-fi",
+      "biological horror",
+      "controlled escalation"
+    ],
+    "vibe_status": "editorial_interpretation_of_observed_scenes",
+    "grounded_examples": [
+      "An introductory medical image contrasts with a space-station room containing a luminous organic core and small armored figure."
+    ],
+    "gameplay_prior": {
+      "text": "Recover abilities along event-directed missions while a powerful mimic threatens familiar spaces.",
+      "status": "model_prior_unverified_unless_piece_links_source"
+    },
+    "evidence": [
+      {
+        "kind": "capture_contact_sheet_inspection",
+        "refs": [
+          "local/captures-experiments/20261016-current-scripts/metroid-fusion/gameplay/keyframes/f009603_scene.png",
+          "local/captures-experiments/20261016-current-scripts/metroid-fusion/gameplay/keyframes/f020934.png"
+        ],
+        "confidence": 0.85,
+        "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+      }
+    ],
+    "category_basis": "Editorial taxonomy from mixed source, observed scenes and explicitly unverified prior; categories are not proof of implemented or extracted rules.",
+    "tagline_status": "editorial_summary_mixed_evidence"
+  },
+  "pieces": [
+    {
+      "id": "metroid-fusion:movement_view",
+      "label": "A familiar controller with different limits",
+      "slot": "movement_view",
+      "effect": "Bundle the source-specific low-gravity jump, air control, innate ledge grip and climbable surfaces; do not copy Zero Mission constants.",
+      "flavor": "A mission-controlled station becomes a hunting ground for the hunter.",
+      "knobs": [
+        {
+          "name": "perspective",
+          "meaning": "Keep or bridge the observed source view.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "cadence",
+          "meaning": "Choose frame updates, tile actions or mode transitions explicitly.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "ground_locomotion"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "jump_and_gravity"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "air_control_and_spin"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "ledge_grab"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "climbable_surfaces"
+        }
+      ],
+      "requires": [
+        "world coordinates",
+        "collision or terrain rules",
+        "input semantics"
+      ],
+      "exposes": [
+        "position",
+        "facing",
+        "grounded or traversal state"
+      ],
+      "conflicts": [
+        {
+          "when": "A host uses tile turns but this controller uses continuous frame updates.",
+          "issue": "One input cannot mean both a whole turn and a physics tick.",
+          "bridge": "Keep a fixed simulation clock and convert a completed movement action into a turn event."
+        }
+      ],
+      "bridge_options": [
+        "Keep side-view stages and a top-down world as separate modes.",
+        "Use a shared height axis rather than interpreting northward movement as a jump."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#ground_locomotion",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusRunning",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusUpdatePhysics",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusUpdateVelocityPosition",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusSkidding",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#jump_and_gravity",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusSetMidAirPose",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusMidAir",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusUpdateVelocityPosition",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#air_control_and_spin",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusSpinning",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusMidAir",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusSetSpinningPose",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#ledge_grab",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusCheckCollisions",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusHangingOnLedge",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#climbable_surfaces",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusCheckCollisions",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusHangingOnVerticalLadder",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusMovingOnHorizontalLadder",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:include/constants/samus.h:SamusPose",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metroid-fusion:combat",
+      "label": "Destroy the host, then manage the parasite",
+      "slot": "combat",
+      "effect": "Enemy defeat releases an X that can heal the player or revive another host; cold Blue X reverses its role after an upgrade.",
+      "flavor": "A mission-controlled station becomes a hunting ground for the hunter.",
+      "knobs": [
+        {
+          "name": "encounter_boundary",
+          "meaning": "Decide whether field movement continues during combat.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "supported_rules",
+          "meaning": "Declare the move/status/item capability subset.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "x_parasite_lifecycle"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "blue_x_varia_gate"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "beam_hierarchy_and_charge"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "missile_hierarchy"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "ice_freeze"
+        }
+      ],
+      "requires": [
+        "combatant state",
+        "legal actions",
+        "damage and resource rules"
+      ],
+      "exposes": [
+        "damage events",
+        "resource expenditure",
+        "win or loss"
+      ],
+      "conflicts": [
+        {
+          "when": "Real-time field action meets a turn-based battle system.",
+          "issue": "Input cadence and simultaneous enemy updates disagree.",
+          "bridge": "Create an explicit encounter boundary, freeze the field and restore its state after battle."
+        }
+      ],
+      "bridge_options": [
+        "Share attack types across real-time and turn-based attacks.",
+        "Preserve the source damage rules while declaring a smaller supported move/effect set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#x_parasite_lifecycle",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/x_parasite_util.c:SpriteDyingInit",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/x_parasite_util.c:XParasiteInit",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/x_parasite_util.c:XParasiteFlyingAway",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/x_parasite_util.c:SamusAbsorbX",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/projectile.c:ProjecileDealDamage",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/hornoad.c:Hornoad (pose 0x5B -> XParasiteInit)",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#blue_x_varia_gate",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/blue_x.c",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#beam_hierarchy_and_charge",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/projectile.c:ProjectileUpdate",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusCheckShooting",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusUpdateHighlightedWeaponsAndCharge",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/projectile.c:ProjectileWaveBeamHitSprite",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprite_util.c:SpriteUtilCheckSamusPseudoScrew",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:include/constants/projectile.h",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#missile_hierarchy",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/projectile.c:ProjectileUpdate",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/samus.c:SamusUpdateHighlightedWeaponsAndCharge",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/projectile.c:ProjectileDiffusionMissileHandler",
+              "confidence": 0.7,
+              "note": "name only; flake spread not read"
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#ice_freeze",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/projectile.c:ProjectileIceMissileDealDamage",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/projectile.c:ProjectileIceBeamDealDamage",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprite_util.c:SpriteUtilSamusAndSpriteCollision",
+              "confidence": 0.8,
+              "note": "frozen-sprite platform collision"
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:include/constants/sprite.h:WEAKNESS_CAN_BE_FROZEN",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metroid-fusion:ai",
+      "label": "A mimic that changes how a room feels",
+      "slot": "ai",
+      "effect": "The stalker uses sight, sound and doors while regular enemies follow readable patterns; parasite homing creates a second phase after a kill.",
+      "flavor": "A mission-controlled station becomes a hunting ground for the hunter.",
+      "knobs": [
+        {
+          "name": "information_budget",
+          "meaning": "Choose visible versus privileged state.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "decision_cadence",
+          "meaning": "Separate every-frame reactions from slower objective decisions.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "sa_x_stalker_ai"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "x_parasite_homing_ai"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "x_host_reinfection"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "hornoad_hopper_ai"
+        }
+      ],
+      "requires": [
+        "observed state contract",
+        "legal actions",
+        "update cadence"
+      ],
+      "exposes": [
+        "chosen action",
+        "target",
+        "decision reason"
+      ],
+      "conflicts": [
+        {
+          "when": "An AI reads hidden battle state but the desired bot sees only screenshots.",
+          "issue": "The policy would gain information unavailable in the target interface.",
+          "bridge": "Expose a typed observation adapter and declare privileged versus visible fields."
+        }
+      ],
+      "bridge_options": [
+        "Use deterministic rules for supported choices; escalate ambiguous goals to an LLM.",
+        "Keep enemy AI and external playtester policies as separate components."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#sa_x_stalker_ai",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sa_x.c",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/sa_x.c:SaXSeeAndLocateSamus",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/sa_x_arc.c:SaXArc",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/sa_x_noc.c:SaXNocInit",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/sa_x_tro_1.c:SaXTro1Init",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:include/structs/sa_x.h",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#x_parasite_homing_ai",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/x_parasite_util.c:XParasiteMove",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/x_parasite_util.c:XParasiteFlyingMovement",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/target.c:TargetSetTargetPosition",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#x_host_reinfection",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprite_util.c:SpriteUtilTrySetAbsorbXFlag",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/x_parasite_util.c:SpriteSpawningFromX",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/hornoad.c:HornoadInit",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/continual_x_spawner.c",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#hornoad_hopper_ai",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/hornoad.c:HornoadCheckSamusInJumpingRange",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/hornoad.c:Hornoad (SPRITE_STATUS_SAMUS_DETECTED set on hit flash)",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/hornoad.c:HornoadJumping",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metroid-fusion:progression",
+      "label": "Mission state reshapes the station",
+      "slot": "progression",
+      "effect": "A linear event counter controls briefings, ability recovery, door connections and emergency room effects; sectors branch off a hub.",
+      "flavor": "A mission-controlled station becomes a hunting ground for the hunter.",
+      "knobs": [
+        {
+          "name": "persistence",
+          "meaning": "Choose session, checkpoint, room or save lifetime.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "unlock_meaning",
+          "meaning": "Choose capability, inventory key or event prerequisite.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "event_counter_progression"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "navigation_room_waypoints"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "ability_recovery_by_event"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "security_level_hatches"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "sector_hub_structure"
+        }
+      ],
+      "requires": [
+        "persistent state",
+        "gate or objective predicates",
+        "reward events"
+      ],
+      "exposes": [
+        "unlocked route",
+        "completion state",
+        "new capability"
+      ],
+      "conflicts": [
+        {
+          "when": "A key consumable is substituted for a permanent capability.",
+          "issue": "Backtracking and recoverability can change even if the first door opens.",
+          "bridge": "Choose explicitly between persistent ability ownership and per-door key consumption."
+        }
+      ],
+      "bridge_options": [
+        "Keep source gate semantics and reskin their fiction.",
+        "Connect battle rewards to traversal capabilities through a named unlock rule."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#event_counter_progression",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/event.c:EventSet",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/event.c:EventCheckRoomHasEventTrigger",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/event.c:EventCheckRoomEventTrigger",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/event_checks.c:EventCheckAdvance",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/event_checks.c:EventCheckWith_SaveDisabled",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/event_checks.c:EventCheckWith_NavigationDisabled",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/connection.c:ConnectionFindEventBasedDoor",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:include/constants/event.h:Event",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#navigation_room_waypoints",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/event.c:EventCheckSetNavigationRoomEvent",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/event.c:EventCheckRoomHasEventTrigger (gPreviousNavigationConversation)",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/room.c:RoomGetClosedNavigationHatches",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#ability_recovery_by_event",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/event.c:EventSet",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/data/event_data.c:sAbilityRamValues",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/data_pad.c",
+              "confidence": 0.8,
+              "note": "EventCheckDownloadedDataItem(TRUE) on download; door unlock 60 frames"
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:include/constants/samus.h (SMF_/BF_/MBF_ flags)",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#security_level_hatches",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/bg_clip.c:BgClipCheckProjectileHitHatch",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/room.c:RoomLoadDoors",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/event.c:EventCheckUnlockSecurityLevel",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/event.c:EventSet",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/security_pad.c",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#sector_hub_structure",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:include/constants/connection.h",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/data/event_data.c:sNavigationTargetLocationAreas",
+              "confidence": 0.85
+            },
+            {
+              "kind": "llm_knowledge",
+              "ref": "sector themes (SRX/TRO/PYR/AQA/ARC/NOC)",
+              "confidence": 0.6
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metroid-fusion:story",
+      "label": "Brief, investigate, reveal, escape",
+      "slot": "story",
+      "effect": "Navigation conversations and elevator monologues punctuate tasks, while timed disasters and mimic sightings interrupt routine.",
+      "flavor": "A mission-controlled station becomes a hunting ground for the hunter.",
+      "knobs": [
+        {
+          "name": "beat_graph",
+          "meaning": "Choose prerequisites and resulting world-state changes.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "delivery",
+          "meaning": "Choose scene, dialogue, environmental cue or playable sequence.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "navigation_briefings"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "cutscenes"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "timed_escapes"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "event_driven_room_effects"
+        }
+      ],
+      "requires": [
+        "event/state flags",
+        "actor and dialogue staging"
+      ],
+      "exposes": [
+        "story milestone",
+        "new objective",
+        "changed world state"
+      ],
+      "conflicts": [
+        {
+          "when": "Two plots both assume exclusive control of campaign milestones.",
+          "issue": "Their original sequence prerequisites may deadlock or contradict each other.",
+          "bridge": "Map selected beats onto one explicit milestone graph; preserve required predecessors."
+        }
+      ],
+      "bridge_options": [
+        "Borrow a beat pattern such as rescue then gift without copying dialogue.",
+        "Treat a vulnerable chapter as a temporary controller/resource contract."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#navigation_briefings",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/navigation_pad.c",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/music_wrappers.c:PlayCharacterAppearingSound",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sound_event.c:SoundEventUpdateForNavConversation",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:asm/disasm_0x080765f8.s:NavigationConversationUpdatePanel",
+              "confidence": 0.55,
+              "note": "panel drawing still asm"
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#cutscenes",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/event.c:EventCheckPlayCutsceneDuringTransition",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sa_x_close_up.c",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:asm/disasm_0x0808F5C4.s:CutsceneHandler",
+              "confidence": 0.5,
+              "note": "still asm"
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#timed_escapes",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/escape.c:EscapeUpdate",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/event_checks.c:EventCheckOn_Escape",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#event_driven_room_effects",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/room_effect.c:RoomEffectSetupCurrentEventBased",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/room_effect.c:RoomEffectProcessEventBased",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metroid-fusion:presentation",
+      "label": "Telegraph biological danger",
+      "slot": "presentation",
+      "effect": "Room effects, X emergence, alarms and chase music make systemic state changes visible rather than purely textual.",
+      "flavor": "A mission-controlled station becomes a hunting ground for the hunter.",
+      "knobs": [
+        {
+          "name": "feedback_density",
+          "meaning": "Balance HUD information against scene readability.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "render_budget",
+          "meaning": "Choose palette, animation and layer costs for the target runtime.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "sprite_mosaic_dissolve"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "event_driven_room_effects"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "adaptive_music"
+        },
+        {
+          "game_id": "metroid-fusion",
+          "component_id": "banners_and_area_text"
+        }
+      ],
+      "requires": [
+        "camera/projection contract",
+        "asset/palette budget",
+        "rendering clock"
+      ],
+      "exposes": [
+        "legible feedback",
+        "scene transitions",
+        "audio cues"
+      ],
+      "conflicts": [
+        {
+          "when": "Different projections share the same screen without a transition rule.",
+          "issue": "Objects can appear to occupy incompatible coordinate spaces.",
+          "bridge": "Use separate scenes/modes or define one consistent projection adapter."
+        }
+      ],
+      "bridge_options": [
+        "Keep source rendering while adding a separate battle mode.",
+        "Translate atmosphere into a coherent new palette and motif set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#sprite_mosaic_dissolve",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/x_parasite_util.c:SpriteDying",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/x_parasite_util.c:XParasiteSpawningInit",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/in_game.c (MOSAIC write)",
+              "confidence": 0.85
+            },
+            {
+              "kind": "capture_telemetry",
+              "ref": "capture:frontend:frames 2202-2370 MOSAIC sweep 0x0110->0x0ff0->0x0110",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#event_driven_room_effects",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/room_effect.c:RoomEffectSetupCurrentEventBased",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/room_effect.c:RoomEffectProcessEventBased",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#adaptive_music",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sound_event.c",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/event.c:EventSet (SoundEventUpdate calls)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/sa_x_noc.c",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/metroid-fusion.yaml#banners_and_area_text",
+          "canonical_file_sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/message_banner.c",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/location_text.c",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mf:src/sprites_AI/area_banner.c",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metroid-fusion:setting",
+      "label": "A concrete place, not just a genre",
+      "slot": "setting",
+      "effect": "An introductory medical image contrasts with a space-station room containing a luminous organic core and small armored figure.",
+      "flavor": "A mission-controlled station becomes a hunting ground for the hunter.",
+      "knobs": [
+        {
+          "name": "scale",
+          "meaning": "Choose the world and object scale relationship.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "motif_palette",
+          "meaning": "Choose which observed motifs define the adaptation.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "world/content vocabulary"
+      ],
+      "exposes": [
+        "region identities",
+        "spatial motifs"
+      ],
+      "conflicts": [
+        {
+          "when": "Two settings imply different world scales or technologies.",
+          "issue": "Literal asset mixing can obscure the intended place.",
+          "bridge": "Choose a unifying art/world rule and map each motif into it."
+        }
+      ],
+      "bridge_options": [
+        "Retain mechanics while authoring original scenery.",
+        "Make a deliberate crossing between region styles rather than random per-object mixing."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/metroid-fusion/gameplay/keyframes/f009603_scene.png",
+            "local/captures-experiments/20261016-current-scripts/metroid-fusion/gameplay/keyframes/f020934.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "metroid-fusion:tone",
+      "label": "Emotional register",
+      "slot": "tone",
+      "effect": "Isolated sci-fi, biological horror, controlled escalation. This is a reading of the retained scenes, not a complete tone audit.",
+      "flavor": "A mission-controlled station becomes a hunting ground for the hunter.",
+      "knobs": [
+        {
+          "name": "contrast",
+          "meaning": "Decide where tonal contrast is intentional.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "pacing",
+          "meaning": "Choose recovery versus pressure intervals.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "editorial direction",
+        "consistent audiovisual treatment"
+      ],
+      "exposes": [
+        "emotional register",
+        "contrast between scenes"
+      ],
+      "conflicts": [
+        {
+          "when": "Comic reactions and horror tension occur in the same scene.",
+          "issue": "Their feedback can cancel the intended emotional effect.",
+          "bridge": "Assign tones to acts, regions or feedback layers, with a deliberate transition."
+        }
+      ],
+      "bridge_options": [
+        "Use tonal contrast as a story beat.",
+        "Borrow pacing or vulnerability without copying character identities."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/metroid-fusion/gameplay/keyframes/f009603_scene.png",
+            "local/captures-experiments/20261016-current-scripts/metroid-fusion/gameplay/keyframes/f020934.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    }
+  ],
+  "story": {
+    "beats": [
+      {
+        "id": "retained_scene",
+        "description": "An introductory medical image contrasts with a space-station room containing a luminous organic core and small armored figure.",
+        "status": "observed_scene_without_causal_order_claim",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/metroid-fusion/gameplay/keyframes/f009603_scene.png",
+              "local/captures-experiments/20261016-current-scripts/metroid-fusion/gameplay/keyframes/f020934.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      },
+      {
+        "id": "premise_candidate",
+        "description": "An infection, recovery and station investigation become a conflict with an imitation of the protagonist.",
+        "status": "model_prior_unverified",
+        "evidence": [
+          {
+            "kind": "model_prior_unverified",
+            "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+            "confidence": 0.35,
+            "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+          }
+        ]
+      }
+    ],
+    "delivery": [
+      {
+        "description": "Observed scene/GUI staging; specific source script and dialogue links are below when available.",
+        "status": "observed_partial",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/metroid-fusion/gameplay/keyframes/f009603_scene.png",
+              "local/captures-experiments/20261016-current-scripts/metroid-fusion/gameplay/keyframes/f020934.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      }
+    ],
+    "gaps": [
+      "Two retained scenes do not establish the complete narrative or player agency.",
+      "Resolve beat prerequisites, event flags, dialogue text and ending variants from source."
+    ]
+  },
+  "coverage": {
+    "status": "partial",
+    "depth": "source_partial",
+    "canonical_component_count": 69,
+    "canonical_facets": [
+      "ai",
+      "audio",
+      "camera",
+      "economy",
+      "frontend",
+      "mechanics",
+      "movement_physics",
+      "narrative_delivery",
+      "progression",
+      "projection",
+      "rendering",
+      "setting",
+      "ui_hud"
+    ],
+    "source_supported_piece_count": 6,
+    "missing": [
+      "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+      "Complete plot/event dependency graph",
+      "Calibrated user skill and strategy evidence",
+      "Full asset-to-source/address reuse catalogue"
+    ],
+    "granular_records_not_summarized": [
+      {
+        "component_id": "game_mode_flow",
+        "label": "Top-level game-mode state machine and soft reset",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "intro_sequence",
+        "label": "Two-stage pre-title space intro",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "new_file_prologue",
+        "label": "New-file prologue with paged story text and X-infection mosaic",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "title_and_attract_demo",
+        "label": "Title screen with 20 s idle attract demos replaying recorded input",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "file_select_and_extras",
+        "label": "Three-slot file select with sound option, no difficulty select",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "save_and_continue",
+        "label": "Save pads, redundant SRAM slots and game-over continue",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "bg_layer_stack",
+        "label": "Mode-0 four-layer tilemap room renderer with OBJ actors",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "hblank_raster_effects",
+        "label": "HBlank-DMA haze and power-bomb window with event-driven fog",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "blend_and_palette_effects",
+        "label": "Alpha-blended overlays, dark/dim rooms, colour fades and iris window transition",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "affine_rotscale",
+        "label": "Affine OBJ only (no affine backgrounds)",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "scroll_camera",
+        "label": "Scroll-region-bounded follow camera with displacement-limited catch-up",
+        "facet": "camera"
+      },
+      {
+        "component_id": "parallax_layers",
+        "label": "Per-room BG3 parallax codes and auto-scrolling BG0",
+        "facet": "camera"
+      },
+      {
+        "component_id": "side_view_projection",
+        "label": "Side-view orthographic 2D with 16 px metatile grid",
+        "facet": "projection"
+      },
+      {
+        "component_id": "wall_jump",
+        "label": "Spin wall jump with fixed impulse and horizontal kick",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "space_jump",
+        "label": "Space Jump re-jump with fall-speed window",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "speed_booster",
+        "label": "Speed Booster sustained-run speed mode",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "shinespark",
+        "label": "Stored shinespark dash",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "morph_ball_and_bomb_jump",
+        "label": "Morph Ball with High-Jump ball jump and weak mid-air bomb re-bounce",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "liquid_physics",
+        "label": "Liquid drag negated by Gravity Suit (or late SA-X suit flag)",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "bombs_and_power_bombs",
+        "label": "Morph-ball bombs and screen-filling power bombs",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "damage_and_iframes",
+        "label": "Contact damage with four suit-reduction classes, knockback and i-frames",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "environmental_hazards",
+        "label": "Suit-dependent hazard damage including cold before Varia",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "body_attacks",
+        "label": "Movement-as-weapon (Screw Attack, speed boost, shinespark, pseudo screw)",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "sa_x_arsenal",
+        "label": "Mirror enemy with the player's kit - freezing ice beam, super missiles, power bombs",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "enemy_weakness_mask",
+        "label": "Enemy weakness bitmask and hit-flash invulnerability",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "sa_x_boss_sequence",
+        "label": "Multi-form SA-X finale (SA-X, monster, ice Core-X, Omega rescue)",
+        "facet": "ai"
+      },
+      {
+        "component_id": "core_x_ability_boss",
+        "label": "Core-X - shielded ability core that must be shattered and absorbed",
+        "facet": "ai"
+      },
+      {
+        "component_id": "beam_core_x_boss",
+        "label": "Beam Core-X - rotating eye that opens to fire the beam it holds",
+        "facet": "ai"
+      },
+      {
+        "component_id": "host_bosses",
+        "label": "Host-boss roster with grab, gravity-field and multi-part patterns",
+        "facet": "ai"
+      },
+      {
+        "component_id": "sprite_fsm_framework",
+        "label": "Per-sprite pose state machines with infection classes and X pose band",
+        "facet": "ai"
+      },
+      {
+        "component_id": "surface_crawler_ai",
+        "label": "Geemer - surface crawler that curls up when Samus approaches",
+        "facet": "ai"
+      },
+      {
+        "component_id": "ceiling_diver_ai",
+        "label": "Skree - ceiling diver that burrows and re-emerges under Samus",
+        "facet": "ai"
+      },
+      {
+        "component_id": "zebesian_ai",
+        "label": "Zebesian - front-cone jumper and shooter",
+        "facet": "ai"
+      },
+      {
+        "component_id": "ranked_ending",
+        "label": "Tank-completion and time-ranked ending images",
+        "facet": "progression"
+      },
+      {
+        "component_id": "destructible_block_locks",
+        "label": "Weapon-typed destructible and reforming blocks, hidden tanks",
+        "facet": "progression"
+      },
+      {
+        "component_id": "resource_pools",
+        "label": "Energy, one missile pool and power bombs with tank expansions",
+        "facet": "economy"
+      },
+      {
+        "component_id": "recharge_stations",
+        "label": "Energy, ammo and combined recharge pads",
+        "facet": "economy"
+      },
+      {
+        "component_id": "x_absorption_economy",
+        "label": "Colour-coded X refills with per-enemy odds and need-aware substitution",
+        "facet": "economy"
+      },
+      {
+        "component_id": "obj_hud",
+        "label": "Sprite HUD with energy bar, single missile counter, minimap and low-health beep",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "pause_map_and_status",
+        "label": "Pause map with downloaded sector maps and read-only status screen",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "controls_and_aiming",
+        "label": "Hold-to-arm weapon button and five-way aiming",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "bsl_station_setting",
+        "label": "Infested orbital research station above SR388",
+        "facet": "setting"
+      },
+      {
+        "component_id": "sound_engine",
+        "label": "MP2K-style sequenced engine at 10512 Hz with DirectSound and PSG",
+        "facet": "audio"
+      }
+    ],
+    "not_claimed": [
+      "All mechanics extracted",
+      "Full ROM decompiled",
+      "Complete plot recovered",
+      "Every proposed bundle assembled or playtested"
+    ]
+  },
+  "provenance": {
+    "recorded_at": "2026-10-16T06:22:36.193456+00:00",
+    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "rom_sha1": "ca33f4348c2c05dd330d37b97e2c5a69531dfe87",
+    "canonical": {
+      "kind": "canonical_ontology",
+      "ref": "ontology/games/metroid-fusion.yaml",
+      "sha256": "8324b383950137b0d5040366e844b10605aae83f6bec844314f6a65508efe6e8",
+      "scope": "Existing component extraction; inherited evidence and limitations, not a fresh independent verification."
+    },
+    "source_repositories": [
+      {
+        "path": "local/decomps/mf",
+        "commit": "55b1a54bd20c0daf5a64859850b6ebc1322bf514",
+        "source_dirty": false,
+        "file_counts": {
+          ".c": 702,
+          ".h": 394,
+          ".inc": 1,
+          ".s": 677
+        },
+        "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+      }
+    ],
+    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "capture_run_id": "20261016T004328-0e248f",
+    "capture_frame_sha256": {
+      "local/captures-experiments/20261016-current-scripts/metroid-fusion/gameplay/keyframes/f009603_scene.png": "632b1245ab96607c83a837e4cdc5896240d4e7e510e2408a99e3ea85c5a70a9b",
+      "local/captures-experiments/20261016-current-scripts/metroid-fusion/gameplay/keyframes/f020934.png": "f8659bed283f64c272168beb5f97cf8e27278ff5934cd1dbde06fef4d4249198"
+    },
+    "source_inspection_notes": "Canonical component evidence is inherited; direct new source story anchors, when present, are marked separately."
+  }
+}

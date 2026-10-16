@@ -1,0 +1,1455 @@
+{
+  "schema_version": 1,
+  "game_id": "legend-of-zelda-the-the-minish-cap",
+  "title": "The Legend of Zelda: The Minish Cap",
+  "identity": {
+    "tagline": "The same ordinary world becomes a new puzzle when the hero is tiny.",
+    "categories": [
+      "action adventure",
+      "scale shifting",
+      "tool puzzles"
+    ],
+    "view": {
+      "label": "top down with jump height",
+      "status": "observed_or_source_backed_presentation",
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/legend-of-zelda-the-the-minish-cap/gameplay/keyframes/f004774_scene.png",
+            "local/captures-experiments/20261016-current-scripts/legend-of-zelda-the-the-minish-cap/gameplay/keyframes/f009906.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ]
+    },
+    "vibe": [
+      "whimsical",
+      "miniature worlds",
+      "warm folklore"
+    ],
+    "vibe_status": "editorial_interpretation_of_observed_scenes",
+    "grounded_examples": [
+      "A tiny green-clad figure appears in a grassy field and a carefully furnished bedroom with hearts and contextual button labels."
+    ],
+    "gameplay_prior": {
+      "text": "Shrink at portals, combine dungeon tools and revisit locations from another physical scale.",
+      "status": "model_prior_unverified_unless_piece_links_source"
+    },
+    "evidence": [
+      {
+        "kind": "capture_contact_sheet_inspection",
+        "refs": [
+          "local/captures-experiments/20261016-current-scripts/legend-of-zelda-the-the-minish-cap/gameplay/keyframes/f004774_scene.png",
+          "local/captures-experiments/20261016-current-scripts/legend-of-zelda-the-the-minish-cap/gameplay/keyframes/f009906.png"
+        ],
+        "confidence": 0.85,
+        "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+      }
+    ],
+    "category_basis": "Editorial taxonomy from mixed source, observed scenes and explicitly unverified prior; categories are not proof of implemented or extracted rules.",
+    "tagline_status": "editorial_summary_mixed_evidence"
+  },
+  "pieces": [
+    {
+      "id": "legend-of-zelda-the-the-minish-cap:movement_view",
+      "label": "Walk a world at two scales",
+      "slot": "movement_view",
+      "effect": "Combine eight-direction movement, terrain collision and portal-based shrinking; size changes the accessible world.",
+      "flavor": "The same ordinary world becomes a new puzzle when the hero is tiny.",
+      "knobs": [
+        {
+          "name": "perspective",
+          "meaning": "Keep or bridge the observed source view.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "cadence",
+          "meaning": "Choose frame updates, tile actions or mode transitions explicitly.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "top_down_projection"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "eight_direction_walk"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "tile_collision_and_sliding"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "minish_shrink"
+        }
+      ],
+      "requires": [
+        "world coordinates",
+        "collision or terrain rules",
+        "input semantics"
+      ],
+      "exposes": [
+        "position",
+        "facing",
+        "grounded or traversal state"
+      ],
+      "conflicts": [
+        {
+          "when": "A host uses tile turns but this controller uses continuous frame updates.",
+          "issue": "One input cannot mean both a whole turn and a physics tick.",
+          "bridge": "Keep a fixed simulation clock and convert a completed movement action into a turn event."
+        }
+      ],
+      "bridge_options": [
+        "Keep side-view stages and a top-down world as separate modes.",
+        "Use a shared height axis rather than interpreting northward movement as a jump."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#top_down_projection",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:include/entity.h:Entity (x/y/z Q16.16)",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/collision.c:IsColliding (z half-depth)",
+              "confidence": 0.85
+            },
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:keyframes f004503, f005344_scene (Link's house area)",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#eight_direction_walk",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/player.c:PlayerNormal",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/code_0805EC04.c:gUnk_08109202 (D-pad to direction table)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/physics.c:LinearMoveUpdate",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/physics.c:sub_0806F948 (facing on diagonals)",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/player.c:sub_08074244 (slope modifier)",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#tile_collision_and_sliding",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:asm/src/player.s:sub_080085CC",
+              "confidence": 0.75
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:asm/src/code_08001A7C.s:LinearMoveDirectionOLD",
+              "confidence": 0.7
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/playerUtils.c:sub_0807A5B8",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/movement.c:IsTileCollision",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#minish_shrink",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/manager/minishPortalManager.c:PortalReadyForMinish",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/player.c:PortalShrinkInit",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/player.c:PlayerMinish",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/itemDefinitions.c:gItemDefinitions (isUseableAsMinish)",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/playerUtils.c:CreateItem (PL_MINISH check)",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/player.c:SurfaceAction_MinishDoorFront",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/player.c:SurfaceAction_ShallowWater",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/playerUtils.c:IsTryingToPickupObject",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "legend-of-zelda-the-the-minish-cap:combat",
+      "label": "Tools work in fights and puzzles",
+      "slot": "combat",
+      "effect": "Pair a two-button toolkit with sword techniques and enemies whose response depends on the used item.",
+      "flavor": "The same ordinary world becomes a new puzzle when the hero is tiny.",
+      "knobs": [
+        {
+          "name": "encounter_boundary",
+          "meaning": "Decide whether field movement continues during combat.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "supported_rules",
+          "meaning": "Declare the move/status/item capability subset.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "item_toolkit"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "sword_combat"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "item_vulnerability_ai"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "four_sword_clones"
+        }
+      ],
+      "requires": [
+        "combatant state",
+        "legal actions",
+        "damage and resource rules"
+      ],
+      "exposes": [
+        "damage events",
+        "resource expenditure",
+        "win or loss"
+      ],
+      "conflicts": [
+        {
+          "when": "Real-time field action meets a turn-based battle system.",
+          "issue": "Input cadence and simultaneous enemy updates disagree.",
+          "bridge": "Create an explicit encounter boundary, freeze the field and restore its state after battle."
+        }
+      ],
+      "bridge_options": [
+        "Share attack types across real-time and turn-based attacks.",
+        "Preserve the source damage rules while declaring a smaller supported move/effect set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#item_toolkit",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/itemDefinitions.c:gItemDefinitions",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/itemUtils.c:PutItemOnSlot",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/playerUtils.c:UpdateActiveItems",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:include/item.h:Item",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#sword_combat",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/item/itemSword.c:sub_080754B8",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/playerItem/playerItemSword.c:PlayerItemSword_Action1",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/playerUtils.c:UpdatePlayerSkills",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#item_vulnerability_ai",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/enemy/octorok.c:Octorok_OnGrabbed",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/enemy/peahat.c:Peahat_OnCollision",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/enemy/rollobite.c:Rollobite_OnKnockback",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/enemy/businessScrub.c:BusinessScrub_Action2",
+              "confidence": 0.7
+            },
+            {
+              "kind": "llm_knowledge",
+              "ref": "Gust Jar pulls Peahat propellers off; Business Scrubs are stunned by reflecting their nut with the shield",
+              "confidence": 0.5
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#four_sword_clones",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/player.c:SurfaceAction_CloneTile",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/playerUtils.c:sub_08078008",
+              "confidence": 0.85
+            },
+            {
+              "kind": "llm_knowledge",
+              "ref": "clones copy Link's movements and are used for multi-switch and heavy-block puzzles",
+              "confidence": 0.5
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "legend-of-zelda-the-the-minish-cap:ai",
+      "label": "Teach enemies readable attack rules",
+      "slot": "ai",
+      "effect": "Mix alignment charges, wandering shots, hopping pursuit and guarded swordsmen; item-specific reactions create puzzle-like fights.",
+      "flavor": "The same ordinary world becomes a new puzzle when the hero is tiny.",
+      "knobs": [
+        {
+          "name": "information_budget",
+          "meaning": "Choose visible versus privileged state.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "decision_cadence",
+          "meaning": "Separate every-frame reactions from slower objective decisions.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "aligned_charge_ai"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "wander_shooter_ai"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "hopping_pursuer_ai"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "guarded_swordsman_ai"
+        }
+      ],
+      "requires": [
+        "observed state contract",
+        "legal actions",
+        "update cadence"
+      ],
+      "exposes": [
+        "chosen action",
+        "target",
+        "decision reason"
+      ],
+      "conflicts": [
+        {
+          "when": "An AI reads hidden battle state but the desired bot sees only screenshots.",
+          "issue": "The policy would gain information unavailable in the target interface.",
+          "bridge": "Expose a typed observation adapter and declare privileged versus visible fields."
+        }
+      ],
+      "bridge_options": [
+        "Use deterministic rules for supported choices; escalate ambiguous goals to an LLM.",
+        "Keep enemy AI and external playtester policies as separate components."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#aligned_charge_ai",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/enemy/rope.c:sub_080314FC",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/code_08049DF4.c:sub_0804A044",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#wander_shooter_ai",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/enemy/octorok.c:Octorok_Turn",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/enemy/octorok.c:Octorok_ShootNut",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/enemy/octorok.c:Octorok_FacesPlayer",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#hopping_pursuer_ai",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/enemy/chuchu.c:sub_0801F12C",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/enemy/chuchu.c:sub_0801F1B0",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/enemy/chuchu.c:CheckWaterTile",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#guarded_swordsman_ai",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/enemy/darkNut.c:DarkNut_OnCollision",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/enemy/darkNut.c:sub_08020F48",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "legend-of-zelda-the-the-minish-cap:progression",
+      "label": "A new tool changes old places",
+      "slot": "progression",
+      "effect": "Link dungeon keys, permanent tool capabilities and persistent flags; matching kinstones can change a remote location.",
+      "flavor": "The same ordinary world becomes a new puzzle when the hero is tiny.",
+      "knobs": [
+        {
+          "name": "persistence",
+          "meaning": "Choose session, checkpoint, room or save lifetime.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "unlock_meaning",
+          "meaning": "Choose capability, inventory key or event prerequisite.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "dungeon_lock_and_key"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "item_gated_obstacles"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "kinstone_fusion"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "flag_banks"
+        }
+      ],
+      "requires": [
+        "persistent state",
+        "gate or objective predicates",
+        "reward events"
+      ],
+      "exposes": [
+        "unlocked route",
+        "completion state",
+        "new capability"
+      ],
+      "conflicts": [
+        {
+          "when": "A key consumable is substituted for a permanent capability.",
+          "issue": "Backtracking and recoverability can change even if the first door opens.",
+          "bridge": "Choose explicitly between persistent ability ownership and per-door key consumption."
+        }
+      ],
+      "bridge_options": [
+        "Keep source gate semantics and reskin their fiction.",
+        "Connect battle rewards to traversal capabilities through a named unlock rule."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#dungeon_lock_and_key",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/object/lockedDoor.c:LockedDoor_Init",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/object/bossDoor.c",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/gameUtils.c:ModDungeonKeys",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/common.c:DrawDungeonMap",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/playerItemUtils.c:OpenSmallChest",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#item_gated_obstacles",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/room.c:LoadDestructibleTile",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/object/lilypadLarge.c (ITEM_FLIPPERS check)",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/object/smallIceBlock.c",
+              "confidence": 0.75
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/roomInit.c:sub_StateChange_CastorWilds_Main",
+              "confidence": 0.8
+            },
+            {
+              "kind": "llm_knowledge",
+              "ref": "per-dungeon item order (Gust Jar, Cane of Pacci, Mole Mitts, Flippers, Roc's Cape, Lantern)",
+              "confidence": 0.5
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#kinstone_fusion",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/common.c:GetFusionToOffer",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/common.c:NotifyFusersOnFusionDone",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/menu/kinstoneMenu.c:KinstoneMenu_Type3_Overlay1 (shape compare)",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/menu/kinstoneMenu.c:KinstoneMenu_Type5_Overlay0 (WriteBit fused, fusedCount)",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/kinstone.c:sub_0801876C",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/subtask/subtaskWorldEvent.c:sub_08054974",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:include/kinstone.h:KinstoneWorldEvent",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#flag_banks",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/flags.c:CheckFlags",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/code_08049CD4.c:AddCurrentRoom",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "legend-of-zelda-the-the-minish-cap:story",
+      "label": "A companion comments on milestones",
+      "slot": "story",
+      "effect": "Use story flags and context hints to change advice and NPC/world state instead of attaching dialogue to time alone.",
+      "flavor": "The same ordinary world becomes a new puzzle when the hero is tiny.",
+      "knobs": [
+        {
+          "name": "beat_graph",
+          "meaning": "Choose prerequisites and resulting world-state changes.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "delivery",
+          "meaning": "Choose scene, dialogue, environmental cue or playable sequence.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "story_progress_gate"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "hint_systems"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "dialogue_and_scripts"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "story_intro_and_credits"
+        }
+      ],
+      "requires": [
+        "event/state flags",
+        "actor and dialogue staging"
+      ],
+      "exposes": [
+        "story milestone",
+        "new objective",
+        "changed world state"
+      ],
+      "conflicts": [
+        {
+          "when": "Two plots both assume exclusive control of campaign milestones.",
+          "issue": "Their original sequence prerequisites may deadlock or contradict each other.",
+          "bridge": "Map selected beats onto one explicit milestone graph; preserve required predecessors."
+        }
+      ],
+      "bridge_options": [
+        "Borrow a beat pattern such as rescue then gift without copying dialogue.",
+        "Treat a vulnerable chapter as a temporary controller/resource contract."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#story_progress_gate",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/gameUtils.c:UpdateGlobalProgress",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/room.c:LoadRoom (enemy list gated by TABIDACHI)",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#hint_systems",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/kinstone.c:sub_0801855C",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/kinstone.c:ShuffleEzloHints",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/manager/ezloHintManager.c",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#dialogue_and_scripts",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/script.c:ExecuteScript",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/message.c:MessageRequest",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#story_intro_and_credits",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "capture_frame",
+              "ref": "capture:frontend:keyframes f001431 (stained-glass panel), f002582 (narration text)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "capture_telemetry",
+              "ref": "capture:frontend:frames 1347-4102 WIN0 0x00f0/0x0060, BLDCNT 0x2244",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/staffroll.c:StaffrollTask_State0",
+              "confidence": 0.75
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/playerUtils.c:FinalizeSave (spawn in Link's bedroom)",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "legend-of-zelda-the-the-minish-cap:presentation",
+      "label": "Make smallness visible",
+      "slot": "presentation",
+      "effect": "Use foreground scale, parallax and different paths to make ordinary scenery feel large; preserve readable contextual controls.",
+      "flavor": "The same ordinary world becomes a new puzzle when the hero is tiny.",
+      "knobs": [
+        {
+          "name": "feedback_density",
+          "meaning": "Balance HUD information against scene readability.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "render_budget",
+          "meaning": "Choose palette, animation and layer costs for the target runtime.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "scale_parallax_backgrounds"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "bg_layer_stack"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "hud"
+        },
+        {
+          "game_id": "legend-of-zelda-the-the-minish-cap",
+          "component_id": "music_system"
+        }
+      ],
+      "requires": [
+        "camera/projection contract",
+        "asset/palette budget",
+        "rendering clock"
+      ],
+      "exposes": [
+        "legible feedback",
+        "scene transitions",
+        "audio cues"
+      ],
+      "conflicts": [
+        {
+          "when": "Different projections share the same screen without a transition rule.",
+          "issue": "Objects can appear to occupy incompatible coordinate spaces.",
+          "bridge": "Use separate scenes/modes or define one consistent projection adapter."
+        }
+      ],
+      "bridge_options": [
+        "Keep source rendering while adding a separate battle mode.",
+        "Translate atmosphere into a coherent new palette and motif set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#scale_parallax_backgrounds",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/manager/horizontalMinishPathBackgroundManager.c:sub_08057F20",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/manager/minishRaftersBackgroundManager.c",
+              "confidence": 0.7
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#bg_layer_stack",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/interrupts.c:DispCtrlSet",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/interrupts.c:UpdateDisplayControls",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/kinstone.c:sub_0801876C (SetTileType on LAYER_BOTTOM/LAYER_TOP)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "capture_telemetry",
+              "ref": "capture:frontend:frames 4120-5400 video mode 0",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#hud",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/ui.c:DrawHearts",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/ui.c:TextUIElement",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/ui.c:DrawKeys",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml#music_system",
+          "canonical_file_sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/gameUtils.c:LoadRoomBgm",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/game.c (gArea.bgm != queued_bgm -> SoundReq)",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "tmc:src/manager/fightManager.c:FightManager_WaitForFlag",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "legend-of-zelda-the-the-minish-cap:setting",
+      "label": "A concrete place, not just a genre",
+      "slot": "setting",
+      "effect": "A tiny green-clad figure appears in a grassy field and a carefully furnished bedroom with hearts and contextual button labels.",
+      "flavor": "The same ordinary world becomes a new puzzle when the hero is tiny.",
+      "knobs": [
+        {
+          "name": "scale",
+          "meaning": "Choose the world and object scale relationship.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "motif_palette",
+          "meaning": "Choose which observed motifs define the adaptation.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "world/content vocabulary"
+      ],
+      "exposes": [
+        "region identities",
+        "spatial motifs"
+      ],
+      "conflicts": [
+        {
+          "when": "Two settings imply different world scales or technologies.",
+          "issue": "Literal asset mixing can obscure the intended place.",
+          "bridge": "Choose a unifying art/world rule and map each motif into it."
+        }
+      ],
+      "bridge_options": [
+        "Retain mechanics while authoring original scenery.",
+        "Make a deliberate crossing between region styles rather than random per-object mixing."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/legend-of-zelda-the-the-minish-cap/gameplay/keyframes/f004774_scene.png",
+            "local/captures-experiments/20261016-current-scripts/legend-of-zelda-the-the-minish-cap/gameplay/keyframes/f009906.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "legend-of-zelda-the-the-minish-cap:tone",
+      "label": "Emotional register",
+      "slot": "tone",
+      "effect": "Whimsical, miniature worlds, warm folklore. This is a reading of the retained scenes, not a complete tone audit.",
+      "flavor": "The same ordinary world becomes a new puzzle when the hero is tiny.",
+      "knobs": [
+        {
+          "name": "contrast",
+          "meaning": "Decide where tonal contrast is intentional.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "pacing",
+          "meaning": "Choose recovery versus pressure intervals.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "editorial direction",
+        "consistent audiovisual treatment"
+      ],
+      "exposes": [
+        "emotional register",
+        "contrast between scenes"
+      ],
+      "conflicts": [
+        {
+          "when": "Comic reactions and horror tension occur in the same scene.",
+          "issue": "Their feedback can cancel the intended emotional effect.",
+          "bridge": "Assign tones to acts, regions or feedback layers, with a deliberate transition."
+        }
+      ],
+      "bridge_options": [
+        "Use tonal contrast as a story beat.",
+        "Borrow pacing or vulnerability without copying character identities."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/legend-of-zelda-the-the-minish-cap/gameplay/keyframes/f004774_scene.png",
+            "local/captures-experiments/20261016-current-scripts/legend-of-zelda-the-the-minish-cap/gameplay/keyframes/f009906.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    }
+  ],
+  "story": {
+    "beats": [
+      {
+        "id": "retained_scene",
+        "description": "A tiny green-clad figure appears in a grassy field and a carefully furnished bedroom with hearts and contextual button labels.",
+        "status": "observed_scene_without_causal_order_claim",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/legend-of-zelda-the-the-minish-cap/gameplay/keyframes/f004774_scene.png",
+              "local/captures-experiments/20261016-current-scripts/legend-of-zelda-the-the-minish-cap/gameplay/keyframes/f009906.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      },
+      {
+        "id": "premise_candidate",
+        "description": "A small-folk legend, a companion cap and milestone-gated restoration quest.",
+        "status": "model_prior_unverified",
+        "evidence": [
+          {
+            "kind": "model_prior_unverified",
+            "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+            "confidence": 0.35,
+            "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+          }
+        ]
+      }
+    ],
+    "delivery": [
+      {
+        "description": "Observed scene/GUI staging; specific source script and dialogue links are below when available.",
+        "status": "observed_partial",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/legend-of-zelda-the-the-minish-cap/gameplay/keyframes/f004774_scene.png",
+              "local/captures-experiments/20261016-current-scripts/legend-of-zelda-the-the-minish-cap/gameplay/keyframes/f009906.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      }
+    ],
+    "gaps": [
+      "Two retained scenes do not establish the complete narrative or player agency.",
+      "Resolve beat prerequisites, event flags, dialogue text and ending variants from source."
+    ]
+  },
+  "coverage": {
+    "status": "partial",
+    "depth": "source_partial",
+    "canonical_component_count": 59,
+    "canonical_facets": [
+      "ai",
+      "audio",
+      "camera",
+      "economy",
+      "frontend",
+      "mechanics",
+      "movement_physics",
+      "narrative_delivery",
+      "progression",
+      "projection",
+      "rendering",
+      "setting",
+      "ui_hud"
+    ],
+    "source_supported_piece_count": 6,
+    "missing": [
+      "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+      "Complete plot/event dependency graph",
+      "Calibrated user skill and strategy evidence",
+      "Full asset-to-source/address reuse catalogue"
+    ],
+    "granular_records_not_summarized": [
+      {
+        "component_id": "game_mode_flow",
+        "label": "Top-level task state machine with soft reset and sleep mode",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "logos_and_title",
+        "label": "Nintendo/Capcom logos, zooming-sword title and idle loop back to logos (no attract demo)",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "file_select_and_naming",
+        "label": "Three-slot file select with copy/erase, options and 6-character name entry",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "save_system",
+        "label": "Anywhere-save to mirrored, checksummed EEPROM records",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "game_over_continue",
+        "label": "Game over with save prompt, continue at last entrance with 3 hearts",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "follow_camera",
+        "label": "Centred follow camera clamped to room bounds with capped speed and screen shake",
+        "facet": "camera"
+      },
+      {
+        "component_id": "room_transitions",
+        "label": "Room-edge slide scrolling, door warps and typed fades",
+        "facet": "camera"
+      },
+      {
+        "component_id": "hblank_raster_effects",
+        "label": "HBlank-DMA window and affine raster effects (iris wipes, dark-room light circle, barrel, heat shimmer)",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "affine_title_and_sprites",
+        "label": "Mode-1 affine title zoom and affine BG set pieces",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "blend_light_and_overlays",
+        "label": "Alpha overlays, light levels and screen fades",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "sound_engine",
+        "label": "MP2K (m4a) sequencer at 15768 Hz with a fade-aware request wrapper",
+        "facet": "audio"
+      },
+      {
+        "component_id": "surface_and_ice_physics",
+        "label": "Per-tile surface actions (ice momentum, conveyors, swamp, slopes)",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "roll_and_dash",
+        "label": "R-button roll and Pegasus Boots charge-dash",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "rocs_cape_jump",
+        "label": "Roc's Cape z-jump with held glide extension",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "terrain_moves",
+        "label": "Ledge hops, push/pull, ladders, holes and swimming",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "knockback_and_iframes",
+        "label": "Matrix-driven knockback slide and signed i-frame counters",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "hazard_falls_and_respawn",
+        "label": "Pit, water, lava and swamp hazards with breadcrumb respawn",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "health_and_damage",
+        "label": "Heart health in eighth units, charms and bottled restoratives",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "enemy_entity_framework",
+        "label": "Six-handler enemy FSM runtime with definition table and home box",
+        "facet": "ai"
+      },
+      {
+        "component_id": "scale_dependent_targeting",
+        "label": "Size-filtered enemy target selection (full-size vs Minish-scale threats)",
+        "facet": "ai"
+      },
+      {
+        "component_id": "flutter_sleep_ai",
+        "label": "Keese random flutter with rest and proximity wake",
+        "facet": "ai"
+      },
+      {
+        "component_id": "ambush_grabber_ai",
+        "label": "Wallmaster ceiling drop and Like Like engulf/steal",
+        "facet": "ai"
+      },
+      {
+        "component_id": "wall_follower_ai",
+        "label": "Spark wall-hugging circuit",
+        "facet": "ai"
+      },
+      {
+        "component_id": "dungeon_bosses",
+        "label": "Element-dungeon bosses with item-specific damage windows and phase health",
+        "facet": "ai"
+      },
+      {
+        "component_id": "fight_rooms",
+        "label": "Monitored ambush fights that seal and resolve via flags",
+        "facet": "ai"
+      },
+      {
+        "component_id": "business_scrub_trades",
+        "label": "Business Scrub stun-then-trade shops",
+        "facet": "economy"
+      },
+      {
+        "component_id": "overworld_structure",
+        "label": "Hub overworld of linked areas with layered dungeons and Minish sub-world",
+        "facet": "progression"
+      },
+      {
+        "component_id": "windcrest_fast_travel",
+        "label": "Wind crest activation and Ocarina fast travel",
+        "facet": "progression"
+      },
+      {
+        "component_id": "technique_scrolls",
+        "label": "Sword techniques bought from dojo masters",
+        "facet": "progression"
+      },
+      {
+        "component_id": "rupee_wallet_economy",
+        "label": "Rupees, ammo and shells with upgradeable capacities",
+        "facet": "economy"
+      },
+      {
+        "component_id": "drop_tables",
+        "label": "Weighted 16-slot drop tables with need-aware boosts and picolyte bias",
+        "facet": "economy"
+      },
+      {
+        "component_id": "shops",
+        "label": "Fixed-price shops for gear, ammo, food and bottle contents",
+        "facet": "economy"
+      },
+      {
+        "component_id": "figurine_gacha",
+        "label": "Mysterious Shell figurine gacha with pity floor",
+        "facet": "economy"
+      },
+      {
+        "component_id": "pause_menus",
+        "label": "Multi-screen pause menu (items, quest status, maps, kinstones, techniques, save/sleep)",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "minish_fantasy_setting",
+        "label": "Hyrule seen from two scales - Picori folklore fantasy",
+        "facet": "setting"
+      }
+    ],
+    "not_claimed": [
+      "All mechanics extracted",
+      "Full ROM decompiled",
+      "Complete plot recovered",
+      "Every proposed bundle assembled or playtested"
+    ]
+  },
+  "provenance": {
+    "recorded_at": "2026-10-16T06:22:36.193456+00:00",
+    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "rom_sha1": "b4bd50e4131b027c334547b4524e2dbbd4227130",
+    "canonical": {
+      "kind": "canonical_ontology",
+      "ref": "ontology/games/legend-of-zelda-the-the-minish-cap.yaml",
+      "sha256": "630c829356dc78b2adda539af825fa6717fb60e2030725f67996d8d12ea088e0",
+      "scope": "Existing component extraction; inherited evidence and limitations, not a fresh independent verification."
+    },
+    "source_repositories": [
+      {
+        "path": "local/decomps/tmc",
+        "commit": "6fb6dfb4a7efbe24d0fd1dda5097af6131faacde",
+        "source_dirty": false,
+        "file_counts": {
+          ".c": 632,
+          ".h": 198,
+          ".inc": 592,
+          ".pal": 1,
+          ".png": 1,
+          ".s": 304
+        },
+        "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+      }
+    ],
+    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "capture_run_id": "20261016T004328-0e248f",
+    "capture_frame_sha256": {
+      "local/captures-experiments/20261016-current-scripts/legend-of-zelda-the-the-minish-cap/gameplay/keyframes/f004774_scene.png": "2b6cba799aba79c30322e6e382de46f3e3fb8c7050168cf6c2416599ccf4dd93",
+      "local/captures-experiments/20261016-current-scripts/legend-of-zelda-the-the-minish-cap/gameplay/keyframes/f009906.png": "4aa520a534ae99a579cd0cedf08e251974906ed2581d9795966a008e70718e80"
+    },
+    "source_inspection_notes": "Canonical component evidence is inherited; direct new source story anchors, when present, are marked separately."
+  }
+}

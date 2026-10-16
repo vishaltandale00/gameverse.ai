@@ -1,0 +1,1351 @@
+{
+  "schema_version": 1,
+  "game_id": "kingdom-hearts-chain-of-memories",
+  "title": "Kingdom Hearts: Chain of Memories",
+  "identity": {
+    "tagline": "Build rooms with cards, then contest attacks with another deck.",
+    "categories": [
+      "action RPG",
+      "deck building",
+      "room synthesis"
+    ],
+    "view": {
+      "label": "oblique field plus 2.5D arena",
+      "status": "observed_or_source_backed_presentation",
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/kingdom-hearts-chain-of-memories/gameplay/keyframes/f011149_scene.png",
+            "local/captures-experiments/20261016-current-scripts/kingdom-hearts-chain-of-memories/gameplay/keyframes/f022949.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ]
+    },
+    "vibe": [
+      "theatrical fantasy",
+      "bright and uncanny",
+      "memory motif"
+    ],
+    "vibe_status": "editorial_interpretation_of_observed_scenes",
+    "grounded_examples": [
+      "A robed figure crosses a pale hall; a later arena tutorial explicitly teaches jump and double-tap dodge roll beside a card HUD."
+    ],
+    "gameplay_prior": {
+      "text": "Cards are both spatial construction resources and real-time combat commitments.",
+      "status": "model_prior_unverified_unless_piece_links_source"
+    },
+    "evidence": [
+      {
+        "kind": "capture_contact_sheet_inspection",
+        "refs": [
+          "local/captures-experiments/20261016-current-scripts/kingdom-hearts-chain-of-memories/gameplay/keyframes/f011149_scene.png",
+          "local/captures-experiments/20261016-current-scripts/kingdom-hearts-chain-of-memories/gameplay/keyframes/f022949.png"
+        ],
+        "confidence": 0.85,
+        "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+      }
+    ],
+    "category_basis": "Editorial taxonomy from mixed source, observed scenes and explicitly unverified prior; categories are not proof of implemented or extracted rules.",
+    "tagline_status": "editorial_summary_mixed_evidence"
+  },
+  "pieces": [
+    {
+      "id": "kingdom-hearts-chain-of-memories:movement_view",
+      "label": "Explore a field, fight in an arena",
+      "slot": "movement_view",
+      "effect": "Bridge an oblique field and a separate battle plane with explicit depth and height instead of treating both as a flat tile grid.",
+      "flavor": "Build rooms with cards, then contest attacks with another deck.",
+      "knobs": [
+        {
+          "name": "perspective",
+          "meaning": "Keep or bridge the observed source view.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "cadence",
+          "meaning": "Choose frame updates, tile actions or mode transitions explicitly.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "field_projection"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "battle_side_projection"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "field_locomotion"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "battle_locomotion"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "battle_jump"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "dodge_roll"
+        }
+      ],
+      "requires": [
+        "world coordinates",
+        "collision or terrain rules",
+        "input semantics"
+      ],
+      "exposes": [
+        "position",
+        "facing",
+        "grounded or traversal state"
+      ],
+      "conflicts": [
+        {
+          "when": "A host uses tile turns but this controller uses continuous frame updates.",
+          "issue": "One input cannot mean both a whole turn and a physics tick.",
+          "bridge": "Keep a fixed simulation clock and convert a completed movement action into a turn event."
+        }
+      ],
+      "bridge_options": [
+        "Keep side-view stages and a top-down world as separate modes.",
+        "Use a shared height axis rather than interpreting northward movement as a jump."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#field_projection",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:include/map/map_types.h:MapCellType",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/map/map.c:MapEnmDraw",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#battle_side_projection",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/battle_runtime.c:WorldToScreen",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:include/btl/battle_bounds.h",
+              "confidence": 0.75
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#field_locomotion",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/map/fld_sora.c:task_fld_sora_1",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/map/fld_sora.c:FldSoraCheckBlocked",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/map/map_runtime.c:IsFldPosBlocked",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#battle_locomotion",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/btl_sora.c:UpdateBtlSoraWalk",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#battle_jump",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/btl_sora.c:task_btl_sora_1",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#dodge_roll",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/btl_sora.c:task_btl_sora_1",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "kingdom-hearts-chain-of-memories:combat",
+      "label": "Every action spends a card",
+      "slot": "combat",
+      "effect": "Use valued cards to commit actions, contest an opponent play and build three-card sleights at the cost of later deck availability.",
+      "flavor": "Build rooms with cards, then contest attacks with another deck.",
+      "knobs": [
+        {
+          "name": "encounter_boundary",
+          "meaning": "Decide whether field movement continues during combat.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "supported_rules",
+          "meaning": "Declare the move/status/item capability subset.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "real_time_card_battle"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "card_break_rule"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "sleight_combos"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "deck_reload"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "card_data_and_cp_cost"
+        }
+      ],
+      "requires": [
+        "combatant state",
+        "legal actions",
+        "damage and resource rules"
+      ],
+      "exposes": [
+        "damage events",
+        "resource expenditure",
+        "win or loss"
+      ],
+      "conflicts": [
+        {
+          "when": "Real-time field action meets a turn-based battle system.",
+          "issue": "Input cadence and simultaneous enemy updates disagree.",
+          "bridge": "Create an explicit encounter boundary, freeze the field and restore its state after battle."
+        }
+      ],
+      "bridge_options": [
+        "Share attack types across real-time and turn-based attacks.",
+        "Preserve the source damage rules while declaring a smaller supported move/effect set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#real_time_card_battle",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/mode_battle.c:mode_battle_1",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/battle_runtime.c:HandleSoraCardInput",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/battle_runtime.c:TryStartCardAction",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/card_battle.c:CreateSoraCardRing",
+              "confidence": 0.6,
+              "note": "name only for the ring display"
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#card_break_rule",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/card_battle.c:TrySoraCardBreak",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/card_battle.c:TrySoraStockBreak",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/card_enemy.c:UseEnemyCard (VERSION_EU 0-card branch)",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#sleight_combos",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/mode_riku_tutorial.c:LookupStockName",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/card_battle.c:UseSoraStock",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/card_battle.c:StockSoraCard",
+              "confidence": 0.75
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#deck_reload",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/card_battle.c:UpdateSoraReloadGauge",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/card_battle.c:IncrementReloadCount",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/card_battle.c:ResetSoraReloadGauge",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#card_data_and_cp_cost",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:include/card/card_types.h:CardDef",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/card_catalog.c:GetCardCpCost",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/card_deckexchange.c:CheckDeckExchangeCpCost",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/card_battle.c:UseSoraCard",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "kingdom-hearts-chain-of-memories:ai",
+      "label": "Opponents contest the same card space",
+      "slot": "ai",
+      "effect": "Use distance/state-driven task behavior and card plays so enemy actions can be answered through the same break rule.",
+      "flavor": "Build rooms with cards, then contest attacks with another deck.",
+      "knobs": [
+        {
+          "name": "information_budget",
+          "meaning": "Choose visible versus privileged state.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "decision_cadence",
+          "meaning": "Separate every-frame reactions from slower objective decisions.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "enemy_task_fsm_framework"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "enemy_card_play_ai"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "humanoid_card_duelist_ai"
+        }
+      ],
+      "requires": [
+        "observed state contract",
+        "legal actions",
+        "update cadence"
+      ],
+      "exposes": [
+        "chosen action",
+        "target",
+        "decision reason"
+      ],
+      "conflicts": [
+        {
+          "when": "An AI reads hidden battle state but the desired bot sees only screenshots.",
+          "issue": "The policy would gain information unavailable in the target interface.",
+          "bridge": "Expose a typed observation adapter and declare privileged versus visible fields."
+        }
+      ],
+      "bridge_options": [
+        "Use deterministic rules for supported choices; escalate ambiguous goals to an LLM.",
+        "Keep enemy AI and external playtester policies as separate components."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#enemy_task_fsm_framework",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/emy_common.c:EmyUpdateCommonStates",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/emy_common.c:EmyLungeAttack",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:include/btl/enemy_types.h:EmyDef",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:include/btl/battle_actor_types.h:EmyKind",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/battle_runtime.c:SpawnEnemy",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#enemy_card_play_ai",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/battle_runtime.c:TryEnemyCardUse",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/battle_runtime.c:UpdateEnemyCardUse",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/card_enemy.c:UseEnemyCard",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#humanoid_card_duelist_ai",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/bos/hum_common.c:HumChooseCardAction",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/bos/hum_common.c:HandleRikuAiCardInput",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/card_battle_riku.c:sRikuDecks",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/bos/hum_laxene.c:task_hum_laxene_1",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "kingdom-hearts-chain-of-memories:progression",
+      "label": "Spend cards to shape the next room",
+      "slot": "progression",
+      "effect": "Treat a room card as both a door resource and a choice of room contents; story keys constrain the world episode.",
+      "flavor": "Build rooms with cards, then contest attacks with another deck.",
+      "knobs": [
+        {
+          "name": "persistence",
+          "meaning": "Choose session, checkpoint, room or save lifetime.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "unlock_meaning",
+          "meaning": "Choose capability, inventory key or event prerequisite.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "room_synthesis_map_cards"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "door_card_gate"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "castle_oblivion_floor_progression"
+        }
+      ],
+      "requires": [
+        "persistent state",
+        "gate or objective predicates",
+        "reward events"
+      ],
+      "exposes": [
+        "unlocked route",
+        "completion state",
+        "new capability"
+      ],
+      "conflicts": [
+        {
+          "when": "A key consumable is substituted for a permanent capability.",
+          "issue": "Backtracking and recoverability can change even if the first door opens.",
+          "bridge": "Choose explicitly between persistent ability ownership and per-door key consumption."
+        }
+      ],
+      "bridge_options": [
+        "Keep source gate semantics and reskin their fiction.",
+        "Connect battle rewards to traversal capabilities through a named unlock rule."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#room_synthesis_map_cards",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/map/map_runtime.c:CreateMapRoom",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/map/map_runtime.c:GetRandomRoomType",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/map/map.c:MapDoorWaitCard",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:config/assets/map_room_tables.yaml:gMapRoomShapes",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/map/map.c:MapEnmApplyRoomFlags",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#door_card_gate",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/map/map.c:DoorAcceptsMapCard",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:config/assets/map_room_tables.yaml:gEventKeys00",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/map/map_runtime.c:AdvanceFloorStory",
+              "confidence": 0.8
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#castle_oblivion_floor_progression",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/evt/mode_event.c:GrantRewardsAfterEvent",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/menu/mode_worldselect.c:sWorldselectWorldDefs",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/map/map_runtime.c:GetProgressFloor",
+              "confidence": 0.8
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:include/save_types.h:FloorFlag",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "kingdom-hearts-chain-of-memories:story",
+      "label": "Build an episodic memory climb",
+      "slot": "story",
+      "effect": "Separate floor entrance, world episode and boss/end beats; keyframed scenes synchronize portraits, camera and sound.",
+      "flavor": "Build rooms with cards, then contest attacks with another deck.",
+      "knobs": [
+        {
+          "name": "beat_graph",
+          "meaning": "Choose prerequisites and resulting world-state changes.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "delivery",
+          "meaning": "Choose scene, dialogue, environmental cue or playable sequence.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "memory_story_structure"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "cutscene_system"
+        }
+      ],
+      "requires": [
+        "event/state flags",
+        "actor and dialogue staging"
+      ],
+      "exposes": [
+        "story milestone",
+        "new objective",
+        "changed world state"
+      ],
+      "conflicts": [
+        {
+          "when": "Two plots both assume exclusive control of campaign milestones.",
+          "issue": "Their original sequence prerequisites may deadlock or contradict each other.",
+          "bridge": "Map selected beats onto one explicit milestone graph; preserve required predecessors."
+        }
+      ],
+      "bridge_options": [
+        "Borrow a beat pattern such as rescue then gift without copying dialogue.",
+        "Treat a vulnerable chapter as a temporary controller/resource contract."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#memory_story_structure",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/evt/events/ (per-floor and per-world e0..e3/boss/end event scripts)",
+              "confidence": 0.85
+            },
+            {
+              "kind": "llm_knowledge",
+              "ref": "worlds are recreated from Sora's memories inside Castle Oblivion, which erode as he climbs",
+              "confidence": 0.55
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#cutscene_system",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:include/evt/msg_types.h:EventCameraKeyframe",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:include/evt/msg_types.h:MessageScriptEntry",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/evt/events/008_1f_battle_guardarmor.inc (camera shake keyframes, sound cues, chara tracks)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:include/evt/evt_types.h:EventState",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "kingdom-hearts-chain-of-memories:presentation",
+      "label": "A stage that reacts to battle commitments",
+      "slot": "presentation",
+      "effect": "Use card HUD, hit-stop, camera bias and keyframed scenes to make real-time deck choices legible.",
+      "flavor": "Build rooms with cards, then contest attacks with another deck.",
+      "knobs": [
+        {
+          "name": "feedback_density",
+          "meaning": "Balance HUD information against scene readability.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "render_budget",
+          "meaning": "Choose palette, animation and layer costs for the target runtime.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "battle_hud"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "battle_camera"
+        },
+        {
+          "game_id": "kingdom-hearts-chain-of-memories",
+          "component_id": "cutscene_system"
+        }
+      ],
+      "requires": [
+        "camera/projection contract",
+        "asset/palette budget",
+        "rendering clock"
+      ],
+      "exposes": [
+        "legible feedback",
+        "scene transitions",
+        "audio cues"
+      ],
+      "conflicts": [
+        {
+          "when": "Different projections share the same screen without a transition rule.",
+          "issue": "Objects can appear to occupy incompatible coordinate spaces.",
+          "bridge": "Use separate scenes/modes or define one consistent projection adapter."
+        }
+      ],
+      "bridge_options": [
+        "Keep source rendering while adding a separate battle mode.",
+        "Translate atmosphere into a coherent new palette and motif set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#battle_hud",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/btl_hpply.c:task_btl_hpply_1",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/btl_hpenm.c:task_btl_hpenm_1",
+              "confidence": 0.85
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/card/card_battle.c:CreateSoraCardRing",
+              "confidence": 0.6,
+              "note": "name only"
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/btl_pause.c:task_btl_pause_1",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#battle_camera",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/btl_map.c:task_btl_map_1",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/btl/btl_map.c:BtlMapFollowPosition",
+              "confidence": 0.95
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml#cutscene_system",
+          "canonical_file_sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:include/evt/msg_types.h:EventCameraKeyframe",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:include/evt/msg_types.h:MessageScriptEntry",
+              "confidence": 0.95
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:src/evt/events/008_1f_battle_guardarmor.inc (camera shake keyframes, sound cues, chara tracks)",
+              "confidence": 0.9
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "khcom:include/evt/evt_types.h:EventState",
+              "confidence": 0.85
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "kingdom-hearts-chain-of-memories:setting",
+      "label": "A concrete place, not just a genre",
+      "slot": "setting",
+      "effect": "A robed figure crosses a pale hall; a later arena tutorial explicitly teaches jump and double-tap dodge roll beside a card HUD.",
+      "flavor": "Build rooms with cards, then contest attacks with another deck.",
+      "knobs": [
+        {
+          "name": "scale",
+          "meaning": "Choose the world and object scale relationship.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "motif_palette",
+          "meaning": "Choose which observed motifs define the adaptation.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "world/content vocabulary"
+      ],
+      "exposes": [
+        "region identities",
+        "spatial motifs"
+      ],
+      "conflicts": [
+        {
+          "when": "Two settings imply different world scales or technologies.",
+          "issue": "Literal asset mixing can obscure the intended place.",
+          "bridge": "Choose a unifying art/world rule and map each motif into it."
+        }
+      ],
+      "bridge_options": [
+        "Retain mechanics while authoring original scenery.",
+        "Make a deliberate crossing between region styles rather than random per-object mixing."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/kingdom-hearts-chain-of-memories/gameplay/keyframes/f011149_scene.png",
+            "local/captures-experiments/20261016-current-scripts/kingdom-hearts-chain-of-memories/gameplay/keyframes/f022949.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "kingdom-hearts-chain-of-memories:tone",
+      "label": "Emotional register",
+      "slot": "tone",
+      "effect": "Theatrical fantasy, bright and uncanny, memory motif. This is a reading of the retained scenes, not a complete tone audit.",
+      "flavor": "Build rooms with cards, then contest attacks with another deck.",
+      "knobs": [
+        {
+          "name": "contrast",
+          "meaning": "Decide where tonal contrast is intentional.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "pacing",
+          "meaning": "Choose recovery versus pressure intervals.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "editorial direction",
+        "consistent audiovisual treatment"
+      ],
+      "exposes": [
+        "emotional register",
+        "contrast between scenes"
+      ],
+      "conflicts": [
+        {
+          "when": "Comic reactions and horror tension occur in the same scene.",
+          "issue": "Their feedback can cancel the intended emotional effect.",
+          "bridge": "Assign tones to acts, regions or feedback layers, with a deliberate transition."
+        }
+      ],
+      "bridge_options": [
+        "Use tonal contrast as a story beat.",
+        "Borrow pacing or vulnerability without copying character identities."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/kingdom-hearts-chain-of-memories/gameplay/keyframes/f011149_scene.png",
+            "local/captures-experiments/20261016-current-scripts/kingdom-hearts-chain-of-memories/gameplay/keyframes/f022949.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    }
+  ],
+  "story": {
+    "beats": [
+      {
+        "id": "retained_scene",
+        "description": "A robed figure crosses a pale hall; a later arena tutorial explicitly teaches jump and double-tap dodge roll beside a card HUD.",
+        "status": "observed_scene_without_causal_order_claim",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/kingdom-hearts-chain-of-memories/gameplay/keyframes/f011149_scene.png",
+              "local/captures-experiments/20261016-current-scripts/kingdom-hearts-chain-of-memories/gameplay/keyframes/f022949.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      },
+      {
+        "id": "premise_candidate",
+        "description": "A climb through a castle organizes recurring world episodes and encounters with robed figures.",
+        "status": "model_prior_unverified",
+        "evidence": [
+          {
+            "kind": "model_prior_unverified",
+            "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+            "confidence": 0.35,
+            "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+          }
+        ]
+      }
+    ],
+    "delivery": [
+      {
+        "description": "Observed scene/GUI staging; specific source script and dialogue links are below when available.",
+        "status": "observed_partial",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/kingdom-hearts-chain-of-memories/gameplay/keyframes/f011149_scene.png",
+              "local/captures-experiments/20261016-current-scripts/kingdom-hearts-chain-of-memories/gameplay/keyframes/f022949.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      }
+    ],
+    "gaps": [
+      "Two retained scenes do not establish the complete narrative or player agency.",
+      "Resolve beat prerequisites, event flags, dialogue text and ending variants from source."
+    ]
+  },
+  "coverage": {
+    "status": "partial",
+    "depth": "source_partial",
+    "canonical_component_count": 60,
+    "canonical_facets": [
+      "ai",
+      "audio",
+      "camera",
+      "economy",
+      "frontend",
+      "mechanics",
+      "movement_physics",
+      "narrative_delivery",
+      "progression",
+      "projection",
+      "rendering",
+      "setting",
+      "ui_hud"
+    ],
+    "source_supported_piece_count": 6,
+    "missing": [
+      "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+      "Complete plot/event dependency graph",
+      "Calibrated user skill and strategy evidence",
+      "Full asset-to-source/address reuse catalogue"
+    ],
+    "granular_records_not_summarized": [
+      {
+        "component_id": "game_mode_flow",
+        "label": "Mode manager with deferred mode switch, boot repair and soft reset",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "title_screen",
+        "label": "Affine-zoom title with context-sensitive menu and no attract demo",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "save_system",
+        "label": "Mirrored SRAM blocks, suspend save and save rooms",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "fmv_movie_player",
+        "label": "Mode-3 bitmap FMV player with IWRAM codecs and ADPCM audio stream",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "field_bg_stack",
+        "label": "Mode-0 four-layer field renderer with alpha overlay",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "battle_affine_arena_renderer",
+        "label": "Affine battle floor (Mode 2) and Mode-1 boss arenas",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "sound_engine",
+        "label": "MP2K (m4a) sequencer at 15768 Hz plus streamed PCM paths",
+        "facet": "audio"
+      },
+      {
+        "component_id": "jiminy_journal",
+        "label": "Jiminy's journal (codex of characters, enemies, cards and records)",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "staff_roll",
+        "label": "Staff roll with streamed vocal theme",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "combo_swings_and_hitboxes",
+        "label": "Three-hit keyblade combo with geometry-chosen swings and box hitboxes",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "damage_resolution",
+        "label": "Attack x power damage with element affinities and multiplier effects",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "status_effects",
+        "label": "Timed status ailments (stun, stop, confuse, terror, bind, gravity squash)",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "enemy_card_effects",
+        "label": "Enemy (Heartless) cards as timed passive modifiers",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "friend_cards_and_summons",
+        "label": "Friend cards dropped mid-battle and summon cards",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "first_strike",
+        "label": "Field first strike pre-damages and stuns the first wave",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "battle_escape",
+        "label": "Escape by pushing against the arena edge",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "battle_wave_formations",
+        "label": "Battle id -> formation of enemy waves under a sprite tile budget",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "riku_dark_mode",
+        "label": "Riku scenario - fixed decks, dark points and dark mode",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "lock_on_targeting",
+        "label": "Facing-cone automatic lock-on",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "field_encounters",
+        "label": "Visible field enemies, contact battles and room enemy budgets",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "game_over_continue",
+        "label": "Game over rolls back the battle and offers continue",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "pooh_escort_minigame",
+        "label": "100 Acre Wood escort minigame with an autonomous stamina-limited companion",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "link_cable_versus",
+        "label": "Link-cable Sora vs Riku card duel and card trade",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "field_camera",
+        "label": "Room-clamped eased follow camera on the field",
+        "facet": "camera"
+      },
+      {
+        "component_id": "field_jump_and_climb",
+        "label": "Field jump onto raised cells, ledge catch and climb",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "field_enemy_chase_ai",
+        "label": "Field Heartless wander, sight-cone detect and chase",
+        "facet": "ai"
+      },
+      {
+        "component_id": "shadow_ai",
+        "label": "Shadow - sink, drift and lunge",
+        "facet": "ai"
+      },
+      {
+        "component_id": "flier_ai",
+        "label": "Air Soldier - hover, straight flight and dive lunge",
+        "facet": "ai"
+      },
+      {
+        "component_id": "heavy_guard_ai",
+        "label": "Large Body - slow walker with frontal physical guard and stomp",
+        "facet": "ai"
+      },
+      {
+        "component_id": "multi_part_boss_guard_armor",
+        "label": "Guard Armor - six-part boss with distance-banded card odds",
+        "facet": "ai"
+      },
+      {
+        "component_id": "hp_phase_boss_ursula",
+        "label": "Ursula - HP-phase-dependent card rate and range-banded attack choice",
+        "facet": "ai"
+      },
+      {
+        "component_id": "dice_gimmick_boss_oogie",
+        "label": "Oogie Boogie - dice roll effects and card-break-to-open cage",
+        "facet": "ai"
+      },
+      {
+        "component_id": "floor_difficulty_scaling",
+        "label": "Floor-linear enemy stat scaling",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "level_up_choice",
+        "label": "Level-up choice between HP, CP and sleights",
+        "facet": "progression"
+      },
+      {
+        "component_id": "map_card_prizes",
+        "label": "Battle and field map-card prizes with weighted values and caps",
+        "facet": "economy"
+      },
+      {
+        "component_id": "exp_orbs_and_pickups",
+        "label": "EXP orbs, HP balls and Moogle points as timed pickups",
+        "facet": "economy"
+      },
+      {
+        "component_id": "moogle_shop_packs",
+        "label": "Moogle shop - buy random card packs, sell cards for points",
+        "facet": "economy"
+      },
+      {
+        "component_id": "floor_map_screen",
+        "label": "Floor map screen with door requirements",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "castle_oblivion_setting",
+        "label": "Disney and Final Fantasy crossover worlds inside a memory castle",
+        "facet": "setting"
+      }
+    ],
+    "not_claimed": [
+      "All mechanics extracted",
+      "Full ROM decompiled",
+      "Complete plot recovered",
+      "Every proposed bundle assembled or playtested"
+    ]
+  },
+  "provenance": {
+    "recorded_at": "2026-10-16T06:22:36.193456+00:00",
+    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "rom_sha1": "10729bd884f8fdca7a310b6d606c52e46657aa48",
+    "canonical": {
+      "kind": "canonical_ontology",
+      "ref": "ontology/games/kingdom-hearts-chain-of-memories.yaml",
+      "sha256": "4dead5615916dbab0e099b878c003a01a5ccc0b9c9e906344cf760a8c1d1ef93",
+      "scope": "Existing component extraction; inherited evidence and limitations, not a fresh independent verification."
+    },
+    "source_repositories": [
+      {
+        "path": "local/decomps/khcom",
+        "commit": "5dc49b75068bfe24e07bdaf365570d64682680c3",
+        "source_dirty": false,
+        "file_counts": {
+          ".c": 269,
+          ".h": 274,
+          ".inc": 200,
+          ".s": 7
+        },
+        "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+      }
+    ],
+    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "capture_run_id": "20261016T004328-0e248f",
+    "capture_frame_sha256": {
+      "local/captures-experiments/20261016-current-scripts/kingdom-hearts-chain-of-memories/gameplay/keyframes/f011149_scene.png": "2cffc43e65195f57607d6cc1b51f24440f912b345a94fe43857f993de26ff55a",
+      "local/captures-experiments/20261016-current-scripts/kingdom-hearts-chain-of-memories/gameplay/keyframes/f022949.png": "298533f3267e61ba441126a223633e02ace0df65e6a34807330f20f654d3fd9d"
+    },
+    "source_inspection_notes": "Canonical component evidence is inherited; direct new source story anchors, when present, are marked separately."
+  }
+}

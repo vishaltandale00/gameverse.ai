@@ -1,0 +1,748 @@
+{
+  "schema_version": 1,
+  "game_id": "mario-and-luigi-superstar-saga",
+  "title": "Mario & Luigi: Superstar Saga",
+  "identity": {
+    "tagline": "A two-character adventure pairs comic staging with action-sensitive RPG commands.",
+    "categories": [
+      "party RPG",
+      "timed actions",
+      "dual-character adventure"
+    ],
+    "view": {
+      "label": "oblique rooms",
+      "status": "observed_or_source_backed_presentation",
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f004045_scene.png",
+            "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f007983_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ]
+    },
+    "vibe": [
+      "comic",
+      "warm",
+      "expressive"
+    ],
+    "vibe_status": "editorial_interpretation_of_observed_scenes",
+    "grounded_examples": [
+      "A castle front with a heart-shaped emblem gives way to a saturated yellow interior with a framed portrait and small characters."
+    ],
+    "gameplay_prior": {
+      "text": "Control the brothers together in the world and time presses during attacks and enemy responses.",
+      "status": "model_prior_unverified_unless_piece_links_source"
+    },
+    "evidence": [
+      {
+        "kind": "capture_contact_sheet_inspection",
+        "refs": [
+          "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f004045_scene.png",
+          "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f007983_scene.png"
+        ],
+        "confidence": 0.85,
+        "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+      }
+    ],
+    "category_basis": "Editorial taxonomy from mixed source, observed scenes and explicitly unverified prior; categories are not proof of implemented or extracted rules.",
+    "tagline_status": "editorial_summary_mixed_evidence"
+  },
+  "pieces": [
+    {
+      "id": "mario-and-luigi-superstar-saga:movement_view",
+      "label": "A room with visible depth",
+      "slot": "movement_view",
+      "effect": "Use the observed oblique room staging; the actual two-character traversal mechanics are not recovered by these frontend records.",
+      "flavor": "A two-character adventure pairs comic staging with action-sensitive RPG commands.",
+      "knobs": [
+        {
+          "name": "perspective",
+          "meaning": "Keep or bridge the observed source view.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "cadence",
+          "meaning": "Choose frame updates, tile actions or mode transitions explicitly.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "mario-and-luigi-superstar-saga",
+          "component_id": "three_quarter_room_projection"
+        }
+      ],
+      "requires": [
+        "world coordinates",
+        "collision or terrain rules",
+        "input semantics"
+      ],
+      "exposes": [
+        "position",
+        "facing",
+        "grounded or traversal state"
+      ],
+      "conflicts": [
+        {
+          "when": "A host uses tile turns but this controller uses continuous frame updates.",
+          "issue": "One input cannot mean both a whole turn and a physics tick.",
+          "bridge": "Keep a fixed simulation clock and convert a completed movement action into a turn event."
+        }
+      ],
+      "bridge_options": [
+        "Keep side-view stages and a top-down world as separate modes.",
+        "Use a shared height axis rather than interpreting northward movement as a jump."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-and-luigi-superstar-saga.yaml#three_quarter_room_projection",
+          "canonical_file_sha256": "c82dbdb31406d128fc29c0f01871d1b208046bbb3c3dcdb4b54dd6986b1d384e",
+          "source_evidence": [
+            {
+              "kind": "capture_frame",
+              "ref": "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f005249_scene.png",
+              "confidence": 0.9
+            },
+            {
+              "kind": "capture_frame",
+              "ref": "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f006663.png",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "mario-and-luigi-superstar-saga:story",
+      "label": "Stage comedy as an in-engine scene",
+      "slot": "story",
+      "effect": "The source/capture-backed layer currently supports authored character staging and scene transitions, not the recalled full plot.",
+      "flavor": "A two-character adventure pairs comic staging with action-sensitive RPG commands.",
+      "knobs": [
+        {
+          "name": "beat_graph",
+          "meaning": "Choose prerequisites and resulting world-state changes.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "delivery",
+          "meaning": "Choose scene, dialogue, environmental cue or playable sequence.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "mario-and-luigi-superstar-saga",
+          "component_id": "opening_scene_staging"
+        }
+      ],
+      "requires": [
+        "event/state flags",
+        "actor and dialogue staging"
+      ],
+      "exposes": [
+        "story milestone",
+        "new objective",
+        "changed world state"
+      ],
+      "conflicts": [
+        {
+          "when": "Two plots both assume exclusive control of campaign milestones.",
+          "issue": "Their original sequence prerequisites may deadlock or contradict each other.",
+          "bridge": "Map selected beats onto one explicit milestone graph; preserve required predecessors."
+        }
+      ],
+      "bridge_options": [
+        "Borrow a beat pattern such as rescue then gift without copying dialogue.",
+        "Treat a vulnerable chapter as a temporary controller/resource contract."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-and-luigi-superstar-saga.yaml#opening_scene_staging",
+          "canonical_file_sha256": "c82dbdb31406d128fc29c0f01871d1b208046bbb3c3dcdb4b54dd6986b1d384e",
+          "source_evidence": [
+            {
+              "kind": "capture_frame",
+              "ref": "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f004565_scene.png",
+              "confidence": 0.9
+            },
+            {
+              "kind": "capture_frame",
+              "ref": "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f005249_scene.png",
+              "confidence": 0.9
+            },
+            {
+              "kind": "capture_frame",
+              "ref": "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f006663.png",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "mario-and-luigi-superstar-saga:presentation",
+      "label": "Expressive interiors and animated menus",
+      "slot": "presentation",
+      "effect": "Use bright outlined rooms, animated choice previews, distinct menu sounds and affine title treatment.",
+      "flavor": "A two-character adventure pairs comic staging with action-sensitive RPG commands.",
+      "knobs": [
+        {
+          "name": "feedback_density",
+          "meaning": "Balance HUD information against scene readability.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "render_budget",
+          "meaning": "Choose palette, animation and layer costs for the target runtime.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [
+        {
+          "game_id": "mario-and-luigi-superstar-saga",
+          "component_id": "interior_pixel_style"
+        },
+        {
+          "game_id": "mario-and-luigi-superstar-saga",
+          "component_id": "animated_menu_preview"
+        },
+        {
+          "game_id": "mario-and-luigi-superstar-saga",
+          "component_id": "menu_sound_feedback"
+        },
+        {
+          "game_id": "mario-and-luigi-superstar-saga",
+          "component_id": "title_affine_background"
+        }
+      ],
+      "requires": [
+        "camera/projection contract",
+        "asset/palette budget",
+        "rendering clock"
+      ],
+      "exposes": [
+        "legible feedback",
+        "scene transitions",
+        "audio cues"
+      ],
+      "conflicts": [
+        {
+          "when": "Different projections share the same screen without a transition rule.",
+          "issue": "Objects can appear to occupy incompatible coordinate spaces.",
+          "bridge": "Use separate scenes/modes or define one consistent projection adapter."
+        }
+      ],
+      "bridge_options": [
+        "Keep source rendering while adding a separate battle mode.",
+        "Translate atmosphere into a coherent new palette and motif set."
+      ],
+      "evidence": [
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-and-luigi-superstar-saga.yaml#interior_pixel_style",
+          "canonical_file_sha256": "c82dbdb31406d128fc29c0f01871d1b208046bbb3c3dcdb4b54dd6986b1d384e",
+          "source_evidence": [
+            {
+              "kind": "capture_frame",
+              "ref": "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f006153_scene.png",
+              "confidence": 0.9
+            },
+            {
+              "kind": "capture_frame",
+              "ref": "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f007893.png",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-and-luigi-superstar-saga.yaml#animated_menu_preview",
+          "canonical_file_sha256": "c82dbdb31406d128fc29c0f01871d1b208046bbb3c3dcdb4b54dd6986b1d384e",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mlss:src/title_screen.c:open_update:TS_STATE_GAME_SELECT;suitcaseVisualState switch",
+              "confidence": 0.88
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-and-luigi-superstar-saga.yaml#menu_sound_feedback",
+          "canonical_file_sha256": "c82dbdb31406d128fc29c0f01871d1b208046bbb3c3dcdb4b54dd6986b1d384e",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mlss:src/title_screen.c:open_update:TS_STATE_GAME_SELECT",
+              "confidence": 0.88
+            },
+            {
+              "kind": "decomp_source",
+              "ref": "mlss:src/option_screens.c:optn_update",
+              "confidence": 0.88
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "canonical_component",
+          "ref": "ontology/games/mario-and-luigi-superstar-saga.yaml#title_affine_background",
+          "canonical_file_sha256": "c82dbdb31406d128fc29c0f01871d1b208046bbb3c3dcdb4b54dd6986b1d384e",
+          "source_evidence": [
+            {
+              "kind": "decomp_source",
+              "ref": "mlss:src/title_screen.c:open_update:TS_ITEM_ML_LOGO",
+              "confidence": 0.88
+            },
+            {
+              "kind": "capture_telemetry",
+              "ref": "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/attract/phase.json#/video/affine_bg_transformed_frames",
+              "confidence": 0.9
+            }
+          ],
+          "scope": "Supports the named mechanism; preserve granular record caveats."
+        }
+      ],
+      "status": "source_supported_partial",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "mario-and-luigi-superstar-saga:progression",
+      "label": "Journey and replay candidate",
+      "slot": "progression",
+      "effect": "Proposed high-level loop from unverified recall: Control the brothers together in the world and time presses during attacks and enemy responses.",
+      "flavor": "A two-character adventure pairs comic staging with action-sensitive RPG commands.",
+      "knobs": [
+        {
+          "name": "persistence",
+          "meaning": "Choose session, checkpoint, room or save lifetime.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "unlock_meaning",
+          "meaning": "Choose capability, inventory key or event prerequisite.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "persistent state",
+        "gate or objective predicates",
+        "reward events"
+      ],
+      "exposes": [
+        "unlocked route",
+        "completion state",
+        "new capability"
+      ],
+      "conflicts": [
+        {
+          "when": "A key consumable is substituted for a permanent capability.",
+          "issue": "Backtracking and recoverability can change even if the first door opens.",
+          "bridge": "Choose explicitly between persistent ability ownership and per-door key consumption."
+        }
+      ],
+      "bridge_options": [
+        "Keep source gate semantics and reskin their fiction.",
+        "Connect battle rewards to traversal capabilities through a named unlock rule."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f004045_scene.png",
+            "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f007983_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        },
+        {
+          "kind": "model_prior_unverified",
+          "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+          "confidence": 0.35,
+          "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+        }
+      ],
+      "status": "candidate_unverified",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "mario-and-luigi-superstar-saga:setting",
+      "label": "A concrete place, not just a genre",
+      "slot": "setting",
+      "effect": "A castle front with a heart-shaped emblem gives way to a saturated yellow interior with a framed portrait and small characters.",
+      "flavor": "A two-character adventure pairs comic staging with action-sensitive RPG commands.",
+      "knobs": [
+        {
+          "name": "scale",
+          "meaning": "Choose the world and object scale relationship.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "motif_palette",
+          "meaning": "Choose which observed motifs define the adaptation.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "world/content vocabulary"
+      ],
+      "exposes": [
+        "region identities",
+        "spatial motifs"
+      ],
+      "conflicts": [
+        {
+          "when": "Two settings imply different world scales or technologies.",
+          "issue": "Literal asset mixing can obscure the intended place.",
+          "bridge": "Choose a unifying art/world rule and map each motif into it."
+        }
+      ],
+      "bridge_options": [
+        "Retain mechanics while authoring original scenery.",
+        "Make a deliberate crossing between region styles rather than random per-object mixing."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f004045_scene.png",
+            "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f007983_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    },
+    {
+      "id": "mario-and-luigi-superstar-saga:tone",
+      "label": "Emotional register",
+      "slot": "tone",
+      "effect": "Comic, warm, expressive. This is a reading of the retained scenes, not a complete tone audit.",
+      "flavor": "A two-character adventure pairs comic staging with action-sensitive RPG commands.",
+      "knobs": [
+        {
+          "name": "contrast",
+          "meaning": "Decide where tonal contrast is intentional.",
+          "status": "design_parameter_not_extracted_value"
+        },
+        {
+          "name": "pacing",
+          "meaning": "Choose recovery versus pressure intervals.",
+          "status": "design_parameter_not_extracted_value"
+        }
+      ],
+      "component_refs": [],
+      "requires": [
+        "editorial direction",
+        "consistent audiovisual treatment"
+      ],
+      "exposes": [
+        "emotional register",
+        "contrast between scenes"
+      ],
+      "conflicts": [
+        {
+          "when": "Comic reactions and horror tension occur in the same scene.",
+          "issue": "Their feedback can cancel the intended emotional effect.",
+          "bridge": "Assign tones to acts, regions or feedback layers, with a deliberate transition."
+        }
+      ],
+      "bridge_options": [
+        "Use tonal contrast as a story beat.",
+        "Borrow pacing or vulnerability without copying character identities."
+      ],
+      "evidence": [
+        {
+          "kind": "capture_contact_sheet_inspection",
+          "refs": [
+            "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f004045_scene.png",
+            "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f007983_scene.png"
+          ],
+          "confidence": 0.85,
+          "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+        }
+      ],
+      "status": "observed_interpretation",
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+    }
+  ],
+  "story": {
+    "beats": [
+      {
+        "id": "retained_scene",
+        "description": "A castle front with a heart-shaped emblem gives way to a saturated yellow interior with a framed portrait and small characters.",
+        "status": "observed_scene_without_causal_order_claim",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f004045_scene.png",
+              "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f007983_scene.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      },
+      {
+        "id": "premise_candidate",
+        "description": "The brothers cross into a neighboring kingdom on a rescue-and-restoration journey.",
+        "status": "model_prior_unverified",
+        "evidence": [
+          {
+            "kind": "model_prior_unverified",
+            "ref": "GPT editorial recall on2026-10-16; not an extraction result",
+            "confidence": 0.35,
+            "scope": "Candidate gameplay or plot direction awaiting source/event confirmation."
+          }
+        ]
+      }
+    ],
+    "delivery": [
+      {
+        "description": "Observed scene/GUI staging; specific source script and dialogue links are below when available.",
+        "status": "observed_partial",
+        "evidence": [
+          {
+            "kind": "capture_contact_sheet_inspection",
+            "refs": [
+              "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f004045_scene.png",
+              "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f007983_scene.png"
+            ],
+            "confidence": 0.85,
+            "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+          }
+        ]
+      }
+    ],
+    "gaps": [
+      "Two retained scenes do not establish the complete narrative or player agency.",
+      "Resolve beat prerequisites, event flags, dialogue text and ending variants from source."
+    ]
+  },
+  "coverage": {
+    "status": "partial",
+    "depth": "source_partial",
+    "canonical_component_count": 33,
+    "canonical_facets": [
+      "audio",
+      "frontend",
+      "mechanics",
+      "movement_physics",
+      "narrative_delivery",
+      "projection",
+      "rendering",
+      "setting",
+      "ui_hud"
+    ],
+    "source_supported_piece_count": 3,
+    "missing": [
+      "Two-brother traversal and timed combat are model-prior candidates; current extraction concentrates on frontend/presentation",
+      "Uneven rule coverage; high-level bundles inherit the cited source records' gaps",
+      "Complete plot/event dependency graph",
+      "Calibrated user skill and strategy evidence",
+      "Full asset-to-source/address reuse catalogue"
+    ],
+    "granular_records_not_summarized": [
+      {
+        "component_id": "priority_process_scheduler",
+        "label": "Priority-ordered engine process scheduling",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "protected_priority_pause",
+        "label": "Selective process suspension",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "safe_process_unlink",
+        "label": "Process removal repairs active iteration links",
+        "facet": "mechanics"
+      },
+      {
+        "component_id": "publisher_logo_sequence",
+        "label": "Stateful publisher-logo presentation",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "game_boy_player_probe",
+        "label": "Logo-phase peripheral signal detection",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "title_state_machine",
+        "label": "Suitcase-based title-state machine",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "conditional_title_skip",
+        "label": "Conditioned title-animation skip",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "title_press_start",
+        "label": "Title waits for A or START",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "three_way_game_selector",
+        "label": "Cyclic three-entry game selector",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "menu_dispatch",
+        "label": "Fade-boundary dispatch to game, bundled mode or options",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "options_input_gates",
+        "label": "Options interaction is gated during modal animation",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "option_feature_bits",
+        "label": "Three persistent feature-option bits",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "option_confirmation_modal",
+        "label": "Feature-enable confirmation and animated return",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "option_persistence_attempt",
+        "label": "Staged option persistence with explicit return value",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "option_save_error",
+        "label": "Failed settings save receives a separate acknowledgement state",
+        "facet": "frontend"
+      },
+      {
+        "component_id": "scripted_logo_ballistics",
+        "label": "Presentation-only fixed-point falling and rebound",
+        "facet": "movement_physics"
+      },
+      {
+        "component_id": "mode0_mode1_tile_layers",
+        "label": "Measured tile-mode presentation and scenes",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "affine_sprite_presentation",
+        "label": "Affine sprites are present in the measured front end",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "scanline_background_scroll",
+        "label": "HBlank DMA0 drives per-line background scrolling",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "window_shape_dma",
+        "label": "HBlank window-shape transitions",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "brightness_fade",
+        "label": "State transitions use hardware brightness coefficients",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "alpha_blend_measurement",
+        "label": "Alpha blending is observed during entered scenes",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "buffered_hardware_registers",
+        "label": "EWRAM shadow registers separate state updates from hardware access",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "frontend_tile_asset_loading",
+        "label": "Explicit frontend resource uploads and temporary buffers",
+        "facet": "rendering"
+      },
+      {
+        "component_id": "hybrid_sound_hardware",
+        "label": "Measured DirectSound and PSG coexistence",
+        "facet": "audio"
+      },
+      {
+        "component_id": "inferred_menu_route_strategy",
+        "label": "Inferred strategy: choose the shorter cyclic menu route",
+        "facet": "ui_hud"
+      },
+      {
+        "component_id": "inferred_state_aware_input_skill",
+        "label": "Inferred skill: recognize when the front end accepts input",
+        "facet": "ui_hud"
+      }
+    ],
+    "not_claimed": [
+      "All mechanics extracted",
+      "Full ROM decompiled",
+      "Complete plot recovered",
+      "Every proposed bundle assembled or playtested"
+    ]
+  },
+  "provenance": {
+    "recorded_at": "2026-10-16T06:22:36.193456+00:00",
+    "method": "GPT reads existing source-backed canonical records and retained capture contact sheets; editorial synthesis plus explicitly labeled model priors. No new model-provider calls or ROM runs.",
+    "rom_sha1": "7c303cdde5061ee329296948060b875cb50ba410",
+    "canonical": {
+      "kind": "canonical_ontology",
+      "ref": "ontology/games/mario-and-luigi-superstar-saga.yaml",
+      "sha256": "c82dbdb31406d128fc29c0f01871d1b208046bbb3c3dcdb4b54dd6986b1d384e",
+      "scope": "Existing component extraction; inherited evidence and limitations, not a fresh independent verification."
+    },
+    "source_repositories": [
+      {
+        "path": "local/decomps/mlss",
+        "commit": "b03634c2c700a3ae78f39e576cc88a45c3a724fd",
+        "source_dirty": false,
+        "file_counts": {
+          ".c": 5,
+          ".h": 18,
+          ".inc": 1,
+          ".s": 16
+        },
+        "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+      },
+      {
+        "path": "local/decomps/MLSuperstarSaga",
+        "commit": "baae10311925d1f498ff0ad3c43a748b453be239",
+        "source_dirty": false,
+        "file_counts": {},
+        "asset_semantics": "not established by suffix counts; .bin may contain non-media data"
+      }
+    ],
+    "source_to_rom_mapping": "survey candidate; rebuild identity not established by this inventory",
+    "capture_run_id": "20261016T004328-0e248f",
+    "capture_frame_sha256": {
+      "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f004045_scene.png": "7ea9a836457e3eaafd3063e8e9a885d71583dd34fd28928693b4f4a71227e678",
+      "local/captures-experiments/20261016-current-scripts/mario-and-luigi-superstar-saga/gameplay/keyframes/f007983_scene.png": "f215a84c5cab6b8fd57f70f07ffb3e391c9c6e83b81ef574183d6837f67692c3"
+    },
+    "source_inspection_notes": "Canonical component evidence is inherited; direct new source story anchors, when present, are marked separately."
+  }
+}
