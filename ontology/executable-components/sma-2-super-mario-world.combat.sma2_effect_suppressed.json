@@ -1,0 +1,51 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma-2-super-mario-world.combat.sma2_effect_suppressed",
+  "label": "Sma2 effect suppressed",
+  "role": "combat",
+  "source_game": "super-mario-advance-2-super-mario-world",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma-2-super-mario-world.combat.sma2_effect_suppressed/package.json",
+  "package_sha256": "9aa4ddd6df4a904c35035e19904abf1978133b0b68a6d1105e6c38036aff2951",
+  "behavior_sha256": "002dec11c892ee567bf46c5d8e1c8bffbdf004c220f9b31bb1d4c4afdedec455",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "61da518b73887c21f7f3fb24598c5516ea2580a0f989f42f1c6653b8289f9174"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [],
+  "collection_ports": [],
+  "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+  "owned_state": {
+    "fields": 2,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma-2-super-mario-world.combat.sma2_effect_suppressed/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

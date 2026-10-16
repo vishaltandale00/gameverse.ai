@@ -1,0 +1,51 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma.motion.sma1_integrate_y",
+  "label": "Sma1 integrate y",
+  "role": "movement",
+  "source_game": "super-mario-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma.motion.sma1_integrate_y/package.json",
+  "package_sha256": "9f307c5a9199e38d0b12444dc7b78fab0e57435f23a931127093d3c2a1fd5350",
+  "behavior_sha256": "8762fedfb59ca8b55743dfa296212b1ab0e6583c33705ea656e8df21cfb82419",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "63ab38de3e3dd1311882aebb5f0ccd7cccac9cbe655eca9c271c58276f39e9fd"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [],
+  "collection_ports": [],
+  "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+  "owned_state": {
+    "fields": 5,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma.motion.sma1_integrate_y/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

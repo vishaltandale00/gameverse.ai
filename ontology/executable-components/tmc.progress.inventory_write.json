@@ -1,0 +1,94 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "tmc.progress.inventory_write",
+  "label": "Acquire or update persistent equipment state",
+  "role": "progression",
+  "source_game": "legend-of-zelda-the-the-minish-cap",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/tmc.progress.inventory_write/package.json",
+  "package_sha256": "3e5ff8c64e749337ef739311f4e5c2beb49f8ea8d6cabcd840b60065c1c80cc7",
+  "behavior_sha256": "c8acaaa532043662fa385bc610499ea9b68bc4fd462d4c832830dfe198377568",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "5858032dfff35ebb9afe6a4a064f0db94540ae5198798ebfff27bb2eda055c06"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 255
+      }
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 3
+      }
+    }
+  ],
+  "ports": [],
+  "collection_ports": [
+    {
+      "id": "collection_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "count": 64,
+      "semantic_type": {
+        "quantity": "packed_two_bit_inventory",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "campaign",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_usage_and_native_component_oracle"
+        ],
+        "naming_status": "analysis_annotation_not_behavior_input"
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 0,
+    "collections": [
+      {
+        "id": "collection_0",
+        "storage_type": "u8",
+        "count": 64
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/tmc.progress.inventory_write/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "tmc.progress.derive_skills",
+  "label": "Derive legal sword skills from learned inventory",
+  "role": "progression",
+  "source_game": "legend-of-zelda-the-the-minish-cap",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/tmc.progress.derive_skills/package.json",
+  "package_sha256": "f62865697bb4a90634d8a678a20a85a101bae03d46c8ca42b94fdcd9cf1a902f",
+  "behavior_sha256": "3c683d0489f455e5421a875ed3b88970977800b02d1458087816e3dd54ddfef8",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "8662a1748ba13066cc392f2c6706ddfb502047925b0ebcb34e773ca4b4e8ffd2"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "abilities.derived",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_usage_and_native_component_oracle"
+        ],
+        "naming_status": "analysis_annotation_not_behavior_input"
+      }
+    }
+  ],
+  "collection_ports": [
+    {
+      "id": "dependency_0_collection_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "count": 64,
+      "semantic_type": {
+        "quantity": "packed_two_bit_inventory",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "campaign",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_usage_and_native_component_oracle"
+        ],
+        "naming_status": "analysis_annotation_not_behavior_input"
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 1,
+    "collections": [
+      {
+        "id": "dependency_0_collection_0",
+        "storage_type": "u8",
+        "count": 64
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "7d36e5c4ed17168a4f96d6ecf00857340a36bf9867232243d593f472866a08de",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/tmc.progress.derive_skills/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

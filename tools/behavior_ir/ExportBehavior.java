@@ -94,12 +94,14 @@ public class ExportBehavior extends GhidraScript {
 
     public void run() throws Exception {
         String[] args = getScriptArgs(); Path output = Paths.get(args[0]); Files.createDirectories(output);
-        List<Function> functions = new ArrayList<>(); boolean batch = args.length>1 && args[1].equals("ALL");
+        List<Function> functions = new ArrayList<>(); boolean queued = args.length>1 && args[1].equals("QUEUE"); boolean batch = args.length>1 && args[1].equals("ALL");
         double budget = batch ? Double.parseDouble(args[2]) : 45;
-        int limit = batch ? Integer.parseInt(args[3]) : args.length-1;
-        if (batch) {
+        long maxBytes=128L*1024*1024, writtenBytes=0; boolean outputCap=false; int limit = batch ? Integer.parseInt(args[3]) : args.length-1;
+        if(queued){JsonObject selection=JsonParser.parseString(Files.readString(Paths.get(args[2]))).getAsJsonObject();budget=selection.get("budget_s").getAsDouble();limit=selection.get("limit").getAsInt();for(JsonElement e:selection.getAsJsonArray("priority_entries")){var address=toAddr(Long.parseLong(e.getAsString(),16));Function f=currentProgram.getFunctionManager().getFunctionAt(address);if(f==null){currentProgram.getProgramContext().setValue(currentProgram.getRegister("TMode"),address,address,java.math.BigInteger.ONE);disassemble(address);f=createFunction(address,null);}if(f!=null)functions.add(f);}}
+
+        if (batch || queued) {
             var iterator = currentProgram.getFunctionManager().getFunctions(true);
-            while (iterator.hasNext() && functions.size()<limit) functions.add(iterator.next());
+            while (iterator.hasNext() && functions.size()<limit) {var next=iterator.next();if(!functions.contains(next))functions.add(next);}
         } else for (int i=1;i<args.length;i++) {
             Function f = currentProgram.getFunctionManager().getFunctionAt(toAddr(Long.parseLong(args[i],16)));
             if (f==null) throw new Exception("missing function "+args[i]); functions.add(f);
@@ -110,7 +112,7 @@ public class ExportBehavior extends GhidraScript {
             if ((System.nanoTime()-started)/1e9>=budget) break;
             String entry = function.getEntryPoint().toString();
             try {
-                Files.writeString(output.resolve(entry+".json"),gson.toJson(export(function,decompiler))); passed++;
+                String content=gson.toJson(export(function,decompiler));long bytes=content.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;if(writtenBytes+bytes>maxBytes){outputCap=true;break;}Files.writeString(output.resolve(entry+".json"),content);writtenBytes+=bytes;passed++;
             } catch (Exception exception) {
                 JsonObject failure = new JsonObject(); failure.addProperty("entry",entry);
                 failure.addProperty("error",exception.toString()); failures.add(failure);
@@ -120,7 +122,7 @@ public class ExportBehavior extends GhidraScript {
         summary.addProperty("schema","gameverse.l0.export-run/0.2"); summary.addProperty("requested",functions.size());
         summary.addProperty("exported",passed); summary.add("failures",failures);
         summary.addProperty("budget_s",budget); summary.addProperty("wall_s",(System.nanoTime()-started)/1e9);
-        summary.addProperty("budget_exhausted",passed+failures.size()<functions.size());
+        summary.addProperty("budget_exhausted",passed+failures.size()<functions.size());summary.addProperty("output_byte_cap",maxBytes);summary.addProperty("written_bytes",writtenBytes);summary.addProperty("output_cap_reached",outputCap);summary.addProperty("available_program_functions",currentProgram.getFunctionManager().getFunctionCount());
         summary.addProperty("per_function_timeout_s",2); summary.addProperty("read_only",true);
         Files.writeString(output.resolve("export-summary.json"),gson.toJson(summary));
     }

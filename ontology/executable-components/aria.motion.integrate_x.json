@@ -1,0 +1,112 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "aria.motion.integrate_x",
+  "label": "Horizontal acceleration, speed cap and integration",
+  "role": "movement",
+  "source_game": "castlevania-aria-of-sorrow",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/aria.motion.integrate_x/package.json",
+  "package_sha256": "3247326dc292e6f44d2fa9396f7c3aff8027b0b4d09ef8942ffa649024c011f1",
+  "behavior_sha256": "b97f0bab6e299245ea79da7360184ee601d792c826530386aa9905cad3ad458e",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "2b15c058e3afb8e6d893c19014db65af06ca00cc421e8e7009eb22b6c13b8f92"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {}
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 65536
+        },
+        "frame": "world.x.right",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_usage_and_native_component_oracle"
+        ],
+        "naming_status": "analysis_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 65536
+        },
+        "frame": "world.x.right",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_usage_and_native_component_oracle"
+        ],
+        "naming_status": "analysis_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "acceleration",
+        "unit": {
+          "numerator": 1,
+          "denominator": 65536
+        },
+        "frame": "world.x.right",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_usage_and_native_component_oracle"
+        ],
+        "naming_status": "analysis_annotation_not_behavior_input"
+      }
+    }
+  ],
+  "collection_ports": [],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 3,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/aria.motion.integrate_x/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

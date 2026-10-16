@@ -1,111 +1,388 @@
 {
-  "schema": "gameverse.automatic-ir-status/0.2",
-  "source_commit": "acc56819395d7ca51b5d0b17c9ae3e5d968698fa",
-  "environment": "macOS-27.0.1-arm64-arm-64bit",
-  "queue_s": null,
-  "scope": "Automatic executable movement/combat/progression subset and connected clean-ROM vertical slice; full Sonic campaign remains a separate workstream",
-  "sonic_candidate_denominator": 1929,
-  "l0_exported_initial": 1926,
-  "l0_exported_after_narrow_repair": 1929,
-  "l0_export_percent_after_repair": 100.0,
-  "l0_export_s": 24.55895,
-  "l0_repair_export_s": 0.367280584,
-  "l0_failures_retained": 3,
-  "static_l1_candidates": 57,
-  "static_l1_census_s": 1.828509583,
-  "qualified_packages": 9,
-  "qualified_sonic_functions": 5,
-  "qualified_native_pairs": 184320,
-  "real_saved_ram_pairs": 10,
-  "new_rom": {
-    "path": "local/ir/builds/asterion-04/game.gba",
-    "sha256": "88e608f9cd44adb4b3bfcbd11183670233a7b89e0af7a935855c531e4c2e231a",
-    "parent_rom_used": false,
-    "build_s": 0.11055820899999999,
-    "route_s": 0.55665275,
-    "route_final": {
-      "ticks": 417,
-      "player_x": 256832,
-      "player_y": 32768,
-      "shot_count": 16,
-      "kills": 3,
-      "pickup_taken": 1,
-      "gate_open": 1,
-      "won": 1,
-      "player_hp": 12,
-      "ability_mask": 1
-    },
-    "route_receipt": "local/ir/qualification/asterion-03-route/route-receipt.json",
-    "receipt_artifact_note": "Build03 and04 produced identical ROM bytes;04adds an explicit adapter input domain to the composition proof metadata",
-    "video": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/qualification/asterion-03-route/playthrough.mp4"
+  "schema": "gameverse.automatic-ir-status/0.3",
+  "source_commit_at_snapshot": "c6c7c4e5f8b4b3e3aa5faecd6f6988ff9c468335",
+  "updated_utc": "2026-10-16T09:53:01.328976+00:00",
+  "objective_status": "ONGOING_ALL_GAMES_PARTIAL",
+  "scope": "Automatic own-ROM executable mechanics and new-ROM compositions; complete Mario mechanic recovery is active priority. None of this count is whole-game completeness.",
+  "rom_inventory": 33,
+  "discovery_states": {
+    "baseline_reused": 2,
+    "depth_pending": 29,
+    "failed_discovery": 2
   },
-  "composition_only_variant": {
-    "path": "local/ir/builds/asterion-strong-beam/game.gba",
-    "sha256": "8b62a5f2edece30a6fdc8b809a1e4d519cabfdd9a23c68e9808032a44ad8c09a",
-    "change": "IR impact argument2\u21924; compiler/runtime unchanged",
-    "route_s": 0.430434791,
-    "normal_shots": 16,
-    "variant_shots": 11,
-    "route_final": {
-      "ticks": 370,
-      "player_x": 256832,
-      "player_y": 32768,
-      "shot_count": 11,
-      "kills": 3,
-      "pickup_taken": 1,
-      "gate_open": 1,
-      "won": 1,
-      "player_hp": 12,
-      "ability_mask": 1
-    }
-  },
-  "retained_failures": [
+  "bounded_l0_exports": 21845,
+  "bounded_static_l1_candidates": 2271,
+  "retained_native_qualified_packages": 31,
+  "typed_port_subset_packages": 15,
+  "retained_package_fixture_pairs": 524872,
+  "packages": [
     {
-      "kind": "C lowering link",
-      "reason": "64bit multiplication helper missing; replaced unnecessary intermediate64bit operations with exact unsigned storage-width operations",
-      "evidence": "local/re/experiments/automatic-ir-m1-01/08047078/failed-01-receipt.json"
+      "id": "aria.motion.integrate_x",
+      "source_game": "castlevania-aria-of-sorrow",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": true
     },
     {
-      "kind": "runtime link",
-      "reason": "initialized .data unsupported and compiler introduced unsigned division helper; runtime initialization and ABI helper added",
-      "evidence": "local/ir/builds/asterion-01/build-receipt.json"
+      "id": "aria.motion.integrate_y",
+      "source_game": "castlevania-aria-of-sorrow",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": true
     },
     {
-      "kind": "route budget",
-      "reason": "rendering cost caused configured frame cap before exit; replaced clear with DMA and row writes with32bit access, retained failure",
-      "evidence": "local/ir/qualification/asterion-02-route/route-receipt.json"
+      "id": "mzm.combat.impact",
+      "source_game": "metroid-zero-mission",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": true
+    },
+    {
+      "id": "mzm.motion.accelerate",
+      "source_game": "metroid-zero-mission",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": true
+    },
+    {
+      "id": "mzm.progress.acquire",
+      "source_game": "metroid-zero-mission",
+      "vectors": 4096,
+      "qualification": "native_finite_pass",
+      "typed_ports": true
+    },
+    {
+      "id": "mzm.progress.events",
+      "source_game": "metroid-zero-mission",
+      "vectors": 65536,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "sma-2-super-mario-world.combat.sma2_effect_suppressed",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "sma-2-super-mario-world.combat.sma2_terminal_state",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "sma-2-super-mario-world.motion.sma2_decay_run_charge",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "sma-2-super-mario-world.motion.sma2_gravity",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 1024,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "sma-2-super-mario-world.motion.sma2_integrate",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": true
+    },
+    {
+      "id": "sma-2-super-mario-world.motion.sma2_integrate_x",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": true
+    },
+    {
+      "id": "sma-2-super-mario-world.motion.sma2_integrate_y",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": true
+    },
+    {
+      "id": "sma-2-super-mario-world.motion.sma2_run_charge",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "sma-2-super-mario-world.motion.sma2_special_surface",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "sma-4-super-mario-bros-3.combat.bounce_initializer",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "sma-4-super-mario-bros-3.combat.flatten_initializer",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "sma-4-super-mario-bros-3.motion.run_boost_helper",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "sma-4-super-mario-bros-3.motion.vertical_integration",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "sma.motion.sma1_friction",
+      "source_game": "super-mario-advance",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "sma.motion.sma1_gravity_hover",
+      "source_game": "super-mario-advance",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": true
+    },
+    {
+      "id": "sma.motion.sma1_integrate_y",
+      "source_game": "super-mario-advance",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "sma.motion.sma1_jump_onset",
+      "source_game": "super-mario-advance",
+      "vectors": 11848,
+      "qualification": "native_finite_pass",
+      "typed_ports": true
+    },
+    {
+      "id": "sonic.motion.gravity",
+      "source_game": "sonic-advance",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": true
+    },
+    {
+      "id": "sonic.motion.integrate",
+      "source_game": "sonic-advance",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": true
+    },
+    {
+      "id": "sonic.motion.slope_acceleration",
+      "source_game": "sonic-advance",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "sonic.motion.surface_detach",
+      "source_game": "sonic-advance",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "sonic.motion.surface_projection",
+      "source_game": "sonic-advance",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": false
+    },
+    {
+      "id": "tmc.progress.derive_skills",
+      "source_game": "legend-of-zelda-the-the-minish-cap",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": true
+    },
+    {
+      "id": "tmc.progress.inventory_read",
+      "source_game": "legend-of-zelda-the-the-minish-cap",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": true
+    },
+    {
+      "id": "tmc.progress.inventory_write",
+      "source_game": "legend-of-zelda-the-the-minish-cap",
+      "vectors": 16384,
+      "qualification": "native_finite_pass",
+      "typed_ports": true
     }
   ],
-  "gaps": [
-    "Static lift does not imply original boundary/ABI correctness or composable semantics",
-    "L1 semantic unit annotations use existing own-ROM analysis; automatic relative-unit inference and external scoring are incomplete",
-    "No generalized structured loops, arbitrary pointer aliases, ARM/Thumb interworking or all service closures yet",
-    "Captured RAM fixtures are phase-end states, not per-call trace contexts",
-    "The runtime currently implements Mode4 primitives and geometry queries, not all original rendering/audio/save services",
-    "Acquired ownership drives an authored world gate; original equip/active refresh is not recovered here",
-    "Candidate function coverage is not instruction coverage or full-game completion"
-  ],
-  "repair_static_diagnostics": [
+  "generated_compositions": [
     {
-      "function": "0803ab30",
-      "outcome": "unsupported",
-      "reason": "unresolved callee closure 0803b52e"
+      "request_id": "aria-minish-mzm-three-game-01",
+      "outcome": "pass",
+      "diagnostic": null,
+      "rom_sha256": "4ae08e61db0a6779b2ebfc4c2a92aa40e86d7a7cfa42a89d41c80fdb4bd88ea0",
+      "receipt": "local/ir/generated/aria-minish-01/status.json",
+      "wall_s": 0.6385938329999999,
+      "route": {
+        "outcome": "pass",
+        "receipt": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/generated/aria-minish-01/native/route-receipt.json",
+        "wall_s": 0.50218525,
+        "final": {
+          "ticks": 435,
+          "player_x": 256320,
+          "player_y": 32768,
+          "shot_count": 16,
+          "kills": 3,
+          "pickup_taken": 1,
+          "gate_open": 1,
+          "won": 1,
+          "player_hp": 12,
+          "ability_mask": 1
+        },
+        "error": null
+      }
     },
     {
-      "function": "08047634",
-      "outcome": "unsupported",
-      "reason": "unresolved callee closure 08047078"
+      "request_id": "mario-minish-connected",
+      "outcome": "pass",
+      "diagnostic": null,
+      "rom_sha256": "2203a60e880c20e6fabfcf594db736cc76f96beee579e5f20fc1d6ae4760902a",
+      "receipt": "local/ir/generated/mario-minish-01/status.json",
+      "wall_s": 0.633536208,
+      "route": {
+        "outcome": "pass",
+        "receipt": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/generated/mario-minish-01/native/route-receipt.json",
+        "wall_s": 0.5010457079999999,
+        "final": {
+          "ticks": 435,
+          "player_x": 256320,
+          "player_y": 32768,
+          "shot_count": 16,
+          "kills": 3,
+          "pickup_taken": 1,
+          "gate_open": 1,
+          "won": 1,
+          "player_hp": 12,
+          "ability_mask": 1
+        },
+        "error": null
+      }
     },
     {
-      "function": "080989d8",
-      "outcome": "unsupported",
-      "reason": "not constant v4"
+      "request_id": "minish-skills-three-game-01",
+      "outcome": "pass",
+      "diagnostic": null,
+      "rom_sha256": "6fef885452079c8db98baee860947e0ce1ac36f665171ef70bff99efe16dea7b",
+      "receipt": "local/ir/generated/minish-skills-01/status.json",
+      "wall_s": 0.6972975419999999,
+      "route": {
+        "outcome": "pass",
+        "receipt": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/generated/minish-skills-01/native/route-receipt.json",
+        "wall_s": 0.538390292,
+        "final": {
+          "ticks": 417,
+          "player_x": 256832,
+          "player_y": 32768,
+          "shot_count": 16,
+          "kills": 3,
+          "pickup_taken": 1,
+          "gate_open": 1,
+          "won": 1,
+          "player_hp": 12,
+          "ability_mask": 1
+        },
+        "error": null
+      }
+    },
+    {
+      "request_id": "sma1-mario-policies",
+      "outcome": "pass",
+      "diagnostic": null,
+      "rom_sha256": "08aa9cbb77be827e4b0f38eca44ad22f56eb21d2dd1dc12364b0993b6d7e9a8c",
+      "receipt": "local/ir/generated/sma1-mario-01/status.json",
+      "wall_s": 0.591013666,
+      "route": {
+        "outcome": "pass",
+        "receipt": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/generated/sma1-mario-01/native/route-receipt.json",
+        "wall_s": 0.46461229100000007,
+        "final": {
+          "ticks": 417,
+          "player_x": 256832,
+          "player_y": 32768,
+          "shot_count": 16,
+          "kills": 3,
+          "pickup_taken": 1,
+          "gate_open": 1,
+          "won": 1,
+          "player_hp": 12,
+          "ability_mask": 1,
+          "sma1_hover": 0
+        },
+        "error": null
+      }
+    },
+    {
+      "request_id": "sma1-peach-policies",
+      "outcome": "pass",
+      "diagnostic": null,
+      "rom_sha256": "7f8899ed3ab7a61e63bb59eee9ecec256b3ed867f29fffe460a850cb389a7637",
+      "receipt": "local/ir/generated/sma1-peach-01/status.json",
+      "wall_s": 0.6354476670000001,
+      "route": {
+        "outcome": "pass",
+        "receipt": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/generated/sma1-peach-01/native/route-receipt.json",
+        "wall_s": 0.5110051249999998,
+        "final": {
+          "ticks": 417,
+          "player_x": 256832,
+          "player_y": 32768,
+          "shot_count": 16,
+          "kills": 3,
+          "pickup_taken": 1,
+          "gate_open": 1,
+          "won": 1,
+          "player_hp": 12,
+          "ability_mask": 1,
+          "sma1_hover": 48
+        },
+        "error": null
+      }
     }
   ],
-  "measurement_notes": [
-    "Export timings exclude JVM startup; static-lift wall is separate",
-    "Native qualification includes clean compile/link/oracle construction; nested stages are not additive to total",
-    "No comparable previous whole-census automatic-lift baseline exists",
-    "New-ROM build02before runtime optimization0.101s;03after0.107s (comparable clean same machine); route frame cap and resource policy changed, so total route durations are not comparable throughput baselines"
-  ]
+  "queue_ref": "local/ir/automatic-queue.json",
+  "coverage_ref": "research/automatic-ir/mario-mechanic-coverage.json",
+  "continuation_policy": "tools/behavior_ir/CONTINUATION.md",
+  "initial_checkpoint_ref": "research/automatic-ir/initial-slice-status.json",
+  "count_limits": [
+    "Candidate pools are bounded, not complete ROM/function/instruction coverage",
+    "Fixture counts sum retained per-package finite proofs; they are not unique gameplay states or whole-game mechanics coverage",
+    "Typed port subsets are usable qualified pieces, not completed parent controllers or games",
+    "New-ROM world/contact/projectile/gate/rendering are explicitly authored IR; recovered behaviors and source datasets are named in composition receipts"
+  ],
+  "active_blockers": [
+    "Mario shared world/entity actor views require typed entity handles and alias-preserving pool schema; separate actor/world copies would be incorrect",
+    "Original audio/render service boundaries are not interchangeable with resource/collision effects",
+    "General loop structuring, dynamic callbacks, unresolved pointer aliases and non-AAPCS profiles remain unsupported",
+    "Full terrain/controllers/health/death/enemies/abilities/progression/persistence and bundled engines remain partial/unexplored"
+  ],
+  "timing_context": "Retained receipts include actual build/native stages and immutable hashes; queue latency is unavailable. No paid provider calls or new dependency/CI job. Reused exact behavior/native identities avoid broad unchanged reruns."
 }

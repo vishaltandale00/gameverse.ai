@@ -21,15 +21,17 @@ DEFS=[
  ('mzm.progress.events','mzm/080608bc','metroid-zero-mission','Persistent event query and mutation',{}),
  ('mzm.progress.acquire','mzm/080138d8','metroid-zero-mission','Acquire equipment and campaign event flags',{'field_0':meaning('bitset',1,'weapons.owned'),'field_1':meaning('bitset',1,'abilities.owned')})]
 def effects(x):
- reads=set();writes=set()
+ reads=set();writes=set();collection_reads=set();collection_writes=set()
  def visit(z):
   if isinstance(z,list):
    for y in z:visit(y)
   elif isinstance(z,dict):
    if z.get('op')=='field':reads.add(z['name'])
    if z.get('op')=='assign_field':writes.add(z['field'])
+   if z.get('op')=='collection_read':collection_reads.add(z['collection'])
+   if z.get('op')=='assign_collection':collection_writes.add(z['collection'])
    for y in z.values():visit(y)
- visit(x['body']);return {'reads':sorted(reads),'writes':sorted(writes)}
+ visit(x['body']);return {'reads':sorted(reads),'writes':sorted(writes),'collection_reads':sorted(collection_reads),'collection_writes':sorted(collection_writes)}
 def publish():
  OUT.mkdir(parents=True,exist_ok=True);dependencies={};reports=[]
  for name,entry,game,title,meanings in DEFS:

@@ -55,4 +55,7 @@ def validate(document):
    else:raise ValueError('unresolved effect/control '+op)
  for n,t in list(fields.items())+list(locals.items())+list(params.items()):
   if not re.fullmatch('[A-Za-z_][A-Za-z_0-9]*',n)or t not in TYPES:raise ValueError('invalid symbolic declaration')
+ for p in document.get('parameters',[])+document['state']:
+  d=p.get('domain',{});lo=d.get('unsigned_min',0);hi=d.get('unsigned_max',(1<<int(p['storage_type'][1:]))-1)
+  if not 0<=lo<=hi<(1<<int(p['storage_type'][1:])):raise ValueError('invalid parameter domain')
  statements(document['body']);return True

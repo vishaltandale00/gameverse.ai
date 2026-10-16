@@ -31,7 +31,15 @@ def inline_dependencies(l1,adapter,dependencies):
             if s['op']=='call':
                 i=s['dependency'];dep,renames=imported[i]
                 def rewrite(x):
-                    if isinstance(x,list):return[rewrite(z)for z in x if not(isinstance(z,dict)and z.get('op')=='return')]
+                    if isinstance(x,list):
+                        result=[]
+                        for z in x:
+                            if isinstance(z,dict)and z.get('op')=='return':
+                                if 'result'in s:
+                                    if 'value'not in z:raise ValueError('callee return value missing')
+                                    result.append({'op':'assign_local','local':s['result'],'value':rewrite(z['value']),'provenance':s['provenance']})
+                            else:result.append(rewrite(z))
+                        return result
                     if not isinstance(x,dict):return x
                     if x.get('op')=='parameter':return copy.deepcopy(s['arguments'][x['name']])
                     y={k:rewrite(v)for k,v in x.items()}

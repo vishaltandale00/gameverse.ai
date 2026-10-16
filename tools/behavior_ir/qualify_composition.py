@@ -5,7 +5,7 @@ ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'tools/re/session'))
 from bridge import NativeSession
 
-def run(build,out):
+def run(build,out,probe_negative=False):
  start=time.perf_counter();session=NativeSession(build/'game.gba',out,ROOT/'tools/re/session/build/gba-session',memory_profile=build/'memory-profile.json');report={'schema':'gameverse.new-rom-route/0.1','rom_sha256':session.game_version,'queue_s':None,'limits':{'max_frames':4200,'action_frames':30,'wall_timeout_s':30},'actions':[],'checkpoints':{},'outcome':'running','state_writes':False,'emulator':session.emulator,'harness_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'build_receipt_sha256':hashlib.sha256((build/'build-receipt.json').read_bytes()).hexdigest()}
  def step(keys,n=30,label=None):
   if session.frame+n>4200 or time.perf_counter()-start>30:raise RuntimeError('route budget exhausted')
@@ -14,6 +14,12 @@ def run(build,out):
   return facts
  try:
   session.start_recording(2);facts=step([],2,'boot')
+  if probe_negative:
+   while facts['ticks']==0:facts=step([],4)
+   before=facts['player_x'];facts=step(['LEFT'],20,'negative_motion')
+   if facts['player_x']>=before:raise RuntimeError('negative movement adapter did not preserve sign')
+   report['negative_motion_probe']={'before_x':before,'after_x':facts['player_x'],'outcome':'pass'}
+   facts=step([],4)
   # Approach each guardian, stop short, and let actual shots land.
   for i,x in enumerate((264,440,574)):
    while facts['player_x']//256<x-90:facts=step(['RIGHT','B'],10)

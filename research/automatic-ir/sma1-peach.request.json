@@ -1,0 +1,13 @@
+{
+  "schema": "gameverse.ir.generation-request/0.1",
+  "request_id": "sma1-peach-policies",
+  "title": "SMA1 PEACH",
+  "selections": {
+    "movement": "movement.sma1-peach-policies",
+    "combat": "combat.mzm-impact",
+    "progression": "progression.minish-skills"
+  },
+  "qualification": {
+    "run": true
+  }
+}

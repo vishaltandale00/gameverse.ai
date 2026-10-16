@@ -1,0 +1,51 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma.motion.sma1_friction",
+  "label": "Sma1 friction",
+  "role": "movement",
+  "source_game": "super-mario-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma.motion.sma1_friction/package.json",
+  "package_sha256": "5b8b38a5b291b4bc47e54fe137f663ce54c09acce45c0ba379e318a09cb8a79f",
+  "behavior_sha256": "049ac5d180d625705450dd002d43a50f8e2166b5d2b044be7fe51f57d0f41356",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "1a520dd5361d838ab995dd368a9fdf9509117a8cc48a1fc6853cc64cfeac77d3"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [],
+  "collection_ports": [],
+  "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+  "owned_state": {
+    "fields": 11,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma.motion.sma1_friction/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

@@ -15,6 +15,9 @@
     "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
     "receipt_sha256": "079e41fb7bcf8689ede452ef96c1781d74eb9d925f7d7e5b8955502088df23f4"
   },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
   "parameters": [
     {
       "name": "param_0",
@@ -95,6 +98,7 @@
       }
     }
   ],
+  "collection_ports": [],
   "assembly_status": "qualified_typed_ports",
   "owned_state": {
     "fields": 9,

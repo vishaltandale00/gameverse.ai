@@ -1,0 +1,51 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma-2-super-mario-world.motion.sma2_special_surface",
+  "label": "Sma2 special surface",
+  "role": "movement",
+  "source_game": "super-mario-advance-2-super-mario-world",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma-2-super-mario-world.motion.sma2_special_surface/package.json",
+  "package_sha256": "67cd227be0b252d2051918934e03dc428702c077b05d3e34bbf4bca793e64951",
+  "behavior_sha256": "5feea688047e5e6a0aa8ce05f3c3f94bfd2f09b9cb0066919be08632a92f1cc9",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "79bff96f628ed23d0b4fd09bf412092987be0661629eca267865df4321bedd13"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [],
+  "collection_ports": [],
+  "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+  "owned_state": {
+    "fields": 2,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma-2-super-mario-world.motion.sma2_special_surface/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

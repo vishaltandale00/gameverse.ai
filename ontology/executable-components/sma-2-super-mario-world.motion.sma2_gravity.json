@@ -1,0 +1,83 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma-2-super-mario-world.motion.sma2_gravity",
+  "label": "Sma2 gravity",
+  "role": "movement",
+  "source_game": "super-mario-advance-2-super-mario-world",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma-2-super-mario-world.motion.sma2_gravity/package.json",
+  "package_sha256": "6c6401f169b6cb4c6ddb2f79c1a5f0b110b2155c4a914c94c198570386d4c512",
+  "behavior_sha256": "234fca0bc8e2d0efcb1ff83e5f0038e2ad4cfa8271add89caa9443715d0496ee",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 1024,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "19c6b30b13d2f381c664d0ed39bc643cb56764d5962424539f4670ad5a054f8e"
+  },
+  "configurations": [],
+  "state_owners": [
+    {
+      "id": "context_object_0",
+      "identity": "profile",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": [
+        "research/deep-extraction/mario/l0-context-evidence.json",
+        "research/deep-extraction/mario/context-observations.json"
+      ]
+    },
+    {
+      "id": "context_object_1",
+      "identity": "engine",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": [
+        "research/deep-extraction/mario/l0-context-evidence.json",
+        "research/deep-extraction/mario/context-observations.json"
+      ]
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 2
+      }
+    }
+  ],
+  "ports": [],
+  "collection_ports": [],
+  "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+  "owned_state": {
+    "fields": 6,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma-2-super-mario-world.motion.sma2_gravity/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

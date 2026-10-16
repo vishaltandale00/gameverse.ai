@@ -3,11 +3,30 @@
   "scope": "Qualified automatic behavior subset; not complete game ontologies",
   "entries": [
     {
+      "id": "aria.motion.integrate_x",
+      "role": "movement",
+      "record": "aria.motion.integrate_x.json",
+      "source_game": "castlevania-aria-of-sorrow",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "b97f0bab6e299245ea79da7360184ee601d792c826530386aa9905cad3ad458e"
+    },
+    {
+      "id": "aria.motion.integrate_y",
+      "role": "movement",
+      "record": "aria.motion.integrate_y.json",
+      "source_game": "castlevania-aria-of-sorrow",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "3d2d65ab65607f8c2fd8be1939d86dc437c28ecabfc6022d35ae5999abfb402e"
+    },
+    {
       "id": "mzm.combat.impact",
       "role": "combat",
       "record": "mzm.combat.impact.json",
       "source_game": "metroid-zero-mission",
       "qualified": true,
+      "assembly_status": "qualified_typed_ports",
       "behavior_sha256": "d1553f6e708d9c1f8dfd18aad318bf1b88ba373483ddee4adcbbbaeb6e38c890"
     },
     {
@@ -16,6 +35,7 @@
       "record": "mzm.motion.accelerate.json",
       "source_game": "metroid-zero-mission",
       "qualified": true,
+      "assembly_status": "qualified_typed_ports",
       "behavior_sha256": "f0507074e04a8112e567b093b33bee6ed685d8b49a34b8b927ceeef688e880a6"
     },
     {
@@ -24,6 +44,7 @@
       "record": "mzm.progress.acquire.json",
       "source_game": "metroid-zero-mission",
       "qualified": true,
+      "assembly_status": "qualified_typed_ports",
       "behavior_sha256": "885c2aae5398d0f2928e7448e43626bc9204ba235f230f80932dbe685c2b4723"
     },
     {
@@ -32,7 +53,161 @@
       "record": "mzm.progress.events.json",
       "source_game": "metroid-zero-mission",
       "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
       "behavior_sha256": "1e2dd520dd5749512a513532bba1090b1dc34486c55a5160288e17a7c825b1a5"
+    },
+    {
+      "id": "sma-2-super-mario-world.combat.sma2_effect_suppressed",
+      "role": "combat",
+      "record": "sma-2-super-mario-world.combat.sma2_effect_suppressed.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "002dec11c892ee567bf46c5d8e1c8bffbdf004c220f9b31bb1d4c4afdedec455"
+    },
+    {
+      "id": "sma-2-super-mario-world.combat.sma2_terminal_state",
+      "role": "combat",
+      "record": "sma-2-super-mario-world.combat.sma2_terminal_state.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "27ba685f356639c29b9db2fadd5514c1cead74bf9af7e2b61c7331f452b63acf"
+    },
+    {
+      "id": "sma-2-super-mario-world.motion.sma2_decay_run_charge",
+      "role": "movement",
+      "record": "sma-2-super-mario-world.motion.sma2_decay_run_charge.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "70e9f5f4403e2a481831a88ac89f46ea94c009591eec71c083f64fc89536ca82"
+    },
+    {
+      "id": "sma-2-super-mario-world.motion.sma2_gravity",
+      "role": "movement",
+      "record": "sma-2-super-mario-world.motion.sma2_gravity.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "234fca0bc8e2d0efcb1ff83e5f0038e2ad4cfa8271add89caa9443715d0496ee"
+    },
+    {
+      "id": "sma-2-super-mario-world.motion.sma2_integrate",
+      "role": "movement",
+      "record": "sma-2-super-mario-world.motion.sma2_integrate.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "e0c3c5b48258943f8ae8ac0d7629c9dc163cf619443363dd24706429f80ef7b5"
+    },
+    {
+      "id": "sma-2-super-mario-world.motion.sma2_integrate_x",
+      "role": "movement",
+      "record": "sma-2-super-mario-world.motion.sma2_integrate_x.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "ed1b5fb58ec41c0a4c326f8d6acf873a794f2b6481ed3dc8f9e9c4fe3faf3ea1"
+    },
+    {
+      "id": "sma-2-super-mario-world.motion.sma2_integrate_y",
+      "role": "movement",
+      "record": "sma-2-super-mario-world.motion.sma2_integrate_y.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "48b0003ebc86b959ff6759a77996b64c38b87890bc451ca22060bf6759cddf58"
+    },
+    {
+      "id": "sma-2-super-mario-world.motion.sma2_run_charge",
+      "role": "movement",
+      "record": "sma-2-super-mario-world.motion.sma2_run_charge.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "7d35bda26ed87e76859351fa96167e9f0b8c5dce4643c96540e8350ac2c72083"
+    },
+    {
+      "id": "sma-2-super-mario-world.motion.sma2_special_surface",
+      "role": "movement",
+      "record": "sma-2-super-mario-world.motion.sma2_special_surface.json",
+      "source_game": "super-mario-advance-2-super-mario-world",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "5feea688047e5e6a0aa8ce05f3c3f94bfd2f09b9cb0066919be08632a92f1cc9"
+    },
+    {
+      "id": "sma-4-super-mario-bros-3.combat.bounce_initializer",
+      "role": "combat",
+      "record": "sma-4-super-mario-bros-3.combat.bounce_initializer.json",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "d5a621e7c9fd990d4126b77383a70d032c4a5b476b569bcc6767fea73466960e"
+    },
+    {
+      "id": "sma-4-super-mario-bros-3.combat.flatten_initializer",
+      "role": "combat",
+      "record": "sma-4-super-mario-bros-3.combat.flatten_initializer.json",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "219324e658ed59978a8b1cc66fc67a5e3236e6a74f57ef5fa3eebb86dfe19b13"
+    },
+    {
+      "id": "sma-4-super-mario-bros-3.motion.run_boost_helper",
+      "role": "movement",
+      "record": "sma-4-super-mario-bros-3.motion.run_boost_helper.json",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "5bbe838fcf667f0be534ff3b64a8725e8041be6269a48a4e0d3567921d2fc2b8"
+    },
+    {
+      "id": "sma-4-super-mario-bros-3.motion.vertical_integration",
+      "role": "movement",
+      "record": "sma-4-super-mario-bros-3.motion.vertical_integration.json",
+      "source_game": "super-mario-advance-4-super-mario-bros-3",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "48cdd653abcc4cee121008e2655194982a8c18054003dc500ea62193eb6ef7e2"
+    },
+    {
+      "id": "sma.motion.sma1_friction",
+      "role": "movement",
+      "record": "sma.motion.sma1_friction.json",
+      "source_game": "super-mario-advance",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "049ac5d180d625705450dd002d43a50f8e2166b5d2b044be7fe51f57d0f41356"
+    },
+    {
+      "id": "sma.motion.sma1_gravity_hover",
+      "role": "movement",
+      "record": "sma.motion.sma1_gravity_hover.json",
+      "source_game": "super-mario-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "8497bdbff8ffa3c520fc25f6be0ad34c0c0d6c5d02312e8b7bb4fbc7fe2b29a7"
+    },
+    {
+      "id": "sma.motion.sma1_integrate_y",
+      "role": "movement",
+      "record": "sma.motion.sma1_integrate_y.json",
+      "source_game": "super-mario-advance",
+      "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+      "behavior_sha256": "8762fedfb59ca8b55743dfa296212b1ab0e6583c33705ea656e8df21cfb82419"
+    },
+    {
+      "id": "sma.motion.sma1_jump_onset",
+      "role": "movement",
+      "record": "sma.motion.sma1_jump_onset.json",
+      "source_game": "super-mario-advance",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "e02de3bee4305bfe787b36c5858006537cb91b1d42df915cc8a611082fd7c9ee"
     },
     {
       "id": "sonic.motion.gravity",
@@ -40,6 +215,7 @@
       "record": "sonic.motion.gravity.json",
       "source_game": "sonic-advance",
       "qualified": true,
+      "assembly_status": "qualified_typed_ports",
       "behavior_sha256": "2125d4c9097713fc2dc3d12fe35b1c8209b3a310db4aa8f780b6eed0470cdb45"
     },
     {
@@ -48,6 +224,7 @@
       "record": "sonic.motion.integrate.json",
       "source_game": "sonic-advance",
       "qualified": true,
+      "assembly_status": "qualified_typed_ports",
       "behavior_sha256": "65e2dfe1679d10de632a0c476f541117aea74b2098ddf843d3c1e9edd7992462"
     },
     {
@@ -56,6 +233,7 @@
       "record": "sonic.motion.slope_acceleration.json",
       "source_game": "sonic-advance",
       "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
       "behavior_sha256": "87ffd4bb97068be6b2705feaf5b8273299cbbc45dc1f0ac5dac5da8c4258eb82"
     },
     {
@@ -64,6 +242,7 @@
       "record": "sonic.motion.surface_detach.json",
       "source_game": "sonic-advance",
       "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
       "behavior_sha256": "6df3d8ce49cfc9a82276a2c6af09dfc516c6e01bca095717e9c05e811e8cedb1"
     },
     {
@@ -72,7 +251,35 @@
       "record": "sonic.motion.surface_projection.json",
       "source_game": "sonic-advance",
       "qualified": true,
+      "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
       "behavior_sha256": "0bd45089f689d0e4c15e0edf26e866bd0ab4a9449e569d2ceb9fc93eb8e79646"
+    },
+    {
+      "id": "tmc.progress.derive_skills",
+      "role": "progression",
+      "record": "tmc.progress.derive_skills.json",
+      "source_game": "legend-of-zelda-the-the-minish-cap",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "3c683d0489f455e5421a875ed3b88970977800b02d1458087816e3dd54ddfef8"
+    },
+    {
+      "id": "tmc.progress.inventory_read",
+      "role": "progression",
+      "record": "tmc.progress.inventory_read.json",
+      "source_game": "legend-of-zelda-the-the-minish-cap",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "81de4588a711ef7460a424f26d6021fa65ac2a96908ccda7226a7340b2f563ae"
+    },
+    {
+      "id": "tmc.progress.inventory_write",
+      "role": "progression",
+      "record": "tmc.progress.inventory_write.json",
+      "source_game": "legend-of-zelda-the-the-minish-cap",
+      "qualified": true,
+      "assembly_status": "qualified_typed_ports",
+      "behavior_sha256": "c8acaaa532043662fa385bc610499ea9b68bc4fd462d4c832830dfe198377568"
     }
   ],
   "groups": [
@@ -80,7 +287,22 @@
       "id": "movement",
       "label": "How the player moves",
       "members": [
+        "aria.motion.integrate_x",
+        "aria.motion.integrate_y",
         "mzm.motion.accelerate",
+        "sma-2-super-mario-world.motion.sma2_decay_run_charge",
+        "sma-2-super-mario-world.motion.sma2_gravity",
+        "sma-2-super-mario-world.motion.sma2_integrate",
+        "sma-2-super-mario-world.motion.sma2_integrate_x",
+        "sma-2-super-mario-world.motion.sma2_integrate_y",
+        "sma-2-super-mario-world.motion.sma2_run_charge",
+        "sma-2-super-mario-world.motion.sma2_special_surface",
+        "sma-4-super-mario-bros-3.motion.run_boost_helper",
+        "sma-4-super-mario-bros-3.motion.vertical_integration",
+        "sma.motion.sma1_friction",
+        "sma.motion.sma1_gravity_hover",
+        "sma.motion.sma1_integrate_y",
+        "sma.motion.sma1_jump_onset",
         "sonic.motion.gravity",
         "sonic.motion.integrate",
         "sonic.motion.slope_acceleration",
@@ -94,7 +316,11 @@
       "id": "combat",
       "label": "How hits change an enemy",
       "members": [
-        "mzm.combat.impact"
+        "mzm.combat.impact",
+        "sma-2-super-mario-world.combat.sma2_effect_suppressed",
+        "sma-2-super-mario-world.combat.sma2_terminal_state",
+        "sma-4-super-mario-bros-3.combat.bounce_initializer",
+        "sma-4-super-mario-bros-3.combat.flatten_initializer"
       ],
       "meaning": "HP subtraction, lethal lifecycle/pose/flag updates and reaction state. Projectile/contact dispatch and hit cadence are authored policy in the current new-ROM example."
     },
@@ -103,9 +329,12 @@
       "label": "What acquisition changes",
       "members": [
         "mzm.progress.acquire",
-        "mzm.progress.events"
+        "mzm.progress.events",
+        "tmc.progress.derive_skills",
+        "tmc.progress.inventory_read",
+        "tmc.progress.inventory_write"
       ],
-      "meaning": "Native equipment ownership and persistent event-bank operations. The example consumes acquired ownership in an authored world gate; original active/equip refresh is not claimed."
+      "meaning": "Equipment ownership/event banks and Minish persistent two-bit inventory linked to derived skill gates. The clean-ROM route consumes acquired capability in an explicitly authored world gate; original campaigns/equip UI are not claimed."
     }
   ],
   "discovery_contract": "Read records, resolve package_ref, enforce behavior/receipt identities, inspect typed ports and constraints, then select/configure an L2 graph."

@@ -1,0 +1,86 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "tmc.progress.inventory_read",
+  "label": "Read persistent packed equipment state",
+  "role": "progression",
+  "source_game": "legend-of-zelda-the-the-minish-cap",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/tmc.progress.inventory_read/package.json",
+  "package_sha256": "78f23bd0349fd9cfe1ef48ab3c95081017750fac94d556add0f019dffc5e9c3e",
+  "behavior_sha256": "81de4588a711ef7460a424f26d6021fa65ac2a96908ccda7226a7340b2f563ae",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "d072d9e53ca35dc6c7286fdfa544c37a3087607a1b8e0c4c56bb995984204f49"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32",
+      "domain": {
+        "unsigned_min": 0,
+        "unsigned_max": 255
+      }
+    }
+  ],
+  "ports": [],
+  "collection_ports": [
+    {
+      "id": "collection_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "count": 64,
+      "semantic_type": {
+        "quantity": "packed_two_bit_inventory",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "campaign",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_usage_and_native_component_oracle"
+        ],
+        "naming_status": "analysis_annotation_not_behavior_input"
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 0,
+    "collections": [
+      {
+        "id": "collection_0",
+        "storage_type": "u8",
+        "count": 64
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/tmc.progress.inventory_read/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

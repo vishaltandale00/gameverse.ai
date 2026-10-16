@@ -1,0 +1,349 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma.motion.sma1_jump_onset",
+  "label": "Sma1 jump onset",
+  "role": "movement",
+  "source_game": "super-mario-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma.motion.sma1_jump_onset/package.json",
+  "package_sha256": "54ddf663d18eea0195316983f4781e1fecfe3f2b51d8b6a54ae8f12dc4c1b9ef",
+  "behavior_sha256": "e02de3bee4305bfe787b36c5858006537cb91b1d42df915cc8a611082fd7c9ee",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 11848,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "e215577e480664c6b66bad30c0e1df6a0efc4d88cdfa251b5942df49a22a4483"
+  },
+  "configurations": [
+    {
+      "id": "source_profile_0",
+      "label": "Mario profile",
+      "source_data_sha256": "9ebb14e668707c9bd9d6333f0fa44f167623990b42997c9b08de61de764a3ff6",
+      "source_rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "provenance": {
+        "kind": "observed_readonly_ROM_object",
+        "evidence": [
+          "research/deep-extraction/mario/l0-context-evidence.json",
+          "research/deep-extraction/mario/context-observations.json"
+        ],
+        "machine_layout": "validation_adapter_only"
+      }
+    },
+    {
+      "id": "source_profile_1",
+      "label": "Peach profile",
+      "source_data_sha256": "461030992de537f9a2c5ce879df4971bd1e5be953bc68ff57b3594ba1d5a91ef",
+      "source_rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "provenance": {
+        "kind": "observed_readonly_ROM_object",
+        "evidence": [
+          "research/deep-extraction/mario/l0-context-evidence.json",
+          "research/deep-extraction/mario/context-observations.json"
+        ],
+        "machine_layout": "validation_adapter_only"
+      }
+    }
+  ],
+  "state_owners": [
+    {
+      "id": "context_object_0",
+      "identity": "player",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": [
+        "research/deep-extraction/mario/l0-context-evidence.json",
+        "research/deep-extraction/mario/context-observations.json"
+      ]
+    },
+    {
+      "id": "context_object_1",
+      "identity": "character_parameters",
+      "ownership": "distinct_owned_object",
+      "lifetime": "invocation",
+      "separation": "accessed_views_disjoint_with_evidenced_context_layouts",
+      "evidence": [
+        "research/deep-extraction/mario/l0-context-evidence.json",
+        "research/deep-extraction/mario/context-observations.json"
+      ]
+    }
+  ],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1048576
+        },
+        "frame": "world.x.right",
+        "confidence": 0.9,
+        "label": "horizontal_velocity_internal_fraction16_scaled_by16",
+        "evidence": [
+          "research/deep-extraction/mario/l0-context-evidence.json",
+          "research/deep-extraction/mario/sma1-unit-calibration.json"
+        ],
+        "naming_status": "evidence_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "out",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1048576
+        },
+        "frame": "world.y.down",
+        "confidence": 0.9,
+        "label": "vertical_velocity_internal_fraction16_scaled_by16",
+        "evidence": [
+          "research/deep-extraction/mario/l0-context-evidence.json",
+          "research/deep-extraction/mario/sma1-unit-calibration.json"
+        ],
+        "naming_status": "evidence_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.jump_variant",
+        "confidence": 0.9,
+        "label": "jump_variant_selector",
+        "evidence": [
+          "research/deep-extraction/mario/l0-context-evidence.json",
+          "research/deep-extraction/mario/sma1-unit-calibration.json"
+        ],
+        "naming_status": "evidence_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.air_mode",
+        "confidence": 0.9,
+        "label": "air_mode",
+        "evidence": [
+          "research/deep-extraction/mario/l0-context-evidence.json",
+          "research/deep-extraction/mario/sma1-unit-calibration.json"
+        ],
+        "naming_status": "evidence_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "out",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "hover.invocations",
+        "confidence": 0.9,
+        "label": "remaining_hover",
+        "evidence": [
+          "research/deep-extraction/mario/l0-context-evidence.json",
+          "research/deep-extraction/mario/sma1-unit-calibration.json"
+        ],
+        "naming_status": "evidence_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.crouch_charge",
+        "confidence": 0.9,
+        "label": "crouch_charge",
+        "evidence": [
+          "research/deep-extraction/mario/l0-context-evidence.json",
+          "research/deep-extraction/mario/sma1-unit-calibration.json"
+        ],
+        "naming_status": "evidence_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_6",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "boolean",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.carry",
+        "confidence": 0.9,
+        "label": "carried_object_present",
+        "evidence": [
+          "research/deep-extraction/mario/l0-context-evidence.json",
+          "research/deep-extraction/mario/sma1-unit-calibration.json"
+        ],
+        "naming_status": "evidence_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_7",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "player.charge_phase",
+        "confidence": 0.9,
+        "label": "charged_jump_phase",
+        "evidence": [
+          "research/deep-extraction/mario/l0-context-evidence.json",
+          "research/deep-extraction/mario/sma1-unit-calibration.json"
+        ],
+        "naming_status": "evidence_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_8",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "enum",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world.object_kind",
+        "confidence": 0.9,
+        "label": "carried_object_type",
+        "evidence": [
+          "research/deep-extraction/mario/l0-context-evidence.json",
+          "research/deep-extraction/mario/sma1-unit-calibration.json"
+        ],
+        "naming_status": "evidence_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_9",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 16
+        },
+        "frame": "world.y.down",
+        "confidence": 0.9,
+        "label": "special_jump_velocity",
+        "evidence": [
+          "research/deep-extraction/mario/l0-context-evidence.json",
+          "research/deep-extraction/mario/sma1-unit-calibration.json"
+        ],
+        "naming_status": "evidence_annotation_not_behavior_input"
+      }
+    },
+    {
+      "id": "field_10",
+      "direction": "in",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "hover.invocations",
+        "confidence": 0.9,
+        "label": "initial_hover_frames",
+        "evidence": [
+          "research/deep-extraction/mario/l0-context-evidence.json",
+          "research/deep-extraction/mario/sma1-unit-calibration.json"
+        ],
+        "naming_status": "evidence_annotation_not_behavior_input"
+      }
+    }
+  ],
+  "collection_ports": [
+    {
+      "id": "collection_0",
+      "direction": "in",
+      "storage_type": "u8",
+      "count": 6,
+      "semantic_type": {
+        "quantity": "jump_onset_velocity_profile",
+        "unit": {
+          "numerator": 1,
+          "denominator": 16
+        },
+        "frame": "world.y.down",
+        "confidence": 0.9,
+        "evidence": [
+          "research/deep-extraction/mario/l0-context-evidence.json"
+        ]
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 11,
+    "collections": [
+      {
+        "id": "collection_0",
+        "storage_type": "u8",
+        "count": 6
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma.motion.sma1_jump_onset/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

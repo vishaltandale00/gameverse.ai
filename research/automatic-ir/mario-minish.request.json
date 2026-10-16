@@ -1,0 +1,13 @@
+{
+  "schema": "gameverse.ir.generation-request/0.1",
+  "request_id": "mario-minish-connected",
+  "title": "MARIO RELAY",
+  "selections": {
+    "movement": "movement.mario-sma2-sonic-mzm",
+    "combat": "combat.mzm-impact",
+    "progression": "progression.minish-skills"
+  },
+  "qualification": {
+    "run": true
+  }
+}

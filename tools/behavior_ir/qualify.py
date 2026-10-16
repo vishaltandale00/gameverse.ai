@@ -19,12 +19,21 @@ def qualify(out,rom,vectors=16384,parameter_grid=False,fixtures=None):
   nm=stage('symbols',['arm-none-eabi-nm',out/'generated.elf']);entry=int(next(line.split()[0]for line in nm.splitlines()if line.split()[-1]=='behavior_0'),16)&~1
   stage('emit',['arm-none-eabi-objcopy','-O','binary',out/'generated.elf',out/'generated.bin'])
   if(out/'generated.bin').stat().st_size>16384:raise RuntimeError('generated code/asset image exceeds16KiB oracle code region')
-  c=(ROOT/'tools/behavior_ir/oracle.c.in').read_text().replace('@FIELDS@',','.join('{'+str((f['address']or 0)+f['offset']if f['owner']=='global'else 0)+','+str(f['offset'])+',offsetof(LiftedState,'+f['name']+'),'+str(f['width']//8)+'}'for f in a['fields'])).replace('@VECTORS@',str(vectors)).replace('@ORIGINAL_ENTRY@','0x'+a['entry']).replace('@GENERATED_ENTRY@',hex(entry))
-  entities={f['argument']for f in a['fields']if f['owner']=='entity'}
+  span=max([256]+[f['offset']+f['width']//8 for f in a['fields']if f['owner']in('entity','reference')]+[z['offset']+z['size']*z['count']for z in a.get('collections',[])if z.get('address')is None]);entity_bytes=(span+31)//32*32
+  if entity_bytes>8192:raise RuntimeError('entity span exceeds oracle8192byte bound')
+  refs={ref['name']:i for i,ref in enumerate(a.get('object_references',[]))};object_count=max(1,len(refs))
+  if object_count>4:raise RuntimeError('oracle object count exceeds4')
+  if a.get('object_references')and any(f['owner']=='entity'for f in a['fields']):raise RuntimeError('object/entity alias precondition unproved')
+  for f in a['fields']:
+   if f['owner']=='global'and f['offset']<0x02018000 and 0x02010000<f['offset']+f['width']//8:raise RuntimeError('oracle object allocation aliases source global')
+  r['limits'].update(entity_bytes=entity_bytes,object_count=object_count)
+  c=(ROOT/'tools/behavior_ir/oracle.c.in').read_text().replace('@FIELDS@',','.join('{'+str((f['address']or 0)+f['offset']if f['owner']=='global'else 0)+','+str(f['offset'])+',offsetof(LiftedState,'+f['name']+'),'+str(f['width']//8)+','+str(refs[f['reference']]if f['owner']=='reference'else 0)+','+str(f.get('domain',{}).get('unsigned_min',0))+'u,'+str(f.get('domain',{}).get('unsigned_max',0xffffffff))+'u}'for f in a['fields'])).replace('@VECTORS@',str(vectors)).replace('@ORIGINAL_ENTRY@','0x'+a['entry']).replace('@GENERATED_ENTRY@',hex(entry))
+  entities={f['argument']for f in a['fields']if f['owner']=='entity'}|{z['argument']for z in a.get('collections',[])if z.get('owner')=='entity'}
   if len(entities)>1:raise RuntimeError('oracle currently supports one entity object')
   if len(a.get('parameters',[]))>3:raise RuntimeError('generated scalar ABI exceeds registers')
   if sum(c['size']*c['count']for c in a.get('collections',[]))>4096:raise RuntimeError('oracle collection byte budget')
-  c=c.replace('@ENTITY_ARGS@',''.join('original_args['+f[1:]+']=0x03007000;'for f in entities)).replace('@PARAMETERS@',','.join('{'+p['register'][1:]+','+str(int(p['type'][1:])//8)+'}'for p in a.get('parameters',[]))).replace('@COLLECTIONS@',','.join('{'+str(z['address'])+',offsetof(LiftedState,'+z['name']+'),'+str(z['size']*z['count'])+'}'for z in a.get('collections',[])))
+  c=c.replace('@ENTITY_ARGS@',''.join('original_args['+f[1:]+']=0x02010000;'for f in entities)).replace('@PARAMETERS@',','.join('{'+p['register'][1:]+','+str(int(p['type'][1:])//8)+','+str(p.get('domain',{}).get('unsigned_min',0))+'u,'+str(p.get('domain',{}).get('unsigned_max',0xffffffff))+'u}'for p in a.get('parameters',[]))).replace('@COLLECTIONS@',','.join('{'+str(z['address']or 0)+',offsetof(LiftedState,'+z['name']+'),'+str(z['size']*z['count'])+','+str(refs[z['reference']]if z.get('owner')=='reference'else 0)+','+str(z.get('offset',0))+'}'for z in a.get('collections',[])))
+  c=c.replace('@ENTITY_BYTES@',str(entity_bytes)).replace('@OBJECT_COUNT@',str(object_count)).replace('@REFERENCE_SETUP@',''.join('c->busWrite32(c,'+str(ref['cell'])+','+str(0x02010000+refs[ref['name']]*8192)+');'for ref in a.get('object_references',[])))
   c=c.replace('@PARAMETER_VALUE@',('((random32()&0xffffff00u)|((test>>(j*8))&255u))&((parameters[j].bytes==4)?UINT_MAX:((1u<<(parameters[j].bytes*8))-1))')if parameter_grid else'value(test,j+17,parameters[j].bytes)')
   rows=fixtures.get('states',[])if fixtures else[]
   if fixtures and(a.get('parameters')or a.get('collections')):raise RuntimeError('capture fixture adapter currently supports leaf entity/global fields only')
@@ -33,7 +42,6 @@ def qualify(out,rom,vectors=16384,parameter_grid=False,fixtures=None):
   r['capture_fixtures']=fixtures.get('context')if fixtures else None
   return_bits=int(a['return_type'][1:])if a.get('return_type','void')!='void'else 0
   c=c.replace('@RETURN_CHECK@',('if(((original_result^generated_result)&'+hex((1<<return_bits)-1)+'u)!=0){fprintf(stderr,"return mismatch test%u original%u generated%u\\n",test,original_result,generated_result);return 9;}')if return_bits else'')
-  if any(f['offset']+f['width']//8>256 for f in a['fields']if f['owner']=='entity'):raise RuntimeError('entity span exceeds oracle256byte bound')
   (out/'validation-adapter.c').write_text(c)
   stage('compile_oracle',['cc','-std=c11','-O1','-I/opt/homebrew/include',out/'validation-adapter.c','-L/opt/homebrew/lib','-Wl,-rpath,/opt/homebrew/lib','-lmgba','-o',out/'oracle'])
   r['parity']=json.loads(stage('native_parity',[out/'oracle',rom,out/'generated.bin']));r['outcome']='pass'

@@ -1,0 +1,51 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sma-4-super-mario-bros-3.combat.bounce_initializer",
+  "label": "Bounce initializer",
+  "role": "combat",
+  "source_game": "super-mario-advance-4-super-mario-bros-3",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sma-4-super-mario-bros-3.combat.bounce_initializer/package.json",
+  "package_sha256": "02488bb46378a60bde2055f4347f58edd823501df38d4ccb599dd8aa1a83a387",
+  "behavior_sha256": "d5a621e7c9fd990d4126b77383a70d032c4a5b476b569bcc6767fea73466960e",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "cee567954a5166b933847c1b0e96ae732637f78b733f6e90dc53a2dc5af81153"
+  },
+  "configurations": [],
+  "state_owners": [],
+  "game_readiness": "partial_not_game_completion",
+  "parameters": [],
+  "ports": [],
+  "collection_ports": [],
+  "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+  "owned_state": {
+    "fields": 7,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sma-4-super-mario-bros-3.combat.bounce_initializer/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Input domains are explicit component preconditions; no unsupported alias/service is silently replaced"
+  ]
+}

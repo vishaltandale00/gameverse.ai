@@ -6,18 +6,21 @@ import argparse,hashlib,json,subprocess,time,platform
 from lower import HELPERS,T,expr as l1_expr,lower
 
 def bits(t):return int(t[1:])
-def adapter(e,src,dst,domain=None):
+def adapter(e,src,dst,domain=None,quantization=None):
     """Exact scale synthesis. Quantizing conversions require an explicit policy."""
     if all(src.get(k)==dst.get(k)for k in('storage_type','quantity','unit','frame')):return e
     if src['quantity']!=dst['quantity']or src['frame']!=dst['frame']:raise ValueError('semantic port incompatibility: quantity/frame')
     a=src['unit'];b=dst['unit'];num=a['numerator']*b['denominator'];den=a['denominator']*b['numerator']
     import math
     g=math.gcd(num,den);num//=g;den//=g
-    if den!=1:raise ValueError('quantizing conversion needs explicit rounding/order contract')
+    if den!=1:
+        if num!=1 or den&(den-1) or not quantization or quantization.get('rounding')!='arithmetic_shift' or quantization.get('shift')!=den.bit_length()-1:raise ValueError('quantizing conversion needs exact explicit shift/order contract')
+        return {'op':'extract','type':dst['storage_type'],'args':[{'op':'shift_arithmetic','type':src['storage_type'],'args':[e,{'op':'const','type':'u32','value':quantization['shift']}]},{'op':'const','type':'u32','value':0}],'derivation':{'kind':'unit_ratio_quantized','divisor':den,'rounding':'arithmetic_shift_before_destination_narrowing','exactness_evidence':quantization.get('exactness_evidence','not guaranteed')}}
     if num>1:
         if not domain:raise ValueError('expanding conversion requires an evidenced signed source domain')
         lo,hi=domain['signed_min'],domain['signed_max'];width=int(dst['storage_type'][1:])
         if lo*num<-(1<<(width-1))or hi*num>=(1<<(width-1)):raise ValueError('semantic conversion overflows declared destination domain')
+    if int(dst['storage_type'][1:])>int(src['storage_type'][1:])and src['quantity']in('position','velocity','acceleration'):e={'op':'sext','type':dst['storage_type'],'args':[e]}
     return {'op':'mul_wrap','type':dst['storage_type'],'args':[e,{'op':'const','type':dst['storage_type'],'value':num}],'derivation':{'kind':'unit_ratio','factor':num,'rounding':'none','narrowing':'destination_width_after_multiply','source_domain':domain}}
 
 class Composer:
@@ -29,6 +32,7 @@ class Composer:
         receipt_path=manifest_path.parent/m['qualification']['receipt'];receipt=json.loads(receipt_path.read_text())
         if m['qualification']['status']!='pass'or receipt.get('outcome')!='pass':raise ValueError('unqualified package')
         if receipt['artifacts']['l1.json']['sha256']!=m['behavior_sha256']:raise ValueError('stale qualification does not cover behavior')
+        if c.get('configuration_id')and not any(p['id']==c['configuration_id']for p in m.get('configurations',[])):raise ValueError('unknown extracted source configuration')
         self.packages[name]=(c,m,x)
  def expr(self,e):
     op=e['op']
@@ -64,17 +68,31 @@ class Composer:
                 if f in reads:
                     var=self.p['state'][b['slot']];src=dict(var['semantic_type'],storage_type=var['storage_type']);dst=dict(m['field_meanings'][f],storage_type=next(z['storage_type']for z in x['state']if z['name']==f));e={'op':'slot','name':b['slot'],'type':var['storage_type']}
                     if 'index'in b:e['index']=b['index']
-                    converted=adapter(e,src,dst,b.get('domain'))
+                    converted=adapter(e,src,dst,b.get('domain'),b.get('quantization'))
                     if converted!=e:self.conversions.append({'component':name,'field':f,'direction':'in','conversion':converted['derivation']})
                     out+=indent+path+'.'+f+' = '+self.expr(converted)+';\n'
+            for collection,slot_name in c.get('collection_bindings',{}).items():
+                definition=next(z for z in x['collections']if z['name']==collection);slot=self.p['state'][slot_name];meaning=m.get('collection_meanings',{}).get(collection)
+                if not meaning:raise ValueError('collection semantic contract missing')
+                if slot.get('count')!=definition['count']or slot['storage_type']!=definition['storage_type']or any(slot['semantic_type'].get(k)!=meaning.get(k)for k in('quantity','unit','frame')):raise ValueError('collection port contract mismatch')
+                out+=indent+'for(unsigned ir_copy=0;ir_copy<'+str(definition['count'])+';ir_copy++) '+path+'.'+collection+'[ir_copy]=g->'+slot_name+'[ir_copy];\n'
+            for parameter in x.get('parameters',[]):
+                domain=parameter.get('domain',{});argument=s['arguments'][parameter['name']]
+                if domain and(argument['op']!='const'or not domain.get('unsigned_min',0)<=argument['value']<=domain.get('unsigned_max',(1<<int(parameter['storage_type'][1:]))-1)):raise ValueError('component parameter domain is not statically established')
             args=[self.expr(s['arguments'][p['name']])for p in x.get('parameters',[])]
             call=name+'_run(&'+path+(' ,'+','.join(args)if args else'')+')'
             out+=indent+(self.target(s['result'])+' = 'if'result'in s else'')+call+';\n'
+            from publish import effects
+            collection_writes=effects(x).get('collection_writes',[])
+            for collection,slot_name in c.get('collection_bindings',{}).items():
+                if collection in collection_writes:
+                    definition=next(z for z in x['collections']if z['name']==collection)
+                    out+=indent+'for(unsigned ir_copy=0;ir_copy<'+str(definition['count'])+';ir_copy++) g->'+slot_name+'[ir_copy]='+path+'.'+collection+'[ir_copy];\n'
             for f,b in c.get('bindings',{}).items():
                 if f in writes:
                     var=self.p['state'][b['slot']];src=dict(m['field_meanings'][f],storage_type=next(z['storage_type']for z in x['state']if z['name']==f));dst=dict(var['semantic_type'],storage_type=var['storage_type']);e={'op':'component_field','type':src['storage_type'],'component':name,'field':f}
                     if c.get('instances'):e['instance']=s['instance']
-                    converted=adapter(e,src,dst,b.get('domain'))
+                    converted=adapter(e,src,dst,b.get('domain'),b.get('quantization'))
                     if converted!=e:self.conversions.append({'component':name,'field':f,'direction':'out','conversion':converted['derivation']})
                     out+=indent+self.target(b)+' = '+self.expr(converted)+';\n'
             self.invocations+=1
@@ -95,7 +113,20 @@ class Composer:
     c+='typedef struct {\n'
     for name,v in self.p['state'].items():c+=' '+T[v['storage_type']]+' '+name+('['+str(v['count'])+']'if'count'in v else'')+';\n'
     for name,(cfg,m,x)in self.packages.items():c+=' '+name+'_State '+name+('['+str(cfg['instances'])+']'if cfg.get('instances')else'')+';\n'
-    c+='} GameState;\nstatic GameState game;\nvolatile uint32_t gv_observable[32];\nvoid game_initialize(GameState*g){\n'+self.statements(self.p['initialize'])+'}\nvoid game_tick(GameState*g){\n'+self.statements(self.p['update'])+'}\nvoid game_draw(GameState*g){\n'+self.statements(self.p['render'])+'}\n'
+    defaults=''
+    for name,(cfg,m,x)in self.packages.items():
+        if not cfg.get('configuration_id'):continue
+        if cfg.get('instances'):raise ValueError('configuration initialization for instanced packages not yet supported')
+        data=next(p for p in m['configurations']if p['id']==cfg['configuration_id'])
+        fields={f['name']:f for f in x['state']}
+        for field,value in data['fields'].items():
+            if field not in fields or not isinstance(value,int)or not 0<=value<1<<bits(fields[field]['storage_type']):raise ValueError('invalid configuration field/value')
+            defaults+=' g->'+name+'.'+field+'='+str(value)+';\n'
+        collections={c['name']:c for c in x.get('collections',[])}
+        for collection,values in data['collections'].items():
+            if collection not in collections or len(values)!=collections[collection]['count']or any(not isinstance(v,int)or not 0<=v<1<<bits(collections[collection]['storage_type'])for v in values):raise ValueError('invalid configuration collection/value')
+            for i,value in enumerate(values):defaults+=' g->'+name+'.'+collection+'['+str(i)+']='+str(value)+';\n'
+    c+='} GameState;\nstatic GameState game;\nvolatile uint32_t gv_observable[32];\nvoid game_initialize(GameState*g){\n'+defaults+self.statements(self.p['initialize'])+'}\nvoid game_tick(GameState*g){\n'+self.statements(self.p['update'])+'}\nvoid game_draw(GameState*g){\n'+self.statements(self.p['render'])+'}\n'
     c+='void main(void){runtime_initialize();game_initialize(&game);for(;;){runtime_wait_frame();game_tick(&game);game_draw(&game);'
     c+=''.join('gv_observable['+str(i)+']='+self.expr(dict(op='slot',type=self.p['state'][name]['storage_type'],name=name)).replace('g->','game.')+';'for i,name in enumerate(self.p['observations']))
     c+='}}\n';return c

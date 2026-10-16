@@ -13,11 +13,11 @@ def const(value,t='u32'): return {'op':'const','type':t,'value':value}
 def node(op,t,*args,**kw): return dict(op=op,type=t,args=list(args),**kw)
 
 class Lifter:
-    def __init__(self,l0,rom,callees=None):
-        self.l0=l0; self.rom=rom; self.callees=callees or {};self.dependencies={}; self.v={v['id']:v for v in l0['varnodes']}
+    def __init__(self,l0,rom,callees=None,param_domains=None,object_contract=None,state_domains=None):
+        self.l0=l0; self.rom=rom; self.callees=callees or {};self.dependencies={};self.param_domains=param_domains or {};self.call_results={}; self.v={v['id']:v for v in l0['varnodes']}
         self.blocks={b['id']:b for b in l0['blocks']}
         self.defs={o['output']:o for b in l0['blocks']for o in b['ops']if o.get('output')}
-        self.loads={};self.phis={};self.access={};self.fields={};self.assets={};self.assumptions=[];self.expanded=0;self.params={};self.collections={};self.return_value=None;self.expression_nodes=0
+        self.loads={};self.phis={};self.access={};self.fields={};self.assets={};self.assumptions=[];self.expanded=0;self.params={};self.collections={};self.object_refs={};self.object_contract=object_contract or {};self.state_domains=state_domains or {};self.reference_loads=set();self.return_value=None;self.expression_nodes=0;self.bound_active=set()
     def literal(self,v):
         z=self.v[v]
         if z['constant']:return int(z['offset'])
@@ -29,6 +29,8 @@ class Lifter:
             return int.from_bytes(self.rom[off:off+z['size']],'little')
         o=self.defs.get(v)
         if o and o['opcode']in('COPY','CAST','INDIRECT'):return self.literal(o['inputs'][0])
+        if o and o['opcode']in('INT_ADD','PTRSUB','PTRADD'):
+            xs=[self.literal(i)for i in o['inputs']];return(xs[0]+xs[1]*(xs[2]if len(xs)>2 else 1))&((1<<(z['size']*8))-1)
         if o and o['opcode']=='MULTIEQUAL':
             xs=[self.literal(i)for i in o['inputs']]
             if len(set(xs))==1:return xs[0]
@@ -39,6 +41,11 @@ class Lifter:
             if z.get('register')not in ('r0','r1','r2','r3'):raise Unsupported('unknown pointer ABI '+v)
             return ('entity',z['register'],const(0))
         o=self.defs.get(v)
+        try:
+            n=self.literal(v)
+            if 0x02000000<=n<0x04000000:return('global',n,const(0))
+            if 0x08000000<=n<0x08000000+len(self.rom):return('asset',n,const(0))
+        except Unsupported:pass
         if o and o['opcode']in('COPY','CAST','INDIRECT'):return self.ptr(o['inputs'][0])
         if o and o['opcode']=='MULTIEQUAL':
             ps=[self.ptr(i)for i in o['inputs']]
@@ -52,6 +59,10 @@ class Lifter:
                 try:p=self.ptr(a);delta=self.expr(b)
                 except Unsupported:p=self.ptr(b);delta=self.expr(a)
             return (p[0],p[1],self.fold(node('add_wrap','u32',p[2],delta)))
+        if o and o['opcode']=='LOAD' and z['size']==4:
+            source=self.ptr(o['inputs'][1])
+            if source[0]!='global' or source[2]['op']!='const':raise Unsupported('dynamic or nested object reference unresolved')
+            cell=source[1]+source[2]['value'];name=self.object_refs.setdefault(cell,'context_object_'+str(len(self.object_refs)));self.reference_loads.add(o['id']);return('reference',name,const(0))
         n=self.literal(v)
         if 0x02000000<=n<0x04000000:return('global',n,const(0))
         if 0x08000000<=n<0x08000000+len(self.rom):return('asset',n,const(0))
@@ -59,6 +70,9 @@ class Lifter:
     def fold(self,e):
         if e['op']=='const':return e
         a=[self.fold(z) for z in e.get('args',[])];e=dict(e, args=a)
+        if e['op']=='sub_wrap'and a[1]['op']=='const'and a[0]['op']=='add_wrap':
+            for i,z in enumerate(a[0]['args']):
+                if z['op']=='const'and z['value']==a[1]['value']:return a[0]['args'][1-i]
         if a and all(z['op']=='const'for z in a):
             x,y=[z['value']for z in a]
             if e['op']=='add_wrap':return const((x+y)&0xffffffff)
@@ -67,16 +81,46 @@ class Lifter:
     def bounds(self,e):
         op=e['op'];width=int(e['type'][1:])
         if op=='const':return(e['value'],e['value'])
-        if op in('local','field'):return(0,(1<<width)-1)
+        if op=='local':
+            key='v'+e['name'].removeprefix('value_')if e['name'].startswith('value_')else'';definition=self.defs.get(key)
+            if definition and definition['opcode']=='LOAD':
+                access=self.access.get(definition['id'])or self.resolve_access(definition)
+                if access[0]=='state':
+                    d=self.state_domain(access[1],access[2])
+                    if d:return(d['unsigned_min'],d['unsigned_max'])
+            if definition and definition['opcode']=='MULTIEQUAL'and key not in self.bound_active:
+                self.bound_active.add(key)
+                try:
+                    ranges=[self.bounds(self.expr(v))for v in definition['inputs']];return(min(r[0]for r in ranges),max(r[1]for r in ranges))
+                finally:self.bound_active.remove(key)
+            return(0,(1<<width)-1)
+        if op=='field':return(0,(1<<width)-1)
         if op=='zext':return self.bounds(e['args'][0])
-        if op=='parameter':return(0,(1<<width)-1)
+        if op=='sext':
+            lo,hi=self.bounds(e['args'][0]);source_width=int(e['args'][0]['type'][1:])
+            if hi<1<<(source_width-1):return lo,hi
+            if lo>=1<<(source_width-1):return lo|(((1<<width)-1)^((1<<source_width)-1)),hi|(((1<<width)-1)^((1<<source_width)-1))
+        if op=='parameter':
+            p=next(p for p in self.params.values()if p['name']==e['name']);d=p.get('domain',{});return(d.get('unsigned_min',0),d.get('unsigned_max',(1<<width)-1))
         if op=='shift_right' and e['args'][1]['op']=='const':
             a,b=self.bounds(e['args'][0]);n=e['args'][1]['value'];return(a>>n,b>>n)
         if op in('add_wrap','mul_wrap'):
             a,b=map(self.bounds,e['args']);lo,hi=(a[0]+b[0],a[1]+b[1])if op=='add_wrap'else(a[0]*b[0],a[1]*b[1])
             if hi<1<<width:return lo,hi
-        if op=='bit_and'and e['args'][1]['op']=='const':return(0,e['args'][1]['value'])
+        if op=='shift_left'and e['args'][1]['op']=='const':
+            a,b=self.bounds(e['args'][0]);n=e['args'][1]['value']
+            if n<width and b<<n<1<<width:return(a<<n,b<<n)
+        if op=='extract':return(0,min((1<<width)-1,self.bounds(e['args'][0])[1]>>e['args'][1]['value']))
+        if op=='bit_and'and e['args'][1]['op']=='const':return(0,min(self.bounds(e['args'][0])[1],e['args'][1]['value']))
+        if op=='bit_or':
+            a,b=map(self.bounds,e['args'])
+            if(a[1]-a[0]+1)*(b[1]-b[0]+1)<=256:
+                xs=[x|y for x in range(a[0],a[1]+1)for y in range(b[0],b[1]+1)];return min(xs),max(xs)
         return(0,(1<<width)-1)
+    def state_domain(self,owner,start):
+        if owner[0]=='reference':identity=next(f'{cell:08x}'for cell,name in self.object_refs.items()if name==owner[1])
+        else:identity=str(owner[1])
+        return self.state_domains.get(owner[0]+':'+identity+':'+str(start),{})
     def resolve_access(self,o):
         p=self.ptr(o['inputs'][1]);size=self.v[o['output']if o['opcode']=='LOAD'else o['inputs'][2]]['size']
         if p[0]=='asset':
@@ -87,16 +131,18 @@ class Lifter:
             asset['end']=max(asset['end'],hi+size);asset['refs'].append(o['id']);result=('asset',key,p[2],size)
         else:
             if p[2]['op']!='const':
-                if p[0]!='global':raise Unsupported('dynamic entity index unresolved')
                 lo,hi=self.bounds(p[2])
                 def aligned(e,n):
+                    if n==1:return True
                     if e['op']=='const':return e['value']%n==0
                     if e['op']=='add_wrap':return all(aligned(z,n)for z in e['args'])
                     if e['op']=='mul_wrap':return any(aligned(z,n)for z in e['args'])
                     return False
-                if hi>4096 or not aligned(p[2],size):raise Unsupported('unbounded or unaligned state collection')
-                key=(p[1],size);c=self.collections.setdefault(key,{'name':'collection_'+str(len(self.collections)),'address':p[1],'size':size,'count':0,'refs':[]})
-                c['count']=max(c['count'],hi//size+1);c['refs'].append(o['id']);result=('collection',key,node('shift_right','u32',p[2],const(size.bit_length()-1)),size)
+                if hi-lo>4096 or lo%size or not aligned(p[2],size):raise Unsupported('unbounded or unaligned state collection')
+                key=(p[0],p[1],lo,size)
+                metadata={'address':p[1]+lo}if p[0]=='global'else{'address':None,'owner':p[0],'argument':p[1]if p[0]=='entity'else None,'reference':p[1]if p[0]=='reference'else None,'offset':lo}
+                c=self.collections.setdefault(key,dict(name='collection_'+str(len(self.collections)),size=size,count=0,refs=[],**metadata))
+                c['count']=max(c['count'],(hi-lo)//size+1);c['refs'].append(o['id']);delta=self.fold(node('sub_wrap','u32',p[2],const(lo)))if lo else p[2];result=('collection',key,node('shift_right','u32',delta,const(size.bit_length()-1)),size)
             else:
                 start=p[2]['value']+(p[1]if p[0]=='global'else 0);owner=(p[0],0 if p[0]=='global'else p[1]);result=('state',owner,start,size)
         self.access[o['id']]=result;return result
@@ -112,15 +158,48 @@ class Lifter:
                     target=self.v[o['inputs'][0]]
                     entry=f'{int(target["offset"]):08x}'
                     if entry not in self.callees:raise Unsupported('unresolved callee closure '+entry)
-                    if o.get('output'):raise Unsupported('callee return value not yet inlined')
+                    if o.get('output'):self.call_results[o['output']]=o
                     self.dependencies[entry]=self.callees[entry]
                 if o['opcode']=='CALLOTHER':raise Unsupported('unsupported effect/control '+o['opcode'])
+        # A single stable context object is a typed ownership precondition.
+        # Multiple unknown references or rebinding would require alias analysis.
+        if self.object_refs:
+            if any(kind=='state'and owner[0]=='entity'for kind,owner,start,size in self.access.values()):raise Unsupported('object/reference argument alias closure unresolved')
+            if len(self.object_refs)>1:
+                contracts=[self.object_contract.get(f'{cell:08x}')for cell in self.object_refs]
+                if not all(c and c.get('ownership')=='distinct_access_windows'and c.get('evidence')for c in contracts):raise Unsupported('multiple object reference alias closure unresolved')
+                if len({c['identity']for c in contracts})!=len(contracts):raise Unsupported('object alias identity contract unresolved')
+                windows=[]
+                for kind,owner,start,size in self.access.values():
+                    if kind!='state':continue
+                    if owner[0]=='global':windows.append((owner,start,start+size))
+                    elif owner[0]=='reference':
+                        cell=next(cell for cell,name in self.object_refs.items()if name==owner[1]);contract=self.object_contract[f'{cell:08x}']
+                        if not contract.get('observed_targets'):raise Unsupported('object window separation lacks observed roots')
+                        for target in contract['observed_targets']:windows.append((owner,target+start,target+start+size))
+                for c in self.collections.values():
+                    if c['address']is not None:windows.append((('global',0),c['address'],c['address']+c['count']*c['size']))
+                    elif c['owner']=='reference':
+                        cell=next(cell for cell,name in self.object_refs.items()if name==c['reference']);contract=self.object_contract[f'{cell:08x}']
+                        for target in contract['observed_targets']:windows.append((('reference',c['reference']),target+c['offset'],target+c['offset']+c['count']*c['size']))
+                for i,(owner,a,b)in enumerate(windows):
+                    if any(owner!=other and a<d and c<b for other,c,d in windows[i+1:]):raise Unsupported('observed accessed object/global views may alias')
+            for b in self.blocks.values():
+                for o in b['ops']:
+                    if o['opcode']=='STORE':
+                        kind,owner,start,size=self.access[o['id']]
+                        if kind=='state'and owner[0]=='global'and any(start<cell+4 and cell<start+size for cell in self.object_refs):raise Unsupported('mutable object reference lifetime unresolved')
+                        ref_name=owner[1]if kind=='state'and owner[0]=='reference'else self.collections[owner].get('reference')if kind=='collection'else None
+                        if ref_name:
+                            cell=next(cell for cell,name in self.object_refs.items()if name==ref_name)
+                            if self.object_contract.get(f'{cell:08x}',{}).get('storage')in('readonly_rom','readonly_during_call_ram'):raise Unsupported('write violates read-only object access contract')
+            for key in self.reference_loads:self.access.pop(key,None)
         # Unresolved aliasing blocks promotion. Collections are typed, bounded
         # regions, not an excuse to duplicate overlapping mutable memory.
-        regions=[(c['address'],c['address']+c['size']*c['count'])for c in self.collections.values()]
-        for i,(a,b)in enumerate(regions):
-            if any(a<d and c<b for c,d in regions[i+1:]):raise Unsupported('overlapping state collections')
-            if any(kind=='state'and own[0]=='global'and a<start+size and start<b for kind,own,start,size in self.access.values()):raise Unsupported('collection/field alias unresolved')
+        regions=[(('global',0)if c['address']is not None else(c['owner'],c.get('reference')or c.get('argument')),c['address']if c['address']is not None else c['offset'],(c['address']if c['address']is not None else c['offset'])+c['size']*c['count'])for c in self.collections.values()]
+        for i,(owner,a,b)in enumerate(regions):
+            if any(owner==other and a<d and c<b for other,c,d in regions[i+1:]):raise Unsupported('overlapping state collections')
+            if any(kind=='state'and own==owner and a<start+size and start<b for kind,own,start,size in self.access.values()):raise Unsupported('collection/field alias unresolved')
         # Partition overlap into nonoverlapping symbolic storage. Access views are
         # concatenations/slices, never independent aliased fields.
         owners=collections.defaultdict(list)
@@ -131,7 +210,7 @@ class Lifter:
             for a,b in zip(bounds,bounds[1:]):
                 if any(x<=a and b<=y for x,y in ranges):
                     if b-a not in(1,2,4,8):raise Unsupported('irregular overlapping storage partition')
-                    self.fields[(owner,a)]={'name':'field_'+str(len(self.fields)),'size':b-a,'owner':'entity_'+owner[1]if owner[0]=='entity'else'context','start':a}
+                    self.fields[(owner,a)]={'name':'field_'+str(len(self.fields)),'size':b-a,'owner':'entity_'+owner[1]if owner[0]=='entity'else owner[1]if owner[0]=='reference'else'context','start':a}
     def field_expr(self,owner,start,size):
         pieces=[(a,f)for (own,a),f in self.fields.items()if own==owner and start<=a<a+f['size']<=start+size]
         if sum(f['size']for a,f in pieces)!=size:raise Unsupported('unresolved storage view')
@@ -153,10 +232,13 @@ class Lifter:
             return const(value,t)
         if not o:
             if z['input']and z['space']=='register'and z.get('register')in('r0','r1','r2','r3'):
-                if v not in self.params:self.params[v]={'name':'param_'+str(len(self.params)),'type':t,'register':z['register']}
+                if v not in self.params:self.params[v]={'name':'param_'+str(len(self.params)),'type':t,'register':z['register'],'domain':self.param_domains.get(z['register'],{})}
                 return {'op':'parameter','type':t,'name':self.params[v]['name']}
             raise Unsupported('unresolved scalar argument '+v)
         op=o['opcode'];ins=o['inputs'];ref={'provenance':o['id']}
+        if op=='CALL':
+            if v not in self.call_results:raise Unsupported('unresolved return-valued callee')
+            return dict(op='local',type=t,name='value_'+v[1:],**ref)
         if op=='LOAD':
             self.loads[v]=o
             return dict(op='local',type=t,name='value_'+v[1:],**ref)
@@ -192,6 +274,7 @@ class Lifter:
                 if o['opcode']=='STORE':self.expr(o['inputs'][2])
                 elif o['opcode']=='CBRANCH':self.expr(o['inputs'][1])
                 elif o['opcode']=='CALLIND'and len(o['inputs'])==2:self.return_value=self.expr(o['inputs'][1])
+                elif o['opcode']=='RETURN'and len(o['inputs'])==2:self.return_value=self.expr(o['inputs'][1])
                 elif o['opcode']=='BRANCHIND':self.expr(o['inputs'][0])
                 elif o['opcode']=='CALL':
                     for v in o['inputs'][1:]:self.expr(v)
@@ -201,29 +284,59 @@ class Lifter:
                 pending.add(v)
                 for i in self.phis[v]['inputs']:self.expr(i)
         # Asset-index expressions may introduce additional loads.
-        def region(bid,pred,path):
+        # Compute immediate postdominators so sequential reconverging branches
+        # remain linear-sized structured code instead of duplicating all tails.
+        all_ids=set(self.blocks);post={i:({i}if not b['successors']else set(all_ids))for i,b in self.blocks.items()}
+        changed=True
+        while changed:
+            changed=False
+            for i,b in self.blocks.items():
+                if b['successors']:
+                    value={i}|set.intersection(*(post[j]for j in b['successors']))
+                    if value!=post[i]:post[i]=value;changed=True
+        joins={}
+        for i in self.blocks:
+            candidates=post[i]-{i}
+            closest=[c for c in candidates if all(d==c or d in post[c]for d in candidates)]
+            if len(closest)==1:joins[i]=closest[0]
+        def region(bid,pred,path,stop=None):
             self.expanded+=1
             if self.expanded>2048:raise Unsupported('structured expansion budget')
             if bid in path:raise Unsupported('loop CFG not yet structured')
             b=self.blocks[bid];ss=[]
+            if bid==stop:
+                if pred is not None:
+                    for o in b['ops']:
+                        out=o.get('output')
+                        if o['opcode']=='MULTIEQUAL'and out in self.phis:
+                            ss.append({'op':'assign_local','local':'value_'+out[1:],'value':self.expr(o['inputs'][b['predecessors'].index(pred)]),'provenance':o['id']})
+                return ss
             for o in b['ops']:
                 op=o['opcode'];out=o.get('output')
                 if op=='MULTIEQUAL'and out in self.phis:
+                    if pred is None:continue
                     if pred not in b['predecessors']:raise Unsupported('phi predecessor mismatch')
                     e=self.expr(o['inputs'][b['predecessors'].index(pred)])
                     ss.append({'op':'assign_local','local':'value_'+out[1:],'value':e,'provenance':o['id']})
                 elif op=='LOAD'and out in self.loads:ss.append({'op':'assign_local','local':'value_'+out[1:],'value':self.read(o),'provenance':o['id']})
                 elif op=='STORE':ss.extend(self.store(o))
                 elif op=='CBRANCH':
-                    ss.append({'op':'if','condition':self.expr(o['inputs'][1]),'then':region(b['true_successor'],bid,path+[bid]),'else':region(b['false_successor'],bid,path+[bid]),'provenance':o['id']});return ss
+                    join=joins.get(bid)
+                    ss.append({'op':'if','condition':self.expr(o['inputs'][1]),'then':region(b['true_successor'],bid,path+[bid],join),'else':region(b['false_successor'],bid,path+[bid],join),'provenance':o['id']})
+                    if join is not None:ss.extend(region(join,None,path+[bid],stop))
+                    return ss
                 elif op=='CALL':
                     entry=format(int(self.v[o["inputs"][0]]["offset"]),"08x");dep,da=self.dependencies[entry]
                     arguments={}
                     for p in da['parameters']:
                         slot=int(p['register'][1:])+1
                         if slot>=len(o['inputs']):raise Unsupported('callee ABI argument missing')
-                        arguments[p['name']]=node('extract',p['type'],self.expr(o['inputs'][slot]),const(0))
-                    ss.append({'op':'call','dependency':list(self.dependencies).index(entry),'arguments':arguments,'provenance':o['id']})
+                        argument=self.expr(o['inputs'][slot]);domain=p.get('domain',{})
+                        if domain:
+                            lo,hi=self.bounds(argument)
+                            if lo<domain.get('unsigned_min',0)or hi>domain.get('unsigned_max',(1<<int(p['type'][1:]))-1):raise Unsupported('callee parameter domain unproven')
+                        arguments[p['name']]=node('extract',p['type'],argument,const(0))
+                    ss.append(dict(op='call',dependency=list(self.dependencies).index(entry),arguments=arguments,provenance=o['id'],**({'result':'value_'+out[1:]}if out else{})))
                 elif op=='BRANCHIND':
                     table=next((t for t in self.l0.get('jump_tables',[])if t['pc']==o['pc']),None)
                     if not table:raise Unsupported('unresolved jump table')
@@ -242,17 +355,19 @@ class Lifter:
                 elif op=='CALLIND' and len(o['inputs'])==2:
                     ss.append({'op':'return','value':self.expr(o['inputs'][1]),'provenance':o['id']});return ss
                 elif op=='RETURN':
-                    if len(o['inputs'])>1:raise Unsupported('return value ABI not qualified')
-                    ss.append({'op':'return','provenance':o['id']});return ss
-            if len(b['successors'])==1:ss.extend(region(b['successors'][0],bid,path+[bid]))
+                    if len(o['inputs'])>2:raise Unsupported('multiple return values ABI not qualified')
+                    ss.append(dict(op='return',provenance=o['id'],**({'value':self.expr(o['inputs'][1])}if len(o['inputs'])==2 else{})));return ss
+            if len(b['successors'])==1:ss.extend(region(b['successors'][0],bid,path+[bid],stop))
             elif b['successors']:raise Unsupported('unresolved control flow')
             return ss
         body=region(min(self.blocks),None,[])
         for key,a in self.assets.items():
             start=a['start']-0x08000000;end=a['end'];a['data']=list(self.rom[start:start+end])
-        def field(f):return {'name':f['name'],'owner':f['owner'],'storage_type':typ(f['size']),'semantic_type':{'quantity':'unknown','unit':'unknown','frame':'unknown','confidence':0.0,'evidence':[]}}
-        l1={'schema':'gameverse.l1.behavior/0.2','id':'behavior_0','parameters':[{'name':p['name'],'storage_type':p['type']}for p in self.params.values()],'return_type':self.return_value['type']if self.return_value else'void','collections':[{'name':c['name'],'storage_type':typ(c['size']),'count':c['count'],'provenance':c['refs']}for c in self.collections.values()],'state':[field(f)for f in self.fields.values()],'locals':[{'name':'value_'+v[1:],'storage_type':typ(self.v[v]['size'])}for v in sorted(set(self.loads)|set(self.phis),key=lambda x:int(x[1:]))],'assets':[{'name':a['name'],'storage_type':'u8','data':a['data'],'provenance':a['refs']}for a in self.assets.values()],'body':body,'phase':{'name':'unknown','ordering':[],'confidence':0.0},'verification':{'status':'pending','receipt':None},'preconditions':['Entity objects occupy mutable RAM and are disjoint from immutable ROM assets','No unresolved pointer alias escapes the recovered state views'],'limitations':['Acyclic structured CFG only','Semantic units and human names remain unknown unless separately evidenced']}
-        adapter={'schema':'gameverse.l0.validation-adapter/0.2','entry':self.l0['entry'],'parameters':[dict(p)for p in self.params.values()],'return_type':l1['return_type'],'collections':[dict(c)for c in self.collections.values()],'fields':[dict(name=f['name'],width=f['size']*8,owner=owner[0],argument=owner[1]if owner[0]=='entity'else None,address=None if owner[0]=='entity'else owner[1],offset=start)for(owner,start),f in self.fields.items()],'assets':[{'name':a['name'],'address':a['start'],'bytes':a['end']}for a in self.assets.values()],'assumptions':self.assumptions,'l0_sha256':hashlib.sha256(json.dumps(self.l0,sort_keys=True).encode()).hexdigest()}
+        def field(f):return dict({'name':f['name'],'owner':f['owner'],'storage_type':typ(f['size']),'semantic_type':{'quantity':'unknown','unit':'unknown','frame':'unknown','confidence':0.0,'evidence':[]}},**({'domain':self.state_domain(next(owner for(owner,start),z in self.fields.items()if z is f),f['start'])}if self.state_domain(next(owner for(owner,start),z in self.fields.items()if z is f),f['start'])else{}))
+        l1={'schema':'gameverse.l1.behavior/0.2','id':'behavior_0','parameters':[{'name':p['name'],'storage_type':p['type'],'domain':p.get('domain',{})}for p in self.params.values()],'return_type':self.return_value['type']if self.return_value else'void','collections':[{'name':c['name'],'storage_type':typ(c['size']),'count':c['count'],'provenance':c['refs']}for c in self.collections.values()],'state':[field(f)for f in self.fields.values()],'locals':[{'name':'value_'+v[1:],'storage_type':typ(self.v[v]['size'])}for v in sorted(set(self.loads)|set(self.phis)|set(self.call_results),key=lambda x:int(x[1:]))],'assets':[{'name':a['name'],'storage_type':'u8','data':a['data'],'provenance':a['refs']}for a in self.assets.values()],'body':body,'phase':{'name':'unknown','ordering':[],'confidence':0.0},'verification':{'status':'pending','receipt':None},'preconditions':['Entity objects occupy mutable RAM and are disjoint from immutable ROM assets','No unresolved pointer alias escapes the recovered state views']+(['Declared context object references remain stable during invocation, have evidenced disjoint accessed views; named global storage is disjoint from those accessed views']if self.object_refs else[]),'limitations':['Acyclic structured CFG only','Semantic units and human names remain unknown unless separately evidenced']}
+        adapter={'schema':'gameverse.l0.validation-adapter/0.2','entry':self.l0['entry'],'parameters':[dict(p)for p in self.params.values()],'return_type':l1['return_type'],'collections':[dict(c)for c in self.collections.values()],'fields':[dict(name=f['name'],width=f['size']*8,owner=owner[0],argument=owner[1]if owner[0]=='entity'else None,address=None if owner[0]in('entity','reference')else owner[1],offset=start,**({'domain':self.state_domain(owner,start)}if self.state_domain(owner,start)else{}),**({'reference':owner[1]}if owner[0]=='reference'else{}))for(owner,start),f in self.fields.items()],'assets':[{'name':a['name'],'address':a['start'],'bytes':a['end']}for a in self.assets.values()],'assumptions':self.assumptions,'l0_sha256':hashlib.sha256(json.dumps(self.l0,sort_keys=True).encode()).hexdigest()}
+        if self.object_refs:l1['state_owners']=[{'id':name,'identity':self.object_contract.get(f'{cell:08x}',{}).get('identity',name),'ownership':'distinct_owned_object','lifetime':'invocation','separation':'accessed_views_disjoint_with_evidenced_context_layouts','evidence':self.object_contract.get(f'{cell:08x}',{}).get('evidence',[])}for cell,name in self.object_refs.items()]
+        if self.object_refs:adapter['object_references']=[{'name':name,'cell':cell,'lifetime':'stable_for_invocation','alias_contract':'distinct_owned_object','evidence':self.object_contract.get(f'{cell:08x}',{}).get('evidence',[]),'identity':self.object_contract.get(f'{cell:08x}',{}).get('identity',name)}for cell,name in self.object_refs.items()]
         if self.dependencies:
             from inline import inline_dependencies
             l1,adapter=inline_dependencies(l1,adapter,list(self.dependencies.values()))

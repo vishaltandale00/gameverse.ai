@@ -1,0 +1,13 @@
+{
+  "schema": "gameverse.ir.generation-request/0.1",
+  "request_id": "sma1-mario-policies",
+  "title": "SMA1 MARIO",
+  "selections": {
+    "movement": "movement.sma1-mario-policies",
+    "combat": "combat.mzm-impact",
+    "progression": "progression.minish-skills"
+  },
+  "qualification": {
+    "run": true
+  }
+}
