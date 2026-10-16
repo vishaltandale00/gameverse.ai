@@ -1,0 +1,165 @@
+{
+  "runId": "astra-route-polish-2026-10-16",
+  "date": "2026-10-16",
+  "baselineCommit": "0d98de68e0f6664b65022a0a53763d0a25b1b716",
+  "implementationModel": "gpt-6-astra",
+  "scope": "V1 neighborhood spawn to Alder Arcade: graphics, player collision, camera. Manual local work, not integrated improvement harness.",
+  "environment": {
+    "node": "22.23.2",
+    "npm": "10.9.8",
+    "os": "macOS 26.6.1",
+    "architecture": "arm64",
+    "browser": "Chrome for Testing, installed Playwright cache revision 1243",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "input": "Real automated keyboard and mouse events in a separate browser context; no physical controller qualification"
+  },
+  "checks": {
+    "tests": {
+      "passed": 39,
+      "failed": 0,
+      "runnerMs": 70.572667,
+      "commandWallSeconds": 0.22
+    },
+    "diffCheck": "passed",
+    "packagedEditedSourceByteMatch": true,
+    "collisionProbe": {
+      "runId": "astra-route-polish-2026-10-16",
+      "seed": 6719,
+      "checked": 11203,
+      "failures": [],
+      "durationMs": 23.417417,
+      "scope": "Generated finite valid-start moves against four static AABBs. Endpoint non-penetration within 1e-6m tolerance; not a formal proof or complete trajectory check.",
+      "sourceSha256": "e244371d25a505822b08ead1932f86ed1922fa86b24fdc577483b9d113291783",
+      "node": "v22.23.2",
+      "architecture": "arm64"
+    },
+    "comparisonViewer": {
+      "outcome": "passed",
+      "imageWidths": [
+        1280,
+        1280
+      ],
+      "sliderValue": "25%",
+      "selectedView": "arcade",
+      "videoCount": 2
+    }
+  },
+  "builds": {
+    "mode": "clean output, installed dependencies, warm local filesystem, same machine/toolchain; one sample each",
+    "before": {
+      "innerMs": 17.1,
+      "commandWallSeconds": 0.11
+    },
+    "after": {
+      "innerMs": 19.9,
+      "commandWallSeconds": 0.14
+    },
+    "intermediateAfter": {
+      "innerMs": 20.5,
+      "commandWallSeconds": 0.12,
+      "context": "Concurrent browser startup, not used as comparable final sample"
+    },
+    "note": "Inner copy step is nested in command time. These samples do not establish an SLA or statistically significant latency change."
+  },
+  "browser": {
+    "before": {
+      "version": "alder-neighborhood-prototype-1",
+      "spawn": {
+        "drawCalls": 175,
+        "triangles": 320802
+      },
+      "fpsSamples": [
+        60,
+        60,
+        60,
+        60
+      ],
+      "arcadeAvailable": true,
+      "wallPose": {
+        "x": -41.31145467612443,
+        "z": -21.605
+      },
+      "cameraObstruction": {
+        "x": -41.56857909151114,
+        "y": 1.6958880712552526,
+        "z": -21.666172399098347,
+        "distance": 0.27718697199776215,
+        "desiredDistance": 6.2
+      },
+      "cameraRelease": [
+        2.7771869719977618,
+        3.52668697199776,
+        6.2
+      ],
+      "errors": [],
+      "failedResources": []
+    },
+    "after": {
+      "version": "alder-neighborhood-route-polish-2",
+      "spawn": {
+        "drawCalls": 221,
+        "triangles": 149790
+      },
+      "fpsSamples": [
+        60,
+        60,
+        60,
+        60
+      ],
+      "arcadeAvailable": true,
+      "wallPose": {
+        "x": -41.3110153285703,
+        "z": -21.1
+      },
+      "cameraObstruction": {
+        "x": -41.568134332126085,
+        "y": 1.6158880712552524,
+        "z": -21.161172399098348,
+        "distance": 0.27718697199776215,
+        "desiredDistance": 5.2
+      },
+      "cameraRelease": [
+        4.548456304077689,
+        4.868262343914783,
+        5.1821974008903355
+      ],
+      "errors": [],
+      "failedResources": []
+    },
+    "note": "Same starting player pose and repeated input recipe. Camera framing deliberately changed; stopping positions/timings vary slightly. FPS samples are short requestAnimationFrame observations, not GPU profiling. Cold/warm shader/cache state is not controlled, so startup times are not compared."
+  },
+  "visualReview": {
+    "outcome": "Ready for human review",
+    "retainedIntermediate": "local-data/route-polish/preview-route-capture",
+    "issueFound": "New arcade geometry projected outside old facade proxy, allowing the camera/player into trim.",
+    "resolution": "Updated player frontage/cabinet proxies and separate overhead camera proxies; final replay shows camera outside frontage with smooth recovery.",
+    "mediaNote": "Comparison encoding first attempted embedded text labels, unavailable in installed ffmpeg; final video uses before on left and after on right, with labels in viewer and accompanying text."
+  },
+  "evidence": {
+    "viewer": "http://127.0.0.1:4184/review.html",
+    "before": "local-data/route-polish/before-capture",
+    "after": "local-data/route-polish/after-capture",
+    "captureScript": "local-data/route-polish/capture.cjs",
+    "comparisonVideo": "local-data/route-polish/before-after.mp4",
+    "comparisonVideoBytes": 5111995,
+    "comparisonScreenshot": "local-data/route-polish/comparison.png"
+  },
+  "unavailable": {
+    "ciQueueTime": null,
+    "ciJobTime": null,
+    "improvementHarnessRun": null,
+    "formalProof": null,
+    "minimumHardwareQualification": null
+  },
+  "sourceSha256": {
+    "src/neighborhood-math.js": "e244371d25a505822b08ead1932f86ed1922fa86b24fdc577483b9d113291783",
+    "src/neighborhood-controller.js": "a96adb568016074ca4bfd8ca27d9c383df4ab2396511fccb643c1bfaa9cf3d9c",
+    "src/neighborhood-world.js": "26653285a5f04b7d50a93f5507dce14dc4659da3c9a4656f202234b596517499",
+    "src/neighborhood.js": "08f7da51d1b5856b4bf1dc710e7f01ad38b7f9d970752c64a101f26ccbd8ef29",
+    "style.css": "73ccd9715661fb7a48b6f6eaa25b37bac7b4a27b3d7f61968ecdd4e73a5e1d8e",
+    "tests/neighborhood.test.js": "ecf6817e213bcd42050e70ce734ee4616b48e2281d25d78e7afdad7b7ea0147c"
+  }
+}

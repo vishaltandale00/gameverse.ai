@@ -145,3 +145,22 @@ test('gamepad movement still collides and keyboard still works without a gamepad
   const observed = controller.observe(); observed.gamepad.move.y = 999; observed.gamepad.buttons[4] = false;
   assert.equal(controller.observe().gamepad.move.y, -1); assert.equal(controller.observe().gamepad.buttons[4], true);
 });
+
+test('real controller commits certified grid movement and final camera/target through keyboard and gamepad paths', t => {
+  const xbox = pad(), { controller, world, window } = fixture(t, xbox);
+  controller.update(1 / 60);
+  const before = controller.observe().safety;
+  world.colliders.push({ minX: -5, maxX: 5, minZ: -1.1, maxZ: -1, minY: 0, maxY: 5 });
+  xbox.axes[1] = -1;
+  for (let i = 0; i < 40; i++) controller.update(1 / 60);
+  xbox.axes[1] = 0;
+  window.dispatchEvent(Object.assign(new Event('keydown'), { code: 'KeyD' }));
+  for (let i = 0; i < 10; i++) controller.update(1 / 60);
+  const observation = controller.observe();
+  assert.ok(observation.safety.playerChecks >= before.playerChecks + 50);
+  assert.ok(observation.safety.cameraChecks >= before.cameraChecks + 50);
+  assert.ok(observation.z >= -0.68 && observation.x > 0);
+  for (const value of [observation.x, observation.z, observation.camera.x, observation.camera.y, observation.camera.z, ...Object.values(observation.cameraTarget)]) {
+    assert.equal(value * 65536, Math.trunc(value * 65536));
+  }
+});

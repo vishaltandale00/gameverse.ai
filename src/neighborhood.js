@@ -3,7 +3,7 @@ import { createNeighborhoodWorld } from './neighborhood-world.js';
 import { NeighborhoodController } from './neighborhood-controller.js';
 import { FIRE_RED_ENTRANCE } from './neighborhood-math.js';
 
-const VERSION = 'alder-neighborhood-prototype-1';
+const VERSION = 'alder-neighborhood-certified-safety-3';
 
 export async function openNeighborhood(container, onMenu, initialPose, onEnterFireRed, configuration = {}) {
   const started = performance.now(), abort = new AbortController();
@@ -80,13 +80,14 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
       triangles: renderer?.info.render.triangles ?? null, colliderCount: world?.colliders.length ?? 0,
       entrance: { ...FIRE_RED_ENTRANCE, distance: entranceDistance(), available: !suspended && !paused && entranceDistance() <= FIRE_RED_ENTRANCE.radius } }; },
     colliders() { return world?.colliders.map(box => ({ ...box })) || []; },
+    cameraColliders() { return world?.cameraColliders.map(box => ({ ...box })) || []; },
   });
   // Read-only developer observations; no mutation or gameplay controls are exposed.
   window.__gameverseNeighborhood = diagnostics;
   try {
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.06;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.04;
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
     const canvas = renderer.domElement; canvas.tabIndex = 0; canvas.setAttribute('aria-label', 'Gameverse, Alder District. WASD or left stick to walk, Shift or LB to run, drag or right stick to look, E or A at the arcade, Escape or Start for menu.');
     query('.neighborhood-canvas').append(canvas);
@@ -101,9 +102,13 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
       const { width, height } = container.getBoundingClientRect();
       if (width <= 0 || height <= 0) return;
       renderer.setSize(Math.max(1, width), Math.max(1, height), false); camera.aspect = width / Math.max(1, height); camera.updateProjectionMatrix();
-      if (paused && !suspended && !failed) renderer.render(world.scene, camera);
+      try {
+        controller.updateCamera(0); // Aspect changes can enlarge near-plane clearance.
+        if (paused && !suspended && !failed) renderer.render(world.scene, camera);
+      } catch (error) { fail(error); }
     }
     observer = new ResizeObserver(resize); observer.observe(container); resize();
+    if (failed) return { dispose, suspend, resume, observe: diagnostics.read };
     renderer.render(world.scene, camera); renderedFrames++; firstRenderMs = performance.now() - started;
     overlay.hidden = true; canvas.focus({ preventScroll: true }); lastTime = performance.now();
     function animate(now) {
@@ -112,7 +117,7 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterFi
       const elapsed = now - lastTime; lastTime = now;
       if (paused || document.hidden) return;
       const dt = Math.min(elapsed / 1000, 0.05);
-      controller.update(dt);
+      try { controller.update(dt); } catch (error) { fail(error); return; }
       if (paused || suspended) return;
       renderer.render(world.scene, camera); renderedFrames++; activeMs += elapsed;
       sampleMs += elapsed; sampleFrames++;
