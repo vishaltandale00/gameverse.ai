@@ -338,6 +338,30 @@ class RPGTests(unittest.TestCase):
         self.assertGreater(adapter.field_free_settle_remaining,0)
         self.assertEqual(adapter.observe()['options'][0]['id'],'wait')
 
+    def test_same_ready_mode_on_new_map_after_release_never_receives_a(self):
+        adapter, game, emu = self.adapter()
+        game.s.update(free=False,printer_wait=True,tasks=['Task_DrawFieldMessage'])
+        original_hold=emu.hold;keys=[]
+        def hold(key,count):
+            keys.append(key);original_hold(key,count);game.s['map']='other_room'
+        emu.hold=hold
+        receipt=adapter.act(adapter.observe()['options'][0],max_frames=600)
+        self.assertEqual(keys,[None])
+        self.assertEqual(receipt['decision_boundary'],'map_transition')
+        self.assertEqual(receipt['source_event_a_edges'],0)
+
+    def test_map_boundary_precedes_free_field_settling(self):
+        adapter, game, emu = self.adapter()
+        game.s.update(free=False,tasks=['Task_ExitDoor'])
+        original_hold=emu.hold
+        def hold(key,count):
+            original_hold(key,count);game.s.update(map='other_room',free=True,tasks=[])
+        emu.hold=hold
+        receipt=adapter.act(adapter.observe()['options'][0],max_frames=600)
+        self.assertEqual(receipt['frames'],1)
+        self.assertEqual(receipt['decision_boundary'],'map_transition')
+        self.assertEqual(adapter.field_free_settle_remaining,0)
+
     def test_hash_and_authorized_root_checked(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / 'source'; path.write_text('source')

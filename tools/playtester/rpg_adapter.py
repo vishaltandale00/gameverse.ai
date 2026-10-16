@@ -323,11 +323,19 @@ class RPGNavigationAdapter:
 
     def _execute_event(self, state, mode, start, budget):
         previous = self._event_boundary(state)
+        original_map = state.get('map')
+        def changed_map(current):
+            if current.get('map') != original_map:
+                self.field_free_settle_remaining = 0
+                self.boundary = 'map_transition'
+                return True
+            return False
         edges = 0
         if mode == 'advance':
             # Release before the press: both scrcmd and match_call test JOY_NEW.
             self.emu.hold(None, 1)
             current = self.game.state()
+            if changed_map(current): return edges
             if self._event_mode(current) != previous['mode']:
                 if current.get('free') and not current.get('menu') and not current.get('in_battle'):
                     self.field_free_settle_remaining = 15
@@ -336,9 +344,11 @@ class RPGNavigationAdapter:
                 self.boundary = 'option_budget'; return edges
             self.emu.hold('A', 1)
             edges = 1
+            if changed_map(self.game.state()): return edges
         while self.emu.frames - start < budget:
             self.emu.hold(None, 1)
             current = self.game.state()
+            if changed_map(current): return edges
             if current.get('free') and not current.get('menu') and not current.get('in_battle'):
                 # Original Bot.untilfree requires eight free samples separated
                 # by two neutral frames; preserve that post-event readiness.

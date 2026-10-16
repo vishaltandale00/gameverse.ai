@@ -1,7 +1,7 @@
 {
   "schema": "gameverse.owner-reported-verification/1",
   "date": "2026-10-16",
-  "source_parent": "e6a9b34fa76ffd5bbce9ba1c65a4a47297cc24f2",
+  "source_parent": "8361605a97f376c2cc162d2a7f38b10e837bae97",
   "measurement_provenance": "Targeted check results reported by source owners; publisher records current source hashes and independently validates provider inventory/API-Python readset parity. No repeated broad suite or new model/native qualification claimed.",
   "sourcepins": [
     {
@@ -46,11 +46,11 @@
     },
     {
       "path": "tools/playtester/rpg_adapter.py",
-      "sha256": "629f13fd6e87a13e5cb6294f735818a9695031a122712fef3982da7ed22e92b0"
+      "sha256": "05d2a9a1a1a966fa380238fb4133554df1c2cbe0a36b5a2adbe44f1fa4d02a4f"
     },
     {
       "path": "tools/playtester/test_rpg_adapter.py",
-      "sha256": "7edd8ee9117c193a8d349e63566dfd7ffed93c44f6c128b1898a7ff8aebd747b"
+      "sha256": "7ba146018907ec7ad409f879aef6473812c6ced1c1290b94d3f8cfe327076285"
     }
   ],
   "checks": [
@@ -77,8 +77,9 @@
     {
       "scope": "source-backed RPG wait/text and native key-release guards",
       "owner": "rpg_navigation_harness",
-      "tests_passed": 40,
-      "wall_s": 0.309
+      "tests_passed": 42,
+      "wall_s": 0.324,
+      "details": "Checks map identity after every native hold before sending A or settling; rejects same-mode map changes."
     },
     {
       "scope": "typed SID v1/v2 deterministic evidence accepted, other adapter rejected",

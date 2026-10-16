@@ -5,8 +5,8 @@
   "source": {
     "adapter_version": "sid-rpg-navigation/2",
     "files_sha256": {
-      "tools/playtester/rpg_adapter.py": "629f13fd6e87a13e5cb6294f735818a9695031a122712fef3982da7ed22e92b0",
-      "tools/playtester/test_rpg_adapter.py": "7edd8ee9117c193a8d349e63566dfd7ffed93c44f6c128b1898a7ff8aebd747b"
+      "tools/playtester/rpg_adapter.py": "05d2a9a1a1a966fa380238fb4133554df1c2cbe0a36b5a2adbe44f1fa4d02a4f",
+      "tools/playtester/test_rpg_adapter.py": "7ba146018907ec7ad409f879aef6473812c6ced1c1290b94d3f8cfe327076285"
     },
     "provider_manifest_sha256": "5e747a8e8fe4637d14a4c0117aadea689b6366925749d12ac9f76f4df9caa157",
     "provider_source_tree_sha256": "c20917371921119c4204a50d7708c006b0b7cb01a3fceb3fe8fe1eedb0252e27",
@@ -30,8 +30,8 @@
   ],
   "focused_checks": {
     "outcome": "passed",
-    "tests": 40,
-    "wall_s": 0.309,
+    "tests": 42,
+    "wall_s": 0.324,
     "environment_reference_configured": true,
     "new_cases": [
       "Text rendering stops at actual readiness",
@@ -42,7 +42,9 @@
       "Source printer progress consumes no model calls",
       "Transient free field does not expose premature semantic choice",
       "Partial neutral settling is checkpointed and validated",
-      "Automatic source close during pre-A release retains neutral free-field settling and emits no A edge"
+      "Automatic source close during pre-A release retains neutral free-field settling and emits no A edge",
+      "Map transition during pre-A release prevents A even when the new source mode is identical",
+      "Map transition stops before neutral free-field settling"
     ]
   },
   "retained_actual_slow_prefix": {
@@ -65,7 +67,7 @@
     "source_history_preserved": true
   },
   "offline_regression": {
-    "run_id": "954a79822203454d96c3b650c1e00d6b",
+    "run_id": "5ae6236299e3495093645441b37660d7",
     "same_original_save_and_setup": true,
     "setup_frames": 1692,
     "first_semantic_selection": "Replayed exactly from the retained prefix; not a new model decision",
@@ -73,7 +75,7 @@
     "reason": "objective_observed",
     "play_frames": 1093,
     "actions": 34,
-    "wall_s": 1.820682,
+    "wall_s": 1.817541,
     "actual_d1_calls": 0,
     "actual_s2_calls": 0,
     "source_event_counts": {
@@ -83,8 +85,8 @@
     },
     "actual_source_a_edges": 7,
     "weekend_stage_reached": 1,
-    "report_sha256": "cc2876343331beed743fa7e49e54992a4215cace2c80772f211a5a0e4171cf97",
-    "events_sha256": "914f6a021b9441b6853fd9f49357391cdc5a0bde71b44e6ecd5e3446331f0766",
+    "report_sha256": "50baedab178a316c4b12cb4400819c3a9fddb96930ade563b5b3206a4f85edb6",
+    "events_sha256": "664efb89c2b8d6e6af7e301ce9e0d26aa54006edc7f6f39861f3146061b08b8b",
     "report_binds_events": true
   },
   "comparison_limits": [
