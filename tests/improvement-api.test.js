@@ -228,3 +228,39 @@ test('public fixture executes existing engine without original material and reta
   assert.equal(done.status,'completed');assert.equal(done.result.action_count,18);assert.equal(done.quality.model_calls,0);assert.equal(done.quality.gba_generation,false);assert.equal(done.artifacts.rom,undefined);assert.ok(done.artifacts.result);
   const result=JSON.parse(await readFile(done.result_path));assert.equal(result.schema,'gameverse.reference-fixture-result/1');assert.equal(result.game_material_required,false);
 });
+test('restart authenticates living detached worker, blocks duplicate writer and cancels without PID signals',async t=>{
+  const {directory}=await fixture(t),fixtureRoot=resolve(directory,'workspace');
+  const real=(await createImprovementApi({root}).capabilities()).fixtures[0];
+  for(const ref of real.executor_pins){const path=resolve(fixtureRoot,ref.path);await mkdir(resolve(path,'..'),{recursive:true});await writeFile(path,await readFile(resolve(root,ref.path)));}
+  // A real long-lived synthetic writer, no models/native/game material.
+  await writeFile(resolve(fixtureRoot,'tools/prefab_pipeline/reference_fixture.py'),`import argparse,time\nfrom pathlib import Path\np=argparse.ArgumentParser();p.add_argument('--request');p.add_argument('--output');a=p.parse_args();out=Path(a.output);out.mkdir();\nwhile True:\n (out/'heartbeat').write_text(str(time.time_ns()));time.sleep(.02)\n`);
+  const runDirectory=resolve(directory,'owned-runs'),restarted=createImprovementApi({root:fixtureRoot,directory:runDirectory});
+  t.after(()=>restarted.shutdown());
+  const fixtureInfo=(await restarted.capabilities()).fixtures[0],body={...fixtureInfo.request_template,request_id:randomUUID()};
+  const {spawn}=await import('node:child_process');
+  const moduleUrl=new URL('../scripts/improvement-api.mjs',import.meta.url).href;
+  const controller=spawn(process.execPath,['--input-type=module','--eval',`import {createImprovementApi} from ${JSON.stringify(moduleUrl)};const api=createImprovementApi(${JSON.stringify({root:fixtureRoot,directory:runDirectory})});await api.submit(${JSON.stringify(body)});setTimeout(()=>process.exit(0),300);`],{stdio:'ignore'});
+  await new Promise((resolveExit,reject)=>{controller.on('error',reject);controller.on('exit',code=>code===0?resolveExit():reject(Error('synthetic server failed')));});
+  const heartbeat=resolve(runDirectory,body.request_id,'output/heartbeat');
+  assert.ok(await readFile(heartbeat));
+  assert.equal((await restarted.status(body.request_id)).worker_ownership,'recovered');
+  await assert.rejects(restarted.submit({...body,request_id:randomUUID()}),{code:'worker_ownership_pending'});
+  let response;const res={writeHead(code){this.code=code;return this;},end(bytes){response=JSON.parse(bytes);}};
+  await restarted.handle({method:'DELETE',headers:{host:'localhost:4175'}},res,`/api/improvement/runs/${body.request_id}`);
+  assert.equal(response.cancellation_requested,true);
+  for(let i=0;i<100;i++){if((await restarted.status(body.request_id)).status==='cancelled')break;await new Promise(r=>setTimeout(r,10));}
+  assert.equal((await restarted.status(body.request_id)).status,'cancelled');
+  const stopped=await readFile(heartbeat,'utf8');await new Promise(r=>setTimeout(r,80));assert.equal(await readFile(heartbeat,'utf8'),stopped);
+  const next={...body,request_id:randomUUID()};await restarted.submit(next);
+  for(let i=0;i<100;i++){try{await readFile(resolve(runDirectory,next.request_id,'output/heartbeat'));break;}catch{await new Promise(r=>setTimeout(r,10));}}
+  await restarted.shutdown();
+  for(let i=0;i<100;i++){if((await restarted.status(next.request_id)).status!=='running')break;await new Promise(r=>setTimeout(r,10));}
+  assert.notEqual((await restarted.status(next.request_id)).status,'running');
+});
+test('concurrent submissions reserve one worker after asynchronous ownership reconciliation',async t=>{
+  const {api,body,child}=await fixture(t);
+  const outcomes=await Promise.allSettled([api.submit(body),api.submit({...body,request_id:randomUUID()})]);
+  assert.equal(outcomes.filter(row=>row.status==='fulfilled').length,1);
+  assert.equal(outcomes.find(row=>row.status==='rejected').reason.code,'busy');
+  child().emit('close',2);await new Promise(r=>setTimeout(r,20));
+});

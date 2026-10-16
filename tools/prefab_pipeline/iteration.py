@@ -256,7 +256,7 @@ def run_iteration(request, config, output_dir, stages=None, *, resume=False):
                         and (policy in ('single_available_action', 'continue_adapter_target')
                              or (policy == 'continue_model_wait'
                                  and record.get('basis') == 'source_proven_noninteractive_callback_unchanged')))
-            deterministic_evidence = (reference_operation and config['adapter_version'] == 'sid-rpg-navigation/1'
+            deterministic_evidence = (reference_operation and config['adapter_version'] in ('sid-rpg-navigation/1', 'sid-rpg-navigation/2')
                 and experiment.get('control_basis') == 'source-defined-navigation'
                 and experiment.get('usage', {}).get('model_calls') == 0
                 and experiment.get('usage', {}).get('native_frames', 0) > 0
@@ -274,9 +274,6 @@ def run_iteration(request, config, output_dir, stages=None, *, resume=False):
                 break
             checkpoint = experiment.get('checkpoint')
             report['checkpoint'] = checkpoint
-            if config.get('pause_after_experiment'):
-                report.update(status='partial', reason='awaiting_explicit_continuation')
-                break
             if experiment.get('success') is True:
                 witness = experiment.get('objective_witness') or {}
                 if (witness.get('source') != 'native-observation' or witness.get('artifact_sha256') != artifact['sha256']
@@ -285,6 +282,9 @@ def run_iteration(request, config, output_dir, stages=None, *, resume=False):
                     raise IterationError('native_objective_witness_required')
                 report['qualification']['native_objective'] = 'observed'
                 report.update(status='success', reason='native_objective_observed', artifact=artifact, objective_witness=witness)
+                break
+            if config.get('pause_after_experiment'):
+                report.update(status='partial', reason='awaiting_explicit_continuation')
                 break
             diagnosis = stage('diagnose', stages.diagnose, current, artifact, experiment)
             if reference_operation:
@@ -579,7 +579,7 @@ def prepare_iteration_config(request, template, new_run_id):
     return config
 
 
-def prepare_continuation_config(prior_report_ref, template, new_run_id):
+def prepare_continuation_config(prior_report_ref, template, new_run_id, *, campaign_resource_transition=False):
     """Explicit new-process chunk; exact artifact/state/context, no silent replay."""
     if not verify_file_ref(prior_report_ref):
         raise IterationError('prior_report_pin_mismatch')
@@ -605,6 +605,23 @@ def prepare_continuation_config(prior_report_ref, template, new_run_id):
             raise IterationError('continuation_experiment_pin_mismatch')
     if prepared['experiment'].get('models') != prior['config']['experiment'].get('models'):
         raise IterationError('continuation_model_identity_mismatch')
+    # A standalone continuation preserves the complete effective loop policy,
+    # not just adapter/model names. Campaign resource transitions are explicit
+    # and separately charged by the campaign's immutable cumulative contract.
+    def effective_policy(value):
+        value = copy.deepcopy(value)
+        for key in ('run_id', 'loop_config_ref', 'source_commit', 'preparation',
+                    'initial_checkpoint', 'cached_build_report', 'artifact_reference_parent',
+                    'continuation', 'continuation_request', 'pause_after_experiment',
+                    'retry_of', 'repair_of', 'checkpoint', 'template_status'):
+            value.pop(key, None)
+        if value.get('runtime_readset_pin'):
+            value.pop('runtime_manifest_pin', None)
+        if campaign_resource_transition:
+            value.pop('limits', None)
+        return value
+    if effective_policy(prepared) != effective_policy(prior['config']):
+        raise IterationError('continuation_loop_policy_mismatch')
     prepared['initial_checkpoint'] = checkpoint
     if request.get('schema') == 'native-artifact-traversal-request/1':
         prepared['artifact_reference_parent'] = prior['build_report']

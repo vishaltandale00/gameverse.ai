@@ -99,7 +99,7 @@ class ArtifactReferenceTests(unittest.TestCase):
                 'usage': {'model_calls': 0, 'native_frames': 1, 'cost_usd': None}, 'decisions': [], 'evidence': evidence,
                 'deterministic_navigation': {'decisions': [{'event': 'decision', 'result': {'accepted': True,
                     'action_id': 'follow-observed-path', 'record': {'policy': 'single_available_action'}}}], 'evidence': evidence}}
-        for adapter, expected in [('sid-rpg-navigation/1', 'partial'), ('other-adapter/1', 'blocked')]:
+        for adapter, expected in [('sid-rpg-navigation/1', 'partial'), ('sid-rpg-navigation/2', 'partial'), ('other-adapter/1', 'blocked')]:
             config={**self.config, 'schema': VERSION, 'run_id': adapter, 'adapter_version': adapter,
                 'source_commit': 'test', 'environment_version': 'test/1', 'loop_config_ref': 'fixture',
                 'mechanism_sha256': file_ref(iteration.__file__)['sha256'],
@@ -108,7 +108,7 @@ class ArtifactReferenceTests(unittest.TestCase):
             with patch.object(provider, 'ROOT', self.root):
                 selected=provider.artifact_stages()
                 stages=IterationStages(selected.admit,selected.build,experiment,selected.diagnose,selected.repair)
-                result=run_iteration(self.request,config,self.root/('run-'+adapter.split('/')[0]),stages)
+                result=run_iteration(self.request,config,self.root/('run-'+adapter.replace('/', '-')),stages)
             self.assertEqual(result['status'],expected)
             self.assertEqual(result['usage']['model_calls'],0)
 

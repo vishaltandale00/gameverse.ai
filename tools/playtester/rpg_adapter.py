@@ -17,7 +17,8 @@ import uuid
 
 from .core import digest, require
 
-VERSION = 'sid-rpg-navigation/1'
+VERSION = 'sid-rpg-navigation/2'
+EVENT_SOURCE_REFS = ('src/field_message_box.c', 'src/field_screen_effect.c', 'src/scrcmd.c', 'src/text.c', 'src/match_call.c')
 SOURCE_POIS = 'source-live-pois/1'
 
 
@@ -60,7 +61,7 @@ def provider_manifest(root, *, rom, elf, save=None):
         'game_id': 'siddarth-emerald', 'rom': pin(rom), 'elf': pin(elf),
         'source_tree': source_tree_identity(root),
         'sources': {name: pin(sid / name) for name in ('sidbot.py', 'world.py', 'battler.py')},
-        'source_inputs': {name: pin(root / name) for name in ('charmap.txt', 'dev_scripts/sid/objectives.json')},
+        'source_inputs': {name: pin(root / name) for name in ('charmap.txt', 'dev_scripts/sid/objectives.json') + EVENT_SOURCE_REFS},
         'capability_scope': 'SID Emerald source ABI only; not an unqualified FireRed adapter'}
     # Recovered compiler and cached constant results remain an explicit local dependency.
     toolbin = root / '.toolchain/arm-gnu-toolchain-13.3.rel1-darwin-arm64-arm-none-eabi/bin'
@@ -76,7 +77,8 @@ def load_provider(manifest, cache):
     require(manifest.get('source_tree') == source_tree_identity(root), 'rpg_provider_source_tree_mismatch')
     sources = {name: checked(ref, root) for name, ref in manifest['sources'].items()}
     require(set(sources) == {'sidbot.py', 'world.py', 'battler.py'}, 'invalid_rpg_provider_sources')
-    for ref in manifest.get('source_inputs', {}).values(): checked(ref, root)
+    require(set(EVENT_SOURCE_REFS) <= set(manifest.get('source_inputs', {})), 'missing_rpg_event_source_pins')
+    for ref in manifest['source_inputs'].values(): checked(ref, root)
     require(set(manifest.get('tools', {})) == {'arm-none-eabi-nm', 'arm-none-eabi-gcc'}, 'missing_rpg_provider_tool_pins')
     for ref in manifest['tools'].values(): checked(ref, root)
     # SID imports these conventional module names. Refuse conflicting providers.
@@ -153,6 +155,7 @@ class RPGNavigationAdapter:
         self.route_steps = 0
         self.last_state = None
         self.restored_image = None
+        self.field_free_settle_remaining = 0
 
     @classmethod
     def open(cls, manifest, output, *, binary, targets=(), initial_state=None, max_option_frames=600, navigation_policy=None):
@@ -274,6 +277,84 @@ class RPGNavigationAdapter:
         # No old model client exists on the minimally initialized provider Bot.
         return traveled[0]
 
+    def _event_mode(self, state):
+        """Only positively source-defined, nonsemantic field operations.
+
+        Menus and battles always return to their semantic options first. A field
+        message merely existing does not mean its printer is ready for a key.
+        """
+        if (state.get('in_battle') or state.get('menu')
+                or any(any(token in task for token in ('Menu', 'Choose', 'Choice', 'YesNo')) for task in state.get('tasks', []))):
+            return None
+        if state.get('free'):
+            return ('wait', 'recovered_untilfree_eight_samples_two_frames_neutral_settle') if self.field_free_settle_remaining else None
+        if state.get('printer_wait') or state.get('script_native') == 'WaitForAorBPress':
+            return ('advance', 'source_text_printer_wait_or_scrcmd_waitbuttonpress')
+        tasks = set(state.get('tasks', []))
+        raw = getattr(self.game, 'task_raw', {}).get('ExecuteMatchCall')
+        match_stage = struct.unpack_from('<h', raw, 8)[0] if raw and len(raw) >= 10 else None
+        if ('ExecuteMatchCall' in tasks and match_stage == 5 and not state.get('printer_char')):
+            return ('advance', 'source_match_call_printmessage_complete_requires_new_a_or_b')
+        if (tasks & {'Task_WarpAndLoadMap', 'Task_ExitDoor', 'Task_AnimateDoor'}
+                or state.get('cb2') in ('CB2_DoChangeMap', 'CB2_LoadMap', 'CB2_LoadMap2')):
+            return ('wait', 'source_map_transition_task_has_no_input_choice')
+        if (tasks & {'Task_DrawFieldMessage', 'Task_HidePokenavMessageWhenDone', 'ExecuteMatchCall'}):
+            return ('wait', 'source_field_message_or_match_call_rendering_not_key_ready')
+        return None
+
+    def _event_progress(self, state):
+        task_stages = {}
+        for name in ('Task_WarpAndLoadMap', 'Task_ExitDoor', 'Task_AnimateDoor',
+                     'Task_DrawFieldMessage', 'Task_HidePokenavMessageWhenDone', 'ExecuteMatchCall'):
+            raw = getattr(self.game, 'task_raw', {}).get(name)
+            if raw and len(raw) >= 10: task_stages[name] = struct.unpack_from('<h', raw, 8)[0]
+        return {'field_free_settle_remaining': self.field_free_settle_remaining, 'printer_char': state.get('printer_char'), 'printer_wait': state.get('printer_wait'),
+                'script_status': state.get('script_status'), 'script_native': state.get('script_native'),
+                'script_ptr': state.get('script_ptr'), 'msgbox': state.get('msgbox'),
+                'task_stages': task_stages, 'tasks': state.get('tasks', []),
+                'cb1': state.get('cb1'), 'cb2': state.get('cb2')}
+
+    def _event_boundary(self, state):
+        """Printer character movement is progress, not a reason to stop a wait."""
+        value = self._event_progress(state)
+        value.pop('printer_char', None)
+        return dict(value, map=state.get('map'), free=state.get('free'),
+                    menu=state.get('menu'), in_battle=state.get('in_battle'), mode=self._event_mode(state))
+
+    def _execute_event(self, state, mode, start, budget):
+        previous = self._event_boundary(state)
+        edges = 0
+        if mode == 'advance':
+            # Release before the press: both scrcmd and match_call test JOY_NEW.
+            self.emu.hold(None, 1)
+            current = self.game.state()
+            if self._event_mode(current) != previous['mode']:
+                if current.get('free') and not current.get('menu') and not current.get('in_battle'):
+                    self.field_free_settle_remaining = 15
+                self.boundary = 'source_event_boundary'; return edges
+            if self.emu.frames - start >= budget:
+                self.boundary = 'option_budget'; return edges
+            self.emu.hold('A', 1)
+            edges = 1
+        while self.emu.frames - start < budget:
+            self.emu.hold(None, 1)
+            current = self.game.state()
+            if current.get('free') and not current.get('menu') and not current.get('in_battle'):
+                # Original Bot.untilfree requires eight free samples separated
+                # by two neutral frames; preserve that post-event readiness.
+                if not self.field_free_settle_remaining:
+                    self.field_free_settle_remaining = 15
+                else:
+                    self.field_free_settle_remaining -= 1
+                if self.field_free_settle_remaining:
+                    continue
+                self.boundary = 'source_event_boundary'; return edges
+            self.field_free_settle_remaining = 0
+            if self._event_boundary(current) != previous:
+                self.boundary = 'source_event_boundary'; return edges
+        self.boundary = 'option_budget'
+        return edges
+
     def _options(self, state):
         def action(ident, text, **extra):
             frames = extra.pop('frames', min(120, self.max_option_frames))
@@ -296,8 +377,12 @@ class RPGNavigationAdapter:
             if labels:
                 return [action('menu:' + str(i), str(label), cursor_address=self.game.addr('sMenu', 12) + 2,
                         cursor=i, semantic='menu') for i, label in enumerate(labels)]
-        if state.get('printer_wait') or state.get('msgbox'):
-            return [action('text:advance', 'Advance the observed dialogue', input_key='A', semantic='dialogue')]
+        event = self._event_mode(state)
+        if event:
+            mode, proof = event
+            return [action('text:advance' if mode == 'advance' else 'wait',
+                'Advance one source-ready text page' if mode == 'advance' else 'Wait for a source-proven noninteractive field event',
+                frames=self.max_option_frames, semantic='source_event', event_mode=mode, source_proof=proof)]
         if state.get('free') and state.get('x') is not None:
             if self.navigation_policy == SOURCE_POIS:
                 return self._live_poi_options(state)
@@ -312,7 +397,9 @@ class RPGNavigationAdapter:
             # No trustworthy route: expose uncertainty, not a fabricated walkable map.
             return [action('input:' + key, 'Uncertain route: bounded observed input ' + key, input_key=key,
                            semantic='uncertain_route') for key in ('A', 'B', 'UP', 'DOWN', 'LEFT', 'RIGHT')]
-        return [action('wait', 'Wait for the current noninteractive script/frame to advance', input_key=None, semantic='wait')]
+        if state.get('msgbox'):
+            return [action('input:' + key, 'Uncertain message readiness: inspect before input ' + key, input_key=key, semantic='uncertain_message') for key in ('A', 'B')]
+        return [action('wait', 'Bounded observation of an unclassified script/frame', input_key=None, semantic='wait')]
 
     def observe(self):
         require(not self.closed, 'rpg_session_closed')
@@ -326,6 +413,12 @@ class RPGNavigationAdapter:
             if state.get('free'): facts['source_pois'] = self.planner.live_pois(state)
         facts['provider_manifest_sha256'] = self.provider_identity
         facts['navigation_boundary'] = self.boundary
+        event = self._event_mode(state)
+        facts['source_event_mode'] = event[0] if event else None
+        facts['source_event_proof'] = event[1] if event else None
+        facts['noninteractive_wait_safe'] = bool(event and event[0] == 'wait')
+        facts['source_callback2'] = state.get('cb2')
+        facts['source_event_progress'] = self._event_progress(state)
         facts['navigation_grid_available'] = bool(state.get('free') and state.get('x') is not None)
         if state['map'] in getattr(self.game, 'W', {}):
             facts['map_group'] = self.game.W[state['map']]['group']
@@ -344,6 +437,7 @@ class RPGNavigationAdapter:
         phase = 'battle' if state.get('in_battle') else 'menu' if state.get('menu') else 'overworld' if state.get('free') else 'script'
         progress = {key: state.get(key) for key in ('map', 'x', 'y', 'text', 'in_battle')}
         progress['semantic_cursors'] = cursors
+        progress['source_event'] = self._event_progress(state)
         if 'story' in facts: progress['story'] = copy.deepcopy(facts['story'])
         obs = {'frame': self.emu.frames, 'state_key': digest(progress), 'phase': phase, 'facts': facts,
             'progress': progress, 'terminal': False, 'success': False, 'options': options,
@@ -366,7 +460,10 @@ class RPGNavigationAdapter:
         self.restored_image = None
         self.boundary = None
         steps = 0
-        if chosen.get('semantic') == 'source_poi_choice':
+        event_edges = 0
+        if chosen.get('semantic') == 'source_event':
+            event_edges = self._execute_event(state, chosen['event_mode'], start, budget)
+        elif chosen.get('semantic') == 'source_poi_choice':
             steps = self._execute_source_poi(chosen['target'], start, budget)
         elif chosen['id'].startswith('navigate:'):
             target = tuple(chosen['target']['position'])
@@ -429,14 +526,16 @@ class RPGNavigationAdapter:
         self.route_steps += steps
         self.boundary = self.boundary or 'option_budget'
         return {'frames': self.emu.frames - start, 'decision_boundary': self.boundary,
-            'deterministic_tile_steps': steps, 'model_calls_inside_adapter': 0}
+            'deterministic_tile_steps': steps, 'model_calls_inside_adapter': 0,
+            'source_event_mode': chosen.get('event_mode'), 'source_event_proof': chosen.get('source_proof'),
+            'source_event_a_edges': event_edges}
 
     def restore_navigation(self, state):
         require(state.get('provider_manifest_sha256') == self.provider_identity, 'rpg_checkpoint_provider_mismatch')
         require(state.get('navigation_policy') == self.navigation_policy, 'rpg_checkpoint_navigation_policy_mismatch')
         allowed = {None, 'option_budget', 'map_transition', 'battle_or_script', 'target_reached', 'route_unavailable',
             'position_divergence', 'blocked_edge_replan', 'semantic_action_executed', 'cursor_not_reached',
-            'semantic_input_executed', 'source_poi_completed', 'source_navigation_unresolved', 'battle', 'menu', 'script'}
+            'semantic_input_executed', 'source_event_boundary', 'source_poi_completed', 'source_navigation_unresolved', 'battle', 'menu', 'script'}
         require(state.get('boundary') in allowed, 'invalid_rpg_checkpoint_boundary')
         require(type(state.get('route_steps')) is int and state['route_steps'] >= 0, 'invalid_rpg_checkpoint_route_steps')
         edges = state.get('blocked_edges')
@@ -445,6 +544,9 @@ class RPGNavigationAdapter:
             require(isinstance(edge, list) and len(edge) == 2 and isinstance(edge[0], list) and len(edge[0]) == 2
                     and all(type(v) is int for v in edge[0]) and edge[1] in ('UP','DOWN','LEFT','RIGHT'), 'invalid_rpg_checkpoint_edge')
         self.planner.blocked_edges = {(tuple(position), direction) for position, direction in edges}
+        settle = state.get('field_free_settle_remaining', 0)
+        require(type(settle) is int and 0 <= settle <= 16, 'invalid_rpg_checkpoint_field_settle')
+        self.field_free_settle_remaining = settle
         self.boundary, self.route_steps = state.get('boundary'), state['route_steps']
 
     def checkpoint(self):
@@ -456,6 +558,7 @@ class RPGNavigationAdapter:
         token = 'rpg-checkpoint-' + str(slot)
         state = {'blocked_edges': [[list(p), d] for p, d in self.planner.blocked_edges],
                  'boundary': self.boundary, 'route_steps': self.route_steps,
+                 'field_free_settle_remaining': self.field_free_settle_remaining,
                  'provider_manifest_sha256': self.provider_identity, 'navigation_policy': self.navigation_policy}
         image = self.session.observe()['image'] if hasattr(self.session, 'observe') else None
         self.tokens[token] = (slot, self.session.frame, self.session.native_counter, copy.deepcopy(state), image)

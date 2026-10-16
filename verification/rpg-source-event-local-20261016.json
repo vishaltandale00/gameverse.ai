@@ -1,0 +1,128 @@
+{
+  "schema": "gameverse.rpg-source-event-verification/1",
+  "recorded_utc": "2026-10-16T19:50:59.970689+00:00",
+  "scope": "Offline replay of retained first semantic selection plus source-defined no-choice events only; no new D1/S2 calls, no full quest or battle claim",
+  "source": {
+    "adapter_version": "sid-rpg-navigation/2",
+    "files_sha256": {
+      "tools/playtester/rpg_adapter.py": "629f13fd6e87a13e5cb6294f735818a9695031a122712fef3982da7ed22e92b0",
+      "tools/playtester/test_rpg_adapter.py": "7edd8ee9117c193a8d349e63566dfd7ffed93c44f6c128b1898a7ff8aebd747b"
+    },
+    "provider_manifest_sha256": "5e747a8e8fe4637d14a4c0117aadea689b6366925749d12ac9f76f4df9caa157",
+    "provider_source_tree_sha256": "c20917371921119c4204a50d7708c006b0b7cb01a3fceb3fe8fe1eedb0252e27",
+    "provider_source_tree_files": 9705,
+    "event_source_sha256": {
+      "src/field_message_box.c": "be11e57a7bca81a68e7defbe3326dfa40963e3da972ab58a8574a495c75a87bd",
+      "src/field_screen_effect.c": "e269275ff957afd64d2fc561ffca20056e8858ac807049fd450ded7665e0f036",
+      "src/scrcmd.c": "d07fbafbcfae677a52c0a095fb1103b9d3524321cb27ff4e002e8bb53df06b60",
+      "src/text.c": "b4e557438da0a949cacfc2d83ef9a3816a0ef8d942a99f5c04be9a9c19b57012",
+      "src/match_call.c": "c52d1b740575662176016fa402d7fa855fb7f43a835badbfce965bce35817209"
+    },
+    "rom_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+    "battery_save_sha256": "21fa895f1f79dab55e729196b8e1a606f712055300b8a5da9861156ff6f4dea3"
+  },
+  "changes": [
+    "Include observed printer pointer/readiness, script/callback and source task stages in progress",
+    "Wait without input while pinned field text/match-call/map-transition sources have no input choice",
+    "Emit one released A edge only at an observed source-ready text/page acknowledgment",
+    "Batch neutral frames only until the next source boundary or configured option limit",
+    "Preserve recovered post-event free-field settling across native checkpoint chunks; menus and battles interrupt immediately"
+  ],
+  "focused_checks": {
+    "outcome": "passed",
+    "tests": 40,
+    "wall_s": 0.309,
+    "environment_reference_configured": true,
+    "new_cases": [
+      "Text rendering stops at actual readiness",
+      "A edge release and source revalidation",
+      "A newly appearing menu prevents text acknowledgment",
+      "Unknown message and choice tasks do not auto-advance",
+      "Match-call final acknowledgment requires source task state",
+      "Source printer progress consumes no model calls",
+      "Transient free field does not expose premature semantic choice",
+      "Partial neutral settling is checkpointed and validated",
+      "Automatic source close during pre-A release retains neutral free-field settling and emits no A edge"
+    ]
+  },
+  "retained_actual_slow_prefix": {
+    "run_id": "d2e7374b-540e-4fa8-873b-79199f3cc184",
+    "status": "stopped",
+    "reason": "model_call_limit",
+    "setup_frames": 1692,
+    "play_frames": 439,
+    "actions": 36,
+    "d1_calls": 1,
+    "s2_calls": 19,
+    "total_playtest_wall_s": 49.259915,
+    "model_wall_s": {
+      "system1": 0.2713190000000001,
+      "system2": 48.42201137200001
+    },
+    "weekend_stage_reached": 0,
+    "report_sha256": "d56fd3ae8b7b53ed40ff162b15a51b138f5976d2f7b30781e5fb4a0ceb20cb7d",
+    "events_sha256": "ce14bcb86b7b63186b8202afd2fbc2968102a723b06bf15ddc342efe6f50879d",
+    "source_history_preserved": true
+  },
+  "offline_regression": {
+    "run_id": "954a79822203454d96c3b650c1e00d6b",
+    "same_original_save_and_setup": true,
+    "setup_frames": 1692,
+    "first_semantic_selection": "Replayed exactly from the retained prefix; not a new model decision",
+    "outcome": "success",
+    "reason": "objective_observed",
+    "play_frames": 1093,
+    "actions": 34,
+    "wall_s": 1.820682,
+    "actual_d1_calls": 0,
+    "actual_s2_calls": 0,
+    "source_event_counts": {
+      "source_poi_choice": 1,
+      "wait": 26,
+      "advance": 7
+    },
+    "actual_source_a_edges": 7,
+    "weekend_stage_reached": 1,
+    "report_sha256": "cc2876343331beed743fa7e49e54992a4215cace2c80772f211a5a0e4171cf97",
+    "events_sha256": "914f6a021b9441b6853fd9f49357391cdc5a0bde71b44e6ecd5e3446331f0766",
+    "report_binds_events": true
+  },
+  "comparison_limits": [
+    "Same local interpreter, native runtime, ROM, ordinary save, boot recipe and retained first selected destination",
+    "Old prefix stopped at stage0 after439frames; regression reachesstage1 after1093frames, so outputs and model-decision work differ",
+    "Offline replay isolates nonsemantic event progression; it is not a full model-campaign latency benchmark or a claim about performance of future semantic decisions"
+  ],
+  "restart_policy": {
+    "old_native_or_learning_checkpoint_rebound": false,
+    "new_adapter_and_provider_identity_required": true,
+    "next_model_prefix": "Fresh pinned original ordinary-save restart under the refreshed authority; preserve old partial result"
+  },
+  "environment": {
+    "python": "3.9.6",
+    "machine": "arm64",
+    "emulator": {
+      "name": "libmgba",
+      "version": "0.10.5",
+      "frequency_hz": 16777216,
+      "frame_cycles": 280896,
+      "bios": "mGBA HLE; skipBios=true",
+      "rtc": "fixed 2024-01-01 UTC"
+    }
+  },
+  "qualification": {
+    "arrival_only_offline": true,
+    "live_model_fix_qualified": false,
+    "battle_qualified": false,
+    "weekend_stage6_qualified": false,
+    "candidate_mod_quality_qualified": false,
+    "full_campaign_qualified": false
+  },
+  "excluded": [
+    "Private paths",
+    "ROM/save/ELF/snapshot bytes",
+    "Screenshots",
+    "Raw RAM",
+    "Transcripts",
+    "Credentials"
+  ]
+}

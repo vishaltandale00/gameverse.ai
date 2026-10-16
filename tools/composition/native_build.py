@@ -512,6 +512,25 @@ def argument(arg, host, expected_type=None, hook=None):
     raise ValueError('Unknown native argument expression')
 
 
+REQUIRED_TOOLS = ('git', 'cc', 'arm-none-eabi-ld', 'arm-none-eabi-objcopy', 'arm-none-eabi-nm')
+
+
+def resolve_tools(names=REQUIRED_TOOLS):
+    """Resolve every required executable before hashing or invoking any tool."""
+    resolved = {name: shutil.which(name) for name in names}
+    missing = [name for name, path in resolved.items() if path is None]
+    if missing:
+        raise ValueError('Missing native build tools on PATH: ' + ', '.join(missing) +
+                         '. Install the required toolchain or update PATH before retrying.')
+    binaries = {}
+    for name, path in resolved.items():
+        # Keep the selected executable (including a configured PATH symlink),
+        # but make it absolute before subprocess changes its working directory.
+        executable = Path(path).absolute()
+        binaries[name] = {'path': str(executable), 'sha256': sha(executable.resolve().read_bytes())}
+    return binaries
+
+
 def build(plan, rom_path, out):
     out = Path(out).resolve()
     out.mkdir(parents=True, exist_ok=False)
@@ -526,6 +545,7 @@ def build(plan, rom_path, out):
         receipt_path.write_text(json.dumps(receipt, indent=2) + '\n')
     deadline = started + plan.get('native_build', {}).get('max_build_s', 60)
     def command(label, argv, timeout):
+        argv = [receipt['tool_binaries'][argv[0]]['path'], *argv[1:]]
         timeout = min(timeout, deadline-time.monotonic())
         if timeout <= 0:
             raise ValueError('Total native build time budget exhausted')
@@ -548,8 +568,8 @@ def build(plan, rom_path, out):
         rom = Path(rom_path).read_bytes()
         spec, host, packages, sources, hooks, static = validate(plan, rom)
         receipt['limits'] = {'stage_timeout_s': spec['timeout_s'], 'max_build_s': spec.get('max_build_s', 60), 'max_payload_bytes': spec['max_payload_bytes']}
+        receipt['tool_binaries'] = resolve_tools()
         receipt['source_commit'] = command('source-context', ['git', 'rev-parse', 'HEAD'], 3).strip()
-        receipt['tool_binaries'] = {name: {'path': shutil.which(name), 'sha256': sha(Path(shutil.which(name)).resolve().read_bytes())} for name in ['cc', 'arm-none-eabi-ld', 'arm-none-eabi-objcopy']}
         receipt['compiler'] = command('toolchain', ['cc', '--version'], 3).splitlines()[0]
         receipt['host_sha256'] = sha(canonical(host))
         receipt['foundation_sha256'] = sha(rom)

@@ -176,7 +176,7 @@ def run_campaign(request, template, campaign_config, output_dir, *, resume=False
             prefix_wall = prefix.get('total_wall_seconds')
             if type(prefix_wall) not in (int, float) or not math.isfinite(prefix_wall) or prefix_wall < 0:
                 raise CampaignError('initial_report_wall_usage_unavailable')
-            prepare_continuation_config(prefix_ref, template, config['run_id'] + '-prefix-validation')
+            prepare_continuation_config(prefix_ref, template, config['run_id'] + '-prefix-validation', campaign_resource_transition=True)
             # The explicit new campaign adopts immutable receipts; the gap before
             # adoption is not execution. Retained prefix work consumes its caps.
             report['retained_prefix_wall_seconds'] = prefix_wall
@@ -246,7 +246,7 @@ def run_campaign(request, template, campaign_config, output_dir, *, resume=False
                                     for row in prior.get('stages', []))):
                     prior_ref = None
             if prior_ref:
-                child_config = prepare_continuation_config(prior_ref, chunk_template, run_id)
+                child_config = prepare_continuation_config(prior_ref, chunk_template, run_id, campaign_resource_transition=True)
                 child_request = child_config['continuation_request']
             else:
                 child_config = prepare_iteration_config(request, chunk_template, run_id)

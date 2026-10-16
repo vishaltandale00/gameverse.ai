@@ -21,8 +21,8 @@
     "sha256": "21fa895f1f79dab55e729196b8e1a606f712055300b8a5da9861156ff6f4dea3"
   },
   "provider_manifest": {
-    "path": "local-data/rpg/sid-provider-18e.json",
-    "sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9"
+    "path": "local-data/rpg/sid-provider-18e-events-v2.json",
+    "sha256": "5e747a8e8fe4637d14a4c0117aadea689b6366925749d12ac9f76f4df9caa157"
   },
   "game_profile": {
     "path": "tools/playtester/profiles/pokemon-rpg-weekend-quest.json",

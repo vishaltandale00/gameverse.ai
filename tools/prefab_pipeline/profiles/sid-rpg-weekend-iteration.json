@@ -3,7 +3,7 @@
   "run_id": "sid-rpg-weekend-template",
   "source_commit": "prepared-at-run-time",
   "environment_version": "libmgba/0.10.5",
-  "adapter_version": "sid-rpg-navigation/1",
+  "adapter_version": "sid-rpg-navigation/2",
   "loop_config_ref": "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
   "mechanism_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
   "base_rom_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
@@ -16,18 +16,18 @@
   },
   "supported_requests": [],
   "experiment": {
-    "adapter_id": "sid-rpg-navigation/1",
+    "adapter_id": "sid-rpg-navigation/2",
     "profile": {
       "path": "tools/playtester/profiles/pokemon-rpg-weekend-quest.json",
       "sha256": "0d0cf9edf720a3040196a477ff74b64c1842ef7909aac18f45c4fe8ad895e20f"
     },
     "memory_profile": {
-      "path": "local-data/rpg/sid-provider-18e.json",
-      "sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9"
+      "path": "local-data/rpg/sid-provider-18e-events-v2.json",
+      "sha256": "5e747a8e8fe4637d14a4c0117aadea689b6366925749d12ac9f76f4df9caa157"
     },
     "provider_manifest_ref": {
-      "path": "local-data/rpg/sid-provider-18e.json",
-      "sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9"
+      "path": "local-data/rpg/sid-provider-18e-events-v2.json",
+      "sha256": "5e747a8e8fe4637d14a4c0117aadea689b6366925749d12ac9f76f4df9caa157"
     },
     "fixture_recipe": {
       "path": "tools/playtester/profiles/pokemon-rpg-weekend-fixture.json",

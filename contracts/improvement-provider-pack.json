@@ -133,18 +133,18 @@
       ]
     },
     {
-      "bytes": 2641,
+      "bytes": 3643,
       "kind": "external-evidence",
       "origins": [
         "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
         "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json"
       ],
-      "path": "local-data/rpg/sid-provider-18e.json",
+      "path": "local-data/rpg/sid-provider-18e-events-v2.json",
       "payload_policy": "metadata-only-user-provided",
       "recipes": [
         "sid-rpg-weekend-original"
       ],
-      "sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9",
+      "sha256": "5e747a8e8fe4637d14a4c0117aadea689b6366925749d12ac9f76f4df9caa157",
       "stages": [
         "build-and-loop"
       ]
@@ -1502,7 +1502,7 @@
       ]
     },
     {
-      "bytes": 52791,
+      "bytes": 56050,
       "kind": "authored-code",
       "origins": [
         "registered-recipe-entry"
@@ -1514,7 +1514,7 @@
         "sid-rpg-weekend-original",
         "sonic-metroid-coast-campaign"
       ],
-      "sha256": "917f7f2bf835513ccdcd9381c10cefe342f5b3291384f64550c3608d13b13e57",
+      "sha256": "3db69d44dd12fa04f0565b1fbc8b257064fa4108b552ebb972fc819fd31c0df0",
       "stages": [
         "build-and-loop"
       ]
@@ -1556,7 +1556,25 @@
       ]
     },
     {
-      "bytes": 1078,
+      "bytes": 3906,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "scripts/improvement-worker.mjs",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "99304341b0ad94a9f1635f547ab39157676bfc565528afb7efc072d5203a8bf0",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1339,
       "kind": "authored-code",
       "origins": [
         "registered-recipe-entry"
@@ -1568,7 +1586,7 @@
         "sid-rpg-weekend-original",
         "sonic-metroid-coast-campaign"
       ],
-      "sha256": "1692fe871dedb7414c4005c45c525385c7da21fd54c1e43956f12a831ea8ad05",
+      "sha256": "90660b0fc6008a8d05106f2b5e07e843258894e19850a58209e602f7782cbb3f",
       "stages": [
         "build-and-loop"
       ]
@@ -2255,7 +2273,7 @@
       ]
     },
     {
-      "bytes": 42534,
+      "bytes": 43385,
       "kind": "authored-code",
       "origins": [
         "registered-recipe-entry",
@@ -2271,7 +2289,7 @@
         "sid-rpg-weekend-original",
         "sonic-metroid-coast-campaign"
       ],
-      "sha256": "50148ff195ac6ce3f683ad824b6ff79bf5ef59bb80569fdadef68e2558425a81",
+      "sha256": "f36d5c9e1af9fcd6d8c94435b8677e907d279bcafac6cd1e6639a7747070c1ad",
       "stages": [
         "build",
         "build-and-loop"
@@ -2961,7 +2979,7 @@
       ]
     },
     {
-      "bytes": 28468,
+      "bytes": 34995,
       "kind": "authored-code",
       "origins": [
         "registered-recipe-entry",
@@ -2975,7 +2993,7 @@
         "sid-rpg-weekend-original",
         "sonic-metroid-coast-campaign"
       ],
-      "sha256": "4afe6f1985e363a8bce504c0eef5ce9aa01773db2f64dd566c1fb8c09062d65e",
+      "sha256": "629f13fd6e87a13e5cb6294f735818a9695031a122712fef3982da7ed22e92b0",
       "stages": [
         "build-and-loop"
       ]
@@ -3095,7 +3113,7 @@
       ]
     },
     {
-      "bytes": 18908,
+      "bytes": 18978,
       "kind": "authored-code",
       "origins": [
         "registered-recipe-entry"
@@ -3106,7 +3124,7 @@
         "sid-rpg-weekend-original",
         "sonic-metroid-coast-campaign"
       ],
-      "sha256": "e9732803805815b22f0830a49287686987e8a1f0037e8a83610df471842e7d51",
+      "sha256": "066a26e477f99fc8bd528e6e77b9b5715431e7b9ab30464f95d5a2efd0571ba9",
       "stages": [
         "build-and-loop"
       ]
@@ -3138,7 +3156,7 @@
       ]
     },
     {
-      "bytes": 38085,
+      "bytes": 39163,
       "kind": "authored-code",
       "origins": [
         "registered-recipe-entry",
@@ -3152,7 +3170,7 @@
         "sid-rpg-weekend-original",
         "sonic-metroid-coast-campaign"
       ],
-      "sha256": "9b8fd984b393e4843a4f797b607f910a9eed8becbe7d452e0528710fc35d29cf",
+      "sha256": "b68e00b31b9d03ac220be740620175508055868b7d5b3926d7820eb7787ba2e4",
       "stages": [
         "build-and-loop"
       ]
@@ -3340,7 +3358,7 @@
       ]
     },
     {
-      "bytes": 2868,
+      "bytes": 2888,
       "kind": "source-evidence",
       "origins": [
         "registered-recipe-entry"
@@ -3350,7 +3368,7 @@
       "recipes": [
         "sid-rpg-weekend-original"
       ],
-      "sha256": "cc0c4797759ce21dfc475ec2c45b8d92664f26f99fa0448e2cf7d8768b9d20bc",
+      "sha256": "58204de6163c9084eec33853a8ee27109099c9b19546c6fdba6d31d3675f98d6",
       "stages": [
         "build-and-loop"
       ]
@@ -3508,7 +3526,7 @@
       ]
     },
     {
-      "bytes": 1439,
+      "bytes": 1449,
       "kind": "recipe",
       "origins": [
         "registered-recipe-entry"
@@ -3518,7 +3536,7 @@
       "recipes": [
         "sid-rpg-weekend-original"
       ],
-      "sha256": "273d57bf366446c3adc2229b74c18eaccc7130b4ade95f19c0a3f50c3f28ea5e",
+      "sha256": "dbdb5dd815b899b88c63a82c1fe557e5f8d0f3a0d58891f7a48020d2d6e394bb",
       "stages": [
         "build-and-loop"
       ]
@@ -3775,7 +3793,7 @@
       "build": "Not applicable: exact authorized original ROM is reused; no native edit or source build is claimed.",
       "id": "sid-rpg-weekend-original",
       "request_path": "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json",
-      "request_sha256": "273d57bf366446c3adc2229b74c18eaccc7130b4ade95f19c0a3f50c3f28ea5e"
+      "request_sha256": "dbdb5dd815b899b88c63a82c1fe557e5f8d0f3a0d58891f7a48020d2d6e394bb"
     }
   ],
   "reference_claim_checks": [
@@ -6044,11 +6062,11 @@
       "recipe": "sid-rpg-weekend-original"
     },
     {
-      "actual_sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9",
-      "claimed_sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9",
+      "actual_sha256": "5e747a8e8fe4637d14a4c0117aadea689b6366925749d12ac9f76f4df9caa157",
+      "claimed_sha256": "5e747a8e8fe4637d14a4c0117aadea689b6366925749d12ac9f76f4df9caa157",
       "matches": true,
       "origin": "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json",
-      "path": "local-data/rpg/sid-provider-18e.json",
+      "path": "local-data/rpg/sid-provider-18e-events-v2.json",
       "recipe": "sid-rpg-weekend-original"
     },
     {
@@ -6076,19 +6094,19 @@
       "recipe": "sid-rpg-weekend-original"
     },
     {
-      "actual_sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9",
-      "claimed_sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9",
+      "actual_sha256": "5e747a8e8fe4637d14a4c0117aadea689b6366925749d12ac9f76f4df9caa157",
+      "claimed_sha256": "5e747a8e8fe4637d14a4c0117aadea689b6366925749d12ac9f76f4df9caa157",
       "matches": true,
       "origin": "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
-      "path": "local-data/rpg/sid-provider-18e.json",
+      "path": "local-data/rpg/sid-provider-18e-events-v2.json",
       "recipe": "sid-rpg-weekend-original"
     },
     {
-      "actual_sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9",
-      "claimed_sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9",
+      "actual_sha256": "5e747a8e8fe4637d14a4c0117aadea689b6366925749d12ac9f76f4df9caa157",
+      "claimed_sha256": "5e747a8e8fe4637d14a4c0117aadea689b6366925749d12ac9f76f4df9caa157",
       "matches": true,
       "origin": "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
-      "path": "local-data/rpg/sid-provider-18e.json",
+      "path": "local-data/rpg/sid-provider-18e-events-v2.json",
       "recipe": "sid-rpg-weekend-original"
     },
     {
@@ -6109,7 +6127,7 @@
     }
   ],
   "schema": "gameverse.improvement-provider-pack/1",
-  "source_commit": "d709577",
+  "source_commit": "e6a9b34fa76ffd5bbce9ba1c65a4a47297cc24f2",
   "static_resolution": [
     {
       "errors": [],
@@ -6247,5 +6265,5 @@
       "stage": "model-decisions-and-optional-repair"
     }
   ],
-  "working_tree": "Post-prefix client-default transport fix; other runtime pins retain the captured d709577 source. Exact file hashes are authoritative."
+  "working_tree": "shared dirty working tree; exact file hashes are authoritative"
 }

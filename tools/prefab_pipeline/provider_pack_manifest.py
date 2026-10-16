@@ -275,7 +275,7 @@ def generate_manifest(root=ROOT):
         if json.loads((inventory.root / spec["request"]).read_text()).get("schema") != "native-artifact-traversal-request/1":
             seeds += ["tools/prefab_pipeline/native_cli.py", "tools/composition/native_build.py", "tools/composition/resolve.py"]
         if "scripts/serve-improvement.mjs" in seeds:
-            seeds += ["scripts/improvement-ui.mjs", "improvement.html", "improvement.css",
+            seeds += ["scripts/improvement-ui.mjs", "scripts/improvement-worker.mjs", "improvement.html", "improvement.css",
                       "src/improvement-page.js", "src/improvement-workbench.js", "src/improvement-workbench-model.js"]
         if spec.get("profile"):
             seeds.append(spec["profile"])

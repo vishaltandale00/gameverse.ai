@@ -1,0 +1,97 @@
+{
+  "schema": "gameverse.owner-reported-verification/1",
+  "date": "2026-10-16",
+  "source_parent": "e6a9b34fa76ffd5bbce9ba1c65a4a47297cc24f2",
+  "measurement_provenance": "Targeted check results reported by source owners; publisher records current source hashes and independently validates provider inventory/API-Python readset parity. No repeated broad suite or new model/native qualification claimed.",
+  "sourcepins": [
+    {
+      "path": "scripts/improvement-api.mjs",
+      "sha256": "3db69d44dd12fa04f0565b1fbc8b257064fa4108b552ebb972fc819fd31c0df0"
+    },
+    {
+      "path": "scripts/improvement-worker.mjs",
+      "sha256": "99304341b0ad94a9f1635f547ab39157676bfc565528afb7efc072d5203a8bf0"
+    },
+    {
+      "path": "scripts/serve-improvement.mjs",
+      "sha256": "90660b0fc6008a8d05106f2b5e07e843258894e19850a58209e602f7782cbb3f"
+    },
+    {
+      "path": "tests/improvement-api.test.js",
+      "sha256": "b07974d74e022c4d3e78ceb27bf191a65b3d882d392a64a122f4eaaf6b81e71a"
+    },
+    {
+      "path": "tools/composition/native_build.py",
+      "sha256": "f36d5c9e1af9fcd6d8c94435b8677e907d279bcafac6cd1e6639a7747070c1ad"
+    },
+    {
+      "path": "tools/composition/test_native_build.py",
+      "sha256": "7aeae321c34f000456212e97733509c51a1dd0426941185d74e5e6a43397e5cc"
+    },
+    {
+      "path": "tools/prefab_pipeline/iteration.py",
+      "sha256": "b68e00b31b9d03ac220be740620175508055868b7d5b3926d7820eb7787ba2e4"
+    },
+    {
+      "path": "tools/prefab_pipeline/test_iteration.py",
+      "sha256": "3a9e689fbb670bd46e60ef6b81c56b5a9e1f7cede329582bddc571395a6a6a0a"
+    },
+    {
+      "path": "tools/prefab_pipeline/campaign.py",
+      "sha256": "066a26e477f99fc8bd528e6e77b9b5715431e7b9ab30464f95d5a2efd0571ba9"
+    },
+    {
+      "path": "tools/prefab_pipeline/test_artifact_reference.py",
+      "sha256": "6faf7791ebf5b2eb87e503dae62078e4dec1692335997dd2f4b54d8112232878"
+    },
+    {
+      "path": "tools/playtester/rpg_adapter.py",
+      "sha256": "629f13fd6e87a13e5cb6294f735818a9695031a122712fef3982da7ed22e92b0"
+    },
+    {
+      "path": "tools/playtester/test_rpg_adapter.py",
+      "sha256": "7edd8ee9117c193a8d349e63566dfd7ffed93c44f6c128b1898a7ff8aebd747b"
+    }
+  ],
+  "checks": [
+    {
+      "scope": "API lifecycle and concurrent admission",
+      "owner": "improvement_api_contract",
+      "tests_passed": 19,
+      "wall_s": 2.795,
+      "synthetic_lifecycle_test_wall_s": 0.71,
+      "details": "real synthetic subprocess server exit, recovered owner, duplicate block, authenticated cancellation, deadline/heartbeat, shutdown; concurrent requests dispatch exactly once"
+    },
+    {
+      "scope": "standalone success/pause, complete continuation policy and campaign transition",
+      "owner": "full_engine_integration",
+      "tests_passed": 41,
+      "wall_s": 0.218
+    },
+    {
+      "scope": "native tools resolved before hashing; selected executable provenance",
+      "owner": "traversal_throughput",
+      "tests_passed": 22,
+      "wall_s": 0.036
+    },
+    {
+      "scope": "source-backed RPG wait/text and native key-release guards",
+      "owner": "rpg_navigation_harness",
+      "tests_passed": 40,
+      "wall_s": 0.309
+    },
+    {
+      "scope": "typed SID v1/v2 deterministic evidence accepted, other adapter rejected",
+      "owner": "full_engine_integration",
+      "tests_passed": 1,
+      "wall_s": 0.025
+    }
+  ],
+  "rpg_offline_evidence": "verification/rpg-source-event-local-20261016.json",
+  "rpg_v1_live_evidence": "verification/rpg-weekend-prefix-20261016.json",
+  "qualification": "RPG live v2 comparison pending at source freeze. Old v1 stage-0 partial remains unchanged.",
+  "queue_s": null,
+  "ci_s": null,
+  "comparable_baseline_s": null,
+  "timing_note": "Synthetic lifecycle timing nests API test duration; independent targeted commands are not a CI critical-path measurement."
+}

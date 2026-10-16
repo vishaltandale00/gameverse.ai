@@ -219,6 +219,125 @@ class RPGTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'checkpoint_boundary'):
             adapter.restore_navigation(dict(state,boundary='invented boundary'))
 
+    def test_rendering_wait_batches_only_until_actual_source_readiness(self):
+        adapter, game, emu = self.adapter()
+        game.s.update(free=False, msgbox=2, printer_wait=False, printer_char=1,
+                      tasks=['Task_DrawFieldMessage'], cb2='CB2_Overworld')
+        original_hold = emu.hold
+        def hold(key, count):
+            self.assertIsNone(key)
+            original_hold(key, count)
+            game.s['printer_char'] += count
+            if emu.frames >= 37: game.s['printer_wait'] = True
+        emu.hold = hold
+        before = adapter.observe()
+        self.assertEqual(before['options'][0]['id'], 'wait')
+        self.assertTrue(before['facts']['noninteractive_wait_safe'])
+        result = adapter.act(before['options'][0], max_frames=600)
+        after = adapter.observe()
+        self.assertEqual(result['frames'], 37)
+        self.assertEqual(result['decision_boundary'], 'source_event_boundary')
+        self.assertEqual(after['options'][0]['id'], 'text:advance')
+        self.assertNotEqual(before['state_key'], after['state_key'])
+
+    def test_nonsemantic_advance_is_one_released_edge_then_source_wait(self):
+        adapter, game, emu = self.adapter()
+        game.s.update(free=False, printer_wait=True, printer_char=10, tasks=['Task_DrawFieldMessage'])
+        keys=[];original_hold=emu.hold
+        def hold(key,count):
+            keys.append(key);original_hold(key,count)
+            if key=='A':game.s['printer_wait']=False
+        emu.hold=hold
+        receipt=adapter.act(adapter.observe()['options'][0],max_frames=600)
+        self.assertEqual(keys,[None,'A',None])
+        self.assertEqual(receipt['frames'],3)
+        self.assertEqual(receipt['decision_boundary'],'source_event_boundary')
+
+    def test_new_menu_during_release_prevents_nonsemantic_a_press(self):
+        adapter, game, emu = self.adapter()
+        game.s.update(free=False, printer_wait=True, tasks=['Task_DrawFieldMessage'])
+        keys=[];original_hold=emu.hold
+        def hold(key,count):
+            keys.append(key);original_hold(key,count);game.s['menu']=True
+        emu.hold=hold
+        receipt=adapter.act(adapter.observe()['options'][0],max_frames=600)
+        self.assertEqual(keys,[None]);self.assertEqual(receipt['frames'],1)
+
+    def test_unknown_message_and_known_choice_tasks_are_not_auto_advanced(self):
+        adapter, game, emu = self.adapter()
+        game.s.update(free=False, msgbox=2, printer_wait=False, tasks=[])
+        self.assertEqual(len(adapter.observe()['options']),2)
+        game.s.update(printer_wait=True,tasks=['Task_SpecialChoiceMenu'])
+        self.assertIsNone(adapter._event_mode(game.state()))
+        self.assertEqual(len(adapter.observe()['options']),2)
+
+    def test_matchcall_complete_requires_source_task_stage(self):
+        adapter, game, emu = self.adapter()
+        game.s.update(free=False,msgbox=2,printer_char=0,tasks=['ExecuteMatchCall'])
+        raw=bytearray(40);raw[8]=4;game.task_raw={'ExecuteMatchCall':bytes(raw)}
+        self.assertEqual(adapter._event_mode(game.state())[0],'wait')
+        raw[8]=5;game.task_raw={'ExecuteMatchCall':bytes(raw)}
+        self.assertEqual(adapter._event_mode(game.state())[0],'advance')
+
+    def test_source_wait_progress_does_not_consume_model_calls(self):
+        adapter, game, emu = self.adapter()
+        game.s.update(free=False,msgbox=2,printer_char=1,tasks=['Task_DrawFieldMessage'])
+        original_hold=emu.hold
+        def hold(key,count):
+            original_hold(key,count);game.s['printer_char']+=count
+        emu.hold=hold
+        model,slow=Model(),Model()
+        report=Playtester(adapter,{'schema_version':1,'game_id':'test-rpg'},model,system2=slow,
+            limits=Limits(max_steps=4,max_frames=2400,max_action_frames=600)).run()
+        self.assertEqual(report['frames'],2400)
+        self.assertEqual((model.calls,slow.calls),(0,0))
+
+    def test_one_frame_free_gap_does_not_expose_semantic_choices(self):
+        adapter, game, emu = self.adapter()
+        game.s.update(free=False,tasks=['Task_ExitDoor'])
+        original_hold=emu.hold
+        def hold(key,count):
+            original_hold(key,count)
+            if emu.frames==1:game.s.update(free=True,tasks=[])
+            else:game.s.update(free=False,msgbox=2,tasks=['Task_DrawFieldMessage'])
+        emu.hold=hold
+        receipt=adapter.act(adapter.observe()['options'][0],max_frames=600)
+        self.assertEqual(receipt['frames'],2)
+        self.assertEqual(adapter.observe()['options'][0]['id'],'wait')
+        self.assertEqual(adapter.field_free_settle_remaining,0)
+
+    def test_neutral_free_settle_survives_partial_chunk_checkpoint(self):
+        adapter, game, emu = self.adapter()
+        game.s.update(free=False,tasks=['Task_ExitDoor'])
+        original_hold=emu.hold
+        def hold(key,count):
+            original_hold(key,count);game.s.update(free=True,tasks=[])
+        emu.hold=hold
+        receipt=adapter.act(adapter.observe()['options'][0],max_frames=3)
+        self.assertEqual(receipt['frames'],3)
+        self.assertGreater(adapter.field_free_settle_remaining,0)
+        self.assertEqual(adapter.observe()['options'][0]['id'],'wait')
+        state={'provider_manifest_sha256':'provider','navigation_policy':None,'boundary':'option_budget',
+               'route_steps':0,'blocked_edges':[],'field_free_settle_remaining':adapter.field_free_settle_remaining}
+        resumed,_,_=self.adapter();resumed.restore_navigation(state)
+        self.assertEqual(resumed.field_free_settle_remaining,adapter.field_free_settle_remaining)
+        with self.assertRaisesRegex(ValueError,'field_settle'):
+            resumed.restore_navigation(dict(state,field_free_settle_remaining=17))
+
+    def test_automatic_close_during_key_release_preserves_free_settle(self):
+        adapter, game, emu = self.adapter()
+        game.s.update(free=False,printer_wait=True,tasks=['Task_DrawFieldMessage'])
+        original_hold=emu.hold;keys=[]
+        def hold(key,count):
+            keys.append(key);original_hold(key,count)
+            game.s.update(free=True,printer_wait=False,tasks=[])
+        emu.hold=hold
+        receipt=adapter.act(adapter.observe()['options'][0],max_frames=600)
+        self.assertEqual(keys,[None])
+        self.assertEqual(receipt['source_event_a_edges'],0)
+        self.assertGreater(adapter.field_free_settle_remaining,0)
+        self.assertEqual(adapter.observe()['options'][0]['id'],'wait')
+
     def test_hash_and_authorized_root_checked(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / 'source'; path.write_text('source')

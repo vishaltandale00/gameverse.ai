@@ -2,6 +2,8 @@
 import copy
 import hashlib
 import json
+import os
+import sys
 from pathlib import Path
 import tempfile
 import unittest
@@ -76,6 +78,27 @@ class NativeContracts(unittest.TestCase):
         self.write('host.json', self.host)
         self.plan['native_build']['host'] = self.pin('host.json')
         self.package_update()
+
+    def test_missing_tools_preflight_has_actionable_list_without_processes(self):
+        self.write('fixture.gba', self.rom)
+        empty_path = self.root / 'empty-path';empty_path.mkdir()
+        with patch.dict(os.environ, {'PATH': str(empty_path)}), patch.object(native.platform, 'platform', return_value='hermetic-test'), patch.object(native.subprocess, 'run') as run:
+            with self.assertRaisesRegex(ValueError, 'Missing native build tools on PATH: git, cc, arm-none-eabi-ld, arm-none-eabi-objcopy, arm-none-eabi-nm'):
+                native.build(self.plan, self.root/'fixture.gba', self.root/'output')
+        run.assert_not_called()
+        receipt=json.loads((self.root/'output/receipt.json').read_text())
+        self.assertEqual(receipt['outcome'],'failed')
+        self.assertIn('update PATH',receipt['error'])
+        self.assertEqual(receipt['stages'],[])
+
+    def test_tool_resolution_preserves_selected_real_binary_provenance(self):
+        # Use the real Python executable as data; execute no compiler or stub.
+        executable=Path(sys.executable).absolute()
+        empty_path=self.root/'empty-path';empty_path.mkdir()
+        with patch.dict(os.environ, {'PATH':str(empty_path)}):
+            result=native.resolve_tools((str(executable),))
+        self.assertEqual(result[str(executable)]['path'],str(executable))
+        self.assertEqual(result[str(executable)]['sha256'],native.sha(executable.resolve().read_bytes()))
 
     def test_global_typed_existing_ram_no_allocation(self):
         self.global_fixture()

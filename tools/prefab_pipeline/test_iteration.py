@@ -47,6 +47,21 @@ class IterationTests(unittest.TestCase):
         self.assertEqual(result['reason'], 'declared_mod_quality_not_passed')
         self.assertNotEqual(result['status'], 'success')
 
+    def test_success_is_verified_before_explicit_pause(self):
+        self.config['pause_after_experiment'] = True
+        def succeeded(artifact, context):
+            result = self.experiment(artifact, context)
+            result.update(success=True, objective_witness={'source': 'native-observation',
+                'artifact_sha256': artifact['sha256'], 'observed_predicate': 'real fixture predicate',
+                'evidence': [file_ref(self.root/'evidence')]})
+            return result
+        self.stages = IterationStages(self.stages.admit, self.build, succeeded,
+                                      self.stages.diagnose, self.stages.repair)
+        result = self.run_loop()
+        self.assertEqual(result['status'], 'success')
+        self.assertEqual(result['reason'], 'native_objective_observed')
+        self.assertEqual(result['qualification']['native_objective'], 'observed')
+
     def test_diagnosis_cannot_claim_success(self):
         result = self.run_loop()
         self.assertEqual(result['status'], 'artifact-built-with-diagnostics')
@@ -182,6 +197,26 @@ class IterationTests(unittest.TestCase):
         request = {'request_id': 'fresh', 'plan': file_ref(plan), 'rom': {'sha256': 'b'*64}}
         with patch.object(native_mod, 'ROOT', root), patch.object(native_mod, 'validate_native_mod_request', return_value={'lowering': None}), patch.object(iteration, '__file__', str(root/'tools/prefab_pipeline/iteration.py')), patch.object(iteration.subprocess, 'check_output', return_value='commit'):
             prepared = iteration.prepare_iteration_config(request, template, 'new-run')
+            learning=root/'learning.json';learning.write_text('{}')
+            checkpoint={'artifact_sha256': self.artifact['sha256'], 'adapter_version': prepared['adapter_version'],
+                'environment_version': prepared['environment_version'], 'state': file_ref(root/'state'),
+                'learning_context': file_ref(learning)}
+            prior={'status':'partial','usage_complete':True,'run_id':'new-run','config':prepared,
+                'usage':{'model_calls':1,'native_frames':10,'cost_usd':None},'artifact':self.artifact,
+                'checkpoint':checkpoint,'final_request':request,'build_report':file_ref(root/'evidence')}
+            prior_path=root/'prior-real-prepare.json';prior_path.write_text(json.dumps(prior))
+            continued=iteration.prepare_continuation_config(file_ref(prior_path),template,'next-run')
+            self.assertEqual(continued['initial_checkpoint'],checkpoint)
+            for field in ('confidence','margin','max_frames'):
+                changed=json.loads(json.dumps(template));changed['experiment'][field]=999
+                with self.assertRaisesRegex(IterationError,'continuation_loop_policy_mismatch'):
+                    iteration.prepare_continuation_config(file_ref(prior_path),changed,'changed-run')
+            changed=json.loads(json.dumps(template));changed['limits']['model_calls']+=1
+            with self.assertRaisesRegex(IterationError,'continuation_loop_policy_mismatch'):
+                iteration.prepare_continuation_config(file_ref(prior_path),changed,'changed-budget')
+            (root/'tools/playtester/models.py').write_text('changed actual policy source')
+            with self.assertRaisesRegex(IterationError,'continuation_loop_policy_mismatch'):
+                iteration.prepare_continuation_config(file_ref(prior_path),template,'changed-policy')
         self.assertEqual(prepared['limits'], template['limits'])
         self.assertNotIn('initial_checkpoint', prepared)
         self.assertNotIn('cached_build_report', prepared)

@@ -1,9 +1,10 @@
 // Local agent seam. Registered native recipes remain the authority for supported edits.
 import { createHash, randomUUID } from 'node:crypto';
 import { spawn, execFile } from 'node:child_process';
-import { mkdir, readFile, writeFile, rename, realpath, copyFile, unlink } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename, realpath, copyFile, unlink, readdir } from 'node:fs/promises';
 import { resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ownerState, stopOwner } from './improvement-worker.mjs';
 const workspace = fileURLToPath(new URL('../', import.meta.url));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const readJson = async path => JSON.parse(await readFile(path, 'utf8'));
@@ -17,9 +18,9 @@ const recipes = [
   { id: 'aria-soulstride', command: 'build-mod', file: 'tools/prefab_pipeline/requests/aria-soulstride.json', quality: 'build-only', description: 'Connected native bone birth/lunge, moving-defeat MP refund and soul progression. Build does not certify gameplay or campaign.' },
 ];
 const iterationProfiles = [{ id: 'aria-soulstride-iteration', recipe_id: 'aria-soulstride-controlled-lunge', file: 'tools/prefab_pipeline/profiles/aria-soulstride-iteration.json' }];
-const mechanismFiles = ['scripts/improvement-api.mjs', 'tools/prefab_pipeline/native_cli.py', 'tools/prefab_pipeline/mod_rom.py', 'tools/prefab_pipeline/native_mod.py', 'tools/composition/native_build.py', 'tools/composition/resolve.py', 'tools/prefab_pipeline/contract.py', 'tools/prefab_pipeline/momentum_strategy.py', 'tools/prefab_pipeline/reward_strategy.py', 'tools/prefab_pipeline/soulstride_movement.py', 'tools/prefab_pipeline/soulstride_progression.py', 'tools/prefab_pipeline/soul_eligibility.py', 'tools/re/session/bridge.py', 'tools/re/session/session.c'];
+const mechanismFiles = ['scripts/improvement-api.mjs', 'scripts/improvement-worker.mjs', 'tools/prefab_pipeline/native_cli.py', 'tools/prefab_pipeline/mod_rom.py', 'tools/prefab_pipeline/native_mod.py', 'tools/composition/native_build.py', 'tools/composition/resolve.py', 'tools/prefab_pipeline/contract.py', 'tools/prefab_pipeline/momentum_strategy.py', 'tools/prefab_pipeline/reward_strategy.py', 'tools/prefab_pipeline/soulstride_movement.py', 'tools/prefab_pipeline/soulstride_progression.py', 'tools/prefab_pipeline/soul_eligibility.py', 'tools/re/session/bridge.py', 'tools/re/session/session.c'];
 const referenceRequest={schema:'gameverse.reference-fixture-request/1',fixture_id:'reference-key-door',operation:'engine-demonstration',limits:{max_actions:32,max_wall_s:5,max_repairs:0}};
-const referenceFiles=['tools/prefab_pipeline/reference_fixture.py','tools/prefab_pipeline/__init__.py','tools/playtester/__init__.py','tools/playtester/adapters.py','tools/playtester/core.py','tools/playtester/examples/key-door.json'];
+const referenceFiles=['scripts/improvement-worker.mjs','tools/prefab_pipeline/reference_fixture.py','tools/prefab_pipeline/__init__.py','tools/playtester/__init__.py','tools/playtester/adapters.py','tools/playtester/core.py','tools/playtester/examples/key-door.json'];
 let pythonProbe;
 function pythonAvailable(){return pythonProbe??=new Promise(resolveProbe=>execFile('python3',['--version'],{timeout:1000,maxBuffer:1024},(error,stdout,stderr)=>resolveProbe(!error&&/^Python 3\./.test(`${stdout}${stderr}`))));}
 const safeMissing=values=>(values||[]).map(value=>typeof value==='string'&&!value.startsWith('/')&&!value.split('/').includes('..')&&!/[\r\n]/.test(value)?value:'A configured local input is unavailable.');
@@ -60,6 +61,25 @@ export function createImprovementApi({ root = workspace, directory = resolve(roo
     return {...config,run_id:body.request_id};
   }
   const dir = id => resolve(directory, id);
+  const ownerPath=id=>resolve(dir(id),'worker-owner.json');
+  async function spawnWorker(id,args,deadline){
+    if(spawnImpl!==spawn)return spawnImpl('python3',args,{cwd:root,detached:true,stdio:['ignore','ignore','ignore']});
+    const token=randomUUID();await atomic(ownerPath(id),{schema:'gameverse.worker-owner/1',state:'starting',token});
+    return spawn(process.execPath,[fileURLToPath(new URL('./improvement-worker.mjs',import.meta.url)),ownerPath(id),'python3',...args],{cwd:root,detached:true,stdio:'ignore',env:{...process.env,GAMEVERSE_WORKER_TOKEN:token,GAMEVERSE_WORKER_TIMEOUT_MS:String(deadline)}});
+  }
+  async function assertNoRecoveredWorker(){
+    for(const id of await readdir(directory).catch(error=>{if(error.code==='ENOENT')return [];throw error;})){
+      if(!uuid(id)||active?.id===id)continue;
+      const owner=await ownerState(ownerPath(id));
+      if(owner&&owner.state!=='terminal')throw fail(409,'worker_ownership_pending','A retained worker is alive or its ownership is unresolved; cancel/reconcile it before another dispatch.');
+    }
+  }
+  async function shutdown(){
+    for(const id of await readdir(directory).catch(()=>[]))if(uuid(id)){
+      const owner=await ownerState(ownerPath(id));if(owner&&owner.state!=='terminal')await stopOwner(ownerPath(id),'shutdown');
+    }
+  }
+
   async function recipeInfo(recipe) {
     const bytes = await readFile(resolve(root, recipe.file)), request = JSON.parse(bytes), missing = [], runtimePins = [], visited = new Set(), actualRoot = await realpath(root);
     async function inspect(value) {
@@ -147,7 +167,7 @@ export function createImprovementApi({ root = workspace, directory = resolve(roo
     for (const profile of profiles) { if(profile.profile_sha256) mechanisms.push({path:profile.file,sha256:profile.profile_sha256}); mechanisms.push(...(profile.input_pins||[])); }
     for (const path of ['tools/prefab_pipeline/__main__.py','tools/prefab_pipeline/iteration.py','tools/prefab_pipeline/campaign.py']) { try { mechanisms.push({path,sha256:sha(await readFile(resolve(root,path)))}); } catch(error) { if(error.code!=='ENOENT')throw error; } }
     const uniquePins=pins=>[...new Map(pins.map(row=>[row.path,{path:row.path,sha256:row.sha256}])).values()].sort((a,b)=>a.path<b.path?-1:a.path>b.path?1:0);
-    const corePaths=['scripts/improvement-api.mjs','tools/prefab_pipeline/__main__.py','tools/prefab_pipeline/iteration.py','tools/prefab_pipeline/campaign.py'];
+    const corePaths=['scripts/improvement-api.mjs','scripts/improvement-worker.mjs','tools/prefab_pipeline/__main__.py','tools/prefab_pipeline/iteration.py','tools/prefab_pipeline/campaign.py'];
     for(const profile of profiles.filter(row=>row.version_basis==='recipe-readset/1')) {
       const recipe=registered.find(row=>row.id===profile.recipe_id),files=uniquePins((recipe?.runtime_pins||[]).filter(row=>!['contracts/improvement-provider-pack.json','contracts/improvement-profile-registry.json'].includes(row.path)));
       const readset={schema:'gameverse.runtime-readset/1',recipe_id:profile.recipe_id,files};
@@ -196,6 +216,10 @@ export function createImprovementApi({ root = workspace, directory = resolve(roo
         }
       } catch(error) {if(error.code!=='ENOENT')throw error;}
     }
+    const owner=await ownerState(ownerPath(id));
+    if(owner?.state==='running'&&active?.id!==id)return {...record,status:'running',worker_ownership:'recovered',resume_available:false};
+    if(owner&&owner.state!=='terminal'&&active?.id!==id)return {...record,status:'interrupted',worker_ownership:'unknown',resume_available:false,error:{code:'worker_ownership_unknown',message:'Retained worker identity cannot be authenticated; dispatch/resume blocked.'}};
+    if(owner?.state==='terminal'&&owner.stop_reason&&active?.id!==id)return {...record,status:owner.stop_reason==='cancelled'?'cancelled':'interrupted',worker_ownership:'stopped',resume_available:false,usage_complete:false,error:{code:`worker_${owner.stop_reason}`,message:'Owned worker stopped; retained evidence and usage must be reconciled before continuation.'}};
     if (record.status === 'running' && active?.id !== id) return { ...record, status: 'interrupted', error: { code: 'worker_interrupted', message: record.input.operation==='native-campaign'?'Campaign worker unavailable; explicit resume reconciles existing receipts and blocks unknown usage.':'Worker unavailable after server restart; evidence retained. Use a new request ID.' } };
     return record;
   }
@@ -206,14 +230,17 @@ export function createImprovementApi({ root = workspace, directory = resolve(roo
     try{const prior=await status(id);if(prior.request_sha256!==fingerprint)throw fail(409,'idempotency_conflict','Request ID belongs to different input.');return prior;}catch(error){if(error.code!=='not_found')throw error;}
     if(!fixture.availability.execution_ready)throw fail(422,'fixture_setup_required','The public fixture executor or Python interpreter is unavailable.');
     if(active||submitting)throw fail(409,'busy','A worker is already running.');
+    await assertNoRecoveredWorker();
+    if(active||submitting)throw fail(409,'busy','A worker is already running.');
     submitting=true;
     try{
       await mkdir(directory,{recursive:true});await mkdir(dir(id));
       const record={schema:'gameverse.improvement-run/1',request_id:id,request_sha256:fingerprint,status:'running',phase:'reference-fixture',received_at:new Date().toISOString(),input:body,resolved_fixture:fixture,candidate_only:true,artifacts:{},timings:{queue_s:null,execution_wall_s:null,build_s:null,simulation_s:null,evaluation_s:null,accounting:'Reference executor wall time is nested within worker execution; no native build or provider calls.'}};
       await atomic(resolve(dir(id),'run.json'),record);await atomic(resolve(dir(id),'request.json'),{...referenceRequest,request_id:id});
-      const child=spawnImpl('python3',['-B','-m','tools.prefab_pipeline.reference_fixture','--request',resolve(dir(id),'request.json'),'--output',resolve(dir(id),'output')],{cwd:root,detached:true,stdio:['ignore','ignore','ignore']}),started=performance.now();let stopped=null,finished=false;
-      const stop=reason=>{stopped=reason;try{process.kill(-child.pid,'SIGKILL');}catch{child.kill('SIGKILL');}};active={id,stop};const timer=setTimeout(()=>stop('timeout'),10000);
+      const child=await spawnWorker(id,['-B','-m','tools.prefab_pipeline.reference_fixture','--request',resolve(dir(id),'request.json'),'--output',resolve(dir(id),'output')],10000),started=performance.now();let stopped=null,finished=false;
+      const stop=reason=>{stopped=reason;if(spawnImpl===spawn)return stopOwner(ownerPath(id),reason);try{process.kill(-child.pid,'SIGKILL');}catch{child.kill('SIGKILL');}};active={id,stop};const timer=setTimeout(()=>{void Promise.resolve(stop('timeout')).catch(()=>{});},10000);
       const finish=async(code,error)=>{if(finished)return;finished=true;clearTimeout(timer);try{
+        stopped??=(await ownerState(ownerPath(id)))?.stop_reason;
         const path=resolve(dir(id),'output/result.json'),bytes=await readFile(path).catch(()=>null),result=bytes?JSON.parse(bytes):null;
         record.status=stopped==='cancelled'?'cancelled':!stopped&&!error&&code===0&&result?.status==='passed'?'completed':'failed';record.phase='terminal';record.finished_at=new Date().toISOString();record.timings.execution_wall_s=(performance.now()-started)/1000;
         record.result=result;record.engine_status=result?.status||null;record.error=record.status==='failed'?{code:stopped||'reference_fixture_failed',message:'The authored reference fixture did not pass; inspect retained evidence.'}:null;
@@ -230,14 +257,15 @@ export function createImprovementApi({ root = workspace, directory = resolve(roo
     if(resume)await unlink(resolve(folder,'cancel.request')).catch(error=>{if(error.code!=='ENOENT')throw error;});
     const priorWall=record.timings.execution_wall_s||0,started=performance.now();
     record.status='running';record.error=null;record.phase='automatic-native-campaign';record.resume_count=(record.resume_count||0)+(resume?1:0);await atomic(resolve(dir(id),'run.json'),record);
-    const child=spawnImpl('python3',['-B','-m','tools.prefab_pipeline.campaign','--request',resolve(dir(id),'request.json'),'--template',resolve(root,record.resolved_profile.file),'--config',resolve(dir(id),'campaign-config.json'),'--output',folder,...(resume?['--resume']:[])],{cwd:root,detached:true,stdio:['ignore','ignore','ignore']});
+    const child=await spawnWorker(id,['-B','-m','tools.prefab_pipeline.campaign','--request',resolve(dir(id),'request.json'),'--template',resolve(root,record.resolved_profile.file),'--config',resolve(dir(id),'campaign-config.json'),'--output',folder,...(resume?['--resume']:[])],Math.max(timeoutMs,Math.ceil(record.campaign_config.limits.wall_seconds*1000)+15000));
     let forced=null,finished=false;
-    const force=()=>{forced='watchdog_usage_unknown';try{process.kill(-child.pid,'SIGKILL');}catch{child.kill('SIGKILL');}};
+    const force=()=>{forced='watchdog_usage_unknown';if(spawnImpl===spawn){void stopOwner(ownerPath(id),'timeout').catch(()=>{});return;}try{process.kill(-child.pid,'SIGKILL');}catch{child.kill('SIGKILL');}};
     active={id,stop:async()=>{await writeFile(resolve(folder,'cancel.request'),'requested\n',{mode:0o600});}};
     const timer=setTimeout(force,Math.max(timeoutMs,Math.ceil(record.campaign_config.limits.wall_seconds*1000)+15000));
     const finish=async(code,error)=>{
       if(finished)return;finished=true;clearTimeout(timer);
       try {
+        const stopReason=(await ownerState(ownerPath(id)))?.stop_reason;if(stopReason)forced=`${stopReason}_usage_unknown`;
         const bytes=await readFile(reportPath).catch(()=>null),result=bytes?JSON.parse(bytes):null;
         record.status=forced||error||!result||(code!==0&&result.status!=='blocked')?'failed':({success:'completed',partial:'partial',cancelled:'cancelled',blocked:'blocked'})[result.status]||'failed';
         record.phase='terminal';record.finished_at=new Date().toISOString();record.timings.execution_wall_s=priorWall+(performance.now()-started)/1000;record.timings.backend_total_s=result?.total_wall_seconds??null;
@@ -268,11 +296,13 @@ export function createImprovementApi({ root = workspace, directory = resolve(roo
     const prior=await status(id);
     if(prior.input.operation!=='native-campaign')throw fail(422,'unsupported_resume','Only a registered campaign can resume in place.');
     if(active?.id===id)return prior;
+    await assertNoRecoveredWorker();
     if(active||submitting)throw fail(409,'busy','A native worker is already running.');
     const caps=await capabilities(),profile=caps.iteration_profiles.find(row=>row.id===prior.input.plan.profile_id),selectedVersion=profile?.version_basis==='recipe-readset/1'?profile.loop_version:caps.loop_version;
     if(body.loop_version!==prior.input.loop_version||body.loop_version!==selectedVersion||body.campaign_report_sha256!==prior.report_sha256)throw fail(409,'stale_campaign_resume','Campaign resume requires the exact prior/current engine and report pins.');
     const report=await readJson(resolve(dir(id),'output/campaign.json'));
     if(!['running','cancelled'].includes(report.status)||report.usage_complete!==true)throw fail(409,'campaign_resume_unavailable','Only a known-usage cancelled/interrupted campaign may be explicitly reconciled and resumed; exhausted caps do not reset.');
+    if(active||submitting)throw fail(409,'busy','A worker is already running.');
     submitting=true;try{return await launchCampaign(prior,true);}finally{submitting=false;}
   }
   async function submit(body, continuation = null) {
@@ -285,6 +315,8 @@ export function createImprovementApi({ root = workspace, directory = resolve(roo
     const fingerprint = sha(canonical(body));
     try { const prior = await status(body.request_id); if (prior.request_sha256 !== fingerprint) throw fail(409, 'idempotency_conflict', 'Request ID already belongs to different input.'); return prior; } catch (e) { if (e.code !== 'not_found') throw e; }
     if (active || submitting) throw fail(409, 'busy', 'A bounded worker is already running.');
+    await assertNoRecoveredWorker();
+    if(active||submitting)throw fail(409,'busy','A worker is already running.');
     submitting = true;
     try {
       const caps = await capabilities(), recipe = caps.recipes.find(r => r.id === body.plan?.recipe_id);
@@ -328,15 +360,16 @@ export function createImprovementApi({ root = workspace, directory = resolve(roo
         ...(continuation ? ['--prior-report',continuation.report_path,'--prior-report-sha256',continuation.report_sha256] : ['--request',resolve(dir(id),'request.json')]),
         '--output-dir',resolve(dir(id),'output'),'--output',output]
         : ['-B', '-m', 'tools.prefab_pipeline.native_cli', recipe.command, '--request', resolve(dir(id), 'request.json'), '--output-dir', resolve(dir(id), 'output'), '--output', output];
-      const child = spawnImpl('python3', args, { cwd: root, detached: true, stdio: ['ignore', 'ignore', 'ignore'] });
+      const child = await spawnWorker(id,args,profile?Math.max(timeoutMs,Math.ceil(profile.limits.wall_seconds*1000)+15000):timeoutMs);
       let reason = null, finished = false;
-      const stop = why => { reason = why; try { process.kill(-child.pid, 'SIGKILL'); } catch { child.kill('SIGKILL'); } };
+      const stop = why => { reason = why; if(spawnImpl===spawn)return stopOwner(ownerPath(id),why); try { process.kill(-child.pid, 'SIGKILL'); } catch { child.kill('SIGKILL'); } };
       active = { id, stop };
       const workerTimeoutMs = profile ? Math.max(timeoutMs, Math.ceil(profile.limits.wall_seconds*1000)+15000) : timeoutMs;
-      const timer = setTimeout(() => stop('timeout'), workerTimeoutMs);
+      const timer = setTimeout(() => {void Promise.resolve(stop('timeout')).catch(()=>{});}, workerTimeoutMs);
       const finish = async (code, error) => {
         if (finished) return; finished = true; clearTimeout(timer);
         try {
+          reason??=(await ownerState(ownerPath(id)))?.stop_reason;
           const result = await readJson(output).catch(() => null);
           record.status = reason === 'cancelled' ? 'cancelled' : !reason && !error && code === 0 && ['candidate-built', 'qualified-bounded-modification','success','artifact-built-with-diagnostics'].includes(result?.status) ? 'completed' : 'failed';
           if(profile && !reason && !error && result && ['budget','blocked','cancelled','partial'].includes(result.status)) record.status=result.status;
@@ -401,7 +434,7 @@ export function createImprovementApi({ root = workspace, directory = resolve(roo
           const bytes = await readFile(file); if ((match[2] === 'rom' && sha(bytes) !== run.artifact_sha256) || (match[2] === 'result' && run.result_sha256 && sha(bytes) !== run.result_sha256) || (['iteration','campaign'].includes(match[2]) && sha(bytes)!==run.report_sha256)) throw fail(409, 'artifact_changed', 'Artifact digest changed.');
           res.writeHead(200, { 'Content-Type': match[2] !== 'rom' ? 'application/json' : 'application/octet-stream' }).end(bytes);
         }
-      } else if (req.method === 'DELETE' && match && !match[2] && !match[3]) { const run = await status(match[1]); if (active?.id === match[1]) await active.stop('cancelled'); json(202, { ...run, cancellation_requested: active?.id === match[1] }); }
+      } else if (req.method === 'DELETE' && match && !match[2] && !match[3]) { const run = await status(match[1]); const requested=active?.id===match[1]?(await active.stop('cancelled'),true):await stopOwner(ownerPath(match[1]),'cancelled'); json(202, { ...run, cancellation_requested: requested }); }
       else if (req.method === 'POST' && (path === '/api/improvement/runs' || ['continue','resume'].includes(match?.[3]))) {
         if (!req.headers['content-type']?.startsWith('application/json')) throw fail(415, 'json_required', 'Send JSON.');
         let size = 0; const chunks = []; for await (const chunk of req) { size += chunk.length; if (size > 32768) throw fail(413, 'too_large', 'Request exceeds 32 KiB.'); chunks.push(chunk); }
@@ -411,5 +444,5 @@ export function createImprovementApi({ root = workspace, directory = resolve(roo
     } catch (error) { json(error.status || 500, { error: { code: error.status ? error.code : 'service_error', message: error.status ? error.message : 'Improvement service could not complete this operation.' } }); }
     return true;
   }
-  return { handle, capabilities, submit, status, continueRun, resumeCampaign };
+  return { handle, capabilities, submit, status, continueRun, resumeCampaign, shutdown };
 }
