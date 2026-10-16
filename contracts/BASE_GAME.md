@@ -1,12 +1,13 @@
 # Base game contract
 
-Version: 0.2 · Date: 2026-10-15 · Status: updated requirements; exact interfaces remain proposed
+> 2026-10-16 scope update: Pokémon FireRed is the sole initial game, compiled from editable source. Mario is deferred and does not block slice 1. Finish FireRed play, controls, save/return/resume and recovery before expanding. [Current setup, evidence and remaining gates](../DEVELOPMENT.md).
+Version: 0.3 · Date: 2026-10-15 · Status: updated requirements; exact interfaces remain proposed
 
 Owner: Vishal, including subgame navigation, play, progress and host-controlled activation. Shishir owns the separate creation/improvement loop. The base must be independently usable while that integration is unavailable.
 
 Implements PRD R01, R03, R15 and R16, and the hosting portion of R05/R10. Read alongside [the subgame contract](SUBGAME.md), [the improvement contract](IMPROVEMENT_LOOP.md) and [the task split](../TASKS.md).
 
-The base game must support a complete play journey without the improvement worker. Start with one simple existing/reused game world, with source/runtime selection still open. The base remains replaceable through adapters. It owns subgame discovery and game-specific session policy; neither a custom-built hub nor a universal library UI is required. [PARALLEL_DEVELOPMENT.md](PARALLEL_DEVELOPMENT.md) records the config/version/simulation handoff to Shishir.
+Delivery follows [three slices](../plans/ENVIRONMENT_SLICES.md). Slice 1 is a name/preset-avatar character creator and FireRed selector with exact-session resume, without the improvement worker. FireRed keeps separate trainer creation. Slice 2 introduces a simple reused open world through the same environment interface. Slice 3 integrates the improvement loops and candidate activation. The base owns discovery/session policy and remains replaceable through adapters. [PARALLEL_DEVELOPMENT.md](PARALLEL_DEVELOPMENT.md) records the config/version/simulation handoff to Shishir.
 
 ## Ownership
 
@@ -24,13 +25,13 @@ These are logical responsibilities, not prescribed processes or packages. The ba
 
 | ID | Obligation | Acceptance evidence |
 | --- | --- | --- |
-| B01 | Launch locally in a supported browser; create/select a profile and character; enter a playable home. | Move and interact with a subgame entrance using controller or keyboard; profile survives refresh. Appearance depth remains O02. |
-| B02 | Let the base game's config/implementation discover and present available subgames, including accepted version, progress/resume state and readiness. | Demonstrate discovery through the chosen base world; distinguish ready/unavailable/failed entries without prescribing doors, NPCs or menus in the shared interface. |
-| B03 | Enter a pinned subgame version and return to the home through a shell-owned action. | Home → game → home → resume game; preserve profile, return location and independent progress. |
+| B01 | Launch locally in a supported browser; create/select persistent name/preset character and enter the FireRed selector in slice 1, then a playable world in slice 2. | Controller/keyboard creator → selector → FireRed works first; world movement/entrance follows in slice 2; FireRed keeps its own trainer creation. |
+| B02 | Let the base config/implementation present available games and readiness. | Slice 1 has one FireRed entry with start/continue/loading/error states; slice 2 has world-owned entrances; slice 3 exposes accepted generated/fork entries. |
+| B03 | Enter pinned FireRed and return through a shell-owned action. | Selector → FireRed → confirmed snapshot → selector → browser restart → exact mid-battle resume in slice 1; valid world return placement in slice 2. |
 | B04 | Own one shared semantic control mapping and input focus. | Both controller families and keyboard complete entry/return; overlays receive each action once; no stuck movement or leaked confirmation presses. |
 | B05 | Preserve a shell recovery path when a game fails, hangs or refuses an operation. | Deliberately crash/stall an adapter; bounded recovery returns to a usable home and last confirmed checkpoint without claiming unsaved progress was saved. |
-| B06 | Persist library/profile and version-associated checkpoints outside disposable game runtimes. | Reload/browser restart restores accepted references and compatible progress; failed writes leave the last confirmed record usable. |
-| B07 | Accept an explicit, validated subgame registration without an AI worker. | Register two independently versioned fixture games; enter each and preserve separate progress without editing base-game logic per game. |
+| B06 | Persist profile, version-associated emulator snapshots and separately retained normal saves outside disposable runtimes. | Confirm explicit-return snapshot before disposal; restart restores exact session with matching cartridge/core; failures retain prior records and offer explicit fallback. Abrupt termination recovers the last confirmed checkpoint. |
+| B07 | Accept a validated pinned FireRed baseline without an AI worker. | Slice 1 loads the declared complete game with runtime/play/save evidence; FireRed requires qualification; no additional game or fixture is required. General new/fork registration and isolation are qualified in slice 3. |
 | B08 | Remain playable when improvement capability is absent, offline or failed. | Disable the worker: play, save, return and resume still work; feedback opens an honest unavailable state and does not pretend a request was durably queued. |
 | B09 | Load each version from an immutable manifest/artifact reference. | Refresh and failed base updates cannot combine code/assets from different versions or lose existing library/profile references. |
 | B10 | Expose target context for a later improvement integration. | Captured context identifies base game or subgame, exact version, session/profile and available checkpoint; opening an overlay does not change the target. |
@@ -38,13 +39,13 @@ These are logical responsibilities, not prescribed processes or packages. The ba
 | B12 | Support declared background simulation/session capabilities independently of player progress. | Two pinned simulation sessions can operate on copied/fresh state and fail/clean up without modifying the player's accepted state. |
 | B13 | Measure host/game build and runtime-operation timings using the shared run context. | Establish observed baselines and report failure/cancellation, cache/build mode and unavailable measurements; follow AGENTS.md for CI overhead. |
 
-For B07, fixtures are small playable games with actions, an outcome and saved progress. They prove hosting behavior; they do not satisfy the complete FireRed requirement. Fixture choices and the home renderer are implementation decisions to demonstrate and review.
+Deliver B01–B10 and player-facing B11/B13 behavior as used in slices 1–2. Background sessions and full candidate activation belong to slice 3; they are not separate vertical slices. FireRed baseline/campaign qualification is required inside slice 1. Test fixtures may assist checks but cannot replace it.
 
 ## Entry, exit and recovery
 
 Entry order: select accepted game/version → check adapter/manifest compatibility → preserve home return context → prepare a session → load → verify readiness → transfer gameplay focus. A failed load leaves the home usable. Never start a second gameplay session or duplicate input subscriptions because a button was pressed twice.
 
-Exit order: request pause → capture and durably store a checkpoint when supported → dispose runtime → restore home and focus. The adapter reports whether saving is safe. If it cannot checkpoint now, show waiting/cancel options; do not report a successful save. The shell can still offer a forced return that preserves the last confirmed checkpoint and explicitly discloses possible loss of subsequent progress. It must not wait forever on an unresponsive game.
+Slice 1 normal exit: request pause → capture and durably confirm the matching-version emulator snapshot → dispose runtime → restore selector and focus. Slice 2 uses the same operation before world return. The adapter reports whether saving is safe. If it cannot checkpoint now, show waiting/cancel options; do not report a successful save. The shell can still offer a forced return that preserves the last confirmed checkpoint and explicitly discloses possible loss of subsequent progress. It must not wait forever on an unresponsive game.
 
 Only the active game or overlay receives gameplay actions. Clear held inputs on focus changes/disconnects, require release before forwarding a held button into another screen, and restore audio/focus on return. The shell retains exit/recovery and feedback actions independently of the game.
 
@@ -56,8 +57,8 @@ Subgame delivery supplies a manifest, adapter, artifact and evidence satisfying 
 
 Improvement delivery consumes captured context and publishes verified candidates through the version coordinator. It cannot directly replace a running artifact, edit an accepted save or take over shell controls. Until integrated, the shell needs only the shared feedback action, target-context capture and a capability/unavailable state; live transcription and builder jobs belong to the improvement task.
 
-## Completion gate
+## Completion gates
 
-Record one continuous journey: launch → profile/character → move in home → enter fixture A → play/save → return → enter fixture B → play/save → refresh → resume A. Also demonstrate a failed load, stalled-runtime recovery, controller reconnect, worker absence and a rejected unsupported manifest. Retain browser/OS, artifact versions and actual controller connection details with evidence.
+Slice 1: creator/FireRed selector → real play → confirmed snapshot → return → close/reopen → exact mid-battle resume, plus ordinary-save fallback, failure/recovery and both-controller/keyboard evidence. Pause for hands-on review. Slice 2: world movement → FireRed entrance → play → world return → restart/revisit with preserved existing progress. Slice 3: actual loop exchange, isolated sessions, candidate registration/activation and compatible recovery under the improvement contract.
 
-Passing this gate completes the base/hosting task. Full FireRed and the improvement loop have their own gates; the overall PRD still requires both.
+Retain browser/OS, game/core/config/adapter versions, actual controller connections and observed timings. These gates replace the old two-fixture hosting gate; full FireRed is part of slice 1, not a later substitute for fixtures.

@@ -1,8 +1,9 @@
 # Subgame contract
 
-Version: 0.2 · Date: 2026-10-15 · Status: updated requirements; exact interfaces remain proposed
+> 2026-10-16 scope update: Pokémon FireRed is the sole initial game, compiled from editable source. Mario is deferred and does not block slice 1. Finish FireRed play, controls, save/return/resume and recovery before expanding. [Current setup, evidence and remaining gates](../DEVELOPMENT.md).
+Version: 0.3 · Date: 2026-10-15 · Status: updated requirements; exact interfaces remain proposed
 
-Defines the seam between the [base game](BASE_GAME.md) and independently delivered games. Complete FireRed remains PRD R02; hosting fixtures are not a substitute.
+Defines the seam between the [base game](BASE_GAME.md) and independently delivered games. [Slice 1](../plans/ENVIRONMENT_SLICES.md) includes complete FireRed (PRD R02) as the sole initial game, exact-session resume (R17) and normal-save fallback. Slice 2 adds world navigation; slice 3 adds loop integration. FireRed requires qualification; no additional game or fixture is required.
 
 Game configs are versioned manifests that may reference larger objects, source trees and artifacts. The same environment/adapter concepts support replaceable base games and growing subgame sets. Base-owned discovery and the independently versioned loop use [PARALLEL_DEVELOPMENT.md](PARALLEL_DEVELOPMENT.md); internal loop candidate/search representations are Shishir's responsibility.
 
@@ -50,7 +51,9 @@ Progress is scoped to profile, game ID, version/schema and progress revision. Pa
 
 Entering a subgame never imports another game's progress implicitly. Forks have independent saves; offered transfers use explicit adapters and copied data. Save import failures preserve the original and provide retry/return recovery. A routine return must not silently start a new game when a save cannot load.
 
-For FireRed, in-game battery saves and emulator execution snapshots are different formats. Cross-version continuation requires tested in-game save compatibility or migration. An emulator snapshot tied to old cartridge code cannot stand in for a portable checkpoint. Safe-state detection must observe actual game state rather than elapsed time.
+For slice 1 FireRed, explicit return pauses/captures/durably confirms an execution snapshot before runtime disposal. Bind it to profile, cartridge/game version, emulator/core, available snapshot-format version and checkpoint revision; restart must restore the captured moment, including mid-battle. Retain ordinary in-game saves separately, protect newer confirmed records and offer explicit retry/fallback on failure. Abrupt shutdown recovers only the last confirmed checkpoint.
+
+In-game battery saves and emulator execution snapshots are different formats. Cross-version continuation requires tested in-game save compatibility or migration. An emulator snapshot tied to old cartridge code cannot stand in for a portable checkpoint. Safe-state detection must observe actual game state rather than elapsed time.
 
 ## Qualification cases
 
@@ -58,7 +61,7 @@ For FireRed, in-game battery saves and emulator execution snapshots are differen
 | --- | --- |
 | S01 | Host loads the exact declared version; missing/tampered assets or unsupported contracts are rejected. |
 | S02 | The declared core loop is playable repeatedly with controller and keyboard, including success/failure and return. |
-| S03 | Save → return → browser restart → resume preserves recognized progress; invalid imports do not destroy it. |
+| S03 | Slice 1 confirmed snapshot → return → browser restart → matching game/core → exact mid-battle resume; normal-save fallback and failed import/write preserve confirmed records without silent reset. |
 | S04 | Entry/exit, overlays, disconnect/reconnect and repeated navigation do not leak input, audio or sessions. |
 | S05 | Boot failure, runtime crash and unresponsive operations leave a usable host recovery path. |
 | S06 | Game-specific safe states and compatible copied-save continuation are verified before automatic update eligibility. |

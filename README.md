@@ -2,19 +2,24 @@
 
 A single-player browser environment for playing games and developing them through conversation, using a controller.
 
-**Status:** product contracts and research. There is no runnable Gameverse app, integrated FireRed runtime or improvement worker yet. There is no app installation or development command to run from this repository today.
+**Status:** slice 1 implementation in progress. The local character/collection shell runs FireRed from a matching editable-source build, with browser snapshot return/resume. FireRed is the sole initial game; Mario is deferred. Campaign, mid-battle and physical-controller qualification remain open. The improvement harness is not integrated.
+
+Run `npm ci --ignore-scripts`, `npm run source:setup -- firered`, `npm run game:build -- firered`, then `npm run dev`. Open [local Gameverse](http://127.0.0.1:4173). See [development setup and evidence](DEVELOPMENT.md) for toolchain prerequisites, controls, timings and remaining issue #3 gates.
 
 ## Start here
 
 | Document | Purpose |
 | --- | --- |
+| [Development](DEVELOPMENT.md) | Runnable slice 1, editable-source setup, evidence and qualification gaps |
 | [PRD](PRD.md) | Product scope, acceptance requirements and open decisions |
 | [Parallel development contract](contracts/PARALLEL_DEVELOPMENT.md) | Configs, independent harness versions, simulations, candidate submissions and timing handoff |
 | [Base game contract](contracts/BASE_GAME.md) | Persistent playable home, profiles, subgame hosting and recovery |
 | [Subgame contract](contracts/SUBGAME.md) | Versioned games, runtime interface, progress and qualification |
 | [Improvement loop contract](contracts/IMPROVEMENT_LOOP.md) | Voice requests, builds, verification and safe updates/forks |
 | [Delivery tasks](TASKS.md) | Separate work packages, dependencies and evidence gates |
-| [Base game implementation plan](plans/BASE_GAME.md) | Staged work from the first complete play journey through two-game hosting and recovery |
+| [Base game implementation plan](plans/BASE_GAME.md) | FireRed launcher, open-world navigation and improvement integration |
+| [Environment PRD](plans/ENVIRONMENT_PRD.md) | Issue #1 scope, player journeys, acceptance, shared interface decisions and timing gates |
+| [Environment vertical slices](plans/ENVIRONMENT_SLICES.md) | Three agreed slices with GitHub subissues, dependencies and acceptance criteria |
 | [Vishal — issue #1](https://github.com/vishaltandale00/gameverse.ai/issues/1) | Versioned environment harness, swappable base and subgame adapters |
 | [Shishir — issue #2](https://github.com/vishaltandale00/gameverse.ai/issues/2) | Versioned build/improvement loop for base games and subgames |
 | [Development instructions](AGENTS.md) | Lean CI/builds and comparable timing reports |
@@ -24,17 +29,17 @@ A single-player browser environment for playing games and developing them throug
 
 ## Delivery split
 
-1. **Vishal — game environment harness:** start with one simple reused world, configured and replaceable through adapters; own base-game discovery, subgame play/navigation, progress and host-controlled activation. This journey works without an AI worker.
-2. **Vishal — complete FireRed baseline integration:** reproduce the pinned baseline, integrate a browser runtime and qualify controls, progress and campaign coverage through the shared host interface.
-3. **Shishir ([tandalesc](https://github.com/tandalesc)) — build/improvement harness:** config-defined and independently versioned; operates during initial game creation and later improvement for base games and subgames. Simulate pinned versions with isolated state and submit verified new games, updates or forks. Work is underway externally per Vishal; repository integration remains unimplemented.
+1. **[Slice 1 — character creator and FireRed selector](https://github.com/vishaltandale00/gameverse.ai/issues/3):** Vishal delivers a persistent name/preset avatar, FireRed menu, complete browser GBA game, controls/recovery and exact-session resume after confirmed return and restart, with normal saves retained as fallback. FireRed keeps its own trainer creation.
+2. **[Slice 2 — open-world base](https://github.com/vishaltandale00/gameverse.ai/issues/4):** Vishal adds a reused explorable world, character navigation, game entrances and return while keeping the same FireRed integration/progress.
+3. **[Slice 3 — improvement loop integration](https://github.com/vishaltandale00/gameverse.ai/issues/5):** connect the environment to Shishir's independently versioned harness for base/subgame feedback, builds, verification, isolated simulation and safe updates/forks. Vishal owns hosting/activation; Shishir retains loop implementation in [#2](https://github.com/vishaltandale00/gameverse.ai/issues/2).
 
 The shared handoff pins game/config/artifact references and both harness versions, exposes adapter/session capabilities, and exchanges candidate submissions/results and timing reports. Base-specific discovery/session policy and Shishir's internal algorithm remain separately configurable. See [the parallel contract](contracts/PARALLEL_DEVELOPMENT.md) and [TASKS.md](TASKS.md); exact schemas still need joint review.
 
-The task split changes delivery dependencies, not the full product promise. Fixtures do not replace FireRed; parameter edits alone do not satisfy the mechanic-development requirement. Browser/engine selection and home layout remain open implementation/design decisions.
+FireRed is the sole initial game and uses an editable source build. Mario is deferred. The three slices replace the earlier eight-slice/fixture-first plan. Pause for hands-on review of slice 1 before expanding. Exact snapshots apply to matching game/core versions; slice 3 changes require separately verified save compatibility. Full product qualification still requires real mechanic development, not parameter edits alone. The pinned mGBA worker adapter is in development; slice 2 world selection remains open.
 
 ## Research and examples
 
-[MVP_CONTRACT.md](MVP_CONTRACT.md) records the detailed earlier design. [POKEMON_SOURCE_RESEARCH.md](POKEMON_SOURCE_RESEARCH.md) and [research/pokemon](research/pokemon) contain pinned observations, logs, scenario designs and a source-level forest patch. No game ROMs, third-party source checkouts or accepted game packages are included.
+[MVP_CONTRACT.md](MVP_CONTRACT.md) records the detailed earlier design. [POKEMON_SOURCE_RESEARCH.md](POKEMON_SOURCE_RESEARCH.md) and [research/pokemon](research/pokemon) contain pinned observations, logs, scenario designs and a source-level forest patch. Game cartridges, third-party checkouts, extracted assets and local build outputs stay in ignored directories and are not included in version control.
 
 `POC_DESIGN.md`, `BROWSER_DESIGN.md`, `BASE_GAME_CANDIDATES.md`, `ENGINE_COMPARISON.md` and `RESEARCH.md` are historical investigations. `design/processor.example.json` and `design/request_examples.json` are historical examples, not current runtime configuration. `design/game_proposal.example.json` illustrates proposal data; it is not an executable schema or test result.
 

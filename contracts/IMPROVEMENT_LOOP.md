@@ -2,7 +2,7 @@
 
 Version: 0.2 · Date: 2026-10-15 · Status: updated requirements; exact interfaces remain proposed
 
-Owner: Shishir. Vishal owns the base game, subgame hosting and host-controlled activation. External loop work is underway per Vishal; this document does not certify its implementation. The proposed joint handoff is recorded in [TASKS.md](../TASKS.md).
+Owner: Shishir. Vishal owns the base game, subgame hosting and host-controlled activation. External loop work is underway per Vishal; this document does not certify its implementation. The proposed joint handoff is recorded in [TASKS.md](../TASKS.md). The real integration is [slice 3 / #5](https://github.com/vishaltandale00/gameverse.ai/issues/5); Shishir's harness implementation remains [#2](https://github.com/vishaltandale00/gameverse.ai/issues/2) and may proceed alongside the FireRed launcher and world slices.
 
 Implements PRD R04–R14 and improvement-related R15 behavior, using the [base-game](BASE_GAME.md) and [subgame](SUBGAME.md) interfaces. This task changes games; base-game play and manually installed subgames must work independently.
 
@@ -34,6 +34,8 @@ Verification covers build/boot, real input, repeatable core loop, requested beha
 Updates retain game identity and recognized progress. Forks have new identities, independent saves and pinned parent lineage. Mashups name each parent's contribution and implement an actual composed mechanic. Optional progress imports preview copied/mapped/dropped fields and validate the copied target without mutating the parent.
 
 ## Safe activation
+
+Slice 1 exact-session snapshots resume unchanged matching game/core versions. Preserve those snapshots with their original versions; do not assume they migrate into loop-modified cartridge code. Qualify in-game-save compatibility/migration separately for changed versions.
 
 Recheck candidate evidence, cancellation, expected active baseline and runtime state immediately before activation. Unknown runtime state blocks activation. A per-game mutation transaction prevents overlapping promotion, save/import and rollback writes.
 

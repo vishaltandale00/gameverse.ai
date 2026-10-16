@@ -1,93 +1,45 @@
 # Delivery tasks
 
-Date: 2026-10-15 · Status: reviewable work packages; implementation has not started.
+> 2026-10-16 scope update: Pokémon FireRed is the sole initial game, compiled from editable source. Mario is deferred and does not block slice 1. Finish FireRed play, controls, save/return/resume and recovery before expanding. [Current setup, evidence and remaining gates](DEVELOPMENT.md).
+Date: 2026-10-15 · Status: three agreed vertical slices; slice 1 implementation is in progress; acceptance remains open.
 
-These are task specifications for repository issues and implementation work. The [PRD](PRD.md) remains the overall acceptance baseline; [contracts](contracts/BASE_GAME.md) define the seams used to split delivery. Publication of these specifications does not claim implementation.
+The [PRD](PRD.md) and [environment PRD](plans/ENVIRONMENT_PRD.md) define scope. [The slice specifications](plans/ENVIRONMENT_SLICES.md) contain acceptance checklists; [the base plan](plans/BASE_GAME.md) describes implementation order. These three player experiences replace the earlier eight-slice and T1/T2/T3 delivery decomposition.
 
-Start parallel work from [PARALLEL_DEVELOPMENT.md](contracts/PARALLEL_DEVELOPMENT.md). It captures the latest config/version/discovery/simulation decisions and the remaining schema handoff. Requirements are recorded from Vishal's discussion; Shishir's acceptance and exact interface implementation remain joint work.
-
-| Task | Owner | Deliverable | Dependencies | Status |
+| Slice | Owner | Deliverable | Dependency | Tracking |
 | --- | --- | --- | --- | --- |
-| P0 — Publish the planning baseline | Vishal | Reviewable repository with README, contracts, task specs and research provenance | Approved publication scope | Public repository and MIT license verified; receipt in PUBLICATION.md |
-| T1 — Versioned environment, base and subgame adapters | Vishal | One reused/swappable world, config-defined games, base-owned discovery, play/progress, simulation hooks and candidate activation | Shared v0 interface; source/runtime and browser selection | [Issue #1](https://github.com/vishaltandale00/gameverse.ai/issues/1), assigned to vishaltandale00; unimplemented |
-| T2 — Integrate complete FireRed as a subgame | Vishal, for baseline play/integration | Reproducible FireRed artifact, browser adapter and retained play/save/campaign evidence | Subgame contract; toolchain and runtime feasibility | Specified; unimplemented |
-| T3 — Versioned build/improvement harness | Shishir (tandalesc) | Config-defined initial builds/improvements for base/subgames, isolated simulations, evidence, updates/forks and timing reports | Shared v0 interface and executable reference; T2 for later FireRed scenarios | [Issue #2](https://github.com/vishaltandale00/gameverse.ai/issues/2); named owner; GitHub assignment rejected; repository integration unimplemented |
+| 1 | Vishal | Name/preset character, FireRed selector, complete GBA game, controls/recovery and exact-session resume | FireRed/browser feasibility inside the slice | [#3](https://github.com/vishaltandale00/gameverse.ai/issues/3) |
+| 2 | Vishal | Reused open-world base, character navigation, FireRed entrance and return with preserved progress | Slice 1 hands-on acceptance | [#4](https://github.com/vishaltandale00/gameverse.ai/issues/4) |
+| 3 | Vishal and Shishir at the integration boundary | Scoped feedback/build/play journey, isolated simulation, candidate receipts, safe updates/forks and recovery for base/subgame targets | Slice 2 and agreed runnable harness/interface | [#5](https://github.com/vishaltandale00/gameverse.ai/issues/5) |
 
-T1 and T3 can start in parallel against the same v0 config/adapter/submission/timing contract and an executable reference target. The reference provider and exact wire format still need agreement. T2 source/toolchain work can proceed independently; full FireRed qualification is not a prerequisite for the shared contract or initial handoff. Finishing T1 alone is not full product completion.
+[#1](https://github.com/vishaltandale00/gameverse.ai/issues/1) is the delivery parent with three native subissues. Shishir's separately versioned harness remains [#2](https://github.com/vishaltandale00/gameverse.ai/issues/2); it is an implementation workstream, not a fourth vertical slice. His harness and joint-interface work can proceed alongside slices 1 and 2. The superseded #6–#10 requirements are folded into these slices, not completed work.
+
+## Slice 1 agreed behavior
+
+The character is a persistent Gameverse name/preset avatar; FireRed keeps its own trainer creation. FireRed is the sole initial game, with independent per-profile snapshots and normal saves. Explicit return to the selector captures and durably confirms an emulator snapshot before disposal; close/reopen resumes the same moment, including mid-battle, under matching game/core versions. Keep normal FireRed in-game saves separately as fallback. Failed writes/restores preserve confirmed records and show explicit recovery choices. Abrupt termination recovers the last confirmed checkpoint, not a guaranteed final frame.
+
+Actual FireRed baseline/build/browser integration and campaign/save qualification now belong inside slice 1. The old T2 label is no longer a separate delivery dependency. No open world or additional fixture is needed before the FireRed journey works. Pause for hands-on review of slice 1 before expanding the experience.
 
 ## Ownership and joint handoff
 
-Vishal confirmed the ownership split on 2026-10-15: Shishir is building the game improvement loop; Vishal is building the base game and the ability to navigate and play subgames. T1/T2 are the playable environment workstream; T3 is the creation/improvement workstream. Shishir's external work has not been inspected as a runnable integration in this repository.
+Vishal owns the environment harness, base/FireRed adapters, character/profile, discovery/navigation, controls, player progress and host activation/recovery. Shishir owns transcript/builder workflow, durable requests, proposals, construction/improvement algorithms, experiments, verification evidence and loop resource policies.
 
-The proposed joint handoff below needs agreement between the two workstreams; the owner split does not mean the detailed interfaces have already been accepted by both people.
-
-| Integration point | Vishal supplies | Shishir supplies |
+| Boundary | Vishal supplies | Shishir supplies |
 | --- | --- | --- |
-| Playable game | Registration, versioned loading, gameplay input, save/resume and return to base | Generated/changed game artifacts conforming to the subgame contract |
-| Configuration and versions | Game config/environment/adapter meanings and exact supported references | Independently versioned loop config; pinned input/output config and artifact provenance |
-| Discovery and session policy | Base-configured discovery/presentation and player-session policy | Compatible submissions; no dependency on a particular world UI or pause/continue policy |
-| Background simulations | Isolated sessions, supported runtime/action/context/checkpoint hooks and cleanup | Experiment orchestration and internal candidate/search/version representation |
-| Feedback and builder | Shared invocation action, exact game/version context and a shell overlay surface with focus/recovery | Voice/transcript correction, builder conversation, durable request receipt and job status |
-| Verification | Observable runtime/input/checkpoint hooks and truthful safe-state reporting | Proposals, executable play/change checks and artifact-bound evidence |
-| Activation | Host-owned coordinator that validates eligibility, copies/checkpoints progress, switches versions and recovers | Verified candidate, declared compatibility and any tested migration/progress adapter |
-| Turnaround | CI/build/host timings and comparable environments under AGENTS.md | Loop/build/simulation/evaluation/repair timings and outcomes under the same run context |
+| Player/session | Versioned loading, gameplay focus, snapshot/save continuation, return and recovery | Compatible generated/changed artifacts and declared capabilities |
+| Shared records | Game/environment/adapter configs and supported operations | Loop config and exact run/input/output provenance |
+| Simulation | Isolated pinned sessions, actions/observations, health and cleanup | Experiment scheduling and internal search representation |
+| Feedback | Shared invocation, captured original target and shell surface/focus | Editable transcript, durable receipt, builder conversation and status |
+| Candidates | Validation/registration, accepted discovery, copied-progress safe activation and recovery | Immutable new/update/fork envelope, parents, compatibility/migrations and artifact-bound verification evidence |
+| Timing | CI/build/player/runtime timings under AGENTS.md | Queue/build/simulation/evaluation/repair timings with the same correlation/context meanings |
 
-The loop cannot directly overwrite an accepted artifact or player save. The host cannot claim a candidate is verified merely because it loads. Existing subgames remain playable when the loop is absent or failed.
+Start at [PARALLEL_DEVELOPMENT.md](contracts/PARALLEL_DEVELOPMENT.md). Exact v0 formats/transport, simulation vocabulary and supported compatibility ranges require joint agreement. The host protects accepted artifacts/saves; the loop cannot overwrite them directly. Exact snapshots of an old FireRed version are not assumed portable into changed code. A reference submission supports development but does not close real slice 3 integration acceptance.
 
-## P0 — Publish the planning baseline
+## Qualification and cost
 
-**Outcome:** another contributor can find the current product intent, implementation status, task ownership and first acceptance journey without reading conversation history.
+Each slice retains continuous user-visible evidence, pinned setup/run instructions, meaningful affected checks and actual timings. Both controller families and keyboard, focus/reconnect, failed load/save/runtime, restart and confirmed-progress recovery are part of slice 1. Slice 2 adds world discovery/return; slice 3 adds actual loop exchange, two improvement cycles including a mechanic/quest, base targeting, isolation, new/fork progress, stale/cancelled rejection and safe activation/recovery. Overall PRD E01–E05 remain staged qualification inside slice 3.
 
-Scope: inspect intended files; provide entrypoint and ignored local/generated artifacts; preserve existing research with its limitations; reconcile PRD/handoff with the task split; validate local links and JSON examples. Create the initial commit and GitHub repository only after destination/visibility and publication scope are settled. Publish task specs as issues if requested, avoiding duplicate issue/chat creation.
+Follow [AGENTS.md](AGENTS.md): justify added jobs/dependencies/checks by coverage and expected cost, reuse timestamps, retain failed/cancelled runs, annotate unavailable or nested metrics and compare representative turnaround on matching inputs/environments. Broad campaigns and expensive loop evaluations are separately triggered with explicit limits. No runtime/CI baseline has been measured by this planning change.
 
-Gate: [publication checks](PUBLICATION.md) pass; the exact initial file set is reviewable; remote URL, visibility and pushed commit are verified after publication. Repository publication does not deploy a game or confer a license on third-party content.
+## Publication history
 
-## T1 — Play the base game and enter subgames
-
-Implementation plan: [plans/BASE_GAME.md](plans/BASE_GAME.md). Tracking issue: [#1 — Vishal's versioned game environment requirements](https://github.com/vishaltandale00/gameverse.ai/issues/1).
-
-**Outcome:** launch → create/select character → move/interact in a playable home → enter a subgame → play/save → return → enter a second game → resume prior progress after refresh.
-
-Scope:
-
-- Implement the base-game and shell responsibilities in [BASE_GAME.md](contracts/BASE_GAME.md).
-- Begin with a simple reused world and keep it replaceable through versioned configs/adapters. Let that base own discovery and game-specific session policy; do not prescribe a universal library UI or pause/continue rule.
-- Supply the config/version/session/submission/timing meanings in the parallel contract, including isolated background instances and candidate receipts/activation.
-- Implement registration, version pinning, adapter lifecycle, focus, checkpoint persistence and host recovery from [SUBGAME.md](contracts/SUBGAME.md).
-- Deliver two small playable fixture games with independent progress to prove that another game can be installed without changing host logic. Declare their loops; do not present them as FireRed or generated content.
-- Keep the shared feedback action and captured target context available. When improvement is absent, show an honest capability state; do not build transcription, queues or coding workers in this task.
-- Implement version-associated storage and a coordinator that can load/recover a compatible artifact/checkpoint pair. Candidate production and autonomous migration work belong to T3.
-
-Before substantial scene/UI investment, select/build/run the reused world and choose the smallest discovery interaction it supports. City scale, renderer, narrative and cross-runtime avatar appearance are not implied. Record browser/OS, storage and measured build/runtime assumptions.
-
-**Acceptance:** B01–B13, applicable S01–S08 and X01–X10. Record controller/keyboard journeys, isolated simulations, config/version provenance, candidate receipts, reconnect/focus, failed loads, stalled runtime, duplicate/stale submissions and compatible recovery. Automatic updates require actual S06 qualification. Add real run/test instructions and timing baselines with the implementation.
-
-**Handoff to T2/T3:** pinned host-interface version, manifest examples for both fixtures, run instructions, automated interface checks where useful, session/progress semantics and continuous visible journey evidence. Pause at this user-tryable gate before expanding scope.
-
-## T2 — Integrate complete FireRed as a subgame
-
-**Outcome:** complete FireRed can be installed, entered, played, saved, exited and resumed through the same host used by fixture games.
-
-Start with the pinned source/toolchain and adapter spike in HANDOFF M0. Build the unmodified baseline and verify its reference checksum before applying any research patch. Pin emulator/core/build dependencies. Document source and packaging prerequisites separately from the planning repository.
-
-Implement the subgame interface and map actual FireRed progress and runtime states. Distinguish battery saves from execution snapshots. Prove pause/dispose, controller focus, save export/import and failed-load recovery. Observe actual safe states for future updates or report the capability unavailable until verified.
-
-**Acceptance:** S01–S07 as applicable and PRD R02: reproducible baseline/build logs; complete campaign coverage plan with representative early/mid/late fixtures and observed results; real browser play; both controller families; return/restart/resume with recognized progress. A town slice or Red recreation does not pass. Report remaining campaign coverage honestly rather than treating a checksum as gameplay proof.
-
-**Handoff to T3:** actual accepted game/version/artifact, adapter, save schema/ranges, checkpoint fixtures, safe-state observations, core-loop checks and source edit/build instructions. The forest patch can then be exercised as an integration probe; generated quests/build automation are T3 work.
-
-## T3 — Create and improve games through conversation
-
-Tracking issue: [#2 — Shishir's versioned build/improvement harness requirements](https://github.com/vishaltandale00/gameverse.ai/issues/2). Owner: Shishir ([tandalesc](https://github.com/tandalesc)); GitHub currently rejected assignment to that account, so ownership is recorded in the issue text.
-
-The loop is a config-defined, independently versioned harness. It operates during initial construction and later improvement of either game role, may simulate multiple isolated versions, and owns its internal algorithms/iteration representations. The environment consumes stable submissions and timing reports under the parallel contract.
-
-**Outcome:** play → speak/correct request → durable receipt → keep playing during build → inspect/reply in builder → verified safe update → play result → request another change. Separately, create/enter a new game with independent progress and lineage.
-
-Implement [IMPROVEMENT_LOOP.md](contracts/IMPROVEMENT_LOOP.md): voice/correction, persistent builder conversation, configurable worker, proposals, isolated source builds, executable verification, evidence, classification and host-mediated activation. The same targeting model supports base-game changes. Use T1's host and T2's game adapter rather than rebuilding either inside the worker.
-
-First parallel gate: agree/example the v0 interface, then demonstrate pinned initial build, isolated simulations, versioned update/fork submissions and timing reports (I08–I11/X01–X10) against a compatible reference/environment. The player-feedback gate then covers I01–I04, two durable cycles including a mechanic/quest, stale/cancelled failure, safe switching and recovery. A fixture gate does not claim FireRed completion.
-
-Second gate: I05–I07 and PRD E01–E05. Demonstrate forest behavior, the pre-Misty quest and infiltration in FireRed; blank basketball creation; an actual composed mashup with lineage; verified optional progress import; base-game targeting and recovery. Preserve parent games and their saves. Meet controller-first routine operation and configured cost/repair limits.
-
-**Completion:** retain continuous visible journeys plus version/proposal-bound verification and recovery evidence. Then perform overall PRD qualification across T1–T3. Neither successful builds nor task specifications establish completion.
+P0 planning publication is recorded in [PUBLICATION.md](PUBLICATION.md). The repository publication receipt remains historical evidence; these updated documents and issues do not claim implementation, deployment or completion of any slice.

@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-16",
+  "environmentHarness": "gameverse-environment/0.1.0",
+  "environmentSourceCommit": "d431b8183f1001722d7bc9a326da28088930c344",
+  "environmentWorkingTree": "implementation uncommitted; early reports do not retain a complete environment source fingerprint",
+  "browser": "Codex in-app Chromium 155.0.0.0 on macOS",
+  "browserUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+  "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a",
+  "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+  "checks": {
+    "profilePersistence": "passed after reload/new tab",
+    "fireRedBrowserBoot": "intro/title/tutorial observed",
+    "keyboardStartAndA": "passed",
+    "confirmedSnapshotReturn": "passed",
+    "newTabRestore": {
+      "runId": "d641fb2b-9b86-4883-b8d4-82084eb72cea",
+      "expectedFrame": 11596,
+      "restoredFrame": 11596,
+      "adapterWallMs": 60.80000019073486,
+      "outcome": "passed"
+    },
+    "atomicCheckpointCommit": true,
+    "staleWriteRejected": true,
+    "injectedStorageFailureRetainsPreviousHead": true,
+    "duplicateWriterRejected": true,
+    "actualSaveFailureRecoveryUI": true,
+    "suppressedWorkerResponse": {
+      "elapsedMs": 5001.5,
+      "timeoutRejected": true,
+      "actualNativeHang": false
+    }
+  },
+  "screenshots": {
+    "desktop": "artifacts/slice1/launcher-desktop.jpg"
+  },
+  "notQualified": [
+    "Mario build/browser play",
+    "physical DualSense/Xbox",
+    "campaign or early/mid/late save fixtures",
+    "mid-battle restore",
+    "full browser-process restart",
+    "normal-save fallback with actual trainer progress",
+    "native infinite-loop recovery",
+    "audible audio quality",
+    "input-to-photon latency",
+    "CI",
+    "improvement loop"
+  ],
+  "notes": [
+    "Normal save bytes and emulator snapshots are distinct; later snapshots record their paired battery ID.",
+    "Temporary browser fault injection was removed; synthetic test records were cleaned up.",
+    "Browser timings exclude cartridge fetching and IndexedDB reads before adapter load.",
+    "Only local source artifacts and development baseline receipts are supplied; no release or acceptance is certified."
+  ]
+}
