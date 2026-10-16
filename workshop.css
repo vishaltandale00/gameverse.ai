@@ -12,3 +12,13 @@ body[data-view="workshop"] .discovery-intro,body[data-view="workshop"] .research
 .mining-game-progress{border:1px solid #d1d8c3;background:#e6eadb;border-radius:5px;padding:13px;margin:15px 0}.mining-game-progress>span{display:block;font:6px/1.7 Courier New,monospace;letter-spacing:.8px;color:#939d83}.mining-game-progress>strong{display:block;font:17px Georgia,serif;font-weight:400;color:#71875e;margin:8px 0}.mining-game-progress p{font-size:9px;line-height:1.8;color:#8d9b7c;margin:7px 0}.mining-game-progress small{font:7px/1.8 Courier New,monospace;color:#a0a98f}.mining-game-progress .mining-progress-failure{color:#aa8c65}
 
 .collection-world-return{font-size:9px;color:#82966e;text-decoration:none;white-space:nowrap}.collection-world-return:hover{text-decoration:underline}.collection-world-return:focus-visible{outline:2px solid #91a77c;outline-offset:3px}
+
+.sonic-metroid-movement-v1 .game-art{background:#dce4d9;isolation:isolate}
+.sonic-sun{position:absolute;width:130px;height:130px;right:25px;top:35px;border-radius:50%;background:#e9c778;opacity:.75}
+.sonic-hill{position:absolute;width:125%;height:65%;left:-10%;bottom:-24%;border-radius:50% 50% 0 0;transform:rotate(-13deg);background:#718e70}
+.sonic-hill.hill-back{bottom:-6%;left:35%;background:#a4b49a;transform:rotate(18deg)}
+.sonic-loop{position:absolute;right:15%;bottom:-18%;width:38%;height:75%;border:17px solid #4f735d;border-bottom:0;border-radius:50% 50% 0 0;transform:rotate(-13deg);opacity:.75}
+.sonic-ring{position:absolute;right:23%;top:27%;width:30px;height:30px;border:5px solid #c39447;border-radius:50%;transform:rotate(-16deg)}
+.art-title.sonic-title{position:relative;z-index:1;line-height:.92;color:#344d3e;font-size:37px;letter-spacing:-1.8px;padding-top:20px;text-shadow:0 1px #e3e9d8}
+.sonic-title small{display:block;font:italic 21px Georgia,serif;margin:6px 0;color:#896d4d}
+.sonic-title span{display:block;font-size:29px;letter-spacing:1px;color:#344d3e}

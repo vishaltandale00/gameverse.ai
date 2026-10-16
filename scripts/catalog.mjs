@@ -12,6 +12,7 @@ export async function gameCatalog() {
       const bytes = await readFile(new URL(`local-data/games/${receipt.sha256}.gba`, root));
       if (receipt.gameId !== id || receipt.sourceCommit !== source.commit || receipt.sha256 !== hash(bytes)) throw Error('Artifact provenance mismatch');
       if (source.buildRecipe && receipt.recipeSha256 !== hash(await readFile(new URL(source.buildRecipe, root)))) throw Error('Composition recipe provenance mismatch');
+      if (source.compositionPlan && receipt.compositionPlanSha256 !== hash(await readFile(new URL(source.compositionPlan, root)))) throw Error('Composition plan provenance mismatch');
       return { id, ...source, ready: true, receipt, artifactUrl: `/artifacts/${receipt.sha256}.gba` };
     } catch (error) {
       return { id, ...source, ready: false, reason: error.code === 'ENOENT'
