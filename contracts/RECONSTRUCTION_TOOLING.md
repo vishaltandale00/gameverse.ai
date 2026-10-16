@@ -54,3 +54,11 @@ python3 -B tools/behavior_ir/verify_readonly_callee.py
 ```
 
 The 13 synthetic tests passed in 0.039 s and 14 readonly checks in 0.001503 s. An independent reviewer also copied the exact helper, existing public reassembly module and eight input tests into a minimal package; all eight passed in 0.035851 s. That result was reused without a duplicate run. Replay/batch times above come from retained owner evidence and independent QC, not new publisher native execution. Queue time, remote CI time, general ABI-guard overhead and whole-game build/latency baselines remain unavailable.
+
+## Local central-library discovery
+
+The separately installed local library now contains 183 packages (170 previously) and 171 source-root identities (159 previously). The package increase is 11 new roots plus two historical MMZ domain variants; those variants add one previously unrepresented source identity. There are 21 capability records for 19 owners. Ready phase variants/canonical modules remain 29/20, with zero newly closed prefabs. These private library records and payloads are not bundled in this checkout.
+
+One retained production extraction over 15 games produced 56 contract-valid capsules and selected 19 records for 17 canonical owners. Extraction took 0.826830 s; planning took 0.650474 s, including 0.564986 s nested admission. Planning intentionally remained blocked by backend, capability, closure and dependency gaps. Two failed schema-handling attempts remain in the [sanitized discovery receipt](../verification/central-discovery-wave-20261016.json). The source-only app refresh passed 11 checks in 1.959674 s. No new native, build or model execution occurred during this publication, and no comparable expanded-input latency baseline is available.
+
+The compatibility loader fixes were verified in that local production pipeline and are pinned in the receipt. The public extractor/library-loader frontend is not included in this PR; the discovery results cannot be reproduced from this public checkout alone without that separately installed pipeline and authorized library. This metadata-only follow-up adds no runtime source or database.
