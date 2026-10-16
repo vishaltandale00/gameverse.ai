@@ -1,0 +1,291 @@
+{
+  "schema": "gameverse.mario.fire-ability-evidence/0.1",
+  "game": "super-mario-advance-2-super-mario-world",
+  "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+  "status": "static_causal_closure_discovered_not_native_emitted_qualified",
+  "target_ids": [
+    "sma2.fire_form_acquire",
+    "sma2.fire_form_transform_finish",
+    "sma2.form_action_legality",
+    "sma2.fire_projectile_spawn",
+    "sma2.auxiliary_frame_dispatch",
+    "sma2.fire_projectile_update",
+    "sma2.fire_projectile_enemy_hit",
+    "sma2.fire_projectile_impact",
+    "sma2.impact_effect_lifetime",
+    "sma2.auxiliary_slot_clear",
+    "sma2.auxiliary_terrain_query",
+    "sma2.auxiliary_vertical_integrate"
+  ],
+  "alias_contract": {
+    "scene_pointer": "03007a48",
+    "auxiliary_pool": {
+      "offset": "0x158",
+      "stride": 28,
+      "scheduled_count": 10,
+      "player_shot_slots": [
+        8,
+        9
+      ],
+      "capacity": 2
+    },
+    "enemy_pool_accessed_by_hit": {
+      "offset": "0x6cc",
+      "stride": 100,
+      "checked_indices": [
+        0,
+        9
+      ]
+    },
+    "shared_index": "scene+ed5 temporarily reused duringenemyloop; saveat+65b andrestore afterward",
+    "invariant": "Auxiliary/entity views share scene backing storage withquerymode/scratchstate; cannot independently copy fullscene andview."
+  },
+  "units": {
+    "position_raw": "1/65536px",
+    "velocity_raw": "1/65536px/nativeupdate",
+    "horizontal_velocity_pixels": [
+      -3,
+      3
+    ],
+    "initial_vertical_velocity_pixels": {
+      "character0": 3,
+      "other_character": 1
+    },
+    "gravity_pixels_per_update_squared": {
+      "character0": 0.25,
+      "other_character": 0.625
+    },
+    "vertical_cap_pixels": 3,
+    "bounce_lookup_unit": "signed8*4096 raw =1/16px/update per tableunit; slope-index domain must be proved by terrain service"
+  },
+  "dispatch_edges": {
+    "playerstate4": "0x806969d",
+    "playerstate3": "0x8069641",
+    "auxiliarytype5": "0x803e865",
+    "auxiliarytype1": "0x803e4b1"
+  },
+  "dependencies_to_resolve": [
+    "Accepteditem contact andconsumption",
+    "Audio querycontrol branches/contexts",
+    "Terrain slope/bounds/dynamic mapquery35fa8/361c0",
+    "Projectile/enemy collision query andenemytransformation lifecycle",
+    "All camera/render mode state dependencies",
+    "Abilityownership persistence andscene unload/reset"
+  ],
+  "accepted_item_transaction": {
+    "entry": "080350f0",
+    "eligibility": "08034264 contact succeeds; either item+1f==0 oritem+1b==0, anditem+23==0",
+    "consume": "Clears actor state+1c before effect dispatch",
+    "index": "((item.type_u8+1a -0x74)*4 &0xff) | profile.currentform_u8+e0",
+    "explicit_supported_domain": {
+      "item_types": [
+        116,
+        117,
+        118,
+        119,
+        120
+      ],
+      "current_form": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    "reserve_table": {
+      "address": "0x08100c9c",
+      "size": 20,
+      "sha256": "7fb82e8833642f7aad0ea682c10702e82ed356d7dd69106dbb55d7aa7d3a67a6"
+    },
+    "effect_selector_table": {
+      "address": "0x08100cb0",
+      "size": 20,
+      "sha256": "68105af92e54410a9c658d7daef3d4280d40be4d125243e6417dacceb624fe4c"
+    },
+    "callback_table": "0x08100d5c, indexed byeffect_selector",
+    "records": [
+      {
+        "item_type": 116,
+        "prior_form": 0,
+        "reserve_value": 0,
+        "effect_selector": 0,
+        "callback_entry": "08034de4"
+      },
+      {
+        "item_type": 116,
+        "prior_form": 1,
+        "reserve_value": 1,
+        "effect_selector": 1,
+        "callback_entry": "08034dd8"
+      },
+      {
+        "item_type": 116,
+        "prior_form": 2,
+        "reserve_value": 1,
+        "effect_selector": 1,
+        "callback_entry": "08034dd8"
+      },
+      {
+        "item_type": 116,
+        "prior_form": 3,
+        "reserve_value": 1,
+        "effect_selector": 1,
+        "callback_entry": "08034dd8"
+      },
+      {
+        "item_type": 117,
+        "prior_form": 0,
+        "reserve_value": 0,
+        "effect_selector": 4,
+        "callback_entry": "08034fe8"
+      },
+      {
+        "item_type": 117,
+        "prior_form": 1,
+        "reserve_value": 1,
+        "effect_selector": 4,
+        "callback_entry": "08034fe8"
+      },
+      {
+        "item_type": 117,
+        "prior_form": 2,
+        "reserve_value": 4,
+        "effect_selector": 4,
+        "callback_entry": "08034fe8"
+      },
+      {
+        "item_type": 117,
+        "prior_form": 3,
+        "reserve_value": 2,
+        "effect_selector": 1,
+        "callback_entry": "08034dd8"
+      },
+      {
+        "item_type": 118,
+        "prior_form": 0,
+        "reserve_value": 0,
+        "effect_selector": 2,
+        "callback_entry": "08034e4c"
+      },
+      {
+        "item_type": 118,
+        "prior_form": 1,
+        "reserve_value": 0,
+        "effect_selector": 2,
+        "callback_entry": "08034e4c"
+      },
+      {
+        "item_type": 118,
+        "prior_form": 2,
+        "reserve_value": 0,
+        "effect_selector": 2,
+        "callback_entry": "08034e4c"
+      },
+      {
+        "item_type": 118,
+        "prior_form": 3,
+        "reserve_value": 0,
+        "effect_selector": 2,
+        "callback_entry": "08034e4c"
+      },
+      {
+        "item_type": 119,
+        "prior_form": 0,
+        "reserve_value": 0,
+        "effect_selector": 3,
+        "callback_entry": "08034f60"
+      },
+      {
+        "item_type": 119,
+        "prior_form": 1,
+        "reserve_value": 1,
+        "effect_selector": 3,
+        "callback_entry": "08034f60"
+      },
+      {
+        "item_type": 119,
+        "prior_form": 2,
+        "reserve_value": 4,
+        "effect_selector": 1,
+        "callback_entry": "08034dd8"
+      },
+      {
+        "item_type": 119,
+        "prior_form": 3,
+        "reserve_value": 2,
+        "effect_selector": 3,
+        "callback_entry": "08034f60"
+      },
+      {
+        "item_type": 120,
+        "prior_form": 0,
+        "reserve_value": 0,
+        "effect_selector": 5,
+        "callback_entry": "08035068"
+      },
+      {
+        "item_type": 120,
+        "prior_form": 1,
+        "reserve_value": 0,
+        "effect_selector": 5,
+        "callback_entry": "08035068"
+      },
+      {
+        "item_type": 120,
+        "prior_form": 2,
+        "reserve_value": 0,
+        "effect_selector": 5,
+        "callback_entry": "08035068"
+      },
+      {
+        "item_type": 120,
+        "prior_form": 3,
+        "reserve_value": 0,
+        "effect_selector": 5,
+        "callback_entry": "08035068"
+      }
+    ],
+    "reset_persistence_limit": "Within-call consume is known; room/load respawn and persistent inventory ownership remain to qualify.",
+    "reserve_semantics": {
+      "location": "profile+e1 u8",
+      "encoding": "source item-kind code, not activeform ID",
+      "known_codes": {
+        "1": "type74 growth item",
+        "2": "type75 fire-form item",
+        "4": "type77 cape-form item"
+      },
+      "drop_constructor": "080381f8 consumes reserve and creates actor type reserve+0x73, proving code\u2192source item type relation",
+      "qualification_limit": "Source causal evidence; actual new composition inventory/drop lifecycle not native-qualified yet"
+    }
+  },
+  "timed_invulnerability_lifecycle": {
+    "acquire_chain": [
+      "080350f0 type76",
+      "08034e4c",
+      "08030054"
+    ],
+    "acquire_effects": [
+      "engine+1158=255",
+      "scene+6ca=0",
+      "profile+fc u16 |=0x80",
+      "audio control0809b348(8)"
+    ],
+    "mechanical_consumers": [
+      "Hurt0807081c returns whenengine+1158!=0",
+      "Contact08034264 selects enemy defeat/reaction vs playerhurt basedtimer andresistanceflags",
+      "Rewardchains0802fe64/08034864 choose mode-owned counters"
+    ],
+    "clock_owner": "0806aa14, a mixed gameplay/presentation function",
+    "clock_guards": [
+      "transformtimer03004031==0",
+      "spritephase03003fa7!=0xff",
+      "frame03002bd4&3==0"
+    ],
+    "expiry_effects": [
+      "decrementsengine+1158; atzero calls08030430(scene+6c0), clears6c0 and69f",
+      "atpredecrementtimer30 restores music/profileflag unlessspecial sentinelconditions"
+    ],
+    "not_a_pure_renderer": "Dropping0806aa14 as presentation would remove timed ability expiry and reward accounting. Future automatic SSA projection or explicit whole-function service closure is required.",
+    "duration_limit": "255 eligible clock decrements, not a fixed wall-clock duration or unconditional frame count."
+  }
+}

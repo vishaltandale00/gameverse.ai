@@ -1,6 +1,6 @@
 {
   "schema": "gameverse.ir.mechanic-coverage/0.2",
-  "updated_utc": "2026-10-16T09:44:41.592749+00:00",
+  "updated_utc": "2026-10-16T10:09:42.277886+00:00",
   "objective": "Comprehensive actual mechanics recovery, closed owned-state/dependency/service contracts and executable IR. Partial packages remain useful outputs, never game completion.",
   "enumeration_status": "expanded_game_specific_inventory_still_open_to_discovery",
   "completion_rule": "No game/family is complete until its discovered modes/states/transitions, world interactions, dependencies, persistence and qualification obligations are closed with evidence and unknown-coverage review. A fixed family checklist is not proof all mechanics were discovered.",
@@ -13,8 +13,8 @@
       "discovery_limit": "Bounded saved-project candidate pools and instruction-hashed gameplay seeds; not exhaustive ROM/mechanic coverage",
       "counts": {
         "native_qualified": 4,
-        "composable_ports_ready": 0,
-        "mechanics_closure_ready": 0
+        "composable_ports_ready": 2,
+        "mechanics_closure_ready": 2
       },
       "families": [
         {
@@ -350,47 +350,14 @@
       "name_basis": "Existing own-ROM packets where linked; otherwise observed portrait/editorial prior defines a verification question, never a recovered rule.",
       "automatic_target_rows": [
         {
-          "id": "sma1.player_death_release",
-          "role": "combat",
-          "entry": "080ad8dc",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "ed2c85768e94d2ce5ac442973d040e9960a38a6d44e85db709e872402620b878",
-          "attempt_count": 1,
-          "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.0011154580000010128,
-          "closure_ready": false
-        },
-        {
-          "id": "sma1.actor_hurt_transaction",
-          "role": "combat",
-          "entry": "080afc64",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "08f8100834bcb410975db186867969e7008f138421fc6e97a72a3ab8efe9e18c",
-          "attempt_count": 1,
-          "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.001903208000001655,
-          "closure_ready": false
-        },
-        {
-          "id": "sma1.terrain_hurt_transaction",
-          "role": "combat",
-          "entry": "080afe44",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "bac0d6c72425f6b37ea11bf919d99714c321388d0046100da1a354639692ae25",
-          "attempt_count": 1,
-          "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.0013695829999988973,
-          "closure_ready": false
-        },
-        {
           "id": "sma.motion.sma1_integrate_x",
           "role": "movement",
           "entry": "080abf40",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "a92a7f28369122086e14d25660c5e5026c96bc762ba045e7b83d47d587d63dbd",
-          "attempt_count": 2,
+          "input_signature": "dfbfe7b0537a0febdf8895fdd0318f65e06f396bf784349b81e20edcfcc48a68",
+          "attempt_count": 4,
           "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.0010016660000005118,
+          "wall_s": 0.001240041999999164,
           "closure_ready": false
         },
         {
@@ -398,10 +365,10 @@
           "role": "movement",
           "entry": "0804b270",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "68c924ee713efc6c93d8db4fb236d94a93b544a7d873a857f8475be11b88105c",
-          "attempt_count": 2,
+          "input_signature": "8db5cfc8f864a5e4502b3e315679492d43eaed1e12e86b06eaba165f07f9ce08",
+          "attempt_count": 4,
           "reason": "unbounded or unaligned state collection",
-          "wall_s": 0.000850499999998533,
+          "wall_s": 0.0008325419999994921,
           "closure_ready": false
         },
         {
@@ -409,10 +376,10 @@
           "role": "movement",
           "entry": "080a7570",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "dcaf06bb08030a60e4df2ce51fa0fd9ad5364e1eb59a26b4f8ee611918276f72",
-          "attempt_count": 2,
+          "input_signature": "ae17609600decbd5ed3bc2e95e9b75a92d643aa5b0bb626814e98815407a936a",
+          "attempt_count": 4,
           "reason": "unbounded read-only asset index",
-          "wall_s": 0.0008879159999999331,
+          "wall_s": 0.0009288749999996071,
           "closure_ready": false
         },
         {
@@ -420,10 +387,10 @@
           "role": "movement",
           "entry": "080a7774",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "a2d6487a12453c17d60ce20d916e6d50e8bc1d4c8017c1ef9b6c81256ef455a1",
-          "attempt_count": 2,
+          "input_signature": "2c581c7768947451bf7d0b2c79d76221857c0d9b7ad97cd8c4983bae5c21660c",
+          "attempt_count": 4,
           "reason": "unbounded read-only asset index",
-          "wall_s": 0.0038014169999982528,
+          "wall_s": 0.003843665999999857,
           "closure_ready": false
         },
         {
@@ -431,10 +398,43 @@
           "role": "movement",
           "entry": "080a7c7c",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "888d2623d8e131ad7955a7616a0874ba1ad48b95a58746359378985d8397653e",
-          "attempt_count": 2,
+          "input_signature": "39056c6704c7a9f0e9109b46751eea427baf18ee2cba717be2f2beaec411607f",
+          "attempt_count": 4,
           "reason": "unbounded read-only asset index",
-          "wall_s": 0.0007097910000020136,
+          "wall_s": 0.0007614589999995758,
+          "closure_ready": false
+        },
+        {
+          "id": "sma.motion.sma1_ctl_speed_cap_throw",
+          "role": "movement",
+          "entry": "080a8008",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "44fddf3d1e5e17d69af364d88cf98e9d2ab114c4bfc0b3862b9a78973ccf20ae",
+          "attempt_count": 4,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.0007903329999994213,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.movement_contact_legality",
+          "role": "movement",
+          "entry": "080a821c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "614a2da220ad29572130657a03d4d0039612dfb4eb31f40657540e7b4e6a86e7",
+          "attempt_count": 3,
+          "reason": "not constant v41",
+          "wall_s": 0.004400416999999379,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.terrain_response",
+          "role": "movement",
+          "entry": "080a8950",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "8c5f67dae9610873e38802c8a87d3ab98f37db26453ae166f4ec91318a0a6c97",
+          "attempt_count": 3,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.00046558400000051847,
           "closure_ready": false
         },
         {
@@ -442,28 +442,28 @@
           "role": "movement",
           "entry": "080a7618",
           "outcome": "native_qualified",
-          "input_signature": "78de295e2e7f5eb112d93eb5deb85ad3a105deef29e88280be986f69b1d440ab",
-          "attempt_count": 3,
-          "ports_ready": false,
-          "closure_ready": false,
+          "input_signature": "25e24fdc9bbdd752cb5eee59cd5ebae88a642c9171e7f9002262f16eaed66c3d",
+          "attempt_count": 4,
+          "ports_ready": true,
+          "closure_ready": true,
           "dependency_closure": "closed",
           "vectors": 16384,
-          "artifacts": "local/ir/depth-runs/20261016T093733/super-mario-advance/sma.motion.sma1_gravity_hover",
-          "wall_s": 0.279784125
+          "artifacts": "local/ir/depth-runs/20261016T094509/super-mario-advance/sma.motion.sma1_gravity_hover",
+          "wall_s": 0.321403083
         },
         {
           "id": "sma.motion.sma1_jump_onset",
           "role": "movement",
           "entry": "080a9808",
           "outcome": "native_qualified",
-          "input_signature": "e71247af53b6927d7b23c2bb1924f8ec96fe7577f4d4f4b39f5210ede56924e5",
-          "attempt_count": 4,
-          "ports_ready": false,
-          "closure_ready": false,
+          "input_signature": "9062cc13f2ba1c1716614678268c4fc4b2ec9ddb58620f351d26c89cd2677364",
+          "attempt_count": 6,
+          "ports_ready": true,
+          "closure_ready": true,
           "dependency_closure": "closed",
           "vectors": 11848,
-          "artifacts": "local/ir/depth-runs/20261016T094112/super-mario-advance/sma.motion.sma1_jump_onset",
-          "wall_s": 0.289622667
+          "artifacts": "local/ir/depth-runs/20261016T095300/super-mario-advance/sma.motion.sma1_jump_onset",
+          "wall_s": 0.29261454200000003
         },
         {
           "id": "sma.motion.sma1_integrate_y",
@@ -486,39 +486,6 @@
           "vectors": 16384,
           "artifacts": "local/ir/depth-runs/20261016T092601/super-mario-advance/sma.motion.sma1_friction",
           "wall_s": 0.21129033400000002
-        },
-        {
-          "id": "sma.motion.sma1_ctl_speed_cap_throw",
-          "role": "movement",
-          "entry": "080a8008",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "3264e301c24117858a0f3cd14ddc3842726a0211d55dadc505ef095459052ef1",
-          "attempt_count": 2,
-          "reason": "dynamic entity index unresolved",
-          "wall_s": 0.0007746669999999511,
-          "closure_ready": false
-        },
-        {
-          "id": "sma1.movement_contact_legality",
-          "role": "movement",
-          "entry": "080a821c",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "5e9a39cd455039d768851647cffa4ee57f99efc27adec06c91922f8e94bdb9bf",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 080a8780",
-          "wall_s": 0.0027472090000006943,
-          "closure_ready": false
-        },
-        {
-          "id": "sma1.terrain_response",
-          "role": "movement",
-          "entry": "080a8950",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "72781ca0284ef8b38fee8015a1643c2d521f182d9c6f3258b47978391f09200a",
-          "attempt_count": 1,
-          "reason": "unbounded read-only asset index",
-          "wall_s": 0.000376874999998833,
-          "closure_ready": false
         },
         {
           "id": "sma1.death_update_lives",
@@ -609,6 +576,39 @@
           "closure_ready": false
         },
         {
+          "id": "sma1.player_death_release",
+          "role": "combat",
+          "entry": "080ad8dc",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "ed2c85768e94d2ce5ac442973d040e9960a38a6d44e85db709e872402620b878",
+          "attempt_count": 1,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.0011154580000010128,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.actor_hurt_transaction",
+          "role": "combat",
+          "entry": "080afc64",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "08f8100834bcb410975db186867969e7008f138421fc6e97a72a3ab8efe9e18c",
+          "attempt_count": 1,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.001903208000001655,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.terrain_hurt_transaction",
+          "role": "combat",
+          "entry": "080afe44",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "bac0d6c72425f6b37ea11bf919d99714c321388d0046100da1a354639692ae25",
+          "attempt_count": 1,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.0013695829999988973,
+          "closure_ready": false
+        },
+        {
           "id": "sma.motion.sma1_ctl_character_sound",
           "role": "movement",
           "entry": "080b1358",
@@ -637,7 +637,8 @@
         "research/corpus-mining/20261016-binary-corpus-round2/super-mario-advance.json",
         "ontology/portraits/super-mario-advance.json"
       ],
-      "counts_snapshot_utc": "2026-10-16T09:44:41.592749+00:00"
+      "counts_snapshot_utc": "2026-10-16T10:09:42.277886+00:00",
+      "automatic_status_sha256": "db0e82c07bf4ce209dd461582022c7cb283cd54a924aedfb8dea95bb702a5381"
     },
     {
       "game": "super-mario-advance-2-super-mario-world",
@@ -646,7 +647,7 @@
       "priority": "active_depth",
       "discovery_limit": "Bounded saved-project candidate pools and instruction-hashed gameplay seeds; not exhaustive ROM/mechanic coverage",
       "counts": {
-        "native_qualified": 9,
+        "native_qualified": 12,
         "composable_ports_ready": 2,
         "mechanics_closure_ready": 2
       },
@@ -798,7 +799,7 @@
         },
         {
           "id": "projectile_actions",
-          "state": "unknown_not_recovered",
+          "state": "static_causal_target",
           "coverage_complete": false,
           "obligations": [
             {
@@ -822,9 +823,26 @@
               "coverage_complete": false
             }
           ],
-          "evidence_refs": [],
-          "discovery_target_ids": [],
-          "remaining_unknowns": []
+          "evidence_refs": [
+            "research/deep-extraction/mario/sma2-fire-ability-lifecycle.json"
+          ],
+          "discovery_target_ids": [
+            "sma2.fire_form_acquire",
+            "sma2.fire_form_transform_finish",
+            "sma2.form_action_legality",
+            "sma2.fire_projectile_spawn",
+            "sma2.auxiliary_frame_dispatch",
+            "sma2.fire_projectile_update",
+            "sma2.fire_projectile_enemy_hit",
+            "sma2.fire_projectile_impact",
+            "sma2.impact_effect_lifetime",
+            "sma2.auxiliary_slot_clear"
+          ],
+          "remaining_unknowns": [
+            "No emitted/native whole ability qualification yet",
+            "Stateful terrain and target collisions, shared scene aliases and renderer/audio control services need adapter closure",
+            "Acquisition consumed-item/reset/persistence and other abilities remain incomplete"
+          ]
         },
         {
           "id": "player_damage_death_respawn",
@@ -1014,6 +1032,97 @@
       "name_basis": "Existing own-ROM packets where linked; otherwise observed portrait/editorial prior defines a verification question, never a recovered rule.",
       "automatic_target_rows": [
         {
+          "id": "sma2.timed_invulnerability_acquire",
+          "role": "progression",
+          "entry": "08030054",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "822df22e05f4dba0f21d346f91b03722810ad97e79ac67e82b16b9b77b1a873e",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 08030054",
+          "wall_s": 0.0002655420000010622,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.growth_item_begin",
+          "role": "progression",
+          "entry": "08034de4",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "6aad99896699b645712d334f50cc011f3fdcaa4cf26158df863ea703af56dd20",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 08034de4",
+          "wall_s": 0.0001580829999987543,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.accepted_item_consume_effect",
+          "role": "progression",
+          "entry": "080350f0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "8cc871d330113fca97b7703a79c61818ad75511ba2657787dabf3a0fd53ec3c6",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080350f0",
+          "wall_s": 0.00021624999999936279,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.fire_projectile_update",
+          "role": "movement",
+          "entry": "0803e864",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "e74dda93dcf4d4852618fab6a59d07895d28a04c330ad5f7aae22492bee4810a",
+          "attempt_count": 1,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.004511916000000227,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.auxiliary_frame_dispatch",
+          "role": "movement",
+          "entry": "0803f7b8",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "0f138512cf0b107e366cb8573e4b061d5b784ce0742d1c3c48c2db53718c8035",
+          "attempt_count": 1,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.00044879199999847685,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.player_state_dispatch",
+          "role": "movement",
+          "entry": "08068dfc",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "50b8d0b8ade4cbbe628156769041e5e894df26f63c35fb36fa3321bbbf373da6",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 0809e43c",
+          "wall_s": 0.00028137500000013915,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.small_hurt_recovery",
+          "role": "combat",
+          "entry": "08069530",
+          "outcome": "native_qualified",
+          "input_signature": "e84471f6f1ba858ab3f2cae295c40320fca0fc0f1b70bf50a16bc1de76aa10fa",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 1865,
+          "artifacts": "local/ir/depth-runs/20261016T100753/super-mario-advance-2-super-mario-world/sma2.small_hurt_recovery",
+          "wall_s": 0.22173637500000076
+        },
+        {
+          "id": "sma2.growth_transform_finish",
+          "role": "progression",
+          "entry": "0806959c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "aca0bb908474226430b66eae92078b117ffce2e84c5b3f517ee83aa356efdf7e",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 0806959c",
+          "wall_s": 0.0001789579999993407,
+          "closure_ready": false
+        },
+        {
           "id": "sma-2-super-mario-world.combat.sma2_spin_stomp",
           "role": "combat",
           "entry": "0802fd38",
@@ -1025,6 +1134,70 @@
           "closure_ready": false
         },
         {
+          "id": "sma2.auxiliary_vertical_integrate",
+          "role": "movement",
+          "entry": "0803dae8",
+          "outcome": "native_qualified",
+          "input_signature": "07994fd82deb4b6c1f537bc6de675ea5925471c33322174e989a6039ceca2bd0",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T100747/super-mario-advance-2-super-mario-world/sma2.auxiliary_vertical_integrate",
+          "wall_s": 0.2678394579999992
+        },
+        {
+          "id": "sma-2-super-mario-world.motion.sma2_integrate",
+          "role": "movement",
+          "entry": "0806b52c",
+          "outcome": "native_qualified",
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T092749/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.motion.sma2_integrate",
+          "wall_s": 0.0069248750000000005
+        },
+        {
+          "id": "sma-2-super-mario-world.motion.sma2_integrate_x",
+          "role": "movement",
+          "entry": "0806b5a8",
+          "outcome": "native_qualified",
+          "ports_ready": true,
+          "closure_ready": true,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T092749/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.motion.sma2_integrate_x",
+          "wall_s": 0.0037376249999999944
+        },
+        {
+          "id": "sma-2-super-mario-world.motion.sma2_integrate_y",
+          "role": "movement",
+          "entry": "0806b604",
+          "outcome": "native_qualified",
+          "ports_ready": true,
+          "closure_ready": true,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T092749/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.motion.sma2_integrate_y",
+          "wall_s": 0.003691209000000001
+        },
+        {
+          "id": "sma-2-super-mario-world.motion.sma2_gravity",
+          "role": "movement",
+          "entry": "0806f714",
+          "outcome": "native_qualified",
+          "input_signature": "20dba08baca6d5aa7bb9ba36a06c4a98e958db0294d63fb69547220e97edd393",
+          "attempt_count": 4,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 1024,
+          "artifacts": "local/ir/depth-runs/20261016T093901/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.motion.sma2_gravity",
+          "wall_s": 0.26525525
+        },
+        {
           "id": "sma2.accepted_top_contact",
           "role": "combat",
           "entry": "0802bd9c",
@@ -1034,6 +1207,28 @@
           "reason": "unbounded or unaligned state collection",
           "wall_s": 0.00472379200000006,
           "closure_ready": false
+        },
+        {
+          "id": "sma-2-super-mario-world.combat.sma2_effect_suppressed",
+          "role": "combat",
+          "entry": "0802e978",
+          "outcome": "native_qualified",
+          "ports_ready": false,
+          "closure_ready": false,
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T092601/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.combat.sma2_effect_suppressed",
+          "wall_s": 0.2064659579999999
+        },
+        {
+          "id": "sma-2-super-mario-world.combat.sma2_terminal_state",
+          "role": "combat",
+          "entry": "0802faac",
+          "outcome": "native_qualified",
+          "ports_ready": false,
+          "closure_ready": false,
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T092601/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.combat.sma2_terminal_state",
+          "wall_s": 0.19915687500000012
         },
         {
           "id": "sma-2-super-mario-world.combat.sma2_contact_effect",
@@ -1091,6 +1286,39 @@
           "closure_ready": false
         },
         {
+          "id": "sma2.fire_form_acquire",
+          "role": "movement",
+          "entry": "08034fe8",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "cfd12f132bed7345285ad7780102783d4db991a8cefdf71335a6917f1198a3d9",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.0011076250000012777,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.auxiliary_terrain_query",
+          "role": "movement",
+          "entry": "0803627c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "af8fa685361a51bfe107f7141519b01d462ea8b611a7204ee8d3000dcdc28802",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080361c0",
+          "wall_s": 0.0005965830000000949,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.reserve_item_drop_on_hurt",
+          "role": "progression",
+          "entry": "080381f8",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "14c29097adff1049606026d00ed1abeef7614820b0f0732b1d4f7be31c329b94",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.0011401660000007752,
+          "closure_ready": false
+        },
+        {
           "id": "sma-2-super-mario-world.combat.sma2_reward_slot",
           "role": "combat",
           "entry": "0803d804",
@@ -1100,78 +1328,6 @@
           "reason": "unbounded or unaligned state collection",
           "wall_s": 0.0006396660000014265,
           "closure_ready": false
-        },
-        {
-          "id": "sma-2-super-mario-world.motion.sma2_integrate",
-          "role": "movement",
-          "entry": "0806b52c",
-          "outcome": "native_qualified",
-          "ports_ready": false,
-          "closure_ready": false,
-          "dependency_closure": "closed",
-          "vectors": 16384,
-          "artifacts": "local/ir/depth-runs/20261016T092749/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.motion.sma2_integrate",
-          "wall_s": 0.0069248750000000005
-        },
-        {
-          "id": "sma-2-super-mario-world.motion.sma2_integrate_x",
-          "role": "movement",
-          "entry": "0806b5a8",
-          "outcome": "native_qualified",
-          "ports_ready": true,
-          "closure_ready": true,
-          "dependency_closure": "closed",
-          "vectors": 16384,
-          "artifacts": "local/ir/depth-runs/20261016T092749/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.motion.sma2_integrate_x",
-          "wall_s": 0.0037376249999999944
-        },
-        {
-          "id": "sma-2-super-mario-world.motion.sma2_integrate_y",
-          "role": "movement",
-          "entry": "0806b604",
-          "outcome": "native_qualified",
-          "ports_ready": true,
-          "closure_ready": true,
-          "dependency_closure": "closed",
-          "vectors": 16384,
-          "artifacts": "local/ir/depth-runs/20261016T092749/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.motion.sma2_integrate_y",
-          "wall_s": 0.003691209000000001
-        },
-        {
-          "id": "sma-2-super-mario-world.motion.sma2_gravity",
-          "role": "movement",
-          "entry": "0806f714",
-          "outcome": "native_qualified",
-          "input_signature": "20dba08baca6d5aa7bb9ba36a06c4a98e958db0294d63fb69547220e97edd393",
-          "attempt_count": 4,
-          "ports_ready": false,
-          "closure_ready": false,
-          "dependency_closure": "closed",
-          "vectors": 1024,
-          "artifacts": "local/ir/depth-runs/20261016T093901/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.motion.sma2_gravity",
-          "wall_s": 0.26525525
-        },
-        {
-          "id": "sma-2-super-mario-world.combat.sma2_effect_suppressed",
-          "role": "combat",
-          "entry": "0802e978",
-          "outcome": "native_qualified",
-          "ports_ready": false,
-          "closure_ready": false,
-          "vectors": 16384,
-          "artifacts": "local/ir/depth-runs/20261016T092601/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.combat.sma2_effect_suppressed",
-          "wall_s": 0.2064659579999999
-        },
-        {
-          "id": "sma-2-super-mario-world.combat.sma2_terminal_state",
-          "role": "combat",
-          "entry": "0802faac",
-          "outcome": "native_qualified",
-          "ports_ready": false,
-          "closure_ready": false,
-          "vectors": 16384,
-          "artifacts": "local/ir/depth-runs/20261016T092601/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.combat.sma2_terminal_state",
-          "wall_s": 0.19915687500000012
         },
         {
           "id": "sma-2-super-mario-world.combat.sma2_reward_record",
@@ -1193,6 +1349,93 @@
           "attempt_count": 1,
           "reason": "dynamic entity index unresolved",
           "wall_s": 0.0010747500000003463,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.auxiliary_slot_clear",
+          "role": "movement",
+          "entry": "0803dab4",
+          "outcome": "native_qualified",
+          "input_signature": "f2db34e64344a9d4bcd2449dda8127ee5b9461208fdb0682b8a040b02d6ca9be",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T100747/super-mario-advance-2-super-mario-world/sma2.auxiliary_slot_clear",
+          "wall_s": 0.19710954199999975
+        },
+        {
+          "id": "sma2.fire_projectile_impact",
+          "role": "movement",
+          "entry": "0803dcf0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "0a68b3e40aa72a658a3cc006290e0dd37cefed7749b9c1541aa45cda532fbb7c",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 0809b734",
+          "wall_s": 0.0006329590000007101,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.fire_projectile_enemy_hit",
+          "role": "movement",
+          "entry": "0803dd3c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "2f3b1ddc32e4d45ae9ca7804c0c762c7e0ea6762d5df735885181bbf852ea989",
+          "attempt_count": 1,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.0018273749999995204,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.impact_effect_lifetime",
+          "role": "movement",
+          "entry": "0803e4b0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "c0efab6e1b88502f3cfde68b74823fe79216fb2502425109e527c791afa63e0e",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.0008015839999995222,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.cape_form_transform_finish",
+          "role": "movement",
+          "entry": "08069640",
+          "outcome": "pending_unattempted",
+          "discovery_only": false,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.fire_form_transform_finish",
+          "role": "movement",
+          "entry": "0806969c",
+          "outcome": "pending_unattempted",
+          "discovery_only": false,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.death_countdown_life_retry",
+          "role": "combat",
+          "entry": "08069d60",
+          "outcome": "pending_unattempted",
+          "discovery_only": false,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.player_mode_clock_presentation",
+          "role": "progression",
+          "entry": "0806aa14",
+          "outcome": "pending_unattempted",
+          "discovery_only": false,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.carried_attachment_release",
+          "role": "combat",
+          "entry": "0806c910",
+          "outcome": "pending_unattempted",
+          "discovery_only": false,
           "closure_ready": false
         },
         {
@@ -1218,6 +1461,14 @@
           "attempt_count": 1,
           "reason": "missing L0 dependency 0809b5cc",
           "wall_s": 0.009936874999999734,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.form_action_legality",
+          "role": "movement",
+          "entry": "0806f128",
+          "outcome": "pending_unattempted",
+          "discovery_only": false,
           "closure_ready": false
         },
         {
@@ -1282,6 +1533,38 @@
           "closure_ready": false
         },
         {
+          "id": "sma2.death_velocity_begin",
+          "role": "combat",
+          "entry": "080709f8",
+          "outcome": "pending_unattempted",
+          "discovery_only": false,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.death_state_begin",
+          "role": "combat",
+          "entry": "08070a14",
+          "outcome": "pending_unattempted",
+          "discovery_only": false,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.powered_hurt_recovery",
+          "role": "combat",
+          "entry": "080711d4",
+          "outcome": "pending_unattempted",
+          "discovery_only": false,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.fire_projectile_spawn",
+          "role": "movement",
+          "entry": "08071514",
+          "outcome": "pending_unattempted",
+          "discovery_only": false,
+          "closure_ready": false
+        },
+        {
           "id": "sma-2-super-mario-world.motion.sma2_ground_effect",
           "role": "movement",
           "entry": "08071810",
@@ -1299,7 +1582,8 @@
         "research/corpus-mining/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world.json",
         "ontology/portraits/super-mario-advance-2-super-mario-world.json"
       ],
-      "counts_snapshot_utc": "2026-10-16T09:44:41.592749+00:00"
+      "counts_snapshot_utc": "2026-10-16T10:09:42.277886+00:00",
+      "automatic_status_sha256": "d041162e414da9dff971b144dbde634cd43dd5e08fa8ce537371dd19eb5077d2"
     },
     {
       "game": "super-mario-advance-4-super-mario-bros-3",
@@ -1308,9 +1592,9 @@
       "priority": "active_depth",
       "discovery_limit": "Bounded saved-project candidate pools and instruction-hashed gameplay seeds; not exhaustive ROM/mechanic coverage",
       "counts": {
-        "native_qualified": 4,
-        "composable_ports_ready": 0,
-        "mechanics_closure_ready": 0
+        "native_qualified": 7,
+        "composable_ports_ready": 1,
+        "mechanics_closure_ready": 1
       },
       "families": [
         {
@@ -1711,91 +1995,83 @@
       "name_basis": "Existing own-ROM packets where linked; otherwise observed portrait/editorial prior defines a verification question, never a recovered rule.",
       "automatic_target_rows": [
         {
-          "id": "sma4.reward_event_to_world_state",
+          "id": "sma4.clear_actor_active",
           "role": "combat",
-          "entry": "08091050",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "808e23fdd508e8acc8e2807235477916b137084489ca70c127861183f2ddcd03",
+          "entry": "08047910",
+          "outcome": "native_qualified",
+          "input_signature": "0a370574b9b47b04dde3730ca196a9a9c2182e63db937a4b0d72c09df2f68518",
           "attempt_count": 1,
-          "reason": "missing L0 dependency 08091000",
-          "wall_s": 0.0005483329999975695,
-          "closure_ready": false
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T100756/super-mario-advance-4-super-mario-bros-3/sma4.clear_actor_active",
+          "wall_s": 0.20413483400000132
         },
         {
-          "id": "sma4.player_outer_tick",
-          "role": "movement",
-          "entry": "08092240",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "c3dc4250b40c543e678be9a68ed841917cce9b683790932ec05fd096871ab0c9",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 080928f8",
-          "wall_s": 0.0034478750000026537,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.player_mode_gate",
-          "role": "movement",
-          "entry": "08092684",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "8c7e86710396104d64e9fe1c3be2003959b0bb9a311078418cf2ec4e0f79834d",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 080a59e0",
-          "wall_s": 0.0005157079999982273,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.player_tick_form_commit",
-          "role": "progression",
-          "entry": "08092d9c",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "121109ccbc1d30179035e0610171e6c9730660c6ce254565e779d270d472a49d",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 08095268",
-          "wall_s": 0.006945999999999231,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.player_terrain_phase",
-          "role": "movement",
-          "entry": "08097bf0",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "1416358c9a9797980bf9a5dc3718f7c6b3ef33836e59113cdfa0d292e6c12bca",
-          "attempt_count": 1,
-          "reason": "missing L0 dependency 0809bdd4",
-          "wall_s": 0.0008690419999979326,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.form_palette_refresh",
-          "role": "movement",
-          "entry": "0809d51c",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "31e920ccee39bb901fae98cf64f6939e71540588ef75fbabed7fa44751921554",
-          "attempt_count": 1,
-          "reason": "dynamic or nested object reference unresolved",
-          "wall_s": 0.0005077910000004238,
-          "closure_ready": false
-        },
-        {
-          "id": "sma4.death_phase_dispatch",
+          "id": "sma4.retire_actor_and_spawn_marker",
           "role": "combat",
-          "entry": "080a66c4",
+          "entry": "0804791c",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "66e00cb8ab48231d3575fad13198257bc92210f68c0868cd402ab874206cc64e",
+          "input_signature": "d18a7f958c6baa096ad74b0bbf44c1699541f2b092e0faf0a209000ef19732ec",
           "attempt_count": 1,
-          "reason": "missing L0 dependency 080e7634",
-          "wall_s": 0.0002724159999978326,
+          "reason": "missing L0 dependency 0808e75c",
+          "wall_s": 0.0006986670000017625,
           "closure_ready": false
         },
         {
-          "id": "sma4.death_phase_1",
+          "id": "sma4.species_retirement_cleanup",
           "role": "combat",
-          "entry": "080a66e8",
+          "entry": "08047954",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "0c1d37fada853fe4a489b45474be647165c1a074b60ae092f58b884593135e56",
+          "input_signature": "9cfd947301f697bf73d1ba3d073953e944cd51a68a86743ea09c59c96bc6ac66",
           "attempt_count": 1,
-          "reason": "missing L0 dependency 080e3e7c",
-          "wall_s": 0.00037395800000084023,
+          "reason": "unresolved pointer phi v65",
+          "wall_s": 0.0003570419999974206,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_pair_contact_phase",
+          "role": "combat",
+          "entry": "08051144",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "266c9cb76a304b611b773b3a4996e13bd038efcfd9dfda1484adeda5806532f2",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 08046154",
+          "wall_s": 0.0005980420000000208,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.walking_hopping_ai",
+          "role": "combat",
+          "entry": "0805130c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "c669433b10716635b32af5f55796f3b1105b8be364d6b13fc6986893c8ca0484",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 08047db0",
+          "wall_s": 0.0011724999999991326,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.death_phase_2",
+          "role": "combat",
+          "entry": "080a674c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "9d7aa9cdef76ee30fdfefcfcb60486d2dbb387af30749de9299ddf9a2784438c",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080e64a8",
+          "wall_s": 0.0005453329999980383,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.death_phase_3",
+          "role": "combat",
+          "entry": "080a678c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "34d8179306437d88b37ca0e2f84c8e8ff8fc2b8001e1bde7b887f746a48fe816",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080e64a8",
+          "wall_s": 0.0010768339999991383,
           "closure_ready": false
         },
         {
@@ -1803,10 +2079,10 @@
           "role": "combat",
           "entry": "08046744",
           "outcome": "pending_dependency_or_compiler",
-          "input_signature": "ae2d44b4d682efd2c391b39d752531389ed066d21baf868d62bca79256e7bea8",
-          "attempt_count": 1,
+          "input_signature": "fa4cc9928ad4cf8cae2b683b73da017fec365e287a0f0ee97b373a20865449dd",
+          "attempt_count": 2,
           "reason": "unbounded read-only asset index",
-          "wall_s": 0.004374084000000167,
+          "wall_s": 0.004290916000002198,
           "closure_ready": false
         },
         {
@@ -1822,14 +2098,17 @@
         },
         {
           "id": "sma-4-super-mario-bros-3.combat.actor_x_integration",
-          "role": "combat",
+          "role": "movement",
           "entry": "080479c0",
-          "outcome": "pending_dependency_or_compiler",
-          "input_signature": "9fa82d38e81a635eb82a682aa0708654bcd2f737e78b4566b612e77eb489778d",
-          "attempt_count": 1,
-          "reason": "multiple object reference alias closure unresolved",
-          "wall_s": 0.00025345800000131646,
-          "closure_ready": false
+          "outcome": "native_qualified",
+          "input_signature": "111e6b0cf6ae867f42d536f2b1d07f5e8e94b834323a89e556f88d2a5e27ec8a",
+          "attempt_count": 2,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 2770,
+          "artifacts": "local/ir/depth-runs/20261016T100234/super-mario-advance-4-super-mario-bros-3/sma-4-super-mario-bros-3.combat.actor_x_integration",
+          "wall_s": 0.285293542
         },
         {
           "id": "sma-4-super-mario-bros-3.combat.wrapped_actor_x_integration",
@@ -1840,6 +2119,17 @@
           "attempt_count": 1,
           "reason": "multiple object reference alias closure unresolved",
           "wall_s": 0.00040766599999919606,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_motion_gravity_terrain",
+          "role": "movement",
+          "entry": "08047ac8",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "92f3c74a267330044e07c44ca7abfcaa753514b3be673f7399238a8ed976d21c",
+          "attempt_count": 1,
+          "reason": "object/reference argument alias closure unresolved",
+          "wall_s": 0.0013569169999989583,
           "closure_ready": false
         },
         {
@@ -1912,6 +2202,80 @@
           "wall_s": 0.23360154199999972
         },
         {
+          "id": "sma4.dead_actor_offscreen_gate",
+          "role": "combat",
+          "entry": "080413f0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "b6f41d90f22df3b0ba4743ab790542e4cca02ed2cc9e158a710f14708a1bb8f7",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 08042b28",
+          "wall_s": 0.00038716700000129833,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08041464",
+          "role": "combat",
+          "entry": "08041464",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_type_initialize",
+          "role": "combat",
+          "entry": "0804146c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "ec368901e489dda5478aa0efe496a91178d457f6ae2e48fbcdc47e872ec99109",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.002100875000000002,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.species_update_dispatch",
+          "role": "combat",
+          "entry": "0804149c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "03f215d71acdc16a532c87e55b92e071d708f1e73c3f3205da0f17b92e1574d2",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 08045638",
+          "wall_s": 0.00038783299999956,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.dead_actor_class_dispatch",
+          "role": "combat",
+          "entry": "080420d4",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "ce217613d55b3749200b0da06da9d6ab90a16ad3328257e7b43180bc4de9c26b",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 08042b28",
+          "wall_s": 0.0006357909999987754,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_state_update_dispatch",
+          "role": "combat",
+          "entry": "080425a0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "bdbb947c0d414d2aa114b539e58762e0f3021578df2cbfa64803f9c09527fe1a",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.0008736250000005441,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.world_actor_frame",
+          "role": "combat",
+          "entry": "08042738",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "aa6196d2a291714a4c8b8e152c2913c5b3e9f0fe5f3904c182f1a72ef36cfcd9",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 0808e8f0",
+          "wall_s": 0.0043594999999996276,
+          "closure_ready": false
+        },
+        {
           "id": "sma-4-super-mario-bros-3.combat.flatten_initializer",
           "role": "combat",
           "entry": "08046738",
@@ -1934,6 +2298,17 @@
           "attempt_count": 1,
           "reason": "missing L0 dependency 080466bc",
           "wall_s": 0.0006550000000000722,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.retirement_reward_accounting",
+          "role": "combat",
+          "entry": "08047144",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "081e70651283c82b1eea00f32cd072ab303a11b05f8cd2276aa538f0f026dfba",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 0808e8f0",
+          "wall_s": 0.0002491659999996898,
           "closure_ready": false
         },
         {
@@ -1981,6 +2356,972 @@
           "closure_ready": false
         },
         {
+          "id": "sma4.actor_update_discovery.0804c238",
+          "role": "combat",
+          "entry": "0804c238",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804c320",
+          "role": "combat",
+          "entry": "0804c320",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804c408",
+          "role": "combat",
+          "entry": "0804c408",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804c58c",
+          "role": "combat",
+          "entry": "0804c58c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804c640",
+          "role": "combat",
+          "entry": "0804c640",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804c708",
+          "role": "combat",
+          "entry": "0804c708",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804c7b0",
+          "role": "combat",
+          "entry": "0804c7b0",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804c7ec",
+          "role": "combat",
+          "entry": "0804c7ec",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804c944",
+          "role": "combat",
+          "entry": "0804c944",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804caac",
+          "role": "combat",
+          "entry": "0804caac",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804ce04",
+          "role": "combat",
+          "entry": "0804ce04",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804ce6c",
+          "role": "combat",
+          "entry": "0804ce6c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804d030",
+          "role": "combat",
+          "entry": "0804d030",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804d0c0",
+          "role": "combat",
+          "entry": "0804d0c0",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804d1d0",
+          "role": "combat",
+          "entry": "0804d1d0",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804d280",
+          "role": "combat",
+          "entry": "0804d280",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804d4d8",
+          "role": "combat",
+          "entry": "0804d4d8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804d5c8",
+          "role": "combat",
+          "entry": "0804d5c8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804d6c4",
+          "role": "combat",
+          "entry": "0804d6c4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804d830",
+          "role": "combat",
+          "entry": "0804d830",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804da58",
+          "role": "combat",
+          "entry": "0804da58",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804dc04",
+          "role": "combat",
+          "entry": "0804dc04",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804e13c",
+          "role": "combat",
+          "entry": "0804e13c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804e620",
+          "role": "combat",
+          "entry": "0804e620",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804e984",
+          "role": "combat",
+          "entry": "0804e984",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804ed70",
+          "role": "combat",
+          "entry": "0804ed70",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804f094",
+          "role": "combat",
+          "entry": "0804f094",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804f274",
+          "role": "combat",
+          "entry": "0804f274",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804f334",
+          "role": "combat",
+          "entry": "0804f334",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804f610",
+          "role": "combat",
+          "entry": "0804f610",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804fbec",
+          "role": "combat",
+          "entry": "0804fbec",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804fc3c",
+          "role": "combat",
+          "entry": "0804fc3c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804fc8c",
+          "role": "combat",
+          "entry": "0804fc8c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0804ff68",
+          "role": "combat",
+          "entry": "0804ff68",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08050184",
+          "role": "combat",
+          "entry": "08050184",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805020c",
+          "role": "combat",
+          "entry": "0805020c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080504ac",
+          "role": "combat",
+          "entry": "080504ac",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080508e0",
+          "role": "combat",
+          "entry": "080508e0",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08050b44",
+          "role": "combat",
+          "entry": "08050b44",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08050e6c",
+          "role": "combat",
+          "entry": "08050e6c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_pair_reaction",
+          "role": "combat",
+          "entry": "080510b8",
+          "outcome": "native_qualified",
+          "input_signature": "8b50e80dc0de2705b36d0ded7d19ada2bbbe70405b9be37d8a218a704ae18de2",
+          "attempt_count": 4,
+          "ports_ready": true,
+          "closure_ready": true,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T100633/super-mario-advance-4-super-mario-bros-3/sma4.actor_pair_reaction",
+          "wall_s": 0.311702375
+        },
+        {
+          "id": "sma4.actor_update_discovery.08051504",
+          "role": "combat",
+          "entry": "08051504",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805180c",
+          "role": "combat",
+          "entry": "0805180c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080518e4",
+          "role": "combat",
+          "entry": "080518e4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08051aa4",
+          "role": "combat",
+          "entry": "08051aa4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08051e64",
+          "role": "combat",
+          "entry": "08051e64",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08052014",
+          "role": "combat",
+          "entry": "08052014",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080520f0",
+          "role": "combat",
+          "entry": "080520f0",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08052164",
+          "role": "combat",
+          "entry": "08052164",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080522d8",
+          "role": "combat",
+          "entry": "080522d8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08052404",
+          "role": "combat",
+          "entry": "08052404",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08052748",
+          "role": "combat",
+          "entry": "08052748",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08052c50",
+          "role": "combat",
+          "entry": "08052c50",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08053094",
+          "role": "combat",
+          "entry": "08053094",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08053890",
+          "role": "combat",
+          "entry": "08053890",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080539bc",
+          "role": "combat",
+          "entry": "080539bc",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080540c4",
+          "role": "combat",
+          "entry": "080540c4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08054458",
+          "role": "combat",
+          "entry": "08054458",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080546d8",
+          "role": "combat",
+          "entry": "080546d8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080549f4",
+          "role": "combat",
+          "entry": "080549f4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08054c88",
+          "role": "combat",
+          "entry": "08054c88",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08054e34",
+          "role": "combat",
+          "entry": "08054e34",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08054f84",
+          "role": "combat",
+          "entry": "08054f84",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08055148",
+          "role": "combat",
+          "entry": "08055148",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080552a8",
+          "role": "combat",
+          "entry": "080552a8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805553c",
+          "role": "combat",
+          "entry": "0805553c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080557ec",
+          "role": "combat",
+          "entry": "080557ec",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08056074",
+          "role": "combat",
+          "entry": "08056074",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08056204",
+          "role": "combat",
+          "entry": "08056204",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805660c",
+          "role": "combat",
+          "entry": "0805660c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08056734",
+          "role": "combat",
+          "entry": "08056734",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08056f2c",
+          "role": "combat",
+          "entry": "08056f2c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08057938",
+          "role": "combat",
+          "entry": "08057938",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08057efc",
+          "role": "combat",
+          "entry": "08057efc",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080585b8",
+          "role": "combat",
+          "entry": "080585b8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08058870",
+          "role": "combat",
+          "entry": "08058870",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08058f08",
+          "role": "combat",
+          "entry": "08058f08",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08059504",
+          "role": "combat",
+          "entry": "08059504",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805a08c",
+          "role": "combat",
+          "entry": "0805a08c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805adfc",
+          "role": "combat",
+          "entry": "0805adfc",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805b178",
+          "role": "combat",
+          "entry": "0805b178",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805b488",
+          "role": "combat",
+          "entry": "0805b488",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805bc20",
+          "role": "combat",
+          "entry": "0805bc20",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805cfd0",
+          "role": "combat",
+          "entry": "0805cfd0",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805d5d8",
+          "role": "combat",
+          "entry": "0805d5d8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805dad8",
+          "role": "combat",
+          "entry": "0805dad8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805db0c",
+          "role": "combat",
+          "entry": "0805db0c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805db80",
+          "role": "combat",
+          "entry": "0805db80",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805e424",
+          "role": "combat",
+          "entry": "0805e424",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805e478",
+          "role": "combat",
+          "entry": "0805e478",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805f6bc",
+          "role": "combat",
+          "entry": "0805f6bc",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805f890",
+          "role": "combat",
+          "entry": "0805f890",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0805fe00",
+          "role": "combat",
+          "entry": "0805fe00",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08060148",
+          "role": "combat",
+          "entry": "08060148",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080604ec",
+          "role": "combat",
+          "entry": "080604ec",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08060854",
+          "role": "combat",
+          "entry": "08060854",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080609c8",
+          "role": "combat",
+          "entry": "080609c8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08060a64",
+          "role": "combat",
+          "entry": "08060a64",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08060ee8",
+          "role": "combat",
+          "entry": "08060ee8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08061108",
+          "role": "combat",
+          "entry": "08061108",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08061510",
+          "role": "combat",
+          "entry": "08061510",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806251c",
+          "role": "combat",
+          "entry": "0806251c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806292c",
+          "role": "combat",
+          "entry": "0806292c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08062e20",
+          "role": "combat",
+          "entry": "08062e20",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080632cc",
+          "role": "combat",
+          "entry": "080632cc",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080639b8",
+          "role": "combat",
+          "entry": "080639b8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08063b3c",
+          "role": "combat",
+          "entry": "08063b3c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08063fd8",
+          "role": "combat",
+          "entry": "08063fd8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08064404",
+          "role": "combat",
+          "entry": "08064404",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08065dc4",
+          "role": "combat",
+          "entry": "08065dc4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080663b4",
+          "role": "combat",
+          "entry": "080663b4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08066874",
+          "role": "combat",
+          "entry": "08066874",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08066af4",
+          "role": "combat",
+          "entry": "08066af4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08066e40",
+          "role": "combat",
+          "entry": "08066e40",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08067264",
+          "role": "combat",
+          "entry": "08067264",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08067938",
+          "role": "combat",
+          "entry": "08067938",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08067a48",
+          "role": "combat",
+          "entry": "08067a48",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080680d0",
+          "role": "combat",
+          "entry": "080680d0",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08068478",
+          "role": "combat",
+          "entry": "08068478",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08068970",
+          "role": "combat",
+          "entry": "08068970",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
           "id": "sma-4-super-mario-bros-3.progression.growth_audio_helper",
           "role": "progression",
           "entry": "08068aa4",
@@ -2025,6 +3366,774 @@
           "closure_ready": false
         },
         {
+          "id": "sma4.actor_update_discovery.080693d8",
+          "role": "combat",
+          "entry": "080693d8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080694bc",
+          "role": "combat",
+          "entry": "080694bc",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080694f8",
+          "role": "combat",
+          "entry": "080694f8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08069558",
+          "role": "combat",
+          "entry": "08069558",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080695c8",
+          "role": "combat",
+          "entry": "080695c8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08069980",
+          "role": "combat",
+          "entry": "08069980",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08069b68",
+          "role": "combat",
+          "entry": "08069b68",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08069c80",
+          "role": "combat",
+          "entry": "08069c80",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806a16c",
+          "role": "combat",
+          "entry": "0806a16c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806b7a0",
+          "role": "combat",
+          "entry": "0806b7a0",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806badc",
+          "role": "combat",
+          "entry": "0806badc",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806c078",
+          "role": "combat",
+          "entry": "0806c078",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806c46c",
+          "role": "combat",
+          "entry": "0806c46c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806c5f4",
+          "role": "combat",
+          "entry": "0806c5f4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806c704",
+          "role": "combat",
+          "entry": "0806c704",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806c964",
+          "role": "combat",
+          "entry": "0806c964",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806ca5c",
+          "role": "combat",
+          "entry": "0806ca5c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806cbfc",
+          "role": "combat",
+          "entry": "0806cbfc",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806cdc0",
+          "role": "combat",
+          "entry": "0806cdc0",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806ce78",
+          "role": "combat",
+          "entry": "0806ce78",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806d6c0",
+          "role": "combat",
+          "entry": "0806d6c0",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806e0e0",
+          "role": "combat",
+          "entry": "0806e0e0",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806e25c",
+          "role": "combat",
+          "entry": "0806e25c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806e3b8",
+          "role": "combat",
+          "entry": "0806e3b8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806e5cc",
+          "role": "combat",
+          "entry": "0806e5cc",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806f17c",
+          "role": "combat",
+          "entry": "0806f17c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0806f740",
+          "role": "combat",
+          "entry": "0806f740",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080710bc",
+          "role": "combat",
+          "entry": "080710bc",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08071810",
+          "role": "combat",
+          "entry": "08071810",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080729c4",
+          "role": "combat",
+          "entry": "080729c4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807303c",
+          "role": "combat",
+          "entry": "0807303c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080731ec",
+          "role": "combat",
+          "entry": "080731ec",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08073330",
+          "role": "combat",
+          "entry": "08073330",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08073c48",
+          "role": "combat",
+          "entry": "08073c48",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080741d8",
+          "role": "combat",
+          "entry": "080741d8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08074650",
+          "role": "combat",
+          "entry": "08074650",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08075210",
+          "role": "combat",
+          "entry": "08075210",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080754b8",
+          "role": "combat",
+          "entry": "080754b8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080758d0",
+          "role": "combat",
+          "entry": "080758d0",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08075f84",
+          "role": "combat",
+          "entry": "08075f84",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08076574",
+          "role": "combat",
+          "entry": "08076574",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08076710",
+          "role": "combat",
+          "entry": "08076710",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08076a5c",
+          "role": "combat",
+          "entry": "08076a5c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08076c2c",
+          "role": "combat",
+          "entry": "08076c2c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08077188",
+          "role": "combat",
+          "entry": "08077188",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08077358",
+          "role": "combat",
+          "entry": "08077358",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080776d8",
+          "role": "combat",
+          "entry": "080776d8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080776f4",
+          "role": "combat",
+          "entry": "080776f4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08077b24",
+          "role": "combat",
+          "entry": "08077b24",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08078000",
+          "role": "combat",
+          "entry": "08078000",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080788c4",
+          "role": "combat",
+          "entry": "080788c4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08078d30",
+          "role": "combat",
+          "entry": "08078d30",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08079860",
+          "role": "combat",
+          "entry": "08079860",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08079a54",
+          "role": "combat",
+          "entry": "08079a54",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807a3a8",
+          "role": "combat",
+          "entry": "0807a3a8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807a564",
+          "role": "combat",
+          "entry": "0807a564",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807a7c4",
+          "role": "combat",
+          "entry": "0807a7c4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807a888",
+          "role": "combat",
+          "entry": "0807a888",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807af98",
+          "role": "combat",
+          "entry": "0807af98",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807b2f8",
+          "role": "combat",
+          "entry": "0807b2f8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807b688",
+          "role": "combat",
+          "entry": "0807b688",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807b85c",
+          "role": "combat",
+          "entry": "0807b85c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807bc74",
+          "role": "combat",
+          "entry": "0807bc74",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807bee8",
+          "role": "combat",
+          "entry": "0807bee8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807c3e8",
+          "role": "combat",
+          "entry": "0807c3e8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807c7c8",
+          "role": "combat",
+          "entry": "0807c7c8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807c8c0",
+          "role": "combat",
+          "entry": "0807c8c0",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807ca24",
+          "role": "combat",
+          "entry": "0807ca24",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807d044",
+          "role": "combat",
+          "entry": "0807d044",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807d3f4",
+          "role": "combat",
+          "entry": "0807d3f4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807dee0",
+          "role": "combat",
+          "entry": "0807dee0",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807e010",
+          "role": "combat",
+          "entry": "0807e010",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807e19c",
+          "role": "combat",
+          "entry": "0807e19c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807e290",
+          "role": "combat",
+          "entry": "0807e290",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807e874",
+          "role": "combat",
+          "entry": "0807e874",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807e8f8",
+          "role": "combat",
+          "entry": "0807e8f8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0807ff28",
+          "role": "combat",
+          "entry": "0807ff28",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08080154",
+          "role": "combat",
+          "entry": "08080154",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080807a4",
+          "role": "combat",
+          "entry": "080807a4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08080fd4",
+          "role": "combat",
+          "entry": "08080fd4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0808122c",
+          "role": "combat",
+          "entry": "0808122c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08081530",
+          "role": "combat",
+          "entry": "08081530",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08081da4",
+          "role": "combat",
+          "entry": "08081da4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0808233c",
+          "role": "combat",
+          "entry": "0808233c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08082aac",
+          "role": "combat",
+          "entry": "08082aac",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0808313c",
+          "role": "combat",
+          "entry": "0808313c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080841d8",
+          "role": "combat",
+          "entry": "080841d8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080846f4",
+          "role": "combat",
+          "entry": "080846f4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.0808471c",
+          "role": "combat",
+          "entry": "0808471c",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08084820",
+          "role": "combat",
+          "entry": "08084820",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080849ac",
+          "role": "combat",
+          "entry": "080849ac",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08084abc",
+          "role": "combat",
+          "entry": "08084abc",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080858e8",
+          "role": "combat",
+          "entry": "080858e8",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08085c54",
+          "role": "combat",
+          "entry": "08085c54",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.080861c4",
+          "role": "combat",
+          "entry": "080861c4",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_update_discovery.08086644",
+          "role": "combat",
+          "entry": "08086644",
+          "outcome": "pending_causal_analysis",
+          "discovery_only": true,
+          "closure_ready": false
+        },
+        {
           "id": "sma4.visual_reward_pool_select",
           "role": "combat",
           "entry": "08090f6c",
@@ -2033,6 +4142,61 @@
           "attempt_count": 1,
           "reason": "maximum recursion depth exceeded in comparison",
           "wall_s": 0.0035429580000005956,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.reward_event_to_world_state",
+          "role": "combat",
+          "entry": "08091050",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "808e23fdd508e8acc8e2807235477916b137084489ca70c127861183f2ddcd03",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 08091000",
+          "wall_s": 0.0005483329999975695,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.player_outer_tick",
+          "role": "movement",
+          "entry": "08092240",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "c3dc4250b40c543e678be9a68ed841917cce9b683790932ec05fd096871ab0c9",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080928f8",
+          "wall_s": 0.0034478750000026537,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.player_mode_gate",
+          "role": "movement",
+          "entry": "08092684",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "8c7e86710396104d64e9fe1c3be2003959b0bb9a311078418cf2ec4e0f79834d",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080a59e0",
+          "wall_s": 0.0005157079999982273,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.player_tick_form_commit",
+          "role": "progression",
+          "entry": "08092d9c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "121109ccbc1d30179035e0610171e6c9730660c6ce254565e779d270d472a49d",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 08095268",
+          "wall_s": 0.006945999999999231,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.player_terrain_phase",
+          "role": "movement",
+          "entry": "08097bf0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "1416358c9a9797980bf9a5dc3718f7c6b3ef33836e59113cdfa0d292e6c12bca",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 0809bdd4",
+          "wall_s": 0.0008690419999979326,
           "closure_ready": false
         },
         {
@@ -2075,17 +4239,36 @@
           "closure_ready": false
         },
         {
-          "id": "sma4.death_phase_2",
-          "role": "combat",
-          "entry": "080a674c",
-          "outcome": "pending_unattempted",
+          "id": "sma4.form_palette_refresh",
+          "role": "movement",
+          "entry": "0809d51c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "31e920ccee39bb901fae98cf64f6939e71540588ef75fbabed7fa44751921554",
+          "attempt_count": 1,
+          "reason": "dynamic or nested object reference unresolved",
+          "wall_s": 0.0005077910000004238,
           "closure_ready": false
         },
         {
-          "id": "sma4.death_phase_3",
+          "id": "sma4.death_phase_dispatch",
           "role": "combat",
-          "entry": "080a678c",
-          "outcome": "pending_unattempted",
+          "entry": "080a66c4",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "66e00cb8ab48231d3575fad13198257bc92210f68c0868cd402ab874206cc64e",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080e7634",
+          "wall_s": 0.0002724159999978326,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.death_phase_1",
+          "role": "combat",
+          "entry": "080a66e8",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "0c1d37fada853fe4a489b45474be647165c1a074b60ae092f58b884593135e56",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080e3e7c",
+          "wall_s": 0.00037395800000084023,
           "closure_ready": false
         }
       ],
@@ -2095,7 +4278,8 @@
         "research/corpus-mining/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3.json",
         "ontology/portraits/super-mario-advance-4-super-mario-bros-3.json"
       ],
-      "counts_snapshot_utc": "2026-10-16T09:44:41.592749+00:00"
+      "counts_snapshot_utc": "2026-10-16T10:09:42.277886+00:00",
+      "automatic_status_sha256": "451659505aca1533a8716540fca8338d5994346525e0e1612d71a75625ec0c1a"
     },
     {
       "game": "mario-and-luigi-superstar-saga",

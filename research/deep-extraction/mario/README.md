@@ -6,9 +6,10 @@ This lane maps missing mechanic families and their actual own-ROM dependency cha
 
 | File | Actual scope |
 | --- | --- |
-| `mechanics-targets.json` | 57 causal gameplay targets, own-ROM instruction/export hashes, callers, dependencies, state roles, acceptance obligations and two bounded indirect dispatch maps |
+| `mechanics-targets.json` | 75 causal gameplay targets, own-ROM instruction/export hashes, callers, dependencies, state roles, acceptance obligations and two bounded indirect dispatch maps |
 | `l0-context-evidence.json` | Three hash-pinned L0 context/domain profiles used to resolve original player/character/engine references; no behavior implementation |
 | `context-observations.json` | Read-only roots from three retained checkpoints (0.0923 s), plus a separate stock Mario 3 actor-view snapshot (0.03095 s); one rendered restore frame each |
+| `sma2-fire-ability-lifecycle.json` | Actual form acquisition→legal shot→two-slot allocation→projectile/target/terrain update→impact lifetime→slot cleanup graph; currently static causal evidence |
 | `sma4-collision-service-contracts.json` | Local collision-frame domain, conditional scratch outputs and stateful tile-query service requirements |
 | `sma4-pair-reaction-semantics.json` | Eight typed pair-contact state fields plus relative-position argument, pinned to original machine dataflow and consumers |
 | `sma4-actor-dispatch.json` | Actor collection/handle ownership, walking/hopping AI phase closure and instruction-confirmed pair-reaction ABI; other actor types remain discovery targets |

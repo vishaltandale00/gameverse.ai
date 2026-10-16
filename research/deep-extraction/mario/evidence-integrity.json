@@ -11,5 +11,19 @@
     "new_target_instruction_spans": 14,
     "total_target_spans": 57,
     "scope": "New enemy scheduler/pair/lifecycle targets; own-ROM hashes and distinct IDs. No new native gameplay qualification implied."
-  }
+  },
+  "followup_checks": [
+    {
+      "outcome": "pass_metadata_integrity_only",
+      "new_targets": 13,
+      "total_targets": 70,
+      "scope": "Own-ROM fire/form lifecycle instruction hashes, including independently reviewed missing leaf boundary; not gameplay qualification."
+    },
+    {
+      "outcome": "pass_metadata_integrity_only",
+      "new_targets": 5,
+      "total_targets": 75,
+      "scope": "Own-ROM accepted item/reserve table and clock/transformation target ranges; no native qualification implied."
+    }
+  ]
 }
