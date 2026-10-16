@@ -92,6 +92,35 @@ test('empty final transcripts never submit a backend request', async () => {
   assert.equal(f.calls.some(call => call.path === '/api/voice/requests'), false); await f.voice.cancel();
 });
 
+test('name dictation returns the final draft in the foreground without saving feedback', async () => {
+  const f = fixture({ transcriptOnly: true }); await f.voice.start();
+  f.streams[0].options.onText('Vi');
+  f.streams[0].stop = async () => ({ text: 'Vishal', transcriptionMs: 12 });
+  f.voice.stop(); assert.equal(f.views.at(-1).background, false); await tick();
+  assert.equal(f.views.at(-1).text, 'Vishal'); assert.equal(f.views.at(-1).state, 'received');
+  assert.equal(f.voice.active, false); assert.ok(f.tracks.every(track => track.stopped));
+  assert.equal(f.calls.some(call => call.path === '/api/voice/requests'), false);
+});
+
+test('B still cancels name finalization and a late final cannot replace the draft', async () => {
+  const f = fixture({ transcriptOnly: true }), controller = pad(), final = deferred();
+  f.voice.poll([controller], true); await f.voice.start();
+  f.streams[0].stop = () => final.promise; f.voice.stop();
+  controller.buttons[1].pressed = true; assert.equal(f.voice.poll([controller], true), true);
+  await tick(); final.resolve({ text: 'Discarded name' }); await tick();
+  assert.equal(f.voice.active, false); assert.equal(f.views.some(view => view.state === 'received'), false);
+  assert.equal(f.voice.poll([controller], true), true, 'held B remains consumed');
+  assert.equal(f.calls.length, 1, 'only config was fetched');
+});
+
+test('empty name speech remains an actionable foreground error and can be retried', async () => {
+  const f = fixture({ transcriptOnly: true }); await f.voice.start();
+  f.streams[0].stop = async () => ({ text: ' ' }); f.voice.stop(); await tick();
+  assert.equal(f.voice.active, false); assert.equal(f.views.at(-1).state, 'error'); assert.equal(f.views.at(-1).background, false);
+  await f.voice.cancel(); await f.voice.start(); assert.equal(f.voice.state, 'recording');
+  await f.voice.cancel(); assert.equal(f.calls.some(call => call.path === '/api/voice/requests'), false);
+});
+
 test('cancel during connection closes a late-started stream without rearming recording', async () => {
   const ready = deferred(), f = fixture(); const original = f.voice.createStream;
   f.voice.createStream = options => { const stream = original(options); stream.start = () => ready.promise; return stream; };

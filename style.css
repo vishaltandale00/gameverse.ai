@@ -501,6 +501,10 @@ dialog .controller-menu-hint { border-top:1px solid var(--line); padding-top:18p
 #profile-dialog .primary:hover { background:#e1ead9; }
 #profile-dialog .text-button, #profile-dialog .existing-profile { color:#a8b3a8; }
 #profile-dialog #letters button { border-color:#ffffff18; }
+/* Gamepad focus is programmatic, so browsers do not always match :focus-visible. */
+#profile-dialog button:focus { outline:2px solid #bdcdb2; outline-offset:3px; }
+#profile-dialog button:not(.primary):hover:not(:disabled) { background:#d4dfca1d; }
+#name-case[aria-pressed=true] { background:#d4dfca12; border-color:#c9d7bd; }
 /* Voice is a small HUD panel; keep the game visible while input is paused. */
 #voice-button {
   display:flex; align-items:center; gap:9px; position:fixed; right:24px; bottom:24px; z-index:30;
@@ -604,6 +608,14 @@ dialog .primary {
   margin-top:12px}
 #letters button {
   padding:9px}
+.name-voice-actions, .name-key-actions { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0; }
+.name-voice-actions button { flex:1; }
+.name-key-actions button { flex:1; padding:9px 7px; font-size:12px; }
+#name-status { min-height:36px; margin:12px 0; }
+#name-live { padding:10px; border-left:2px solid #c9d7bd; overflow-wrap:anywhere; }
+#profile-review { padding-top:20px; }
+#profile-review-avatar { font-size:44px; }
+#profile-review-name { font-size:28px; overflow-wrap:anywhere; }
 .player-heading {
   display:flex;
   justify-content:space-between;

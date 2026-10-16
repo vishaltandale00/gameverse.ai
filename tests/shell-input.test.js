@@ -19,7 +19,7 @@ function fixture() {
   const context = { pads: [pad()], clicks: 0, menuOpens: 0, inputs: [], focused: true, busy: false, dialog: null, resumes: 0, closes: 0,
     neighborhoodOpen: false, padArmed: false, padPrevious: [], keyboard: new Set(), inputMask: -1,
     shellPadDevice: null, shellPadIndex: null, lastPadAction: 0, session: undefined,
-    voice: { poll() {} }, padMask, sampleStandardGamepad, requestAnimationFrame() {}, focusDirection() {},
+    nameEntry: { voice: { poll() {} }, back: () => false }, voice: { poll() {} }, padMask, sampleStandardGamepad, requestAnimationFrame() {}, focusDirection() {},
     $: selector => selector.startsWith('dialog[open]') ? context.dialog : context.elements[selector] || status,
   };
   context.elements = {
@@ -141,4 +141,15 @@ test('shell navigation waits for both sticks and keeps the selected controller',
   const original = context.pads[0]; context.pads = [pad(1), original];
   context.pollInput(400);
   assert.equal(context.shellPadIndex, 0); assert.equal(context.shellPadDevice, '0:test-pad-0');
+});
+
+test('name dictation owns cancelling B and review consumes B without closing the character dialog', () => {
+  const context = fixture(); context.dialog = { id: 'profile-dialog', close() { context.closes++; } };
+  context.nameEntry.voice.poll = () => true;
+  context.pollInput(100); press(context, 1); context.pollInput(200);
+  assert.equal(context.closes, 0, 'voice cancellation must not close character creation');
+  press(context, 1, false); context.pollInput(300); context.nameEntry.voice.poll = () => false;
+  let edits = 0; context.nameEntry.back = () => { edits++; return true; };
+  press(context, 1); context.pollInput(400);
+  assert.equal(edits, 1); assert.equal(context.closes, 0);
 });
