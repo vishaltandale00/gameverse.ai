@@ -137,3 +137,15 @@ python3 -B -m tools.roundtrip.ir_bundle rebuild --bundle /path/to/private-bundle
 ```
 
 These generic sources support replay of admitted, sealed input snapshots. New admission requires the compatible authoring snapshot helpers described above; the public subset does not provide arbitrary game extraction or a complete game decompiler.
+
+## Final bounded qualification and cancellation continuity
+
+[The independently validated final receipt](../verification/rpg-final-qualification-20261016.json) pins source `96c5566`, its exact 49-file runtime readset, original ROM/save/provider and profile. The final fresh-save run made 34 successful provider requests (nine D1, 25 System 2), executed 164 actions and 7,893 native frames: 1,692 startup, one resume integration, and 6,200 play. It stopped partial at source stage 4 with four battle observations. No pair-battle win, gym completion, stage 6 or full-quest success was observed.
+
+The actual controller was cancelled before its second experiment with zero additional usage, stopped, then resumed in a new controller process. Native checkpoint, learning context, observation, source facts and parent references matched exactly. The new supervisor had a different authenticated token/port, and no 1,692-frame startup replay occurred. [The earlier cancelled campaign](../verification/rpg-cancelled-campaign-20261016.json) preserves the checkpoint-loss defect and duplicate work that led to this fix; [the zero-model native comparison](../verification/rpg-cancelled-checkpoint-local-20261016.json) independently distinguishes original-save stage 0 from retained-checkpoint stage 2.
+
+Final worker execution was 60.162394 s, including model work; D1 and System 2 calls occupied 3.616658 s and 42.717333 s respectively. Those timings nest inside worker execution. The 6,200 play frames represent 103.806 simulated seconds, or 1.72541 simulated play seconds per worker second. This is a bounded-run measurement with no source build and no full-quest latency guarantee. Queue, provider billing and remote CI measurements remain unavailable.
+
+The current call ledger is exhausted: 14 v2-prefix + four [actual retained D1 rechecks](../verification/rpg-d1-targeted-rechecks-20261016.json) + 48 earlier cancelled-campaign + 34 final calls = 100. The earlier separately authorized v1 prefix used 20 calls. Across all RPG runs and targeted requests, 120 calls, 28,897 native frames and 237.13608 seconds of aggregate observed worker/request execution are retained, including failures and duplicate work. This aggregate is not a single elapsed critical path. All workers are stopped; no further qualification is running.
+
+All four retained D1 rechecks returned HTTP 200/status success with zero retries in 1.862158 s after lossless context compaction. Their low scores still failed the unchanged confidence gate. Exact source review and 33 focused checks covered action metadata, anchored history/gaps and JSON type changes; this correction removes redundancy without pruning choices, current facts, screenshots or source criteria. The provider's exact request-size limit remains unknown.
