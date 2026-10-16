@@ -10,6 +10,21 @@
   box-sizing:border-box}
 body {
   margin:0}
+.application-loading > .topbar, .application-loading > footer,
+.world-application > .topbar, .world-application > footer,
+.application-failed > .topbar, .application-failed > footer { display:none; }
+.world-application { background:#283b36; }
+.world-application #player { background:#f7f5ef; min-height:100vh; }
+#application-loading { position:fixed; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; background:#253b35; color:#eee8d6; }
+#application-loading .brand-mark { color:#c7b68a; }
+#application-loading h1 { font:48px Georgia,serif; letter-spacing:-1px; margin:15px; }
+#application-loading p { font-size:13px; color:#ced1bf; }
+#application-error { min-height:100vh; padding-top:18vh; padding-bottom:80px; background:#f7f5ef; }
+#application-error h1 { font-size:48px; letter-spacing:-2px; }
+#application-error-message { line-height:1.7; max-width:600px; }
+#application-error a { display:inline-block; margin-left:24px; color:var(--green); font-size:13px; }
+.world-original-link { display:inline-block; margin-top:20px; color:var(--muted); font-size:12px; }
+#world-menu { background:#f0eee1; }
 button,input {
   font:inherit}
 button,a,input {
@@ -704,6 +719,68 @@ footer {
 
 
 /* Give the initial FireRed adventure the full collection row. */
+.neighborhood-card { display:grid; grid-template-columns:1fr 1.15fr; overflow:hidden; border:1px solid var(--line); border-radius:12px; margin:28px 0 38px; background:#f0eee4; }
+.neighborhood-card-art { min-height:270px; position:relative; overflow:hidden; background:linear-gradient(160deg,#a8c1c2,#e1d6b6 68%,#687468 69%); }
+.neighborhood-card-art span { position:absolute; left:25px; top:25px; font:600 34px/1 Georgia,serif; letter-spacing:-1px; color:#34453e; z-index:2; }
+.neighborhood-card-art i { position:absolute; bottom:30px; width:19%; height:110px; left:5%; background:repeating-linear-gradient(90deg,transparent 0 16px,#414e4c 17px 22px,transparent 23px 32px),repeating-linear-gradient(0deg,#bfae92 0 20px,#e4d2ae 21px 25px); transform:skewY(-5deg); box-shadow:15px 12px 0 #8e8d78; }
+.neighborhood-card-art i:nth-of-type(2) { left:26%; height:140px; }
+.neighborhood-card-art i:nth-of-type(3) { left:47%; height:100px; }
+.neighborhood-card-art i:nth-of-type(4) { left:68%; height:170px; }
+.neighborhood-card-art i:nth-of-type(5) { left:89%; height:120px; }
+.neighborhood-card-copy { padding:30px 36px; }
+.neighborhood-card-copy h2 { font-size:30px; font-weight:500; letter-spacing:-1px; margin:12px 0; }
+.neighborhood-card-copy p:not(.eyebrow) { font-size:13px; line-height:1.65; color:var(--muted); }
+.neighborhood-card-copy button { margin-top:8px; }
+.neighborhood-card-copy button span { margin-left:22px; }
+.neighborhood-card-copy small { display:block; color:var(--muted); margin-top:13px; font-size:10px; }
+.exploring-neighborhood { overflow:hidden; }
+.exploring-neighborhood > .topbar, .exploring-neighborhood > footer { visibility:hidden; }
+#neighborhood { position:fixed; inset:0; z-index:20; background:#899fa5; color:#fff9e9; font-family:Arial,Helvetica,sans-serif; }
+.neighborhood-canvas { position:absolute; inset:0; }
+.neighborhood-canvas canvas { display:block; width:100%; height:100%; outline:none; touch-action:none; cursor:grab; }
+.neighborhood-canvas canvas:active { cursor:grabbing; }
+.neighborhood-heading { position:absolute; top:34px; left:38px; pointer-events:none; text-shadow:0 2px 18px #18262680; }
+.neighborhood-kicker { font:10px 'Courier New',monospace; letter-spacing:2px; }
+.neighborhood-heading h1 { font:36px/1.05 Georgia,serif; letter-spacing:-1px; margin:11px 0 0; }
+.neighborhood-heading h1 span { display:block; font:12px Arial,sans-serif; letter-spacing:.1px; margin-top:10px; opacity:.84; }
+.neighborhood-input-status { font-size:10px; opacity:.8; margin-top:12px; }
+#neighborhood button { color:#fff9e9; border:1px solid #ffffff40; background:#22322b8c; backdrop-filter:blur(10px); font-size:12px; font-weight:400; }
+#neighborhood button:hover { background:#263c32dc; }
+.neighborhood-return { position:absolute; right:32px; top:34px; z-index:4; }
+.neighborhood-return span { margin-left:20px; }
+.neighborhood-destination { position:absolute; top:100px; right:32px; padding:17px 19px; border:1px solid #edc08266; border-radius:8px; background:#27362be6; max-width:300px; pointer-events:none; }
+.neighborhood-destination strong { display:block; margin:9px 0; font:21px Georgia,serif; }
+.neighborhood-directions, .neighborhood-distance { display:block; font-size:11px; line-height:1.7; }
+.neighborhood-distance { color:#f2c98b; }
+.neighborhood-entry { position:absolute; left:50%; bottom:115px; transform:translateX(-50%); width:min(390px,calc(100% - 32px)); padding:22px; text-align:center; border:1px solid #e0bc7c88; border-radius:10px; background:#29382df0; box-shadow:0 10px 30px #17221866; }
+.neighborhood-entry strong { display:block; font:27px Georgia,serif; margin:10px 0; }
+.neighborhood-entry p { font-size:12px; line-height:1.6; margin:11px 0; }
+.neighborhood-entry-message:empty { display:none; }
+#neighborhood .neighborhood-enter { background:#efc78b; color:#2a382c; font-weight:600; margin-top:3px; }
+#neighborhood .neighborhood-enter:hover { background:#ffe0ae; }
+.neighborhood-enter kbd { margin-left:15px; border-color:#7d725a; }
+.neighborhood-location { position:absolute; left:38px; bottom:40px; display:flex; gap:13px; align-items:center; text-shadow:0 2px 7px #152b20; pointer-events:none; }
+.neighborhood-location-dot { width:10px; height:10px; border-radius:50%; border:2px solid #e4d7a8; box-shadow:0 0 0 5px #233a3144; }
+.neighborhood-location strong { display:block; font-size:11px; letter-spacing:1.9px; }
+.neighborhood-location div>span { display:block; font-size:10px; margin-top:7px; opacity:.75; }
+.neighborhood-controls { position:absolute; right:32px; bottom:32px; display:flex; align-items:center; gap:15px; font-size:11px; padding:10px 13px; border-radius:8px; background:#1b2c2580; backdrop-filter:blur(9px); }
+.neighborhood-controls kbd { font:10px Arial,sans-serif; border-color:#ffffff50; padding:3px 5px; margin-right:4px; }
+#neighborhood .neighborhood-controls button { border:none; padding:7px 8px; background:transparent; backdrop-filter:none; font-size:11px; }
+.neighborhood-overlay { position:absolute; inset:0; display:grid; place-items:center; background:#1a2a247a; backdrop-filter:blur(5px); z-index:3; }
+.neighborhood-overlay>div { max-width:460px; margin:24px; text-align:center; }
+.neighborhood-overlay h2 { font:38px Georgia,serif; letter-spacing:-1px; margin:18px 0; }
+.neighborhood-message { font-size:14px; line-height:1.7; opacity:.85; }
+#neighborhood .neighborhood-resume { margin-top:15px; background:#eee9d6; color:#273c32; padding:15px 25px; }
+@media (max-width:850px) {
+  .neighborhood-card { grid-template-columns:1fr; }
+  .neighborhood-card-art { min-height:220px; }
+  .neighborhood-heading { top:23px; left:22px; }
+  .neighborhood-heading h1 { font-size:28px; }
+  .neighborhood-return { top:22px; right:22px; }
+  .neighborhood-destination { top:100px; right:20px; max-width:235px; padding:12px; }
+  .neighborhood-controls { left:20px; right:20px; bottom:18px; justify-content:center; gap:8px; flex-wrap:wrap; }
+  .neighborhood-location { left:24px; bottom:100px; }
+}
 .games.single-game {
   grid-template-columns: 1fr;
 }
@@ -728,4 +805,44 @@ footer {
   .games.single-game .card-info {
     padding: 22px;
   }
+}
+
+/* Subgames occupy the viewport; preserve the GBA 3:2 image with letterboxing. */
+body.playing-subgame { overflow:hidden; background:#080b0b; }
+.playing-subgame > .topbar, .playing-subgame > footer { display:none; }
+body.playing-subgame #player {
+  position:fixed; inset:0; width:100%; max-width:none; height:100dvh;
+  min-height:0; margin:0; padding:0; background:#080b0b;
+}
+.playing-subgame .screen {
+  position:absolute; inset:0; margin:0; padding:0; border-radius:0;
+  min-height:0; align-items:center; background:#080b0b;
+}
+.playing-subgame .screen canvas {
+  flex:none; width:min(100vw, 150dvh); height:min(100dvh, 66.666667vw);
+  max-height:none; aspect-ratio:3/2; object-fit:contain;
+}
+.playing-subgame .player-heading {
+  position:absolute; z-index:1; top:12px; right:12px; left:12px;
+  padding:0; margin:0; justify-content:flex-end; pointer-events:none;
+}
+.playing-subgame .player-heading > div { display:none; }
+.playing-subgame .player-heading button {
+  pointer-events:auto; background:#101918e6; color:#f3f1e6;
+  border-color:#f3f1e640; padding:10px 13px; font-size:12px;
+}
+.playing-subgame .play-controls {
+  position:absolute; z-index:1; bottom:12px; left:12px; right:12px;
+  margin:0 auto; padding:9px 12px; width:fit-content; max-width:calc(100% - 24px);
+  border-radius:6px; background:#101918e6; color:#f3f1e6;
+  gap:12px; pointer-events:none; font-size:11px;
+  animation:subgame-controls-hint 8s forwards;
+}
+.playing-subgame #session-status {
+  position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%);
+}
+.controller-menu-hint { color:var(--muted); font-size:12px; line-height:1.6; }
+@keyframes subgame-controls-hint { 0%,75% { opacity:1; } 100% { opacity:0; } }
+@media (prefers-reduced-motion:reduce) {
+  .playing-subgame .play-controls { animation:none; }
 }

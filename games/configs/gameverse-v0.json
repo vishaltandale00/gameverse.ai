@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "gameverse",
+  "version": "v0",
+  "title": "Gameverse",
+  "base": {
+    "kind": "collection",
+    "entryPath": "/v0"
+  },
+  "subgames": [
+    {
+      "id": "firered",
+      "catalogId": "firered",
+      "adapter": "gameverse-gba-worker/0.1.0"
+    }
+  ]
+}

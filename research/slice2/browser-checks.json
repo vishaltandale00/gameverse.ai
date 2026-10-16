@@ -1,0 +1,199 @@
+{
+  "runId": "neighborhood-browser-2026-10-16T05:44:05.923Z",
+  "timestamp": "2026-10-16T05:44:05.935Z",
+  "baselineCommit": "d63a776ebe8e6acb31839a6f854745a1f9c39034",
+  "gameVersion": "alder-neighborhood-prototype-1",
+  "adapter": "neighborhood-controller (prototype; not shared adapter contract)",
+  "loop": null,
+  "queueMs": null,
+  "environment": {
+    "origin": "http://127.0.0.1:4173",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "viewport": {
+      "devicePixelRatio": 2,
+      "height": 720,
+      "width": 1280
+    },
+    "host": {
+      "platform": "darwin",
+      "architecture": "arm64",
+      "cpu": "Apple M4 Max",
+      "memoryBytes": 38654705664,
+      "node": "v22.23.2"
+    }
+  },
+  "checks": {
+    "rendered": true,
+    "walk": {
+      "holdMs": 1200,
+      "distanceMetres": 2.8140973024005915
+    },
+    "sprint": {
+      "holdMs": 1200,
+      "distanceMetres": 6.515551673225731
+    },
+    "buildingCollision": {
+      "passed": true,
+      "pose": {
+        "x": -48,
+        "z": -21.605
+      },
+      "wallMaxZ": -21.925,
+      "playerRadius": 0.32
+    },
+    "cameraObstruction": {
+      "passed": true,
+      "desiredMetres": 6.2,
+      "actualMetres": 0.12
+    },
+    "pause": {
+      "passed": true,
+      "framesBefore": 6110,
+      "framesAfter": 6110,
+      "heldMoveAttemptMs": 1000
+    },
+    "pointerCapture": {
+      "outcome": "unsupported in in-app browser; drag fallback and keyboard movement verified",
+      "nativePointerLockQualified": false
+    },
+    "crossIntersection": {
+      "passed": true,
+      "start": {
+        "x": -48.01961066369973,
+        "z": 11.484585116206436
+      },
+      "end": {
+        "x": 19.40385910119237,
+        "z": 11.482094114849929
+      }
+    },
+    "return": {
+      "passed": true
+    },
+    "reentry": {
+      "passed": true
+    },
+    "graphicsLoss": {
+      "method": "Injected WEBGL_lose_context through DevTools on the prototype canvas",
+      "failureState": "failed",
+      "recoveredState": "playing",
+      "passed": true
+    },
+    "progressPreserved": {
+      "passed": true,
+      "metadataSha256": "70adb3da71db5e8c1deb4bcdea7aedafb951c917e2a74144a5c6f844bbc9efcf",
+      "scope": "Existing profiles, selected profile, and FireRed progress-head metadata; no FireRed session started"
+    }
+  },
+  "timings": {
+    "firstIncrementFirstRenderMs": 1082.3999996185305,
+    "reviewedReentryFirstRenderMs": [
+      89.70000076293945,
+      93,
+      93
+    ],
+    "recentFpsObserved": [
+      120,
+      120,
+      120
+    ],
+    "notes": "First increment source fingerprint was not retained. Reentry results use warm browser/shader state; they are not comparable to cold startup. Module import/download precede the first-render timer. FPS is a short requestAnimationFrame observation, not GPU profiling, input latency, or a hardware SLA."
+  },
+  "unqualified": [
+    "Physical gamepads",
+    "Touch movement",
+    "Persistent world save/reload pose",
+    "GTA V visual parity",
+    "FireRed doorway/world-to-subgame integration",
+    "Full slice 2 acceptance",
+    "Minimum hardware/browser matrix",
+    "Real OS focus-loss and hidden-tab qualification"
+  ],
+  "finalReviewChanges": [
+    "Recovery copy names the actual Collection action",
+    "PCFShadowMap explicitly selects the same renderer fallback already exercised",
+    "Hide underlying shell header/footer from keyboard and accessibility focus while exploring; verified hidden in final browser pass"
+  ],
+  "sourceFiles": {
+    "package.json": "10c6a757c25269186d375d46898e257fc0f8ee9a958a70676b79a740cb4a79e7",
+    "package-lock.json": "8dc884ee72a919dd96ad30c348c2b5cfc711eed81005730f3e0fe9b434a90b50",
+    "index.html": "181996f9bad61c38167ae07f33e63f829aa328c5db0984d086c9e672e1306c4f",
+    "style.css": "38c4423cdc2a4843326b32c649d4d4445f5394ac64b35f76ceef768e2a1721be",
+    "scripts/build.mjs": "aae7f1130a83c9e7a60a9f249016cb155ffd3cbe14b15e6431518319dea04106",
+    "scripts/serve.mjs": "e6f5aa6879521220d76716c11c1c312301f21c6dcfe940bdab8c536b238eeeb7",
+    "src/main.js": "d5f0fe532a7bbffb1c0b4839de67e0ab1a5ee3dc5438f1cd8d577acf5df4a39e",
+    "src/neighborhood.js": "15cf8051e4bd4617f596554f6b9fbc5cda65879475dddaddb1e20129ba4c7bb7",
+    "src/neighborhood-controller.js": "fc953b7d4af32e3264081b548a5f31c96c597999408c75571faa35cfe3383754",
+    "src/neighborhood-math.js": "11daacbe54d5f2e1218d710085015dfdc043cae971c10f7524a76e32f68ea25a",
+    "src/neighborhood-world.js": "ade3694e3249161ada16474b419ca1012fdb21acec37a9215163e2b7636d55af",
+    "tests/neighborhood.test.js": "406dbe7a58a4c07b8fac149b23ddff69f72645156b8c930d23d3f99569c9508d"
+  },
+  "sourceFingerprint": "a68a56c0d123690ef7d3826d21162ca63688a08877bee0b5585f1162958be897",
+  "builds": {
+    "baseline": {
+      "mode": "clean output; warm dependencies/filesystem",
+      "innerMs": 22.7,
+      "commandWallSeconds": 0.13
+    },
+    "initialAfter": {
+      "innerMs": 34.8,
+      "commandWallSeconds": 0.15
+    },
+    "agentFinal": {
+      "innerMs": 20.6,
+      "commandWallSeconds": 0.13
+    },
+    "rootFinal": {
+      "innerMs": 28.5,
+      "commandWallSeconds": null,
+      "note": "After shell focus visibility cleanup; command combined build and diff check, so no separate build-command wall time recorded."
+    },
+    "queueMs": null,
+    "rootPriorFinal": {
+      "innerMs": 21,
+      "commandWallSeconds": null,
+      "note": "Includes final recovery-copy and shadow-map cleanup. Command combined syntax/build/diff check, so no separate command wall time recorded."
+    }
+  },
+  "tests": {
+    "outcome": "passed",
+    "count": 11,
+    "runnerMs": 1014.1,
+    "commandWallSeconds": 1.13,
+    "executedBy": "Astra implementation agent",
+    "coverage": "Six existing identity/controller-map checks plus five focused neighborhood input/collision/camera checks; source syntax, diff and packaged-byte checks also passed."
+  },
+  "finalSmoke": {
+    "headerVisible": "hidden",
+    "world": {
+      "activeMs": 1110.6999994277958,
+      "camera": {
+        "desiredDistance": 6.2,
+        "distance": 6.2,
+        "x": -51.67310250477768,
+        "y": 2.8937562838482345,
+        "z": 12.462948092873075
+      },
+      "colliderCount": 88,
+      "disposed": false,
+      "drawCalls": 172,
+      "heldKeys": [],
+      "loadToFirstRenderMs": 87.19999980926514,
+      "paused": false,
+      "pitch": 0.24,
+      "pointerLocked": false,
+      "recentFps": 122,
+      "renderedFrames": 136,
+      "renderer": "Three.js WebGL2",
+      "rendererVersion": "186",
+      "speed": 0.23554889881772365,
+      "state": "playing",
+      "triangles": 320752,
+      "version": "alder-neighborhood-prototype-1",
+      "x": -46.361692022501394,
+      "yaw": -1.08,
+      "z": 9.624469432642666
+    }
+  },
+  "finalStartupWarningsAndErrors": []
+}

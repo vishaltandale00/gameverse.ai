@@ -1,0 +1,389 @@
+{
+  "runId": "firered-arcade-browser-2026-10-16T06:02:19.778Z",
+  "timestamp": "2026-10-16T06:02:19.778Z",
+  "baselineCommit": "d63a776ebe8e6acb31839a6f854745a1f9c39034",
+  "worldVersion": "alder-neighborhood-prototype-1",
+  "gameIdentity": {
+    "adapter": "gameverse-gba-worker/0.1.0",
+    "buildRunId": "bf0012cb-e5bd-436d-9394-7f57f56c5d23",
+    "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+    "expectedFrame": 3189,
+    "gameId": "firered",
+    "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+    "mode": "snapshot",
+    "origin": "neighborhood",
+    "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+    "restoredFrame": 3189,
+    "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+    "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+  },
+  "qaOrigin": "http://localhost:4173",
+  "userOrigin": "http://127.0.0.1:4173",
+  "queueMs": null,
+  "loop": null,
+  "checks": {
+    "walkToEntrance": true,
+    "profileGate": {
+      "state": "suspended",
+      "cancelResumes": true,
+      "cancelPreservesPose": true,
+      "createThenLaunch": true
+    },
+    "realGameplay": {
+      "booted": true,
+      "keyboardAdvancedTo": "FireRed controls tutorial after title screen",
+      "campaignQualified": false
+    },
+    "worldSuspended": {
+      "passed": true,
+      "stateDuringGame": "suspended"
+    },
+    "saveReturn": {
+      "samePoseBeforeFix": true,
+      "sameLatchedPoseAfterFix": true
+    },
+    "exactRestore": {
+      "expectedFrame": 3189,
+      "restoredFrame": 3189,
+      "passed": true
+    },
+    "forceReturn": {
+      "state": "playing",
+      "checkpointRetained": true
+    },
+    "blockedCartridge": {
+      "injection": "CDP Network.setBlockedURLs for QA artifact URL only; unblocked after each scenario; Network disabled after testing",
+      "headPreserved": true
+    },
+    "fallbackRetryBeforeFix": {
+      "outcome": "failed",
+      "reason": "Immediate reacquisition raced old Web Lock release; UI incorrectly reported another tab. City recovered and checkpoint was preserved.",
+      "loadModeBatteryReached": false,
+      "sourceFingerprint": null,
+      "note": "Intermediate source fingerprint not retained; failure observed before awaitable-release fix."
+    },
+    "fallbackRetryAfterFix": {
+      "outcome": "passed",
+      "mode": "battery",
+      "origin": "neighborhood",
+      "cityStayedSuspended": true,
+      "note": "Checks fallback lifecycle using a new-game battery capture; real trainer in-game-save continuation remains unqualified."
+    },
+    "collectionOrigin": {
+      "homeVisible": true,
+      "worldVisible": false,
+      "playerVisible": false
+    },
+    "userProgressUnchanged": true,
+    "handoffAtEntrance": true
+  },
+  "timings": {
+    "initialEntryAndCheckpoint": [
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "buildRunId": "bf0012cb-e5bd-436d-9394-7f57f56c5d23",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "expectedFrame": null,
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "mode": "snapshot",
+          "origin": "neighborhood",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "restoredFrame": 0,
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "loop": null,
+        "operation": "load-and-restore",
+        "outcome": "passed",
+        "queueMs": null,
+        "runId": "30ce7332-9814-4a04-8e99-f10672f0432f",
+        "timestamp": "2026-10-16T05:55:13.182Z",
+        "wallMs": 74.90000057220459
+      },
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "loop": null,
+        "operation": "snapshot-capture",
+        "outcome": "passed",
+        "queueMs": null,
+        "runId": "701bbe92-b4c2-4ecd-a545-d924d39dab08",
+        "timestamp": "2026-10-16T05:56:13.147Z",
+        "wallMs": 3.6000003814697266
+      },
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "loop": null,
+        "operation": "checkpoint-commit",
+        "outcome": "passed",
+        "queueMs": null,
+        "runId": "2c08e984-a8a5-4a51-aa96-4d6000bbd77d",
+        "timestamp": "2026-10-16T05:56:13.150Z",
+        "wallMs": 2.5
+      }
+    ],
+    "initialRestore": [
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "buildRunId": "bf0012cb-e5bd-436d-9394-7f57f56c5d23",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "expectedFrame": null,
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "mode": "snapshot",
+          "origin": "neighborhood",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "restoredFrame": 0,
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "loop": null,
+        "operation": "load-and-restore",
+        "outcome": "passed",
+        "queueMs": null,
+        "runId": "30ce7332-9814-4a04-8e99-f10672f0432f",
+        "timestamp": "2026-10-16T05:55:13.182Z",
+        "wallMs": 74.90000057220459
+      },
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "buildRunId": "bf0012cb-e5bd-436d-9394-7f57f56c5d23",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "expectedFrame": 3189,
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "mode": "snapshot",
+          "origin": "neighborhood",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "restoredFrame": 3189,
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "loop": null,
+        "operation": "load-and-restore",
+        "outcome": "passed",
+        "queueMs": null,
+        "runId": "a6185d9e-600d-4153-8539-22894b430c65",
+        "timestamp": "2026-10-16T05:56:24.446Z",
+        "wallMs": 78.69999980926514
+      }
+    ],
+    "fixedRuns": [
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "buildRunId": "bf0012cb-e5bd-436d-9394-7f57f56c5d23",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "expectedFrame": null,
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "mode": "battery",
+          "origin": "neighborhood",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "restoredFrame": 0,
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "loop": null,
+        "operation": "load-and-restore",
+        "outcome": "passed",
+        "queueMs": null,
+        "runId": "c52b8f83-e910-4ce2-b299-584b55161049",
+        "timestamp": "2026-10-16T06:00:11.523Z",
+        "wallMs": 80
+      },
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "buildRunId": "bf0012cb-e5bd-436d-9394-7f57f56c5d23",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "expectedFrame": 3189,
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "mode": "snapshot",
+          "origin": "neighborhood",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "restoredFrame": 3189,
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "loop": null,
+        "operation": "load-and-restore",
+        "outcome": "passed",
+        "queueMs": null,
+        "runId": "f630d13e-17e6-4afa-9776-faf5f97a4809",
+        "timestamp": "2026-10-16T06:00:21.140Z",
+        "wallMs": 81.40000057220459
+      },
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "loop": null,
+        "operation": "snapshot-capture",
+        "outcome": "passed",
+        "queueMs": null,
+        "runId": "46dd0548-3e28-422e-9a3a-67b0d19eba09",
+        "timestamp": "2026-10-16T06:00:28.285Z",
+        "wallMs": 8.299999237060547
+      },
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "loop": null,
+        "operation": "checkpoint-commit",
+        "outcome": "passed",
+        "queueMs": null,
+        "runId": "293587f0-bfcd-4c2a-8deb-666c552d534a",
+        "timestamp": "2026-10-16T06:00:28.292Z",
+        "wallMs": 6.899999618530273
+      },
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "buildRunId": "bf0012cb-e5bd-436d-9394-7f57f56c5d23",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "expectedFrame": 3600,
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "mode": "snapshot",
+          "origin": "collection",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "restoredFrame": 3600,
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "loop": null,
+        "operation": "load-and-restore",
+        "outcome": "passed",
+        "queueMs": null,
+        "runId": "ec5ff278-9e8a-44a1-998d-6c4555592b91",
+        "timestamp": "2026-10-16T06:00:40.605Z",
+        "wallMs": 87
+      },
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "loop": null,
+        "operation": "snapshot-capture",
+        "outcome": "passed",
+        "queueMs": null,
+        "runId": "f391e62b-5549-4c68-ae5a-60a4fcf7846c",
+        "timestamp": "2026-10-16T06:00:47.914Z",
+        "wallMs": 4.40000057220459
+      },
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "loop": null,
+        "operation": "checkpoint-commit",
+        "outcome": "passed",
+        "queueMs": null,
+        "runId": "044e4dc0-cad2-4b7c-80a5-8f1579e7f521",
+        "timestamp": "2026-10-16T06:00:47.926Z",
+        "wallMs": 12
+      }
+    ],
+    "note": "Adapter load/restore, capture and commit stage timings only; do not represent complete click-to-play or campaign timings. Failed cartridge fetch occurred before adapter timing, so its wall time is unavailable."
+  },
+  "unqualified": [
+    "Campaign and mid-battle resume",
+    "Real trainer normal-save continuation",
+    "Browser process restart with persistent city position",
+    "Physical controllers and touch in the city",
+    "GTA V visual parity"
+  ],
+  "sourceFiles": {
+    "package.json": "10c6a757c25269186d375d46898e257fc0f8ee9a958a70676b79a740cb4a79e7",
+    "package-lock.json": "8dc884ee72a919dd96ad30c348c2b5cfc711eed81005730f3e0fe9b434a90b50",
+    "index.html": "f812d8cac0ba9c572ca280d8a70ce59fed98ba5fe11a53eb261d9ac439f16a40",
+    "style.css": "c08d266166cf0dd8b948671a8d3be19822786f4e0507a450fcbf11cd6f7d249c",
+    "scripts/build.mjs": "aae7f1130a83c9e7a60a9f249016cb155ffd3cbe14b15e6431518319dea04106",
+    "scripts/serve.mjs": "e6f5aa6879521220d76716c11c1c312301f21c6dcfe940bdab8c536b238eeeb7",
+    "src/main.js": "57de36d3d63870575fd9de787deac511d1d363fb0317362de68c0dc646d4580a",
+    "src/storage.js": "4bed97d20ccf3310315648efc48edf283de97541ab635a0fd669349821fd4658",
+    "src/neighborhood.js": "e6f42860afc7518834c904885871d73407701d7a53b758557caa30203f9ab132",
+    "src/neighborhood-controller.js": "5cc880be63975a56667a69e82f4780f649285c38c29cce14a048299dea6bd583",
+    "src/neighborhood-math.js": "84c8f0519e40a849adeb2f82134caeb27b89d4e1ef91efb0e5d082c71e2c0752",
+    "src/neighborhood-world.js": "51ca8d36701faed963732230c78172d72b14ab153b07ad3ef17da75732cd07dc",
+    "tests/identity.test.js": "3513d37ed1e1a1b219899c83e64a3033995e3df8a41837d8a004dc19fd99c06a",
+    "tests/neighborhood.test.js": "406dbe7a58a4c07b8fac149b23ddff69f72645156b8c930d23d3f99569c9508d",
+    "tests/storage-lock.test.js": "66dab4c3b95afc8c9eb710db33bc7a6fc698a9212825976f20f0a605753e7ac8"
+  },
+  "sourceFingerprint": "cbe4bed2e449ab7449c67d8987044765289445c1da8494900ad2692e56ac3ae0",
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "cpu": "Apple M4 Max",
+    "node": "v22.23.2"
+  },
+  "tests": {
+    "outcome": "passed",
+    "count": 12,
+    "runnerMs": 1330.520709,
+    "commandWallSeconds": null,
+    "note": "Full Node suite after storage handoff fix; command time not measured separately. Syntax/diff checks passed. One added delayed-Web-Locks regression."
+  },
+  "builds": {
+    "beforeDoorway": {
+      "innerMs": 28.5,
+      "commandWallSeconds": null
+    },
+    "initialDoorway": {
+      "innerMs": 29.7,
+      "commandWallSeconds": 0.13
+    },
+    "afterLockFix": {
+      "innerMs": 26.2,
+      "commandWallSeconds": 0.16
+    },
+    "mode": "clean output, warm filesystem and installed dependencies on same host",
+    "note": "Single observations, not an optimization claim; excludes game build and browser work."
+  }
+}

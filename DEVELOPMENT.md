@@ -4,6 +4,8 @@ Status: in progress, 2026-10-16. **Pokémon FireRed is the sole initial game.** 
 
 The local launcher runs today. FireRed has a matching source build and browser boot/input/checkpoint evidence. The launcher contains only FireRed. The deferred Mario entry is excluded from the catalog and default game-status checks. Issue #3 remains incomplete. The source-edit experiment is a build probe, not an implemented improvement loop or campaign certification.
 
+The latest user-authorized increment opens **Gameverse** at `/` or `/v1`: three original browser-rendered blocks with third-person walking/running and an **Alder Arcade** entrance to FireRed. Approach its marker, press E or controller A, and use FireRed's **Save & return to Gameverse** action to return to the same city spot. The original collection remains at `/v0`. Existing profile and save identities are reused. This prototype does not complete slice 2; see [neighborhood controls, source and checks](CITY_DEVELOPMENT.md).
+
 ## Run locally
 
 Requires Node 22+, Git, make, a native C/C++ compiler, ARM binutils and libpng. On the verified Apple Silicon setup, Xcode tools and Homebrew libpng were already available; ARM binutils 2.47 was installed during this work. The macOS build uses Clang preprocessing and reproduces the expected FireRed SHA-1. Other toolchains are unqualified.
@@ -36,7 +38,7 @@ An existing forest patch was applied, built into a distinct candidate and revers
 ## Controls and progress
 
 - Keyboard: arrows = D-pad; X/Z = A/B; A/S = L/R; Enter = Start; right Shift = Select; Escape = pause/menu.
-- Standard gamepad mapping: bottom/right face = A/B; shoulders = L/R; D-pad or left stick = movement; Start/Select as labeled. Guide or both triggers opens the shell menu. Physical DualSense/Xbox behavior is still unverified.
+- Standard gamepad mapping: bottom/right face = A/B; shoulders = L/R; D-pad or left stick = movement; Start/Select as labeled. Y opens the Gameverse menu; Guide or both triggers also works. In Gameverse menus, D-pad/left stick chooses, A selects, and B resumes or goes back. USB Xbox detection and world movement were confirmed by the user; physical DualSense and full Xbox camera/button behavior remain unverified.
 - Shell gamepad navigation uses directional focus and the bottom face button. Character creation includes a controller-accessible letter keyboard. Held buttons must return to neutral after a transition/reconnect.
 - **Save & return** pauses execution, captures a snapshot plus paired cartridge-save bytes, and commits them atomically before terminating the worker. The normal save is also retained as a separate record. Snapshots are append-only and keyed to profile, game, cartridge SHA-256, core/loader SHA-256, adapter and snapshot format.
 - Resume validates snapshot identity/digest and paired cartridge data, imports both into the same core, and checks the restored frame counter before running. This is for the unchanged cartridge/core only. Old code snapshots are not a migration strategy.
@@ -75,3 +77,5 @@ Default build limits are two jobs and five minutes per subprocess; override with
 FireRed real overworld/battle progression and exact mid-battle restoration; normal in-game save/continue fallback with actual trainer progress; early/mid/late and campaign coverage; full browser-process restart and abrupt-termination recovery; physical controller/reconnect/focus proof; durable-storage/failed-restore and real worker-hang qualification. Vishal's hands-on acceptance still precedes slice 2.
 
 Mario source notes and setup are retained in [the deferred plan](plans/DEFERRED_MARIO.md). They are outside the current delivery gate.
+
+The original FireRed webpage is available at `/v0`; `/` and `/v1` open Gameverse, the 3D world containing FireRed at Alder Arcade. See [CITY_DEVELOPMENT.md](CITY_DEVELOPMENT.md) for separate configurations, controller controls, evidence and remaining qualification.

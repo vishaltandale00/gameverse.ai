@@ -1,0 +1,414 @@
+{
+  "runId": "firered-fullviewport-controller-menu-2026-10-16",
+  "sourceCommit": "d63a776ebe8e6acb31839a6f854745a1f9c39034",
+  "dirtyWorkingTree": true,
+  "qaOrigin": "http://localhost:4173",
+  "timestamp": "2026-10-16T06:20:27.988Z",
+  "wide": {
+    "bodyClass": "playing-subgame",
+    "canvas": {
+      "height": 720,
+      "width": 1080,
+      "x": 100,
+      "y": 0
+    },
+    "overflow": {
+      "height": 720,
+      "width": 1280
+    },
+    "player": {
+      "height": 720,
+      "width": 1280,
+      "x": 0,
+      "y": 0
+    },
+    "screen": {
+      "height": 720,
+      "width": 1280,
+      "x": 0,
+      "y": 0
+    },
+    "viewport": {
+      "height": 720,
+      "width": 1280
+    }
+  },
+  "yMenu": {
+    "active": "resume-button",
+    "open": true
+  },
+  "bResume": {
+    "fullviewport": true,
+    "open": false
+  },
+  "tall": {
+    "canvas": {
+      "height": 542,
+      "width": 813,
+      "x": 0,
+      "y": 155.5
+    },
+    "player": {
+      "height": 853,
+      "width": 813,
+      "x": 0,
+      "y": 0
+    },
+    "ratio": 1.5,
+    "viewport": {
+      "height": 853,
+      "width": 813
+    }
+  },
+  "startStaysInGame": {
+    "hostMenuOpen": false
+  },
+  "controllerSaveChoice": {
+    "activeBeforeA": "save-return"
+  },
+  "initialRapidSaveFailure": {
+    "active": "save-return",
+    "dialogOpen": true,
+    "heldA": true
+  },
+  "v0ControllerReturn": {
+    "fullviewport": false,
+    "homeVisible": true,
+    "timings": [
+      {
+        "operation": "load-and-restore",
+        "outcome": "passed",
+        "wallMs": 67.5
+      },
+      {
+        "operation": "snapshot-capture",
+        "outcome": "passed",
+        "wallMs": 0.6999998092651367
+      },
+      {
+        "operation": "checkpoint-commit",
+        "outcome": "passed",
+        "wallMs": 5.899999618530273
+      }
+    ]
+  },
+  "arcadeBefore": {
+    "activeMs": 23814.799999809264,
+    "camera": {
+      "desiredDistance": 6.2,
+      "distance": 6.2,
+      "x": -43.00399990718833,
+      "y": 3.1037562838482344,
+      "z": -13.80698656195288
+    },
+    "colliderCount": 88,
+    "disposed": false,
+    "drawCalls": 146,
+    "entrance": {
+      "available": true,
+      "distance": 0.03044392688291944,
+      "gameId": "firered",
+      "name": "Alder Arcade",
+      "radius": 2.8,
+      "x": -43,
+      "z": -19.8
+    },
+    "gamepad": {
+      "armed": true,
+      "buttons": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "connected": true,
+      "id": "QA Xbox fullscreen",
+      "index": 0,
+      "look": {
+        "x": 0,
+        "y": 0
+      },
+      "move": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "heldKeys": [],
+    "loadToFirstRenderMs": 120.69999980926514,
+    "paused": false,
+    "pitch": 0.24,
+    "pointerLocked": false,
+    "recentFps": 120,
+    "renderedFrames": 2860,
+    "renderer": "Three.js WebGL2",
+    "rendererVersion": "186",
+    "speed": 0,
+    "state": "playing",
+    "triangles": 318964,
+    "version": "alder-neighborhood-prototype-1",
+    "x": -43.008335959533426,
+    "yaw": 0.0007199999999982047,
+    "z": -19.82928044505655
+  },
+  "v1Fullscreen": {
+    "canvas": {
+      "height": 720,
+      "width": 1080,
+      "x": 100,
+      "y": 0
+    },
+    "class": "world-application playing-subgame",
+    "height": 720,
+    "width": 1280,
+    "worldState": "suspended"
+  },
+  "rapidSaveFixed": {
+    "activeBeforeA": "save-return",
+    "menuStillOpen": true,
+    "millisecondsDownToA": 17,
+    "saveStarted": true
+  },
+  "returnHeldA": {
+    "fullviewport": false,
+    "playerHidden": true,
+    "timings": [
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "baseConfig": {
+            "id": "gameverse",
+            "kind": "neighborhood",
+            "version": "v1"
+          },
+          "buildRunId": "bf0012cb-e5bd-436d-9394-7f57f56c5d23",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "expectedFrame": 6741,
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "mode": "snapshot",
+          "origin": "neighborhood",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "restoredFrame": 6741,
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "operation": "load-and-restore",
+        "outcome": "passed",
+        "wallMs": 64.19999980926514
+      },
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "operation": "snapshot-capture",
+        "outcome": "passed",
+        "wallMs": 0.5999994277954102
+      },
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "operation": "checkpoint-commit",
+        "outcome": "passed",
+        "wallMs": 7
+      }
+    ],
+    "world": {
+      "activeMs": 32048.19999980926,
+      "camera": {
+        "desiredDistance": 6.2,
+        "distance": 6.2,
+        "x": -43.00399990718833,
+        "y": 3.1037562838482344,
+        "z": -13.80698656195288
+      },
+      "colliderCount": 88,
+      "disposed": false,
+      "drawCalls": 146,
+      "entrance": {
+        "available": true,
+        "distance": 0.03044392688291944,
+        "gameId": "firered",
+        "name": "Alder Arcade",
+        "radius": 2.8,
+        "x": -43,
+        "z": -19.8
+      },
+      "gamepad": {
+        "armed": false,
+        "buttons": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "connected": true,
+        "id": "QA Xbox fullscreen",
+        "index": 0,
+        "look": {
+          "x": 0,
+          "y": 0
+        },
+        "move": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "heldKeys": [],
+      "loadToFirstRenderMs": 120.69999980926514,
+      "paused": false,
+      "pitch": 0.24,
+      "pointerLocked": false,
+      "recentFps": 120,
+      "renderedFrames": 3849,
+      "renderer": "Three.js WebGL2",
+      "rendererVersion": "186",
+      "speed": 0,
+      "state": "playing",
+      "triangles": 318964,
+      "version": "alder-neighborhood-prototype-1",
+      "x": -43.008335959533426,
+      "yaw": 0.0007199999999982047,
+      "z": -19.82928044505655
+    }
+  },
+  "afterRelease": {
+    "armed": true,
+    "buttons": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "connected": true,
+    "id": "QA Xbox fullscreen",
+    "index": 0,
+    "look": {
+      "x": 0,
+      "y": 0
+    },
+    "move": {
+      "x": 0,
+      "y": 0
+    }
+  },
+  "reentryLoads": [
+    {
+      "expected": 6741,
+      "outcome": "passed",
+      "restored": 6741
+    },
+    {
+      "expected": 7049,
+      "outcome": "passed",
+      "restored": 7049
+    }
+  ],
+  "finalQaState": {
+    "dialogOpen": false,
+    "playerHidden": true,
+    "world": "playing"
+  },
+  "verification": {
+    "tests": {
+      "passed": 32,
+      "failed": 0,
+      "runnerMs": 1008.276042,
+      "commandWallSeconds": 1.14
+    },
+    "build": {
+      "outcome": "passed",
+      "innerMs": 31.2,
+      "commandWallSeconds": 0.16,
+      "mode": "clean output copy",
+      "cache": "installed dependencies; warm filesystem",
+      "concurrentWithTests": true
+    },
+    "ci": null,
+    "improvementLoop": null,
+    "queue": null,
+    "machine": "Apple Silicon macOS",
+    "node": "22.23.2",
+    "npm": "10.9.8"
+  },
+  "failuresAndRepairs": [
+    {
+      "kind": "browser regression",
+      "observed": "A pressed shortly after D-pad navigation was ignored by shared 180ms throttle",
+      "repair": "Only direction repeats are throttled; A/B edges execute immediately",
+      "regressionBefore": {
+        "passed": 8,
+        "failed": 1,
+        "runnerMs": 46.47
+      },
+      "regressionAfter": {
+        "passed": 9,
+        "failed": 0,
+        "runnerMs": 46.48
+      },
+      "browserAfter": "17ms D-pad release-to-A selected Save & return successfully"
+    }
+  ],
+  "limits": [
+    "Fullscreen means full browser viewport; app/OS window chrome remains outside the page.",
+    "Full new Y/B/save mapping tested with simulated standard pad; prior physical USB connection/movement was user confirmed.",
+    "No campaign or mid-battle qualification; no build/runtime latency improvement claim."
+  ],
+  "sourceFingerprints": {
+    "index.html": "39f1a83043ea8f0f0a575d4477be92ea0a99cb52b21cb4f9ac76c723fc4b3284",
+    "style.css": "50c3a3a93c2b8776c04af4f64c43cd75270db2c51a67b124677044b209f9a5c3",
+    "src/main.js": "10eadb7ff56c9ee13f426c6906a137153e83e7b15d9e076af5fd3e88b6458e47",
+    "src/gamepad.js": "d5838eb36312130506c0728aa764fc65c926ed9657c81087c8aa937ffca2eb49"
+  }
+}

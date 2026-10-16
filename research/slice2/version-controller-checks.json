@@ -1,0 +1,551 @@
+{
+  "runId": "gameverse-version-controller-2026-10-16",
+  "sourceCommit": "d63a776ebe8e6acb31839a6f854745a1f9c39034",
+  "dirtyWorkingTree": true,
+  "browser": "Codex in-app browser",
+  "qaOrigin": "http://localhost:4173",
+  "timestamp": "2026-10-16T06:15:14.931Z",
+  "evidence": {
+    "v0": {
+      "cityPromo": false,
+      "collectionVisible": true,
+      "config": {
+        "base": {
+          "entryPath": "/v0",
+          "kind": "collection"
+        },
+        "id": "gameverse",
+        "schemaVersion": 1,
+        "subgames": [
+          {
+            "adapter": "gameverse-gba-worker/0.1.0",
+            "catalogId": "firered",
+            "id": "firered"
+          }
+        ],
+        "title": "Gameverse",
+        "version": "v0"
+      },
+      "threeRequests": [],
+      "world": false
+    },
+    "v0Load": [
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "baseConfig": {
+            "id": "gameverse",
+            "kind": "collection",
+            "version": "v0"
+          },
+          "buildRunId": "bf0012cb-e5bd-436d-9394-7f57f56c5d23",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "expectedFrame": 3613,
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "mode": "snapshot",
+          "origin": "collection",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "restoredFrame": 3613,
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "outcome": "passed",
+        "wallMs": 71.5
+      }
+    ],
+    "v1": {
+      "collectionVisible": false,
+      "config": {
+        "base": {
+          "entryPath": "/v1",
+          "kind": "neighborhood",
+          "location": "Alder District"
+        },
+        "id": "gameverse",
+        "schemaVersion": 1,
+        "subgames": [
+          {
+            "adapter": "gameverse-gba-worker/0.1.0",
+            "catalogId": "firered",
+            "id": "firered"
+          }
+        ],
+        "title": "Gameverse",
+        "version": "v1"
+      },
+      "pads": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "world": {
+        "activeMs": 4571.500000190735,
+        "camera": {
+          "desiredDistance": 6.2,
+          "distance": 5.271206899586144,
+          "x": -52.515732835598214,
+          "y": 2.8829797244724595,
+          "z": 12.913259402924933
+        },
+        "colliderCount": 88,
+        "disposed": false,
+        "drawCalls": 175,
+        "entrance": {
+          "available": false,
+          "distance": 30.709770432225636,
+          "gameId": "firered",
+          "name": "Alder Arcade",
+          "radius": 2.8,
+          "x": -43,
+          "z": -19.8
+        },
+        "gamepad": {
+          "armed": false,
+          "buttons": [],
+          "connected": false,
+          "id": null,
+          "index": null,
+          "look": {
+            "x": 0,
+            "y": 0
+          },
+          "move": {
+            "x": 0,
+            "y": 0
+          }
+        },
+        "heldKeys": [],
+        "loadToFirstRenderMs": 108.30000019073486,
+        "paused": false,
+        "pitch": 0.24,
+        "pointerLocked": false,
+        "recentFps": 120,
+        "renderedFrames": 551,
+        "renderer": "Three.js WebGL2",
+        "rendererVersion": "186",
+        "speed": 0,
+        "state": "playing",
+        "triangles": 320802,
+        "version": "alder-neighborhood-prototype-1",
+        "x": -48,
+        "yaw": -1.08,
+        "z": 10.5
+      }
+    },
+    "simulatedWalk": {
+      "after": {
+        "x": -46.10730913609536,
+        "z": 9.488524301495136
+      },
+      "before": {
+        "x": -48,
+        "z": 10.5
+      },
+      "distance": 2.1460106698183017
+    },
+    "simulatedLook": {
+      "after": -1.8417365853658545,
+      "before": -1.08
+    },
+    "simulatedStart": {
+      "active": "world-resume",
+      "dialog": true,
+      "world": {
+        "activeMs": 24141.600000190738,
+        "camera": {
+          "desiredDistance": 6.2,
+          "distance": 6.2,
+          "x": -51.72999806592081,
+          "y": 2.8937562838482345,
+          "z": 7.78058551468372
+        },
+        "colliderCount": 88,
+        "disposed": false,
+        "drawCalls": 169,
+        "entrance": {
+          "available": false,
+          "distance": 29.338789573114116,
+          "gameId": "firered",
+          "name": "Alder Arcade",
+          "radius": 2.8,
+          "x": -43,
+          "z": -19.8
+        },
+        "gamepad": {
+          "armed": false,
+          "buttons": [],
+          "connected": true,
+          "id": "QA Xbox standard",
+          "index": 0,
+          "look": {
+            "x": 0,
+            "y": 0
+          },
+          "move": {
+            "x": 0,
+            "y": 0
+          }
+        },
+        "heldKeys": [],
+        "loadToFirstRenderMs": 108.30000019073486,
+        "paused": true,
+        "pitch": 0.24,
+        "pointerLocked": false,
+        "recentFps": 120,
+        "renderedFrames": 2900,
+        "renderer": "Three.js WebGL2",
+        "rendererVersion": "186",
+        "speed": 0,
+        "state": "suspended",
+        "triangles": 320640,
+        "version": "alder-neighborhood-prototype-1",
+        "x": -45.92739792377918,
+        "yaw": -1.8417365853658545,
+        "z": 9.39237768684358
+      }
+    },
+    "simulatedResume": {
+      "armed": false,
+      "menu": false,
+      "state": "playing"
+    },
+    "simulatedDisconnect": {
+      "menu": true,
+      "speed": 0,
+      "state": "suspended"
+    },
+    "profileCancel": {
+      "menu": true,
+      "profile": false,
+      "state": "suspended"
+    },
+    "controllerArcadeApproach": {
+      "activeMs": 24435.80000057221,
+      "camera": {
+        "desiredDistance": 6.2,
+        "distance": 6.2,
+        "x": -43.470122785348735,
+        "y": 3.1037562838482344,
+        "z": -13.812744756017397
+      },
+      "colliderCount": 88,
+      "disposed": false,
+      "drawCalls": 146,
+      "entrance": {
+        "available": true,
+        "distance": 0.591048821999035,
+        "gameId": "firered",
+        "name": "Alder Arcade",
+        "radius": 2.8,
+        "x": -43,
+        "z": -19.8
+      },
+      "gamepad": {
+        "armed": true,
+        "buttons": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "connected": true,
+        "id": "QA Xbox standard",
+        "index": 0,
+        "look": {
+          "x": 0,
+          "y": 0
+        },
+        "move": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "heldKeys": [],
+      "loadToFirstRenderMs": 96.80000019073486,
+      "paused": false,
+      "pitch": 0.24,
+      "pointerLocked": false,
+      "recentFps": 120,
+      "renderedFrames": 2935,
+      "renderer": "Three.js WebGL2",
+      "rendererVersion": "186",
+      "speed": 0,
+      "state": "playing",
+      "triangles": 318964,
+      "version": "alder-neighborhood-prototype-1",
+      "x": -43.590078976996836,
+      "yaw": 0.01992000000000259,
+      "z": -19.833845396922108
+    },
+    "v1Load": [
+      {
+        "context": {
+          "adapter": "gameverse-gba-worker/0.1.0",
+          "baseConfig": {
+            "id": "gameverse",
+            "kind": "neighborhood",
+            "version": "v1"
+          },
+          "buildRunId": "bf0012cb-e5bd-436d-9394-7f57f56c5d23",
+          "cartridgeSha256": "3d0c79f1627022e18765766f6cb5ea067f6b5bf7dca115552189ad65a5c3a8ac",
+          "expectedFrame": 3613,
+          "gameId": "firered",
+          "loaderSha256": "e4d7a15cc5bead4cef965eecacf40e20454081d3e97d0fa44b948aa1db41abdc",
+          "mode": "snapshot",
+          "origin": "neighborhood",
+          "profileId": "e455f250-6f6b-4060-8037-92eacef1f537",
+          "restoredFrame": 3613,
+          "snapshotFormat": "mgba-wasm-0.1.1-state-api",
+          "wasmSha256": "11be9f4b88f5c26249b5b48b677470b2c0d20e5cdc31d8415650cbfd7171c90a"
+        },
+        "outcome": "passed",
+        "wallMs": 66.5
+      }
+    ],
+    "gbaControllerMenu": {
+      "active": "save-return",
+      "dialog": true,
+      "worldState": "suspended"
+    },
+    "v1Return": {
+      "activeMs": 24599.100000953673,
+      "camera": {
+        "desiredDistance": 6.2,
+        "distance": 6.2,
+        "x": -43.470122785348735,
+        "y": 3.1037562838482344,
+        "z": -13.812744756017397
+      },
+      "colliderCount": 88,
+      "disposed": false,
+      "drawCalls": 146,
+      "entrance": {
+        "available": true,
+        "distance": 0.591048821999035,
+        "gameId": "firered",
+        "name": "Alder Arcade",
+        "radius": 2.8,
+        "x": -43,
+        "z": -19.8
+      },
+      "gamepad": {
+        "armed": true,
+        "buttons": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "connected": true,
+        "id": "QA Xbox standard",
+        "index": 0,
+        "look": {
+          "x": 0,
+          "y": 0
+        },
+        "move": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "heldKeys": [],
+      "loadToFirstRenderMs": 96.80000019073486,
+      "paused": false,
+      "pitch": 0.24,
+      "pointerLocked": false,
+      "recentFps": 120,
+      "renderedFrames": 2955,
+      "renderer": "Three.js WebGL2",
+      "rendererVersion": "186",
+      "speed": 0,
+      "state": "playing",
+      "triangles": 318964,
+      "version": "alder-neighborhood-prototype-1",
+      "x": -43.590078976996836,
+      "yaw": 0.01992000000000259,
+      "z": -19.833845396922108
+    },
+    "acceptanceNotes": [
+      "Controller-driven approach Runtime.evaluate exceeded the CDP 3-second timeout; the page continued the input sequence, and a later read confirmed arrival.",
+      "Automatic approval review blocked confirming leave-without-saving in v1; Save & return was used on the localhost QA profile.",
+      "Simulated standard-pad journey passed. Physical USB controller detected as standard index 1; user explicitly confirmed connects and moves. Full physical button/camera/long-session qualification remains open."
+    ],
+    "usbDevice": {
+      "source": "ioreg USB and IOHIDDevice",
+      "vendor": "Microsoft",
+      "vendorId": 1118,
+      "productId": 2816,
+      "transport": "USB",
+      "usagePage": 1,
+      "usage": 5
+    },
+    "physicalAfter": {
+      "focused": true,
+      "gamepadAllowed": true,
+      "pads": [
+        null,
+        {
+          "axes": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "connected": true,
+          "heldButtons": [],
+          "id": "Controller (STANDARD GAMEPAD)",
+          "index": 1,
+          "mapping": "standard"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "secureContext": true,
+      "world": {
+        "activeMs": 37287.29999904633,
+        "camera": {
+          "desiredDistance": 6.2,
+          "distance": 6.2,
+          "x": -41.46285133648786,
+          "y": 5.038668420792434,
+          "z": -15.53905802229862
+        },
+        "colliderCount": 88,
+        "disposed": false,
+        "drawCalls": 145,
+        "entrance": {
+          "available": false,
+          "distance": 1.5979711670318364,
+          "gameId": "firered",
+          "name": "Alder Arcade",
+          "radius": 2.8,
+          "x": -43,
+          "z": -19.8
+        },
+        "gamepad": {
+          "armed": false,
+          "buttons": [],
+          "connected": true,
+          "id": "Controller (STANDARD GAMEPAD)",
+          "index": 1,
+          "look": {
+            "x": 0,
+            "y": 0
+          },
+          "move": {
+            "x": 0,
+            "y": 0
+          }
+        },
+        "heldKeys": [],
+        "loadToFirstRenderMs": 176.5,
+        "paused": true,
+        "pitch": 0.5821070997605188,
+        "pointerLocked": false,
+        "recentFps": 120,
+        "renderedFrames": 4458,
+        "renderer": "Three.js WebGL2",
+        "rendererVersion": "186",
+        "speed": 0,
+        "state": "suspended",
+        "triangles": 318904,
+        "version": "alder-neighborhood-prototype-1",
+        "x": -41.688558327771425,
+        "yaw": 0.04359586231944653,
+        "z": -20.713034824641102
+      }
+    },
+    "physicalUserConfirmation": {
+      "timestamp": "2026-10-16T06:17:30.262Z",
+      "connection": "USB",
+      "response": "Controller connects and moves",
+      "verified": [
+        "browser detection",
+        "world movement"
+      ],
+      "remaining": [
+        "physical right-stick camera",
+        "physical arcade/menu buttons",
+        "long-session controller stability"
+      ]
+    }
+  },
+  "sourceFingerprints": {
+    "index.html": "6335450bed064d3245d979997b55f54af44938beaf4920a9b153483e0d117485",
+    "style.css": "6c4e82df841eb7b40def11508a003da9653fec65e944c90386b105c1999da06d",
+    "src/main.js": "a1e0eadcf96697276ee3599d9f9891148d052298cf9d6f40bc7015ebed787a31",
+    "src/application.js": "3497faaa9e4308b2a104c9116f65dcc3c9f0e74fd91e753b4bddc474d5e9a6a9",
+    "src/neighborhood.js": "97425ed50b25f056ddf8283f66012bc2ee9d946a02aff1d91d4f9272cdbb161f",
+    "src/neighborhood-controller.js": "277ac89913b1d5ae1d1e40dd5991c0f5ea7e188bdf313d41cdce61e64c8ead24",
+    "src/gamepad.js": "d5838eb36312130506c0728aa764fc65c926ed9657c81087c8aa937ffca2eb49",
+    "games/configs/gameverse-v0.json": "e9adcc614f33ac30525c3f85c6f9824a3e61389b562c32a03982f612a79ab58d",
+    "games/configs/gameverse-v1.json": "2d7637ae23d14a5c5de5e1dedfc6c383c02c47b737b933cbae35f65660463e46"
+  },
+  "verification": {
+    "test": {
+      "passed": 26,
+      "failed": 0,
+      "runnerMs": 1224.079709,
+      "commandWallSeconds": 1.36
+    },
+    "build": {
+      "outcome": "passed",
+      "mode": "clean output copy",
+      "dependencies": "installed; warm filesystem",
+      "innerMs": 35.8,
+      "commandWallSeconds": 0.17,
+      "concurrentWithTests": true
+    },
+    "packagedBytesMatch": true,
+    "diffCheck": "passed",
+    "ci": null,
+    "improvementLoop": null,
+    "machine": "Apple Silicon macOS",
+    "node": "22.23.2",
+    "npm": "10.9.8",
+    "timingNote": "Copy duration is nested in command wall time; single warm sample under concurrent test load, not an optimization comparison."
+  },
+  "userMetadata": {
+    "origin": "http://127.0.0.1:4173",
+    "beforeRows": 4,
+    "afterRows": 4,
+    "unchanged": true,
+    "note": "QA used localhost origin. User independently interacting with real controller/profile UI during final detection."
+  }
+}
