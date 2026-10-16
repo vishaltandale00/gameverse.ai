@@ -102,3 +102,55 @@ successful encoding. The final recording is 214 frames / approximately 7.17 s,
 331844 bytes. Queue time is unavailable. Total wall time contains boot, emulator,
 model and encoding work; nested timings must not be added. These runs have
 different scope and are not a before/after throughput benchmark.
+
+## Version 2: field Pokémon, exact contact and one wild opponent
+
+`wild_run.py` qualifies a declared source-aware route against the compiled v2
+ROM. It reads actual native sprite records and render counters, walks into an
+eligible actor without SELECT, checks matching field/battle species and identity,
+and requires exactly one populated wild enemy slot against the three-member
+player party. It verifies actual HP/PP attack effects, native victory, the exact
+actor identity in the defeated ledger, native actor removal and restored world
+movement. Party HP/PP must remain unchanged across the return transition.
+
+```sh
+python3 -m tools.gba_playtest.wild_run \
+  --rom local/game-builds/mzm-emerald-wilds-v2-r1/mzm_us.gba \
+  --profile local/gba-playtests/mzm-wilds-v2-r1-profile.json \
+  --build-receipt local/game-builds/mzm-emerald-wilds-v2-r1-receipt.json \
+  --source-commit 9caaefc0ee570f3399d86acf140fdeada9692836 \
+  --game-id mzm-emerald-wilds-v2 --scenario victory \
+  --max-iterations 60 --max-frames 12000 --max-wall-s 120 \
+  --out local/gba-playtests/new-wild-episode
+```
+
+The profile derives the native-ID→Pokémon mapping from the actual glue switch and
+pinned MZM enum, reads ELF-sized `gSpriteData`/ledger arrays, and records source
+hashes. A RAM battle-entry flag precedes completed rendering; the worker waits
+24 real neutral frames before acting, and reads menu selection after each tap.
+The first v2 attempt retained an intermediate white frame and failed its menu
+probe; this was a harness cadence issue, not accepted as a ready battle display.
+
+Retained actual-ROM evidence for SHA-256
+`bca2f2c7e647524e860eca164902fae0035fc5bec5712dd5a3bf2d04a95d1f6b`:
+
+- `local/gba-playtests/wild-v2-r1-victory-2/run.json`: 0.924 s total, actual Paras
+  field art/contact, identity 1298 (area0/room0/native room slot5/sprite18), single
+  wild Paras46, voluntary Charmander switch, Flamethrower victory, exact ledger
+  membership and native actor resolution, persistent party and world control
+  restored. All declared victory witnesses passed. Actual-frame MP4 is 324
+  sampled frames, about 10.85 s, 525788 bytes; encoding took 0.057 s. Selected PNGs
+  were visually inspected; `visual-review.json` pins the report and those images.
+- `local/gba-playtests/wild-v2-r1-retreat-1/`: retained unsuccessful retreat probe;
+  the victory policy defeated the weak wild Pokémon before it could retreat.
+- `local/gba-playtests/wild-v2-r1-retreat-2/run.json`: 0.961 s total; a lower-power
+  attack followed by actual native retreat preserved the same living actor, left
+  defeated count zero, preserved party HP/PP and restored movement. This separate
+  scope does not claim victory or voluntary party-switch coverage.
+
+These bounded episodes made zero model calls. The worker uses a disclosed native
+state and move/type-table policy, not an LLM-playing or blind-exploration claim.
+It does not qualify all mapped species, room transitions, SRAM persistence or a
+complete campaign. Historical v1 report bytes remain untouched. Policy iteration
+limits exclude bounded boot/menu substeps; total native frames and wall time
+bound every input. No new CI job, package or broad gameplay campaign was added.

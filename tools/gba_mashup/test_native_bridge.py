@@ -45,6 +45,18 @@ int main(void) {
     assert(GvBattleTurn(&state,1));
     assert(GvBattleTurn(&copy,1));
     assert(!memcmp(&state,&copy,sizeof(state))); /* deterministic seed */
+    /* A source-linked wild is one opponent; the existing party survives. */
+    GvBattleBeginWild(&state,71,0,SPECIES_ZUBAT,0);
+    assert(state.enemyIndex==0 && state.enemy[0].species==SPECIES_ZUBAT);
+    assert(state.enemy[0].hp && !state.enemy[1].hp && !state.enemy[2].hp);
+    state.player[0].hp-=7;state.player[0].pp[0]--;state.player[0].status1=STATUS1_BURN;
+    copy=state;
+    GvBattleBeginWild(&state,72,0,SPECIES_GEODUDE,1);
+    assert(!memcmp(state.player,copy.player,sizeof(state.player)));
+    assert(state.enemy[0].species==SPECIES_GEODUDE && !state.enemy[1].hp && !state.enemy[2].hp);
+    assert(GvFieldTiles(SPECIES_ZUBAT) && GvFieldPalette(SPECIES_ZUBAT));
+    GvBattleRescueParty(&state);
+    assert(state.player[0].hp==state.player[0].maxHP && !state.player[0].status1);
     for(seed=1;seed<=16;seed++) {
         GvBattleBegin(&state,seed,seed%4);
         for(steps=0;steps<96 && !state.result;steps++) {

@@ -47,7 +47,7 @@ and the builder refuses to reset them. The default limit is four compile jobs an
 
 ```sh
 python3 tools/gba_mashup/build_mzm.py \
-  --work-dir local/game-builds/mzm-emerald-encounters-v2 \
+  --work-dir local/game-builds/mzm-emerald-wilds-v2-example \
   --native tools/gba_mashup/native \
   --jobs 4 --timeout 240
 ```
@@ -71,7 +71,10 @@ copied from the matching base ROM at offset `0x7d8000`; all core MZM gameplay C
 and its extracted assets are compiled. The matching baseline includes that
 unchanged tail, rather than rebuilding the separate NES emulator project.
 
-## Native encounter contract
+## Original v1 native encounter contract
+
+The following describes the preserved v1 artifact. Current source implements v2;
+see the v2 contract below and its recipe for changed contact/party behavior.
 
 `gv_native.c` is new display/input/integration glue. `emerald_bridge.c` contains
 the declared reduced battle adapter; its generated includes hold the exact
@@ -130,3 +133,27 @@ warm compiler, cold source objects. Those are different inputs and preprocessing
 paths, so they are not a before/after regression measurement. Failed compiler,
 preprocessor and missing-NES attempts remain in the baseline receipt. No CI job,
 new build dependency matrix or full-campaign qualification was added.
+
+## V2 source actor contract
+
+Current native source hooks `SpriteUtilSamusAndSpriteCollision` after its exact
+hitbox-overlap check. Eligible ordinary actors capture identity before damage;
+the next gameplay frame enters through the normal pause fade. `SpriteDraw` uses
+the original spriteset allocation only when no unmapped/different-species actor
+shares it, including multi-slot overlapping allocations. Rendering and contact
+share this guard. Source AI and hitboxes remain authoritative.
+
+`GvWildLink` is20bytes: identity(u32), species/x/y(u16 each), RAM slot/native
+ID/area/room/active/resolution(u8 each), wins/retreats(u16 each). Identity packs
+area<<24 | room<<16 | roomSlot<<8 | nativeId. Resolution0is pending/active,
+1victory,2party rescue,3retreat. `GvBattle` remains288bytes. Symbol-resolved
+`gGvWorldDrawIdentity`, `gGvWorldDrawSpecies` and `gGvWorldDrawCount` identify actual
+field drawing. `gGvDefeatedIdentities[128]` and `gGvDefeatedCount` expose bounded
+session history; full checkpoints preserve all this IWRAM state.
+
+A clean v2-r1 build with four jobs, warm compiler and cold source objects took
+15.5533s for make and17.1495s total on this machine. The earlier v1 comparable
+candidate make was15.6169s and17.1557s total; observed difference is-0.0636s make
+and-0.0062s total, a single-run comparison rather than a performance guarantee.
+No dependency or CI stage was added. Gameplay qualification remains separate from
+this build and must name the exact ROM hash.
