@@ -2,11 +2,13 @@
 
 A single-player browser environment for playing games and developing them through conversation, using a controller.
 
-**Status:** the local v1 Gameverse overworld has three explorable city blocks and an Alder Arcade entrance to FireRed. The original FireRed collection remains available as v0. Both versions share existing profiles and compatible checkpoints; FireRed uses a matching editable-source build. Xbox USB connection and world movement were confirmed by the user, while full controller, campaign and mid-battle qualification remain open. The improvement harness is not integrated.
+**Status:** the local v1 Gameverse overworld has three explorable city blocks, Alder Arcade for FireRed, Juniper Pitch for 5v5 soccer, and Foundry Field for 7v7 American football. The sports games are original custom quick matches against AI; see [sports controls, scope and evidence](SPORTS_DEVELOPMENT.md). The original FireRed collection remains available as v0. Both world versions share existing profiles and compatible FireRed checkpoints; FireRed uses a matching editable-source build. Xbox USB connection and world movement were confirmed by the user; physical-controller qualification of the new sports games and full FireRed campaign/mid-battle qualification remain open. The improvement harness is not integrated.
 
 Run `npm ci --ignore-scripts`, `npm run source:setup -- firered`, `npm run game:build -- firered`, then `npm run dev`. Open [local Gameverse](http://127.0.0.1:4173). See [development setup and evidence](DEVELOPMENT.md) for toolchain prerequisites, controls, timings and remaining issue #3 gates.
 
-- `/` or `/v1`: Gameverse, the 3D overworld. Approach Alder Arcade and press E or controller A to play FireRed.
+For sports-only play, `npm ci --ignore-scripts` and `npm run dev` are sufficient; FireRed setup is not required.
+
+- `/` or `/v1`: Gameverse, the 3D overworld. Approach a venue and press E or controller A to enter FireRed, soccer or football.
 - `/v0`: the original FireRed collection webpage.
 
 FireRed fills the browser view while preserving its 3:2 aspect ratio. Controller Y opens the Gameverse menu; Start remains FireRed's own menu. Use D-pad/left stick and A to select **Save & return**, or B to resume. See [world controls and browser verification](CITY_DEVELOPMENT.md). Game cartridges and saves remain local and are not included in this repository.
@@ -17,6 +19,7 @@ FireRed fills the browser view while preserving its 3:2 aspect ratio. Controller
 | --- | --- |
 | [Development](DEVELOPMENT.md) | Runnable slice 1, editable-source setup, evidence and qualification gaps |
 | [Gameverse world development](CITY_DEVELOPMENT.md) | v0/v1 configs, walking prototype, FireRed entrance, controller controls and verification |
+| [Sports development](SPORTS_DEVELOPMENT.md) | Soccer/football controls, playable scope, save/resume evidence and physics verification boundaries |
 | [PRD](PRD.md) | Product scope, acceptance requirements and open decisions |
 | [Parallel development contract](contracts/PARALLEL_DEVELOPMENT.md) | Configs, independent harness versions, simulations, candidate submissions and timing handoff |
 | [Base game contract](contracts/BASE_GAME.md) | Persistent playable home, profiles, subgame hosting and recovery |
@@ -41,7 +44,7 @@ FireRed fills the browser view while preserving its 3:2 aspect ratio. Controller
 
 The shared handoff pins game/config/artifact references and both harness versions, exposes adapter/session capabilities, and exchanges candidate submissions/results and timing reports. Base-specific discovery/session policy and Shishir's internal algorithm remain separately configurable. See [the parallel contract](contracts/PARALLEL_DEVELOPMENT.md) and [TASKS.md](TASKS.md); exact schemas still need joint review.
 
-FireRed is the sole initial game and uses an editable source build. Mario is deferred. The three slices replace the earlier eight-slice/fixture-first plan. The user subsequently authorized the current browser walking prototype and reviewed controller movement; this does not close the remaining slice 1 or slice 2 qualification gates. Exact snapshots apply to matching game/core versions; slice 3 changes require separately verified save compatibility. Full product qualification still requires real mechanic development, not parameter edits alone. The pinned mGBA worker adapter remains in development; the current world uses Three.js with original procedural geometry and textures.
+FireRed was the sole initial game and uses an editable source build. The user subsequently authorized the walking prototype and the current soccer/American football expansion; Mario remains deferred. The three slices replace the earlier eight-slice/fixture-first plan. These additions do not close the remaining slice 1 or slice 2 qualification gates. Exact snapshots apply to matching game/core versions; slice 3 changes require separately verified save compatibility. Full product qualification still requires real mechanic development, not parameter edits alone. The pinned mGBA worker adapter remains in development; the current world uses Three.js with original procedural geometry and textures. The new synchronous custom adapter is limited to trusted built-in sports modules; arbitrary generated-game isolation is not qualified.
 
 ## Research and examples
 

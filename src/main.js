@@ -12,7 +12,7 @@ let avatar = avatars[0], profile, profiles = [], games = [], runtime, session, a
 let keyboard = new Set(), inputMask = -1, padArmed = false, padPrevious = [], lastPadAction = 0;
 let neighborhoodOpen = false, neighborhoodPose, neighborhood, neighborhoodLaunch = 0, neighborhoodEntryPending = false;
 let worldProfilePending = false, shellPadDevice = null, shellPadIndex = null;
-let voiceClock, voiceNoticeTimer;
+let voiceClock, voiceNoticeTimer, voiceOwnsSportsB = false;
 const timings = [];
 window.__gameverseTimings = timings;
 const escapeHtml = text => String(text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -129,6 +129,11 @@ async function renderGames() {
   for (const game of games) {
     let head;
     if (profile && game.ready) head = await storage.get(progressKey(identityFor(game)));
+    if (game.kind === 'custom-sports') {
+      const card = document.createElement('article'); card.className = `game-card sport-card ${game.id}`;
+      card.innerHTML = `<div class="sport-card-art"><span>ALDER SPORTS / ORIGINAL</span><h3>${escapeHtml(game.name)}</h3><p>${escapeHtml(game.subtitle)}</p></div><div class="card-info"><p>${head ? 'Your saved match is ready.' : 'Team control · classic controls · play the CPU'}</p><button data-game="${game.id}">${head ? 'Continue match' : 'Play quick match'} ↗</button></div>`;
+      card.querySelector('button').onclick = () => startGame(game).catch(handleError); $('#games').append(card); continue;
+    }
     const card = document.createElement('article'); card.className = `game-card ${game.id}`;
     card.innerHTML = `<div class="game-art"><div class="art-label"><span>GAME BOY ADVANCE</span><span>${game.id === 'firered' ? '01' : '02'} / GBA</span></div>${game.id === 'firered'
       ? '<div class="pixel-sun"></div><div class="land land-back"></div><div class="land land-front"></div><div class="tree tree-one"></div><div class="tree tree-two"></div><div class="art-title">FIRE<span>RED</span></div><span class="art-caption">A whole world awaits.</span>'
@@ -138,6 +143,7 @@ async function renderGames() {
   }
 }
 function identityFor(game) {
+  if (game.kind === 'custom-sports') return { kind: game.kind, profileId: profile.id, gameId: game.id, version: game.version, artifactSha256: game.artifactSha256, adapter: game.adapter, snapshotFormat: game.snapshotFormat };
   return { profileId: profile.id, gameId: game.id, cartridgeSha256: game.receipt.sha256, wasmSha256: runtime.wasmSha256, loaderSha256: runtime.loaderSha256, adapter: runtime.adapter, snapshotFormat: runtime.snapshotFormat };
 }
 function clearInput() { keyboard.clear(); inputMask = -1; padArmed = false; session?.adapter?.input(0); }
@@ -163,18 +169,22 @@ async function startGame(game, mode = 'snapshot', origin = 'collection') {
   busy = true; notice('Loading your adventure…');
   let current, release;
   try {
-    validateGameBinding(application, game, runtime);
+    validateGameBinding(application, game, game.kind === 'custom-sports' ? game : runtime);
     release = await storage.acquireSessionLock(`session:${profile.id}:${game.id}`);
     const identity = identityFor(game), key = progressKey(identity);
     current = { game, identity, key, release, origin, state: 'loading', head: await storage.get(key) || { revision: 0 } };
     session = current;
     $('#profile-button').disabled = true;
     $('#save-return').textContent = origin === 'neighborhood' ? 'Save & return to Gameverse' : 'Save & return to collection';
-    const romResponse = await fetch(game.artifactUrl);
-    if (!romResponse.ok) throw Error('Built cartridge is unavailable. The confirmed progress is retained.');
-    const rom = new Uint8Array(await romResponse.arrayBuffer());
-    if (await digest(rom) !== identity.cartridgeSha256) throw Error('Cartridge digest does not match its source-build receipt.');
-    validateCartridge(rom, game.gameCode);
+    const custom = game.kind === 'custom-sports';
+    let rom;
+    if (!custom) {
+      const romResponse = await fetch(game.artifactUrl);
+      if (!romResponse.ok) throw Error('Built cartridge is unavailable. The confirmed progress is retained.');
+      rom = new Uint8Array(await romResponse.arrayBuffer());
+      if (await digest(rom) !== identity.cartridgeSha256) throw Error('Cartridge digest does not match its source-build receipt.');
+      validateCartridge(rom, game.gameCode);
+    }
     let state, battery, expectedFrame;
     if (current.head.snapshotId && mode === 'snapshot') {
       const checkpoint = await storage.get(`snapshot:${current.head.snapshotId}`);
@@ -195,11 +205,25 @@ async function startGame(game, mode = 'snapshot', origin = 'collection') {
     }
     $('#home').hidden = true; $('#player').hidden = false; document.body.classList.add('playing-subgame');
     $('#playing-title').textContent = game.subtitle ? `${game.name}: ${game.subtitle}` : game.name;
-    $('#screen').innerHTML = '<canvas width="240" height="160" aria-label="Game Boy Advance game screen"></canvas>';
-    current.adapter = new GbaAdapter($('#screen canvas'), error => failSession(current, error));
-    const loadContext = { ...identity, buildRunId: game.receipt.runId, mode, origin, baseConfig: { id: application.id, version: application.version, kind: application.base.kind }, expectedFrame: expectedFrame ?? null };
+    document.body.classList.toggle('playing-sports', custom);
+    $('#download-save').hidden = custom;
+    $('#menu-button').setAttribute('aria-label', custom ? 'Gameverse menu — Start or Escape' : 'Gameverse menu — Y or Escape');
+    $('#menu-button kbd').textContent = custom ? 'Start' : 'Y';
+    $('#session-control-note').textContent = custom
+      ? (game.id === 'soccer'
+        ? 'Soccer: LS move and pass/shot direction · A pass · B shoot/tackle · X lob/tackle · Y through ball · RS skills · LB run/switch · RB finesse/driven · LT shield/jockey · RT sprint. Hold then release the action for power. Start/Options pauses; R3 voice. Keyboard: WASD direction, J pass, K shoot, U through, I lob, L tackle, Q run/switch, F modifier, E + arrows skill, C shield, Shift sprint, Esc pause.'
+        : 'Football: A snap · A/B/X receiver buttons (tap lob, hold bullet) · LS move and pass lead · RS juke · A stiff arm · B spin · RB protect · RT sprint. Defense: B switch, X dive tackle, A conservative tackle, LT strafe. Start/Options pauses; R3 voice. Keyboard: WASD move/lead, J/U/K receivers, L tackle, Q switch, E + arrows skill, C protect, V strafe, Shift sprint, Esc pause. Pausing cancels an unfinished throw.')
+      : 'Start and View / Back belong to FireRed.';
+    if (custom) {
+      const { CustomSportsAdapter } = await import(game.entryUrl);
+      current.adapter = new CustomSportsAdapter($('#screen'), game, error => failSession(current, error), { onPause: openMenu, ownsB: () => voiceOwnsSportsB, preferredPadIndex: shellPadIndex });
+    } else {
+      $('#screen').innerHTML = '<canvas width="240" height="160" aria-label="Game Boy Advance game screen"></canvas>';
+      current.adapter = new GbaAdapter($('#screen canvas'), error => failSession(current, error));
+    }
+    const loadContext = { ...identity, buildRunId: game.receipt?.runId || null, mode, origin, baseConfig: { id: application.id, version: application.version, kind: application.base.kind }, expectedFrame: expectedFrame ?? null };
     await timed('load-and-restore', loadContext, async () => {
-      const loaded = await current.adapter.load(rom, state, battery);
+      const loaded = await (custom ? current.adapter.load(state) : current.adapter.load(rom, state, battery));
       loadContext.restoredFrame = loaded.frame;
       if (state && loaded.frame !== expectedFrame) throw Error('Restored frame does not match the confirmed checkpoint.');
     });
@@ -258,7 +282,7 @@ async function leaveSession({ restoreOrigin = true, message = '' } = {}) {
   const wasBusy = busy; busy = true;
   try {
     session = undefined; current.adapter?.dispose(); await current.release();
-    clearInput(); $('#session-dialog').close(); $('#player').hidden = true; document.body.classList.remove('playing-subgame'); $('#screen').replaceChildren();
+    clearInput(); $('#session-dialog').close(); $('#player').hidden = true; document.body.classList.remove('playing-subgame', 'playing-sports'); $('#screen').replaceChildren();
     if (restoreOrigin) restoreSessionOrigin(current.origin, message);
     renderGames().catch(handleError);
   } finally { busy = wasBusy; }
@@ -274,12 +298,12 @@ async function saveAndReturn() {
     const battery = captured.battery ? { id: crypto.randomUUID(), identity: current.identity, bytes: captured.battery, sha256: await digest(captured.battery), savedAt } : null;
     const checkpoint = { id: crypto.randomUUID(), identity: current.identity, state: captured.state, sha256: await digest(captured.state), frame: captured.frame, savedAt, batteryId: battery?.id || null };
     await timed('checkpoint-commit', current.identity, () => storage.commitCheckpoint(current.key, current.head.revision, checkpoint, battery));
-    await leaveSession({ message: 'Moment saved. Enter the arcade whenever you want to continue.' }); notice('Moment saved. Your adventure will be here when you return.');
+    await leaveSession({ message: 'Match or adventure saved. Visit its venue to continue.' }); notice('Moment saved. Your adventure will be here when you return.');
   } catch (error) { failSession(current, error); }
   finally { busy = false; $('#save-return').disabled = false; $('#force-return').disabled = false; }
 }
 function handleError(error) { notice(error.message || String(error)); }
-async function enterFireRedFromNeighborhood() {
+async function enterGameFromNeighborhood(gameId = 'firered') {
   const sourceWorld = neighborhood;
   if (!sourceWorld || !neighborhoodOpen || busy || session || neighborhoodEntryPending) {
     sourceWorld?.resume('Finish the current action, then try the arcade again.'); return;
@@ -293,20 +317,20 @@ async function enterFireRedFromNeighborhood() {
         showProfile();
       });
       if (!stillHere()) return;
-      if (!profile || $('#profile-dialog').returnValue !== 'selected') { sourceWorld.resume('Choose a character when you are ready to play FireRed.'); return; }
+      if (!profile || $('#profile-dialog').returnValue !== 'selected') { sourceWorld.resume('Choose a character when you are ready to play.'); return; }
     }
     // Refresh readiness at the entrance so a missing or newly built cartridge is reported accurately.
     await refreshGames();
     if (!stillHere()) return;
-    const game = games.find(item => item.id === 'firered');
-    if (!game?.ready) throw Error(game?.reason || 'FireRed is not ready. Build the local cartridge, then try the arcade again.');
+    const game = games.find(item => item.id === gameId);
+    if (!game?.ready) throw Error(game?.reason || 'This game is not ready. Return to the venue and try again.');
     if (!runtime) throw Error('The game runtime is unavailable. Reload Gameverse before trying again.');
     sourceWorld.suspend(); neighborhoodOpen = false; $('#neighborhood').hidden = true;
     document.body.classList.remove('exploring-neighborhood'); clearInput();
     await startGame(game, 'snapshot', 'neighborhood');
-    if (!session && !neighborhoodOpen) restoreSessionOrigin('neighborhood', 'FireRed did not start. Try the arcade again.');
+    if (!session && !neighborhoodOpen) restoreSessionOrigin('neighborhood', 'The game did not start. Try its venue again.');
   } catch (error) {
-    if (neighborhood === sourceWorld && !session) restoreSessionOrigin('neighborhood', error.message || 'FireRed could not open.');
+    if (neighborhood === sourceWorld && !session) restoreSessionOrigin('neighborhood', error.message || 'The game could not open.');
   } finally { neighborhoodEntryPending = false; }
 }
 async function exploreNeighborhood() {
@@ -321,8 +345,8 @@ async function exploreNeighborhood() {
   };
   try {
     const { openNeighborhood } = await import('./neighborhood.js');
-    const opened = await openNeighborhood($('#neighborhood'), showMenu, neighborhoodPose, enterFireRedFromNeighborhood,
-      { title: application.title, location: application.base.location, hasFireRed: application.subgames.some(game => game.id === 'firered') });
+    const opened = await openNeighborhood($('#neighborhood'), showMenu, neighborhoodPose, enterGameFromNeighborhood,
+      { title: application.title, location: application.base.location, hasFireRed: application.subgames.some(game => game.id === 'firered'), gameIds: application.subgames.map(game => game.id) });
     if (launch === neighborhoodLaunch) {
       neighborhood = opened;
       if ($('#world-menu').open) { opened.suspend(); updateWorldMenu(); }
@@ -343,7 +367,7 @@ function updateWorldMenu() {
 function openWorldMenu(message = '') {
   if (session || busy || worldProfilePending || $('#profile-dialog').open) return;
   clearInput(); neighborhood?.suspend(); updateWorldMenu();
-  $('#world-menu-message').textContent = message || 'Your world is paused. FireRed is waiting at Alder Arcade.';
+  $('#world-menu-message').textContent = message || 'Visit Alder Arcade, Juniper Pitch, or Foundry Field. Each venue keeps its own progress.';
   if (!$('#world-menu').open) { $('#world-menu').returnValue = ''; $('#world-menu').showModal(); }
   ($('#world-resume').disabled ? $('#world-reload') : $('#world-resume')).focus();
 }
@@ -352,9 +376,14 @@ $('#world-menu-close').onclick = () => $('#world-menu').close('resume');
 $('#world-menu').addEventListener('cancel', event => { if ($('#world-resume').disabled) event.preventDefault(); });
 $('#world-menu').addEventListener('close', () => {
   clearInput();
-  if (['character', 'reload'].includes($('#world-menu').returnValue)) return;
+  if (['character', 'reload', 'venue'].includes($('#world-menu').returnValue)) return;
   if (neighborhood && !session) neighborhood.resume();
 });
+for (const button of document.querySelectorAll('[data-venue]')) button.onclick = async () => {
+  const id = button.dataset.venue;
+  $('#world-menu').close('venue');
+  await enterGameFromNeighborhood(id);
+};
 $('#world-character').onclick = () => {
   if (busy || session) return;
   worldProfilePending = true; $('#world-menu').close('character'); showProfile();
@@ -424,9 +453,16 @@ $('#download-save').onclick = async () => {
 };
 window.addEventListener('keydown', event => {
   if ($('#voice-dialog').open && event.code === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); void voice.cancel(); return; }
+  const direction = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[event.code];
+  const editing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target?.tagName) || event.target?.isContentEditable;
+  if (direction && !editing && $('dialog[open]:not(#voice-dialog)')) {
+    event.preventDefault();
+    if (!busy) focusDirection(direction);
+    return;
+  }
   if (event.repeat && (event.code === 'Enter' || event.code === 'Space')) event.preventDefault();
   if (event.code === 'Escape' && session?.state === 'playing') { event.preventDefault(); openMenu(); return; }
-  if (session?.state !== 'playing' || !KEY_BITS[event.code]) return;
+  if (session?.state !== 'playing' || session.game?.kind === 'custom-sports' || !KEY_BITS[event.code]) return;
   event.preventDefault(); if (!event.repeat) keyboard.add(event.code);
 });
 window.addEventListener('keyup', event => keyboard.delete(event.code));
@@ -456,6 +492,7 @@ function pollInput(now) {
   const padsForVoice = navigator.getGamepads?.() || [], voiceEnabled = !document.hidden && document.hasFocus() && !busy;
   const nameOwnsB = nameEntry.voice.poll(padsForVoice, voiceEnabled && $('#profile-dialog').open);
   const voiceOwnsB = voice.poll(padsForVoice, voiceEnabled) || nameOwnsB;
+  voiceOwnsSportsB = voiceOwnsB;
   // A controller must not activate a focused button in an inactive browser tab.
   // Saving/loading also suspend menu actions; held buttons must be released afterward.
   if (document.hidden || !document.hasFocus() || busy) {
@@ -480,11 +517,13 @@ function pollInput(now) {
   if (padArmed) {
     const pressed = i => buttons[i] && !padPrevious[i];
     if (session?.state === 'playing') {
-      // Start/Back remain GBA Start/Select. Y is the Gameverse host menu.
-      if (pressed(3) || pressed(16) || (buttons[6] && buttons[7])) { openMenu(); padArmed = false; }
+      // Sports use Start/Options; Y belongs to their familiar gameplay layout.
+      // FireRed keeps Start/Back in-game and Y (or both triggers) for the host.
+      const sports = session.game?.kind === 'custom-sports';
+      if (pressed(16) || (sports ? pressed(9) : pressed(3) || (buttons[6] && buttons[7]))) { openMenu(); padArmed = false; }
     } else {
       const dialog = $('dialog[open]:not(#voice-dialog)');
-      if (dialog && ((!voiceOwnsB && pressed(1)) || (dialog.id === 'world-menu' && pressed(9)))) {
+      if (dialog && ((!voiceOwnsB && pressed(1)) || ((dialog.id === 'world-menu' || (dialog.id === 'session-dialog' && session?.game?.kind === 'custom-sports')) && pressed(9)))) {
         if (dialog.id === 'session-dialog') {
           if (!$('#resume-button').hidden && !$('#resume-button').disabled) $('#resume-button').click();
         } else if (dialog.id === 'world-menu') {
@@ -495,7 +534,7 @@ function pollInput(now) {
       else if ((mask & 240) && now - lastPadAction > 180) { focusDirection(mask & 64 ? 'up' : mask & 128 ? 'down' : mask & 32 ? 'left' : 'right'); lastPadAction = now; }
     }
   }
-  if (session?.state === 'playing') {
+  if (session?.state === 'playing' && session.game?.kind !== 'custom-sports') {
     const next = [...keyboard].reduce((mask, code) => mask | KEY_BITS[code], padArmed ? mask : 0);
     if (next !== inputMask) { inputMask = next; session.adapter.input(next); }
   }

@@ -43,3 +43,13 @@ test('standard controller mapping covers GBA keys and ignores unsupported/discon
   pad.connected = false; assert.equal(padMask(pad), 0);
   pad.connected = true; pad.mapping = ''; assert.equal(padMask(pad), 0);
 });
+
+
+test('custom progress separates profile, sport, artifact and version without emulator identities', () => {
+  const identity = { kind: 'custom-sports', profileId: 'a', gameId: 'soccer', version: '1.0.0', artifactSha256: 'abc', adapter: 'sports/1', snapshotFormat: 'json/1' };
+  for (const field of ['profileId', 'gameId', 'version', 'artifactSha256', 'adapter', 'snapshotFormat']) {
+    assert.notEqual(progressKey(identity), progressKey({ ...identity, [field]: 'changed' }));
+    assert.throws(() => validateCheckpoint({ identity: { ...identity, [field]: 'changed' }, state: new Uint8Array([1]) }, identity));
+  }
+  validateCheckpoint({ identity, state: new Uint8Array([1]) }, identity);
+});
