@@ -1,0 +1,103 @@
+
+local/roms/Dragon Ball - Advanced Adventure (USA).gba:     file format binary
+
+
+Disassembly of section .data:
+
+080149dc <.data+0x149dc>:
+ 80149dc:	b530      	push	{r4, r5, lr}
+ 80149de:	1c03      	adds	r3, r0, #0
+ 80149e0:	68d8      	ldr	r0, [r3, #12]
+ 80149e2:	2180      	movs	r1, #128	@ 0x80
+ 80149e4:	00c9      	lsls	r1, r1, #3
+ 80149e6:	4008      	ands	r0, r1
+ 80149e8:	2800      	cmp	r0, #0
+ 80149ea:	d001      	beq.n	0x80149f0
+ 80149ec:	2000      	movs	r0, #0
+ 80149ee:	e001      	b.n	0x80149f4
+ 80149f0:	4818      	ldr	r0, [pc, #96]	@ (0x8014a54)
+ 80149f2:	8800      	ldrh	r0, [r0, #0]
+ 80149f4:	21e2      	movs	r1, #226	@ 0xe2
+ 80149f6:	18c9      	adds	r1, r1, r3
+ 80149f8:	468c      	mov	ip, r1
+ 80149fa:	8809      	ldrh	r1, [r1, #0]
+ 80149fc:	4662      	mov	r2, ip
+ 80149fe:	8010      	strh	r0, [r2, #0]
+ 8014a00:	4388      	bics	r0, r1
+ 8014a02:	1c1a      	adds	r2, r3, #0
+ 8014a04:	32e4      	adds	r2, #228	@ 0xe4
+ 8014a06:	8010      	strh	r0, [r2, #0]
+ 8014a08:	4664      	mov	r4, ip
+ 8014a0a:	8820      	ldrh	r0, [r4, #0]
+ 8014a0c:	4381      	bics	r1, r0
+ 8014a0e:	1c18      	adds	r0, r3, #0
+ 8014a10:	30e6      	adds	r0, #230	@ 0xe6
+ 8014a12:	8001      	strh	r1, [r0, #0]
+ 8014a14:	8810      	ldrh	r0, [r2, #0]
+ 8014a16:	4c10      	ldr	r4, [pc, #64]	@ (0x8014a58)
+ 8014a18:	4004      	ands	r4, r0
+ 8014a1a:	1c1d      	adds	r5, r3, #0
+ 8014a1c:	35e8      	adds	r5, #232	@ 0xe8
+ 8014a1e:	802c      	strh	r4, [r5, #0]
+ 8014a20:	4661      	mov	r1, ip
+ 8014a22:	8808      	ldrh	r0, [r1, #0]
+ 8014a24:	22f0      	movs	r2, #240	@ 0xf0
+ 8014a26:	4002      	ands	r2, r0
+ 8014a28:	2a00      	cmp	r2, #0
+ 8014a2a:	d017      	beq.n	0x8014a5c
+ 8014a2c:	1c18      	adds	r0, r3, #0
+ 8014a2e:	30e1      	adds	r0, #225	@ 0xe1
+ 8014a30:	7803      	ldrb	r3, [r0, #0]
+ 8014a32:	1c01      	adds	r1, r0, #0
+ 8014a34:	2b00      	cmp	r3, #0
+ 8014a36:	d001      	beq.n	0x8014a3c
+ 8014a38:	2b10      	cmp	r3, #16
+ 8014a3a:	d107      	bne.n	0x8014a4c
+ 8014a3c:	1c20      	adds	r0, r4, #0
+ 8014a3e:	4310      	orrs	r0, r2
+ 8014a40:	8028      	strh	r0, [r5, #0]
+ 8014a42:	7808      	ldrb	r0, [r1, #0]
+ 8014a44:	2800      	cmp	r0, #0
+ 8014a46:	d101      	bne.n	0x8014a4c
+ 8014a48:	2008      	movs	r0, #8
+ 8014a4a:	7008      	strb	r0, [r1, #0]
+ 8014a4c:	7808      	ldrb	r0, [r1, #0]
+ 8014a4e:	3801      	subs	r0, #1
+ 8014a50:	e007      	b.n	0x8014a62
+ 8014a52:	0000      	movs	r0, r0
+ 8014a54:	3100      	adds	r1, #0
+ 8014a56:	0300      	lsls	r0, r0, #12
+ 8014a58:	030f      	lsls	r7, r1, #12
+ 8014a5a:	0000      	movs	r0, r0
+ 8014a5c:	1c19      	adds	r1, r3, #0
+ 8014a5e:	31e1      	adds	r1, #225	@ 0xe1
+ 8014a60:	2010      	movs	r0, #16
+ 8014a62:	7008      	strb	r0, [r1, #0]
+ 8014a64:	bc30      	pop	{r4, r5}
+ 8014a66:	bc01      	pop	{r0}
+ 8014a68:	4700      	bx	r0
+ 8014a6a:	0000      	movs	r0, r0
+ 8014a6c:	b5f0      	push	{r4, r5, r6, r7, lr}
+ 8014a6e:	4657      	mov	r7, sl
+ 8014a70:	464e      	mov	r6, r9
+ 8014a72:	4645      	mov	r5, r8
+ 8014a74:	b4e0      	push	{r5, r6, r7}
+ 8014a76:	b082      	sub	sp, #8
+ 8014a78:	4f98      	ldr	r7, [pc, #608]	@ (0x8014cdc)
+ 8014a7a:	6938      	ldr	r0, [r7, #16]
+ 8014a7c:	4680      	mov	r8, r0
+ 8014a7e:	2100      	movs	r1, #0
+ 8014a80:	9100      	str	r1, [sp, #0]
+ 8014a82:	2288      	movs	r2, #136	@ 0x88
+ 8014a84:	0052      	lsls	r2, r2, #1
+ 8014a86:	18bb      	adds	r3, r7, r2
+ 8014a88:	681a      	ldr	r2, [r3, #0]
+ 8014a8a:	2a00      	cmp	r2, #0
+ 8014a8c:	d019      	beq.n	0x8014ac2
+ 8014a8e:	6890      	ldr	r0, [r2, #8]
+ 8014a90:	2180      	movs	r1, #128	@ 0x80
+ 8014a92:	0209      	lsls	r1, r1, #8
+ 8014a94:	4008      	ands	r0, r1
+ 8014a96:	2800      	cmp	r0, #0
+ 8014a98:	d105      	bne.n	0x8014aa6
+ 8014a9a:	68d0      	ldr	r0, [r2, #12]

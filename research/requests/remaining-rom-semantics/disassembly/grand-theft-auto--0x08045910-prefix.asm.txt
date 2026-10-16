@@ -1,0 +1,99 @@
+
+local/roms/Grand Theft Auto (USA).gba:     file format binary
+
+
+Disassembly of section .data:
+
+08045910 <.data+0x45910>:
+ 8045910:	b5f0      	push	{r4, r5, r6, r7, lr}
+ 8045912:	4657      	mov	r7, sl
+ 8045914:	464e      	mov	r6, r9
+ 8045916:	4645      	mov	r5, r8
+ 8045918:	b4e0      	push	{r5, r6, r7}
+ 804591a:	b081      	sub	sp, #4
+ 804591c:	1c04      	adds	r4, r0, #0
+ 804591e:	1c27      	adds	r7, r4, #0
+ 8045920:	6aa0      	ldr	r0, [r4, #40]	@ 0x28
+ 8045922:	6a40      	ldr	r0, [r0, #36]	@ 0x24
+ 8045924:	1c01      	adds	r1, r0, #0
+ 8045926:	310a      	adds	r1, #10
+ 8045928:	9100      	str	r1, [sp, #0]
+ 804592a:	300c      	adds	r0, #12
+ 804592c:	4680      	mov	r8, r0
+ 804592e:	6ae2      	ldr	r2, [r4, #44]	@ 0x2c
+ 8045930:	4692      	mov	sl, r2
+ 8045932:	4803      	ldr	r0, [pc, #12]	@ (0x8045940)
+ 8045934:	7b00      	ldrb	r0, [r0, #12]
+ 8045936:	2800      	cmp	r0, #0
+ 8045938:	d106      	bne.n	0x8045948
+ 804593a:	4802      	ldr	r0, [pc, #8]	@ (0x8045944)
+ 804593c:	6806      	ldr	r6, [r0, #0]
+ 804593e:	e0a4      	b.n	0x8045a8a
+ 8045940:	0ce0      	lsrs	r0, r4, #19
+ 8045942:	0200      	lsls	r0, r0, #8
+ 8045944:	0f10      	lsrs	r0, r2, #28
+ 8045946:	0200      	lsls	r0, r0, #8
+ 8045948:	4807      	ldr	r0, [pc, #28]	@ (0x8045968)
+ 804594a:	6801      	ldr	r1, [r0, #0]
+ 804594c:	4807      	ldr	r0, [pc, #28]	@ (0x804596c)
+ 804594e:	4684      	mov	ip, r0
+ 8045950:	4a07      	ldr	r2, [pc, #28]	@ (0x8045970)
+ 8045952:	4691      	mov	r9, r2
+ 8045954:	428c      	cmp	r4, r1
+ 8045956:	d10f      	bne.n	0x8045978
+ 8045958:	6801      	ldr	r1, [r0, #0]
+ 804595a:	6810      	ldr	r0, [r2, #0]
+ 804595c:	4281      	cmp	r1, r0
+ 804595e:	d10b      	bne.n	0x8045978
+ 8045960:	4804      	ldr	r0, [pc, #16]	@ (0x8045974)
+ 8045962:	6806      	ldr	r6, [r0, #0]
+ 8045964:	e091      	b.n	0x8045a8a
+ 8045966:	0000      	movs	r0, r0
+ 8045968:	f3d8 0202 			@ <UNDEFINED> instruction: 0xf3d80202
+ 804596c:	0224      	lsls	r4, r4, #8
+ 804596e:	0200      	lsls	r0, r0, #8
+ 8045970:	f3d0 0202 			@ <UNDEFINED> instruction: 0xf3d00202
+ 8045974:	f3dc 0202 			@ <UNDEFINED> instruction: 0xf3dc0202
+ 8045978:	4803      	ldr	r0, [pc, #12]	@ (0x8045988)
+ 804597a:	6801      	ldr	r1, [r0, #0]
+ 804597c:	2900      	cmp	r1, #0
+ 804597e:	d001      	beq.n	0x8045984
+ 8045980:	2c00      	cmp	r4, #0
+ 8045982:	d105      	bne.n	0x8045990
+ 8045984:	4e01      	ldr	r6, [pc, #4]	@ (0x804598c)
+ 8045986:	e030      	b.n	0x80459ea
+ 8045988:	0f10      	lsrs	r0, r2, #28
+ 804598a:	0200      	lsls	r0, r0, #8
+ 804598c:	ffff 7fff 			@ <UNDEFINED> instruction: 0xffff7fff
+ 8045990:	2030      	movs	r0, #48	@ 0x30
+ 8045992:	7a0a      	ldrb	r2, [r1, #8]
+ 8045994:	4010      	ands	r0, r2
+ 8045996:	2800      	cmp	r0, #0
+ 8045998:	d002      	beq.n	0x80459a0
+ 804599a:	6a08      	ldr	r0, [r1, #32]
+ 804599c:	1d05      	adds	r5, r0, #4
+ 804599e:	e000      	b.n	0x80459a2
+ 80459a0:	698d      	ldr	r5, [r1, #24]
+ 80459a2:	2030      	movs	r0, #48	@ 0x30
+ 80459a4:	7a21      	ldrb	r1, [r4, #8]
+ 80459a6:	4008      	ands	r0, r1
+ 80459a8:	2800      	cmp	r0, #0
+ 80459aa:	d002      	beq.n	0x80459b2
+ 80459ac:	6a20      	ldr	r0, [r4, #32]
+ 80459ae:	1d02      	adds	r2, r0, #4
+ 80459b0:	e000      	b.n	0x80459b4
+ 80459b2:	69a2      	ldr	r2, [r4, #24]
+ 80459b4:	6829      	ldr	r1, [r5, #0]
+ 80459b6:	6810      	ldr	r0, [r2, #0]
+ 80459b8:	1a0b      	subs	r3, r1, r0
+ 80459ba:	2b00      	cmp	r3, #0
+ 80459bc:	da00      	bge.n	0x80459c0
+ 80459be:	425b      	negs	r3, r3
+ 80459c0:	6869      	ldr	r1, [r5, #4]
+ 80459c2:	6850      	ldr	r0, [r2, #4]
+ 80459c4:	1a08      	subs	r0, r1, r0
+ 80459c6:	2800      	cmp	r0, #0
+ 80459c8:	da00      	bge.n	0x80459cc
+ 80459ca:	4240      	negs	r0, r0
+ 80459cc:	1c02      	adds	r2, r0, #0
+ 80459ce:	429a      	cmp	r2, r3

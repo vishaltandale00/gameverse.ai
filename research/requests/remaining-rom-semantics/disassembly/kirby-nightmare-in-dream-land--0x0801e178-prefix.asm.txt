@@ -1,0 +1,102 @@
+
+local/roms/Kirby - Nightmare in Dream Land (USA).gba:     file format binary
+
+
+Disassembly of section .data:
+
+0801e178 <.data+0x1e178>:
+ 801e178:	b5f0      	push	{r4, r5, r6, r7, lr}
+ 801e17a:	4657      	mov	r7, sl
+ 801e17c:	464e      	mov	r6, r9
+ 801e17e:	4645      	mov	r5, r8
+ 801e180:	b4e0      	push	{r5, r6, r7}
+ 801e182:	b083      	sub	sp, #12
+ 801e184:	481e      	ldr	r0, [pc, #120]	@ (0x801e200)
+ 801e186:	7800      	ldrb	r0, [r0, #0]
+ 801e188:	2800      	cmp	r0, #0
+ 801e18a:	d000      	beq.n	0x801e18e
+ 801e18c:	e12f      	b.n	0x801e3ee
+ 801e18e:	481d      	ldr	r0, [pc, #116]	@ (0x801e204)
+ 801e190:	7801      	ldrb	r1, [r0, #0]
+ 801e192:	2004      	movs	r0, #4
+ 801e194:	4008      	ands	r0, r1
+ 801e196:	2800      	cmp	r0, #0
+ 801e198:	d100      	bne.n	0x801e19c
+ 801e19a:	e128      	b.n	0x801e3ee
+ 801e19c:	481a      	ldr	r0, [pc, #104]	@ (0x801e208)
+ 801e19e:	2100      	movs	r1, #0
+ 801e1a0:	5e40      	ldrsh	r0, [r0, r1]
+ 801e1a2:	4d1a      	ldr	r5, [pc, #104]	@ (0x801e20c)
+ 801e1a4:	2200      	movs	r2, #0
+ 801e1a6:	5ea9      	ldrsh	r1, [r5, r2]
+ 801e1a8:	4c19      	ldr	r4, [pc, #100]	@ (0x801e210)
+ 801e1aa:	2300      	movs	r3, #0
+ 801e1ac:	5ee2      	ldrsh	r2, [r4, r3]
+ 801e1ae:	1889      	adds	r1, r1, r2
+ 801e1b0:	f003 fa40 	bl	0x8021634
+ 801e1b4:	2800      	cmp	r0, #0
+ 801e1b6:	d100      	bne.n	0x801e1ba
+ 801e1b8:	e119      	b.n	0x801e3ee
+ 801e1ba:	4916      	ldr	r1, [pc, #88]	@ (0x801e214)
+ 801e1bc:	4816      	ldr	r0, [pc, #88]	@ (0x801e218)
+ 801e1be:	8800      	ldrh	r0, [r0, #0]
+ 801e1c0:	1840      	adds	r0, r0, r1
+ 801e1c2:	7800      	ldrb	r0, [r0, #0]
+ 801e1c4:	0600      	lsls	r0, r0, #24
+ 801e1c6:	1600      	asrs	r0, r0, #24
+ 801e1c8:	2800      	cmp	r0, #0
+ 801e1ca:	d010      	beq.n	0x801e1ee
+ 801e1cc:	4a13      	ldr	r2, [pc, #76]	@ (0x801e21c)
+ 801e1ce:	7ad1      	ldrb	r1, [r2, #11]
+ 801e1d0:	2001      	movs	r0, #1
+ 801e1d2:	4008      	ands	r0, r1
+ 801e1d4:	2800      	cmp	r0, #0
+ 801e1d6:	d100      	bne.n	0x801e1da
+ 801e1d8:	e109      	b.n	0x801e3ee
+ 801e1da:	7b10      	ldrb	r0, [r2, #12]
+ 801e1dc:	2700      	movs	r7, #0
+ 801e1de:	5fe9      	ldrsh	r1, [r5, r7]
+ 801e1e0:	2300      	movs	r3, #0
+ 801e1e2:	5ee2      	ldrsh	r2, [r4, r3]
+ 801e1e4:	1889      	adds	r1, r1, r2
+ 801e1e6:	1109      	asrs	r1, r1, #4
+ 801e1e8:	4288      	cmp	r0, r1
+ 801e1ea:	dd00      	ble.n	0x801e1ee
+ 801e1ec:	e0ff      	b.n	0x801e3ee
+ 801e1ee:	480c      	ldr	r0, [pc, #48]	@ (0x801e220)
+ 801e1f0:	6800      	ldr	r0, [r0, #0]
+ 801e1f2:	2800      	cmp	r0, #0
+ 801e1f4:	d118      	bne.n	0x801e228
+ 801e1f6:	480b      	ldr	r0, [pc, #44]	@ (0x801e224)
+ 801e1f8:	2400      	movs	r4, #0
+ 801e1fa:	5704      	ldrsb	r4, [r0, r4]
+ 801e1fc:	e019      	b.n	0x801e232
+ 801e1fe:	0000      	movs	r0, r0
+ 801e200:	5574      	strb	r4, [r6, r5]
+ 801e202:	0200      	lsls	r0, r0, #8
+ 801e204:	5568      	strb	r0, [r5, r5]
+ 801e206:	0300      	lsls	r0, r0, #12
+ 801e208:	5560      	strb	r0, [r4, r5]
+ 801e20a:	0300      	lsls	r0, r0, #12
+ 801e20c:	5570      	strb	r0, [r6, r5]
+ 801e20e:	0300      	lsls	r0, r0, #12
+ 801e210:	5584      	strb	r4, [r0, r6]
+ 801e212:	0300      	lsls	r0, r0, #12
+ 801e214:	36f0      	adds	r6, #240	@ 0xf0
+ 801e216:	0873      	lsrs	r3, r6, #1
+ 801e218:	5578      	strb	r0, [r7, r5]
+ 801e21a:	0300      	lsls	r0, r0, #12
+ 801e21c:	5530      	strb	r0, [r6, r4]
+ 801e21e:	0300      	lsls	r0, r0, #12
+ 801e220:	5598      	strb	r0, [r3, r6]
+ 801e222:	0300      	lsls	r0, r0, #12
+ 801e224:	5564      	strb	r4, [r4, r5]
+ 801e226:	0300      	lsls	r0, r0, #12
+ 801e228:	2401      	movs	r4, #1
+ 801e22a:	4264      	negs	r4, r4
+ 801e22c:	2800      	cmp	r0, #0
+ 801e22e:	dd00      	ble.n	0x801e232
+ 801e230:	2401      	movs	r4, #1
+ 801e232:	2c01      	cmp	r4, #1
+ 801e234:	d134      	bne.n	0x801e2a0
+ 801e236:	4812      	ldr	r0, [pc, #72]	@ (0x801e280)

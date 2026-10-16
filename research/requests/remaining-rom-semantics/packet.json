@@ -1,0 +1,1602 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-16T06:31:38.591204+00:00",
+  "scope": "One bounded static pass over22 retained partial exports; deeper semantic triage of5 source-poor games",
+  "counts": {
+    "cohort_games": 22,
+    "games_deepened": 5,
+    "high_value_candidates": 10,
+    "supporting_or_rejected_spans": 11,
+    "bounded_instruction_prefixes": 5,
+    "instruction_prefix_bytes_total": 960
+  },
+  "claims": [
+    "New exact source/ROM anchored candidate records, not complete ontologies",
+    "One DBZ input transformation locally instruction-checked; all broader player-facing identities remain candidates"
+  ],
+  "inputs": {
+    "rom_manifest": {
+      "path": "local/re/roms.json",
+      "sha256": "d73ad87321d66a5c432e36a6a19f136a2db8cb1c81417b68fd0fd87feb9b6db6"
+    },
+    "catalog": {
+      "path": "local/re/experiments/20261016-corpus-decompile/catalog.json",
+      "sha256": "33718aeef8178000060e27db83010200c33d08c833fc36c70dc5e1f3383f6571"
+    },
+    "source_survey": {
+      "path": "local/decomps/survey.json",
+      "sha256": "f57a48b5590c65a6a33a936dfcad27e3fdc9e8f12a923ddf65d6c3d8a4395bd3"
+    }
+  },
+  "cohort": [
+    {
+      "game_id": "crash-bandicoot-the-huge-adventure",
+      "rom_sha1": "5a2651c78bb8a1d707e3c3af1f46fb64e2104198",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/crash-bandicoot-the-huge-adventure/functions.jsonl",
+        "sha256": "e4c71d377c52424830755a30ff367019b07be8ce46848decb90e7bd9448ae11c"
+      },
+      "function_records": 751,
+      "generated_pseudo_c": 751,
+      "canonical_ontology_available": true,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005243-7bfbd5"
+    },
+    {
+      "game_id": "dragon-ball-advanced-adventure",
+      "rom_sha1": "1338584d8cfa57402603197e65d2e2ff0184d24f",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/dragon-ball-advanced-adventure/functions.jsonl",
+        "sha256": "3cc10636231603098c87a25760cc91ddf00345d09c9121ffd15fb238d79875ac"
+      },
+      "function_records": 716,
+      "generated_pseudo_c": 716,
+      "canonical_ontology_available": false,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": true,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005243-7bfbd5"
+    },
+    {
+      "game_id": "driv3r",
+      "rom_sha1": "df2238fc239bdd0226a1b39deef06fa521eae48e",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/driv3r/functions.jsonl",
+        "sha256": "0aad04967fdf9d88bced52a77ed72a650e970dfa4438f209cac1e1796fd60d36"
+      },
+      "function_records": 169,
+      "generated_pseudo_c": 168,
+      "canonical_ontology_available": false,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005243-7bfbd5"
+    },
+    {
+      "game_id": "final-fantasy-i-and-ii-dawn-of-souls",
+      "rom_sha1": "6472695d69661490f78245e2982e1e676c080be7",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/final-fantasy-i-and-ii-dawn-of-souls/functions.jsonl",
+        "sha256": "0b19b51f3a114f517cf274ab163a115afd041ec446213b91ceab2f712cc89efc"
+      },
+      "function_records": 456,
+      "generated_pseudo_c": 456,
+      "canonical_ontology_available": false,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005243-7bfbd5"
+    },
+    {
+      "game_id": "final-fantasy-vi-advance",
+      "rom_sha1": "e9a2a58bc56ace26cb56d0cf5cdad1a10aa5dedf",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/final-fantasy-vi-advance/functions.jsonl",
+        "sha256": "e020e242ea95c4e4889ebb3abd20e4755eea401f2ba3d4d22874407927b1b70c"
+      },
+      "function_records": 735,
+      "generated_pseudo_c": 735,
+      "canonical_ontology_available": false,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": true,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005243-7bfbd5"
+    },
+    {
+      "game_id": "grand-theft-auto",
+      "rom_sha1": "742fc0062ad930253ffea449953061381577649e",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/grand-theft-auto/functions.jsonl",
+        "sha256": "612eb7b1762c5bc34db7042fb2a3e7d1cd3e7a890d3d39947c2c03fde9cf71fa"
+      },
+      "function_records": 864,
+      "generated_pseudo_c": 864,
+      "canonical_ontology_available": false,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": true,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005243-7bfbd5"
+    },
+    {
+      "game_id": "kirby-and-the-amazing-mirror",
+      "rom_sha1": "274b102b6d940f46861a92b4e65f89a51815c12c",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-and-the-amazing-mirror/functions.jsonl",
+        "sha256": "622a7231cf6b5c5def5cea33e3f50f960a38064802861a545283d37312dc4bd2"
+      },
+      "function_records": 838,
+      "generated_pseudo_c": 838,
+      "canonical_ontology_available": false,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": true,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005243-7bfbd5"
+    },
+    {
+      "game_id": "kirby-nightmare-in-dream-land",
+      "rom_sha1": "37a476567d133c146fee6b5e2eb0b07a215da6b0",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-nightmare-in-dream-land/functions.jsonl",
+        "sha256": "bf3814b2c9e9b27eec0d2758b515872936c0045087c79eea3ab98cf2f6141589"
+      },
+      "function_records": 711,
+      "generated_pseudo_c": 711,
+      "canonical_ontology_available": false,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": true,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005243-7bfbd5"
+    },
+    {
+      "game_id": "legend-of-zelda-the-a-link-to-the-past-and-four-swords",
+      "rom_sha1": "a272055abbbf6c26b0cd54c87395d01699589161",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/legend-of-zelda-the-a-link-to-the-past-and-four-swords/functions.jsonl",
+        "sha256": "02f200b03ed3c3350329702e03abb95aabe8bc3746664265f0cbf1663fc780ec"
+      },
+      "function_records": 889,
+      "generated_pseudo_c": 889,
+      "canonical_ontology_available": false,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005243-7bfbd5"
+    },
+    {
+      "game_id": "megaman-zero",
+      "rom_sha1": "193b14120119162518a73c70876f0b8bffdbd96e",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/megaman-zero/functions.jsonl",
+        "sha256": "eb9d28283211959f23d14376711914ee8d1e04df8c619200a9ec9b81548ae8aa"
+      },
+      "function_records": 876,
+      "generated_pseudo_c": 876,
+      "canonical_ontology_available": true,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005524-478941"
+    },
+    {
+      "game_id": "metal-slug-advance",
+      "rom_sha1": "067e1511ab6becf797f1bbd321a858e96a0349af",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/metal-slug-advance/functions.jsonl",
+        "sha256": "0bbb54b05bfc922765c1af9dc55b02c4b05223f3bcf1e23f0f2555fbec194fac"
+      },
+      "function_records": 1148,
+      "generated_pseudo_c": 1148,
+      "canonical_ontology_available": true,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005524-478941"
+    },
+    {
+      "game_id": "need-for-speed-underground",
+      "rom_sha1": "ddd304481617a748aa9f37535908a37452dd2f03",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/need-for-speed-underground/functions.jsonl",
+        "sha256": "79c0010ebf08275eca1093d9d1d6a2d4dc15d2cba930dd15adb305b874838e8a"
+      },
+      "function_records": 423,
+      "generated_pseudo_c": 423,
+      "canonical_ontology_available": false,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005524-478941"
+    },
+    {
+      "game_id": "prince-of-persia-the-sands-of-time",
+      "rom_sha1": "3f379cd2e598ca69ba68649c81cf425ed284ae27",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/prince-of-persia-the-sands-of-time/functions.jsonl",
+        "sha256": "afd2801b2a23ff75b1e5b87cdc86a1181d4a1afc1b6d6181e8e962b03bcdcc85"
+      },
+      "function_records": 594,
+      "generated_pseudo_c": 594,
+      "canonical_ontology_available": true,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005524-478941"
+    },
+    {
+      "game_id": "shaman-king-master-of-spirits",
+      "rom_sha1": "4a0fecdf90055fe1934b54d10e47b46ac399aecd",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/shaman-king-master-of-spirits/functions.jsonl",
+        "sha256": "64fb74409f1b9526a991e6437f6ce7608443217e6b559f958bad1091ead8a3a8"
+      },
+      "function_records": 323,
+      "generated_pseudo_c": 323,
+      "canonical_ontology_available": false,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005524-478941"
+    },
+    {
+      "game_id": "super-mario-advance",
+      "rom_sha1": "f071d45d8f5cb05b48d7d2b804c6cb6a79ad96fb",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/super-mario-advance/functions.jsonl",
+        "sha256": "270888670e27f12532dec8d94a761b630a2fcce66c7c016c8703e5c29af3aaab"
+      },
+      "function_records": 413,
+      "generated_pseudo_c": 413,
+      "canonical_ontology_available": false,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005524-478941"
+    },
+    {
+      "game_id": "super-mario-advance-2-super-mario-world",
+      "rom_sha1": "5101ddf223d1d918928fe1f306b63a42ada14a5e",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "1b580bc2d2cb8dca1e7e9c8b4fe307ac67fec3b03739c9a4ff8404d74fd3dd37"
+      },
+      "function_records": 731,
+      "generated_pseudo_c": 731,
+      "canonical_ontology_available": false,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005524-478941"
+    },
+    {
+      "game_id": "super-mario-advance-4-super-mario-bros-3",
+      "rom_sha1": "69e81f41394f02d64cad206adb26b3cd43690770",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "6919450cbcf131d3c996562ff027389f6e4c415db9ba286d572be00e93159030"
+      },
+      "function_records": 479,
+      "generated_pseudo_c": 479,
+      "canonical_ontology_available": false,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005524-478941"
+    },
+    {
+      "game_id": "tekken-advance",
+      "rom_sha1": "8b21cd57cacf172f963dfc7ead4fa127a8a63870",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-b/tekken-advance/functions.jsonl",
+        "sha256": "d18782dc1d294a028ebb7c261652870412b2663cd5fb78dcbbd9589d1f20ccb0"
+      },
+      "function_records": 340,
+      "generated_pseudo_c": 340,
+      "canonical_ontology_available": false,
+      "community_source_checkout_available": false,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005524-478941"
+    },
+    {
+      "game_id": "final-fantasy-tactics-advance",
+      "rom_sha1": "4ac05441f4de70a4ec3dd932116346c61b8783d9",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-c/final-fantasy-tactics-advance/functions.jsonl",
+        "sha256": "86f11903014db11e2802bdf7207fcec980b152a05767544a624b8c7216594673"
+      },
+      "function_records": 1159,
+      "generated_pseudo_c": 1159,
+      "canonical_ontology_available": true,
+      "community_source_checkout_available": true,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005416-27dd13"
+    },
+    {
+      "game_id": "mario-and-luigi-superstar-saga",
+      "rom_sha1": "7c303cdde5061ee329296948060b875cb50ba410",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-c/mario-and-luigi-superstar-saga/functions.jsonl",
+        "sha256": "774c51ed45f99a74d81f56658a906c6d9043a7d2dd161f6be78a2236e6652ea0"
+      },
+      "function_records": 591,
+      "generated_pseudo_c": 591,
+      "canonical_ontology_available": true,
+      "community_source_checkout_available": true,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005416-27dd13"
+    },
+    {
+      "game_id": "mario-kart-super-circuit",
+      "rom_sha1": "9d327c030c3e2d9007990518594f70c3340ac56f",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-c/mario-kart-super-circuit/functions.jsonl",
+        "sha256": "b57539d58b82bd900e0cb4b22ab382888c8f844c1d3a3d4a5c6229bd5ba703a3"
+      },
+      "function_records": 626,
+      "generated_pseudo_c": 626,
+      "canonical_ontology_available": true,
+      "community_source_checkout_available": true,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005416-27dd13"
+    },
+    {
+      "game_id": "sonic-advance",
+      "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-c/sonic-advance/functions.jsonl",
+        "sha256": "3bba538bb52819de78c229012facc0c00331ccaab903a15ce0381011f6635aab"
+      },
+      "function_records": 383,
+      "generated_pseudo_c": 383,
+      "canonical_ontology_available": true,
+      "community_source_checkout_available": true,
+      "new_semantic_review_this_packet": false,
+      "scope": "Retained capture-seeded partial export; function boundaries, ABI and semantics are not globally verified",
+      "original_export_run_id": "20261016T005416-27dd13"
+    }
+  ],
+  "games": [
+    {
+      "game_id": "dragon-ball-advanced-adventure",
+      "rom_sha1": "1338584d8cfa57402603197e65d2e2ff0184d24f",
+      "rom_sha256": "89a13559f76cf708d679c2d4f1d90d97333205e27dae72b47a7200715c57702e",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/dragon-ball-advanced-adventure/functions.jsonl",
+        "sha256": "3cc10636231603098c87a25760cc91ddf00345d09c9121ffd15fb238d79875ac"
+      },
+      "capture_context": {
+        "image": "local/captures-experiments/20261016-current-scripts/dragon-ball-advanced-adventure/gameplay/keyframes/f005362_scene.png",
+        "observed": "Side-view scene with Goku HUD, ground platforms and two enemy-like figures; screenshot alone does not identify candidate function ownership.",
+        "image_sha256": "dd30d5315a08aa1c45d4199706201fa1644eb31e92bee660947214eed87b7ab9",
+        "summary": {
+          "path": "local/captures-experiments/20261016-current-scripts/dragon-ball-advanced-adventure/summary.json",
+          "sha256": "ec27c766a1157a0d360752957127495b0931fa6cb8f6163403501e413d55480c"
+        },
+        "run_id": "20261016T004328-0e248f"
+      },
+      "candidates": [
+        "0x080149dc",
+        "0x08017244",
+        "0x08016c84"
+      ],
+      "next_action": {
+        "static": [
+          "Disassemble08014a6c..080153b4 and08017244..08017b8c, repair actual saved-LR epilogues before trusting callflow",
+          "Decode handlers08018e68/0801b93c and table08a41822 against ROM bytes"
+        ],
+        "bounded_capture": [
+          "Checkpoint a normal stage and probe LEFT/RIGHT/A/B separately for12frames",
+          "Watch fixed record020205a0 input+e2/e4/e6/e8 and position-like+1c/+20, velocity-like+2c/+2e; log selected callback+10"
+        ]
+      },
+      "input_anchors": [
+        {
+          "entry": "0x0810d2f8",
+          "export_record_line": 661,
+          "pseudocode": {
+            "path": "research/requests/remaining-rom-semantics/pseudocode/dragon-ball-advanced-adventure--0x0810d2f8.c",
+            "sha256": "1ac68f989c1e9bf4869b898f9a69422f4a0c3c2af66edc212bd6a526dc388288"
+          },
+          "pseudo_c_sha256": "1ac68f989c1e9bf4869b898f9a69422f4a0c3c2af66edc212bd6a526dc388288",
+          "scope": "KEYINPUT-containing retained C only; polling, replay and repeat branches require instruction/runtime checks before treating all fields as live player intent"
+        }
+      ]
+    },
+    {
+      "game_id": "kirby-and-the-amazing-mirror",
+      "rom_sha1": "274b102b6d940f46861a92b4e65f89a51815c12c",
+      "rom_sha256": "cfb194cd0cb373787094a962852e3e564fb2ecdb0609fe065afdd8de3f4e11f1",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-and-the-amazing-mirror/functions.jsonl",
+        "sha256": "622a7231cf6b5c5def5cea33e3f50f960a38064802861a545283d37312dc4bd2"
+      },
+      "capture_context": {
+        "image": "local/captures-experiments/20261016-current-scripts/kirby-and-the-amazing-mirror/gameplay/keyframes/f005343.png",
+        "observed": "Side-view outdoor scene, Kirby-like actor, NORMAL HUD and large star effects; no ability/collision policy inferred from the effect.",
+        "image_sha256": "161710ed34b008ddef981555e19b80a8cd261026712908df1a9ff601dcd9b75a",
+        "summary": {
+          "path": "local/captures-experiments/20261016-current-scripts/kirby-and-the-amazing-mirror/summary.json",
+          "sha256": "70fede3bfece021c360feac02672d19c5db022f926d14a0b272ba7146dee35d8"
+        },
+        "run_id": "20261016T004328-0e248f"
+      },
+      "candidates": [
+        "0x0800385c",
+        "0x08038b34"
+      ],
+      "next_action": {
+        "static": [
+          "Check0800385c body and callback table082d8da4; decode sampler080023e4 and overlap0803912c",
+          "Map record02020ee0 stride1a8 actor identities before calling this partner AI"
+        ],
+        "bounded_capture": [
+          "Probe walking/jump into a known visible wall from an isolated checkpoint",
+          "At0800385c log R0/R1 and record+40/+44/+50/+52/+57/+58/+62, plus tile samples and contact outcome"
+        ]
+      },
+      "input_anchors": [
+        {
+          "entry": "0x08152694",
+          "export_record_line": 775,
+          "pseudocode": {
+            "path": "research/requests/remaining-rom-semantics/pseudocode/kirby-and-the-amazing-mirror--0x08152694.c",
+            "sha256": "94be073eb5b12e9ec679f1573af6106c3a233bf9e13e8e2e78a7af7c601f7617"
+          },
+          "pseudo_c_sha256": "94be073eb5b12e9ec679f1573af6106c3a233bf9e13e8e2e78a7af7c601f7617",
+          "scope": "KEYINPUT-containing retained C only; polling, replay and repeat branches require instruction/runtime checks before treating all fields as live player intent"
+        }
+      ]
+    },
+    {
+      "game_id": "kirby-nightmare-in-dream-land",
+      "rom_sha1": "37a476567d133c146fee6b5e2eb0b07a215da6b0",
+      "rom_sha256": "caa4e11b6102257939297710dc4b49f6cec307de67838b2e7b7627e81b155db8",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-nightmare-in-dream-land/functions.jsonl",
+        "sha256": "bf3814b2c9e9b27eec0d2758b515872936c0045087c79eea3ab98cf2f6141589"
+      },
+      "capture_context": {
+        "image": "local/captures-experiments/20261016-current-scripts/kirby-nightmare-in-dream-land/gameplay/keyframes/f005302.png",
+        "observed": "Side-view grassy platforms and airborne Kirby-like actor with HUD; input causality is not established by this single frame.",
+        "image_sha256": "9416977cc8840c324c045d8fd9bc3e8a3a87cb4ca40cb622a98672d7d631dd5b",
+        "summary": {
+          "path": "local/captures-experiments/20261016-current-scripts/kirby-nightmare-in-dream-land/summary.json",
+          "sha256": "655ba0d726c534d489414e2d275397c28a5f2641eb5774006a972ae814e1e4fa"
+        },
+        "run_id": "20261016T004328-0e248f"
+      },
+      "candidates": [
+        "0x0801e178",
+        "0x08036280"
+      ],
+      "next_action": {
+        "static": [
+          "Check08021634/080216d8/080219b0 and shape tables087328f0/08733ff0",
+          "Trace writes to current object pointer03002490 and global work record03005560/03005570"
+        ],
+        "bounded_capture": [
+          "Probe a flat landing and one ledge with separate short inputs",
+          "Log tile IDs03005578/03005588, local sample03005508 and correction before/after0801e178; trace state+73 object identity"
+        ]
+      },
+      "input_anchors": [
+        {
+          "entry": "0x080011dc",
+          "export_record_line": 12,
+          "pseudocode": {
+            "path": "research/requests/remaining-rom-semantics/pseudocode/kirby-nightmare-in-dream-land--0x080011dc.c",
+            "sha256": "7124f4e93efe90e85b6edd6777781277d99823bb831f14d8d542e242ee16963e"
+          },
+          "pseudo_c_sha256": "7124f4e93efe90e85b6edd6777781277d99823bb831f14d8d542e242ee16963e",
+          "scope": "KEYINPUT-containing retained C only; polling, replay and repeat branches require instruction/runtime checks before treating all fields as live player intent"
+        }
+      ]
+    },
+    {
+      "game_id": "grand-theft-auto",
+      "rom_sha1": "742fc0062ad930253ffea449953061381577649e",
+      "rom_sha256": "215c574d5afbda0aadbf89dc76b765cfaaeb35953eab63f7687d8bfe8a8e0f4d",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/grand-theft-auto/functions.jsonl",
+        "sha256": "612eb7b1762c5bc34db7042fb2a3e7d1cd3e7a890d3d39947c2c03fde9cf71fa"
+      },
+      "capture_context": {
+        "image": "local/captures-experiments/20261016-current-scripts/grand-theft-auto/gameplay/keyframes/f005394_scene.png",
+        "observed": "Top-down street scene, actor/vehicles, minimap and CHINATOWN HUD text; target-selector records are not identified by the picture.",
+        "image_sha256": "801545fc4b5d916419f1635f015403da7ab4651543fd4ffed1ce5800fb1cf7fb",
+        "summary": {
+          "path": "local/captures-experiments/20261016-current-scripts/grand-theft-auto/summary.json",
+          "sha256": "3a555548e83ffe05f968419f5bd6ba244fa54817e214311b21e9222741c835de"
+        },
+        "run_id": "20261016T004328-0e248f"
+      },
+      "candidates": [
+        "0x08045910",
+        "0x08051e78"
+      ],
+      "next_action": {
+        "static": [
+          "Decode08045910 distance arithmetic and writers of02000f10/02001140",
+          "Decode080544c0/08053d68 for eligibility before inferring combat, police or traffic rules"
+        ],
+        "bounded_capture": [
+          "Use an isolated street checkpoint; change only player proximity/vehicle state in short steps",
+          "Log0202f3d8/0202f3dc cache and both candidate coordinate records alongside pixels; do not infer mission success"
+        ]
+      },
+      "input_anchors": [
+        {
+          "entry": "0x08065344",
+          "export_record_line": 826,
+          "pseudocode": {
+            "path": "research/requests/remaining-rom-semantics/pseudocode/grand-theft-auto--0x08065344.c",
+            "sha256": "d99b692a195d0dcbc18b64288f52592a8863254d0cdd21dc2076992476ad6c6b"
+          },
+          "pseudo_c_sha256": "d99b692a195d0dcbc18b64288f52592a8863254d0cdd21dc2076992476ad6c6b",
+          "scope": "KEYINPUT-containing retained C only; polling, replay and repeat branches require instruction/runtime checks before treating all fields as live player intent"
+        }
+      ]
+    },
+    {
+      "game_id": "final-fantasy-vi-advance",
+      "rom_sha1": "e9a2a58bc56ace26cb56d0cf5cdad1a10aa5dedf",
+      "rom_sha256": "1310f2ad3c13f5446cf6c43d01d48aad640d6b8a4fbba2b92c776f4f6d90e6ff",
+      "export": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/final-fantasy-vi-advance/functions.jsonl",
+        "sha256": "e020e242ea95c4e4889ebb3abd20e4755eea401f2ba3d4d22874407927b1b70c"
+      },
+      "capture_context": {
+        "image": "local/captures-experiments/20261016-current-scripts/final-fantasy-vi-advance/gameplay/keyframes/f013412.png",
+        "observed": "Snowy top-down town and Guard dialogue window. This supports text-scene context, not event-VM or actor-control completion.",
+        "image_sha256": "15d65f9ff8bf3c41b48abfa8e01ef710ed0e1d2d818dfca12691871ae8fca22f",
+        "summary": {
+          "path": "local/captures-experiments/20261016-current-scripts/final-fantasy-vi-advance/summary.json",
+          "sha256": "2639e3954eac61e50f79a460c5384285550fb096678d6819a5d8c8c0894a9b3a"
+        },
+        "run_id": "20261016T004328-0e248f"
+      },
+      "candidates": [
+        "0x0815115c"
+      ],
+      "next_action": {
+        "static": [
+          "Disassemble0815115c stream branches and decode08150844/08150894 glyph helpers",
+          "Find actual token stream pointer writers before treating text codes as plot/event opcodes"
+        ],
+        "bounded_capture": [
+          "From the retained Guard dialogue state, compare WAIT vs A vs B with same checkpoint",
+          "Record03002518 state+18/+19/+1c/+30 and selected control030024b8; separate text advance from world movement"
+        ]
+      },
+      "input_anchors": [
+        {
+          "entry": "0x080f4850",
+          "export_record_line": 305,
+          "pseudocode": {
+            "path": "research/requests/remaining-rom-semantics/pseudocode/final-fantasy-vi-advance--0x080f4850.c",
+            "sha256": "5e04cd032969fb28c90dcc293e3a38198c40b53b7543d5536a928860d1554a12"
+          },
+          "pseudo_c_sha256": "5e04cd032969fb28c90dcc293e3a38198c40b53b7543d5536a928860d1554a12",
+          "scope": "KEYINPUT-containing retained C only; polling, replay and repeat branches require instruction/runtime checks before treating all fields as live player intent"
+        },
+        {
+          "entry": "0x08136600",
+          "export_record_line": 509,
+          "pseudocode": {
+            "path": "research/requests/remaining-rom-semantics/pseudocode/final-fantasy-vi-advance--0x08136600.c",
+            "sha256": "4a40a5d97911323b80784b5098aef18b6840395f4e069302837b8099e45dd8a4"
+          },
+          "pseudo_c_sha256": "4a40a5d97911323b80784b5098aef18b6840395f4e069302837b8099e45dd8a4",
+          "scope": "KEYINPUT-containing retained C only; polling, replay and repeat branches require instruction/runtime checks before treating all fields as live player intent"
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "entry": "0x080149dc",
+      "label": "Actor-local held/pressed/released input and directional repetition",
+      "observation": "Object flag+0x0c bit0x400 suppresses global held input0x03003100; halfwords+0xe2/+0xe4/+0xe6 become held/new/released. +0xe8 combines newly pressed0x30f with a directional0xf0 repetition rule controlled by byte+0xe1.",
+      "why_high_value": "Concrete seam between GBA input and an actor record; produces machine-readable action edges for subsequent locomotion/combat dispatch.",
+      "reads": [
+        "0x03003100:u16",
+        "object+0x0c:flags",
+        "object+0xe2:previousHeld",
+        "object+0xe1:repeatByte"
+      ],
+      "writes": [
+        "object+0xe2:u16",
+        "object+0xe4:u16",
+        "object+0xe6:u16",
+        "object+0xe8:u16",
+        "object+0xe1:u8"
+      ],
+      "confidence": "High for the local input transformation after instruction inspection; medium for actor linkage because caller uses0x020205a0; unknown mapping of later named moves.",
+      "gaps": [
+        "Source-mode redirect/replay branch in global input sampler needs isolation before calling every held bit live human input.",
+        "No native time unit assigned to repeat byte."
+      ],
+      "game_id": "dragon-ball-advanced-adventure",
+      "rom_sha1": "1338584d8cfa57402603197e65d2e2ff0184d24f",
+      "status": "candidate_unverified_gameplay_semantics",
+      "export_record": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/dragon-ball-advanced-adventure/functions.jsonl",
+        "line": 154,
+        "pseudo_c_sha256": "207ab75eefd5151e231a927822bf83e7ff51da351acb8806d949a4ae1267b239",
+        "reported_mode": "thumb",
+        "reported_body_size": 132,
+        "boundary_and_ABI_verified": false
+      },
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/dragon-ball-advanced-adventure--0x080149dc.c",
+        "sha256": "207ab75eefd5151e231a927822bf83e7ff51da351acb8806d949a4ae1267b239",
+        "reviewed_spans": [
+          {
+            "start_line": 9,
+            "end_line": 35,
+            "sha256": "6a3afc0e078d6ecc55508d5ff27802b96bf3ceb5bc8e04ad9d45191b97b54be5"
+          }
+        ]
+      },
+      "observed_call_target_phases": [
+        {
+          "phase_name": "frontend",
+          "observed_calls": 2316,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/dragon-ball-advanced-adventure/frontend/coverage.json",
+            "recorded_sha256": "dcab06bfc68c156f26c5c0f2279b89bcaa30e2063a90909ba847f5c039374eeb",
+            "current_bytes_match_export_seed_source": true
+          }
+        },
+        {
+          "phase_name": "gameplay",
+          "observed_calls": 4476,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/dragon-ball-advanced-adventure/gameplay/coverage.json",
+            "recorded_sha256": "fdc71f2a5ce69feea38fa3eeee6e8cc9f928e6dee3905d4b454b6f9eb2ef001a",
+            "current_bytes_match_export_seed_source": true
+          }
+        }
+      ],
+      "callers_from_partial_export": [
+        "0x08014a6c"
+      ],
+      "warning_markers": {
+        "warnings": 2,
+        "unaff_register": false,
+        "extraout_register": false
+      },
+      "not_claimed": [
+        "Native actor identity or named action without additional caller/state evidence",
+        "Full game coverage or native-equivalent executable C",
+        "Successful port or runtime strategy validation"
+      ],
+      "instruction_prefix": {
+        "path": "research/requests/remaining-rom-semantics/disassembly/dragon-ball-advanced-adventure--0x080149dc-prefix.asm.txt",
+        "sha256": "17749b7f615e4d2d5087d1714983205e6e3d37aa82036aeed9de0cd3601d8f9f",
+        "start": "0x080149dc",
+        "end_exclusive": "0x8014a9c",
+        "rom_slice_sha256": "f98796c8e046d89f49abadbb12e8c8493cc151d566689a56149fbdfb83dde596",
+        "scope": "Bounded Thumb prefix inspection only; literal pools and neighboring code may occur; not whole-function verification"
+      },
+      "operator_verified_subset": {
+        "range": "0x080149dc..0x08014a6a (exclusive)",
+        "scope": "Held/new/released input-field transformation and directional repeat-byte writes verified against Thumb instructions, including RAM literal0x03003100. Actor role/reachability unverified.",
+        "rom_slice_sha256": "c6852986f5f39ae235a3edc8427c89d62272d35e962c847f3c5cd2bcd623059a"
+      }
+    },
+    {
+      "entry": "0x08017244",
+      "label": "Capability-gated jump/direction action dispatch and horizontal decay",
+      "observation": "Object capability bits+0xc4 and held/new input+0xe2/+0xe4 select different handler addresses; A-bit1, directions0x30/0x40/0x80 and shoulder0x200 are tested. The signed halfword+0x2c moves toward zero with a character-indexed table when its branch executes.",
+      "why_high_value": "Candidate composable actor action-selection layer and movement damping, with concrete preconditions and downstream handlers rather than a genre guess.",
+      "reads": [
+        "object+0xc4:capabilities",
+        "object+0xe2/+0xe4/+0xea:inputFields",
+        "object+0x2c:s16",
+        "0x0202066a:index",
+        "ROM0x08a41822:indexedTable"
+      ],
+      "writes": [
+        "object+0x2c:s16",
+        "object+0x04:counter",
+        "object+0xa4:state",
+        "object+0x08:flags"
+      ],
+      "confidence": "Medium candidate only; recovered C contains PIC/reachability warnings and a synthetic indirect return.",
+      "gaps": [
+        "Need instruction check of each selected action branch; do not name jump/attack techniques from mask alone.",
+        "Record positions and velocity units remain unverified."
+      ],
+      "game_id": "dragon-ball-advanced-adventure",
+      "rom_sha1": "1338584d8cfa57402603197e65d2e2ff0184d24f",
+      "status": "candidate_unverified_gameplay_semantics",
+      "export_record": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/dragon-ball-advanced-adventure/functions.jsonl",
+        "line": 170,
+        "pseudo_c_sha256": "4ef3fbcda6e1bcf6d1de70e2a5c513d89c0f672c6eb80219c10ecf939717a9b9",
+        "reported_mode": "thumb",
+        "reported_body_size": 1860,
+        "boundary_and_ABI_verified": false
+      },
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/dragon-ball-advanced-adventure--0x08017244.c",
+        "sha256": "4ef3fbcda6e1bcf6d1de70e2a5c513d89c0f672c6eb80219c10ecf939717a9b9",
+        "reviewed_spans": [
+          {
+            "start_line": 25,
+            "end_line": 139,
+            "sha256": "13af171d792575eb8fa42ffb866bdcc9332a9ec67e5e32e8ad5ebe59f0763dc9"
+          },
+          {
+            "start_line": 226,
+            "end_line": 310,
+            "sha256": "f4a7859539119776456ed9e48da860cc551cf5496470dc03b8235f692c1a5b70"
+          }
+        ]
+      },
+      "observed_call_target_phases": [
+        {
+          "phase_name": "frontend",
+          "observed_calls": 2127,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/dragon-ball-advanced-adventure/frontend/coverage.json",
+            "recorded_sha256": "dcab06bfc68c156f26c5c0f2279b89bcaa30e2063a90909ba847f5c039374eeb",
+            "current_bytes_match_export_seed_source": true
+          }
+        },
+        {
+          "phase_name": "gameplay",
+          "observed_calls": 987,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/dragon-ball-advanced-adventure/gameplay/coverage.json",
+            "recorded_sha256": "fdc71f2a5ce69feea38fa3eeee6e8cc9f928e6dee3905d4b454b6f9eb2ef001a",
+            "current_bytes_match_export_seed_source": true
+          }
+        }
+      ],
+      "callers_from_partial_export": [],
+      "warning_markers": {
+        "warnings": 9,
+        "unaff_register": false,
+        "extraout_register": false
+      },
+      "not_claimed": [
+        "Native actor identity or named action without additional caller/state evidence",
+        "Full game coverage or native-equivalent executable C",
+        "Successful port or runtime strategy validation"
+      ]
+    },
+    {
+      "entry": "0x08016c84",
+      "label": "Context-sensitive action handler selection",
+      "observation": "New B-bit2 or shoulder0x200 plus capability flags choose handlers; some branches depend on held directions, a signed resource+0xaa threshold0xff and current callback+0x10.",
+      "why_high_value": "Separates input, actor capabilities, resource eligibility and state-specific action implementations\u2014useful future ability/combat adapter contract.",
+      "reads": [
+        "object+0xc4:flags",
+        "object+0xe2/+0xe4/+0xea:input",
+        "object+0xaa:s16",
+        "object+0x10:callback"
+      ],
+      "writes": [
+        "Downstream handler effects unresolved"
+      ],
+      "confidence": "Medium structural candidate; low for mapping handlers to named combat actions.",
+      "gaps": [
+        "Resource+0xaa could be an eligibility meter but its actual meaning is unknown.",
+        "No complete downstream call graph or actor identity proof."
+      ],
+      "game_id": "dragon-ball-advanced-adventure",
+      "rom_sha1": "1338584d8cfa57402603197e65d2e2ff0184d24f",
+      "status": "candidate_unverified_gameplay_semantics",
+      "export_record": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/dragon-ball-advanced-adventure/functions.jsonl",
+        "line": 164,
+        "pseudo_c_sha256": "450b027556f9f6ed9a4d5f5934f6be666b80f327381e684f3563238c67e32eee",
+        "reported_mode": "thumb",
+        "reported_body_size": 372,
+        "boundary_and_ABI_verified": false
+      },
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/dragon-ball-advanced-adventure--0x08016c84.c",
+        "sha256": "450b027556f9f6ed9a4d5f5934f6be666b80f327381e684f3563238c67e32eee",
+        "reviewed_spans": [
+          {
+            "start_line": 9,
+            "end_line": 74,
+            "sha256": "c59a8e3a3c02bba19c7c722443fccb778151b4e94a55c5ce88144ec2a10ff625"
+          }
+        ]
+      },
+      "observed_call_target_phases": [
+        {
+          "phase_name": "frontend",
+          "observed_calls": 2159,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/dragon-ball-advanced-adventure/frontend/coverage.json",
+            "recorded_sha256": "dcab06bfc68c156f26c5c0f2279b89bcaa30e2063a90909ba847f5c039374eeb",
+            "current_bytes_match_export_seed_source": true
+          }
+        },
+        {
+          "phase_name": "gameplay",
+          "observed_calls": 4098,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/dragon-ball-advanced-adventure/gameplay/coverage.json",
+            "recorded_sha256": "fdc71f2a5ce69feea38fa3eeee6e8cc9f928e6dee3905d4b454b6f9eb2ef001a",
+            "current_bytes_match_export_seed_source": true
+          }
+        }
+      ],
+      "callers_from_partial_export": [],
+      "warning_markers": {
+        "warnings": 2,
+        "unaff_register": false,
+        "extraout_register": false
+      },
+      "not_claimed": [
+        "Native actor identity or named action without additional caller/state evidence",
+        "Full game coverage or native-equivalent executable C",
+        "Successful port or runtime strategy validation"
+      ]
+    },
+    {
+      "entry": "0x0800385c",
+      "label": "Tile-sampled actor bounds and position correction",
+      "observation": "Reads position-like words+0x40/+0x44, signed bounds bytes+0x3c..+0x3f scaled256, displacement-like halfwords+0x50/+0x52 and map selector+0x56. It samples tile properties using080023e4 and082d88b8/082d8da4 tables, then writes corrected words+0x40/+0x44 and contact/property flags+0x57/+0x58/+0x62.",
+      "why_high_value": "Candidate reusable side-view tile collision contract: actor position/bounds, tile sampler, correction and contact flags; not merely rendering.",
+      "reads": [
+        "object+0x40/+0x44:i32",
+        "object+0x3c..0x3f:s8",
+        "object+0x50/+0x52:s16",
+        "object+0x56:u8",
+        "tilePropertyTables082d88b8/082d8da4"
+      ],
+      "writes": [
+        "object+0x40/+0x44:i32",
+        "object+0x57:u8",
+        "object+0x58:u32",
+        "object+0x62:u8"
+      ],
+      "confidence": "Medium-high geometry/collision candidate; prefix confirms field loads and signed byte scaling, full collision semantics/ABI remain unverified.",
+      "gaps": [
+        "Native scale256 is explicit, but pixel units and tile naming not yet independently calibrated.",
+        "Callbacks via0815a2a4 need decoding before named solid/slope/one-way guarantees."
+      ],
+      "game_id": "kirby-and-the-amazing-mirror",
+      "rom_sha1": "274b102b6d940f46861a92b4e65f89a51815c12c",
+      "status": "candidate_unverified_gameplay_semantics",
+      "export_record": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-and-the-amazing-mirror/functions.jsonl",
+        "line": 40,
+        "pseudo_c_sha256": "2e7c49efcb46750e530394fce8ac3fec7cc432fcf51ad885a5e6d4d84473e77f",
+        "reported_mode": "thumb",
+        "reported_body_size": 1886,
+        "boundary_and_ABI_verified": false
+      },
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/kirby-and-the-amazing-mirror--0x0800385c.c",
+        "sha256": "2e7c49efcb46750e530394fce8ac3fec7cc432fcf51ad885a5e6d4d84473e77f",
+        "reviewed_spans": [
+          {
+            "start_line": 35,
+            "end_line": 94,
+            "sha256": "856b4362693c860f4e11bb16a697df248a5fd75cb526ce5d9350a9f72f4ceaf1"
+          },
+          {
+            "start_line": 269,
+            "end_line": 296,
+            "sha256": "4b865c70ea70784e96b4989c57e02b547c28bd0ce8e53fdd25760f4c2bdcb799"
+          }
+        ]
+      },
+      "observed_call_target_phases": [
+        {
+          "phase_name": "frontend",
+          "observed_calls": 8534,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/kirby-and-the-amazing-mirror/frontend/coverage.json",
+            "recorded_sha256": "9e8e5ece730e746e28714530b9aecbac129224f9c8019634eb5714bf678fc62e",
+            "current_bytes_match_export_seed_source": true
+          }
+        },
+        {
+          "phase_name": "gameplay",
+          "observed_calls": 19188,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/kirby-and-the-amazing-mirror/gameplay/coverage.json",
+            "recorded_sha256": "135e64ff728876fb82331cc4929bdde32b2430accd504bf9aa63af1f5839d932",
+            "current_bytes_match_export_seed_source": true
+          }
+        }
+      ],
+      "callers_from_partial_export": [
+        "0x08009dd8",
+        "0x08009de8",
+        "0x08009df8"
+      ],
+      "warning_markers": {
+        "warnings": 2,
+        "unaff_register": false,
+        "extraout_register": false
+      },
+      "not_claimed": [
+        "Native actor identity or named action without additional caller/state evidence",
+        "Full game coverage or native-equivalent executable C",
+        "Successful port or runtime strategy validation"
+      ],
+      "instruction_prefix": {
+        "path": "research/requests/remaining-rom-semantics/disassembly/kirby-and-the-amazing-mirror--0x0800385c-prefix.asm.txt",
+        "sha256": "c68513b804c9f7e12e6d444e09240e31ed32769054dd1d300fa8890c00e9aa63",
+        "start": "0x0800385c",
+        "end_exclusive": "0x800391c",
+        "rom_slice_sha256": "02aee789e1b09d0e53c5218749cc0d5fde7e7e178d0b80ce53f75ca30999b9c7",
+        "scope": "Bounded Thumb prefix inspection only; literal pools and neighboring code may occur; not whole-function verification"
+      }
+    },
+    {
+      "entry": "0x08038b34",
+      "label": "Pairwise actor interaction filtering",
+      "observation": "Iterates records at0x02020ee0 with stride0x1a8 up to byte0x0203ad44. Pairs are filtered by state/flags and shared field+0x60, checked by bounds predicate0803912c, then state handlers and per-pair bitfields are updated.",
+      "why_high_value": "Candidate multiple-actor contact/interaction layer, relevant to companions and cooperative behavior, with exact record layout and exclusion gates.",
+      "reads": [
+        "0x02020ee0:recordBase",
+        "0x0203ad44:recordCount",
+        "record+0x08:flags",
+        "record+0x60:sharedGroup",
+        "record+0xd4:state",
+        "record+0x103:mode"
+      ],
+      "writes": [
+        "record+0xe1:pairBitset",
+        "record+0x104:pairFields",
+        "Downstream handler state"
+      ],
+      "confidence": "Medium for pairwise structure; unknown which actor slots are player/partner/other.",
+      "gaps": [
+        "Do not equate this function with the entire ally AI or copy-ability system.",
+        "Need callback and pairbit interpretation and contact trace."
+      ],
+      "game_id": "kirby-and-the-amazing-mirror",
+      "rom_sha1": "274b102b6d940f46861a92b4e65f89a51815c12c",
+      "status": "candidate_unverified_gameplay_semantics",
+      "export_record": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-and-the-amazing-mirror/functions.jsonl",
+        "line": 309,
+        "pseudo_c_sha256": "7f428adc5ed50145139663cac9fb20b270bbe4e2aee5a23a6f93f21bcc9f8c91",
+        "reported_mode": "thumb",
+        "reported_body_size": 1458,
+        "boundary_and_ABI_verified": false
+      },
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/kirby-and-the-amazing-mirror--0x08038b34.c",
+        "sha256": "7f428adc5ed50145139663cac9fb20b270bbe4e2aee5a23a6f93f21bcc9f8c91",
+        "reviewed_spans": [
+          {
+            "start_line": 19,
+            "end_line": 80,
+            "sha256": "0d13ed9b2229be47ddb36efb40eb3074c81704326077fe97d579dac4e861a8de"
+          },
+          {
+            "start_line": 119,
+            "end_line": 170,
+            "sha256": "3cf4203e7971f8896486a19721c6afc9f27d6666cd1a3c01ef4c2bcdc645dc40"
+          }
+        ]
+      },
+      "observed_call_target_phases": [
+        {
+          "phase_name": "frontend",
+          "observed_calls": 2141,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/kirby-and-the-amazing-mirror/frontend/coverage.json",
+            "recorded_sha256": "9e8e5ece730e746e28714530b9aecbac129224f9c8019634eb5714bf678fc62e",
+            "current_bytes_match_export_seed_source": true
+          }
+        },
+        {
+          "phase_name": "gameplay",
+          "observed_calls": 4578,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/kirby-and-the-amazing-mirror/gameplay/coverage.json",
+            "recorded_sha256": "135e64ff728876fb82331cc4929bdde32b2430accd504bf9aa63af1f5839d932",
+            "current_bytes_match_export_seed_source": true
+          }
+        }
+      ],
+      "callers_from_partial_export": [
+        "0x08036470"
+      ],
+      "warning_markers": {
+        "warnings": 2,
+        "unaff_register": false,
+        "extraout_register": false
+      },
+      "not_claimed": [
+        "Native actor identity or named action without additional caller/state evidence",
+        "Full game coverage or native-equivalent executable C",
+        "Successful port or runtime strategy validation"
+      ]
+    },
+    {
+      "entry": "0x0801e178",
+      "label": "Surface-table probes and position correction",
+      "observation": "Global signed coordinates0x03005560/0x03005570 plus offset0x03005584 feed probes08021634/080216d8. Those helpers select a16x16-local sample and tile IDs; correction values from080219b0/080219d0/080219f0 update the position words, with flags controlling branch eligibility.",
+      "why_high_value": "Candidate terrain collision and slope/height-field seam rather than another generic state helper.",
+      "reads": [
+        "0x03005560:s16",
+        "0x03005570:s16",
+        "0x03005584:s16",
+        "0x03005578:tileIndex",
+        "0x0300553b:flags",
+        "tileShapeTables087328f0/08733ff0"
+      ],
+      "writes": [
+        "0x03005560:s16",
+        "0x03005570:s16",
+        "0x0300553b/0x0300553c/0x0300553d:flags"
+      ],
+      "confidence": "Medium-high terrain probe candidate; initial coordinate/probe call confirmed in ROM prefix; helper table interpretation from retained C only.",
+      "gaps": [
+        "Need determine which runtime actor is copied into the global work record.",
+        "Surface names, world units, exact edge behavior and function returns remain unverified."
+      ],
+      "game_id": "kirby-nightmare-in-dream-land",
+      "rom_sha1": "37a476567d133c146fee6b5e2eb0b07a215da6b0",
+      "status": "candidate_unverified_gameplay_semantics",
+      "export_record": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-nightmare-in-dream-land/functions.jsonl",
+        "line": 202,
+        "pseudo_c_sha256": "eaf3e0aa18a2932cc7818cb24c223affef62cddcbe70de7b63ffd9101a4ef44b",
+        "reported_mode": "thumb",
+        "reported_body_size": 2272,
+        "boundary_and_ABI_verified": false
+      },
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/kirby-nightmare-in-dream-land--0x0801e178.c",
+        "sha256": "eaf3e0aa18a2932cc7818cb24c223affef62cddcbe70de7b63ffd9101a4ef44b",
+        "reviewed_spans": [
+          {
+            "start_line": 19,
+            "end_line": 115,
+            "sha256": "ad034594924338cb50cab089a57a1f321a02517fb8d10e941d5ab89d71c354b9"
+          },
+          {
+            "start_line": 148,
+            "end_line": 171,
+            "sha256": "3966427b9d429fdc6daeeb32d7ef1c56534e9d5ef8ab13fed8028a9a78088e25"
+          }
+        ]
+      },
+      "observed_call_target_phases": [
+        {
+          "phase_name": "frontend",
+          "observed_calls": 1,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/kirby-nightmare-in-dream-land/frontend/coverage.json",
+            "recorded_sha256": "90554ef138be225fb5c6fbe742a36a5b5ccb90e360df7ada41ad6511b991d4ff",
+            "current_bytes_match_export_seed_source": true
+          }
+        },
+        {
+          "phase_name": "gameplay",
+          "observed_calls": 1570,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/kirby-nightmare-in-dream-land/gameplay/coverage.json",
+            "recorded_sha256": "dd914783bcdf9a0e912529a32d59a26170e6f4971a8dea70f14317478b9f4a22",
+            "current_bytes_match_export_seed_source": true
+          }
+        }
+      ],
+      "callers_from_partial_export": [
+        "0x0801baa4"
+      ],
+      "warning_markers": {
+        "warnings": 4,
+        "unaff_register": false,
+        "extraout_register": false
+      },
+      "not_claimed": [
+        "Native actor identity or named action without additional caller/state evidence",
+        "Full game coverage or native-equivalent executable C",
+        "Successful port or runtime strategy validation"
+      ],
+      "instruction_prefix": {
+        "path": "research/requests/remaining-rom-semantics/disassembly/kirby-nightmare-in-dream-land--0x0801e178-prefix.asm.txt",
+        "sha256": "5f469a4e116ca4c32beca747930a81d0bb92985ca816a5f22cb9b885813aa343",
+        "start": "0x0801e178",
+        "end_exclusive": "0x801e238",
+        "rom_slice_sha256": "89d476413b879500cdfa9b7183abfa5630874155c1066834953024e00a78b909",
+        "scope": "Bounded Thumb prefix inspection only; literal pools and neighboring code may occur; not whole-function verification"
+      }
+    },
+    {
+      "entry": "0x08036280",
+      "label": "Actor-mode transitions driven by probes and input-like fields",
+      "observation": "A current object pointer0x03002490 owns byte state+0x73 and flags+0x7a/+0x7b. Cases0..6 invoke different handlers and transition state after predicate08040298 and per-index bitfields at0x03002458/0x030023c0.",
+      "why_high_value": "Concrete actor behavior state graph to trace for movement/AI or ability reactions, with named-actor claims intentionally withheld.",
+      "reads": [
+        "0x03002490:objectPointer",
+        "object+0x73:state",
+        "object+0x7a/+0x7b:flags",
+        "object+0x88:slotPointer",
+        "0x03002458/0x030023c0:indexedBits"
+      ],
+      "writes": [
+        "object+0x73:state",
+        "object+0x7a:u8",
+        "object+0x28:i32",
+        "Callbacks via0803e050/080413a4/08040b40"
+      ],
+      "confidence": "Medium candidate state graph; individual mode labels unknown.",
+      "gaps": [
+        "Not enough evidence to call this Kirby movement, enemy AI, inhaling or a specific copied power.",
+        "Needs object identity plus narrow state-transition recording."
+      ],
+      "game_id": "kirby-nightmare-in-dream-land",
+      "rom_sha1": "37a476567d133c146fee6b5e2eb0b07a215da6b0",
+      "status": "candidate_unverified_gameplay_semantics",
+      "export_record": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-nightmare-in-dream-land/functions.jsonl",
+        "line": 337,
+        "pseudo_c_sha256": "2a109d6fac2f8bc485b275efe57581768630e1683f3c2e1086fbbfe3a7a8cc4c",
+        "reported_mode": "thumb",
+        "reported_body_size": 108,
+        "boundary_and_ABI_verified": false
+      },
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/kirby-nightmare-in-dream-land--0x08036280.c",
+        "sha256": "2a109d6fac2f8bc485b275efe57581768630e1683f3c2e1086fbbfe3a7a8cc4c",
+        "reviewed_spans": [
+          {
+            "start_line": 9,
+            "end_line": 97,
+            "sha256": "02ee8dc2561d2fde4cfad3bcfd975c1b0a0adee200a8fcc4ff600f808c20e181"
+          },
+          {
+            "start_line": 100,
+            "end_line": 171,
+            "sha256": "98033c4904a54346998dd0979f6013199c4700fca6eb41cc958443c8b1ca8748"
+          }
+        ]
+      },
+      "observed_call_target_phases": [
+        {
+          "phase_name": "gameplay",
+          "observed_calls": 401,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/kirby-nightmare-in-dream-land/gameplay/coverage.json",
+            "recorded_sha256": "dd914783bcdf9a0e912529a32d59a26170e6f4971a8dea70f14317478b9f4a22",
+            "current_bytes_match_export_seed_source": true
+          }
+        }
+      ],
+      "callers_from_partial_export": [],
+      "warning_markers": {
+        "warnings": 2,
+        "unaff_register": false,
+        "extraout_register": false
+      },
+      "not_claimed": [
+        "Native actor identity or named action without additional caller/state evidence",
+        "Full game coverage or native-equivalent executable C",
+        "Successful port or runtime strategy validation"
+      ]
+    },
+    {
+      "entry": "0x08045910",
+      "label": "Nearest-of-two position-record choice and reaction dispatch",
+      "observation": "Compares two global record references0x02000f10/0x02001140 against the current object through coordinate-bearing pointers. Distance surrogate usesabs(dx)+abs(dy)-min/2-min/4+min/16; it caches the selected reference at0x0202f3dc keyed by object0x0202f3d8 and counter0x0202f3d0.",
+      "why_high_value": "Candidate target selection/spatial awareness seam with concrete arithmetic, potentially useful for AI navigation/reactions.",
+      "reads": [
+        "0x02000f10:recordRef",
+        "0x02001140:recordRef",
+        "object+0x18 or(object+0x20)+4:coordinatePointer",
+        "0x02000224:counter"
+      ],
+      "writes": [
+        "0x0202f3dc:selectedRecord",
+        "0x0202f3d8:cachedObject",
+        "0x0202f3d0:cachedCounter",
+        "object+0x0c:flags",
+        "Referenced timers/state"
+      ],
+      "confidence": "Medium candidate; prefix confirms pointer-selection/cache branch, distance expression not fully instruction checked.",
+      "gaps": [
+        "No evidence yet which records are pedestrian, player, vehicle, police or mission target.",
+        "Distance units, overflow bounds and spatial eligibility rules unresolved."
+      ],
+      "game_id": "grand-theft-auto",
+      "rom_sha1": "742fc0062ad930253ffea449953061381577649e",
+      "status": "candidate_unverified_gameplay_semantics",
+      "export_record": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/grand-theft-auto/functions.jsonl",
+        "line": 581,
+        "pseudo_c_sha256": "3f124ada8a15fc58418c7313d402097881ccf5f6a94029681685b423514f52eb",
+        "reported_mode": "thumb",
+        "reported_body_size": 826,
+        "boundary_and_ABI_verified": false
+      },
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/grand-theft-auto--0x08045910.c",
+        "sha256": "3f124ada8a15fc58418c7313d402097881ccf5f6a94029681685b423514f52eb",
+        "reviewed_spans": [
+          {
+            "start_line": 19,
+            "end_line": 105,
+            "sha256": "38216652006e26b89ad32eb3dc20f8aac82fbee5065a73e229c2e4634e4a7380"
+          },
+          {
+            "start_line": 126,
+            "end_line": 185,
+            "sha256": "5b304fb96244d821cf92a35187d4a46fe33070ebe5fd7d418ec6825ac38150d5"
+          }
+        ]
+      },
+      "observed_call_target_phases": [
+        {
+          "phase_name": "frontend",
+          "observed_calls": 63,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/grand-theft-auto/frontend/coverage.json",
+            "recorded_sha256": "8b9c60d83ff3dbd660c0aa845f0b30d4b1c82891eba6ee1638cec8cdcc972712",
+            "current_bytes_match_export_seed_source": true
+          }
+        },
+        {
+          "phase_name": "gameplay",
+          "observed_calls": 175,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/grand-theft-auto/gameplay/coverage.json",
+            "recorded_sha256": "b4f468816633b28d8b40710617542bbf26dddadc20947037c17043cbdd6c0a1b",
+            "current_bytes_match_export_seed_source": true
+          }
+        }
+      ],
+      "callers_from_partial_export": [],
+      "warning_markers": {
+        "warnings": 2,
+        "unaff_register": false,
+        "extraout_register": false
+      },
+      "not_claimed": [
+        "Native actor identity or named action without additional caller/state evidence",
+        "Full game coverage or native-equivalent executable C",
+        "Successful port or runtime strategy validation"
+      ],
+      "instruction_prefix": {
+        "path": "research/requests/remaining-rom-semantics/disassembly/grand-theft-auto--0x08045910-prefix.asm.txt",
+        "sha256": "86f19ed0747d8088d77b72500dcc8dcd073a41b02233a7849058ed8fcee2419c",
+        "start": "0x08045910",
+        "end_exclusive": "0x80459d0",
+        "rom_slice_sha256": "4924a148a5b0af23fe11b7a0a34f6fcc3df2d412d1530ccaf82edc98f54a31a4",
+        "scope": "Bounded Thumb prefix inspection only; literal pools and neighboring code may occur; not whole-function verification"
+      }
+    },
+    {
+      "entry": "0x08051e78",
+      "label": "Timer- and flag-gated actor action controller",
+      "observation": "An object with behavior/config pointer+0x2c is gated by flags+0x18, byte+0x0b and short timer+0x14. It calls080544c0 and08053d68 before selecting downstream actions and mutating callback-bearing related records+0x24/+0x28.",
+      "why_high_value": "Candidate behavior scheduling/eligibility layer paired with a concrete target-selector lead; likely richer than raw render updates.",
+      "reads": [
+        "object+0x2c:configPointer",
+        "object+0x18:flags",
+        "object+0x0b:mode",
+        "object+0x14:timer",
+        "0x03000000:deltaLikeValue"
+      ],
+      "writes": [
+        "object+0x14:s16",
+        "object+0x0b:u8",
+        "object+0x18:u32",
+        "Related records+0x24/+0x28"
+      ],
+      "confidence": "Medium structural candidate; low for named weapons or mission semantics.",
+      "gaps": [
+        "No verified actor identity, timer units, pathfinding or combat meaning.",
+        "Need decode080544c0/08053d68 and runtime record provenance."
+      ],
+      "game_id": "grand-theft-auto",
+      "rom_sha1": "742fc0062ad930253ffea449953061381577649e",
+      "status": "candidate_unverified_gameplay_semantics",
+      "export_record": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/grand-theft-auto/functions.jsonl",
+        "line": 633,
+        "pseudo_c_sha256": "9eb821eb1891e45ca412f0e10b52c0bcefe686f22c43920e7eb0df3ad9b8aa14",
+        "reported_mode": "thumb",
+        "reported_body_size": 1134,
+        "boundary_and_ABI_verified": false
+      },
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/grand-theft-auto--0x08051e78.c",
+        "sha256": "9eb821eb1891e45ca412f0e10b52c0bcefe686f22c43920e7eb0df3ad9b8aa14",
+        "reviewed_spans": [
+          {
+            "start_line": 15,
+            "end_line": 55,
+            "sha256": "48432c1c77733f6c5ddf3ae7b89eb26699b7666b5e64e8481bb7fb71c150ce0e"
+          },
+          {
+            "start_line": 165,
+            "end_line": 212,
+            "sha256": "0e9f8643e662c9fd8987f129ed0598da3e88a84f9f40af39b40f9d7e3bf6d7d8"
+          }
+        ]
+      },
+      "observed_call_target_phases": [
+        {
+          "phase_name": "frontend",
+          "observed_calls": 9333,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/grand-theft-auto/frontend/coverage.json",
+            "recorded_sha256": "8b9c60d83ff3dbd660c0aa845f0b30d4b1c82891eba6ee1638cec8cdcc972712",
+            "current_bytes_match_export_seed_source": true
+          }
+        },
+        {
+          "phase_name": "gameplay",
+          "observed_calls": 36129,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/grand-theft-auto/gameplay/coverage.json",
+            "recorded_sha256": "b4f468816633b28d8b40710617542bbf26dddadc20947037c17043cbdd6c0a1b",
+            "current_bytes_match_export_seed_source": true
+          }
+        }
+      ],
+      "callers_from_partial_export": [
+        "0x08053998"
+      ],
+      "warning_markers": {
+        "warnings": 2,
+        "unaff_register": false,
+        "extraout_register": false
+      },
+      "not_claimed": [
+        "Native actor identity or named action without additional caller/state evidence",
+        "Full game coverage or native-equivalent executable C",
+        "Successful port or runtime strategy validation"
+      ]
+    },
+    {
+      "entry": "0x0815115c",
+      "label": "Input-aware text/control-code stream driver",
+      "observation": "Selects newly pressed or held input depending mode6, tracks state near0x03002518, obtains glyph/control values, draws values below0x10d and handles larger codes including0x10e/0x10f/0x135/0x136/0x137/0x13b. Fields+0x18/+0x19 track layout-like offsets and+0x1c a delay; A-bit affects delay/advance.",
+      "why_high_value": "Candidate narrative presentation and dialogue pacing component that exposes concrete text/state boundaries; source-poor FFVI currently lacks a safe gameplay ontology.",
+      "reads": [
+        "0x0300298c:newInputCandidate",
+        "0x03002998:heldInputCandidate",
+        "0x030027d4:mode",
+        "0x03002518:state",
+        "state+0x30:textPointer",
+        "state+0x40:glyphConfig"
+      ],
+      "writes": [
+        "state+0x18/+0x19:layout",
+        "state+0x1c:delay",
+        "0x030024b8:currentControl",
+        "0x03003128/0x03003129:advanceState"
+      ],
+      "confidence": "Medium-high text/control-driver candidate; prefix verifies mode-dependent button selection, full token meanings need decoding.",
+      "gaps": [
+        "This is not evidence of the whole event/quest VM, battle formulas, character stats or story progression flags.",
+        "Extraout and indirect-return warnings prevent trusting all C ABI/dataflow."
+      ],
+      "game_id": "final-fantasy-vi-advance",
+      "rom_sha1": "e9a2a58bc56ace26cb56d0cf5cdad1a10aa5dedf",
+      "status": "candidate_unverified_gameplay_semantics",
+      "export_record": {
+        "path": "local/re/experiments/20261016-corpus-decompile/shard-a/final-fantasy-vi-advance/functions.jsonl",
+        "line": 690,
+        "pseudo_c_sha256": "b63cb8b446d71790aca03cf4af72497fc9b9c673e614a669d774bf8311331011",
+        "reported_mode": "thumb",
+        "reported_body_size": 1950,
+        "boundary_and_ABI_verified": false
+      },
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/final-fantasy-vi-advance--0x0815115c.c",
+        "sha256": "b63cb8b446d71790aca03cf4af72497fc9b9c673e614a669d774bf8311331011",
+        "reviewed_spans": [
+          {
+            "start_line": 30,
+            "end_line": 69,
+            "sha256": "4f8f5db4bc6feed6930eb99ca70e2a7bc3e13ec1eba99103bfec3557ff8fdf36"
+          },
+          {
+            "start_line": 124,
+            "end_line": 265,
+            "sha256": "8c42c3b4c6554908daba6e4ee10908fcaf4da97ca7f5a65979a6ed82be3b0ebc"
+          }
+        ]
+      },
+      "observed_call_target_phases": [
+        {
+          "phase_name": "frontend",
+          "observed_calls": 3474,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/final-fantasy-vi-advance/frontend/coverage.json",
+            "recorded_sha256": "acfdc44f511d122c84a215ef46e8b9259a4e7fc8d91bdca824ca2b294b69dbf1",
+            "current_bytes_match_export_seed_source": true
+          }
+        },
+        {
+          "phase_name": "gameplay",
+          "observed_calls": 7249,
+          "source": {
+            "path": "local/captures-experiments/20261016-current-scripts/final-fantasy-vi-advance/gameplay/coverage.json",
+            "recorded_sha256": "3c98e7be3f87e546e1f87c6ab7497d9dc73b772b727c94e66b34ba84579ced51",
+            "current_bytes_match_export_seed_source": true
+          }
+        }
+      ],
+      "callers_from_partial_export": [
+        "0x0813c5ec"
+      ],
+      "warning_markers": {
+        "warnings": 2,
+        "unaff_register": false,
+        "extraout_register": true
+      },
+      "not_claimed": [
+        "Native actor identity or named action without additional caller/state evidence",
+        "Full game coverage or native-equivalent executable C",
+        "Successful port or runtime strategy validation"
+      ],
+      "instruction_prefix": {
+        "path": "research/requests/remaining-rom-semantics/disassembly/final-fantasy-vi-advance--0x0815115c-prefix.asm.txt",
+        "sha256": "573b1754e20cd529e366d0d157d90ec2dc264c49ecebf22e8585a6b7d307c66f",
+        "start": "0x0815115c",
+        "end_exclusive": "0x815121c",
+        "rom_slice_sha256": "4f39b9c2f670b8412ad7efc7f23d2758faadc87d3df049e4d553bb5040d96863",
+        "scope": "Bounded Thumb prefix inspection only; literal pools and neighboring code may occur; not whole-function verification"
+      }
+    }
+  ],
+  "supporting_or_rejected": [
+    {
+      "game_id": "dragon-ball-advanced-adventure",
+      "entry": "0x08014a6c",
+      "role": "Caller candidate passes fixed record0x020205a0 to input conditioning; links action record to world-update family",
+      "source_record_line": 155,
+      "export_path": "local/re/experiments/20261016-corpus-decompile/shard-a/dragon-ball-advanced-adventure/functions.jsonl",
+      "pseudo_c_sha256": "03713ea37ac7787e59117273b5c1eb9479df75a97e12817bb43ebe286efaa6c9",
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/dragon-ball-advanced-adventure--0x08014a6c.c",
+        "sha256": "03713ea37ac7787e59117273b5c1eb9479df75a97e12817bb43ebe286efaa6c9"
+      }
+    },
+    {
+      "game_id": "kirby-and-the-amazing-mirror",
+      "entry": "0x080023e4",
+      "role": "Supporting tile sampler: map-indexed row-major byte lookup; return ABI unresolved",
+      "source_record_line": 18,
+      "export_path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-and-the-amazing-mirror/functions.jsonl",
+      "pseudo_c_sha256": "81aa22e56af5edb56b399ae49491dee2fbce6346a80672adb6b64c5b286340a9",
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/kirby-and-the-amazing-mirror--0x080023e4.c",
+        "sha256": "81aa22e56af5edb56b399ae49491dee2fbce6346a80672adb6b64c5b286340a9"
+      }
+    },
+    {
+      "game_id": "kirby-and-the-amazing-mirror",
+      "entry": "0x0803912c",
+      "role": "Supporting oriented-bounds overlap candidate using same position/bounds offsets",
+      "source_record_line": 310,
+      "export_path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-and-the-amazing-mirror/functions.jsonl",
+      "pseudo_c_sha256": "4c73acc596f70ff55e8574e82fe73bdde640f0b4e8cebbbb0c852785f542f9bd",
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/kirby-and-the-amazing-mirror--0x0803912c.c",
+        "sha256": "4c73acc596f70ff55e8574e82fe73bdde640f0b4e8cebbbb0c852785f542f9bd"
+      }
+    },
+    {
+      "game_id": "kirby-and-the-amazing-mirror",
+      "entry": "0x08026698",
+      "role": "Rejected as primary gameplay claim: mostly transition/presentation state; input use alone is insufficient",
+      "source_record_line": 128,
+      "export_path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-and-the-amazing-mirror/functions.jsonl",
+      "pseudo_c_sha256": "3c10a8e472817ca473047d42994c2e3794c141b3fdf73a97939c703a69ab47c3",
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/kirby-and-the-amazing-mirror--0x08026698.c",
+        "sha256": "3c10a8e472817ca473047d42994c2e3794c141b3fdf73a97939c703a69ab47c3"
+      }
+    },
+    {
+      "game_id": "kirby-nightmare-in-dream-land",
+      "entry": "0x08021634",
+      "role": "Supporting16x16-local collision sample, table pointer087328f0, map dimensions03005620/0300561c",
+      "source_record_line": 210,
+      "export_path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-nightmare-in-dream-land/functions.jsonl",
+      "pseudo_c_sha256": "e136e99d3fbc75d2fef98604282df3f0a54a3b51c068b5c10259cb18c42b3aab",
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/kirby-nightmare-in-dream-land--0x08021634.c",
+        "sha256": "e136e99d3fbc75d2fef98604282df3f0a54a3b51c068b5c10259cb18c42b3aab"
+      }
+    },
+    {
+      "game_id": "kirby-nightmare-in-dream-land",
+      "entry": "0x080216d8",
+      "role": "Supporting tile-and-next-row sample with map bound handling",
+      "source_record_line": 211,
+      "export_path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-nightmare-in-dream-land/functions.jsonl",
+      "pseudo_c_sha256": "65d9fc07ba3276a9525061f6f353916d5e9efbcec6e69e2c5d0ef8af999eead1",
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/kirby-nightmare-in-dream-land--0x080216d8.c",
+        "sha256": "65d9fc07ba3276a9525061f6f353916d5e9efbcec6e69e2c5d0ef8af999eead1"
+      }
+    },
+    {
+      "game_id": "kirby-nightmare-in-dream-land",
+      "entry": "0x080219b0",
+      "role": "Supporting signed surface offset lookup using current local sample03005508",
+      "source_record_line": 215,
+      "export_path": "local/re/experiments/20261016-corpus-decompile/shard-a/kirby-nightmare-in-dream-land/functions.jsonl",
+      "pseudo_c_sha256": "281263330d20cee833b63790432307bff6780c6fdaa6411c4c9fb94098141ee1",
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/kirby-nightmare-in-dream-land--0x080219b0.c",
+        "sha256": "281263330d20cee833b63790432307bff6780c6fdaa6411c4c9fb94098141ee1"
+      }
+    },
+    {
+      "game_id": "final-fantasy-vi-advance",
+      "entry": "0x08150844",
+      "role": "Supporting indexed glyph code lookup; indirect return artifact",
+      "source_record_line": 676,
+      "export_path": "local/re/experiments/20261016-corpus-decompile/shard-a/final-fantasy-vi-advance/functions.jsonl",
+      "pseudo_c_sha256": "de9be90c21a49e7a49b4e91b0e3674ffa7f776cb97bffe6e7c325708d4ae24ae",
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/final-fantasy-vi-advance--0x08150844.c",
+        "sha256": "de9be90c21a49e7a49b4e91b0e3674ffa7f776cb97bffe6e7c325708d4ae24ae"
+      }
+    },
+    {
+      "game_id": "final-fantasy-vi-advance",
+      "entry": "0x08150894",
+      "role": "Supporting glyph lookup/draw call chain; actual glyph/layout behavior unresolved",
+      "source_record_line": 677,
+      "export_path": "local/re/experiments/20261016-corpus-decompile/shard-a/final-fantasy-vi-advance/functions.jsonl",
+      "pseudo_c_sha256": "dc528697373ac39f26bd396483f601987e11d111cab31126cced944362c6a92e",
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/final-fantasy-vi-advance--0x08150894.c",
+        "sha256": "dc528697373ac39f26bd396483f601987e11d111cab31126cced944362c6a92e"
+      }
+    },
+    {
+      "game_id": "final-fantasy-vi-advance",
+      "entry": "0x0811ab18",
+      "role": "Rejected primary claim: record initialization alone does not identify RPG party/stats",
+      "source_record_line": 320,
+      "export_path": "local/re/experiments/20261016-corpus-decompile/shard-a/final-fantasy-vi-advance/functions.jsonl",
+      "pseudo_c_sha256": "1af624aca59c2936bc7eaabdee098ef19b755c2d9f57ab5326c9c40d1b929c12",
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/final-fantasy-vi-advance--0x0811ab18.c",
+        "sha256": "1af624aca59c2936bc7eaabdee098ef19b755c2d9f57ab5326c9c40d1b929c12"
+      }
+    },
+    {
+      "game_id": "final-fantasy-vi-advance",
+      "entry": "0x080164b8",
+      "role": "Rejected primary claim: packed-bit unpacking with unaff-register artifacts, no player-facing semantics established",
+      "source_record_line": 81,
+      "export_path": "local/re/experiments/20261016-corpus-decompile/shard-a/final-fantasy-vi-advance/functions.jsonl",
+      "pseudo_c_sha256": "2fb84e7899b5915a359449caab1411be015192226a425a8fbac3310234217906",
+      "pseudocode": {
+        "path": "research/requests/remaining-rom-semantics/pseudocode/final-fantasy-vi-advance--0x080164b8.c",
+        "sha256": "2fb84e7899b5915a359449caab1411be015192226a425a8fbac3310234217906"
+      }
+    }
+  ],
+  "resources": {
+    "new_ROM_executions": 0,
+    "new_model_calls": 0,
+    "new_Ghidra_runs": 0,
+    "new_builds_or_tests": 0,
+    "generation_wall_s": 0.192826,
+    "research_wall_s": null,
+    "research_wall_note": "Interactive inspection start/stop not instrumented; generation time is not total research time"
+  }
+}

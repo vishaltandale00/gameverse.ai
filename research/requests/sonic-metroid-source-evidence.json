@@ -1,0 +1,650 @@
+{
+  "schema_version": 1,
+  "kind": "source_investigation_evidence",
+  "created_at": "2026-10-16T06:29:31.707189+00:00",
+  "request_sha256": "e4947a306571408c8f8624966ada1efbf33409e73a0fb924f9b836b8a9c887b4",
+  "implementation_status": "not_implemented",
+  "qualification_status": "not_run",
+  "human_clarifications": [
+    {
+      "intent": "Keep Sonic momentum on loops and ramps.",
+      "source": "human reply after exported request",
+      "effect": "Preserve Sonic tangent velocity, slope gravity, loop collision and external impulses; MZM controller applies where compatible."
+    }
+  ],
+  "foundation": {
+    "game_id": "sonic-advance",
+    "requested_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+    "requested_sha1_independently_verified": true,
+    "source_target_region": "Europe",
+    "source_target_sha1": "eb00f101af23d728075ac2117e27ecd8a4b4c3e9",
+    "exact_baseline_established": false,
+    "baserom_sa1_present_in_checkout": false,
+    "usa_idle_animation_signature": {
+      "bytes_hex": "00006300c7002a01",
+      "matches": [
+        4878084
+      ],
+      "europe_source_mapped_offset": 4906760,
+      "usa_bytes_at_europe_offset_hex": "0000badc0087a9cb"
+    },
+    "static_inventory": {
+      "sa1_c_files": 173,
+      "sa1_c_lines": 82301,
+      "sa1_assembly_fallback_inc_files": 153,
+      "literal_baserom_sa1_directives": 259,
+      "directive_source_files": 16,
+      "union_referenced_baserom_bytes": 702548,
+      "active_linker_coverage": "unmeasured"
+    }
+  },
+  "coordinate_bridge": {
+    "sonic_position_units_per_pixel": 256,
+    "mzm_position_units_per_pixel": 4,
+    "mzm_velocity_to_nominal_sonic_velocity_multiplier": 8,
+    "vertical_velocity_sign_reversal": true,
+    "exact_position_displacement_sonic_units": "(mzm_velocity >> 3) * 64; negate MZM vertical displacement after its shift",
+    "preserve_mzm_displacement_quantization": true,
+    "global_position_authority": "Sonic signed32 Q24.8"
+  },
+  "sources": [
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/config.mk",
+      "sha256": "1f8901446a2e569f896ab0b7a6d7b1493b40e397fb67e866ac886e9332036a40",
+      "symbols": [
+        {
+          "query": "GAME_REGION := EUROPE",
+          "line_matches": [
+            70
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/sa1.sha1",
+      "sha256": "01e49633effa77b597ff1e9c06d6b5335fc5b5e5b3efcb13cf1a77de33152aba",
+      "symbols": [
+        {
+          "query": "eb00f101",
+          "line_matches": [
+            1
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/include/game/shared/stage/player.h",
+      "sha256": "f1ba7d811c64a6cb97713dc8f33f69750bf46c9a847d8bb3a9290716677fa83d",
+      "symbols": [
+        {
+          "query": "typedef struct Player_",
+          "line_matches": [
+            141
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/include/global.h",
+      "sha256": "37d5d16cf5be24e40fbc34015aa22909c8a295fcbcb1dd7e7ec09b243f3053b9",
+      "symbols": [
+        {
+          "query": "#define Q_24_8(n)",
+          "line_matches": [
+            125
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/src/game/shared/stage/player.c",
+      "sha256": "300f37f946203ab4bb20fbbd5c62b20b0a5e9f55618ffc58bbd8f2b13d49bdb8",
+      "symbols": [
+        {
+          "query": "void Task_PlayerMain(void)",
+          "line_matches": [
+            297,
+            4895
+          ],
+          "note": "May include declarations and conditional alternative definitions; verify GAME_SA1 context before extraction."
+        },
+        {
+          "query": "bool32 Player_TryJump(Player *p)",
+          "line_matches": [
+            3734,
+            9653
+          ],
+          "note": "May include declarations and conditional alternative definitions; verify GAME_SA1 context before extraction."
+        },
+        {
+          "query": "void Player_8044670(Player *p)",
+          "line_matches": [
+            3991
+          ],
+          "note": null
+        },
+        {
+          "query": "void Player_8044F7C(Player *p)",
+          "line_matches": [
+            4541
+          ],
+          "note": null
+        },
+        {
+          "query": "void Player_AirInputControls(Player *p)",
+          "line_matches": [
+            3899
+          ],
+          "note": null
+        },
+        {
+          "query": "void Player_80470AC(Player *p)",
+          "line_matches": [
+            9561
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/src/game/sa1/stage/player_sonic.c",
+      "sha256": "fea5f251ad077581065c1932eacb0d033175e3d575230287ae87b0184ca27059",
+      "symbols": [
+        {
+          "query": "void Player_Sonic_80473AC(Player *p)",
+          "line_matches": [
+            21
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/src/game/shared/stage/terrain_collision.c",
+      "sha256": "777229b37e656108cbb8dafafff9ea361012e682cba4e63b987b2de474e5c0d2",
+      "symbols": [
+        {
+          "query": "s32 SA2_LABEL(sub_801F07C)",
+          "line_matches": [
+            906
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/src/game/shared/stage/camera.c",
+      "sha256": "feea71aeb35722c9977241d06e96e48482b1b217dd74d18fa8e52a630157c713",
+      "symbols": [
+        {
+          "query": "void InitCamera(u32 level)",
+          "line_matches": [
+            489
+          ],
+          "note": null
+        },
+        {
+          "query": "void UpdateCamera(void)",
+          "line_matches": [
+            698
+          ],
+          "note": null
+        },
+        {
+          "query": "void RenderMetatileLayers(s32 x, s32 y)",
+          "line_matches": [
+            953
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/src/game/shared/stage/collision_3.c",
+      "sha256": "8b05af23837c9b27253d472867e5917f3a56c2160e6f457173a7bc3760f83bfb",
+      "symbols": [
+        {
+          "query": "bool32 Coll_DamagePlayer(Player *p)",
+          "line_matches": [
+            931
+          ],
+          "note": null
+        },
+        {
+          "query": "bool32 Coll_Player_Enemy_Attack(Sprite *s, CamCoord sx, CamCoord sy)",
+          "line_matches": [
+            455
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/src/game/shared/stage/entities_manager.c",
+      "sha256": "44a76d712b3313b05681c8180b09a6d7482e402eddfc13345425bf107f67ee84",
+      "symbols": [
+        {
+          "query": "void CreateStageEntitiesManager(void)",
+          "line_matches": [
+            825,
+            1378
+          ],
+          "note": "May include declarations and conditional alternative definitions; verify GAME_SA1 context before extraction."
+        }
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/src/game/sa1/stage/enemies/rhinotank.c",
+      "sha256": "df4d3f1817c4e684ca245a12789cd1e1121e2689b9c1d29df7fd0a78f0553301",
+      "symbols": [
+        {
+          "query": "void CreateEntity_Rhinotank(",
+          "line_matches": [
+            28
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/src/game/sa1/stage/interactables/mini_loop.c",
+      "sha256": "68fe1fd927c81b3f54d182663d3411d1d46973775f2e227fb378b5316ea39ba2",
+      "symbols": [
+        {
+          "query": "void Task_MiniLoop_StartBoost(void)",
+          "line_matches": [
+            17,
+            21
+          ],
+          "note": "May include declarations and conditional alternative definitions; verify GAME_SA1 context before extraction."
+        },
+        {
+          "query": "p->qSpeedGround = +Q(9.00)",
+          "line_matches": [
+            43
+          ],
+          "note": null
+        },
+        {
+          "query": "p->qSpeedGround = -Q(7.25)",
+          "line_matches": [
+            75
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/src/game/sa1/stage/interactables/breakable_wall.c",
+      "sha256": "711cf013bf89b073699ef2b975c1a03c995728b54c374b5c0121876dc7cb57a8",
+      "symbols": [
+        {
+          "query": "void CreateEntity_BreakableWall(",
+          "line_matches": [
+            34
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/include/game/sa1/save.h",
+      "sha256": "f676f56c073f1b76d6ee5f7c9bf682645eccceedf70f20d7aa3a44d6434bd45f",
+      "symbols": [
+        {
+          "query": "typedef struct SaveGame",
+          "line_matches": [
+            50
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/src/game/sa1/save.c",
+      "sha256": "1769ce719052c8f320edf7563ccad5848f4a3debe602f9cbdcfd9a17c3cf3135",
+      "symbols": [
+        {
+          "query": "u16 WriteSaveGame(void)",
+          "line_matches": [
+            86
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "sonic-advance",
+      "source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+      "path": "local/decomps/sa2/data/sa1/data_0_4.s",
+      "sha256": "5166df637c56e6a0f5d309693779244a806b4e86b51b2301d83a5aef854f4f1f",
+      "symbols": [
+        {
+          "query": "C_DECL(gPlayerCharacterIdleAnims):",
+          "line_matches": [
+            23
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "source_commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+      "path": "local/decomps/mzm/include/types.h",
+      "sha256": "3274f293eee99076767cf2dc494e58c2b7b142c19246585eb1b61866fb4a6072",
+      "symbols": [
+        {
+          "query": "#define SUB_PIXEL_RATIO 4",
+          "line_matches": [
+            48
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "source_commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+      "path": "local/decomps/mzm/include/structs/samus.h",
+      "sha256": "f942fa9c616d8f47392cddef0ef9dca0d738c155ce816f5d21a443c9d2c4435c",
+      "symbols": [
+        {
+          "query": "struct Equipment {",
+          "line_matches": [
+            16
+          ],
+          "note": null
+        },
+        {
+          "query": "struct WeaponInfo {",
+          "line_matches": [
+            36
+          ],
+          "note": null
+        },
+        {
+          "query": "struct SamusData {",
+          "line_matches": [
+            46
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "source_commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+      "path": "local/decomps/mzm/include/constants/samus.h",
+      "sha256": "71f253731a90b34be5f645e4e753eaf479444cbc51dfda4c280b06585bf5729b",
+      "symbols": [
+        {
+          "query": "#define VELOCITY_TO_SUB_PIXEL",
+          "line_matches": [
+            314
+          ],
+          "note": null
+        },
+        {
+          "query": "#define SAMUS_X_ACCELERATION",
+          "line_matches": [
+            317
+          ],
+          "note": null
+        },
+        {
+          "query": "#define SAMUS_X_VELOCITY_CAP",
+          "line_matches": [
+            318
+          ],
+          "note": null
+        },
+        {
+          "query": "#define SAMUS_Y_ACCELERATION",
+          "line_matches": [
+            324
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "source_commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+      "path": "local/decomps/mzm/src/samus.c",
+      "sha256": "c2f7f262b25f46bcdfb6fb09663ce7c797771739e5ac853008bb188a8ba3c60a",
+      "symbols": [
+        {
+          "query": "void SamusUpdatePhysics(",
+          "line_matches": [
+            2609
+          ],
+          "note": null
+        },
+        {
+          "query": "void SamusUpdate(void)",
+          "line_matches": [
+            2767
+          ],
+          "note": null
+        },
+        {
+          "query": "void SamusAimCannon(",
+          "line_matches": [
+            2951
+          ],
+          "note": null
+        },
+        {
+          "query": "u8 SamusCheckFireBeamMissile(",
+          "line_matches": [
+            3133
+          ],
+          "note": null
+        },
+        {
+          "query": "void SamusCheckNewProjectile(",
+          "line_matches": [
+            3262
+          ],
+          "note": null
+        },
+        {
+          "query": "void SamusApplyXAcceleration(",
+          "line_matches": [
+            3545
+          ],
+          "note": null
+        },
+        {
+          "query": "void SamusUpdateVelocityPosition(",
+          "line_matches": [
+            6737
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "source_commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+      "path": "local/decomps/mzm/src/projectile.c",
+      "sha256": "8f12ab786ec3f21fc7f8e0013c7bca8f7f2c68227acaaf72b641e8ac4c00d745",
+      "symbols": [
+        {
+          "query": "void ProjectileProcessNormalBeam(",
+          "line_matches": [
+            28
+          ],
+          "note": null
+        },
+        {
+          "query": "void ProjectileProcessWaveBeam(",
+          "line_matches": [
+            378
+          ],
+          "note": null
+        },
+        {
+          "query": "void ProjectileProcessPlasmaBeam(",
+          "line_matches": [
+            452
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "source_commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+      "path": "local/decomps/mzm/src/projectile_util.c",
+      "sha256": "1b799c7e4406c22609663b140a8a7ef729ff197cf561de05c87a1866ffa99e93",
+      "symbols": [
+        {
+          "query": "void ProjectileMove(",
+          "line_matches": [
+            844
+          ],
+          "note": null
+        },
+        {
+          "query": "boolu8 ProjectileDealDamage(",
+          "line_matches": [
+            1626
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "source_commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+      "path": "local/decomps/mzm/src/sprite_util.c",
+      "sha256": "6d71b4d7036eba3da263ed66f8f75280a3bced12ea61ab8ac125c2804ce148b9",
+      "symbols": [
+        {
+          "query": "boolu8 SpriteUtilTakeDamageFromSprite(",
+          "line_matches": [
+            125
+          ],
+          "note": null
+        },
+        {
+          "query": "SpriteUtilDetermineEnemyDrop(void)",
+          "line_matches": [
+            3126
+          ],
+          "note": null
+        },
+        {
+          "query": "void SpriteUtilSpriteDeath(",
+          "line_matches": [
+            3331
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "source_commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+      "path": "local/decomps/mzm/src/sprites_AI/zoomer.c",
+      "sha256": "856f38b293708ed397af5da1db0e061b516457ba5a01567b0dc7cfce7b727f5e",
+      "symbols": [
+        {
+          "query": "void Zoomer(void)",
+          "line_matches": [
+            883
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "source_commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+      "path": "local/decomps/mzm/src/sprites_AI/space_pirate.c",
+      "sha256": "37c3569297f4289ecee18dba2c8c8803d7eb130da95f763e07f09bc01959f69f",
+      "symbols": [
+        {
+          "query": "void SpacePirate(void)",
+          "line_matches": [
+            4484
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "source_commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+      "path": "local/decomps/mzm/src/sprites_AI/kraid.c",
+      "sha256": "b3e492bc65eac28cd6e95a04a4c1d9cda8bda91000464a241a9cd4243590ccc4",
+      "symbols": [
+        {
+          "query": "void Kraid(void)",
+          "line_matches": [
+            2498
+          ],
+          "note": null
+        }
+      ]
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "source_commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+      "path": "local/decomps/mzm/src/data/sprite_data.c",
+      "sha256": "f45c037be8afac896efbd3b94b79b32afbfa562a47e0f6cc1fe4fd360485f83d",
+      "symbols": [
+        {
+          "query": "const u16 sPrimarySpriteStats",
+          "line_matches": [
+            67
+          ],
+          "note": null
+        }
+      ]
+    }
+  ],
+  "timing": {
+    "build_seconds": null,
+    "simulation_seconds": null,
+    "queue_seconds": null,
+    "snapshot_generation_seconds": 0.00956,
+    "note": "Only evidence snapshot generation was timed. No compile or playtest was launched."
+  }
+}
