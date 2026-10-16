@@ -17,6 +17,23 @@ test('eight broad design choices produce a source-linked native GBA brief withou
   const rawComponents=result.design_choices.flatMap(d=>d.bundles.flatMap(b=>b.component_ids));assert.ok(rawComponents.length>8,'Bundles may include more than eight raw components.');
   for(const dimension of result.design_choices)for(const bundle of dimension.bundles){const game=catalog.games.find(g=>g.id===bundle.game_id);assert.ok(bundle.component_ids.every(id=>game.components.some(c=>c.id===id)));}
   assert.equal(result.status,'build_brief');assert.ok(result.design_choices.every(d=>d.implementation_status==='requested'));
+  // Both requested parent worlds use a primary side view. A foreign movement
+  // donor alone must not manufacture a perspective conversion or tactical pause.
+  const sonicParents=['metroid-zero-mission','sonic-advance'];
+  const sonicChoices=defaultChoices(sonicParents.map(id=>catalog.games.find(g=>g.id===id)));
+  for(const id of ['traversal','combat','progression','world','resources','opposition'])sonicChoices[id]={...sonicChoices[id],mode:'parent',parent_game_id:'metroid-zero-mission'};
+  const sonicBrief=createMashupRequest(catalog,sonicParents,sonicChoices,'Implement Zero Mission movement, physics and ecology inside Sonic Advance.','sonic-advance');
+  assert.ok(!sonicBrief.dependency_decisions.some(n=>n.id==='view_conversion'));
+  const fieldCombat=sonicBrief.dependency_decisions.find(n=>n.id==='combat_seam');
+  assert.match(fieldCombat.text,/hitboxes.*damage.*invulnerability/);assert.doesNotMatch(fieldCombat.text,/pause|tactical|turn-based/i);
+  const topDownChoices=choices();topDownChoices.traversal.parent_game_id='pokemon-emerald-version';
+  assert.ok(request(topDownChoices).dependency_decisions.some(n=>n.id==='view_conversion'),'Known side-view/top-down families require review.');
+  assert.match(result.dependency_decisions.find(n=>n.id==='combat_seam').text,/turn-based/);
+  sonicChoices.traversal.mode='bridge';sonicChoices.traversal.bridge_id='field_and_hubs';
+  assert.ok(createMashupRequest(catalog,sonicParents,sonicChoices,'Deliberately add separate hub and field views.','sonic-advance').dependency_decisions.some(n=>n.id==='view_seam'),'An explicit hybrid bridge remains a requested design choice.');
+  sonicChoices.traversal.mode='parent';
+  const unknownProjection=structuredClone(catalog);unknownProjection.games.find(g=>g.id==='sonic-advance').components=unknownProjection.games.find(g=>g.id==='sonic-advance').components.filter(c=>c.facet!=='projection');
+  assert.ok(!createMashupRequest(unknownProjection,sonicParents,sonicChoices,'Review unknown projection before adapting.','sonic-advance').dependency_decisions.some(n=>n.id==='view_conversion'));
 });
 test('GBA brief rejects missing parents, stale choices and unbounded intent or notes',()=>{
   assert.throws(()=>request(choices(),'Explore',['metroid-zero-mission','missing-parent']),/absent/);

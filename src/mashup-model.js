@@ -41,13 +41,36 @@ export function bundlesFor(game) {
  }));
 }
 export function defaultChoices(parents){return Object.fromEntries(DIMENSIONS.map((d,i)=>[d.id,{mode:i>=6?'bridge':'parent',parent_game_id:parents[i===1||i===3||i===4||i===5?1:0]?.id,bridge_id:d.bridges[0][0],notes:''}]));}
+// Classify the primary projection only when its component ID/label says so.
+// Narrative summaries can mention special stages or separate battle cameras.
+function projectionFamily(game){
+ const families=new Set((game?.components||[]).filter(c=>c.facet==='projection').map(c=>{
+  const text=`${c.id} ${c.label}`.toLowerCase();
+  if(/top[-_\s]*down/.test(text))return 'top_down';
+  if(/side[-_\s]*(?:view|scroll)/.test(text))return 'side_view';
+  if(/isometric/.test(text))return 'isometric';
+  return null;
+ }).filter(Boolean));
+ return families.size===1?[...families][0]:null;
+}
+function combatFamily(game){
+ if(!game)return null;
+ const components=bundlesFor(game).combat.components;
+ if(components.some(c=>/turn[- ]based|battle_engine_core/.test(`${c.id} ${c.label}`.toLowerCase())))return 'turn_based';
+ if(components.some(c=>/real[- ]time|beam_stacking|missiles_and_arming|body_attacks|contact_damage|red_soul_cast|throw_rock|spin_attack|rolling_attack|damage_and_iframes/.test(`${c.id} ${c.label}`.toLowerCase())))return 'realtime';
+ return null;
+}
 export function dependencyNotes(parents,choices,foundationId){
  const result=[];const traversal=choices.traversal,combat=choices.combat;
- const projection=g=>g?.components.find(c=>c.facet==='projection')?.summary||g?.components.find(c=>c.facet==='projection')?.label||'';
- const foundation=parents.find(g=>g.id===foundationId);
+ const foundation=parents.find(g=>g.id===foundationId),baseView=projectionFamily(foundation),movementParent=parents.find(g=>g.id===traversal?.parent_game_id),movementView=projectionFamily(movementParent);
  if(traversal?.mode==='bridge'&&traversal.bridge_id==='field_and_hubs')result.push({id:'view_seam',level:'bridge',title:'Two views need a deliberate crossing',text:'Use explicit hub/field transitions. Each view needs its own collision, camera and control rules; preserve shared inventory and progression at the seam.'});
- else if(traversal?.parent_game_id&&traversal.parent_game_id!==foundationId&&projection(foundation)&&projection(parents.find(g=>g.id===traversal.parent_game_id)))result.push({id:'view_conversion',level:'review',title:'Changing perspective affects the whole world',text:'Map geometry, actors, collision and camera must be adapted together. A foundation-preserving build can borrow movement ideas without converting the entire campaign.'});
- if(combat?.mode==='bridge'||combat?.parent_game_id!==foundationId)result.push({id:'combat_seam',level:'bridge',title:'Connect exploration and encounters',text:'Define entry, exit, defeat and restoration behavior. A tactical battle can pause the native field, then return to the same location and world state.'});
+ else if(traversal?.mode==='parent'&&baseView&&movementView&&baseView!==movementView)result.push({id:'view_conversion',level:'review',title:'Changing perspective affects the whole world',text:'Map geometry, actors, collision and camera must be adapted together. A foundation-preserving build can borrow movement ideas without converting the entire campaign.'});
+ if(combat?.mode==='bridge'||(combat?.mode==='parent'&&combat.parent_game_id!==foundationId)){
+  const family=combat.mode==='parent'?combatFamily(parents.find(g=>g.id===combat.parent_game_id)):null;
+  if((combat.mode==='bridge'&&combat.bridge_id==='pause_for_tactics')||family==='turn_based')result.push({id:'combat_seam',level:'bridge',title:'Connect exploration and tactical encounters',text:'Define battle entry, exit, defeat and world-state restoration. A turn-based encounter needs an explicit timing and control boundary before returning to exploration.'});
+  else if(family==='realtime'||(combat.mode==='bridge'&&combat.bridge_id==='field_abilities'))result.push({id:'combat_seam',level:'bridge',title:'Integrate attacks with the native field',text:'Resolve actor ownership, target selection, hitboxes, damage, invulnerability and defeat rules. Keep field timing, movement and enemy behavior coherent with the foundation’s collision and update loop.'});
+  else result.push({id:'combat_seam',level:'bridge',title:'Define the combat integration rules',text:'Specify actor ownership, target selection, collision, damage and defeat behavior. Review the selected source rules before choosing a shared update loop or a separate encounter boundary.'});
+ }
  if(choices.progression?.mode==='bridge')result.push({id:'ability_keys',level:'companion',title:'Abilities need somewhere meaningful to work',text:'Pair each new traversal ability with a visible gate, persistent unlock state and a route that can actually use it.'});
  if(choices.resources?.mode==='bridge')result.push({id:'resource_units',level:'review',title:'Reconcile ownership and units',text:'Keep party health, player energy, ammunition and money distinct unless a deliberate conversion rule is chosen. Specify recovery and save behavior.'});
  const missing=parents.filter(g=>!g.components.length);if(missing.length)result.push({id:'missing_evidence',level:'research',title:'Some ingredients still need extraction',text:`${missing.map(g=>g.shortName).join(', ')} can inform the brief, but no component records are available in this snapshot. Research precedes implementation.`});
