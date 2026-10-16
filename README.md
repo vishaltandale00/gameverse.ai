@@ -17,7 +17,7 @@ A single-player browser environment for playing games and developing them throug
 | [Tracking issue #1](https://github.com/vishaltandale00/gameverse.ai/issues/1) | Base-game and subgame-hosting contract, plan and acceptance checklist |
 | [Engineering handoff](HANDOFF.md) | Existing evidence, technical starting points and prerequisites |
 | [Domain language](CONTEXT.md) | Shared meaning of base game, subgame, version, fork and checkpoint |
-| [Publication preparation](PUBLICATION.md) | Repository contents, remaining publication decisions and checks |
+| [Publication record](PUBLICATION.md) | Published contents, visibility, license and verification receipts |
 
 ## Delivery split
 

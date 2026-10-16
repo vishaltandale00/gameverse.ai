@@ -6,7 +6,7 @@ These are task specifications for repository issues and implementation work. The
 
 | Task | Owner | Deliverable | Dependencies | Status |
 | --- | --- | --- | --- | --- |
-| P0 — Publish the planning baseline | Vishal | Reviewable repository with README, contracts, task specs and research provenance | Approved publication scope | Initial private publication complete; public/open-source transition in progress |
+| P0 — Publish the planning baseline | Vishal | Reviewable repository with README, contracts, task specs and research provenance | Approved publication scope | Public repository and MIT license verified; receipt in PUBLICATION.md |
 | T1 — Play the base game and enter subgames | Vishal | A usable browser journey with persistent profile, playable home and independently registered games | Base/subgame contracts; choose minimal home presentation and target browser | [Issue #1](https://github.com/vishaltandale00/gameverse.ai/issues/1); unimplemented |
 | T2 — Integrate complete FireRed as a subgame | Vishal, for baseline play/integration | Reproducible FireRed artifact, browser adapter and retained play/save/campaign evidence | Subgame contract; toolchain and runtime feasibility | Specified; unimplemented |
 | T3 — Create and improve games through conversation | Shishir | Durable requests, builder, verified updates, forks/mashups and recovery | Host/coordinator interfaces; a real target game; T2 for FireRed scenarios | Work underway externally per Vishal; repository integration unimplemented |

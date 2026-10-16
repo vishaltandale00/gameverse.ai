@@ -1,6 +1,6 @@
 # Repository publication record
 
-Date: 2026-10-15 · Status: initial private baseline verified; public/open-source transition in progress at the user's request.
+Date: 2026-10-15 · Status: public repository and MIT license verified; contract issue and implementation plan published.
 
 ## Intended publication
 
@@ -47,7 +47,11 @@ There is no app test/build command to execute yet. Checks on these files validat
 - Created [issue #1](https://github.com/vishaltandale00/gameverse.ai/issues/1) with the contract, ownership, implementation sequence and acceptance gate.
 - Added `plans/BASE_GAME.md`, the ownership updates, original-material MIT licensing and third-party notices.
 - Checked all reachable repository-history blobs and current tracked files for common credential patterns; no matches were identified.
-- Public visibility, pushed contents and detected license remain to be verified after the transition.
+- Verified public visibility and anonymous API access for [vishaltandale00/gameverse.ai](https://github.com/vishaltandale00/gameverse.ai); default branch: `main`.
+- GitHub detected the original-material license as `MIT`.
+- Verified [issue #1](https://github.com/vishaltandale00/gameverse.ai/issues/1) is open and contains the contract, ownership split and implementation checklist.
+- Public baseline commit: `5505e2630771cb3920e7782e60fb1a8b6552c17e`; tree: `90bb78374dde633294e76d831ef43af6b1af9631`.
+- All 29 published files matched local paths, modes and content hashes. JSON and 72 local links passed checks. This receipt/status update is recorded in a subsequent documentation commit.
 
 There is still no runnable game or game deployment. Repository T1–T3 integration remains unimplemented; Shishir's external loop work is user-reported. This publication contains contracts, planning and research.
 
