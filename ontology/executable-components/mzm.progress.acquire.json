@@ -1,0 +1,102 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "mzm.progress.acquire",
+  "label": "Acquire equipment and campaign event flags",
+  "role": "progression",
+  "source_game": "metroid-zero-mission",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/mzm.progress.acquire/package.json",
+  "package_sha256": "6776d8e9d23706a9db587861c63be0f29fddabcda5584485082ffa896bd9c1bd",
+  "behavior_sha256": "885c2aae5398d0f2928e7448e43626bc9204ba235f230f80932dbe685c2b4723",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 4096,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "ab393d37f019ee39a8d7da0c2f6ca116210460b79c77902f20bf4a22aeaa1898"
+  },
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u8"
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "weapons.owned",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "abilities.owned",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 2,
+    "collections": [
+      {
+        "id": "dependency_0_collection_0",
+        "storage_type": "u32",
+        "count": 8
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [
+    {
+      "id": "dependency_0",
+      "behavior_sha256": "cfc4b52ac2f104ee7d382b162f70606153dd4dba24249908e40c3dbf6fb9a651",
+      "provenance_namespace": "dependency_0",
+      "status": "inlined_from_serialized_l1"
+    }
+  ],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/mzm.progress.acquire/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Semantic annotation has not been independently scored against game rendering"
+  ]
+}

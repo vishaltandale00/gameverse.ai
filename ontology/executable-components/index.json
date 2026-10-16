@@ -1,0 +1,112 @@
+{
+  "schema": "gameverse.executable-ontology-index/0.2",
+  "scope": "Qualified automatic behavior subset; not complete game ontologies",
+  "entries": [
+    {
+      "id": "mzm.combat.impact",
+      "role": "combat",
+      "record": "mzm.combat.impact.json",
+      "source_game": "metroid-zero-mission",
+      "qualified": true,
+      "behavior_sha256": "d1553f6e708d9c1f8dfd18aad318bf1b88ba373483ddee4adcbbbaeb6e38c890"
+    },
+    {
+      "id": "mzm.motion.accelerate",
+      "role": "movement",
+      "record": "mzm.motion.accelerate.json",
+      "source_game": "metroid-zero-mission",
+      "qualified": true,
+      "behavior_sha256": "f0507074e04a8112e567b093b33bee6ed685d8b49a34b8b927ceeef688e880a6"
+    },
+    {
+      "id": "mzm.progress.acquire",
+      "role": "progression",
+      "record": "mzm.progress.acquire.json",
+      "source_game": "metroid-zero-mission",
+      "qualified": true,
+      "behavior_sha256": "885c2aae5398d0f2928e7448e43626bc9204ba235f230f80932dbe685c2b4723"
+    },
+    {
+      "id": "mzm.progress.events",
+      "role": "progression",
+      "record": "mzm.progress.events.json",
+      "source_game": "metroid-zero-mission",
+      "qualified": true,
+      "behavior_sha256": "1e2dd520dd5749512a513532bba1090b1dc34486c55a5160288e17a7c825b1a5"
+    },
+    {
+      "id": "sonic.motion.gravity",
+      "role": "movement",
+      "record": "sonic.motion.gravity.json",
+      "source_game": "sonic-advance",
+      "qualified": true,
+      "behavior_sha256": "2125d4c9097713fc2dc3d12fe35b1c8209b3a310db4aa8f780b6eed0470cdb45"
+    },
+    {
+      "id": "sonic.motion.integrate",
+      "role": "movement",
+      "record": "sonic.motion.integrate.json",
+      "source_game": "sonic-advance",
+      "qualified": true,
+      "behavior_sha256": "65e2dfe1679d10de632a0c476f541117aea74b2098ddf843d3c1e9edd7992462"
+    },
+    {
+      "id": "sonic.motion.slope_acceleration",
+      "role": "movement",
+      "record": "sonic.motion.slope_acceleration.json",
+      "source_game": "sonic-advance",
+      "qualified": true,
+      "behavior_sha256": "87ffd4bb97068be6b2705feaf5b8273299cbbc45dc1f0ac5dac5da8c4258eb82"
+    },
+    {
+      "id": "sonic.motion.surface_detach",
+      "role": "movement",
+      "record": "sonic.motion.surface_detach.json",
+      "source_game": "sonic-advance",
+      "qualified": true,
+      "behavior_sha256": "6df3d8ce49cfc9a82276a2c6af09dfc516c6e01bca095717e9c05e811e8cedb1"
+    },
+    {
+      "id": "sonic.motion.surface_projection",
+      "role": "movement",
+      "record": "sonic.motion.surface_projection.json",
+      "source_game": "sonic-advance",
+      "qualified": true,
+      "behavior_sha256": "0bd45089f689d0e4c15e0edf26e866bd0ab4a9449e569d2ceb9fc93eb8e79646"
+    }
+  ],
+  "groups": [
+    {
+      "id": "movement",
+      "label": "How the player moves",
+      "members": [
+        "mzm.motion.accelerate",
+        "sonic.motion.gravity",
+        "sonic.motion.integrate",
+        "sonic.motion.slope_acceleration",
+        "sonic.motion.surface_detach",
+        "sonic.motion.surface_projection"
+      ],
+      "composition_example": "research/automatic-ir/asterion-relay.composition.json",
+      "meaning": "Signed directional acceleration, context-dependent gravity, integration, slope projection/acceleration and detachment; surface contact service closure remains separate."
+    },
+    {
+      "id": "combat",
+      "label": "How hits change an enemy",
+      "members": [
+        "mzm.combat.impact"
+      ],
+      "meaning": "HP subtraction, lethal lifecycle/pose/flag updates and reaction state. Projectile/contact dispatch and hit cadence are authored policy in the current new-ROM example."
+    },
+    {
+      "id": "progression",
+      "label": "What acquisition changes",
+      "members": [
+        "mzm.progress.acquire",
+        "mzm.progress.events"
+      ],
+      "meaning": "Native equipment ownership and persistent event-bank operations. The example consumes acquired ownership in an authored world gate; original active/equip refresh is not claimed."
+    }
+  ],
+  "discovery_contract": "Read records, resolve package_ref, enforce behavior/receipt identities, inspect typed ports and constraints, then select/configure an L2 graph."
+}

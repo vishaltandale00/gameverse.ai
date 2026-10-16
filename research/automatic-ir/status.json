@@ -1,0 +1,111 @@
+{
+  "schema": "gameverse.automatic-ir-status/0.2",
+  "source_commit": "acc56819395d7ca51b5d0b17c9ae3e5d968698fa",
+  "environment": "macOS-27.0.1-arm64-arm-64bit",
+  "queue_s": null,
+  "scope": "Automatic executable movement/combat/progression subset and connected clean-ROM vertical slice; full Sonic campaign remains a separate workstream",
+  "sonic_candidate_denominator": 1929,
+  "l0_exported_initial": 1926,
+  "l0_exported_after_narrow_repair": 1929,
+  "l0_export_percent_after_repair": 100.0,
+  "l0_export_s": 24.55895,
+  "l0_repair_export_s": 0.367280584,
+  "l0_failures_retained": 3,
+  "static_l1_candidates": 57,
+  "static_l1_census_s": 1.828509583,
+  "qualified_packages": 9,
+  "qualified_sonic_functions": 5,
+  "qualified_native_pairs": 184320,
+  "real_saved_ram_pairs": 10,
+  "new_rom": {
+    "path": "local/ir/builds/asterion-04/game.gba",
+    "sha256": "88e608f9cd44adb4b3bfcbd11183670233a7b89e0af7a935855c531e4c2e231a",
+    "parent_rom_used": false,
+    "build_s": 0.11055820899999999,
+    "route_s": 0.55665275,
+    "route_final": {
+      "ticks": 417,
+      "player_x": 256832,
+      "player_y": 32768,
+      "shot_count": 16,
+      "kills": 3,
+      "pickup_taken": 1,
+      "gate_open": 1,
+      "won": 1,
+      "player_hp": 12,
+      "ability_mask": 1
+    },
+    "route_receipt": "local/ir/qualification/asterion-03-route/route-receipt.json",
+    "receipt_artifact_note": "Build03 and04 produced identical ROM bytes;04adds an explicit adapter input domain to the composition proof metadata",
+    "video": "/Users/shishirtandale/Projects/gameverse.ai/local/ir/qualification/asterion-03-route/playthrough.mp4"
+  },
+  "composition_only_variant": {
+    "path": "local/ir/builds/asterion-strong-beam/game.gba",
+    "sha256": "8b62a5f2edece30a6fdc8b809a1e4d519cabfdd9a23c68e9808032a44ad8c09a",
+    "change": "IR impact argument2\u21924; compiler/runtime unchanged",
+    "route_s": 0.430434791,
+    "normal_shots": 16,
+    "variant_shots": 11,
+    "route_final": {
+      "ticks": 370,
+      "player_x": 256832,
+      "player_y": 32768,
+      "shot_count": 11,
+      "kills": 3,
+      "pickup_taken": 1,
+      "gate_open": 1,
+      "won": 1,
+      "player_hp": 12,
+      "ability_mask": 1
+    }
+  },
+  "retained_failures": [
+    {
+      "kind": "C lowering link",
+      "reason": "64bit multiplication helper missing; replaced unnecessary intermediate64bit operations with exact unsigned storage-width operations",
+      "evidence": "local/re/experiments/automatic-ir-m1-01/08047078/failed-01-receipt.json"
+    },
+    {
+      "kind": "runtime link",
+      "reason": "initialized .data unsupported and compiler introduced unsigned division helper; runtime initialization and ABI helper added",
+      "evidence": "local/ir/builds/asterion-01/build-receipt.json"
+    },
+    {
+      "kind": "route budget",
+      "reason": "rendering cost caused configured frame cap before exit; replaced clear with DMA and row writes with32bit access, retained failure",
+      "evidence": "local/ir/qualification/asterion-02-route/route-receipt.json"
+    }
+  ],
+  "gaps": [
+    "Static lift does not imply original boundary/ABI correctness or composable semantics",
+    "L1 semantic unit annotations use existing own-ROM analysis; automatic relative-unit inference and external scoring are incomplete",
+    "No generalized structured loops, arbitrary pointer aliases, ARM/Thumb interworking or all service closures yet",
+    "Captured RAM fixtures are phase-end states, not per-call trace contexts",
+    "The runtime currently implements Mode4 primitives and geometry queries, not all original rendering/audio/save services",
+    "Acquired ownership drives an authored world gate; original equip/active refresh is not recovered here",
+    "Candidate function coverage is not instruction coverage or full-game completion"
+  ],
+  "repair_static_diagnostics": [
+    {
+      "function": "0803ab30",
+      "outcome": "unsupported",
+      "reason": "unresolved callee closure 0803b52e"
+    },
+    {
+      "function": "08047634",
+      "outcome": "unsupported",
+      "reason": "unresolved callee closure 08047078"
+    },
+    {
+      "function": "080989d8",
+      "outcome": "unsupported",
+      "reason": "not constant v4"
+    }
+  ],
+  "measurement_notes": [
+    "Export timings exclude JVM startup; static-lift wall is separate",
+    "Native qualification includes clean compile/link/oracle construction; nested stages are not additive to total",
+    "No comparable previous whole-census automatic-lift baseline exists",
+    "New-ROM build02before runtime optimization0.101s;03after0.107s (comparable clean same machine); route frame cap and resource policy changed, so total route durations are not comparable throughput baselines"
+  ]
+}

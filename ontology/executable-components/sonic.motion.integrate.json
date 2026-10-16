@@ -1,0 +1,156 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sonic.motion.integrate",
+  "label": "Integrate signed motion",
+  "role": "movement",
+  "source_game": "sonic-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sonic.motion.integrate/package.json",
+  "package_sha256": "7b4846722fec19c639104dcb51b10d7970469026655c0b9696ae9bd9e337b662",
+  "behavior_sha256": "65e2dfe1679d10de632a0c476f541117aea74b2098ddf843d3c1e9edd7992462",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "8188e491d8f0b405ff317a4b9597b9a0a688f715285343be267fef51a0ad1512"
+  },
+  "parameters": [],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.x.right",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.y.down",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "id": "field_2",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.x.right",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "id": "field_3",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.y.down",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "id": "field_4",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "stage",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "id": "field_5",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "stage",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 6,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sonic.motion.integrate/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Semantic annotation has not been independently scored against game rendering"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sonic.motion.slope_acceleration",
+  "label": "Gravity along attached slopes",
+  "role": "movement",
+  "source_game": "sonic-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sonic.motion.slope_acceleration/package.json",
+  "package_sha256": "b511d192f3d539df8356f73e14e6bde7650d08a10491c2f674165635f1a327ef",
+  "behavior_sha256": "87ffd4bb97068be6b2705feaf5b8273299cbbc45dc1f0ac5dac5da8c4258eb82",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "a45c8ec92e823617d58bc8699ea7a8a259ea47e14fc23b39278fddf4da2203dd"
+  },
+  "parameters": [],
+  "ports": [],
+  "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+  "owned_state": {
+    "fields": 2,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sonic.motion.slope_acceleration/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced"
+  ]
+}

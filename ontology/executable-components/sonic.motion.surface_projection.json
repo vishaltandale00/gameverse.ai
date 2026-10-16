@@ -1,0 +1,46 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "sonic.motion.surface_projection",
+  "label": "Ground momentum projected through a surface",
+  "role": "movement",
+  "source_game": "sonic-advance",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/sonic.motion.surface_projection/package.json",
+  "package_sha256": "8edccf6f5054a47ec208238215e8cc0cac566c2652554076ea1926df63a10baf",
+  "behavior_sha256": "0bd45089f689d0e4c15e0edf26e866bd0ab4a9449e569d2ceb9fc93eb8e79646",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "e2bde9b6ace25fae0b787c5016973f3f54e85b3a751e18d9e33d77b122816416"
+  },
+  "parameters": [],
+  "ports": [],
+  "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+  "owned_state": {
+    "fields": 4,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/sonic.motion.surface_projection/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced"
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "mzm.motion.accelerate",
+  "label": "Directional acceleration with signed saturation",
+  "role": "movement",
+  "source_game": "metroid-zero-mission",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/mzm.motion.accelerate/package.json",
+  "package_sha256": "8d7791c484c2baf7a14ce25187d6d4e2ef25de7efa7ea8bbcf4d205a5aee98ce",
+  "behavior_sha256": "f0507074e04a8112e567b093b33bee6ed685d8b49a34b8b927ceeef688e880a6",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "096e3425b2045e0b919e360ba0aca9ac6d0ba1a40c1305e2c42d1171591dd67a"
+  },
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u16"
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u16"
+    }
+  ],
+  "ports": [
+    {
+      "id": "field_0",
+      "direction": "in",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "controls",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "id": "field_1",
+      "direction": "inout",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 32
+        },
+        "frame": "world.x.right",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    }
+  ],
+  "assembly_status": "qualified_typed_ports",
+  "owned_state": {
+    "fields": 2,
+    "collections": []
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/mzm.motion.accelerate/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Semantic annotation has not been independently scored against game rendering"
+  ]
+}

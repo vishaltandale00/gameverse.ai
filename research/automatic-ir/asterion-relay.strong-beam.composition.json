@@ -1,0 +1,5478 @@
+{
+  "schema": "gameverse.l2.composition/0.2",
+  "id": "asterion-relay",
+  "title": "ASTERION IR",
+  "scope": "Connected clean-ROM compiler vertical slice, not the Sonic campaign",
+  "components": {
+    "steering": {
+      "package": "../../local/ir/packages/mzm.motion.accelerate/package.json",
+      "bindings": {
+        "field_0": {
+          "slot": "direction"
+        },
+        "field_1": {
+          "slot": "player_vx"
+        }
+      }
+    },
+    "gravity": {
+      "package": "../../local/ir/packages/sonic.motion.gravity/package.json",
+      "bindings": {
+        "field_0": {
+          "slot": "player_vy"
+        },
+        "field_1": {
+          "slot": "actor_flags"
+        }
+      }
+    },
+    "integration": {
+      "package": "../../local/ir/packages/sonic.motion.integrate/package.json",
+      "bindings": {
+        "field_0": {
+          "slot": "player_x"
+        },
+        "field_1": {
+          "slot": "player_y"
+        },
+        "field_2": {
+          "slot": "player_vx",
+          "domain": {
+            "signed_min": -104,
+            "signed_max": 104,
+            "evidence": "Configured acceleration6 and cap104 from zero; plus/minus6 cannot wrap before signed clamp"
+          }
+        },
+        "field_3": {
+          "slot": "player_vy"
+        },
+        "field_4": {
+          "slot": "stage_flags"
+        },
+        "field_5": {
+          "slot": "previous_stage_flags"
+        }
+      }
+    },
+    "impact": {
+      "package": "../../local/ir/packages/mzm.combat.impact/package.json",
+      "instances": 3,
+      "bindings": {
+        "field_0": {
+          "slot": "enemy_hp",
+          "index": {
+            "op": "index",
+            "name": "enemy",
+            "type": "u32"
+          }
+        },
+        "field_2": {
+          "slot": "enemy_pose",
+          "index": {
+            "op": "index",
+            "name": "enemy",
+            "type": "u32"
+          }
+        },
+        "field_7": {
+          "slot": "enemy_flags",
+          "index": {
+            "op": "index",
+            "name": "enemy",
+            "type": "u32"
+          }
+        },
+        "field_8": {
+          "slot": "world_alert"
+        }
+      }
+    },
+    "hurt": {
+      "package": "../../local/ir/packages/mzm.combat.impact/package.json",
+      "bindings": {
+        "field_0": {
+          "slot": "player_hp"
+        },
+        "field_8": {
+          "slot": "world_alert"
+        }
+      }
+    },
+    "acquisition": {
+      "package": "../../local/ir/packages/mzm.progress.acquire/package.json",
+      "bindings": {
+        "field_0": {
+          "slot": "weapon_mask"
+        },
+        "field_1": {
+          "slot": "ability_mask"
+        }
+      }
+    }
+  },
+  "state": {
+    "ticks": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "keys": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "previous_keys": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "pressed": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "grounded": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "floor": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "previous_bottom": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "camera": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "bullet_active": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "bullet_x": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "bullet_y": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "bullet_dir": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "bullet_life": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "bullet_cooldown": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "shot_count": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "kills": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "last_kill": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "pickup_taken": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "gate_open": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "won": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "player_iframes": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "enemy_touch": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "player_death": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "render_color": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "player_x": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.x.right"
+      }
+    },
+    "player_y": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "position",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.y.down"
+      }
+    },
+    "player_vx": {
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 32
+        },
+        "frame": "world.x.right"
+      }
+    },
+    "player_vy": {
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "velocity",
+        "unit": {
+          "numerator": 1,
+          "denominator": 256
+        },
+        "frame": "world.y.down"
+      }
+    },
+    "direction": {
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "controls"
+      }
+    },
+    "facing": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "actor_flags": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "actor"
+      }
+    },
+    "stage_flags": {
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "stage"
+      }
+    },
+    "previous_stage_flags": {
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "stage"
+      }
+    },
+    "ability_mask": {
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "abilities.owned"
+      }
+    },
+    "weapon_mask": {
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "weapons.owned"
+      }
+    },
+    "player_hp": {
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "energy",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "enemy"
+      }
+    },
+    "world_alert": {
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      }
+    },
+    "enemy_x": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      },
+      "count": 3
+    },
+    "enemy_y": {
+      "storage_type": "u32",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world"
+      },
+      "count": 3
+    },
+    "enemy_hp": {
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "energy",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "enemy"
+      },
+      "count": 3
+    },
+    "enemy_pose": {
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pose",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "enemy"
+      },
+      "count": 3
+    },
+    "enemy_flags": {
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "enemy"
+      },
+      "count": 3
+    }
+  },
+  "terrain": [
+    [
+      0,
+      128,
+      1080,
+      32
+    ],
+    [
+      155,
+      103,
+      42,
+      8
+    ],
+    [
+      355,
+      92,
+      48,
+      8
+    ],
+    [
+      590,
+      106,
+      44,
+      8
+    ],
+    [
+      880,
+      101,
+      52,
+      8
+    ]
+  ],
+  "initialize": [
+    {
+      "op": "assign_slot",
+      "slot": "player_x",
+      "value": {
+        "op": "const",
+        "type": "u32",
+        "value": 6144
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "player_y",
+      "value": {
+        "op": "const",
+        "type": "u32",
+        "value": 32768
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "player_hp",
+      "value": {
+        "op": "const",
+        "type": "u16",
+        "value": 12
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "grounded",
+      "value": {
+        "op": "const",
+        "type": "u32",
+        "value": 1
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "facing",
+      "value": {
+        "op": "const",
+        "type": "u32",
+        "value": 1
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "direction",
+      "value": {
+        "op": "const",
+        "type": "u16",
+        "value": 16
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "enemy_x",
+      "value": {
+        "op": "const",
+        "type": "u32",
+        "value": 264
+      },
+      "index": {
+        "op": "const",
+        "type": "u32",
+        "value": 0
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "enemy_y",
+      "value": {
+        "op": "const",
+        "type": "u32",
+        "value": 128
+      },
+      "index": {
+        "op": "const",
+        "type": "u32",
+        "value": 0
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "enemy_hp",
+      "value": {
+        "op": "const",
+        "type": "u16",
+        "value": 6
+      },
+      "index": {
+        "op": "const",
+        "type": "u32",
+        "value": 0
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "enemy_x",
+      "value": {
+        "op": "const",
+        "type": "u32",
+        "value": 440
+      },
+      "index": {
+        "op": "const",
+        "type": "u32",
+        "value": 1
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "enemy_y",
+      "value": {
+        "op": "const",
+        "type": "u32",
+        "value": 128
+      },
+      "index": {
+        "op": "const",
+        "type": "u32",
+        "value": 1
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "enemy_hp",
+      "value": {
+        "op": "const",
+        "type": "u16",
+        "value": 8
+      },
+      "index": {
+        "op": "const",
+        "type": "u32",
+        "value": 1
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "enemy_x",
+      "value": {
+        "op": "const",
+        "type": "u32",
+        "value": 574
+      },
+      "index": {
+        "op": "const",
+        "type": "u32",
+        "value": 2
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "enemy_y",
+      "value": {
+        "op": "const",
+        "type": "u32",
+        "value": 128
+      },
+      "index": {
+        "op": "const",
+        "type": "u32",
+        "value": 2
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "enemy_hp",
+      "value": {
+        "op": "const",
+        "type": "u16",
+        "value": 10
+      },
+      "index": {
+        "op": "const",
+        "type": "u32",
+        "value": 2
+      }
+    }
+  ],
+  "update": [
+    {
+      "op": "assign_slot",
+      "slot": "ticks",
+      "value": {
+        "op": "add_wrap",
+        "type": "u32",
+        "args": [
+          {
+            "op": "slot",
+            "type": "u32",
+            "name": "ticks"
+          },
+          {
+            "op": "const",
+            "type": "u32",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "op": "effect",
+      "service": "input_keys",
+      "arguments": [],
+      "result": {
+        "slot": "keys"
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "pressed",
+      "value": {
+        "op": "bit_and",
+        "type": "u32",
+        "args": [
+          {
+            "op": "slot",
+            "type": "u32",
+            "name": "keys"
+          },
+          {
+            "op": "bit_not",
+            "type": "u32",
+            "args": [
+              {
+                "op": "slot",
+                "type": "u32",
+                "name": "previous_keys"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "op": "assign_slot",
+      "slot": "previous_keys",
+      "value": {
+        "op": "slot",
+        "type": "u32",
+        "name": "keys"
+      }
+    },
+    {
+      "op": "if",
+      "condition": {
+        "op": "not_equal",
+        "type": "u8",
+        "args": [
+          {
+            "op": "slot",
+            "type": "u32",
+            "name": "bullet_cooldown"
+          },
+          {
+            "op": "const",
+            "type": "u32",
+            "value": 0
+          }
+        ]
+      },
+      "then": [
+        {
+          "op": "assign_slot",
+          "slot": "bullet_cooldown",
+          "value": {
+            "op": "sub_wrap",
+            "type": "u32",
+            "args": [
+              {
+                "op": "slot",
+                "type": "u32",
+                "name": "bullet_cooldown"
+              },
+              {
+                "op": "const",
+                "type": "u32",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "else": []
+    },
+    {
+      "op": "if",
+      "condition": {
+        "op": "not_equal",
+        "type": "u8",
+        "args": [
+          {
+            "op": "slot",
+            "type": "u32",
+            "name": "player_iframes"
+          },
+          {
+            "op": "const",
+            "type": "u32",
+            "value": 0
+          }
+        ]
+      },
+      "then": [
+        {
+          "op": "assign_slot",
+          "slot": "player_iframes",
+          "value": {
+            "op": "sub_wrap",
+            "type": "u32",
+            "args": [
+              {
+                "op": "slot",
+                "type": "u32",
+                "name": "player_iframes"
+              },
+              {
+                "op": "const",
+                "type": "u32",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "else": []
+    },
+    {
+      "op": "if",
+      "condition": {
+        "op": "equal",
+        "type": "u8",
+        "args": [
+          {
+            "op": "slot",
+            "type": "u32",
+            "name": "won"
+          },
+          {
+            "op": "const",
+            "type": "u32",
+            "value": 0
+          }
+        ]
+      },
+      "then": [
+        {
+          "op": "assign_slot",
+          "slot": "previous_bottom",
+          "value": {
+            "op": "shift_arithmetic",
+            "type": "u32",
+            "args": [
+              {
+                "op": "slot",
+                "type": "u32",
+                "name": "player_y"
+              },
+              {
+                "op": "const",
+                "type": "u32",
+                "value": 8
+              }
+            ]
+          }
+        },
+        {
+          "op": "if",
+          "condition": {
+            "op": "not_equal",
+            "type": "u8",
+            "args": [
+              {
+                "op": "bit_and",
+                "type": "u32",
+                "args": [
+                  {
+                    "op": "slot",
+                    "type": "u32",
+                    "name": "keys"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 16
+                  }
+                ]
+              },
+              {
+                "op": "const",
+                "type": "u32",
+                "value": 0
+              }
+            ]
+          },
+          "then": [
+            {
+              "op": "assign_slot",
+              "slot": "direction",
+              "value": {
+                "op": "const",
+                "type": "u16",
+                "value": 16
+              }
+            },
+            {
+              "op": "assign_slot",
+              "slot": "facing",
+              "value": {
+                "op": "const",
+                "type": "u32",
+                "value": 1
+              }
+            },
+            {
+              "op": "invoke",
+              "component": "steering",
+              "arguments": {
+                "param_0": {
+                  "op": "const",
+                  "type": "u16",
+                  "value": 6
+                },
+                "param_1": {
+                  "op": "const",
+                  "type": "u16",
+                  "value": 104
+                }
+              }
+            }
+          ],
+          "else": [
+            {
+              "op": "if",
+              "condition": {
+                "op": "not_equal",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "bit_and",
+                    "type": "u32",
+                    "args": [
+                      {
+                        "op": "slot",
+                        "type": "u32",
+                        "name": "keys"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u32",
+                        "value": 32
+                      }
+                    ]
+                  },
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 0
+                  }
+                ]
+              },
+              "then": [
+                {
+                  "op": "assign_slot",
+                  "slot": "direction",
+                  "value": {
+                    "op": "const",
+                    "type": "u16",
+                    "value": 0
+                  }
+                },
+                {
+                  "op": "assign_slot",
+                  "slot": "facing",
+                  "value": {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 4294967295
+                  }
+                },
+                {
+                  "op": "invoke",
+                  "component": "steering",
+                  "arguments": {
+                    "param_0": {
+                      "op": "const",
+                      "type": "u16",
+                      "value": 6
+                    },
+                    "param_1": {
+                      "op": "const",
+                      "type": "u16",
+                      "value": 104
+                    }
+                  }
+                }
+              ],
+              "else": [
+                {
+                  "op": "assign_slot",
+                  "slot": "player_vx",
+                  "value": {
+                    "op": "const",
+                    "type": "u16",
+                    "value": 0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "if",
+          "condition": {
+            "op": "bool_and",
+            "type": "u8",
+            "args": [
+              {
+                "op": "not_equal",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "bit_and",
+                    "type": "u32",
+                    "args": [
+                      {
+                        "op": "slot",
+                        "type": "u32",
+                        "name": "pressed"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u32",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "op": "not_equal",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "slot",
+                    "type": "u32",
+                    "name": "grounded"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "then": [
+            {
+              "op": "assign_slot",
+              "slot": "player_vy",
+              "value": {
+                "op": "const",
+                "type": "u16",
+                "value": 64000
+              }
+            },
+            {
+              "op": "assign_slot",
+              "slot": "grounded",
+              "value": {
+                "op": "const",
+                "type": "u32",
+                "value": 0
+              }
+            }
+          ],
+          "else": []
+        },
+        {
+          "op": "invoke",
+          "component": "gravity",
+          "arguments": {}
+        },
+        {
+          "op": "invoke",
+          "component": "integration",
+          "arguments": {}
+        },
+        {
+          "op": "effect",
+          "service": "floor_query",
+          "arguments": [
+            {
+              "op": "shift_arithmetic",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "player_x"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 8
+                }
+              ]
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "previous_bottom"
+            },
+            {
+              "op": "shift_arithmetic",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "player_y"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 8
+                }
+              ]
+            }
+          ],
+          "result": {
+            "slot": "floor"
+          }
+        },
+        {
+          "op": "if",
+          "condition": {
+            "op": "not_equal",
+            "type": "u8",
+            "args": [
+              {
+                "op": "slot",
+                "type": "u32",
+                "name": "floor"
+              },
+              {
+                "op": "const",
+                "type": "u32",
+                "value": 2147483647
+              }
+            ]
+          },
+          "then": [
+            {
+              "op": "assign_slot",
+              "slot": "player_y",
+              "value": {
+                "op": "shift_left",
+                "type": "u32",
+                "args": [
+                  {
+                    "op": "slot",
+                    "type": "u32",
+                    "name": "floor"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 8
+                  }
+                ]
+              }
+            },
+            {
+              "op": "assign_slot",
+              "slot": "player_vy",
+              "value": {
+                "op": "const",
+                "type": "u16",
+                "value": 0
+              }
+            },
+            {
+              "op": "assign_slot",
+              "slot": "grounded",
+              "value": {
+                "op": "const",
+                "type": "u32",
+                "value": 1
+              }
+            }
+          ],
+          "else": [
+            {
+              "op": "assign_slot",
+              "slot": "grounded",
+              "value": {
+                "op": "const",
+                "type": "u32",
+                "value": 0
+              }
+            }
+          ]
+        },
+        {
+          "op": "if",
+          "condition": {
+            "op": "less_signed",
+            "type": "u8",
+            "args": [
+              {
+                "op": "shift_arithmetic",
+                "type": "u32",
+                "args": [
+                  {
+                    "op": "slot",
+                    "type": "u32",
+                    "name": "player_x"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 8
+                  }
+                ]
+              },
+              {
+                "op": "const",
+                "type": "u32",
+                "value": 8
+              }
+            ]
+          },
+          "then": [
+            {
+              "op": "assign_slot",
+              "slot": "player_x",
+              "value": {
+                "op": "const",
+                "type": "u32",
+                "value": 2048
+              }
+            }
+          ],
+          "else": []
+        },
+        {
+          "op": "if",
+          "condition": {
+            "op": "bool_and",
+            "type": "u8",
+            "args": [
+              {
+                "op": "not_equal",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "bit_and",
+                    "type": "u32",
+                    "args": [
+                      {
+                        "op": "slot",
+                        "type": "u32",
+                        "name": "keys"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u32",
+                        "value": 2
+                      }
+                    ]
+                  },
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "op": "bool_and",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "equal",
+                    "type": "u8",
+                    "args": [
+                      {
+                        "op": "slot",
+                        "type": "u32",
+                        "name": "bullet_active"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u32",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  {
+                    "op": "equal",
+                    "type": "u8",
+                    "args": [
+                      {
+                        "op": "slot",
+                        "type": "u32",
+                        "name": "bullet_cooldown"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u32",
+                        "value": 0
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "then": [
+            {
+              "op": "assign_slot",
+              "slot": "bullet_active",
+              "value": {
+                "op": "const",
+                "type": "u32",
+                "value": 1
+              }
+            },
+            {
+              "op": "assign_slot",
+              "slot": "bullet_x",
+              "value": {
+                "op": "add_wrap",
+                "type": "u32",
+                "args": [
+                  {
+                    "op": "shift_arithmetic",
+                    "type": "u32",
+                    "args": [
+                      {
+                        "op": "slot",
+                        "type": "u32",
+                        "name": "player_x"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u32",
+                        "value": 8
+                      }
+                    ]
+                  },
+                  {
+                    "op": "mul_wrap",
+                    "type": "u32",
+                    "args": [
+                      {
+                        "op": "slot",
+                        "type": "u32",
+                        "name": "facing"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u32",
+                        "value": 9
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "op": "assign_slot",
+              "slot": "bullet_y",
+              "value": {
+                "op": "sub_wrap",
+                "type": "u32",
+                "args": [
+                  {
+                    "op": "shift_arithmetic",
+                    "type": "u32",
+                    "args": [
+                      {
+                        "op": "slot",
+                        "type": "u32",
+                        "name": "player_y"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u32",
+                        "value": 8
+                      }
+                    ]
+                  },
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 8
+                  }
+                ]
+              }
+            },
+            {
+              "op": "assign_slot",
+              "slot": "bullet_dir",
+              "value": {
+                "op": "slot",
+                "type": "u32",
+                "name": "facing"
+              }
+            },
+            {
+              "op": "assign_slot",
+              "slot": "bullet_life",
+              "value": {
+                "op": "const",
+                "type": "u32",
+                "value": 32
+              }
+            },
+            {
+              "op": "assign_slot",
+              "slot": "bullet_cooldown",
+              "value": {
+                "op": "const",
+                "type": "u32",
+                "value": 12
+              }
+            },
+            {
+              "op": "assign_slot",
+              "slot": "shot_count",
+              "value": {
+                "op": "add_wrap",
+                "type": "u32",
+                "args": [
+                  {
+                    "op": "slot",
+                    "type": "u32",
+                    "name": "shot_count"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "else": []
+        },
+        {
+          "op": "if",
+          "condition": {
+            "op": "not_equal",
+            "type": "u8",
+            "args": [
+              {
+                "op": "slot",
+                "type": "u32",
+                "name": "bullet_active"
+              },
+              {
+                "op": "const",
+                "type": "u32",
+                "value": 0
+              }
+            ]
+          },
+          "then": [
+            {
+              "op": "assign_slot",
+              "slot": "bullet_x",
+              "value": {
+                "op": "add_wrap",
+                "type": "u32",
+                "args": [
+                  {
+                    "op": "slot",
+                    "type": "u32",
+                    "name": "bullet_x"
+                  },
+                  {
+                    "op": "mul_wrap",
+                    "type": "u32",
+                    "args": [
+                      {
+                        "op": "slot",
+                        "type": "u32",
+                        "name": "bullet_dir"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u32",
+                        "value": 7
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "op": "assign_slot",
+              "slot": "bullet_life",
+              "value": {
+                "op": "sub_wrap",
+                "type": "u32",
+                "args": [
+                  {
+                    "op": "slot",
+                    "type": "u32",
+                    "name": "bullet_life"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            {
+              "op": "if",
+              "condition": {
+                "op": "equal",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "slot",
+                    "type": "u32",
+                    "name": "bullet_life"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 0
+                  }
+                ]
+              },
+              "then": [
+                {
+                  "op": "assign_slot",
+                  "slot": "bullet_active",
+                  "value": {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 0
+                  }
+                }
+              ],
+              "else": []
+            }
+          ],
+          "else": []
+        },
+        {
+          "op": "repeat",
+          "index": "enemy",
+          "count": 3,
+          "body": [
+            {
+              "op": "if",
+              "condition": {
+                "op": "not_equal",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "slot",
+                    "type": "u16",
+                    "name": "enemy_hp",
+                    "index": {
+                      "op": "index",
+                      "name": "enemy",
+                      "type": "u32"
+                    }
+                  },
+                  {
+                    "op": "const",
+                    "type": "u16",
+                    "value": 0
+                  }
+                ]
+              },
+              "then": [
+                {
+                  "op": "if",
+                  "condition": {
+                    "op": "bool_and",
+                    "type": "u8",
+                    "args": [
+                      {
+                        "op": "not_equal",
+                        "type": "u8",
+                        "args": [
+                          {
+                            "op": "slot",
+                            "type": "u32",
+                            "name": "bullet_active"
+                          },
+                          {
+                            "op": "const",
+                            "type": "u32",
+                            "value": 0
+                          }
+                        ]
+                      },
+                      {
+                        "op": "bool_and",
+                        "type": "u8",
+                        "args": [
+                          {
+                            "op": "bool_and",
+                            "type": "u8",
+                            "args": [
+                              {
+                                "op": "less_signed",
+                                "type": "u8",
+                                "args": [
+                                  {
+                                    "op": "sub_wrap",
+                                    "type": "u32",
+                                    "args": [
+                                      {
+                                        "op": "slot",
+                                        "type": "u32",
+                                        "name": "bullet_x"
+                                      },
+                                      {
+                                        "op": "slot",
+                                        "type": "u32",
+                                        "name": "enemy_x",
+                                        "index": {
+                                          "op": "index",
+                                          "name": "enemy",
+                                          "type": "u32"
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "op": "const",
+                                    "type": "u32",
+                                    "value": 10
+                                  }
+                                ]
+                              },
+                              {
+                                "op": "less_signed",
+                                "type": "u8",
+                                "args": [
+                                  {
+                                    "op": "sub_wrap",
+                                    "type": "u32",
+                                    "args": [
+                                      {
+                                        "op": "slot",
+                                        "type": "u32",
+                                        "name": "enemy_x",
+                                        "index": {
+                                          "op": "index",
+                                          "name": "enemy",
+                                          "type": "u32"
+                                        }
+                                      },
+                                      {
+                                        "op": "slot",
+                                        "type": "u32",
+                                        "name": "bullet_x"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "op": "const",
+                                    "type": "u32",
+                                    "value": 10
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "op": "bool_and",
+                            "type": "u8",
+                            "args": [
+                              {
+                                "op": "less_signed",
+                                "type": "u8",
+                                "args": [
+                                  {
+                                    "op": "sub_wrap",
+                                    "type": "u32",
+                                    "args": [
+                                      {
+                                        "op": "slot",
+                                        "type": "u32",
+                                        "name": "bullet_y"
+                                      },
+                                      {
+                                        "op": "sub_wrap",
+                                        "type": "u32",
+                                        "args": [
+                                          {
+                                            "op": "slot",
+                                            "type": "u32",
+                                            "name": "enemy_y",
+                                            "index": {
+                                              "op": "index",
+                                              "name": "enemy",
+                                              "type": "u32"
+                                            }
+                                          },
+                                          {
+                                            "op": "const",
+                                            "type": "u32",
+                                            "value": 8
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "op": "const",
+                                    "type": "u32",
+                                    "value": 12
+                                  }
+                                ]
+                              },
+                              {
+                                "op": "less_signed",
+                                "type": "u8",
+                                "args": [
+                                  {
+                                    "op": "sub_wrap",
+                                    "type": "u32",
+                                    "args": [
+                                      {
+                                        "op": "sub_wrap",
+                                        "type": "u32",
+                                        "args": [
+                                          {
+                                            "op": "slot",
+                                            "type": "u32",
+                                            "name": "enemy_y",
+                                            "index": {
+                                              "op": "index",
+                                              "name": "enemy",
+                                              "type": "u32"
+                                            }
+                                          },
+                                          {
+                                            "op": "const",
+                                            "type": "u32",
+                                            "value": 8
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "op": "slot",
+                                        "type": "u32",
+                                        "name": "bullet_y"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "op": "const",
+                                    "type": "u32",
+                                    "value": 12
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "then": [
+                    {
+                      "op": "invoke",
+                      "component": "impact",
+                      "arguments": {
+                        "param_0": {
+                          "op": "const",
+                          "type": "u16",
+                          "value": 4
+                        }
+                      },
+                      "instance": {
+                        "op": "index",
+                        "name": "enemy",
+                        "type": "u32"
+                      },
+                      "result": {
+                        "slot": "last_kill"
+                      }
+                    },
+                    {
+                      "op": "assign_slot",
+                      "slot": "bullet_active",
+                      "value": {
+                        "op": "const",
+                        "type": "u32",
+                        "value": 0
+                      }
+                    },
+                    {
+                      "op": "if",
+                      "condition": {
+                        "op": "not_equal",
+                        "type": "u8",
+                        "args": [
+                          {
+                            "op": "slot",
+                            "type": "u32",
+                            "name": "last_kill"
+                          },
+                          {
+                            "op": "const",
+                            "type": "u32",
+                            "value": 0
+                          }
+                        ]
+                      },
+                      "then": [
+                        {
+                          "op": "assign_slot",
+                          "slot": "kills",
+                          "value": {
+                            "op": "add_wrap",
+                            "type": "u32",
+                            "args": [
+                              {
+                                "op": "slot",
+                                "type": "u32",
+                                "name": "kills"
+                              },
+                              {
+                                "op": "const",
+                                "type": "u32",
+                                "value": 1
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "else": []
+                    }
+                  ],
+                  "else": []
+                }
+              ],
+              "else": []
+            },
+            {
+              "op": "if",
+              "condition": {
+                "op": "not_equal",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "slot",
+                    "type": "u16",
+                    "name": "enemy_hp",
+                    "index": {
+                      "op": "index",
+                      "name": "enemy",
+                      "type": "u32"
+                    }
+                  },
+                  {
+                    "op": "const",
+                    "type": "u16",
+                    "value": 0
+                  }
+                ]
+              },
+              "then": [
+                {
+                  "op": "if",
+                  "condition": {
+                    "op": "bool_and",
+                    "type": "u8",
+                    "args": [
+                      {
+                        "op": "equal",
+                        "type": "u8",
+                        "args": [
+                          {
+                            "op": "slot",
+                            "type": "u32",
+                            "name": "player_iframes"
+                          },
+                          {
+                            "op": "const",
+                            "type": "u32",
+                            "value": 0
+                          }
+                        ]
+                      },
+                      {
+                        "op": "bool_and",
+                        "type": "u8",
+                        "args": [
+                          {
+                            "op": "bool_and",
+                            "type": "u8",
+                            "args": [
+                              {
+                                "op": "less_signed",
+                                "type": "u8",
+                                "args": [
+                                  {
+                                    "op": "sub_wrap",
+                                    "type": "u32",
+                                    "args": [
+                                      {
+                                        "op": "shift_arithmetic",
+                                        "type": "u32",
+                                        "args": [
+                                          {
+                                            "op": "slot",
+                                            "type": "u32",
+                                            "name": "player_x"
+                                          },
+                                          {
+                                            "op": "const",
+                                            "type": "u32",
+                                            "value": 8
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "op": "slot",
+                                        "type": "u32",
+                                        "name": "enemy_x",
+                                        "index": {
+                                          "op": "index",
+                                          "name": "enemy",
+                                          "type": "u32"
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "op": "const",
+                                    "type": "u32",
+                                    "value": 12
+                                  }
+                                ]
+                              },
+                              {
+                                "op": "less_signed",
+                                "type": "u8",
+                                "args": [
+                                  {
+                                    "op": "sub_wrap",
+                                    "type": "u32",
+                                    "args": [
+                                      {
+                                        "op": "slot",
+                                        "type": "u32",
+                                        "name": "enemy_x",
+                                        "index": {
+                                          "op": "index",
+                                          "name": "enemy",
+                                          "type": "u32"
+                                        }
+                                      },
+                                      {
+                                        "op": "shift_arithmetic",
+                                        "type": "u32",
+                                        "args": [
+                                          {
+                                            "op": "slot",
+                                            "type": "u32",
+                                            "name": "player_x"
+                                          },
+                                          {
+                                            "op": "const",
+                                            "type": "u32",
+                                            "value": 8
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "op": "const",
+                                    "type": "u32",
+                                    "value": 12
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "op": "bool_and",
+                            "type": "u8",
+                            "args": [
+                              {
+                                "op": "less_signed",
+                                "type": "u8",
+                                "args": [
+                                  {
+                                    "op": "sub_wrap",
+                                    "type": "u32",
+                                    "args": [
+                                      {
+                                        "op": "shift_arithmetic",
+                                        "type": "u32",
+                                        "args": [
+                                          {
+                                            "op": "slot",
+                                            "type": "u32",
+                                            "name": "player_y"
+                                          },
+                                          {
+                                            "op": "const",
+                                            "type": "u32",
+                                            "value": 8
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "op": "slot",
+                                        "type": "u32",
+                                        "name": "enemy_y",
+                                        "index": {
+                                          "op": "index",
+                                          "name": "enemy",
+                                          "type": "u32"
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "op": "const",
+                                    "type": "u32",
+                                    "value": 16
+                                  }
+                                ]
+                              },
+                              {
+                                "op": "less_signed",
+                                "type": "u8",
+                                "args": [
+                                  {
+                                    "op": "sub_wrap",
+                                    "type": "u32",
+                                    "args": [
+                                      {
+                                        "op": "slot",
+                                        "type": "u32",
+                                        "name": "enemy_y",
+                                        "index": {
+                                          "op": "index",
+                                          "name": "enemy",
+                                          "type": "u32"
+                                        }
+                                      },
+                                      {
+                                        "op": "shift_arithmetic",
+                                        "type": "u32",
+                                        "args": [
+                                          {
+                                            "op": "slot",
+                                            "type": "u32",
+                                            "name": "player_y"
+                                          },
+                                          {
+                                            "op": "const",
+                                            "type": "u32",
+                                            "value": 8
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "op": "const",
+                                    "type": "u32",
+                                    "value": 16
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "then": [
+                    {
+                      "op": "invoke",
+                      "component": "hurt",
+                      "arguments": {
+                        "param_0": {
+                          "op": "const",
+                          "type": "u16",
+                          "value": 2
+                        }
+                      },
+                      "result": {
+                        "slot": "player_death"
+                      }
+                    },
+                    {
+                      "op": "assign_slot",
+                      "slot": "player_iframes",
+                      "value": {
+                        "op": "const",
+                        "type": "u32",
+                        "value": 50
+                      }
+                    },
+                    {
+                      "op": "if",
+                      "condition": {
+                        "op": "not_equal",
+                        "type": "u8",
+                        "args": [
+                          {
+                            "op": "slot",
+                            "type": "u32",
+                            "name": "player_death"
+                          },
+                          {
+                            "op": "const",
+                            "type": "u32",
+                            "value": 0
+                          }
+                        ]
+                      },
+                      "then": [
+                        {
+                          "op": "assign_slot",
+                          "slot": "player_x",
+                          "value": {
+                            "op": "const",
+                            "type": "u32",
+                            "value": 6144
+                          }
+                        },
+                        {
+                          "op": "assign_slot",
+                          "slot": "player_y",
+                          "value": {
+                            "op": "const",
+                            "type": "u32",
+                            "value": 32768
+                          }
+                        },
+                        {
+                          "op": "assign_slot",
+                          "slot": "player_hp",
+                          "value": {
+                            "op": "const",
+                            "type": "u16",
+                            "value": 12
+                          }
+                        }
+                      ],
+                      "else": []
+                    }
+                  ],
+                  "else": []
+                }
+              ],
+              "else": []
+            }
+          ]
+        },
+        {
+          "op": "if",
+          "condition": {
+            "op": "bool_and",
+            "type": "u8",
+            "args": [
+              {
+                "op": "equal",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "slot",
+                    "type": "u32",
+                    "name": "pickup_taken"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "op": "bool_and",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "equal",
+                    "type": "u8",
+                    "args": [
+                      {
+                        "op": "slot",
+                        "type": "u16",
+                        "name": "enemy_hp",
+                        "index": {
+                          "op": "const",
+                          "type": "u32",
+                          "value": 2
+                        }
+                      },
+                      {
+                        "op": "const",
+                        "type": "u16",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  {
+                    "op": "bool_and",
+                    "type": "u8",
+                    "args": [
+                      {
+                        "op": "bool_and",
+                        "type": "u8",
+                        "args": [
+                          {
+                            "op": "less_signed",
+                            "type": "u8",
+                            "args": [
+                              {
+                                "op": "sub_wrap",
+                                "type": "u32",
+                                "args": [
+                                  {
+                                    "op": "shift_arithmetic",
+                                    "type": "u32",
+                                    "args": [
+                                      {
+                                        "op": "slot",
+                                        "type": "u32",
+                                        "name": "player_x"
+                                      },
+                                      {
+                                        "op": "const",
+                                        "type": "u32",
+                                        "value": 8
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "op": "const",
+                                    "type": "u32",
+                                    "value": 610
+                                  }
+                                ]
+                              },
+                              {
+                                "op": "const",
+                                "type": "u32",
+                                "value": 15
+                              }
+                            ]
+                          },
+                          {
+                            "op": "less_signed",
+                            "type": "u8",
+                            "args": [
+                              {
+                                "op": "sub_wrap",
+                                "type": "u32",
+                                "args": [
+                                  {
+                                    "op": "const",
+                                    "type": "u32",
+                                    "value": 610
+                                  },
+                                  {
+                                    "op": "shift_arithmetic",
+                                    "type": "u32",
+                                    "args": [
+                                      {
+                                        "op": "slot",
+                                        "type": "u32",
+                                        "name": "player_x"
+                                      },
+                                      {
+                                        "op": "const",
+                                        "type": "u32",
+                                        "value": 8
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "op": "const",
+                                "type": "u32",
+                                "value": 15
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "op": "bool_and",
+                        "type": "u8",
+                        "args": [
+                          {
+                            "op": "less_signed",
+                            "type": "u8",
+                            "args": [
+                              {
+                                "op": "sub_wrap",
+                                "type": "u32",
+                                "args": [
+                                  {
+                                    "op": "shift_arithmetic",
+                                    "type": "u32",
+                                    "args": [
+                                      {
+                                        "op": "slot",
+                                        "type": "u32",
+                                        "name": "player_y"
+                                      },
+                                      {
+                                        "op": "const",
+                                        "type": "u32",
+                                        "value": 8
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "op": "const",
+                                    "type": "u32",
+                                    "value": 98
+                                  }
+                                ]
+                              },
+                              {
+                                "op": "const",
+                                "type": "u32",
+                                "value": 20
+                              }
+                            ]
+                          },
+                          {
+                            "op": "less_signed",
+                            "type": "u8",
+                            "args": [
+                              {
+                                "op": "sub_wrap",
+                                "type": "u32",
+                                "args": [
+                                  {
+                                    "op": "const",
+                                    "type": "u32",
+                                    "value": 98
+                                  },
+                                  {
+                                    "op": "shift_arithmetic",
+                                    "type": "u32",
+                                    "args": [
+                                      {
+                                        "op": "slot",
+                                        "type": "u32",
+                                        "name": "player_y"
+                                      },
+                                      {
+                                        "op": "const",
+                                        "type": "u32",
+                                        "value": 8
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "op": "const",
+                                "type": "u32",
+                                "value": 20
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "then": [
+            {
+              "op": "invoke",
+              "component": "acquisition",
+              "arguments": {
+                "param_0": {
+                  "op": "const",
+                  "type": "u8",
+                  "value": 45
+                }
+              }
+            },
+            {
+              "op": "assign_slot",
+              "slot": "pickup_taken",
+              "value": {
+                "op": "const",
+                "type": "u32",
+                "value": 1
+              }
+            }
+          ],
+          "else": []
+        },
+        {
+          "op": "assign_slot",
+          "slot": "gate_open",
+          "value": {
+            "op": "zext",
+            "type": "u32",
+            "args": [
+              {
+                "op": "bit_and",
+                "type": "u32",
+                "args": [
+                  {
+                    "op": "slot",
+                    "type": "u8",
+                    "name": "ability_mask"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u8",
+                    "value": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "op": "if",
+          "condition": {
+            "op": "bool_and",
+            "type": "u8",
+            "args": [
+              {
+                "op": "equal",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "slot",
+                    "type": "u32",
+                    "name": "gate_open"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "op": "less_signed",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 806
+                  },
+                  {
+                    "op": "shift_arithmetic",
+                    "type": "u32",
+                    "args": [
+                      {
+                        "op": "slot",
+                        "type": "u32",
+                        "name": "player_x"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u32",
+                        "value": 8
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "then": [
+            {
+              "op": "assign_slot",
+              "slot": "player_x",
+              "value": {
+                "op": "const",
+                "type": "u32",
+                "value": 206336
+              }
+            },
+            {
+              "op": "assign_slot",
+              "slot": "player_vx",
+              "value": {
+                "op": "const",
+                "type": "u16",
+                "value": 0
+              }
+            }
+          ],
+          "else": []
+        },
+        {
+          "op": "if",
+          "condition": {
+            "op": "bool_and",
+            "type": "u8",
+            "args": [
+              {
+                "op": "not_equal",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "slot",
+                    "type": "u32",
+                    "name": "gate_open"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "op": "less_signed",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 1000
+                  },
+                  {
+                    "op": "shift_arithmetic",
+                    "type": "u32",
+                    "args": [
+                      {
+                        "op": "slot",
+                        "type": "u32",
+                        "name": "player_x"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u32",
+                        "value": 8
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "then": [
+            {
+              "op": "assign_slot",
+              "slot": "won",
+              "value": {
+                "op": "const",
+                "type": "u32",
+                "value": 1
+              }
+            }
+          ],
+          "else": []
+        }
+      ],
+      "else": []
+    },
+    {
+      "op": "assign_slot",
+      "slot": "camera",
+      "value": {
+        "op": "const",
+        "type": "u32",
+        "value": 0
+      }
+    },
+    {
+      "op": "if",
+      "condition": {
+        "op": "less_signed",
+        "type": "u8",
+        "args": [
+          {
+            "op": "const",
+            "type": "u32",
+            "value": 105
+          },
+          {
+            "op": "shift_arithmetic",
+            "type": "u32",
+            "args": [
+              {
+                "op": "slot",
+                "type": "u32",
+                "name": "player_x"
+              },
+              {
+                "op": "const",
+                "type": "u32",
+                "value": 8
+              }
+            ]
+          }
+        ]
+      },
+      "then": [
+        {
+          "op": "assign_slot",
+          "slot": "camera",
+          "value": {
+            "op": "sub_wrap",
+            "type": "u32",
+            "args": [
+              {
+                "op": "shift_arithmetic",
+                "type": "u32",
+                "args": [
+                  {
+                    "op": "slot",
+                    "type": "u32",
+                    "name": "player_x"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 8
+                  }
+                ]
+              },
+              {
+                "op": "const",
+                "type": "u32",
+                "value": 105
+              }
+            ]
+          }
+        }
+      ],
+      "else": []
+    },
+    {
+      "op": "if",
+      "condition": {
+        "op": "less_signed",
+        "type": "u8",
+        "args": [
+          {
+            "op": "const",
+            "type": "u32",
+            "value": 840
+          },
+          {
+            "op": "slot",
+            "type": "u32",
+            "name": "camera"
+          }
+        ]
+      },
+      "then": [
+        {
+          "op": "assign_slot",
+          "slot": "camera",
+          "value": {
+            "op": "const",
+            "type": "u32",
+            "value": 840
+          }
+        }
+      ],
+      "else": []
+    }
+  ],
+  "render": [
+    {
+      "op": "effect",
+      "service": "clear",
+      "arguments": [
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 0
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 54
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 240
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 65
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 0
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 94
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 240
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 34
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 30
+            },
+            {
+              "op": "shift_right",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "camera"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 73
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 42
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 55
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 120
+            },
+            {
+              "op": "shift_right",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "camera"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 58
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 64
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 70
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 260
+            },
+            {
+              "op": "shift_right",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "camera"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 86
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 25
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 42
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 350
+            },
+            {
+              "op": "shift_right",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "camera"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 68
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 75
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 60
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 480
+            },
+            {
+              "op": "shift_right",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "camera"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 54
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 50
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 74
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 620
+            },
+            {
+              "op": "shift_right",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "camera"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 79
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 70
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 49
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 760
+            },
+            {
+              "op": "shift_right",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "camera"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 60
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 52
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 68
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 900
+            },
+            {
+              "op": "shift_right",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "camera"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 74
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 68
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 54
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 1020
+            },
+            {
+              "op": "shift_right",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "camera"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 52
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 40
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 76
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 0
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 128
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 1080
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 32
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 0
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 128
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 1080
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 2
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 13
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 155
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 103
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 42
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 8
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 155
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 103
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 42
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 2
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 13
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 355
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 92
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 48
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 8
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 355
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 92
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 48
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 2
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 13
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 590
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 106
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 44
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 8
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 590
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 106
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 44
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 2
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 13
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 880
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 101
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 52
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 8
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 880
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 101
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 52
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 2
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 13
+        }
+      ]
+    },
+    {
+      "op": "if",
+      "condition": {
+        "op": "equal",
+        "type": "u8",
+        "args": [
+          {
+            "op": "slot",
+            "type": "u32",
+            "name": "gate_open"
+          },
+          {
+            "op": "const",
+            "type": "u32",
+            "value": 0
+          }
+        ]
+      },
+      "then": [
+        {
+          "op": "effect",
+          "service": "rect",
+          "arguments": [
+            {
+              "op": "sub_wrap",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 816
+                },
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "camera"
+                }
+              ]
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 66
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 8
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 62
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 8
+            }
+          ]
+        },
+        {
+          "op": "effect",
+          "service": "rect",
+          "arguments": [
+            {
+              "op": "sub_wrap",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 814
+                },
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "camera"
+                }
+              ]
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 64
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 12
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 3
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 7
+            }
+          ]
+        }
+      ],
+      "else": [
+        {
+          "op": "effect",
+          "service": "rect",
+          "arguments": [
+            {
+              "op": "sub_wrap",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 816
+                },
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "camera"
+                }
+              ]
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 120
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 8
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 8
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 1010
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 82
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 20
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 46
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 1013
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 85
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 14
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 43
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "op": "if",
+      "condition": {
+        "op": "bool_and",
+        "type": "u8",
+        "args": [
+          {
+            "op": "equal",
+            "type": "u8",
+            "args": [
+              {
+                "op": "slot",
+                "type": "u32",
+                "name": "pickup_taken"
+              },
+              {
+                "op": "const",
+                "type": "u32",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "op": "equal",
+            "type": "u8",
+            "args": [
+              {
+                "op": "slot",
+                "type": "u16",
+                "name": "enemy_hp",
+                "index": {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 2
+                }
+              },
+              {
+                "op": "const",
+                "type": "u16",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "then": [
+        {
+          "op": "effect",
+          "service": "rect",
+          "arguments": [
+            {
+              "op": "sub_wrap",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 606
+                },
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "camera"
+                }
+              ]
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 94
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 9
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 9
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 7
+            }
+          ]
+        },
+        {
+          "op": "effect",
+          "service": "rect",
+          "arguments": [
+            {
+              "op": "sub_wrap",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 609
+                },
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "camera"
+                }
+              ]
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 91
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 3
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 15
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 12
+            }
+          ]
+        }
+      ],
+      "else": []
+    },
+    {
+      "op": "repeat",
+      "index": "enemy",
+      "count": 3,
+      "body": [
+        {
+          "op": "if",
+          "condition": {
+            "op": "not_equal",
+            "type": "u8",
+            "args": [
+              {
+                "op": "slot",
+                "type": "u16",
+                "name": "enemy_hp",
+                "index": {
+                  "op": "index",
+                  "name": "enemy",
+                  "type": "u32"
+                }
+              },
+              {
+                "op": "const",
+                "type": "u16",
+                "value": 0
+              }
+            ]
+          },
+          "then": [
+            {
+              "op": "effect",
+              "service": "rect",
+              "arguments": [
+                {
+                  "op": "sub_wrap",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "sub_wrap",
+                      "type": "u32",
+                      "args": [
+                        {
+                          "op": "slot",
+                          "type": "u32",
+                          "name": "enemy_x",
+                          "index": {
+                            "op": "index",
+                            "name": "enemy",
+                            "type": "u32"
+                          }
+                        },
+                        {
+                          "op": "const",
+                          "type": "u32",
+                          "value": 7
+                        }
+                      ]
+                    },
+                    {
+                      "op": "slot",
+                      "type": "u32",
+                      "name": "camera"
+                    }
+                  ]
+                },
+                {
+                  "op": "sub_wrap",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "slot",
+                      "type": "u32",
+                      "name": "enemy_y",
+                      "index": {
+                        "op": "index",
+                        "name": "enemy",
+                        "type": "u32"
+                      }
+                    },
+                    {
+                      "op": "const",
+                      "type": "u32",
+                      "value": 13
+                    }
+                  ]
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 14
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 13
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 9
+                }
+              ]
+            },
+            {
+              "op": "effect",
+              "service": "rect",
+              "arguments": [
+                {
+                  "op": "sub_wrap",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "sub_wrap",
+                      "type": "u32",
+                      "args": [
+                        {
+                          "op": "slot",
+                          "type": "u32",
+                          "name": "enemy_x",
+                          "index": {
+                            "op": "index",
+                            "name": "enemy",
+                            "type": "u32"
+                          }
+                        },
+                        {
+                          "op": "const",
+                          "type": "u32",
+                          "value": 9
+                        }
+                      ]
+                    },
+                    {
+                      "op": "slot",
+                      "type": "u32",
+                      "name": "camera"
+                    }
+                  ]
+                },
+                {
+                  "op": "sub_wrap",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "slot",
+                      "type": "u32",
+                      "name": "enemy_y",
+                      "index": {
+                        "op": "index",
+                        "name": "enemy",
+                        "type": "u32"
+                      }
+                    },
+                    {
+                      "op": "const",
+                      "type": "u32",
+                      "value": 9
+                    }
+                  ]
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 18
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 6
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 8
+                }
+              ]
+            },
+            {
+              "op": "effect",
+              "service": "rect",
+              "arguments": [
+                {
+                  "op": "sub_wrap",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "sub_wrap",
+                      "type": "u32",
+                      "args": [
+                        {
+                          "op": "slot",
+                          "type": "u32",
+                          "name": "enemy_x",
+                          "index": {
+                            "op": "index",
+                            "name": "enemy",
+                            "type": "u32"
+                          }
+                        },
+                        {
+                          "op": "const",
+                          "type": "u32",
+                          "value": 5
+                        }
+                      ]
+                    },
+                    {
+                      "op": "slot",
+                      "type": "u32",
+                      "name": "camera"
+                    }
+                  ]
+                },
+                {
+                  "op": "sub_wrap",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "slot",
+                      "type": "u32",
+                      "name": "enemy_y",
+                      "index": {
+                        "op": "index",
+                        "name": "enemy",
+                        "type": "u32"
+                      }
+                    },
+                    {
+                      "op": "const",
+                      "type": "u32",
+                      "value": 11
+                    }
+                  ]
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 3
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 2
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 12
+                }
+              ]
+            },
+            {
+              "op": "effect",
+              "service": "rect",
+              "arguments": [
+                {
+                  "op": "sub_wrap",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "add_wrap",
+                      "type": "u32",
+                      "args": [
+                        {
+                          "op": "slot",
+                          "type": "u32",
+                          "name": "enemy_x",
+                          "index": {
+                            "op": "index",
+                            "name": "enemy",
+                            "type": "u32"
+                          }
+                        },
+                        {
+                          "op": "const",
+                          "type": "u32",
+                          "value": 2
+                        }
+                      ]
+                    },
+                    {
+                      "op": "slot",
+                      "type": "u32",
+                      "name": "camera"
+                    }
+                  ]
+                },
+                {
+                  "op": "sub_wrap",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "slot",
+                      "type": "u32",
+                      "name": "enemy_y",
+                      "index": {
+                        "op": "index",
+                        "name": "enemy",
+                        "type": "u32"
+                      }
+                    },
+                    {
+                      "op": "const",
+                      "type": "u32",
+                      "value": 11
+                    }
+                  ]
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 3
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 2
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 12
+                }
+              ]
+            },
+            {
+              "op": "effect",
+              "service": "rect",
+              "arguments": [
+                {
+                  "op": "sub_wrap",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "sub_wrap",
+                      "type": "u32",
+                      "args": [
+                        {
+                          "op": "slot",
+                          "type": "u32",
+                          "name": "enemy_x",
+                          "index": {
+                            "op": "index",
+                            "name": "enemy",
+                            "type": "u32"
+                          }
+                        },
+                        {
+                          "op": "const",
+                          "type": "u32",
+                          "value": 7
+                        }
+                      ]
+                    },
+                    {
+                      "op": "slot",
+                      "type": "u32",
+                      "name": "camera"
+                    }
+                  ]
+                },
+                {
+                  "op": "sub_wrap",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "slot",
+                      "type": "u32",
+                      "name": "enemy_y",
+                      "index": {
+                        "op": "index",
+                        "name": "enemy",
+                        "type": "u32"
+                      }
+                    },
+                    {
+                      "op": "const",
+                      "type": "u32",
+                      "value": 18
+                    }
+                  ]
+                },
+                {
+                  "op": "mul_wrap",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "zext",
+                      "type": "u32",
+                      "args": [
+                        {
+                          "op": "slot",
+                          "type": "u16",
+                          "name": "enemy_hp",
+                          "index": {
+                            "op": "index",
+                            "name": "enemy",
+                            "type": "u32"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "op": "const",
+                      "type": "u32",
+                      "value": 2
+                    }
+                  ]
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 2
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 7
+                }
+              ]
+            }
+          ],
+          "else": []
+        }
+      ]
+    },
+    {
+      "op": "if",
+      "condition": {
+        "op": "not_equal",
+        "type": "u8",
+        "args": [
+          {
+            "op": "slot",
+            "type": "u32",
+            "name": "bullet_active"
+          },
+          {
+            "op": "const",
+            "type": "u32",
+            "value": 0
+          }
+        ]
+      },
+      "then": [
+        {
+          "op": "effect",
+          "service": "rect",
+          "arguments": [
+            {
+              "op": "sub_wrap",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "sub_wrap",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "slot",
+                      "type": "u32",
+                      "name": "bullet_x"
+                    },
+                    {
+                      "op": "const",
+                      "type": "u32",
+                      "value": 4
+                    }
+                  ]
+                },
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "camera"
+                }
+              ]
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "bullet_y"
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 9
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 2
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 12
+            }
+          ]
+        }
+      ],
+      "else": []
+    },
+    {
+      "op": "assign_slot",
+      "slot": "render_color",
+      "value": {
+        "op": "const",
+        "type": "u32",
+        "value": 5
+      }
+    },
+    {
+      "op": "if",
+      "condition": {
+        "op": "not_equal",
+        "type": "u8",
+        "args": [
+          {
+            "op": "slot",
+            "type": "u32",
+            "name": "player_iframes"
+          },
+          {
+            "op": "const",
+            "type": "u32",
+            "value": 0
+          }
+        ]
+      },
+      "then": [
+        {
+          "op": "assign_slot",
+          "slot": "render_color",
+          "value": {
+            "op": "const",
+            "type": "u32",
+            "value": 8
+          }
+        }
+      ],
+      "else": []
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "sub_wrap",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "shift_arithmetic",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "slot",
+                      "type": "u32",
+                      "name": "player_x"
+                    },
+                    {
+                      "op": "const",
+                      "type": "u32",
+                      "value": 8
+                    }
+                  ]
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 4
+                }
+              ]
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "shift_arithmetic",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "player_y"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 8
+                }
+              ]
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 13
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 8
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 13
+        },
+        {
+          "op": "slot",
+          "type": "u32",
+          "name": "render_color"
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "sub_wrap",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "shift_arithmetic",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "slot",
+                      "type": "u32",
+                      "name": "player_x"
+                    },
+                    {
+                      "op": "const",
+                      "type": "u32",
+                      "value": 8
+                    }
+                  ]
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 3
+                }
+              ]
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "shift_arithmetic",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "player_y"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 8
+                }
+              ]
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 15
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 7
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 6
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 7
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "shift_arithmetic",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "player_x"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 8
+                }
+              ]
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "shift_arithmetic",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "player_y"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 8
+                }
+              ]
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 13
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 4
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 2
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 12
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "add_wrap",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "shift_arithmetic",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "slot",
+                      "type": "u32",
+                      "name": "player_x"
+                    },
+                    {
+                      "op": "const",
+                      "type": "u32",
+                      "value": 8
+                    }
+                  ]
+                },
+                {
+                  "op": "mul_wrap",
+                  "type": "u32",
+                  "args": [
+                    {
+                      "op": "slot",
+                      "type": "u32",
+                      "name": "facing"
+                    },
+                    {
+                      "op": "const",
+                      "type": "u32",
+                      "value": 5
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "op": "slot",
+              "type": "u32",
+              "name": "camera"
+            }
+          ]
+        },
+        {
+          "op": "sub_wrap",
+          "type": "u32",
+          "args": [
+            {
+              "op": "shift_arithmetic",
+              "type": "u32",
+              "args": [
+                {
+                  "op": "slot",
+                  "type": "u32",
+                  "name": "player_y"
+                },
+                {
+                  "op": "const",
+                  "type": "u32",
+                  "value": 8
+                }
+              ]
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 9
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 5
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 3
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 6
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 0
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 0
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 240
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 27
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "text",
+      "arguments": [
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 8
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 6
+        },
+        "ASTERION RELAY",
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 12
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "text",
+      "arguments": [
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 8
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 17
+        },
+        "ENERGY",
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 13
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "number",
+      "arguments": [
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 36
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 17
+        },
+        {
+          "op": "zext",
+          "type": "u32",
+          "args": [
+            {
+              "op": "slot",
+              "type": "u16",
+              "name": "player_hp"
+            }
+          ]
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 7
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "text",
+      "arguments": [
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 74
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 17
+        },
+        "WARDENS",
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 13
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "number",
+      "arguments": [
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 108
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 17
+        },
+        {
+          "op": "slot",
+          "type": "u32",
+          "name": "kills"
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 7
+        }
+      ]
+    },
+    {
+      "op": "if",
+      "condition": {
+        "op": "not_equal",
+        "type": "u8",
+        "args": [
+          {
+            "op": "slot",
+            "type": "u32",
+            "name": "gate_open"
+          },
+          {
+            "op": "const",
+            "type": "u32",
+            "value": 0
+          }
+        ]
+      },
+      "then": [
+        {
+          "op": "effect",
+          "service": "text",
+          "arguments": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 142
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 17
+            },
+            "RELAY ONLINE",
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 5
+            }
+          ]
+        }
+      ],
+      "else": [
+        {
+          "op": "effect",
+          "service": "text",
+          "arguments": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 142
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 17
+            },
+            "SEEK THE CORE",
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "rect",
+      "arguments": [
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 0
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 150
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 240
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 10
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "op": "effect",
+      "service": "text",
+      "arguments": [
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 8
+        },
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 153
+        },
+        "A JUMP   B BEAM   ARROWS MOVE",
+        {
+          "op": "const",
+          "type": "u32",
+          "value": 13
+        }
+      ]
+    },
+    {
+      "op": "if",
+      "condition": {
+        "op": "not_equal",
+        "type": "u8",
+        "args": [
+          {
+            "op": "slot",
+            "type": "u32",
+            "name": "won"
+          },
+          {
+            "op": "const",
+            "type": "u32",
+            "value": 0
+          }
+        ]
+      },
+      "then": [
+        {
+          "op": "effect",
+          "service": "rect",
+          "arguments": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 34
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 54
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 172
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 44
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "op": "effect",
+          "service": "rect",
+          "arguments": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 36
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 56
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 168
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 40
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 3
+            }
+          ]
+        },
+        {
+          "op": "effect",
+          "service": "text",
+          "arguments": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 62
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 65
+            },
+            "RELAY RESTORED",
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 12
+            }
+          ]
+        },
+        {
+          "op": "effect",
+          "service": "text",
+          "arguments": [
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 51
+            },
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 80
+            },
+            "THE PATH IS OPEN AGAIN",
+            {
+              "op": "const",
+              "type": "u32",
+              "value": 5
+            }
+          ]
+        }
+      ],
+      "else": []
+    }
+  ],
+  "observations": [
+    "ticks",
+    "player_x",
+    "player_y",
+    "shot_count",
+    "kills",
+    "pickup_taken",
+    "gate_open",
+    "won",
+    "player_hp",
+    "ability_mask"
+  ],
+  "authorship": {
+    "recovered_behavior": [
+      "directional acceleration",
+      "gravity",
+      "signed integration",
+      "enemy damage and lethal lifecycle",
+      "equipment acquisition and campaign event bank"
+    ],
+    "authored_ir": [
+      "input and jump policy",
+      "projectile lifecycle and contact dispatch",
+      "world geometry and collision response",
+      "world capability gate and objective",
+      "side-scroll presentation"
+    ],
+    "hardware_runtime": [
+      "frame clock",
+      "input sampling",
+      "geometry queries",
+      "Mode4 palette and draw primitives"
+    ]
+  },
+  "constraints": [
+    "MZM horizontal velocity converted to Sonic integration units by synthesized exact x8 adapter",
+    "No machine addresses or parent-ROM code are read by composition",
+    "Acquired capability ownership opens an authored world gate; original equip/active refresh is not claimed",
+    "No unknown rendering primitive or semantic mismatch silently falls back"
+  ]
+}

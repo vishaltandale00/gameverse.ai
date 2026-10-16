@@ -1,0 +1,20 @@
+"""Executable ontology catalog: real L1 packages and qualification identities."""
+from pathlib import Path
+import argparse,json,hashlib
+ROOT=Path(__file__).resolve().parents[2]
+CATALOG=ROOT/'ontology/executable-components'
+
+def export_catalog():
+ CATALOG.mkdir(parents=True,exist_ok=True);entries=[]
+ for p in sorted((ROOT/'local/ir/packages').glob('*/package.json')):
+  m=json.loads(p.read_text());behavior=json.loads((p.parent/m['behavior']).read_text());role='movement'if'.motion.'in m['id']else'combat'if'.combat.'in m['id']else'progression'
+  receipt=p.parent/m['qualification']['receipt'];r=json.loads(receipt.read_text())
+  record={'schema':'gameverse.executable-ontology/0.2','id':m['id'],'label':m['title'],'role':role,'source_game':m['source_game'],'origin':m['origin'],'package_ref':str(p.relative_to(ROOT)),'package_sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'behavior_sha256':m['behavior_sha256'],'qualification':dict(m['qualification'],receipt_sha256=hashlib.sha256(receipt.read_bytes()).hexdigest()),'parameters':behavior.get('parameters',[]),'ports':[{'id':f['name'],'direction':('inout'if f['name']in m['effects']['reads']and f['name']in m['effects']['writes']else'out'if f['name']in m['effects']['writes']else'in'),'storage_type':f['storage_type'],'semantic_type':f['semantic_type']}for f in behavior['state']if f['semantic_type']['quantity']!='unknown'],'assembly_status':('qualified_typed_ports'if any(f['semantic_type']['quantity']!='unknown'for f in behavior['state'])else'qualified_storage_behavior_semantic_ports_pending'),'owned_state':{'fields':len(behavior['state']),'collections':[{'id':c['name'],'storage_type':c['storage_type'],'count':c['count']}for c in behavior.get('collections',[])]},'lifecycle':m['lifecycle'],'dependencies':behavior.get('dependencies',[]),'phase_constraints':behavior['phase'],'provenance':{'kind':'automatic_highfunction_ssa','machine_evidence_ref':str((p.parent/'l0.json').relative_to(ROOT)),'resolution':'symbolic ports and opaque operation provenance; machine evidence is L0 only'},'limitations':m['gaps']}
+  target=CATALOG/(m['id']+'.json');target.write_text(json.dumps(record,indent=2)+'\n');entries.append({'id':m['id'],'role':role,'record':target.name,'source_game':m['source_game'],'qualified':r['outcome']=='pass','behavior_sha256':m['behavior_sha256']})
+ groups=[{'id':'movement','label':'How the player moves','members':[e['id']for e in entries if e['role']=='movement'],'composition_example':'research/automatic-ir/asterion-relay.composition.json','meaning':'Signed directional acceleration, context-dependent gravity, integration, slope projection/acceleration and detachment; surface contact service closure remains separate.'},{'id':'combat','label':'How hits change an enemy','members':[e['id']for e in entries if e['role']=='combat'],'meaning':'HP subtraction, lethal lifecycle/pose/flag updates and reaction state. Projectile/contact dispatch and hit cadence are authored policy in the current new-ROM example.'},{'id':'progression','label':'What acquisition changes','members':[e['id']for e in entries if e['role']=='progression'],'meaning':'Native equipment ownership and persistent event-bank operations. The example consumes acquired ownership in an authored world gate; original active/equip refresh is not claimed.'}]
+ index={'schema':'gameverse.executable-ontology-index/0.2','scope':'Qualified automatic behavior subset; not complete game ontologies','entries':entries,'groups':groups,'discovery_contract':'Read records, resolve package_ref, enforce behavior/receipt identities, inspect typed ports and constraints, then select/configure an L2 graph.'}
+ (CATALOG/'index.json').write_text(json.dumps(index,indent=2)+'\n');return index
+if __name__=='__main__':
+ p=argparse.ArgumentParser();p.add_argument('--export',action='store_true');p.add_argument('--role',choices=['movement','combat','progression']);p.add_argument('--id');a=p.parse_args();x=export_catalog()if a.export else json.loads((CATALOG/'index.json').read_text())
+ if a.id:print((CATALOG/(a.id+'.json')).read_text())
+ else:print(json.dumps([e for e in x['entries']if not a.role or e['role']==a.role],indent=2))

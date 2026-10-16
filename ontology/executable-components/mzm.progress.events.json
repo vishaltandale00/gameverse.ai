@@ -1,0 +1,61 @@
+{
+  "schema": "gameverse.executable-ontology/0.2",
+  "id": "mzm.progress.events",
+  "label": "Persistent event query and mutation",
+  "role": "progression",
+  "source_game": "metroid-zero-mission",
+  "origin": "automatic_highfunction_lift",
+  "package_ref": "local/ir/packages/mzm.progress.events/package.json",
+  "package_sha256": "7be90d6894f804ae80d8c243790a319f85b1c6bdadcba37718b14022c17eae09",
+  "behavior_sha256": "1e2dd520dd5749512a513532bba1090b1dc34486c55a5160288e17a7c825b1a5",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 65536,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+    "receipt_sha256": "60e2d67878a033d46a299e1b10bd95f06bec679684c4e1e0f94010fb57d92d9b"
+  },
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u32"
+    },
+    {
+      "name": "param_1",
+      "storage_type": "u8"
+    }
+  ],
+  "ports": [],
+  "assembly_status": "qualified_storage_behavior_semantic_ports_pending",
+  "owned_state": {
+    "fields": 0,
+    "collections": [
+      {
+        "id": "collection_0",
+        "storage_type": "u32",
+        "count": 8
+      }
+    ]
+  },
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "dependencies": [],
+  "phase_constraints": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "provenance": {
+    "kind": "automatic_highfunction_ssa",
+    "machine_evidence_ref": "local/ir/packages/mzm.progress.events/l0.json",
+    "resolution": "symbolic ports and opaque operation provenance; machine evidence is L0 only"
+  },
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced"
+  ]
+}
