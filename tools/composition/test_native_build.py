@@ -57,6 +57,54 @@ class NativeContracts(unittest.TestCase):
         self.write('package.json', self.package)
         self.plan['native_build']['packages'][0]['package'] = self.pin('package.json')
 
+    def test_typed_second_register_and_empty_callback_contract(self):
+        hook = self.host['hooks'][0]
+        hook.update(abi='aapcs-thumb', args=['ptr', 'u32'], **{'return': 'void'})
+        self.package['lowering']['native_v1']['exports'][0]['args'] = ['ptr', 'u32']
+        self.plan['native_build']['hooks'][0]['args'] = [{'arg': 0}, {'arg': 1}]
+        self.write('host.json', self.host)
+        self.plan['native_build']['host'] = self.pin('host.json')
+        self.package_update()
+        self.assertEqual(len(native.validate(self.plan, self.rom)[4]), 1)
+        self.package['lowering']['native_v1']['exports'][0]['args'][1] = 'ptr'
+        self.package_update()
+        with self.assertRaisesRegex(ValueError, 'typed incompatibly'):
+            native.validate(self.plan, self.rom)
+        hook['args'] = []
+        self.package['lowering']['native_v1']['exports'][0]['args'] = []
+        self.plan['native_build']['hooks'][0]['args'] = []
+        self.write('host.json', self.host)
+        self.plan['native_build']['host'] = self.pin('host.json')
+        self.package_update()
+        self.assertEqual(len(native.validate(self.plan, self.rom)[4]), 1)
+
+    def test_fourth_argument_requires_register_preserving_entry_extent(self):
+        hook = self.host['hooks'][0]
+        hook.update(abi='aapcs-thumb', args=['ptr', 'u32', 'i16', 'ptr'], **{'return': 'void'})
+        self.package['lowering']['native_v1']['exports'][0]['args'] = hook['args'][:]
+        self.plan['native_build']['hooks'][0]['args'] = [{'arg': n} for n in range(4)]
+        self.write('host.json', self.host)
+        self.plan['native_build']['host'] = self.pin('host.json')
+        self.package_update()
+        with self.assertRaisesRegex(ValueError, 'preimage/alignment'):
+            native.validate(self.plan, self.rom)
+        hook['preimage'] = self.rom[4:20].hex()
+        self.write('host.json', self.host)
+        self.plan['native_build']['host'] = self.pin('host.json')
+        self.assertEqual(len(native.validate(self.plan, self.rom)[4]), 1)
+
+
+    def test_campaign_state_needs_persistent_native_task_owner(self):
+        lease = {'id': 'inventory', 'storage': 'native-task-data', 'bytes': 64,
+                 'lifetime': 'campaign', 'writes': [{'offset': 0, 'width': 32, 'quantity': 'ability_bits'}],
+                 'allocation': {'service': 'task_create', 'bytes': 64, 'alignment': 4,
+                                'flags': 2, 'priority': 65280, 'locator': 'task-list + magic'}}
+        native.validate_states([lease])
+        lease['allocation']['flags'] = 0
+        with self.assertRaisesRegex(ValueError, 'persistent-task flag'):
+            native.validate_states([lease])
+
+
     def test_matching_contract_resolves(self):
         self.assertEqual(len(native.validate(self.plan, self.rom)[4]), 1)
 

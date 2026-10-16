@@ -113,8 +113,8 @@ def validate(doc, rom):
         if package.get('kind') != 'component_package' or package.get('ir_version') != '0.1':
             raise ValueError('Expected versioned IR component package')
         recovery = package['native_implementation']['recovery']
-        if package['native_implementation']['origin'] != 'self_decompilation' or recovery['dependency_closure']['status'] != 'closed':
-            raise ValueError('Own recovered closed native implementation required')
+        if package['native_implementation']['origin'] not in ('self_decompilation', 'new_bridge') or recovery['dependency_closure']['status'] != 'closed':
+            raise ValueError('Own recovered component or explicit new bridge with closed native dependencies required')
         if recovery['rom_sha256'] != sha(rom) and not recovery.get('dynamic_witness_refs'):
             raise ValueError('Cross-ROM component requires recovery witnesses')
         if recovery['rom_sha256'] == sha(rom):
@@ -176,13 +176,19 @@ def validate(doc, rom):
                 raise ValueError('Missing native dependency: ' + str(dependency))
     host_hooks = {}
     for hook in host['hooks']:
-        exact_keys(hook, ['id', 'address', 'preimage', 'cardinality', 'abi', 'phase', 'writes'],
+        exact_keys(hook, ['id', 'address', 'preimage', 'cardinality', 'abi', 'phase', 'writes', 'args', 'return'],
                    ['id', 'address', 'preimage', 'cardinality', 'abi', 'phase', 'writes'])
-        if hook['id'] in host_hooks or hook['cardinality'] != 1 or hook['abi'] not in ('r0-actor-void-thumb', 'r0-actor-i32-thumb'):
+        if hook['id'] in host_hooks or hook['cardinality'] != 1 or hook['abi'] not in ('r0-actor-void-thumb', 'r0-actor-i32-thumb', 'aapcs-thumb'):
             raise ValueError('Unknown/ambiguous native hook')
+        if hook['abi']=='aapcs-thumb' and (hook.get('return') not in ('void','i32') or
+                not isinstance(hook.get('args'),list) or len(hook['args'])>4 or
+                any(t not in TYPES for t in hook['args'])):
+            raise ValueError('Explicit bounded typed Thumb ABI required')
         address = integer(hook['address'])
         offset = address - 0x08000000
-        if address % 4 or len(bytes.fromhex(hook['preimage'])) != 8 or offset < 0 or offset + 8 > len(rom) or rom[offset:offset+8].hex() != hook['preimage']:
+        size=len(bytes.fromhex(hook['preimage']))
+        required_size=16 if hook['abi']=='aapcs-thumb' and len(hook['args'])==4 else 8
+        if address % 4 or size != required_size or offset < 0 or offset + size > len(rom) or rom[offset:offset+size].hex() != hook['preimage']:
             raise ValueError('Native hook preimage/alignment mismatch')
         host_hooks[hook['id']] = hook
     if len(source_pins) > 128:
@@ -210,7 +216,7 @@ def validate(doc, rom):
         hook = host_hooks[binding['host_hook']]
         package = packages[binding['instance']]
         export = package['exports'][binding['symbol']]
-        expected_return = 'i32' if hook['abi'] == 'r0-actor-i32-thumb' else 'void'
+        expected_return = hook['return'] if hook['abi']=='aapcs-thumb' else ('i32' if hook['abi'] == 'r0-actor-i32-thumb' else 'void')
         if export['return'] != expected_return:
             raise ValueError('Native hook return ABI mismatch')
         if len(binding['args']) != len(export['args']):
@@ -225,11 +231,12 @@ def validate(doc, rom):
         if len(binding['args']) != len(export['args']):
             raise ValueError('Native argument cardinality mismatch')
         addr = integer(hook['address'])
-        if any(abs(addr - other) < 8 for other in occupied):
+        size=len(bytes.fromhex(hook['preimage']))
+        if any(addr<other+other_size and other<addr+size for other,other_size in occupied):
             raise ValueError('Duplicate or overlapping hook authority')
-        occupied.append(addr)
+        occupied.append((addr,size))
         for arg, expected_type in zip(binding['args'], export['args']):
-            argument(arg, host, expected_type)
+            argument(arg, host, expected_type, hook)
         component = components[binding['instance']]
         for state in hook['writes']:
             if not any(a['state'] == state and a['phase'] == hook['phase'] and a['op'] == 'write' for a in component.get('accesses', [])):
@@ -253,8 +260,16 @@ def validate_states(bindings):
         exact_keys(state, ['id', 'storage', 'bytes', 'lifetime', 'writes', 'allocation'],
                    ['id', 'storage', 'bytes', 'lifetime', 'writes', 'allocation'])
         identifier(state['id'])
-        if state['id'] in seen or state['storage'] != 'host-r0-actor' or state['lifetime'] != 'native-entity':
+        actor=state['storage']=='host-r0-actor' and state['lifetime']=='native-entity'
+        task=state['storage']=='native-task-data' and state['lifetime']=='campaign'
+        if state['id'] in seen or not (actor or task):
             raise ValueError('Unsupported or repeated native state binding')
+        if task:
+            a=state['allocation']
+            exact_keys(a,['service','bytes','alignment','flags','priority','locator'],
+                       ['service','bytes','alignment','flags','priority','locator'])
+            if a['bytes']!=state['bytes'] or a['alignment']!=4 or a['flags']!=2 or not 0<a['priority']<65535 or not a['service'] or not a['locator']:
+                raise ValueError('Campaign task allocation must declare native owner, finite size and persistent-task flag')
         seen.add(state['id'])
         if not isinstance(state['bytes'], int) or not 1 <= state['bytes'] <= 4096:
             raise ValueError('Native actor state extent outside supported range')
@@ -290,8 +305,13 @@ def state_header(packages):
     return '\n'.join(rows)+'\n'
 
 
-def argument(arg, host, expected_type=None):
+def argument(arg, host, expected_type=None, hook=None):
     if set(arg) == {'arg'}:
+        if hook and hook['abi']=='aapcs-thumb':
+            index=integer(arg['arg'])
+            if not 0<=index<len(hook['args']) or (expected_type is not None and hook['args'][index]!=expected_type):
+                raise ValueError('Native input register absent or typed incompatibly')
+            return 'r%d'%index
         if expected_type is not None and expected_type != 'ptr':
             raise ValueError('Actor pointer cannot bind scalar input')
         if arg['arg'] != 0:
@@ -380,10 +400,11 @@ def build(plan, rom_path, out):
             sig = 'extern %s %s(%s);' % (return_type, export['symbol'], ','.join(TYPES[t] for t in export['args']) or 'void')
             if sig not in prototypes:
                 prototypes.add(sig); generated.append(sig)
-            args = ['(%s)(%s)' % (TYPES[t], argument(a, host)) for a, t in zip(binding['args'], export['args'])]
+            args = ['(%s)(%s)' % (TYPES[t], argument(a, host, t, hook)) for a, t in zip(binding['args'], export['args'])]
             wrapper = 'gv_entry_%d' % n
             returned = '' if export['return'] == 'void' else 'return '
-            generated.append('%s %s(uint32_t actor) { %s%s(%s); }' % (return_type, wrapper, returned, export['symbol'], ','.join(args)))
+            signature=', '.join('%s r%d'%(TYPES[t],i) for i,t in enumerate(hook['args'])) or 'void' if hook['abi']=='aapcs-thumb' else 'uint32_t actor'
+            generated.append('%s %s(%s) { %s%s(%s); }' % (return_type, wrapper, signature, returned, export['symbol'], ','.join(args)))
             provenance.append({'hook': hook, 'component': binding['instance'], 'export': binding['symbol'], 'generated_symbol': wrapper})
         # These leases describe existing host state; no unsafe unreserved RAM BSS.
         states = {i: p['native']['state_bindings'] for i, p in packages.items()}
@@ -423,15 +444,21 @@ def build(plan, rom_path, out):
         for row in provenance:
             address = integer(row['hook']['address'])
             target = symbols[row['generated_symbol']] | 1
-            veneer = b'\x00\x4b\x18\x47' + target.to_bytes(4, 'little')
+            if row['hook']['abi']=='aapcs-thumb' and len(row['hook']['args'])==4:
+                # Thumb1 has no literal load into r12. Preserve the live fourth
+                # AAPCS argument: push r3; ldr r3,[pc,#8]; mov r12,r3;
+                # pop r3; bx r12; nop; aligned target. SP/LR and r0..r3 survive.
+                veneer=bytes.fromhex('08b4024b9c4608bc6047c046')+target.to_bytes(4,'little')
+            else:
+                veneer = b'\x00\x4b\x18\x47' + target.to_bytes(4, 'little')
             offset = address-0x08000000
-            assembled[offset:offset+8] = veneer
+            assembled[offset:offset+len(veneer)] = veneer
             row.update(target=hex(target), output_bytes=veneer.hex())
         # Prove the full original cart remains byte-identical outside selected hooks.
         retained = bytearray(assembled[:len(rom)])
         for _, hook, _ in hooks:
             offset = integer(hook['address'])-0x08000000
-            retained[offset:offset+8] = bytes.fromhex(hook['preimage'])
+            retained[offset:offset+len(bytes.fromhex(hook['preimage']))] = bytes.fromhex(hook['preimage'])
         if retained != rom:
             raise ValueError('Unexpected mutation outside graph-owned hooks')
         cart = out / 'game.gba'
