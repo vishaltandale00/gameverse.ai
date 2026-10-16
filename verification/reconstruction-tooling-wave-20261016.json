@@ -1,0 +1,261 @@
+{
+  "schema": "gameverse.reconstruction-tooling-publication/1",
+  "date": "2026-10-16",
+  "publication_base_commit": "30167a197481c7537cc36d369dd4e7e2d2f6e42c",
+  "scope": "Reviewed generic source and synthetic verification only. No ROM, game-derived IR/asset payload, source fixture, native binary or private compiler snapshot is distributed.",
+  "sourcepins": [
+    {
+      "path": "tools/behavior_ir/boundary.py",
+      "sha256": "08f62f6b66364bc420c37d3fef417404ddc667ffb61e16aa05f6d7f42cd95622"
+    },
+    {
+      "path": "tools/behavior_ir/bounded_cfg.py",
+      "sha256": "df05ba7a4495aa3182f5bc0f0190eec932fac35c88d29d413a112f50bea50a52"
+    },
+    {
+      "path": "tools/behavior_ir/callee_ranges.py",
+      "sha256": "b7bd41b76c6c5fade9bbd0d4141a5c09a3362619d01a99ab8a184f5633742ffb"
+    },
+    {
+      "path": "tools/behavior_ir/causal.py",
+      "sha256": "740af046d1406b1ee7edaab79cca524f8d8578f96a28c131670e0ee62dc2043d"
+    },
+    {
+      "path": "tools/behavior_ir/contract.py",
+      "sha256": "8886ee064f81e7e8ad0c709d651c95fbc386eb980b069a1761c546c0d81bf816"
+    },
+    {
+      "path": "tools/behavior_ir/domain.py",
+      "sha256": "fa1ba60fc9e476e6eb10b2bbf7db6dc195dca8c98e83e198d75f8ab07d1243e4"
+    },
+    {
+      "path": "tools/behavior_ir/entity_reference.py",
+      "sha256": "14ee40232dc1776a645e76c91a3007d7a8459a0f537ae688115006faea5843e6"
+    },
+    {
+      "path": "tools/behavior_ir/ignored_return.py",
+      "sha256": "6e207f57160d573126802e3d79d9282ccf9138631929e71549b20a936a8ba418"
+    },
+    {
+      "path": "tools/behavior_ir/inline.py",
+      "sha256": "7963546923c47d0dcc02e334cdee5ae003ffd4defa347a453b4c6d5809207b91"
+    },
+    {
+      "path": "tools/behavior_ir/lift.py",
+      "sha256": "28a18e7b12234e75b5afe8764b888671c86fa1dfe861d1bb46edeaa492d7eb1c"
+    },
+    {
+      "path": "tools/behavior_ir/lower.py",
+      "sha256": "683024fbecdc1bc5126cc68b041996269cb1f21a62a0ce3d938376ebe3daa9ea"
+    },
+    {
+      "path": "tools/behavior_ir/native_abi.py",
+      "sha256": "1e7527e8415b22c4b199e86c80adf99e4a1c271e7c7bc1b9175c25243cfe01a8"
+    },
+    {
+      "path": "tools/behavior_ir/native_tokens.py",
+      "sha256": "3ebc77ee52fbd15fff4867b2d3178f76d8ae4ab6b59f26b7302919785863ce31"
+    },
+    {
+      "path": "tools/behavior_ir/oracle_layout.py",
+      "sha256": "da8b5070be32864a37df994b10e57eab206bd9c317316d13fd80bf8ad7759234"
+    },
+    {
+      "path": "tools/behavior_ir/path_bounds.py",
+      "sha256": "2c0d2f9781b51291b4a13788d2d7ccf267e4503b21c6db406319b5dfa7f35d6e"
+    },
+    {
+      "path": "tools/behavior_ir/pointer_regions.py",
+      "sha256": "95630833cdd9f73a6b0aadf5b0e337f8a88946fb3bd6dd28f60d35944e32372e"
+    },
+    {
+      "path": "tools/behavior_ir/pool.py",
+      "sha256": "1cc5df2c5ead01ecf7bd4259afc06a4ee17f36f35452183548a3cb4dff3a52dd"
+    },
+    {
+      "path": "tools/behavior_ir/publish.py",
+      "sha256": "6393559681925eacb75600ccaaa25f939ec97a5fce6974576eb17ffd39a97970"
+    },
+    {
+      "path": "tools/behavior_ir/qualify.py",
+      "sha256": "0249bde6c076f10edec57975c3a8f753225c19403505894f5faaab4beb4daabb"
+    },
+    {
+      "path": "tools/behavior_ir/readonly_assets.py",
+      "sha256": "c554a136b16b023797b17168614c25658abf5a3437618347266585e7d5ea98c3"
+    },
+    {
+      "path": "tools/behavior_ir/readonly_callee.py",
+      "sha256": "ae5083489c03bf425e6d2f58dbcabdb845ea3ae706a557678df47124d2b7dbdb"
+    },
+    {
+      "path": "tools/behavior_ir/readonly_entry.py",
+      "sha256": "4afe729e439bb45db8c3fae6d0e3b3899b816fac04d5b86a9082426c58956f0b"
+    },
+    {
+      "path": "tools/behavior_ir/retained_services.py",
+      "sha256": "413fe378f12f005597f04719d5df1abe6bb82777419dbfa26922e7cf4fec0814"
+    },
+    {
+      "path": "tools/behavior_ir/return_switch.py",
+      "sha256": "8fb1677c4daeaf913a55e26f6d93fb5db92b78dcbd2618739d8515dfd78cc332"
+    },
+    {
+      "path": "tools/behavior_ir/returnproof.py",
+      "sha256": "4174065f5de94b5dfb301c85dcddc3400e8e918e9d97e9d8bf7b3bc3229fa8c2"
+    },
+    {
+      "path": "tools/behavior_ir/rom_rows.py",
+      "sha256": "fc00a15e20a0f0f5ecb9a04b68fe3fcba6d83607253fc8dcb26628249c82393b"
+    },
+    {
+      "path": "tools/behavior_ir/specialize.py",
+      "sha256": "124103b22e8221a6b6e0e46a69625c0bd99a883d2d1851d23810c285700504c8"
+    },
+    {
+      "path": "tools/behavior_ir/verify_readonly_callee.py",
+      "sha256": "b44bdbf57988ec8f60695418035be7bf4c2483614b74e8ef6f4a378df9682d7a"
+    },
+    {
+      "path": "tools/roundtrip/asset_batch.py",
+      "sha256": "df2838df5fa912e4d1749f8a464899260322510c9f69da9e5d244f8ef6af9eef"
+    },
+    {
+      "path": "tools/roundtrip/ir_bundle.py",
+      "sha256": "77061acebddff65075f8e4d0cfb564149119ea5f02f32fe2f7b0f7acb95fbf94"
+    },
+    {
+      "path": "tools/roundtrip/ir_provider.py",
+      "sha256": "6ff3ef6e4f996f56cee66acacaa775d182f3055a601c98a7ccd0302f8e33d0e9"
+    },
+    {
+      "path": "tools/roundtrip/test_asset_batch.py",
+      "sha256": "46311e568d5efd10349dca9c1980c0bb12912385dc3569717ba4252f37c1dc6c"
+    },
+    {
+      "path": "tools/roundtrip/test_ir_bundle.py",
+      "sha256": "673a594b4500fabf647cb495df68e3e7beab765ea8edcdce9edfd5a20e645db7"
+    },
+    {
+      "path": "tools/roundtrip/test_ir_provider_inputs.py",
+      "sha256": "2ffcc55ff834ca2340c26b47600ca7f794c7d27b29781149e2c4b841fcc79941"
+    }
+  ],
+  "verification": [
+    {
+      "provenance": "publisher executed in isolated publication checkout",
+      "command": "python3 -B -m unittest tools.roundtrip.test_ir_bundle tools.roundtrip.test_asset_batch -v",
+      "tests_passed": 13,
+      "wall_s": 0.039,
+      "native_runs": 0,
+      "model_calls": 0
+    },
+    {
+      "provenance": "publisher executed in isolated publication checkout",
+      "command": "python3 -B tools/behavior_ir/verify_readonly_callee.py",
+      "checks_passed": 14,
+      "wall_s": 0.0015030419999999996,
+      "native_runs": 0,
+      "model_calls": 0
+    },
+    {
+      "provenance": "independent provider publication reviewer; exact helper, public reassemble module and unchanged tests copied to minimal package; publisher reused result without duplicate run",
+      "command": "python3 -m unittest tools.roundtrip.test_ir_provider_inputs",
+      "tests_passed": 8,
+      "wall_s": 0.035851125,
+      "native_runs": 0,
+      "model_calls": 0
+    }
+  ],
+  "environment": {
+    "publisher_python": "3.9.6",
+    "publisher_platform": "Darwin arm64",
+    "new_dependencies": [],
+    "new_ci_jobs": []
+  },
+  "ir_bundle_v2": {
+    "review": "independent QC clear",
+    "legacy_mzm_v1_load": "passed",
+    "actual_private_replays": [
+      {
+        "game": "minish-cap",
+        "payload_bytes": 168,
+        "executable_behavior_bytes": 54,
+        "mechanical_binding_bytes": 112,
+        "alignment_bytes": 2,
+        "parent_s": 0.185838
+      },
+      {
+        "game": "metroid-fusion",
+        "payload_bytes": 10932,
+        "executable_behavior_bytes": 124,
+        "mechanical_binding_bytes": 88,
+        "embedded_readonly_mixed_bytes": 10720,
+        "parent_s": 0.13553
+      }
+    ],
+    "targets": 3,
+    "exact_admitted_artifact_identity": "passed",
+    "fresh_ir_lowering_and_mechanical_binding": "passed",
+    "new_native_qualification_runs": 0,
+    "measurement_provenance": "Replay results and timings reported by source owner and independently checked against retained private evidence; publisher did not rerun them.",
+    "data_regeneration_claim": false
+  },
+  "readonly_callee": {
+    "review": "new helper/lift hook independently source-cleared; frozen 27-module transitive baseline is dependency identity, not blanket new compiler qualification",
+    "capability": "exact constant own-ROM scalar field bound through an existing callee; domain/width/storage checked and writes/collections/reference/native effects rejected",
+    "actual_mmz_profiles": [
+      0,
+      1
+    ],
+    "native_cases_each": 256,
+    "semantic_cases_included_each": 16,
+    "native_qualification_provenance": "owner-reported retained actual profile-0/1 proofs; no publisher native run",
+    "unsupported": "unspecialized metadata-only actor/asset binding, arbitrary callees, writable ROM and unproved caller/lifecycle closure"
+  },
+  "entry_abi": {
+    "review": "independent source and dependency clear; five unchanged functions from reviewed pre-ARM baseline",
+    "helper_only": true,
+    "producer_cli_or_qualification_api_shipped": false,
+    "incoming_r3_or_custom_context": "fail-closed",
+    "new_arm_entry_support_shipped": false,
+    "guard_runtime_overhead_s": null
+  },
+  "typed_asset_batch": {
+    "review": "independent source/artifact QC clear",
+    "proof_category": "indexed-4bpp-icon-sprite/1 source table to selector to sprite image to OBJ-copy path",
+    "actual_private_replays": [
+      {
+        "game": "firered",
+        "assets": 410,
+        "typed_captured_bytes": 419840,
+        "fresh_batch_s": 0.437367
+      },
+      {
+        "game": "emerald",
+        "assets": 413,
+        "typed_captured_bytes": 422912,
+        "fresh_batch_s": 0.542964
+      }
+    ],
+    "exact_16_mib_original_identity": "passed for each separated-file replay",
+    "fresh_converter_or_pixel_regeneration_proved": false,
+    "semantic_consumer_reexecuted": false,
+    "new_ir_credit_bytes": 0,
+    "remaining_bytes": "mixed/unknown",
+    "comparable_prior_baseline_s": null,
+    "measurement_provenance": "source owner reported fresh batches and independent QC checked retained inputs/components; no publisher native/model run"
+  },
+  "limits": [
+    "Full source producer frontend and creation of new native qualification receipts are not exported by the mechanical helper API.",
+    "V2 admission requires already qualified producer packets and separately supplied admitted private containers.",
+    "Batch asset output is a separate typed-capture/replay format; it is not silently interchangeable with the older asset-overlay input contract.",
+    "No game has demonstrated whole-game reconstruction from executable IR and identified assets in this publication."
+  ],
+  "timing": {
+    "queue_s": null,
+    "remote_ci_s": null,
+    "full_build_s": null,
+    "note": "Focused checks are separate targeted commands; owner replay timings are parent elapsed values. No CI critical-path, broad build baseline or new native/model campaign was measured."
+  }
+}

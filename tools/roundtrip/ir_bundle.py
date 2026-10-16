@@ -1,6 +1,6 @@
 """Private qualified-IR replay: fresh C/payload plus an explicitly retained host.
 
-The fixed bounded recipe accepts three already-qualified MZM modules. It does
+Versioned bounded recipes accept explicitly qualified target lists. They do
 not lift original machine code, admit arbitrary IR edits, or reconstruct an
 entire game from semantic IR. Unknown host bytes remain mixed_unknown.
 """
@@ -22,7 +22,9 @@ import sys
 import time
 
 ROOT=Path(__file__).resolve().parents[2]
-SCHEMA='gameverse.private-qualified-ir-bundle/1'
+SCHEMA='gameverse.private-qualified-ir-bundle/2'
+LEGACY_SCHEMA='gameverse.private-qualified-ir-bundle/1'
+TARGET_RECIPE='qualified-target-list-arm7tdmi/2'
 LABELS=('behavior','wait','timer')
 MAX_BYTES=32*1024*1024
 
@@ -45,6 +47,79 @@ def write_json(path,value):
     return {'path':Path(path).name,'sha256':sha(data)}
 
 
+def validate_targets(targets):
+    """Bounded explicit target identities, independent of game or naming."""
+    if not isinstance(targets,list) or not 1<=len(targets)<=32:
+        raise ValueError('missing bounded qualified target-list contract (1..32)')
+    labels=set();entries=set()
+    for target in targets:
+        if not isinstance(target,(list,tuple)) or len(target)!=3:
+            raise ValueError('qualified target requires label/package/entry')
+        label,package,entry=target
+        if not isinstance(label,str) or not re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]*',label) or not isinstance(package,str) or not package:
+            raise ValueError('qualified target has unsafe symbolic identity')
+        if not isinstance(entry,str) or not re.fullmatch(r'[0-9a-fA-F]{8}',entry) or int(entry,16)&1 or not 0x08000000<=int(entry,16)<0x0a000000:
+            raise ValueError('qualified target requires aligned Thumb ROM entry')
+        if label in labels or entry.lower() in entries:raise ValueError('duplicate qualified target label/entry')
+        labels.add(label);entries.add(entry.lower())
+    return targets
+
+
+def validate_binding_contract(adapter,entry_validator=None):
+    """Only the existing mechanical canonical storage ABI is admitted here."""
+    if adapter.get('schema')!='gameverse.l0.validation-adapter/0.2':
+        raise ValueError('missing supported validation-adapter contract')
+    if entry_validator is None:raise ValueError('missing source-pinned entry-veneer admission helper')
+    transfer=entry_validator(adapter)
+    if any(adapter.get(k) for k in ('object_references','entity_references','argument_views','reference_binding_authority')):
+        raise ValueError('missing registered reference-storage binding contract')
+    if adapter.get('retained_services'):
+        raise ValueError('missing registered retained-native-service replay contract')
+    registers={p.get('register') for p in adapter.get('parameters',[])}
+    registers.update(f.get('argument') for f in adapter.get('fields',[]) if f.get('owner')=='entity')
+    registers.update(c.get('argument') for c in adapter.get('collections',[]) if c.get('owner')=='entity')
+    if 'r3' in registers:raise ValueError('incoming r3 unavailable: missing preserving entry-veneer ABI contract')
+    if not registers<={'r0','r1','r2'}:raise ValueError('unsupported mechanical register argument binding')
+    if adapter.get('return_type') not in ('void','u8','u16','u32'):
+        raise ValueError('missing supported scalar return binding contract')
+    if any(f.get('owner') not in ('global','entity') or f.get('width') not in (8,16,32) for f in adapter.get('fields',[])):
+        raise ValueError('missing canonical global/entity scalar storage contract')
+    return {'schema':'gameverse.qualified-native-binding/1','kind':'canonical-global-entity-storage',
+            'entry_mode':'thumb','arguments':'r0-r2; incoming r3 unavailable','entry_transfer':transfer,
+            'veneer':'ldr-r3-literal-bx-r3/8','authority':'source-pinned adapter and finite qualification domain',
+            'scope':'No broader caller, allocation, lifecycle or concurrency admission'}
+
+
+def validate_qualification(proof,rom,l1_sha,c_sha):
+    count=proof.get('parity',{}).get('vectors')
+    if (proof.get('schema')!='gameverse.ir.qualification/0.2' or proof.get('outcome')!='pass'
+            or proof.get('rom_sha256')!=rom or proof.get('parity',{}).get('outcome')!='pass'
+            or type(count) is not int or not 1<=count<=65536
+            or proof.get('artifacts',{}).get('l1.json',{}).get('sha256')!=l1_sha
+            or proof.get('artifacts',{}).get('generated.c',{}).get('sha256')!=c_sha):
+        raise ValueError('qualified L1/native receipt identity or bounded vector contract mismatch')
+    return count
+
+
+def immutable_asset_contract(behavior,adapter,receipts):
+    """Pin read-only IR data without claiming its entire span is typed assets."""
+    assets={a['name']:a for a in behavior.get('assets',[])}
+    if len(assets)!=len(behavior.get('assets',[])) or len(assets)!=len(adapter.get('assets',[])):
+        raise ValueError('missing exact immutable IR data inventory')
+    verified={a['name']:a for a in receipts}
+    out=[]
+    for row in adapter.get('assets',[]):
+        a=assets.get(row['name']);proof=verified.get(row['name'],{})
+        if a is None or a.get('storage_type')!='u8':raise ValueError('unsupported immutable IR data type')
+        data=bytes(a['data'])
+        if (len(data)!=row.get('bytes') or proof.get('mode')!='embedded-readonly-no-writeback'
+                or proof.get('address')!=row.get('address') or proof.get('bytes')!=len(data) or proof.get('sha256')!=sha(data)):
+            raise ValueError('missing source-verified immutable IR data receipt')
+        out.append({'name':row['name'],'address':row['address'],'bytes':len(data),'sha256':sha(data),
+                    'classification':'source-verified readonly byte slice; independently typed asset extent unproven'})
+    return out
+
+
 def admit_ir(packet,bundle):
     """Import semantic inputs once into an already-exported private container.
 
@@ -56,15 +131,17 @@ def admit_ir(packet,bundle):
     report_bytes=(packet/'provider-report.json').read_bytes();report=json.loads(report_bytes)
     if (parent.get('schema')!='gameverse.private-component-bundle/1' or parent.get('capability')!='rebuild_only'
             or report.get('outcome')!='pass' or report['rebuilt_sha256']!=parent['expected_artifact']['sha256']
-            or tuple(t[0] for t in report['profile']['targets'])!=LABELS
             or report['profile'].get('arena_append') is not True):
-        raise ValueError('qualified three-consumer appended MZM container required')
+        raise ValueError('missing qualified append-layout provider/container identity contract')
+    targets=validate_targets(report['profile'].get('targets'));labels=tuple(t[0] for t in targets)
+    binding_source=(ROOT/'tools/roundtrip/ir_provider.py').read_bytes()
+    entry_validator=getattr(binding_from_snapshot(binding_source.decode()),'entry_validator',None)
     target=bundle/'ir-inputs';target.mkdir()
     def capture(name,data):
         path=target/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
         return {'path':str(path.relative_to(bundle)),'sha256':sha(data)}
     modules=[]
-    for label,package,entry in report['profile']['targets']:
+    for label,package,entry in targets:
         refs={}
         for name in ('l1.json','validation-adapter.json','original-proof.json','rebuilt-proof.json'):
             relative=label+'/'+name
@@ -72,20 +149,26 @@ def admit_ir(packet,bundle):
             refs[name]=capture(relative,data)
         x=json.loads(read_ref(bundle,refs['l1.json']));adapter=json.loads(read_ref(bundle,refs['validation-adapter.json']))
         if x.get('retained_services') or adapter.get('retained_services'):
-            raise ValueError('retained native services need a separate registered IR recipe')
+            raise ValueError('missing registered retained-native-service replay contract')
+        if adapter.get('entry','').lower()!=entry.lower():raise ValueError('qualified target/adapter entry mismatch')
+        binding_contract=validate_binding_contract(adapter,entry_validator)
+        vectors=[]
         for proof_name,rom in (('original-proof.json',report['original_sha256']),('rebuilt-proof.json',report['rebuilt_sha256'])):
             proof=json.loads(read_ref(bundle,refs[proof_name]))
-            if (proof.get('outcome')!='pass' or proof.get('rom_sha256')!=rom or proof.get('parity',{}).get('outcome')!='pass'
-                    or proof['parity'].get('vectors')!=4096 or proof['artifacts']['l1.json']['sha256']!=refs['l1.json']['sha256']
-                    or proof['artifacts']['generated.c']['sha256']!=report['producer_pins'][label+'/generated.c']):
-                raise ValueError('qualified L1/native receipt identity mismatch')
+            vectors.append(validate_qualification(proof,rom,refs['l1.json']['sha256'],report['producer_pins'][label+'/generated.c']))
+        if vectors[0]!=vectors[1]:raise ValueError('original/rebuilt qualification vector contracts differ')
+        assets=immutable_asset_contract(x,adapter,report['modules'][label].get('assets',[]))
         modules.append({'label':label,'package':package,'entry':entry,'inputs':refs,
                         'expected_generated_c_sha256':report['producer_pins'][label+'/generated.c'],
-                        'expected_bound_c_sha256':report['producer_pins'][label+'/bound.c']})
+                        'expected_bound_c_sha256':report['producer_pins'][label+'/bound.c'],
+                        'binding_contract':binding_contract,'qualification':{'schema':'gameverse.qualified-ir-scope/1','vectors':vectors[0],
+                            'original_rom_sha256':report['original_sha256'],'rebuilt_rom_sha256':report['rebuilt_sha256'],
+                            'scope':'Exact retained finite-domain proof; no arbitrary edit or whole-game semantic closure'},
+                        'immutable_readonly_ir_data':assets})
     compiler={}
     for name in ('lower.py','contract.py','domain.py'):
         compiler[name]=capture('compiler/'+name,(ROOT/'tools/behavior_ir'/name).read_bytes())
-    compiler['binding_source']=capture('compiler/ir_provider.py',(ROOT/'tools/roundtrip/ir_provider.py').read_bytes())
+    compiler['binding_source']=capture('compiler/ir_provider.py',binding_source)
     compiler['assembler_source']=capture('compiler/native_provider.py',(ROOT/'tools/roundtrip/native_provider.py').read_bytes())
     linker=read_ref(packet,{'path':'native.ld','sha256':report['producer_pins']['native.ld']})
     if re.search(rb'\b(INCLUDE|INPUT|GROUP|SEARCH_DIR|STARTUP|OUTPUT)\b',linker):
@@ -109,12 +192,12 @@ def admit_ir(packet,bundle):
         else:mixed.append(descriptor)
     denied=[str(ROOT/name) for name in ('local/roms','local/game-builds','local/whole-game-mashup','local/decomps','local/decomp','local/source-builds')]
     denied.extend([str(packet),str(bundle/'retained-c')])
-    denied_files=[str(packet/label/'generated.c') for label in LABELS]+[str(packet/label/'bound.c') for label in LABELS]
+    denied_files=[str(packet/label/'generated.c') for label in labels]+[str(packet/label/'bound.c') for label in labels]
     original=json.loads((packet/'manifest.json').read_text()).get('original',{}).get('path')
     if original:denied_files.append(str(Path(original).resolve()))
     recipe={'schema':SCHEMA,'capability':'qualified_ir_native_payload_replay','container':{'path':'bundle.json','sha256':sha(parent_bytes)},
             'layout':parent['layout'],'modules':modules,'compiler':compiler,'tools':tools,'linker':linker_ref,
-            'recipe':'qualified-three-unit-arm7tdmi/1','limits':{'units':3,'stage_timeout_seconds':15,'max_rom_bytes':MAX_BYTES},
+            'recipe':TARGET_RECIPE,'entry_symbol':'native_'+labels[0],'target_contract':{'schema':'gameverse.qualified-target-list/1','targets':targets,'binding':'canonical-global-entity-storage'},'limits':{'units':len(targets),'stage_timeout_seconds':15,'max_rom_bytes':MAX_BYTES},
             'expected_payload':{'sha256':report['producer_pins']['native.bin'],'size':report['generated_native_bytes']},
             'expected_artifact':parent['expected_artifact'],'native_entries':report['native_entries'],
             'byte_accounting':{'lifted_function_symbols':report['generated_behavior_function_bytes'],
@@ -127,12 +210,12 @@ def admit_ir(packet,bundle):
                                   'Original scheduler, allocation, lifecycle, rendering/audio and complete gameplay semantics remain native/open',
                                   'Qualification is inherited only for byte-identical payload; arbitrary IR edits require new qualification']},
             'access_policy':{'denied_roots':denied,'denied_files':denied_files,
-                             'negative_controls':[str(packet/'provider-report.json'),str(packet/'behavior/generated.c'),str(bundle/'retained-c/behavior/bound.c'),
+                             'negative_controls':[str(packet/'provider-report.json'),str(packet/labels[0]/'generated.c'),str(bundle/'retained-c'/labels[0]/'bound.c'),
                                                   str(ROOT/'local/game-builds/__ir_bundle_denied__'),str(ROOT/'local/roms/__ir_bundle_denied__')]},
             'provenance':{'provider_report_sha256':sha(report_bytes),'paths_in_receipts':'provenance only; not executable dependencies',
                           'source_recovery':'retained qualified automatic L1; no new L0 lifting'},
             'claims':{'whole_game_ir_only':False,'complete_ir_assets_game':False,'private_original_derived_host':True,
-                      'asset_classification':'No authoritative separate asset records in this three-root scope; object capture remains mixed_unknown'},
+                      'asset_classification':'Separate asset_data requires authoritative overlay; source-verified embedded IR data is not automatically a typed asset'},
             'timing':{'import_seconds':time.perf_counter()-started,'build_seconds':None,'queue_seconds':None}}
     write_json(bundle/'ir-bundle.json',recipe)
     return recipe
@@ -140,12 +223,29 @@ def admit_ir(packet,bundle):
 
 def load_recipe(bundle):
     recipe=json.loads((bundle/'ir-bundle.json').read_text())
-    if recipe.get('schema')!=SCHEMA or recipe.get('recipe')!='qualified-three-unit-arm7tdmi/1' or tuple(m.get('label') for m in recipe['modules'])!=LABELS:
-        raise ValueError('unsupported qualified IR recipe')
+    legacy=recipe.get('schema')==LEGACY_SCHEMA and recipe.get('recipe')=='qualified-three-unit-arm7tdmi/1' and tuple(m.get('label') for m in recipe['modules'])==LABELS
+    generic=recipe.get('schema')==SCHEMA and recipe.get('recipe')==TARGET_RECIPE
+    if not (legacy or generic):raise ValueError('unsupported qualified IR recipe')
+    if generic:
+        contract=recipe.get('target_contract',{})
+        if contract.get('schema')!='gameverse.qualified-target-list/1':raise ValueError('missing qualified target-list contract')
+        targets=validate_targets(contract.get('targets'))
+        if ([(m['label'],m['package'],m['entry']) for m in recipe['modules']]!=[tuple(t) for t in targets]
+                or recipe['limits']['units']!=len(targets) or recipe.get('entry_symbol')!='native_'+targets[0][0]):
+            raise ValueError('qualified target list differs from replay modules/entry symbol')
     parent=json.loads(read_ref(bundle,recipe['container']))
     if parent.get('expected_artifact')!=recipe['expected_artifact']:raise ValueError('IR/container output identity mismatch')
     for module in recipe['modules']:
         for ref in module['inputs'].values():read_ref(bundle,ref)
+        if generic:
+            adapter=json.loads(read_ref(bundle,module['inputs']['validation-adapter.json']))
+            validator=getattr(binding_from_snapshot(read_ref(bundle,recipe['compiler']['binding_source']).decode()),'entry_validator',None)
+            if validate_binding_contract(adapter,validator)!=module.get('binding_contract'):raise ValueError('mechanical binding contract changed')
+            q=module.get('qualification',{})
+            for name,key in (('original-proof.json','original_rom_sha256'),('rebuilt-proof.json','rebuilt_rom_sha256')):
+                proof=json.loads(read_ref(bundle,module['inputs'][name]))
+                if validate_qualification(proof,q.get(key),module['inputs']['l1.json']['sha256'],module['expected_generated_c_sha256'])!=q.get('vectors'):
+                    raise ValueError('qualification scope changed')
     for ref in recipe['compiler'].values():read_ref(bundle,ref)
     read_ref(bundle,recipe['linker']);read_ref(bundle,recipe['layout'])
     for tool in recipe['tools'].values():
@@ -273,9 +373,10 @@ def import_snapshot(name,path):
 
 def binding_from_snapshot(source):
     tree=ast.parse(source)
-    nodes=[n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name in ('storage_moves','binding')]
-    if {n.name for n in nodes}!={'storage_moves','binding'}:raise ValueError('mechanical binding closure unavailable')
+    nodes=[n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name in ('storage_moves','validate_entry_binding','binding')]
+    if not {'storage_moves','binding'}<={n.name for n in nodes}:raise ValueError('mechanical binding closure unavailable')
     namespace={};exec(compile(ast.Module(body=nodes,type_ignores=[]),'<pinned mechanical binding>','exec'),namespace)
+    namespace['binding'].entry_validator=namespace.get('validate_entry_binding')
     return namespace['binding']
 
 
@@ -285,7 +386,7 @@ def worker(bundle,output,asset_partition=None):
     partition=load_asset_partition(asset_partition,bundle,recipe) if asset_partition else None
     receipt={'schema':'gameverse.qualified-ir-replay-result/1','status':'failed','queue_seconds':None,'stages':stages,
              'native_qualification_rerun':False,'new_l0_lifting':False,'model_calls':0,
-             'scope':'Three qualified unchanged IR modules plus retained mixed native host; not whole-game IR reconstruction'}
+             'scope':'Bounded qualified unchanged IR target list plus retained mixed native host; not whole-game IR reconstruction'}
     def run(name,command):
         begin=time.perf_counter();p=subprocess.run(command,cwd=output,capture_output=True,text=True,timeout=15)
         stages.append({'name':name,'seconds':time.perf_counter()-begin,'outcome':'pass' if p.returncode==0 else 'fail','command':command})
@@ -314,7 +415,7 @@ def worker(bundle,output,asset_partition=None):
                                     'generated_c_sha256':sha(code.encode()),'bound_c_sha256':sha(native.encode()),'lower_and_bind_seconds':time.perf_counter()-begin})
             obj=label+'/bound.o';run('compile-'+label,[recipe['tools']['cc']['path'],'-target','armv4t-none-eabi','-mcpu=arm7tdmi','-mthumb','-ffreestanding','-fno-builtin','-Os','-c',label+'/bound.c','-o',obj]);objects.append(obj)
         (output/'native.ld').write_bytes(read_ref(bundle,recipe['linker']))
-        run('link',[recipe['tools']['arm-none-eabi-ld']['path'],'-T','native.ld','-e','native_behavior',*objects,'-o','native.elf'])
+        run('link',[recipe['tools']['arm-none-eabi-ld']['path'],'-T','native.ld','-e',recipe.get('entry_symbol','native_behavior'),*objects,'-o','native.elf'])
         symbols=run('symbols',[recipe['tools']['arm-none-eabi-nm']['path'],'-S','native.elf'])
         entries={p[3]:int(p[0],16)&~1 for line in symbols.splitlines() if len(p:=line.split())==4}
         run('objcopy',[recipe['tools']['arm-none-eabi-objcopy']['path'],'-O','binary','native.elf','native.bin'])
@@ -341,7 +442,7 @@ def worker(bundle,output,asset_partition=None):
             relative=('assets/' if row.get('content_type')=='asset_data' else 'components/')+str(index)+'.bin'
             (output/relative).write_bytes(data);row['artifact']={'path':relative,'sha256':sha(data)}
             typed_rows.append({'id':row['id'],'offset':row['offset'],'size':len(data),'sha256':sha(data),'artifact':row['artifact'],
-                'type':'executable_ir_and_mechanical_binding' if row['offset'] in payload_offsets or row['offset'] in hooks else 'asset_data' if row.get('content_type')=='asset_data' else 'mixed_unknown'})
+                'type':('ir_payload_mixed_code_binding_and_readonly_data' if recipe['byte_accounting']['embedded_asset_bytes'] else 'executable_ir_and_mechanical_binding') if row['offset'] in payload_offsets or row['offset'] in hooks else 'asset_data' if row.get('content_type')=='asset_data' else 'mixed_unknown'})
         if partition and asset_copied!=partition['asset_bytes']:raise ValueError('combined IR replay did not consume every separated asset byte')
         write_json(output/'layout.json',layout)
         assembler=import_snapshot('qualified_bundle_assembler',bundle/recipe['compiler']['assembler_source']['path'])

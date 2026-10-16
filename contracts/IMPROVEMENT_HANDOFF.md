@@ -149,3 +149,7 @@ Final worker execution was 60.162394 s, including model work; D1 and System 2 ca
 The current call ledger is exhausted: 14 v2-prefix + four [actual retained D1 rechecks](../verification/rpg-d1-targeted-rechecks-20261016.json) + 48 earlier cancelled-campaign + 34 final calls = 100. The earlier separately authorized v1 prefix used 20 calls. Across all RPG runs and targeted requests, 120 calls, 28,897 native frames and 237.13608 seconds of aggregate observed worker/request execution are retained, including failures and duplicate work. This aggregate is not a single elapsed critical path. All workers are stopped; no further qualification is running.
 
 All four retained D1 rechecks returned HTTP 200/status success with zero retries in 1.862158 s after lossless context compaction. Their low scores still failed the unchanged confidence gate. Exact source review and 33 focused checks covered action metadata, anchored history/gaps and JSON type changes; this correction removes redundancy without pruning choices, current facts, screenshots or source criteria. The provider's exact request-size limit remains unknown.
+
+## Later reconstruction tooling wave
+
+The [scoped reconstruction tooling handoff](RECONSTRUCTION_TOOLING.md) documents the generic v2 bundle, readonly-callee, entry-ABI helper and typed asset-batch source package. Its frozen 33-game producer snapshot remains zero whole-game closures; it adds no model runs and does not change the RPG source or historical qualification above. Private extracted IR/assets and compiler payloads remain outside Git.

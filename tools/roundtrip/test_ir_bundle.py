@@ -7,7 +7,7 @@ import sys
 import tempfile
 import unittest
 
-from .ir_bundle import read_ref, binding_from_snapshot, load_recipe, load_asset_partition
+from .ir_bundle import read_ref, binding_from_snapshot, load_recipe, load_asset_partition, validate_targets, validate_qualification, validate_binding_contract
 
 
 class IRBundleInputs(unittest.TestCase):
@@ -28,6 +28,32 @@ class IRBundleInputs(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);(root/'ir-bundle.json').write_text(json.dumps({'schema':'unqualified','recipe':'arbitrary-command','modules':[]}))
             with self.assertRaisesRegex(ValueError,'unsupported qualified IR recipe'):load_recipe(root)
+
+    def test_generic_targets_have_explicit_unique_bounded_contract(self):
+        targets=[['read','minish.inventory.read','0807ca84'],['write','minish.inventory.write','0807caa0']]
+        self.assertEqual(validate_targets(targets),targets)
+        for wrong in ([],targets+[targets[0]], [['../escape','pkg','08000000']], [['x','pkg','08000001']], [['x','pkg','03000000']]):
+            with self.assertRaises(ValueError):validate_targets(wrong)
+
+    def test_qualification_count_and_exact_ir_identity_required(self):
+        proof={'schema':'gameverse.ir.qualification/0.2','outcome':'pass','rom_sha256':'rom',
+               'parity':{'outcome':'pass','vectors':32},'artifacts':{'l1.json':{'sha256':'ir'},'generated.c':{'sha256':'c'}}}
+        self.assertEqual(validate_qualification(proof,'rom','ir','c'),32)
+        for count in (0,True,65537):
+            proof['parity']['vectors']=count
+            with self.assertRaises(ValueError):validate_qualification(proof,'rom','ir','c')
+        proof['parity']['vectors']=256
+        with self.assertRaises(ValueError):validate_qualification(proof,'rom','wrong-ir','c')
+
+    def test_generic_binding_needs_source_pinned_abi_validator(self):
+        adapter={'schema':'gameverse.l0.validation-adapter/0.2','parameters':[],'fields':[],'return_type':'void'}
+        with self.assertRaisesRegex(ValueError,'source-pinned'):validate_binding_contract(adapter)
+        validator=lambda a:{'clobbers':['r3']}
+        self.assertEqual(validate_binding_contract(adapter,validator)['entry_transfer'],{'clobbers':['r3']})
+        adapter['parameters']=[{'register':'r3'}]
+        with self.assertRaisesRegex(ValueError,'r3'):validate_binding_contract(adapter,validator)
+        adapter['parameters']=[];adapter['object_references']=[{}]
+        with self.assertRaisesRegex(ValueError,'reference-storage'):validate_binding_contract(adapter,validator)
 
     def test_asset_partition_generic_count_and_negative_extents(self):
         with tempfile.TemporaryDirectory() as directory:
