@@ -225,6 +225,52 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(result['usage']['model_calls'], 5)
         self.assertNotIn('initial_checkpoint', self.seen[1])
 
+    def test_cancelled_second_child_keeps_checkpoint_parent_and_usage(self):
+        original = self.stages
+        def cancelling_stages(request, config):
+            stages = original(request, config)
+            if len(self.seen) != 2:
+                return stages
+            def admit(*args):
+                (self.root/'run/cancel.request').write_text('cancel')
+                return {'admitted': True}
+            return iteration.IterationStages(admit, stages.build, stages.experiment, stages.diagnose, stages.repair)
+        with patch.object(self, 'stages', side_effect=cancelling_stages):
+            first = self.run_campaign()
+        self.assertEqual(first['status'], 'cancelled')
+        self.assertEqual(first['usage']['model_calls'], 2)
+        self.assertEqual(len(first['chunks']), 2)
+        inherited = self.seen[1]['initial_checkpoint']
+        (self.root/'run/cancel.request').unlink()
+        result = self.run_campaign(resume=True)
+        self.assertEqual(self.seen[2]['initial_checkpoint'], inherited)
+        self.assertEqual(result['usage']['model_calls'], 5)
+        self.assertEqual(len(result['chunks']), 4)
+        self.assertEqual(result['chunks'][1]['usage']['model_calls'], 0)
+
+    def test_cancelled_rebuilt_child_never_reuses_different_rom_checkpoint(self):
+        original = self.stages
+        changed = self.root/'changed-rom';changed.write_text('different cartridge')
+        def cancelling_stages(request, config):
+            stages = original(request, config)
+            if len(self.seen) != 2:
+                return stages
+            def build(request, context):
+                result = stages.build(request, context)
+                result['artifact'] = file_ref(changed)
+                (self.root/'run/cancel.request').write_text('cancel')
+                return result
+            return iteration.IterationStages(stages.admit, build, stages.experiment, stages.diagnose, stages.repair)
+        with patch.object(self, 'stages', side_effect=cancelling_stages):
+            first = self.run_campaign()
+        self.assertEqual(first['status'], 'cancelled')
+        (self.root/'run/cancel.request').unlink()
+        result = self.run_campaign(resume=True)
+        self.assertEqual(result['status'], 'blocked')
+        self.assertEqual(result['reason'], 'cancelled_child_checkpoint_parent_identity_mismatch')
+        self.assertEqual(result['usage']['model_calls'], 2)
+        self.assertEqual(len(self.seen), 2)
+
     def test_expired_deadline_never_spends_on_resume(self):
         self.cancel_at = 1
         self.run_campaign()

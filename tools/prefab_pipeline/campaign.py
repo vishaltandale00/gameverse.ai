@@ -244,7 +244,22 @@ def run_campaign(request, template, campaign_config, output_dir, *, resume=False
                         and prior.get('usage_complete') and not prior.get('checkpoint')
                         and not any(row['name'] == 'experiment' and row['status'] == 'completed'
                                     for row in prior.get('stages', []))):
-                    prior_ref = None
+                    inherited = prior.get('config', {}).get('initial_checkpoint')
+                    if inherited:
+                        retained = prior.get('config', {}).get('continuation', {}).get('prior_report')
+                        if not verify_file_ref(retained):
+                            raise CampaignError('cancelled_child_checkpoint_parent_pin_mismatch')
+                        parent = json.loads(Path(retained['path']).read_text())
+                        if (parent.get('checkpoint') != inherited
+                                or parent.get('final_request') != prior.get('request')
+                                or (prior.get('artifact') and prior['artifact'].get('sha256')
+                                    != inherited.get('artifact_sha256'))):
+                            raise CampaignError('cancelled_child_checkpoint_parent_identity_mismatch')
+                        # Cancelled work still consumes a row and its measured
+                        # resources; only state lineage comes from its parent.
+                        prior_ref = retained
+                    else:
+                        prior_ref = None
             if prior_ref:
                 child_config = prepare_continuation_config(prior_ref, chunk_template, run_id, campaign_resource_transition=True)
                 child_request = child_config['continuation_request']

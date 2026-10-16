@@ -3113,7 +3113,7 @@
       ]
     },
     {
-      "bytes": 18978,
+      "bytes": 20091,
       "kind": "authored-code",
       "origins": [
         "registered-recipe-entry"
@@ -3124,7 +3124,7 @@
         "sid-rpg-weekend-original",
         "sonic-metroid-coast-campaign"
       ],
-      "sha256": "066a26e477f99fc8bd528e6e77b9b5715431e7b9ab30464f95d5a2efd0571ba9",
+      "sha256": "aa14fffdad4015b420171547f76e823c52b90e3971166f29f74bbbad7d7dbe50",
       "stages": [
         "build-and-loop"
       ]
@@ -6127,7 +6127,7 @@
     }
   ],
   "schema": "gameverse.improvement-provider-pack/1",
-  "source_commit": "02ac5b6e806b5166b2254427bac3b9b91cc0ab9c",
+  "source_commit": "e2b7e661d5057cc74d44ec44b0c185936f89248b",
   "static_resolution": [
     {
       "errors": [],

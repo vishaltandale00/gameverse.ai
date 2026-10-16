@@ -1,0 +1,79 @@
+{
+  "schema": "gameverse.rpg-cancelled-checkpoint-verification/1",
+  "recorded_utc": "2026-10-16T20:14:58.331504+00:00",
+  "scope": "Offline actual native/scenario replay from an actual pre-experiment-cancelled child. No new model campaign or complete controller-resume qualification.",
+  "outcome": "passed",
+  "cancelled_run_id": "961f2a47-b56a-4142-b87d-5274368db9ca-chunk-0002",
+  "retained_parent_run_id": "961f2a47-b56a-4142-b87d-5274368db9ca-chunk-0001",
+  "cancelled_child_usage_preserved": {
+    "model_calls": 0,
+    "native_frames": 0,
+    "cost_usd": 0.0
+  },
+  "cancelled_child_has_no_new_checkpoint": true,
+  "exact_parent_lineage_verified": true,
+  "artifact_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+  "source_save_sha256": "21fa895f1f79dab55e729196b8e1a606f712055300b8a5da9861156ff6f4dea3",
+  "retained_checkpoint_sha256": "d836666db7c87ff8ddf8948cc96f1bd6617b9a9f3d1b34f5a052e2caa1efdb60",
+  "retained_observation_sha256": "d6f7e893402180e4bf5ba1efe6a1ed20f1bef0c04411137c16dd201284eda6d5",
+  "parent_report_sha256": "15ca2bc76913fa9fa6d08cd1f19b9a9ba87cb0cfb29acf084b219c0c48c5b52b",
+  "cancelled_report_sha256": "be8d3a2d03cac7db7fa6ee4be4d910f721ec2624e7f48646b77f046f8bed1e12",
+  "provider_manifest_sha256": "5e747a8e8fe4637d14a4c0117aadea689b6366925749d12ac9f76f4df9caa157",
+  "runtime_sha256": {
+    "adapter": "05d2a9a1a1a966fa380238fb4133554df1c2cbe0a36b5a2adbe44f1fa4d02a4f",
+    "native_binary": "977359b8e073684818abc28340b99885e0e8fa1c68f6b92e7cbcd1c48b9e98f4",
+    "helper": "886b996aa6bb44707afbd70c26de8621b74aba98ce7c6c0ce0b8d3327eb543e6",
+    "campaign_controller": "aa14fffdad4015b420171547f76e823c52b90e3971166f29f74bbbad7d7dbe50"
+  },
+  "proof": {
+    "native_boundary_and_story_equal_retained": true,
+    "native_boundary_and_story_differ_from_ordinary_save": true,
+    "navigation_boundary_steps_blocked_edges_settle_restored": true,
+    "scenario_reached_nodes_preserved": true,
+    "retained_scenario_node_count": 3,
+    "ordinary_save_weekend_stage": 0,
+    "checkpoint_weekend_stage": 2,
+    "map_differs": true,
+    "position_differs": true,
+    "resume_source_setup_frames": 0,
+    "resume_render_integration_frames": 1,
+    "native_actions_after_resume": 0,
+    "new_model_calls": 0
+  },
+  "timing": {
+    "ordinary_save_setup_frames": 1692,
+    "ordinary_save_open_setup_observe_wall_s": 1.754882,
+    "checkpoint_open_observe_wall_s": 0.773701,
+    "total_wall_s": 2.535051,
+    "queue_wall_s": null,
+    "build_wall_s": null,
+    "note": "Independent native-session initializations; elapsed setup includes source admission/parser work. Resume includes one explicit real render frame."
+  },
+  "environment": {
+    "python": "3.9.6",
+    "machine": "arm64",
+    "emulator": {
+      "name": "libmgba",
+      "version": "0.10.5",
+      "frequency_hz": 16777216,
+      "frame_cycles": 280896,
+      "bios": "mGBA HLE; skipBios=true",
+      "rtc": "fixed 2024-01-01 UTC"
+    }
+  },
+  "qualification": {
+    "live_campaign_resumed": false,
+    "model_calls": 0,
+    "whole_quest_completed": false,
+    "changed_rom_restore_permitted": false,
+    "controller_branch_tests_owned_separately": true
+  },
+  "excluded": [
+    "Private paths",
+    "Screenshots",
+    "RAM dumps",
+    "Transcripts",
+    "Game/save/snapshot bytes",
+    "Credentials"
+  ]
+}
