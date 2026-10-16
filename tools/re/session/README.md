@@ -81,3 +81,22 @@ artifacts. The failed check is retained beside the successful checks under
 `local/re/experiments/playtester-session/`.
 
 API reference: [mGBA 0.10.5 serialization implementation](https://github.com/mgba-emu/mgba/blob/0.10.5/src/core/serialize.c).
+
+## Source RAM and actual video, version 2
+
+`--memory-profile PATH` accepts a ROM-SHA-256-pinned source observation profile.
+Read-only `read_memory` is restricted to IWRAM/EWRAM, at most 256 bytes per
+request; no memory writes or I/O register reads are exposed. `hello` additionally
+reports the actual linked libmgba version, clock frequency and frame cycle count.
+
+```json
+{"id":"7","op":"read_memory","address":50336724,"length":32}
+{"id":"8","op":"record_start","stride":2}
+{"id":"9","op":"record_stop"}
+```
+
+Recording retains actual emulated frames, then encodes H.264 with the existing
+ffmpeg installation. It records no audio and removes temporary raw frames only
+after successful encoding. Explicitly stop recording to obtain its MP4 metadata.
+See `tools/gba_playtest/README.md` for the bounded source-aware episode runner,
+retained baseline failures and actual compiled-candidate screenshots/video.

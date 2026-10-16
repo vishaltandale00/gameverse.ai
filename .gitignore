@@ -24,6 +24,7 @@ local/
 .gameverse/
 local-data/
 recordings/
+tools/gba_mashup/native/generated/
 saves/
 *.sqlite
 *.sqlite3

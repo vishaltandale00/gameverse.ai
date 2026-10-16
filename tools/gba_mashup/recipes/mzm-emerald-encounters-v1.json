@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "recipe_id": "mzm-emerald-encounters-v1",
+  "title": "Metroid × Emerald",
+  "runtime_target": "gba",
+  "role": "separate_fork",
+  "save_policy": "fresh progress; independent artifact identity; no automatic migration",
+  "parent_games": [
+    {"game_id": "metroid-zero-mission", "source_commit": "9caaefc0ee570f3399d86acf140fdeada9692836", "role": "whole campaign foundation"},
+    {"game_id": "pokemon-emerald-version", "source_commit": "731ad5bfd6e6f265508d0efcca0ba42f9dcf5881", "role": "extracted native combat code, tables and sprite assets"}
+  ],
+  "design_choices": [
+    {"id": "perspective", "label": "Side-view world", "mode": "parent", "parent_game_id": "metroid-zero-mission", "implementation": "Retain actual room rendering, collision, camera, HUD and world source"},
+    {"id": "movement", "label": "Metroid movement", "mode": "parent", "parent_game_id": "metroid-zero-mission", "component_ids": ["ground_locomotion", "jump_and_gravity"], "implementation": "Retain native Samus code and all campaign equipment behaviors"},
+    {"id": "progression", "label": "Explore and unlock", "mode": "parent", "parent_game_id": "metroid-zero-mission", "component_ids": ["ability_gating_graph"], "implementation": "Retain entire campaign, native equipment gates, bosses, maps and save system"},
+    {"id": "combat", "label": "Pokémon encounters", "mode": "bridge", "parent_game_id": "pokemon-emerald-version", "component_ids": ["trainer_ai_move_scoring", "trainer_ai_switch_and_items"], "implementation": "Verbatim Emerald damage/type functions plus move/type/species tables; explicit reduced singles AI and turn bridge", "fidelity": "adapted subset; full AI bytecode interpreter and trainer item policy are not ported"},
+    {"id": "weather", "label": "Area changes the matchup", "mode": "bridge", "parent_game_id": "pokemon-emerald-version", "component_ids": ["overworld_weather_effects"], "implementation": "Map current MZM area modulo three to clear/rain/sun; extracted Emerald damage calculation reads native weather bits", "fidelity": "new cross-game mapping; Emerald overworld weather renderer is not ported"},
+    {"id": "setting", "label": "Zebes campaign", "mode": "parent", "parent_game_id": "metroid-zero-mission", "implementation": "Retain actual story, rooms, assets and campaign structure"},
+    {"id": "companions", "label": "Three Pokémon party", "mode": "bridge", "parent_game_id": "pokemon-emerald-version", "implementation": "Actual Bulbasaur, Charmander, Squirtle source stats and first-frame front/back art; bridge-configured moves and level; resets per encounter"},
+    {"id": "tone", "label": "Isolation with tactical encounters", "mode": "custom", "evidence_status": "design intent", "implementation": "Inherited Metroid presentation; native turn-based encounter detours"}
+  ],
+  "dependency_decisions": [
+    {"id": "world_vs_battle_display", "resolution": "Use original pause fade, PauseScreenInit OBJ/palette backups and GM_INGAME reload path; combat owns native Mode3 only while paused"},
+    {"id": "encounter_trigger", "resolution": "SELECT explicitly enters; observed nonzero health loss also enters after cooldown. Health-loss trigger includes hazards and does not identify or remove a specific enemy"},
+    {"id": "battle_world_outcome", "resolution": "Victory restores 8 energy up to native cap; defeat halves nontrivial energy; retreat returns without award; 180 gameplay-frame encounter cooldown"},
+    {"id": "combat_dependencies", "resolution": "Bridge exposes only reviewed singles/no held-items/no gym-badges/no field-sports battler states; do not claim arbitrary Emerald state support"},
+    {"id": "original_request_bounds", "resolution": "Retain the original request separately. Former 12x8 toy grid bounds do not truncate the actual campaign. Human clarification selects side-view platforming with Pokémon combat"}
+  ],
+  "build": {"entry": "tools/gba_mashup/build_mzm.py", "native": "tools/gba_mashup/native", "extraction": "tools/gba_mashup/extract_emerald.py", "rom_inputs": "local exact-hash originals only", "jobs": 4, "make_timeout_s": 240},
+  "qualification": {"entry": "tools/gba_playtest/run.py", "required": ["native exploration controls", "reachable native encounter", "move changes native HP and PP", "party switching", "return to exploration with controls", "actual emulator screenshots and video"], "full_campaign_completion": "unqualified"},
+  "unsupported": ["Arbitrary ontology bundles are not automatically linkable", "Complete Emerald battle scripts, trainer item AI, catching, evolution and persistent Pokémon party", "Automatic native enemy removal after encounter", "Full campaign regression qualification"]
+}

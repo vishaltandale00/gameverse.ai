@@ -23,7 +23,7 @@ export function createAttempt(catalog, keys, intent, adaptations = {}) {
     candidate_id: 'workshop-ontology-draft',
     title: 'Gameverse workshop experiment',
     intent: intent.trim(),
-    components: selected.map(({ game, component }) => ({ game_id: game.id, component_id: component.id, adaptation: adaptations[componentKey(game.id, component.id)]?.trim() || `Explore a simplified adaptation of ${component.label}. Verify constraints and implement this behavior explicitly; the reference grid template does not recover the original rules.` })),
+    components: selected.map(({ game, component }) => ({ game_id: game.id, component_id: component.id, adaptation: adaptations[componentKey(game.id, component.id)]?.trim() || `Use the source references for ${component.label}. Verify dependencies and constraints before integrating this behavior into the GBA build.` })),
     constraints: { max_width: 12, max_height: 8, max_episode_steps: 80 }
   };
 }

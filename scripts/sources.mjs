@@ -79,6 +79,7 @@ try {
   } else {
     const source = manifest.games[gameId];
     if (!source || !['setup', 'build'].includes(operation)) throw Error('Usage: npm run source:setup -- firered|sma4; npm run game:build -- firered|sma4 [--clean] [--base /path/to/sma4.gba]');
+    if (source.buildRecipe) throw Error(`This native composition uses ${source.buildRecipe}. Follow tools/gba_mashup/BUILD_MZM.md for its isolated source build; the baseline builder cannot build this recipe.`);
     report.gameSource = source;
     const directory = await setup(source);
     if (operation === 'setup') {

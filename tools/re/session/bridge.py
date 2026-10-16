@@ -11,12 +11,13 @@ import shutil
 import struct
 import subprocess
 import sys
+import time
 import uuid
 import zlib
 
 KEYS = {key: 1 << i for i, key in enumerate(
     ('A', 'B', 'SELECT', 'START', 'RIGHT', 'LEFT', 'UP', 'DOWN', 'R', 'L'))}
-VERSION = 'mgba-session/1'
+VERSION = 'mgba-session/2'
 
 
 def png(rgba):
@@ -28,7 +29,7 @@ def png(rgba):
 
 
 class NativeSession:
-    def __init__(self, rom, out, binary, *, max_frames=120, timeout=10, initial_state=None):
+    def __init__(self, rom, out, binary, *, max_frames=120, timeout=10, initial_state=None, memory_profile=None):
         self.out = Path(out).resolve()
         # Require a fresh output directory: never reuse another run's saves.
         self.out.mkdir(parents=True, exist_ok=False)
@@ -37,11 +38,22 @@ class NativeSession:
         self.session_id = uuid.uuid4().hex
         self.max_frames, self.timeout = max_frames, timeout
         self.frame, self.sequence, self.checkpoints = 0, 0, {}
+        self.memory_profile = None
+        if memory_profile:
+            profile = json.loads(Path(memory_profile).read_text())
+            if profile.get('rom_sha256') != self.game_version:
+                raise ValueError('memory_profile_rom_mismatch')
+            self.memory_profile = profile
+        self.recording = None
         self.process = subprocess.Popen([str(Path(binary).resolve()), str(self.rom), str(self.out)],
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                                         bufsize=0)
         try:
             self._read()
+            version, frequency, cycles = self._command('version').split()
+            self.emulator = {'name': 'libmgba', 'version': version,
+                             'frequency_hz': int(frequency), 'frame_cycles': int(cycles),
+                             'bios': 'mGBA HLE; skipBios=true', 'rtc': 'fixed 2024-01-01 UTC'}
             if initial_state:
                 source = Path(initial_state).resolve()
                 shutil.copyfile(source, self.out / 'checkpoint-0.ss')
@@ -82,12 +94,71 @@ class NativeSession:
         # Quantized 30x20 screen sample. Animation can still cause false novelty.
         coarse = bytes((raw[(y * 240 + x) * 4 + c] // 32)
                        for y in range(4, 160, 8) for x in range(4, 240, 8) for c in range(3))
+        facts, phase = {}, 'unknown'
+        if self.memory_profile:
+            facts = self.read_facts()
+            for rule in self.memory_profile.get('phase_rules', []):
+                if all(facts.get(k) == v for k, v in rule.get('equals', {}).items()):
+                    phase = rule['phase']
+                    break
         return {'frame': self.frame, 'state_key': hashlib.sha256(coarse).hexdigest(),
-                'image': str(target), 'phase': 'unknown', 'facts': {}, 'progress': {},
+                'image': str(target), 'phase': phase, 'facts': facts, 'progress': {},
                 'terminal': False, 'success': False,
                 'evidence': {'image_sha256': hashlib.sha256(target.read_bytes()).hexdigest(),
                              'state_key_basis': 'quantized_screen_only; animation is not objective progress',
-                             'frame_basis': 'session-relative advanced frames', 'initial_state': self.initial_state}}
+                             'frame_basis': 'session-relative advanced frames', 'initial_state': self.initial_state,
+                             'memory_profile': self.memory_profile}}
+
+    def read_memory(self, address, length):
+        if (type(address) is not int or type(length) is not int or not 1 <= length <= 256 or
+                not any(base <= address and address + length <= end
+                        for base, end in ((0x02000000, 0x02040000), (0x03000000, 0x03008000)))):
+            raise ValueError('invalid_ram_range')
+        raw = bytes.fromhex(self._command('read %d %d' % (address, length)))
+        if len(raw) != length:
+            raise ValueError('invalid_ram_response')
+        return raw
+
+    def read_facts(self):
+        facts = {}
+        for field in self.memory_profile.get('fields', []):
+            size = field['bytes']
+            if size not in (1, 2, 4) or type(field.get('name')) is not str:
+                raise ValueError('invalid_memory_profile')
+            address = int(field['address'], 0) if isinstance(field['address'], str) else field['address']
+            raw = self.read_memory(address, size)
+            facts[field['name']] = int.from_bytes(raw, 'little', signed=field.get('signed', False))
+        return facts
+
+    def start_recording(self, stride=2):
+        if self.recording or type(stride) is not int or not 1 <= stride <= 6:
+            raise ValueError('invalid_recording')
+        self._command('record 1 %d' % stride)
+        self.recording = {'start_frame': self.frame, 'stride': stride, 'audio': False,
+                          'description': 'Actual emulator frames, no synthetic interpolation; audio not recorded'}
+        return dict(self.recording)
+
+    def stop_recording(self):
+        if not self.recording:
+            raise ValueError('not_recording')
+        recorded = int(self._command('record 0'))
+        report = dict(self.recording, end_frame=self.frame, recorded_frames=recorded)
+        self.recording = None
+        raw = self.out / 'video.rgba'
+        output = self.out / 'playthrough.mp4'
+        fps = self.emulator['frequency_hz'] / self.emulator['frame_cycles'] / report['stride']
+        started = time.monotonic()
+        result = subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-f', 'rawvideo', '-pixel_format', 'rgba',
+                                 '-video_size', '240x160', '-framerate', str(fps), '-i', str(raw), '-an',
+                                 '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '22', '-pix_fmt', 'yuv420p',
+                                 '-threads', '1', str(output)], capture_output=True, timeout=60)
+        report.update(encode_wall_s=round(time.monotonic() - started, 6), fps=fps,
+                      path=str(output), outcome='ok' if result.returncode == 0 else 'encode_failed')
+        if result.returncode == 0:
+            report['sha256'] = hashlib.sha256(output.read_bytes()).hexdigest()
+            report['bytes'] = output.stat().st_size
+            raw.unlink()
+        return report
 
     def act(self, action, limit):
         frames, keys = action.get('frames'), action.get('keys', [])
@@ -122,6 +193,7 @@ def main():
     parser.add_argument('--out', type=Path, required=True, help='Fresh private directory; must not already exist')
     parser.add_argument('--binary', type=Path, default=Path(__file__).parent / 'build/gba-session')
     parser.add_argument('--initial-state', type=Path)
+    parser.add_argument('--memory-profile', type=Path, help='ROM-hash-pinned, read-only RAM facts and source refs')
     parser.add_argument('--max-action-frames', type=int, default=120)
     parser.add_argument('--command-timeout', type=float, default=10)
     args = parser.parse_args()
@@ -130,7 +202,7 @@ def main():
     session = None
     try:
         session = NativeSession(args.rom, args.out, args.binary, max_frames=args.max_action_frames,
-                                timeout=args.command_timeout, initial_state=args.initial_state)
+                                timeout=args.command_timeout, initial_state=args.initial_state, memory_profile=args.memory_profile)
         while True:
             raw = sys.stdin.buffer.readline(65537)
             if not raw:
@@ -149,6 +221,8 @@ def main():
                               'capabilities': ['observe', 'act', 'checkpoint', 'restore'], 'max_action_frames': session.max_frames,
                               'source_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                               'native_sha256': hashlib.sha256(args.binary.read_bytes()).hexdigest()}
+                    result['emulator'] = session.emulator
+                    result['capabilities'] += ['read_memory', 'record_start', 'record_stop']
                 elif op == 'observe':
                     result = copy.deepcopy(session.restored_observation) if getattr(session, 'restored_observation', None) else session.observe()
                 elif op == 'act':
@@ -166,6 +240,12 @@ def main():
                     observation = session.observe()
                     session.checkpoints[token] = (slot, session.frame, observation)
                     result = {'checkpoint': token, 'frame': session.frame}
+                elif op == 'read_memory':
+                    result = {'hex': session.read_memory(request['address'], request['length']).hex(), 'frame': session.frame}
+                elif op == 'record_start':
+                    result = session.start_recording(request.get('stride', 2))
+                elif op == 'record_stop':
+                    result = session.stop_recording()
                 elif op == 'restore':
                     slot, frame, observation = session.checkpoints[request['checkpoint']]
                     session._command('load %d' % slot)

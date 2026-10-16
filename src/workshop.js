@@ -1,23 +1,16 @@
-import { componentKey, createAttempt, filterGames, resolveSelection } from './workshop-model.js';
-const $ = selector => document.querySelector(selector);
-const esc = text => String(text).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const colors = ['#dc7248','#6b8874','#8e80a3','#cc9a3d','#608ca2','#bf7f8f','#8e9364','#797b80'];
-let catalog, byId, focused = 'metroid-zero-mission', axis = 'text:mechanics', selected = new Set(['metroid-zero-mission','pokemon-emerald-version']);
-let picks = new Set(), adaptations = {}, evidenceOnly = false, query = '', showAll = false;
-let lastSerialized = '', selectedFacet = 'all';
-const msg = text => { $('#workshop-status').textContent = text; };
-const pretty = value => value.replace(/_/g,' ').replace(/^text:/,'');
-const short = (text, n=25) => text.length > n ? `${text.slice(0,n-1)}…` : text;
-function tint(id) { return colors[(catalog.games.findIndex(g=>g.id===id)) % colors.length]; }
-function go(id) {
-  focused = id; selectedFacet = 'all';
-  renderMap(); renderInspector();
-}
-function toggle(id) {
-  selected.has(id) ? selected.delete(id) : selected.add(id);
-  for (const key of [...picks]) if (!selected.has(key.split(':')[0])) picks.delete(key);
-  renderCatalog(); renderInspector(); renderDraft(); renderMap();
-}
+import { filterGames } from './workshop-model.js';
+import { DIMENSIONS, bundlesFor, defaultChoices, dependencyNotes, createMashupRequest } from './mashup-model.js';
+const $=selector=>document.querySelector(selector);
+const esc=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const colors=['#dc7248','#6b8874','#8e80a3','#cc9a3d','#608ca2','#bf7f8f','#8e9364','#797b80'];
+let catalog,byId,focused='metroid-zero-mission',axis='text:mechanics',selected=new Set(['metroid-zero-mission','pokemon-emerald-version']);
+let choices=null,foundationId='metroid-zero-mission',evidenceOnly=false,query='',showAll=false,lastSerialized='',selectedFacet='all';
+const msg=text=>{$('#workshop-status').textContent=text;};
+const pretty=value=>value.replace(/_/g,' ').replace(/^text:/,'');
+const short=(text,n=25)=>text.length>n?`${text.slice(0,n-1)}…`:text;
+const tint=id=>colors[catalog.games.findIndex(g=>g.id===id)%colors.length];
+function go(id){focused=id;selectedFacet='all';renderMap();renderInspector();}
+function toggle(id){if(selected.has(id))selected.delete(id);else if(selected.size<4)selected.add(id);else{msg('This brief supports up to four parent worlds. Remove one before adding another.');return;}normalizeChoices();renderCatalog();renderInspector();renderDraft();renderMap();}
 function renderMap() {
   const previousFocus = document.activeElement?.closest('.map-node')?.dataset.game;
   const view = catalog.views[axis], ids = catalog.games.map(g=>g.id), xs=ids.map(id=>view.xy[id][0]), ys=ids.map(id=>view.xy[id][1]);
@@ -46,38 +39,6 @@ function renderNeighbors() {
   for (const kind of ['near','far']) $('#neighbors-'+kind).innerHTML = (view.neighbors[focused]?.[kind] || []).map(n=>`<button type="button" class="neighbor" data-id="${n.id}"><span>${esc(byId[n.id].shortName)}</span><span class="mono">${n.distance.toFixed(2)} <span aria-hidden="true">↗</span></span></button>`).join('');
   for (const button of document.querySelectorAll('.neighbor')) button.onclick=()=>go(button.dataset.id);
 }
-function renderInspector() {
-  const game=byId[focused];
-  const list=$('#component-list'), sameGame=list.dataset.game===game.id;
-  const openComponents=new Set(sameGame?[...list.querySelectorAll('details[open]')].map(el=>el.dataset.componentId):[]);
-  const previousComponentFocus=sameGame&&list.contains(document.activeElement)?document.activeElement.dataset.component:null;
-  list.dataset.game=game.id;
-  const facets=[...new Set(game.components.map(c=>c.facet))];
-  $('#inspect-name').textContent=game.shortName; $('#inspect-code').textContent=game.gameCode;
-  $('#inspect-summary').textContent=game.components.length ? `${game.components.length} component records · ${facets.length} dimensions · extraction in progress` : 'ROM indexed · component extraction in progress';
-  $('#inspect-add').textContent=selected.has(game.id)?'Remove from mix −':'Add to mix +';
-  $('#inspect-add').onclick=()=>toggle(game.id);
-  $('#facet-filter').innerHTML = '<option value="all">All dimensions</option>'+facets.map(f=>`<option value="${esc(f)}">${esc(pretty(f))}</option>`).join('');
-  $('#facet-filter').value=selectedFacet; $('#facet-filter').disabled=!facets.length;
-  const shown=game.components.filter(c=>selectedFacet==='all'||c.facet===selectedFacet);
-  $('#component-count').textContent=shown.length;
-  $('#component-list').innerHTML=shown.length ? shown.map(c=>{
-    const key=componentKey(game.id,c.id), chosen=picks.has(key);
-    return `<details class="component" data-component-id="${esc(c.id)}" ${openComponents.has(c.id)?'open':''}><summary><span><span class="component-facet">${esc(pretty(c.facet))}</span>${esc(c.label)}</span><span class="expand-symbol">+</span></summary><div class="component-body"><p>${esc(c.summary)}</p>${c.reads.length||c.writes.length?`<dl class="component-io"><dt>Reads</dt><dd>${esc(c.reads.join(', ')||'Not recorded')}</dd><dt>Writes</dt><dd>${esc(c.writes.join(', ')||'Not recorded')}</dd></dl>`:''}<div class="evidence-refs">${c.evidence.length?c.evidence.map(e=>`<p><span>${esc(pretty(e.kind))}</span><code>${esc(e.ref)}</code></p>`).join(''):'<p>Evidence is recorded at parameter level or remains incomplete. Review the original ontology before use.</p>'}</div><button type="button" class="pick-component ${chosen?'chosen':''}" data-component="${esc(c.id)}" aria-pressed="${chosen}">${chosen?'Added to request ✓':'Use this component +'}</button></div></details>`;
-  }).join('') : '<p class="empty-note">There are no component records in this snapshot yet. You can still include this game in a concept draft.</p>';
-  for (const button of $('#component-list').querySelectorAll('[data-component]')) button.onclick=()=>{
-    const key=componentKey(game.id,button.dataset.component);
-    picks.has(key)?picks.delete(key):picks.add(key); selected.add(game.id);renderInspector();renderDraft();renderCatalog();renderMap();
-  };
-  if (previousComponentFocus) list.querySelector(`[data-component="${previousComponentFocus}"]`)?.focus({preventScroll:true});
-  $('#inspect-source').replaceChildren();
-  for (const ref of game.sourceReferences) {
-    const p=document.createElement('p'); const url=ref.match(/https:\/\/github\.com\/[\w.-]+\/[\w.-]+/), pin=ref.match(/\b[a-f0-9]{40}\b/);
-    if (url) {const a=document.createElement('a');a.href=url[0]+(pin?`/tree/${pin[0]}`:'');a.target='_blank';a.rel='noreferrer';a.textContent='Decompiled source ↗';p.append(a);}
-    const small=document.createElement('span'); small.textContent=ref;p.append(small);$('#inspect-source').append(p);
-  }
-  if (game.ontologyPath) {const p=document.createElement('p');p.textContent=game.ontologyPath;$('#inspect-source').append(p);}
-}
 function renderCatalog() {
   const games=filterGames(catalog.games,query,evidenceOnly), visible=showAll||query||evidenceOnly?games:games.slice(0,12);
   $('#catalog-results').textContent=`${games.length} games`;
@@ -86,55 +47,51 @@ function renderCatalog() {
   for(const b of $('#research-games').querySelectorAll('[data-mix]'))b.onclick=()=>toggle(b.dataset.mix);
   $('#show-all-games').hidden=!!(showAll||query||evidenceOnly);$('#show-all-games').textContent=`Explore all ${catalog.games.length} games ↓`;
 }
-function renderDraft() {
-  $('#mix-count').textContent=String(selected.size).padStart(2,'0');
-  $('#mix-sources').innerHTML=selected.size?[...selected].map(id=>`<div class="mix-source"><span class="mix-source-mark source-color-${catalog.games.findIndex(g=>g.id===id)%8}">✳</span><span><strong>${esc(byId[id].shortName)}</strong><small>${byId[id].components.length} component records</small></span><button data-remove="${id}" aria-label="Remove ${esc(byId[id].shortName)} from mix">×</button></div>`).join(''):'<p class="empty-note">Add games from the map or the collection to start your mix.</p>';
-  for(const b of $('#mix-sources').querySelectorAll('[data-remove]'))b.onclick=()=>toggle(b.dataset.remove);
-  const components=resolveSelection(catalog,picks);
-  $('#mix-components').innerHTML=components.length?components.map(({game,component})=>{const key=componentKey(game.id,component.id);return `<label class="adaptation"><span>${esc(game.shortName)} <span aria-hidden="true">↳</span> ${esc(component.label)}</span><textarea rows="2" maxlength="1500" data-adaptation="${esc(key)}" placeholder="How should this component change in your game?">${esc(adaptations[key]||'')}</textarea></label>`;}).join(''):'<p class="empty-note">Open a game’s component record above and choose “Use this component” to anchor your request.</p>';
-  for(const field of $('#mix-components').querySelectorAll('[data-adaptation]'))field.oninput=()=>{adaptations[field.dataset.adaptation]=field.value;updateRequest();};
-  updateRequest();
+function evidenceMarkup(game,bundle){return bundle.components.length?`<ul class="bundle-source-list">${bundle.components.map(c=>`<li><strong>${esc(c.label)}</strong><small>${esc(game.shortName)} · ${esc(c.id)}</small>${c.evidence.slice(0,1).map(e=>`<code>${esc(e.ref)}</code>`).join('')}</li>`).join('')}</ul>`:'<p class="unverified-note">No matching extracted bundle is available. This direction requests research; it does not claim a recovered implementation.</p>';}
+function renderInspector(){
+ const game=byId[focused],bundles=bundlesFor(game),list=$('#component-list');
+ $('#inspect-name').textContent=game.shortName;$('#inspect-code').textContent=game.gameCode;
+ $('#inspect-summary').textContent=game.components.length?`${game.components.length} source-linked records, grouped into useful design directions.`:'ROM indexed. Design directions still need extraction and source review.';
+ $('#inspect-add').textContent=selected.has(game.id)?'Remove from mix −':'Add to mix +';$('#inspect-add').onclick=()=>toggle(game.id);
+ $('#facet-filter').innerHTML='<option value="all">All directions</option>'+DIMENSIONS.map(d=>`<option value="${d.id}">${esc(d.label)}</option>`).join('');$('#facet-filter').value=selectedFacet;
+ const shown=DIMENSIONS.filter(d=>selectedFacet==='all'||d.id===selectedFacet);$('#component-count').textContent=shown.length;
+ list.innerHTML=shown.map(d=>{const b=bundles[d.id];return `<details class="component"><summary><span><span class="component-facet">${esc(d.label)}</span>${esc(b.label)}</span><span class="expand-symbol">+</span></summary><div class="component-body"><p>${esc(d.description)}</p><p class="bundle-evidence-status">${b.component_ids.length?`${b.component_ids.length} component references · evidence varies`:'Research needed · inspiration only'}</p>${evidenceMarkup(game,b)}<button class="pick-component" data-bundle="${d.id}">Lean toward this direction ↗</button></div></details>`;}).join('');
+ for(const button of list.querySelectorAll('[data-bundle]'))button.onclick=()=>{if(!selected.has(game.id)&&selected.size>=4){msg('Remove a parent before adding another.');return;}selected.add(game.id);normalizeChoices();choices[button.dataset.bundle]={...choices[button.dataset.bundle],mode:'parent',parent_game_id:game.id};renderDraft();renderCatalog();renderMap();document.querySelector('[data-view="workshop"]').click();};
+ $('#inspect-source').replaceChildren();
+ for(const ref of game.sourceReferences){const p=document.createElement('p'),url=ref.match(/https:\/\/github\.com\/[\w.-]+\/[\w.-]+/),pin=ref.match(/\b[a-f0-9]{40}\b/);if(url){const a=document.createElement('a');a.href=url[0]+(pin?`/tree/${pin[0]}`:'');a.target='_blank';a.rel='noreferrer';a.textContent='Decompiled source ↗';p.append(a);}const small=document.createElement('span');small.textContent=ref;p.append(small);$('#inspect-source').append(p);}
+ if(game.ontologyPath){const p=document.createElement('p');p.textContent=game.ontologyPath;$('#inspect-source').append(p);}
 }
-function updateRequest() {
-  const intent=$('#mix-intent').value;
-  let validationError = '';
-  try { createAttempt(catalog,picks,intent,adaptations); } catch(error) { validationError=error.message; }
-  const anchored=!validationError;
-  $('#export-attempt').disabled=!anchored;
-  $('#draft-type').textContent=anchored?'COMPONENT REQUEST READY':'CONCEPT DRAFT';
-  $('#draft-readiness').textContent=anchored?'Your request references actual component IDs from two or more games. Review adaptations before handing it to Codex.':validationError;
-  const draft={schema_version:1,kind:'gameverse_concept_draft',intent,game_ids:[...selected],component_ids:[...picks],adaptations:Object.fromEntries([...picks].map(key=>[key,adaptations[key]||''])),research_snapshot:catalog.snapshotDate,status:'unbuilt',notes:'A design prompt, not a playable artifact. Similarity is exploratory; selected rules require implementation.'};
-  lastSerialized=JSON.stringify(draft,null,2);
-  $('#copy-draft').disabled=selected.size<2||!intent.trim();
+function normalizeChoices(){const parents=[...selected].map(id=>byId[id]);if(!selected.has(foundationId))foundationId=parents[0]?.id||'';if(!choices)choices=defaultChoices(parents);for(const d of DIMENSIONS)if(choices[d.id]?.mode==='parent'&&!selected.has(choices[d.id].parent_game_id))choices[d.id].parent_game_id=parents[0]?.id;}
+function renderDraft(){
+ const control=document.activeElement;const focusToken=control?.dataset.direction?`[data-direction="${control.dataset.direction}"][value="${control.value}"]`:control?.dataset.defer?`[data-defer="${control.dataset.defer}"]`:control?.dataset.parent?`#${control.id}`:null;
+ normalizeChoices();const parents=[...selected].map(id=>byId[id]);$('#mix-count').textContent=String(selected.size).padStart(2,'0');
+ $('#mix-sources').innerHTML=parents.map((game,i)=>`<div class="parent-card"><div class="parent-card-heading"><span class="parent-letter source-color-${catalog.games.findIndex(g=>g.id===game.id)%8}">${String.fromCharCode(65+i)}</span><button data-remove="${game.id}" aria-label="Remove ${esc(game.shortName)}">×</button></div><label class="sr-only" for="parent-${i}">Parent world ${String.fromCharCode(65+i)}</label><select id="parent-${i}" data-parent="${game.id}">${catalog.games.map(g=>`<option value="${g.id}" ${g.id===game.id?'selected':''} ${selected.has(g.id)&&g.id!==game.id?'disabled':''}>${esc(g.shortName)}</option>`).join('')}</select><small>${game.components.length?`${game.components.length} component records · source review available`:'ROM indexed · extraction needed'}</small></div>`).join('')||'<p class="empty-note">Choose worlds from Explore to begin.</p>';
+ for(const b of $('#mix-sources').querySelectorAll('[data-remove]'))b.onclick=()=>toggle(b.dataset.remove);
+ for(const select of $('#mix-sources').querySelectorAll('[data-parent]'))select.onchange=()=>{const ids=[...selected],index=ids.indexOf(select.dataset.parent);ids[index]=select.value;selected=new Set(ids);if(foundationId===select.dataset.parent)foundationId=select.value;normalizeChoices();renderDraft();renderCatalog();renderMap();renderInspector();};
+ $('#add-parent').disabled=parents.length>=4;$('#add-parent').onclick=()=>{const next=catalog.games.find(g=>!selected.has(g.id));if(next)toggle(next.id);};
+ $('#foundation-game').innerHTML=parents.map(g=>`<option value="${g.id}" ${g.id===foundationId?'selected':''}>${esc(g.shortName)}</option>`).join('');$('#foundation-game').onchange=e=>{foundationId=e.target.value;renderDependencies();updateRequest();};
+ $('#mix-components').innerHTML=DIMENSIONS.map((d,index)=>{
+  const choice=choices[d.id],active=choice.mode!=='defer',chosen=parents.find(g=>g.id===choice.parent_game_id),sourceBundles=choice.mode==='parent'&&chosen?[chosen]:parents;
+  return `<article class="design-choice ${active?'':'choice-deferred'}" id="choice-${d.id}"><div class="design-choice-heading"><span class="choice-glyph">${d.icon}</span><div><span class="choice-kicker">${String(index+1).padStart(2,'0')} / ${esc(d.label)}</span><h3>${esc(d.question)}</h3></div><button class="defer-choice" data-defer="${d.id}" aria-pressed="${!active}" aria-label="${active?'Leave open':'Include'} ${esc(d.label)}">${active?'Leave open':'Include +'}</button></div><p class="choice-description">${esc(d.description)}</p><div class="direction-options">${parents.map((game,i)=>{const b=bundlesFor(game)[d.id],isSelected=choice.mode==='parent'&&choice.parent_game_id===game.id;return `<label class="direction-option ${isSelected?'direction-selected':''}"><input type="radio" name="direction-${d.id}" data-direction="${d.id}" value="${game.id}" ${isSelected?'checked':''} ${active?'':'disabled'}><span class="direction-parent">${String.fromCharCode(65+i)} <span>${esc(game.shortName)}</span></span><strong>${esc(b.label)}</strong><small>${b.component_ids.length?`${b.component_ids.length} source-linked pieces`:'Research needed'}</small></label>`;}).join('')}<label class="direction-option bridge-option ${choice.mode==='bridge'?'direction-selected':''}"><input type="radio" name="direction-${d.id}" data-direction="${d.id}" value="bridge" ${choice.mode==='bridge'?'checked':''} ${active?'':'disabled'}><span class="direction-parent">A + B <span>Bridge their ideas</span></span><strong>${esc((d.bridges.find(b=>b[0]===choice.bridge_id)||d.bridges[0])[1])}</strong><small>An explicit adaptation to implement</small></label></div>${choice.mode==='bridge'?`<label class="bridge-choice-label">Choose the connection<select data-bridge="${d.id}">${d.bridges.map(([id,label])=>`<option value="${id}" ${choice.bridge_id===id?'selected':''}>${esc(label)}</option>`).join('')}</select></label>`:''}<div class="companion-line"><span>Bring along</span>${d.requires.map(r=>`<small>${esc(r)}</small>`).join('')}</div><details class="direction-details"><summary>Source context & your direction <span>+</span></summary><label class="direction-note-label">What should change?<textarea rows="2" maxlength="1500" data-choice-note="${d.id}" placeholder="Optional: a plot beat, a constraint, a feeling, or how these ideas should meet…" ${active?'':'disabled'}>${esc(choice.notes||'')}</textarea></label>${sourceBundles.map(g=>{const b=bundlesFor(g)[d.id];return `<div class="direction-source"><span>${esc(g.shortName)} / ${b.component_ids.length?'component references':'research needed'}</span>${evidenceMarkup(g,b)}</div>`;}).join('')}</details></article>`;
+ }).join('');
+ for(const input of $('#mix-components').querySelectorAll('[data-direction]'))input.onchange=()=>{const c=choices[input.dataset.direction];c.mode=input.value==='bridge'?'bridge':'parent';if(c.mode==='parent')c.parent_game_id=input.value;renderDraft();};
+ for(const select of $('#mix-components').querySelectorAll('[data-bridge]'))select.onchange=()=>{choices[select.dataset.bridge].bridge_id=select.value;select.closest('.design-choice').querySelector('.bridge-option strong').textContent=select.selectedOptions[0].textContent;renderDependencies();updateRequest();};
+ for(const button of $('#mix-components').querySelectorAll('[data-defer]'))button.onclick=()=>{const c=choices[button.dataset.defer];c.mode=c.mode==='defer'?'parent':'defer';c.parent_game_id||=parents[0]?.id;renderDraft();};
+ for(const field of $('#mix-components').querySelectorAll('[data-choice-note]'))field.oninput=()=>{choices[field.dataset.choiceNote].notes=field.value;updateRequest();};
+ renderDependencies();updateRequest();if(focusToken)document.querySelector(focusToken)?.focus({preventScroll:true});
 }
+function renderDependencies(){const notes=dependencyNotes([...selected].map(id=>byId[id]),choices,foundationId);$('#dependency-count').textContent=`${notes.length} CONNECTIONS TO REVIEW`;$('#dependency-notes').innerHTML=notes.map(n=>`<article class="dependency-note"><span class="dependency-kind">${({bridge:'Bridge to define',review:'Conditional conflict',companion:'Required companion',research:'Research gap',creative:'Creative direction'})[n.level]}</span><h4>${esc(n.title)}</h4><p>${esc(n.text)}</p></article>`).join('');}
+function updateRequest(){let error='',request;try{request=createMashupRequest(catalog,[...selected],choices,$('#mix-intent').value,foundationId);}catch(e){error=e.message;}const count=DIMENSIONS.filter(d=>choices?.[d.id]?.mode!=='defer').length;$('#choice-count').textContent=`${String(count).padStart(2,'0')} KEY CHOICES`;$('#export-attempt').disabled=!!error;$('#copy-draft').disabled=!!error;$('#draft-type').textContent='NATIVE GBA BUILD BRIEF';$('#draft-readiness').textContent=error||`${selected.size} parent worlds · ${count} broad decisions · source references included. Ready to hand to Codex for implementation review.`;lastSerialized=request?JSON.stringify(request,null,2):'';}
 function download(value,name){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)+'\n'],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-function initTabs(){
-  for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>{
-    const view=b.dataset.view;
-    for(const btn of document.querySelectorAll('[data-view]')){btn.classList.toggle('active',btn===b);btn.setAttribute('aria-current',btn===b?'page':'false');}
-    $('#discover-view').hidden=view==='play';$('#play-view').hidden=view!=='play';
-    if(view==='workshop')$('#workshop').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
-    else window.scrollTo({top:0,behavior:'instant'});
-  };
-  $('#jump-workshop').onclick=()=>document.querySelector('[data-view="workshop"]').click();
-}
-initTabs();
-try {
-  const response=await fetch('/games/research.json');if(!response.ok)throw Error('Research catalog unavailable.');catalog=await response.json();byId=Object.fromEntries(catalog.games.map(g=>[g.id,g]));
-  $('#research-count').textContent=catalog.games.length;$('#ontology-count').textContent=catalog.games.filter(g=>g.components.length).length;$('#all-components-count').textContent=catalog.games.reduce((n,g)=>n+g.components.length,0);
-  $('#map-axis').innerHTML=Object.entries(catalog.views).map(([key,v])=>`<option value="${esc(key)}">${esc(v.label)}</option>`).join('');$('#map-axis').value=axis;$('#map-axis').onchange=e=>{axis=e.target.value;renderMap();};
-  $('#facet-filter').onchange=e=>{selectedFacet=e.target.value;renderInspector();};
-  $('#game-search').oninput=e=>{query=e.target.value;renderCatalog();};
-  $('#evidence-only').onchange=e=>{evidenceOnly=e.target.checked;renderCatalog();};
-  $('#show-all-games').onclick=()=>{showAll=true;renderCatalog();};
-  $('#mix-intent').oninput=updateRequest;
-  $('#copy-draft').onclick=async()=>{try{await navigator.clipboard.writeText(lastSerialized);msg('Concept draft copied. Hand it to Codex to develop the idea.');}catch{download(JSON.parse(lastSerialized),'gameverse-concept.json');msg('Clipboard unavailable. Your concept draft was downloaded.');}};
-  $('#export-attempt').onclick=()=>{try{download(createAttempt(catalog,picks,$('#mix-intent').value,adaptations),'gameverse-request.json');msg('Request exported. Run it with python3 -m tools.game_attempt --request gameverse-request.json in the research checkout.');}catch(error){msg(error.message);}};
-  $('#seed-example').onclick=()=>{
-    selected=new Set(['pokemon-emerald-version','metroid-zero-mission']);picks=new Set(['pokemon-emerald-version:grid_step_locomotion','metroid-zero-mission:ability_gating_graph']);
-    adaptations={'pokemon-emerald-version:grid_step_locomotion':'Use simplified four-direction one-cell movement, without Emerald’s turn-in-place, frame timing or speed variants.','metroid-zero-mission:ability_gating_graph':'Use a collectible key to unlock a barrier; this does not reproduce Zero Mission’s equipment flags or native movement gates.'};
-    $('#mix-intent').value='Create a small top-down exploration game: find an upgrade, return to a locked route, open the barrier and reach a new area. Use original abstract geometry and no copied assets.';renderDraft();renderCatalog();renderMap();renderInspector();msg('Loaded the key-and-gate reference request. The current harness implements this simplified grid template.');
-  };
-  $('#research-provenance').textContent=`Snapshot ${catalog.snapshotDate} · source ${catalog.sourceCommit.slice(0,8)} · ${Object.keys(catalog.views).length} views · cached embedding model revision unavailable`;
-  renderMap();renderInspector();renderCatalog();renderDraft();
+function initTabs(){for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>{const view=b.dataset.view;document.body.dataset.view=view;for(const btn of document.querySelectorAll('[data-view]')){btn.classList.toggle('active',btn===b);btn.setAttribute('aria-current',btn===b?'page':'false');}$('#discover-view').hidden=view==='play';$('#play-view').hidden=view!=='play';window.scrollTo({top:0,behavior:'instant'});};$('#jump-workshop').onclick=()=>document.querySelector('[data-view="workshop"]').click();}
+initTabs();const initialView=new URLSearchParams(location.search).get('view')||'workshop';document.querySelector(`[data-view="${['discover','workshop','play'].includes(initialView)?initialView:'workshop'}"]`).click();
+try{
+ const response=await fetch('/games/research.json');if(!response.ok)throw Error('Research catalog unavailable.');catalog=await response.json();byId=Object.fromEntries(catalog.games.map(g=>[g.id,g]));
+ $('#research-count').textContent=catalog.games.length;$('#ontology-count').textContent=catalog.games.filter(g=>g.components.length).length;$('#all-components-count').textContent=catalog.games.reduce((n,g)=>n+g.components.length,0);
+ $('#map-axis').innerHTML=Object.entries(catalog.views).map(([key,v])=>`<option value="${esc(key)}">${esc(v.label)}</option>`).join('');$('#map-axis').value=axis;$('#map-axis').onchange=e=>{axis=e.target.value;renderMap();};$('#facet-filter').onchange=e=>{selectedFacet=e.target.value;renderInspector();};$('#game-search').oninput=e=>{query=e.target.value;renderCatalog();};$('#evidence-only').onchange=e=>{evidenceOnly=e.target.checked;renderCatalog();};$('#show-all-games').onclick=()=>{showAll=true;renderCatalog();};$('#mix-intent').oninput=updateRequest;
+ $('#copy-draft').onclick=async()=>{try{await navigator.clipboard.writeText(lastSerialized);msg('GBA build brief copied. Hand it to Codex to plan and implement the source changes.');}catch{download(JSON.parse(lastSerialized),'gameverse-mashup-request.json');msg('Clipboard unavailable. Your build brief was downloaded.');}};
+ $('#export-attempt').onclick=()=>{try{download(createMashupRequest(catalog,[...selected],choices,$('#mix-intent').value,foundationId),'gameverse-mashup-request.json');msg('Native GBA build brief exported. Give it to Codex; a playable artifact requires source implementation and a real build.');}catch(error){msg(error.message);}};
+ $('#seed-example').onclick=()=>{selected=new Set(['metroid-zero-mission','pokemon-emerald-version']);foundationId='metroid-zero-mission';choices=defaultChoices([...selected].map(id=>byId[id]));$('#mix-intent').value='Preserve Zero Mission’s native side-view movement, interconnected world and campaign. Add Pokémon-inspired creature encounters with turn-based moves, elemental matchups and tactical opponents. Bring regional weather into the world, with an original story direction that makes the combination feel coherent.';renderDraft();renderCatalog();renderMap();renderInspector();msg('Current direction loaded. These choices are a build brief; they do not claim that every requested integration exists.');};
+ $('#explore-parents').onclick=e=>{e.preventDefault();document.querySelector('[data-view="discover"]').click();};$('#research-provenance').textContent=`Snapshot ${catalog.snapshotDate} · source ${catalog.sourceCommit.slice(0,8)} · ${Object.keys(catalog.views).length} views · cached embedding model revision unavailable`;
+ renderMap();renderInspector();renderCatalog();renderDraft();
 }catch(error){msg(error.message);$('#research-load-error').hidden=false;}

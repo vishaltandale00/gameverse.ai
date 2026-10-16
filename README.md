@@ -2,24 +2,18 @@
 
 A single-player browser environment for playing games and developing them through conversation, using a controller.
 
-**Status:** this development branch combines Vishal's source-built FireRed player with a 33-game research catalog, an interactive game-space map, a mashup request workspace, partial ontologies and isolated bot/generation tools. FireRed is the currently integrated playable game; research catalog entries are not additional registered cartridges. Campaign qualification and host integration of generated candidates remain open.
+**Status:** this development branch combines Vishal's source-built FireRed player with a 33-game research catalog, an interactive game-space map, a mashup workspace, partial ontologies and GBA bot tools. Normal **Play** now also supports **Metroid × Emerald**: the full Zero Mission campaign with native Pokémon encounters, built from pinned decompiled source. Its bounded encounter/attack/party/return check passed; full campaign qualification remains open. Research entries do not automatically become playable cartridges.
 
 Run `npm ci --ignore-scripts`, `npm run source:setup -- firered`, `npm run game:build -- firered`, then `npm run dev`. Open [local Gameverse](http://127.0.0.1:4173). See [development setup and evidence](DEVELOPMENT.md) for toolchain prerequisites, controls, timings and remaining issue #3 gates.
 
-## Run an initial generation and playtest attempt
+## GBA research and playtesting
 
-```sh
-# Python 3.10+; no model key, emulator or extra Python packages required.
-python3 -m tools.game_attempt --output-root local/game-attempts
-```
+Mashup requests target source-built GBA games, played through the browser emulator
+and exercised through the native ROM harness. The earlier abstract JavaScript and
+grid-game generators have been removed because they did not fulfill that goal.
 
-This generates a small source-linked reference game, then plays it through the
-same bounded tester used for external adapters. It retains the request, selected
-ontology components, candidate, transitions, barriers, failures and timings.
-The default is a hand-authored mechanic template; opt-in LLM generation is
-supported. It does not automatically compile a ROM ontology into a new GBA game.
-
-- [Game generation attempt](tools/game_attempt/README.md): natural-language intent, component selections and constraints.
+- [Native GBA assembly](tools/gba_mashup/README.md): component/source lookup, reviewed composition recipe, actual source extraction and cartridge build.
+- [Real GBA bot and recordings](tools/gba_playtest/README.md): bounded source-aware exploration, native combat, d1/LLM policies, screenshots and MP4 evidence.
 - [Play tester](tools/playtester/README.md): game profiles, targets/actions, cheap decisions and LLM escalation; based on sidbot's transferable design.
 - [Headless GBA sessions](tools/re/session/README.md): real ROM stepping, observation and private checkpoints without browser automation.
 - [Decision providers](tools/decisions/README.md): local d1 by default, explicit native OpenAI Decisions support.

@@ -6,6 +6,7 @@
 #include <mgba/core/log.h>
 #include <mgba/core/serialize.h>
 #include <mgba/core/blip_buf.h>
+#include <mgba/core/version.h>
 #include <mgba/gba/core.h>
 #include <mgba-util/vfs.h>
 #include <fcntl.h>
@@ -15,6 +16,18 @@
 
 static void quiet(struct mLogger* l, int c, enum mLogLevel v, const char* f, va_list a) {}
 static struct mLogger logger = {.log = quiet};
+static int writePixels(FILE* f, const color_t* pixels) {
+    unsigned char row[240 * 4];
+    for (int y = 0; y < 160; ++y) {
+        for (int x = 0; x < 240; ++x) {
+            color_t c = pixels[y * 240 + x];
+            row[x * 4] = c & 255; row[x * 4 + 1] = (c >> 8) & 255;
+            row[x * 4 + 2] = (c >> 16) & 255; row[x * 4 + 3] = 255;
+        }
+        if (fwrite(row, 1, sizeof(row), f) != sizeof(row)) return 0;
+    }
+    return 1;
+}
 static void drain(struct mCore* core) {
     short samples[4096];
     for (int ch = 0; ch < 2; ++ch) {
@@ -46,6 +59,9 @@ int main(int argc, char** argv) {
         blip_set_rates(core->getAudioChannel(core, ch), core->frequency(core), 16000);
     char line[256], op[32], path[4096];
     unsigned long long frames = 0;
+    unsigned long long recorded = 0, recordingFrame = 0;
+    unsigned stride = 2;
+    FILE* video = NULL;
     puts("OK ready"); fflush(stdout);
     while (fgets(line, sizeof(line), stdin)) {
         unsigned a = 0, b = 0;
@@ -53,22 +69,42 @@ int main(int argc, char** argv) {
         if (fields < 1) { puts("ERR command"); }
         else if (!strcmp(op, "step") && fields == 3 && a < 1024 && b <= 3600) {
             core->setKeys(core, a);
-            for (unsigned i = 0; i < b; ++i) { core->runFrame(core); drain(core); }
+            int videoOk = 1;
+            for (unsigned i = 0; i < b; ++i) {
+                core->runFrame(core); drain(core);
+                if (video && recordingFrame++ % stride == 0) {
+                    if (!writePixels(video, pixels)) videoOk = 0;
+                    else ++recorded;
+                }
+            }
             core->setKeys(core, 0); frames += b;
-            printf("OK %llu\n", frames);
+            if (videoOk) printf("OK %llu\n", frames); else puts("ERR recording");
         } else if (!strcmp(op, "frame")) {
             snprintf(path, sizeof(path), "%s/frame.rgba", argv[2]);
             FILE* f = fopen(path, "wb");
             int ok = f != NULL;
             if (f) {
-                for (int i = 0; i < 240 * 160; ++i) {
-                    unsigned char px[4] = {pixels[i] & 255, (pixels[i] >> 8) & 255,
-                                          (pixels[i] >> 16) & 255, 255};
-                    if (fwrite(px, 1, 4, f) != 4) { ok = 0; break; }
-                }
+                ok = writePixels(f, pixels);
                 if (fclose(f)) ok = 0;
             }
             if (ok) printf("OK %llu\n", frames); else puts("ERR frame");
+        } else if (!strcmp(op, "read") && fields == 3 && b > 0 && b <= 256 &&
+                   ((a >= 0x02000000 && a <= 0x02040000 - b) ||
+                    (a >= 0x03000000 && a <= 0x03008000 - b))) {
+            printf("OK ");
+            for (unsigned i = 0; i < b; ++i) printf("%02x", (unsigned) core->busRead8(core, a + i));
+            putchar('\n');
+        } else if (!strcmp(op, "record") && fields >= 2 && a <= 1) {
+            if (a == 1 && !video && fields == 3 && b >= 1 && b <= 6) {
+                snprintf(path, sizeof(path), "%s/video.rgba", argv[2]);
+                video = fopen(path, "wb"); stride = b; recordingFrame = recorded = 0;
+                puts(video ? "OK recording" : "ERR recording");
+            } else if (a == 0 && video) {
+                int ok = !fclose(video); video = NULL;
+                if (ok) printf("OK %llu\n", recorded); else puts("ERR recording");
+            } else puts("ERR recording");
+        } else if (!strcmp(op, "version")) {
+            printf("OK %s %d %d\n", projectVersion, core->frequency(core), core->frameCycles(core));
         } else if ((!strcmp(op, "save") || !strcmp(op, "load")) && fields == 2 && a < 32) {
             int saving = !strcmp(op, "save");
             snprintf(path, sizeof(path), "%s/checkpoint-%u.ss", argv[2], a);
@@ -82,6 +118,7 @@ int main(int argc, char** argv) {
         else puts("ERR command");
         fflush(stdout);
     }
+    if (video) fclose(video);
     core->deinit(core); free(pixels);
     return 0;
 }

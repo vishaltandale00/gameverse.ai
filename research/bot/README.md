@@ -6,8 +6,9 @@ constraints stated where applicable. They are not complete ROM decompilations.
 
 `qualification-2026-10-16.json` records actual bounded transport, native ROM and
 generation observations, including a contradictory OpenAI predicate answer.
-Its generated reference candidate is retained separately as data. Neither model
-probabilities nor title-recall embedding distances are calibrated gameplay truth.
+The rejected abstract-game generator and generated candidate have been removed.
+Neither model probabilities nor title-recall embedding distances are calibrated
+gameplay truth.
 
 The local LLM generation attempt produced a candidate that acquired its key,
 opened the required gate and reached the goal in nine actions. Total wall time
@@ -36,8 +37,6 @@ Queue time, billing and exact serving revisions are unavailable. Timing stages
 are nested within total wall time. Small offline fixture durations do not predict
 paid model or full game performance.
 
-Start with `python3 -m tools.game_attempt`; see
-[generation](../../tools/game_attempt/README.md),
-[play tester](../../tools/playtester/README.md),
+See [play tester](../../tools/playtester/README.md),
 [native sessions](../../tools/re/session/README.md) and
 [research handoff](../../ontology/RESEARCH_HANDOFF.md).

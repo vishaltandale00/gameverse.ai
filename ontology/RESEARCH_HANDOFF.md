@@ -75,11 +75,47 @@ Paired captures on identical scripts and ROMs took 17.83 seconds with tracing di
 
 `local/re/experiments/20261016-loaded-assets/` contains the comparison, decoded manifest, raw-context verification and exact Emerald title-logo/tilemap source/ROM links. Destination and source addresses establish where bytes came from and were loaded; they do not by themselves establish reusable sprites, story content or gameplay roles.
 
-## Tonight's executable generation and bot scaffold
+## GBA bot scaffold and rejected generation experiment
+
+### Native composition recovery, 2026-10-16
+
+The rejected JavaScript game and abstract generator are removed. The replacement
+is an actual 8 MiB GBA fork, `mzm-emerald-encounters-v1`, registered under normal
+Play using the existing `GbaAdapter`. Zero Mission's whole source campaign,
+movement, equipment gates and assets are retained. The extracted Emerald subset
+includes damage/type calculation C, move/type/species tables and six original
+front/back sprite frames. The native encounter bridge, menus, turn sequencing
+and reduced damage-scoring AI are explicitly new adaptation code; it does not
+port the full Emerald battle-script interpreter or persistent party.
+
+The unmodified MZM rebuild matches SHA1
+`5de8536afe1f0078ee6fe1089f890e8c7aa0a6e8`. The candidate SHA256 is
+`937786e9019d3f46ba58a0da7c06012f1244a49204da844e1c095a22c8c09994`.
+`tools/gba_mashup/` supplies pinned extraction, source/component lookup, the
+reviewed eight-dimension recipe, isolated compiler/build receipts and local
+registration. ROMs and raw asset extracts remain ignored local outputs.
+
+`local/gba-playtests/candidate-native-final-v4/run.json` records all nine declared
+native witnesses: right/left/jump, encounter, party switch, resolved turn, actual
+attack, frozen world during combat, and restored exploration control. Surf PP
+changed 15→14 and opponent HP 51→41; the run retreated, so victory is false.
+The 0.696 s local run includes a 0.046 s encoding stage and records 7.17 s of
+actual emulated gameplay. Queue time is unavailable. Separate d1 transport worked
+but confidence 0.318 was rejected and a disclosed source-table policy ran.
+Native bot proof and a 3.47 s isolated browser boot smoke are separate evidence;
+neither qualifies a complete campaign. Earlier navigation and defeat failures
+remain in their original directories.
+
+The new frontend offers two to four parent games and up to eight broad choices,
+including atmosphere/story, with source bundles and dependency decisions. It
+exports a schema2 GBA build brief for Codex implementation review. Similarity
+still means embedding distance, not proven compatibility; arbitrary bundles
+cannot automatically link. See `FRONTEND_WORKSHOP.md` and the native recipe for
+the current interface and limitations. Corpus-wide extraction is still partial.
 
 `tools/playtester/` formalizes sidbot's transferable structure: game/profile awareness, adapter-specific short-horizon actions and targets, visited-state/transition memory, barrier hypotheses, cheap decision models and bounded LLM escalation. Known structured targets can continue deterministically while progress is observed. Unknown visual ROM state does not inherit Pokémon map knowledge. `tools/re/session/` implements a persistent headless mGBA JSONL worker with private state and checkpoints; Vishal's existing browser player remains the human-facing runtime.
 
-`tools/game_attempt/` accepts natural-language intent, source-linked component selections and constraints, then creates a validated data-only reference game and uses the same tester. The deterministic baseline wins in nine actions with no model calls. A real local LLM request also generated a candidate that acquired its key, opened its required gate and reached the goal in nine actions: run `20261016T053022Z-fd85857a`, 4.578014 seconds total, 4.527665 generation, 0.003314 validation, 0.029373 playthrough; 799 prompt / 569 completion tokens, one request, zero retries. These nested stages are not summed again. This is a useful initial loop, not automatic compilation of extracted ROM rules or a generated GBA ROM. A goal reached without the required key/gate now fails the attempt's intent check.
+The earlier abstract grid generator and JavaScript game were rejected by the user because the deliverable is a source-built GBA game. Their package, candidate and public routes have been removed. Historical generation measurements in `research/bot/qualification-2026-10-16.json` record the failed approach, not progress toward a delivered GBA game. Preserve the shared playtester and native ROM harness for the required source-build/emulator workflow.
 
 `research/bot/qualification-2026-10-16.json` retains portable transport/generation/native-worker results, including the OpenAI quality-control failure. The initial native checkpoint test failed due to an O_WRONLY mmap incompatibility; both capture and session now open raw state output O_RDWR. Real Zero Mission and Emerald replay image hashes matched after correction. Historical captures with `savestate: false` are invalid checkpoint inputs and remain unchanged. Live adaptive ROM pilots retain uncertainty/escalation stops; no complete ROM objective has been observed yet.
 
