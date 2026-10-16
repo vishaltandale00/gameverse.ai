@@ -63,10 +63,12 @@ candidate through normal Play: 3.466 s total, 43.9 ms load/restore, native frame
 240×160 canvas, no errors. No existing player profile was used or modified.
 Reports/screenshots: `local/re/mashup-ui/` and `local/re/native-play-ui/`.
 
-Ten existing Node identity/cartridge/research-boundary checks passed in 38.328 ms
-in the current checkout. They include the older low-level export helper; the
-actual new schema 2 export was inspected in the bounded browser check. There is
-no complete campaign qualification or new CI measurement.
+Six identity/cartridge checks passed during the earlier combined Node run.
+The four workshop checks were then updated to the actual schema 2 boundary and
+passed in 37.35 ms: eight broad choices may contain more than eight raw pieces,
+and stale choices, duplicate/missing parents and unbounded notes are rejected.
+The unused schema 1 grid-request helpers were removed. There is no complete
+campaign qualification or new CI measurement.
 
 Earlier frontend shell-copy build observations were 15.9 ms before and 17.1 ms after
 on comparable inputs (`d63a776` to the earlier frontend working tree). Those

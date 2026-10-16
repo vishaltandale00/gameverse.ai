@@ -59,6 +59,10 @@ invalid-action rejection, fainted replacement, seeded replay, HP bounds and sixt
 bounded encounters. It ran in 0.381 seconds on this Apple Silicon development
 machine. This is math/state qualification, not GBA display or campaign evidence.
 
+Three source-lookup checks separately guard against confusing conditional call
+sites with function definitions and cover pointer-return declarations. A focused
+review also added source-prefix coverage and qualification-media hash checks.
+
 The separate real-ROM harness in `tools/gba_playtest/` provides bounded native
 emulator actions, source-linked RAM observations, screenshots and actual-frame
 MP4 recording. It accepts explicit model/action/frame/time limits and records

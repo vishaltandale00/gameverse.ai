@@ -1,25 +1,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { componentKey, createAttempt, filterGames } from '../src/workshop-model.js';
+import { filterGames } from '../src/workshop-model.js';
+import { createMashupRequest, defaultChoices } from '../src/mashup-model.js';
 const catalog=JSON.parse(await readFile(new URL('../games/research.json',import.meta.url)));
-const keys=new Set(['pokemon-emerald-version:grid_step_locomotion','metroid-zero-mission:ability_gating_graph']);
-test('actual reference components produce the game-attempt boundary without browser metadata',()=>{
-  const result=createAttempt(catalog,keys,'Find a key and open a new route.');
-  assert.equal(result.schema_version,1);assert.equal(result.components.length,2);
-  assert.deepEqual(result.constraints,{max_width:12,max_height:8,max_episode_steps:80});
-  assert.equal(result.components[0].game_id,'metroid-zero-mission');
-  assert.ok(result.components.every(c=>c.adaptation));
-  assert.deepEqual(Object.keys(result).sort(),['candidate_id','components','constraints','intent','schema_version','title']);
+const parentIds=['metroid-zero-mission','pokemon-emerald-version'];
+const choices=()=>defaultChoices(parentIds.map(id=>catalog.games.find(g=>g.id===id)));
+const request=(designChoices=choices(),intent='Preserve the native world and add tactical encounters.',parents=parentIds)=>createMashupRequest(catalog,parents,designChoices,intent,parents[0]);
+test('eight broad design choices produce a source-linked native GBA brief without limiting raw components',()=>{
+  const result=request();
+  assert.equal(result.schema_version,2);assert.equal(result.kind,'gameverse_mashup_request');assert.equal(result.runtime_target,'gba');
+  assert.equal(result.design_choices.length,8);assert.equal(result.parent_games.length,2);
+  assert.deepEqual(result.foundation,{game_id:'metroid-zero-mission',preserve_world_and_campaign:true});
+  assert.equal(result.constraints.max_design_choices,8);assert.equal(result.constraints.target_platform,'gba');
+  assert.ok(!('max_width' in result.constraints));assert.ok(!('max_height' in result.constraints));
+  const rawComponents=result.design_choices.flatMap(d=>d.bundles.flatMap(b=>b.component_ids));assert.ok(rawComponents.length>8,'Bundles may include more than eight raw components.');
+  for(const dimension of result.design_choices)for(const bundle of dimension.bundles){const game=catalog.games.find(g=>g.id===bundle.game_id);assert.ok(bundle.component_ids.every(id=>game.components.some(c=>c.id===id)));}
+  assert.equal(result.status,'build_brief');assert.ok(result.design_choices.every(d=>d.implementation_status==='requested'));
 });
-test('export rejects missing anchors, single-game requests and unbounded text',()=>{
-  assert.throws(()=>createAttempt(catalog,new Set([...keys,'stale:component']),'Explore'),/absent/);
-  assert.throws(()=>createAttempt(catalog,new Set([keys.values().next().value]),'Explore'),/two games/);
-  assert.throws(()=>createAttempt(catalog,keys,' '.repeat(10)),/Describe/);
-  assert.throws(()=>createAttempt(catalog,keys,'x'.repeat(4001)),/4,000/);
-  assert.throws(()=>createAttempt(catalog,keys,'Explore',{'pokemon-emerald-version:grid_step_locomotion':'x'.repeat(1501)}),/1,500/);
-  const tooMany=new Set(catalog.games.flatMap(g=>g.components.map(c=>componentKey(g.id,c.id))).slice(0,9));
-  assert.throws(()=>createAttempt(catalog,tooMany,'Explore'),/8 components/);
+test('GBA brief rejects missing parents, stale choices and unbounded intent or notes',()=>{
+  assert.throws(()=>request(choices(),'Explore',['metroid-zero-mission','missing-parent']),/absent/);
+  assert.throws(()=>request(choices(),'Explore',['metroid-zero-mission']),/two parent/);
+  assert.throws(()=>request(choices(),'Explore',['metroid-zero-mission','metroid-zero-mission']),/distinct/);
+  assert.throws(()=>request(choices(),' '.repeat(10)),/Describe/);
+  assert.throws(()=>request(choices(),'x'.repeat(4001)),/4,000/);
+  const longNote=choices();longNote.story.notes='x'.repeat(1501);assert.throws(()=>request(longNote),/1,500/);
+  const staleParent=choices();staleParent.combat.parent_game_id='missing-parent';assert.throws(()=>request(staleParent),/removed parent/);
+  const ninth=choices();ninth.extra_dimension={mode:'bridge'};assert.throws(()=>request(ninth),/eight broad/);
+  const staleId=choices();delete staleId.story;staleId.obsolete_story={mode:'bridge'};assert.throws(()=>request(staleId),/unknown design dimension/);
+  const staleBridge=choices();staleBridge.story.bridge_id='removed-bridge';assert.throws(()=>request(staleBridge),/available bridge/);
 });
 test('research export contains the full corpus with finite compact projections and no private machine paths',()=>{
   assert.equal(catalog.games.length,33);assert.equal(new Set(catalog.games.map(g=>g.id)).size,33);

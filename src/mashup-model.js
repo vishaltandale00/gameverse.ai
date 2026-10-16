@@ -55,9 +55,10 @@ export function dependencyNotes(parents,choices,foundationId){
  return result;
 }
 export function createMashupRequest(catalog,parentIds,choices,intent,foundationId){
+ const choiceIds=Object.keys(choices);if(choiceIds.length>8)throw Error('Keep the brief to eight broad choices.');if(choiceIds.some(id=>!DIMENSIONS.some(d=>d.id===id)))throw Error('An unknown design dimension is absent from this snapshot.');if(new Set(parentIds).size!==parentIds.length)throw Error('Choose distinct parent games.');
  const parents=parentIds.map(id=>catalog.games.find(g=>g.id===id));if(parents.some(g=>!g))throw Error('A selected parent is absent from this snapshot.');if(parents.length<2)throw Error('Choose at least two parent games.');if(parents.length>4)throw Error('Keep this brief to at most four parent games.');if(!parents.some(g=>g.id===foundationId))throw Error('Choose a parent as the foundation.');if(!intent.trim())throw Error('Describe the world you want to make.');if(intent.length>4000)throw Error('Keep the game description within 4,000 characters.');
  const design_choices=DIMENSIONS.filter(d=>choices[d.id]?.mode!=='defer').map(d=>{
- const c=choices[d.id];if(!c)throw Error('Choose how to handle each active dimension.');if((c.notes||'').length>1500)throw Error('Keep each direction note within 1,500 characters.');
+ const c=choices[d.id];if(!c)throw Error('Choose how to handle each active dimension.');if(!['parent','bridge'].includes(c.mode))throw Error('Choose a parent or a bridge for each active dimension.');if((c.notes||'').length>1500)throw Error('Keep each direction note within 1,500 characters.');
  const selectedParents=c.mode==='parent'?parents.filter(g=>g.id===c.parent_game_id):parents;
  if(!selectedParents.length)throw Error('A design choice references a removed parent.');
  const bundles=selectedParents.map(g=>{const b=bundlesFor(g)[d.id];return{game_id:g.id,label:b.label,component_ids:b.component_ids,evidence_status:b.evidence_status};});
