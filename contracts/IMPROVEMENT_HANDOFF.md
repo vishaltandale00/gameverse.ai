@@ -27,6 +27,38 @@ python3 -B -m tools.prefab_pipeline run-profile --request tools/prefab_pipeline/
 python3 -B -m tools.prefab_pipeline continue-profile --prior-report PRIOR_ITERATION.json --prior-report-sha256 PRIOR_REPORT_SHA256 --template tools/prefab_pipeline/profiles/aria-soulstride-iteration.json --run-id NEW_RUN_ID --output-dir NEW_OUTPUT_DIRECTORY --output RESULT.json
 ```
 
+## Goal-defined campaigns
+
+The bounded repair fixture above is a smoke check. Longer traversal uses the same playtester through `native-campaign`: a registered source-fact milestone graph defines the actual goal, and a versioned loop configuration supplies cumulative finite frame, model-call, repair, chunk and wall-time limits. Reaching a chunk limit retains a partial checkpoint and automatically starts the next chunk. Cancellation uses a cooperative sentinel; a new process can resume known completed work with the same pinned inputs. Unknown interrupted consumption remains blocked. Provider, adapter and invalid-response failures stop the campaign rather than being retried until its cap.
+
+`tools/prefab_pipeline/campaign.py` also runs standalone with `--request`, `--template`, `--config`, `--output` and optional `--resume`. An explicitly pinned `initial_report_ref` can adopt a measured preliminary chunk into a newly budgeted campaign, retaining its exact native/model state and counting its consumption. Budget changes are recorded inputs, not evidence of improved performance or goal completion.
+
+The existing Sonic/MZM cartridge provides one traversal case: start at the coast with no upgrades, acquire coastal gear and open locks, traverse both coastal acts, and reach Factory with the required gear. The ordered graph uses observed native stage, upgrade, gate and relic fields; it does not count actions as success. The boss/capsule interpretation is labeled as an inference from native progression unless direct callback evidence is present. This is qualification of an existing cartridge, not new mashup implementation.
+
+Native options advance until source-state changes or bounded motion checks require another decision. They retain the normal System 1 confidence gate and System 2 escalation. Native action throughput, setup, observations, provider latency and complete workflow speed must be reported separately; the earlier repair fixture's action-only multiplier is not end-to-end traversal speed.
+
+## Recovered RPG navigation and per-mod quality
+
+The `sid-rpg-weekend-original` recipe is a pinned **original baseline traversal**, not a generated mod. Its `sid-rpg-weekend-iteration` profile selects the recovered SID memory decoder, live source POIs and original `Bot.plan`/`Bot.passable` pathfinding. The modern controller selects semantic destinations, menu answers and battle actions through System 1, then uses the existing confidence-triggered System 2 path. Walking the selected source-backed route and continuing noninteractive input do not require a model request for each tile. Actual zero-call navigation remains explicitly accounted as zero; it cannot stand in for a semantic model decision.
+
+The source-owned weekend scenario starts from the supplied post-Champion save and tracks story stages 0 through 6: arrival, greeting, beach, pair battle, and gym gauntlet. It is not an authentic new-game gym start. Source flags determine milestones; missing milestones stay partial. Battery startup and exact native snapshots are separate operations. No new ROM, save, source tree or credential is distributed.
+
+The checked-in request contains the author's exact private installation fingerprints. Another installation must create its own descriptor and versioned request/profile/registry pins; the author's provider hash is not portable. Generate the local descriptor with the existing adapter command:
+
+```sh
+python3 -B -m tools.playtester.rpg_adapter --install-root /path/to/authorized/sid-source --rom /path/to/game.gba --elf /path/to/game.elf --save /path/to/copied-save.sav --output local-data/rpg/provider.json
+```
+
+Keep the ROM/ELF/save copies and provider JSON under ignored local data, update their exact relative references in a new `native-artifact-traversal-request/1`, and register that request/profile in the data-only catalog. Regenerate/check the provider readset before requesting capabilities. The adapter validates the external source/tool installation at admission; it does not import an arbitrary client-selected module. This is a deliberate per-install setup step, not an automatic game installer.
+
+For the already reviewed local installation, the same engine command is:
+
+```sh
+python3 -B -m tools.prefab_pipeline run-profile --request tools/prefab_pipeline/requests/sid-rpg-weekend-original.json --template tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json --run-id NEW_RUN_ID --output-dir NEW_OUTPUT_DIRECTORY --output RESULT.json
+```
+
+Registered mods can select an adapter/scenario through their pinned iteration profile and optionally supply `experiment.mod_quality_ref` plus pinned original-run evidence in `experiment.mod_quality_runs`. The existing stages dispatch that contract against the actual current candidate report/events; report hashes bind the exact event log. Objective, invariant, reachability and changed-mechanic predicates reuse the same source milestone evaluator. Missing original coverage is unknown, identical baseline/candidate artifacts cannot earn a mod-comparison pass, and missing support is reported explicitly. An original-only RPG run is labeled not evaluated for paired mod quality. A profile may explicitly require its declared quality contract to pass before reporting the candidate as qualified; no universal benchmark is invented.
+
 ## Install exact local provider inputs
 
 An authorized existing working checkout can act as the provider source. The checked-in manifest lists each required path, size, hash and recipe membership; it contains no payload. Verify all source inputs first, then explicitly install missing matching files into this checkout:
@@ -36,7 +68,7 @@ node scripts/improvement-provider.mjs --manifest contracts/improvement-provider-
 node scripts/improvement-provider.mjs --manifest contracts/improvement-provider-pack.json --source /path/to/authorized/working-checkout --install
 ```
 
-The importer refuses traversal, symlink escapes, stale source pins and conflicting existing target files. It preserves matching existing files. The source must contain the exact user-provided USA Aria cartridge and matching reviewed provider files; a different ROM revision or an arbitrary internet download is insufficient. Local provider material must remain local. Recheck capabilities after installation and keep backend admission errors visible.
+The importer refuses traversal, symlink escapes, stale source pins and conflicting existing target files. It preserves matching existing files. The importer currently checks the full declared pack across registered recipes; it has no per-recipe selector. The source must contain every exact matching authorized input declared for Aria, Sonic and the local RPG installation, including required private checkpoint/provider metadata. Different ROM revisions or arbitrary downloads are insufficient. RPG descriptors with external installation roots must be generated and versioned locally as described above. Local provider material must remain local. Recheck capabilities after installation and keep backend admission errors visible.
 
 Native compilation uses `cc` with Clang's ARMv4T target support plus `arm-none-eabi-ld`, `arm-none-eabi-objcopy` and `arm-none-eabi-nm` on PATH. Double-XP qualification also requires mGBA development headers/library, ffmpeg and the built session bridge (`make -C tools/re/session`, with `MGBA_PREFIX` configured for your machine). The existing Double-XP oracle currently assumes the Homebrew `/opt/homebrew` mGBA prefix; using another installation needs a reviewed portability change. Soulstride candidate construction does not run that qualification stage. Model-backed improvement requires the built session bridge and its mGBA library as well as an available configured provider.
 

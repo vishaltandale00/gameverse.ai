@@ -144,15 +144,21 @@ class SonicTraversalAdapter:
         index = len(self.tokens) + 1
         token = 'sonic-checkpoint-' + str(index)
         self.inner._command('save ' + str(index))
-        self.tokens[token] = (index, self.inner.frame, self.inner.native_counter, copy.deepcopy(observation))
+        self.tokens[token] = (index, self.inner.frame, self.inner.native_counter, copy.deepcopy(observation),
+                              copy.deepcopy(self.inner.watches), self.option_source_ready)
         path = self.inner.out / ('checkpoint-' + str(index) + '.ss')
         return {'checkpoint': token, 'frame': self.inner.frame,
             'path': str(path), 'state_path': str(path), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
 
     def restore(self, token):
-        index, frame, counter, observation = self.tokens[token]
+        index, frame, saved_counter, observation, watches, source_ready = self.tokens[token]
         self.inner._command('load ' + str(index))
-        self.inner.frame, self.inner.native_counter = frame, counter
+        # Native process command counter is monotonic and is not in mGBA's
+        # save state. Rewind only logical episode time; preserve its current
+        # counter so the next action subtracts exactly its actual advancement.
+        self.inner.frame = frame
+        self.inner.configure_watches(watches)
+        self.option_source_ready = source_ready
         self.restored_observation = copy.deepcopy(observation)
         return {'checkpoint': token, 'frame': frame}
 

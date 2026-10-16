@@ -29,7 +29,23 @@ def png(rgba):
 
 
 class NativeSession:
-    def __init__(self, rom, out, binary, *, max_frames=120, timeout=10, initial_state=None, memory_profile=None, mailbox_profile=None, callback_profile=None):
+    def __init__(self, rom, out, binary, *, max_frames=120, timeout=10, initial_state=None, initial_save=None, expected_initial_save_sha256=None, memory_profile=None, mailbox_profile=None, callback_profile=None):
+        if initial_save is not None and initial_state is not None:
+            raise ValueError('conflicting_initial_state_and_save')
+        if expected_initial_save_sha256 is not None and initial_save is None:
+            raise ValueError('initial_save_required_for_hash')
+        save_bytes = None
+        self.initial_save = None
+        if initial_save is not None:
+            source_save = Path(initial_save).resolve()
+            if not source_save.is_file() or not 1 <= source_save.stat().st_size <= 1024 * 1024:
+                raise ValueError('invalid_initial_save_size')
+            save_bytes = source_save.read_bytes()
+            save_sha256 = hashlib.sha256(save_bytes).hexdigest()
+            if expected_initial_save_sha256 is not None and save_sha256 != expected_initial_save_sha256:
+                raise ValueError('initial_save_sha256_mismatch')
+            self.initial_save = {'path': str(source_save), 'sha256': save_sha256, 'bytes': len(save_bytes),
+                                 'provenance': 'private battery-save copy loaded before native reset; source never opened by emulator'}
         self.out = Path(out).resolve()
         # Require a fresh output directory: never reuse another run's saves.
         self.out.mkdir(parents=True, exist_ok=False)
@@ -80,6 +96,10 @@ class NativeSession:
             if size < 8 or not 0x03000000 <= address + 4 <= 0x03008000 - 4:
                 raise ValueError('callback_profile_symbol_mismatch')
             native_args += ['--callback-watch', str(address + 4)]
+        if save_bytes is not None:
+            private_save = self.out / 'initial-battery.sav'
+            private_save.write_bytes(save_bytes)
+            native_args += ['--initial-save', str(private_save)]
         self.callback_profile = callback_profile
         self.recording = None
         self.process = subprocess.Popen(native_args,
@@ -156,6 +176,7 @@ class NativeSession:
                 'evidence': {'image_sha256': hashlib.sha256(target.read_bytes()).hexdigest(),
                              'state_key_basis': 'quantized_screen_only; animation is not objective progress',
                              'frame_basis': 'session-relative advanced frames', 'initial_state': self.initial_state,
+                             'initial_save': self.initial_save,
                              'memory_profile': self.memory_profile}}
 
     def read_memory(self, address, length):
@@ -309,6 +330,8 @@ def main():
     parser.add_argument('--out', type=Path, required=True, help='Fresh private directory; must not already exist')
     parser.add_argument('--binary', type=Path, default=Path(__file__).parent / 'build/gba-session')
     parser.add_argument('--initial-state', type=Path)
+    parser.add_argument('--initial-save', type=Path)
+    parser.add_argument('--initial-save-sha256')
     parser.add_argument('--memory-profile', type=Path, help='ROM-hash-pinned, read-only RAM facts and source refs')
     parser.add_argument('--max-action-frames', type=int, default=120)
     parser.add_argument('--command-timeout', type=float, default=10)
@@ -318,7 +341,8 @@ def main():
     session = None
     try:
         session = NativeSession(args.rom, args.out, args.binary, max_frames=args.max_action_frames,
-                                timeout=args.command_timeout, initial_state=args.initial_state, memory_profile=args.memory_profile)
+                                timeout=args.command_timeout, initial_state=args.initial_state, initial_save=args.initial_save,
+                                expected_initial_save_sha256=args.initial_save_sha256, memory_profile=args.memory_profile)
         while True:
             raw = sys.stdin.buffer.readline(65537)
             if not raw:

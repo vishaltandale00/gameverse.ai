@@ -1,0 +1,68 @@
+{
+  "schema": "gameverse.rpg-source-boot/1",
+  "artifact_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+  "scope": "Original supplied chapter18 post-Champion ordinary-save startup. Source continue.txt button recipe; no debug warp, RAM mutation, heal or scenario victory.",
+  "setup_max_frames": 2000,
+  "setup_actions": [
+    {
+      "keys": [],
+      "frames": 600
+    },
+    {
+      "keys": [
+        "A"
+      ],
+      "frames": 4
+    },
+    {
+      "keys": [],
+      "frames": 4
+    },
+    {
+      "keys": [],
+      "frames": 200
+    },
+    {
+      "keys": [
+        "A"
+      ],
+      "frames": 4
+    },
+    {
+      "keys": [],
+      "frames": 4
+    },
+    {
+      "keys": [],
+      "frames": 200
+    },
+    {
+      "keys": [
+        "A"
+      ],
+      "frames": 4
+    },
+    {
+      "keys": [],
+      "frames": 4
+    },
+    {
+      "keys": [],
+      "frames": 240
+    },
+    {
+      "keys": [
+        "A"
+      ],
+      "frames": 4
+    },
+    {
+      "keys": [],
+      "frames": 4
+    },
+    {
+      "keys": [],
+      "frames": 420
+    }
+  ]
+}

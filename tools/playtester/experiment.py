@@ -167,7 +167,7 @@ def experiment_native_candidate(artifact, context):
             '--memory-profile',str(effective_memory)],expected_rom_sha256=artifact['sha256'],goal=config.get('goal','soul_acquisition'),native_event_audit=config.get('native_event_audit',False),
             target_abs_velocity_q16=config.get('target_abs_velocity_q16',196608))
     if adapter_id=='aria-readonly-reward-fragment/1' and prior and prior.get('scenario_state'):
-        old=prior['scenario_state'];adapter.initial_xp=old.get('initial_xp');adapter.initial_inventory=old.get('initial_inventory')
+        old=prior.get('native_adapter_scenario_state') or prior['scenario_state'];adapter.initial_xp=old.get('initial_xp');adapter.initial_inventory=old.get('initial_inventory')
         adapter.reward_frame=1 if old.get('reward_frame') is not None else None;adapter.objective_witness=old.get('objective_witness');adapter.native_events=old.get('native_events',[]);adapter.bone_seen=set(old.get('bone_seen',[]))
     if scenario is not None:
         from .scenario import ScenarioAdapter
@@ -200,7 +200,8 @@ def experiment_native_candidate(artifact, context):
                     'environment_version':meta['emulator']['name']+'/'+meta['emulator']['version'],
                     'runtime_identity':runtime,'profile_sha256':digest(profile),'observation_profile_sha256':digest(memory),
                     'learning_context':pin(learning_path),'observation':pin(observation_path),
-                    'state':pin(checkpoint['state_path']),'scenario_state':checkpoint.get('scenario_state',{})},
+                    'state':pin(checkpoint['state_path']),'scenario_state':checkpoint.get('scenario_state',{}),
+                    'native_adapter_scenario_state':checkpoint.get('native_adapter_scenario_state')},
                 'diagnosis':{'source_outcome':observations[-1]['facts'] if observations else {},
                     'system2_hypotheses':[event['result'].get('reason') for event in decisions if event['event']=='system2'][-3:],
                     'repair_recommendation':'No supported code variant selected by model; retain source evidence for diagnosis.'}}

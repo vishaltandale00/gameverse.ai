@@ -1,4 +1,4 @@
-"""Inventory two registered provider recipes without copying payloads or running builds.
+"""Inventory registered provider recipes without copying payloads or running builds.
 
 This is a bounded file-closure inventory, not a provenance/license certificate or
 qualification runner. Existing reference hashes are checked, never rewritten.
@@ -53,6 +53,30 @@ RECIPES["aria-soulstride"] = {
     "bounded_qc": "Direct build-only recipe; use the explicitly separate controlled-lunge iteration profile for the bounded model repair exercise.",
 }
 RECIPES["aria-soulstride"].pop("profile", None)
+RECIPES["sonic-metroid-coast-campaign"] = {
+    "request": "research/deep-extraction/sonic-metroid/request.json",
+    "profile": "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json",
+    "modules": ["tools/prefab_pipeline/native_mod.py", "tools/prefab_pipeline/sonic_metroid_strategy.py",
+        "tools/prefab_pipeline/iteration.py", "tools/prefab_pipeline/campaign.py", "tools/prefab_pipeline/__main__.py",
+        "tools/playtester/experiment.py", "tools/playtester/scenario.py", "tools/playtester/sonic_adapter.py",
+        "tools/playtester/__main__.py", "tools/decisions/__main__.py", "scripts/improvement-api.mjs",
+        "scripts/improvement-client.mjs", "scripts/serve-improvement.mjs"],
+    "hardcoded": [],
+    "build": "python3 -B -m tools.prefab_pipeline.native_cli build-mod --request research/deep-extraction/sonic-metroid/request.json --output-dir NEW --output RESULT",
+    "bounded_qc": "Registered native-campaign API; first measure the pinned finite prefix, then select explicit cumulative limits without changing executable source or profile pins.",
+}
+RECIPES["sid-rpg-weekend-original"] = {
+    "request": "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json",
+    "profile": "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
+    "modules": ["tools/prefab_pipeline/iteration.py", "tools/prefab_pipeline/campaign.py",
+        "tools/prefab_pipeline/__main__.py", "tools/prefab_pipeline/artifact_reference.py",
+        "tools/prefab_pipeline/quality_dispatch.py", "tools/playtester/rpg_experiment.py",
+        "tools/playtester/rpg_adapter.py", "tools/playtester/scenario.py", "tools/playtester/mod_quality.py",
+        "scripts/improvement-api.mjs", "scripts/improvement-client.mjs", "scripts/serve-improvement.mjs"],
+    "hardcoded": [],
+    "build": "Not applicable: exact authorized original ROM is reused; no native edit or source build is claimed.",
+    "bounded_qc": "Registered native-campaign API with explicit finite cumulative limits; source navigation is deterministic and semantic/battle decisions use configured S1/S2 providers.",
+}
 SHA = re.compile(r"[0-9a-f]{64}\Z")
 PREFIXES = ("tools/", "research/", "ontology/", "contracts/", "src/", "scripts/", "local/")
 SUFFIXES = (".json", ".py", ".mjs", ".js", ".c", ".h", ".s", ".asm.txt", ".gba", ".md")
@@ -91,22 +115,23 @@ class Inventory:
                 raise ValueError("provider manifest file limit exceeded")
             size = path.stat().st_size
             raw_rom = path.suffix.lower() in (".gba", ".gb", ".nds")
-            if not raw_rom and self.metadata_bytes + size > self.max_metadata_bytes:
+            raw_payload = raw_rom or path.suffix.lower() in (".ss", ".sav", ".png", ".rgba", ".mp4")
+            if not raw_payload and self.metadata_bytes + size > self.max_metadata_bytes:
                 raise ValueError("provider manifest metadata byte limit exceeded")
             digest = hashlib.sha256()
             chunks = []
             with path.open("rb") as stream:
                 for chunk in iter(lambda: stream.read(1024 * 1024), b""):
                     digest.update(chunk)
-                    if not raw_rom:
+                    if not raw_payload:
                         chunks.append(chunk)
             content = b"".join(chunks)
             kind = "local-rom" if raw_rom else self.classify(relative, content)
             self.rows[relative] = {"path": relative, "sha256": digest.hexdigest(), "bytes": size,
                 "kind": kind, "recipes": [], "stages": [], "origins": [],
                 "payload_policy": "metadata-only-user-provided" if kind in ("local-rom", "external-evidence") else
-                    "provider-only-pending-provenance-review" if kind == "reconstructed-code" else "authored-or-metadata-review-required"}
-            if not raw_rom:
+                    "provider-only-pending-provenance-review" if kind in ("reconstructed-code", "native-component-provider") else "authored-or-metadata-review-required"}
+            if not raw_payload:
                 self.contents[relative] = content
                 self.metadata_bytes += size
         row = self.rows[relative]
@@ -127,14 +152,18 @@ class Inventory:
 
     @staticmethod
     def classify(path, raw):
-        if path.startswith("local/decomps/") or path.endswith((".s", ".asm.txt")):
+        if path.startswith(("local/", "local-data/")) or path.endswith((".s", ".asm.txt", ".ss", ".sav", ".rgba", ".png", ".mp4")):
             return "external-evidence"
+        if path in ("research/deep-extraction/sonic-metroid/progression/progress_adapter.c", "research/deep-extraction/sonic-metroid/progression/progress_adapter.h"):
+            return "authored-binding"
+        if path.startswith(("tools/composition/components/sonic_metroid/", "tools/composition/packages/sonic-", "tools/composition/plans/sonic-", "tools/composition/native/sonic-", "tools/composition/worlds/sonic-", "research/deep-extraction/sonic-metroid/progression/")):
+            return "native-component-provider"
         if path.endswith(".json"):
             # Some source-evidence certificates embed original assembly text.
             if b'"assembly":' in raw and (b"push {" in raw or b"\n\\t" in raw or b"\\tpush" in raw):
                 return "external-evidence"
             return "recipe" if "/requests/" in path else "source-evidence"
-        if path.startswith(BASE) and path.endswith((".c", ".h")):
+        if path.startswith((BASE, "research/requests/")) and path.endswith((".c", ".h")):
             return "reconstructed-code"
         return "authored-code"
 
@@ -149,7 +178,7 @@ class Inventory:
                 return
             ref = value.get("path", value.get("ref"))
             if isinstance(ref, str) and isinstance(value.get("sha256"), str):
-                if origin == "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json" and value["sha256"] == "0" * 64 and ref == "tools/playtester/models.py":
+                if origin in ("tools/prefab_pipeline/profiles/aria-soulstride-iteration.json", "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json", "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json") and value["sha256"] == "0" * 64 and ref == "tools/playtester/models.py":
                     self.warnings.append({"code": "deferred-template-policy-pin", "recipe": recipe, "path": ref,
                         "detail": "prepare_iteration_config freezes the current policy hash in each prepared run; this template placeholder is not executable admission evidence."})
                     self.add(ref, recipe, stage, origin)
@@ -192,6 +221,11 @@ class Inventory:
                 path = "/".join(part for part in name if part) + ".py"
                 if not (self.root / path).is_file():
                     path = "/".join(part for part in name if part) + "/__init__.py"
+                if (relative == "tools/prefab_pipeline/iteration.py" and path == "tools/prefab_pipeline/artifact_reference.py"
+                        and json.loads((self.root / RECIPES[recipe]["request"]).read_text()).get("schema") != "native-artifact-traversal-request/1"):
+                    # This import executes only in the pinned artifact-reference dispatch branch.
+                    # Native modification recipes must not acquire an unrelated RPG provider dependency.
+                    continue
                 if (self.root / path).is_file():
                     self.add(path, recipe, stage, relative + ":python-import")
 
@@ -201,7 +235,8 @@ class Inventory:
             raw = self.contents.get(relative)
             if raw is None:
                 continue
-            if relative.startswith("local/") or relative.endswith("/soma-cast/evidence.json"):
+            if (relative.startswith("local/") or relative.endswith("/soma-cast/evidence.json")
+                    or relative.startswith("local-data/") and relative != "local-data/sonic-coast-campaign/provider/coast-start.fixture.json"):
                 continue  # Native compiler/lowerer hash these certificates, not their optional historical artifacts.
             if relative.endswith(".json"):
                 try:
@@ -221,6 +256,10 @@ class Inventory:
                 for name in re.findall(rb'^\s*#include\s+"([^"\n]+)"', raw, re.MULTILINE):
                     text = name.decode()
                     candidate = str(Path(relative).parent / text)
+                    if (recipe == "sonic-metroid-coast-campaign" and relative.startswith("research/deep-extraction/sonic-metroid/progression/")
+                            and not (self.root / candidate).is_file()):
+                        # The registered lowerer relocates these exact source modules into the component directory.
+                        candidate = str(Path("tools/composition/components/sonic_metroid") / text)
                     if (self.root / candidate).is_file():
                         self.add(candidate, recipe, stage, relative + ":include")
                     elif text != "state-layout.h":
@@ -232,8 +271,12 @@ def generate_manifest(root=ROOT):
     inventory = Inventory(root)
     recipes = []
     for recipe, spec in RECIPES.items():
-        seeds = [spec["request"], "tools/prefab_pipeline/__init__.py", "tools/prefab_pipeline/native_cli.py",
-                 "tools/composition/native_build.py", "tools/composition/resolve.py", *spec["modules"]]
+        seeds = [spec["request"], "tools/prefab_pipeline/__init__.py", *spec["modules"]]
+        if json.loads((inventory.root / spec["request"]).read_text()).get("schema") != "native-artifact-traversal-request/1":
+            seeds += ["tools/prefab_pipeline/native_cli.py", "tools/composition/native_build.py", "tools/composition/resolve.py"]
+        if "scripts/serve-improvement.mjs" in seeds:
+            seeds += ["scripts/improvement-ui.mjs", "improvement.html", "improvement.css",
+                      "src/improvement-page.js", "src/improvement-workbench.js", "src/improvement-workbench-model.js"]
         if spec.get("profile"):
             seeds.append(spec["profile"])
         for path in seeds:
@@ -248,8 +291,8 @@ def generate_manifest(root=ROOT):
                         "build": spec["build"], "bounded_qc": spec["bounded_qc"]})
     recipe_ids = sorted(RECIPES)
     files = sorted(inventory.rows.values(), key=lambda row: row["path"])
-    if any(row["path"] == "contracts/improvement-provider-pack.json" for row in files):
-        raise ValueError("provider manifest cannot contain its own file hash")
+    if any(row["path"] in ("contracts/improvement-provider-pack.json", "contracts/improvement-profile-registry.json") for row in files):
+        raise ValueError("provider manifest cannot pin its own container or the whole additive profile registry")
     for row in files:
         for field in ("recipes", "stages", "origins"):
             row[field].sort()
@@ -265,8 +308,8 @@ def generate_manifest(root=ROOT):
                     ("arm-none-eabi-nm", "GNU ARM symbol inspection", "build"),
                     ("libmgba", "0.10.5-compatible headers/library and separately built tools/re/session/build/gba-session", "bounded-qc"),
                     ("ffmpeg", "video encoding when bounded QC records a clip", "bounded-qc"))] + [
-            {"name": "DecisionAI System1", "requirement": "Configured Decisions-compatible provider via LITELLM_BASE and LITELLM_API_KEY; defaults identify ramblerun/Decision-AI, credentials remain process-external", "recipes": ["aria-soulstride-controlled-lunge"], "stage": "model-playtest"},
-            {"name": "System2 chat model", "requirement": "Configured PLAYTEST_LLM_BASE_URL, PLAYTEST_LLM_MODEL and PLAYTEST_LLM_API_KEY or explicitly selected GAMEVERSE_SID_ENV_FILE; no credential values retained in manifest", "recipes": ["aria-soulstride-controlled-lunge"], "stage": "model-diagnosis-and-repair"}],
+            {"name": "DecisionAI System1", "requirement": "Configured Decisions-compatible provider via LITELLM_BASE and LITELLM_API_KEY; defaults identify ramblerun/Decision-AI, credentials remain process-external", "recipes": ["aria-soulstride-controlled-lunge", "sonic-metroid-coast-campaign", "sid-rpg-weekend-original"], "stage": "model-playtest"},
+            {"name": "System2 chat model", "requirement": "Configured PLAYTEST_LLM_BASE_URL, PLAYTEST_LLM_MODEL and PLAYTEST_LLM_API_KEY or explicitly selected GAMEVERSE_SID_ENV_FILE; no credential values retained in manifest", "recipes": ["aria-soulstride-controlled-lunge", "sonic-metroid-coast-campaign", "sid-rpg-weekend-original"], "stage": "model-decisions-and-optional-repair"}],
         "closure": {"method": "recursive JSON pins/source_pins, selected Python imports, quoted C includes, explicit reviewed hardcoded lowerer inputs; shared composition.resolve reused",
                     "complete": not inventory.gaps, "gaps": inventory.gaps,
                     "provenance_warnings": inventory.warnings,

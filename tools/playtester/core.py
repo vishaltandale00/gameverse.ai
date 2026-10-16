@@ -360,6 +360,7 @@ class Playtester:
                   "timing_note": "Stages are nested in total; policy includes model/network/queue. Deadline checked between operations; socket/adapter timeouts bound individual operations.",
                   "evidence_note": "Observed transitions and provisional barriers, not proof of game rules. No-change may mean animation, wrong input timing, cooldown, collision or a prerequisite. Model confidence is uncalibrated."}
         if self.output:
+            report["events_sha256"] = hashlib.sha256((self.output / "events.jsonl").read_bytes()).hexdigest() if (self.output / "events.jsonl").is_file() else None
             (self.output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
         return report
 

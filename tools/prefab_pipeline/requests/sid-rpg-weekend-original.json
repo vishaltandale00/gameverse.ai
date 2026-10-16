@@ -1,0 +1,35 @@
+{
+  "schema": "native-artifact-traversal-request/1",
+  "request_id": "sid-rpg-weekend-original-v1",
+  "role": "original",
+  "game_id": "siddarth-emerald",
+  "source_revision": "provider-source-readset:c20917371921119c4204a50d7708c006b0b7cb01a3fceb3fe8fe1eedb0252e27",
+  "source_rom": {
+    "path": "local-data/rpg/registered-original/original.gba",
+    "sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f"
+  },
+  "artifact": {
+    "path": "local-data/rpg/registered-original/original.gba",
+    "sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f"
+  },
+  "elf": {
+    "path": "local-data/rpg/registered-original/original.elf",
+    "sha256": "6977510d5ab798941553132ac35eed4fd8590ee2279a6c0ae09243a49e30d962"
+  },
+  "save": {
+    "path": "local-data/rpg/registered-original/original.sav",
+    "sha256": "21fa895f1f79dab55e729196b8e1a606f712055300b8a5da9861156ff6f4dea3"
+  },
+  "provider_manifest": {
+    "path": "local-data/rpg/sid-provider-18e.json",
+    "sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9"
+  },
+  "game_profile": {
+    "path": "tools/playtester/profiles/pokemon-rpg-weekend-quest.json",
+    "sha256": "0d0cf9edf720a3040196a477ff74b64c1842ef7909aac18f45c4fe8ad895e20f"
+  },
+  "quality": {
+    "path": "tools/playtester/profiles/pokemon-rpg-weekend-scenario.json",
+    "sha256": "1486e7e5dc211f5839bbf47cf8392242d63e44be48a0811f8b6395035de174ac"
+  }
+}

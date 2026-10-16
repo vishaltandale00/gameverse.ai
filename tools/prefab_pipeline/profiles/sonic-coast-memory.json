@@ -1,0 +1,5 @@
+{
+  "rom_sha256": "50757987593917bddafe6b32c3355cb9af32d899468850af69115bad59f3d855",
+  "fields": [],
+  "basis": "SonicTraversalAdapter independently decodes read-only source actor/task-owned state; no generic guessed RAM fields."
+}

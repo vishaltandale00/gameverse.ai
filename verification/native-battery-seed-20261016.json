@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "scope": "battery copy boot600 frames and exact native checkpoint same-input image replay; RPG route semantics separately owned",
+  "elapsed_wall_s": 0.12397625,
+  "model_calls": 0,
+  "initial_save": {
+    "sha256": "21fa895f1f79dab55e729196b8e1a606f712055300b8a5da9861156ff6f4dea3",
+    "bytes": 131072,
+    "provenance": "private battery-save copy loaded before native reset; source never opened by emulator"
+  },
+  "native_sha256": "977359b8e073684818abc28340b99885e0e8fa1c68f6b92e7cbcd1c48b9e98f4",
+  "checkpoint_replay_image_match": true,
+  "source_rom_and_save_unchanged": true,
+  "schema": "gameverse.native-battery-seed/1",
+  "run_id": "sid-rpg-battery-seed-20261016",
+  "environment": "macOS-27.0.1-arm64-arm-64bit",
+  "source_commit": "2e7b00f with source hashes below",
+  "native_frames": 612,
+  "source_hashes": {
+    "tools/re/session/bridge.py": "d78b132c7019ac8d3c89cd42c6cea071f1fd9007fa755c35203ad4673fc0cb8c",
+    "tools/re/session/session.c": "fc4e1d19a2bd3367f0d88c23788352041d2603ffe361f83cecfa7bbb9505502f"
+  },
+  "rom_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+  "tests": {
+    "passed": 44,
+    "duration_s": 0.272
+  },
+  "queue_s": null,
+  "build_s": null,
+  "accounting": "Elapsed smoke wall includes setup, boot, native save/load and two six-frame inputs; final source hash verification follows elapsed measurement. Model/queue unavailable; not model campaign timing. Incremental native build succeeded but duration was not separately measured."
+}

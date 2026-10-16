@@ -7,16 +7,46 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 from tools.prefab_pipeline import native_mod
-from tools.prefab_pipeline.native_mod import ROOT, prepare_native_mod_request
+from tools.prefab_pipeline.native_mod import prepare_native_mod_request
 
 class NativeModRequestTests(unittest.TestCase):
     def setUp(self):
-        def pin(path):
-            return {'path': path, 'sha256': hashlib.sha256((ROOT/path).read_bytes()).hexdigest()}
+        # Admission-only authored graph; these bytes are not a playable cartridge
+        # or evidence for any original game's native implementation.
+        self.folder = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder.cleanup)
+        self.root = Path(self.folder.name).resolve()
+        self.root_patch = patch.object(native_mod, 'ROOT', self.root)
+        self.root_patch.start()
+        self.addCleanup(self.root_patch.stop)
+
+        def write(path, value):
+            data = value if isinstance(value, bytes) else json.dumps(value).encode()
+            (self.root/path).write_bytes(data)
+            return {'path': path, 'sha256': hashlib.sha256(data).hexdigest()}
+
+        package = write('reward.package.json', {
+            'kind': 'component_package',
+            'lowering': {'native_v1': {'version': 'freestanding-c-thumb/1', 'sources': []}}})
+        plan = write('acquisition.plan.json', {
+            'id': 'authored-admission-fixture', 'target': {'preserve_campaign': True},
+            'native_build': {'version': 'gba-component-native/1',
+                'packages': [{'instance': 'reward', 'package': {
+                    'ref': package['path'], 'sha256': package['sha256']}}],
+                'hooks': [{'host_hook': 'enemy_defeat', 'instance': 'reward',
+                    'symbol': 'fixture_reward', 'args': [{'arg': 0}, {'constant': 1}]}]}})
         self.request = {'schema': 'native-prefab-mod-request/1', 'request_id': 'contract-check',
-                        'plan': pin('research/deep-extraction/castlevania/acquisition-parity.plan.json'),
-                        'rom': pin('local/roms/Castlevania - Aria of Sorrow (USA).gba'),
+                        'plan': plan, 'rom': write('synthetic-foundation.bin', bytes(range(32))),
                         'hook_edits': [{'host_hook': 'enemy_defeat', 'constant_arguments': {'1': 2}}]}
+
+    def test_authored_fixture_accepts_only_declared_constant_edit(self):
+        before = copy.deepcopy(self.request)
+        plan, rom, changes = prepare_native_mod_request(self.request)
+        self.assertEqual(plan['native_build']['hooks'][0]['args'], [{'arg': 0}, {'constant': 2}])
+        self.assertEqual(rom.read_bytes(), bytes(range(32)))
+        self.assertEqual(len(changes), 1)
+        self.assertEqual(changes[0]['before']['args'][1], {'constant': 1})
+        self.assertEqual(self.request, before)
 
     def test_runtime_argument_cannot_be_rebound(self):
         request = copy.deepcopy(self.request)

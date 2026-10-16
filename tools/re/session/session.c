@@ -39,6 +39,10 @@ static void drain(struct mCore* core) {
     }
 }
 int main(int argc, char** argv) {
+    const char* initialSave = NULL;
+    if (argc >= 5 && !strcmp(argv[argc - 2], "--initial-save")) {
+        initialSave = argv[argc - 1]; argc -= 2;
+    }
     if (argc != 3 && argc != 5 && argc != 6) return 2;
     unsigned mailboxBase = 0, mailboxSize = 0, callbackAddress = 0;
     if (argc == 5 && !strcmp(argv[3], "--callback-watch")) {
@@ -66,6 +70,13 @@ int main(int argc, char** argv) {
     core->setVideoBuffer(core, pixels, 240);
     core->setAudioBufferSize(core, 4096);
     if (!mCoreLoadFile(core, argv[1])) return 5;
+    /* Python supplies only a private session copy. mGBA owns the VFile
+     * after a successful load and may flush battery writes to that copy. */
+    if (initialSave) {
+        struct VFile* save = VFileOpen(initialSave, O_RDWR);
+        if (!save) return 6;
+        if (!core->loadSave(core, save)) { save->close(save); return 6; }
+    }
     core->rtc.override = RTC_FIXED;
     core->rtc.value = 1704067200000LL;
     core->reset(core);

@@ -50,6 +50,37 @@ class NativeRuntimeTests(unittest.TestCase):
         self.assertEqual(event['velocity_x_q16'],196608);self.assertIsNotNone(a.objective_witness)
 
 
+    def test_sonic_restore_rewinds_logical_frame_but_preserves_native_counter(self):
+        from tools.playtester.sonic_adapter import SonicTraversalAdapter
+        from tools.re.session.bridge import NativeSession
+        native=NativeSession.__new__(NativeSession)
+        native.frame=40;native.native_counter=40;native.max_frames=120
+        native.mailbox_profile=None;native.callback_profile=None
+        commands=[];native._command=lambda command:commands.append(command) or 'state'
+        native.configure_watches=lambda watches:setattr(native,'watches',watches)
+        native._step=lambda mask,count:(native.native_counter+count,None)
+        adapter=SonicTraversalAdapter.__new__(SonicTraversalAdapter);adapter.inner=native
+        saved={'frame':10,'state_key':'saved'};watches=[{'name':'stage','address':0x0300514c,'bytes':1,'mask':255}]
+        adapter.tokens={'saved':(1,10,10,saved,watches,True)}
+        adapter.restore('saved')
+        self.assertEqual(native.frame,10);self.assertEqual(native.native_counter,40)
+        self.assertEqual(native.watches,watches)
+        self.assertEqual(native.act({'keys':['RIGHT'],'frames':7},120)['frames'],7)
+        self.assertEqual(native.frame,17);self.assertEqual(native.native_counter,47)
+
+    def test_initial_save_conflict_and_bad_hash_fail_before_creating_session(self):
+        from tools.re.session.bridge import NativeSession
+        from tempfile import TemporaryDirectory
+        from pathlib import Path
+        with TemporaryDirectory() as temp:
+            root=Path(temp);save=root/'input.sav';save.write_bytes(b'private synthetic battery')
+            before=save.read_bytes();out=root/'session'
+            with self.assertRaisesRegex(ValueError,'conflicting_initial_state_and_save'):
+                NativeSession(root/'no-rom',out,root/'no-binary',initial_save=save,initial_state=root/'state')
+            with self.assertRaisesRegex(ValueError,'initial_save_sha256_mismatch'):
+                NativeSession(root/'no-rom',out,root/'no-binary',initial_save=save,expected_initial_save_sha256='0'*64)
+            self.assertFalse(out.exists());self.assertEqual(save.read_bytes(),before)
+
     def test_source_watch_rejects_invalid_ram_and_mask_before_mutating(self):
         from tools.re.session.bridge import NativeSession
         native=NativeSession.__new__(NativeSession); calls=[]; native._command=lambda command:calls.append(command)

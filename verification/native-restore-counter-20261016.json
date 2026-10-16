@@ -1,0 +1,17 @@
+{
+  "schema": "gameverse.native-restore-counter/1",
+  "status": "passed",
+  "model_calls": 0,
+  "wall_s": 0.033308709,
+  "saved_logical_frame": 1,
+  "native_counter_at_restore": 25,
+  "first_frames": 24,
+  "replayed_frames": 24,
+  "final_logical_frame": 25,
+  "exact_image_and_progress_match": true,
+  "source_hashes": {
+    "tools/playtester/sonic_adapter.py": "dec806d5590f0fbd434554f110c2fab4bd708649e4a5db0bdd80fff448256f5e",
+    "tools/re/session/bridge.py": "d78b132c7019ac8d3c89cd42c6cea071f1fd9007fa755c35203ad4673fc0cb8c",
+    "tools/re/session/session.c": "fc4e1d19a2bd3367f0d88c23788352041d2603ffe361f83cecfa7bbb9505502f"
+  }
+}

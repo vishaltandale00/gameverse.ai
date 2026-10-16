@@ -41,6 +41,12 @@ class IterationTests(unittest.TestCase):
     def run_loop(self, **kwargs):
         return run_iteration(self.request, self.config, self.root/'run', self.stages, **kwargs)
 
+    def test_required_quality_cannot_be_omitted_by_callback(self):
+        self.config['require_mod_quality'] = True
+        result = self.run_loop()
+        self.assertEqual(result['reason'], 'declared_mod_quality_not_passed')
+        self.assertNotEqual(result['status'], 'success')
+
     def test_diagnosis_cannot_claim_success(self):
         result = self.run_loop()
         self.assertEqual(result['status'], 'artifact-built-with-diagnostics')
@@ -253,6 +259,35 @@ class IterationTests(unittest.TestCase):
         self.assertEqual(result['input_sha256'], canonical_hash({'request': result['request'], 'config': result['config']}))
         persisted = json.loads((self.root/'run/inputs.json').read_text())
         self.assertEqual(persisted['config'], result['config'])
+
+    def test_recipe_readset_ignores_unrelated_manifest_addition(self):
+        from . import iteration, native_mod
+        from .contract import canonical_hash
+        root = self.root.resolve()
+        for name in ('tools/prefab_pipeline/iteration.py', 'models.py', 'derived/host.json'):
+            path=root/name;path.parent.mkdir(parents=True, exist_ok=True);path.write_text(name)
+        host=file_ref(root/'derived/host.json')
+        plan=root/'plan.json';plan.write_text(json.dumps({'native_build': {'host': {'ref': 'derived/host.json', 'sha256': host['sha256']}}}))
+        request={'plan': file_ref(plan), 'rom': {'sha256': 'b'*64}}
+        template=json.loads(json.dumps(self.config));template['runtime_manifest']={'path': 'manifest.json', 'recipe_id': 'selected', 'version_basis': 'recipe-readset/1'}
+        template['experiment']={name: file_ref(root/'evidence') for name in ('profile','memory_profile','fixture_recipe')}
+        template['experiment']['policy_ref']=file_ref(root/'models.py')
+        paths=['tools/prefab_pipeline/iteration.py','models.py','derived/host.json','plan.json','evidence']
+        files=[{'path': name, 'sha256': file_ref(root/name)['sha256'], 'recipes': ['selected']} for name in paths]
+        inventory={'files': files};manifest=root/'manifest.json';manifest.write_text(json.dumps(inventory))
+        patches=(patch.object(native_mod,'ROOT',root),patch.object(native_mod,'validate_native_mod_request',return_value={'lowering': None}),patch.object(iteration,'__file__',str(root/'tools/prefab_pipeline/iteration.py')),patch.object(iteration.subprocess,'check_output',return_value='commit'))
+        with patches[0],patches[1],patches[2],patches[3]:
+            first=iteration.prepare_iteration_config(request,template,'one')
+            inventory['files'].append({'path':'unrelated-uninstalled-rpg.rom','sha256':'f'*64,'recipes':['other']})
+            manifest.write_text(json.dumps(inventory))
+            second=iteration.prepare_iteration_config(request,template,'two')
+            self.assertEqual(first['runtime_readset_pin'],second['runtime_readset_pin'])
+            self.assertNotEqual(first['runtime_manifest_pin'],second['runtime_manifest_pin'])
+            self.assertNotIn(str(manifest),[row['path'] for row in first['mechanism_refs']])
+            self.assertEqual(first['runtime_readset_pin']['sha256'],canonical_hash({key:value for key,value in first['runtime_readset_pin'].items() if key!='sha256'}))
+            (root/'models.py').write_text('selected runtime changed')
+            with self.assertRaisesRegex(IterationError,'manifest_input_changed'):
+                iteration.prepare_iteration_config(request,template,'three')
 
 
 if __name__ == '__main__':

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "game_id": "siddarth-emerald",
+  "navigation_policy": "source-live-pois/1",
+  "objective": "From the actual chapter 18 post-Champion save, complete the Ocean City weekend through VAR_SID_OC_WEEKEND >= 6: arrival, crew greeting, beach, football pair battle, and gym gauntlet, ending at Seacrets. Follow the observed source_objective and choose named current-map people, signs, doors or roads. Deterministic navigation executes the selected destination and stops at scene, map, menu or battle boundaries. Select battle moves and semantic menu answers from actual observed facts, escalating low-confidence decisions using the configured System2 policy. Retain partial reached stages honestly if the resource limit ends the run. Do not treat movement, source checks or a model-call count as quest completion.",
+  "awareness": {
+    "perspective": "top_down",
+    "locomotion": "tile_rpg",
+    "basis": "Pinned original SID Game RAM decoder, source live POIs and original Bot place/BFS execution. This seed is post-Champion, not a fresh game or pre-gym save.",
+    "progress_evidence_scope": "partial"
+  },
+  "notes": [
+    "The game provider owns source-live-pois/1; no old ask/autoplay/objective_match/smart battle policy is called.",
+    "Use a pinned provider manifest and explicit bounded startup recipe. Exact checkpoints resume only the matching ROM/provider/policy.",
+    "This profile describes original baseline qualification. No changed candidate mechanic, build, mod-quality comparison or full-game completion is claimed."
+  ]
+}

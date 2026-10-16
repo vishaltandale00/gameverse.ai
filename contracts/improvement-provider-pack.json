@@ -25,6 +25,18 @@
         "detail": "prepare_iteration_config freezes the current policy hash in each prepared run; this template placeholder is not executable admission evidence.",
         "path": "tools/playtester/models.py",
         "recipe": "aria-soulstride-controlled-lunge"
+      },
+      {
+        "code": "deferred-template-policy-pin",
+        "detail": "prepare_iteration_config freezes the current policy hash in each prepared run; this template placeholder is not executable admission evidence.",
+        "path": "tools/playtester/models.py",
+        "recipe": "sonic-metroid-coast-campaign"
+      },
+      {
+        "code": "deferred-template-policy-pin",
+        "detail": "prepare_iteration_config freezes the current policy hash in each prepared run; this template placeholder is not executable admission evidence.",
+        "path": "tools/playtester/models.py",
+        "recipe": "sid-rpg-weekend-original"
       }
     ],
     "unverified": [
@@ -36,6 +48,240 @@
     ]
   },
   "files": [
+    {
+      "bytes": 1914,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "improvement.css",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "aa80402a8a59fb265dbf57adc56c121eaf73cb47bb1762e14e857c7758db87c1",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 609,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "improvement.html",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "4575e4105e93aa06fabadaa804ab97e784b0acd049c072fca93b51c27bc6bcf9",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 36096804,
+      "kind": "external-evidence",
+      "origins": [
+        "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json"
+      ],
+      "path": "local-data/rpg/registered-original/original.elf",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sid-rpg-weekend-original"
+      ],
+      "sha256": "6977510d5ab798941553132ac35eed4fd8590ee2279a6c0ae09243a49e30d962",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 33554432,
+      "kind": "local-rom",
+      "origins": [
+        "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json"
+      ],
+      "path": "local-data/rpg/registered-original/original.gba",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sid-rpg-weekend-original"
+      ],
+      "sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 131072,
+      "kind": "external-evidence",
+      "origins": [
+        "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json"
+      ],
+      "path": "local-data/rpg/registered-original/original.sav",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sid-rpg-weekend-original"
+      ],
+      "sha256": "21fa895f1f79dab55e729196b8e1a606f712055300b8a5da9861156ff6f4dea3",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 2641,
+      "kind": "external-evidence",
+      "origins": [
+        "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
+        "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json"
+      ],
+      "path": "local-data/rpg/sid-provider-18e.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sid-rpg-weekend-original"
+      ],
+      "sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 90089,
+      "kind": "external-evidence",
+      "origins": [
+        "local-data/sonic-coast-campaign/provider/coast-start.fixture.json"
+      ],
+      "path": "local-data/sonic-coast-campaign/provider/coast-setup-ancestry.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "bfb272b740830852c506817418b3f7c9c8077ab2d8cd752ca0a3337a0e732e2c",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 5899,
+      "kind": "external-evidence",
+      "origins": [
+        "local-data/sonic-coast-campaign/provider/coast-start.fixture.json"
+      ],
+      "path": "local-data/sonic-coast-campaign/provider/coast-setup-source.py",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "8e312edcea6c5e2455a3a9c5e3a704b873c8d4621ccd15433b06876db919eba2",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1120,
+      "kind": "external-evidence",
+      "origins": [
+        "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json"
+      ],
+      "path": "local-data/sonic-coast-campaign/provider/coast-start.fixture.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "82d8f298db17c54e02f3524251ff102cdd6c85f2b0e7a8af2ddf7a175cd0a6e7",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 462964,
+      "kind": "external-evidence",
+      "origins": [
+        "local-data/sonic-coast-campaign/provider/coast-start.fixture.json"
+      ],
+      "path": "local-data/sonic-coast-campaign/provider/coast-start.ss",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "85b334982e138cdadf3fd2d01b2507e230a4cb13688cd3ef4f176481121fa044",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 5142,
+      "kind": "external-evidence",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-ripper_assets.json"
+      ],
+      "path": "local/composition-assets/mzm-flyer-02/assets.c",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "386f67bb7f086f69e5cecab9bac8533965848d6103b317673b80db897f89f1a8",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 449,
+      "kind": "external-evidence",
+      "origins": [
+        "tools/composition/components/sonic_metroid/render.c:include",
+        "tools/composition/components/sonic_metroid/ripper_bridge.c:include",
+        "tools/composition/packages/sonic-metroid-draft-render.json",
+        "tools/composition/packages/sonic-metroid-draft-ripper_assets.json",
+        "tools/composition/packages/sonic-metroid-draft-ripper_bridge.json"
+      ],
+      "path": "local/composition-assets/mzm-flyer-02/assets.h",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "b4d28f50061590c0a2b957ecdcb170abff4b6c2ee5c74f4f331ea31aafc0222a",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 2182,
+      "kind": "external-evidence",
+      "origins": [
+        "research/requests/mzm-ripper-live-controller.json",
+        "tools/composition/packages/sonic-metroid-draft-ripper_assets.json"
+      ],
+      "path": "local/composition-assets/mzm-flyer-02/receipt.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "3599368b3e9a2c47fbf4a223f89585bd01737a99c9650e9a1278bca573c58fbd",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 16777216,
+      "kind": "local-rom",
+      "origins": [
+        "research/requests/sonic-native-traversal-contract.json"
+      ],
+      "path": "local/composition-builds/sonic-metroid-signal-descent-23/game.gba",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "362e89249e2e72c6ae6fc3e31ef91e6186d543b9be50bcb573a9665360e68930",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
     {
       "bytes": 30469,
       "kind": "external-evidence",
@@ -73,13 +319,109 @@
       ]
     },
     {
+      "bytes": 1238281,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "local/ir/packages/mzm.progress.acquire/l1.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "885c2aae5398d0f2928e7448e43626bc9204ba235f230f80932dbe685c2b4723",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 3272,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "local/ir/packages/mzm.progress.acquire/package.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "103ec8c6e248cdcee3e86f41b056579597165d60600c9104245d3b81bc6e9b53",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 3027,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "local/ir/packages/mzm.progress.acquire/receipt.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "ab393d37f019ee39a8d7da0c2f6ca116210460b79c77902f20bf4a22aeaa1898",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 36139,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "local/ir/packages/mzm.progress.events/l1.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "1e2dd520dd5749512a513532bba1090b1dc34486c55a5160288e17a7c825b1a5",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 2602,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "local/ir/packages/mzm.progress.events/package.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "914a504d0236029681d07f4e98318b6d286287d137b930f097d21c4c00e0e56e",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 2864,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "local/ir/packages/mzm.progress.events/receipt.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "60e2d67878a033d46a299e1b10bd95f06bec679684c4e1e0f94010fb57d92d9b",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
       "bytes": 428,
-      "kind": "source-evidence",
+      "kind": "external-evidence",
       "origins": [
         "research/deep-extraction/castlevania/aria-usa-soulstride.host.json"
       ],
       "path": "local/prefab-mods/soma-cast-pc-witness-003/report.json",
-      "payload_policy": "authored-or-metadata-review-required",
+      "payload_policy": "metadata-only-user-provided",
       "recipes": [
         "aria-soulstride",
         "aria-soulstride-controlled-lunge"
@@ -87,6 +429,86 @@
       "sha256": "7d3d2a1dde713effd072c0048c1872290b4b27c4d7c20f3bda874306ae04523d",
       "stages": [
         "build",
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1035,
+      "kind": "external-evidence",
+      "origins": [
+        "research/requests/mzm-ripper-live-controller.json"
+      ],
+      "path": "local/re/experiments/20261016-sonic-self-decompile/mzm-ripper-qualification-01/report.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "26283b8248db0f03a924ed4e959712b2c1eb1e06129faeb3d6ee77cf2b036c8a",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4984,
+      "kind": "external-evidence",
+      "origins": [
+        "research/requests/mzm-ripper-live-controller.json"
+      ],
+      "path": "local/re/experiments/20261016-sonic-self-decompile/mzm-ripper-qualification-05/report.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "62583e0cda194d7733ae21aacb34bca07808e85a7967e2c3ca906c46d753bdcd",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 8709,
+      "kind": "external-evidence",
+      "origins": [
+        "research/requests/sonic-native-traversal-contract.json"
+      ],
+      "path": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-23-qualified-factory2-chain/native-handle-transfer/report.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "ecd2b654fa16086dbd67e2d5f4c0e6d02f9baf90a62861962f6bde531b42bd9d",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1803,
+      "kind": "external-evidence",
+      "origins": [
+        "research/requests/sonic-native-traversal-contract.json"
+      ],
+      "path": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-23-qualified-factory2-chain/report.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "b21c5406a6c1367ee6ac44e7b2a5c24f57de5d169f83c0aa3d20c53382fa059c",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1383,
+      "kind": "external-evidence",
+      "origins": [
+        "research/requests/sonic-native-traversal-contract.json"
+      ],
+      "path": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-23-qualified-factory2/report.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "3af08afc6493b359e59e594f7254ee0620927cd2374280fadb3777687bdca635",
+      "stages": [
         "build-and-loop"
       ]
     },
@@ -109,6 +531,39 @@
       "sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
       "stages": [
         "build",
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 8388608,
+      "kind": "local-rom",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-ripper_assets.json"
+      ],
+      "path": "local/roms/Metroid - Zero Mission (USA).gba",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "fc94f65380b65b870a30b9b04b39cca1dc63d6e46a4a373d3904adc0912ebc37",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 8388608,
+      "kind": "local-rom",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/request.json",
+        "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json"
+      ],
+      "path": "local/roms/Sonic Advance (USA) (En,Ja).gba",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "stages": [
         "build-and-loop"
       ]
     },
@@ -799,7 +1254,255 @@
       ]
     },
     {
-      "bytes": 27598,
+      "bytes": 4352,
+      "kind": "native-component-provider",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "research/deep-extraction/sonic-metroid/progression/host-receipt.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "64e6077b26824c5faf60c895fa584d3d522279c8cbb5cff17c4f37824386c5df",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1709,
+      "kind": "authored-binding",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "research/deep-extraction/sonic-metroid/progression/progress_adapter.c",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "93f2a0b23cbb533559f8bda481358c6f9e15eb4d75d534fb62ae20d2d4824f28",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 484,
+      "kind": "authored-binding",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/progression/progress_adapter.c:include",
+        "research/deep-extraction/sonic-metroid/progression/progression.c:include",
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "research/deep-extraction/sonic-metroid/progression/progress_adapter.h",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "33f6be7e7d9dd3ee8312eb1bb5078e0611b5c7324ec9e8a7486278e70c82f9dc",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 6318,
+      "kind": "native-component-provider",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "research/deep-extraction/sonic-metroid/progression/progression.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "7a15814e84c26532cc711d05ce454e3a0658a7a1b5320fa54b2e5432f6969e49",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1149,
+      "kind": "source-evidence",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "research/deep-extraction/sonic-metroid/request.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "24792e0345bbefe63bcd846f2320b447cf4baf62a663085f01d1331269f01dfb",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 3791,
+      "kind": "source-evidence",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/request.json",
+        "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json"
+      ],
+      "path": "research/deep-extraction/sonic-metroid/strategy.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "490da51eff7a044ae9b1a68146813d4964c82f24146449aec23006d214f87931",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1966,
+      "kind": "reconstructed-code",
+      "origins": [
+        "research/requests/metroid-sonic-native-bridge.c:include",
+        "tools/composition/packages/sonic-metroid-motion-jump.json"
+      ],
+      "path": "research/requests/metroid-recovered-motion.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "267a01245b106f0f40d7459adedcdd7a5b6300887dd63566c58d2a5182245a8f",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 2737,
+      "kind": "reconstructed-code",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-motion-jump.json"
+      ],
+      "path": "research/requests/metroid-sonic-native-bridge.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "d6521056331a914df022a036f941743b484cacb4b0928d6592e1fd47c5f0396f",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 6439,
+      "kind": "recipe",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-ripper.json"
+      ],
+      "path": "research/requests/mzm-ripper-live-controller.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "790f881c16560679a4ab209da9196b03d32dac61dbc1ffce42557bac791421dd",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4085,
+      "kind": "recipe",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-geometry.json",
+        "tools/composition/packages/sonic-metroid-draft-movement.json"
+      ],
+      "path": "research/requests/sonic-native-traversal-contract.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "074a32e69a3c52b7b13dcd421f10fb5a298fe79e796baa381c069b84336c27ea",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 2946,
+      "kind": "reconstructed-code",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-air.json"
+      ],
+      "path": "research/requests/sonic-recovered-air-control.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "469c35c07da60fe561562316862103d39616de6607ba607426c51008796f54a0",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 8734,
+      "kind": "reconstructed-code",
+      "origins": [
+        "tools/composition/components/sonic_metroid/geometry.c:include",
+        "tools/composition/packages/sonic-metroid-draft-geometry.json"
+      ],
+      "path": "research/requests/sonic-recovered-contact.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "19996b3377a535b9d1b3e1312edd3d85f9d92f46a1aea23de541a527446eea40",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4072,
+      "kind": "reconstructed-code",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-motion-jump.json"
+      ],
+      "path": "research/requests/sonic-recovered-jump.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "723158eeec8c68659b8e2aedaaef115bcdef118acbb6829252cb84fd2c3693f9",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 3777,
+      "kind": "reconstructed-code",
+      "origins": [
+        "research/requests/metroid-sonic-native-bridge.c:include",
+        "tools/composition/packages/sonic-metroid-motion-jump.json"
+      ],
+      "path": "research/requests/sonic-recovered-motion.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "8cdf1f08852640e238a70038e09012cfe8e15a22b62ba7784ed2749cb2ca7d54",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 3739,
+      "kind": "reconstructed-code",
+      "origins": [
+        "research/requests/sonic-recovered-contact.c:include",
+        "tools/composition/packages/sonic-metroid-draft-geometry.json"
+      ],
+      "path": "research/requests/sonic-recovered-terrain.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "561144e3fdc4d9092036ac3e15e9edd4434cf73b841db3fb4f46effc935334c7",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 52791,
       "kind": "authored-code",
       "origins": [
         "registered-recipe-entry"
@@ -807,15 +1510,17 @@
       "path": "scripts/improvement-api.mjs",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
-      "sha256": "f85f17fa6368f92481f78689a931adab72fd792b39d895484753151228e96496",
+      "sha256": "917f7f2bf835513ccdcd9381c10cefe342f5b3291384f64550c3608d13b13e57",
       "stages": [
         "build-and-loop"
       ]
     },
     {
-      "bytes": 2430,
+      "bytes": 3968,
       "kind": "authored-code",
       "origins": [
         "registered-recipe-entry"
@@ -823,15 +1528,35 @@
       "path": "scripts/improvement-client.mjs",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
-      "sha256": "0b9991e7ea692f15cdcc4f9b3a916454ddcc7b0cc1983121bd9132b464f8eb7e",
+      "sha256": "2e5f7345c5669dc17318e9ac55e6e5f5699f3d4537d2f4704bd510d47e03e74f",
       "stages": [
         "build-and-loop"
       ]
     },
     {
-      "bytes": 938,
+      "bytes": 1320,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "scripts/improvement-ui.mjs",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "8fbceb55ddb615966275269c6bfe3d61a2be6191c335d6d3c72cf6215d53134d",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1078,
       "kind": "authored-code",
       "origins": [
         "registered-recipe-entry"
@@ -839,9 +1564,692 @@
       "path": "scripts/serve-improvement.mjs",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
-      "sha256": "b23bfcf31aa91aaab8204eb0d403f17cf1e374a46f295c51466225a11106a05b",
+      "sha256": "1692fe871dedb7414c4005c45c525385c7da21fd54c1e43956f12a831ea8ad05",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 164,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "src/improvement-page.js",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "7f811482b6f2287be00de0fe8037b2bef1bb1f594d9180d521cf213b8575cf7d",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 6884,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "src/improvement-workbench-model.js",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "f0d29eeef88c3ea0c3df8004e06f313ecbb1687e7f24d93ae98fb28ecae95c92",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 10781,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "src/improvement-workbench.js",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "cab18304303aec75c04b355d58e573470957d4b96f8c8d415021459635132522",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 2879,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-boss.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/boss.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "8d06b39b658c7c3e431bfa0892b6e031f2219ea83c3439c592133236099a1340",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 8645,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-combat.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/combat.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "261c9a629eac2ebcef4efd3a6f3ccf25a179b51f1deb658578a150cb2dfd79ec",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 10967,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-schedule.json",
+        "tools/composition/packages/sonic-metroid-draft-world.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/compile_world.py",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "8ef2a830575dcd6e8cbb8b428a18ce8c807a1434d4c4e73f901c3c0f991e0a60",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4299,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-ecology.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/ecology.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "0cb4cef8a338d1a9dc2d9e6fea385f7a01e7208c9e36e093d38b7f023c1ceadb",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 5611,
+      "kind": "native-component-provider",
+      "origins": [
+        "research/requests/mzm-ripper-live-controller.json",
+        "tools/composition/packages/sonic-metroid-draft-ripper_assets.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/extract_mzm_flyer.py",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "697928d471b3d8a09d92cd404d7571dda8416a3072c49b38be10061eadbcd670",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 491,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-schedule.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/frame_graph.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "48bd1b4e2abfaa8b3215f05d10365585e9de2b3c5ae92d4781669aabade2670a",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 6901,
+      "kind": "native-component-provider",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/progression/progression.c:include",
+        "tools/composition/components/sonic_metroid/boss.c:include",
+        "tools/composition/components/sonic_metroid/combat.c:include",
+        "tools/composition/components/sonic_metroid/ecology.c:include",
+        "tools/composition/components/sonic_metroid/frame_graph.c:include",
+        "tools/composition/components/sonic_metroid/geometry.c:include",
+        "tools/composition/components/sonic_metroid/impact_bridge.c:include",
+        "tools/composition/components/sonic_metroid/kernel.c:include",
+        "tools/composition/components/sonic_metroid/movement.c:include",
+        "tools/composition/components/sonic_metroid/progression.c:include",
+        "tools/composition/components/sonic_metroid/render.c:include",
+        "tools/composition/components/sonic_metroid/resources.c:include",
+        "tools/composition/components/sonic_metroid/ripper_bridge.c:include",
+        "tools/composition/components/sonic_metroid/state.c:include",
+        "tools/composition/components/sonic_metroid/travel.c:include",
+        "tools/composition/components/sonic_metroid/world_data.c:include",
+        "tools/composition/packages/sonic-metroid-draft-boss.json",
+        "tools/composition/packages/sonic-metroid-draft-combat.json",
+        "tools/composition/packages/sonic-metroid-draft-ecology.json",
+        "tools/composition/packages/sonic-metroid-draft-geometry.json",
+        "tools/composition/packages/sonic-metroid-draft-impact_bridge.json",
+        "tools/composition/packages/sonic-metroid-draft-kernel.json",
+        "tools/composition/packages/sonic-metroid-draft-movement.json",
+        "tools/composition/packages/sonic-metroid-draft-progression.json",
+        "tools/composition/packages/sonic-metroid-draft-render.json",
+        "tools/composition/packages/sonic-metroid-draft-resources.json",
+        "tools/composition/packages/sonic-metroid-draft-ripper_bridge.json",
+        "tools/composition/packages/sonic-metroid-draft-schedule.json",
+        "tools/composition/packages/sonic-metroid-draft-state.json",
+        "tools/composition/packages/sonic-metroid-draft-travel.json",
+        "tools/composition/packages/sonic-metroid-draft-world.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4941,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-impact-ir.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/abi-receipt.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "8fcacaac569352d10d210562cdaaf8accd4781baa3a44b2f0617c00a714fd134",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 3656,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-impact-ir.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "9b64ec5b4e457da5d186fca62dc6c7eca350daed70eb1a9cebe8a2f56c0f99e3",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 383,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/components/sonic_metroid/game.h:include",
+        "tools/composition/packages/sonic-metroid-draft-boss.json",
+        "tools/composition/packages/sonic-metroid-draft-combat.json",
+        "tools/composition/packages/sonic-metroid-draft-ecology.json",
+        "tools/composition/packages/sonic-metroid-draft-geometry.json",
+        "tools/composition/packages/sonic-metroid-draft-impact-ir.json",
+        "tools/composition/packages/sonic-metroid-draft-impact_bridge.json",
+        "tools/composition/packages/sonic-metroid-draft-kernel.json",
+        "tools/composition/packages/sonic-metroid-draft-movement.json",
+        "tools/composition/packages/sonic-metroid-draft-progression.json",
+        "tools/composition/packages/sonic-metroid-draft-render.json",
+        "tools/composition/packages/sonic-metroid-draft-resources.json",
+        "tools/composition/packages/sonic-metroid-draft-ripper_bridge.json",
+        "tools/composition/packages/sonic-metroid-draft-schedule.json",
+        "tools/composition/packages/sonic-metroid-draft-state.json",
+        "tools/composition/packages/sonic-metroid-draft-travel.json",
+        "tools/composition/packages/sonic-metroid-draft-world.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 22724,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-impact-ir.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/l1.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "d1553f6e708d9c1f8dfd18aad318bf1b88ba373483ddee4adcbbbaeb6e38c890",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 2861,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-impact-ir.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/native-proof.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "079e41fb7bcf8689ede452ef96c1781d74eb9d925f7d7e5b8955502088df23f4",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 3383,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-impact-ir.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/package.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "f06f2e9fd258dfbd251497c112f73053c3b36f4eab0327597caf54a40c46fed1",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 2861,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-impact-ir.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/receipt.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "079e41fb7bcf8689ede452ef96c1781d74eb9d925f7d7e5b8955502088df23f4",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1827,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-impact-ir.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/validation-adapter.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "67aa8ef0f5863d3734b2df989d4dbacb58706ca0808ee7196cc536ac41a7ee22",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 3140,
+      "kind": "native-component-provider",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/acquire/abi-receipt.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "3d09c3866dad651a5ff00b67a352301c6e6130bfcd1ae8b3b2bf625eef5a1d7e",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 114385,
+      "kind": "native-component-provider",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/acquire/component.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "c1a9d6432c062d1a32381cacdacde386b2243edd7f47c8e4293706f729d70f03",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 294,
+      "kind": "native-component-provider",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/progression/progress_adapter.h:include",
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/acquire/component.h",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "5aace08c1fdc13624aabbd6551b2b2476266269a8919d7b4cce2c6f89128bfd0",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 2071,
+      "kind": "native-component-provider",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/events/abi-receipt.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "909a6370660715f8462a5caa46767dadb749ac2b9f98ba4dc73d47cbc3fc1057",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4874,
+      "kind": "native-component-provider",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/events/component.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "cdc424d7242a656745a62f4da99caf6180c9528ee47b1c4b12eceda8dbe9e362",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 263,
+      "kind": "native-component-provider",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/progression/progress_adapter.c:include",
+        "research/deep-extraction/sonic-metroid/strategy.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/events/component.h",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "6410a6d5721ecaf9a9517594573f7c5c6d473d2586fb62a86c4872e1cd5cf91c",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1157,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-geometry.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/geometry.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "79c03106c81775b1c3f22d75d8daad24e3d8fabf3deb07bcb8d62b71c42f48da",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 685,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-impact_bridge.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/impact_bridge.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "993e1e2d8d2a922721b33cfb6ba62cf032e1042f0cc978f35a6ccc26a3a46684",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 5302,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-kernel.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/kernel.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "2b539ab7239665723973e7dfdc6481270ddbab7a5299514826dc9e96a6a6753c",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 5527,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-movement.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/movement.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "c0f6ae2c34483281e10165ed899b2cc89228f03fcb4d139cb382447b45dd57a0",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 2063,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-ripper.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "d652252eef9e69e49b42e90396dcc0d5fb37009276983e441871a923071c8c4a",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 890,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/components/sonic_metroid/game.h:include",
+        "tools/composition/components/sonic_metroid/mzm_ripper.c:include",
+        "tools/composition/packages/sonic-metroid-draft-boss.json",
+        "tools/composition/packages/sonic-metroid-draft-combat.json",
+        "tools/composition/packages/sonic-metroid-draft-ecology.json",
+        "tools/composition/packages/sonic-metroid-draft-geometry.json",
+        "tools/composition/packages/sonic-metroid-draft-impact_bridge.json",
+        "tools/composition/packages/sonic-metroid-draft-kernel.json",
+        "tools/composition/packages/sonic-metroid-draft-movement.json",
+        "tools/composition/packages/sonic-metroid-draft-progression.json",
+        "tools/composition/packages/sonic-metroid-draft-render.json",
+        "tools/composition/packages/sonic-metroid-draft-resources.json",
+        "tools/composition/packages/sonic-metroid-draft-ripper.json",
+        "tools/composition/packages/sonic-metroid-draft-ripper_bridge.json",
+        "tools/composition/packages/sonic-metroid-draft-schedule.json",
+        "tools/composition/packages/sonic-metroid-draft-state.json",
+        "tools/composition/packages/sonic-metroid-draft-travel.json",
+        "tools/composition/packages/sonic-metroid-draft-world.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 5802,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-progression.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/progression.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "3808f171ac906620361ab97f5b43539f75dd07a0dd00eb375a278f45cf9b5100",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 8234,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-render.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/render.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "ae6e63769bbf81d9beab9d5b511c05e851b6e091ba90f6ce2f4fdc952b7bd673",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1735,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-resources.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/resources.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "6c2ff93150f88d3126bedce5bdadaa8bd2763adbab6bb41f09ab6e17a50d21ba",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 2732,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-ripper_bridge.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/ripper_bridge.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "66cf5f8edb996de914f849b2c9bc06ff09156f8e2206499f4dd7d7110936582f",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1029,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-state.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/state.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "fcda01dc83c947e0079e6dbcd0b42daaa91ecddb175af32fa71c3478c0280070",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1974,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-travel.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/travel.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "a017627f0d0f18082b8f30a31babec73737277c6ee7928e1743405ae19739d7e",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 13244,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-world.json"
+      ],
+      "path": "tools/composition/components/sonic_metroid/world_data.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "b6cd4868c8ac69a15cccf9d868e14752e6e57fd8f199bf9a53382a602e495614",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 12467,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/native/sonic-usa-whole-game.host.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "e9476f97546a5299f7804fe4329768c692f4cd71bf6978359c80bd747058ffe7",
       "stages": [
         "build-and-loop"
       ]
@@ -859,11 +2267,351 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "50148ff195ac6ce3f683ad824b6ff79bf5ef59bb80569fdadef68e2558425a81",
       "stages": [
         "build",
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 5126,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-air.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "6c13885320a49d1c1f6b1d91633a98e18c846ee0b64e1bdfbb93387f474e9a7d",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 5761,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-boss.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "9cf050594c9d76e91b9628be0353594a2a1a9e58531cd4e66a79c1ad201fbcfb",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 5085,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-combat.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "ccec20cb35a01838cc66b6146b8aa1b541f5069f461b4dd92a670110389b8411",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 3905,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-ecology.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "38ff4244f4e783e318ed8fd147fd89458f6b9c616c2552ea0ef743d9606af0c7",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 3720,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-geometry.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "d6e3efad2535b0fc2afd2216c703c63119e1a56f221d71c57b0cb8f387bea3c6",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 8807,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-impact-ir.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "b17394902a35bde74b5e2639083fa527c3896f0c43613b922aa2a7bac2768f78",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 3504,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-impact_bridge.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "08d9103b9489d93964ecedc7e916c85b7de45ace3f540dc3e4b92bac921aa766",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 6151,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-kernel.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "72c0d371871e460cda6b04447c3e89c5f19267ab8f1e887f3301ad9bf232799d",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 7716,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-movement.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "c482efff15684d297258a7cc7ba181da3a4a682a2a8a7e21d2a73abcab7f2445",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4133,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-progression.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "4a98216bfa1cf5929cf5ac20268606d61ef2d5ca57d538f73cc432631fd39f13",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4250,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-render.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "47cd5bc22eaa059c0dcbe010b225b7543d1d0e938cb2892352195ff34d828dd8",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4215,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-resources.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "a271fbc2c69c34a83451a84b0148a351675c60989f93e118ce482b4ce75d5179",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 6172,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-ripper.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "bcc7e860db0dc5e31a8b5a885376a1ba7251a88813f1427ec7852c8e00882b8c",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 3942,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-ripper_assets.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "700cfbe8a4257ad1f83713d78500c3fbcc9fd5d6f0fe4d27336a83bf1bc3e6de",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4044,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-ripper_bridge.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "165fb77540f4317a436c29a0f068f2574e76602116bb255245f21bce06c8cb72",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4391,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-schedule.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "327c1cc32d0e51256ded8505f5eae949fa4017718c4acc7cf5c71c0df5b74ff4",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4430,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-state.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "03043f437738d37ca645402e40162a5fb9fc9bc6479510629570ec0b2b09f7a9",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4003,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-travel.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "a356f6a9f8c06224a1ec515338be36bfa2e4649b6e60b25a79e19b2d915ca23e",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 3668,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-draft-world.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "ecde76c69787e1a91c80287851110b731e520bc3606728c7fab279c776a948e7",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 14698,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/plans/sonic-metroid-signal-descent.json"
+      ],
+      "path": "tools/composition/packages/sonic-metroid-motion-jump.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "d00c360548cc2d105a073ad7499ed679c957fb64a1050460a0d1c8c69b850515",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 24172,
+      "kind": "native-component-provider",
+      "origins": [
+        "research/deep-extraction/sonic-metroid/request.json",
+        "research/deep-extraction/sonic-metroid/strategy.json",
+        "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json"
+      ],
+      "path": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "ce9321025fbcb648bc761174ca46f78d54ad92eecbd1bbd53696d1ce96221025",
+      "stages": [
         "build-and-loop"
       ]
     },
@@ -879,11 +2627,30 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "4b3959e5b77a4c453858c11e8859adee059c3d3832a9c1aff525d64f11041be0",
       "stages": [
         "build",
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 28274,
+      "kind": "native-component-provider",
+      "origins": [
+        "tools/composition/packages/sonic-metroid-draft-schedule.json",
+        "tools/composition/packages/sonic-metroid-draft-world.json"
+      ],
+      "path": "tools/composition/worlds/sonic-metroid-signal-descent.json",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "130e429110c5d54fb12d363f15c6135510529d47328e2ebe1f2c76757e0a4f64",
+      "stages": [
         "build-and-loop"
       ]
     },
@@ -893,12 +2660,15 @@
       "origins": [
         "tools/playtester/__main__.py:python-import",
         "tools/playtester/experiment.py:python-import",
-        "tools/playtester/models.py:python-import"
+        "tools/playtester/models.py:python-import",
+        "tools/playtester/rpg_experiment.py:python-import"
       ],
       "path": "tools/decisions/__init__.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "3a480bb825961fefa655593eb29090825859b756993c24a63b804c4122cf2ad8",
       "stages": [
@@ -914,7 +2684,8 @@
       "path": "tools/decisions/__main__.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "c7775eec9819d5733f19965922feb83d85cc7ef2c23a3eab2ed34afc4185b4b8",
       "stages": [
@@ -932,7 +2703,9 @@
       "path": "tools/decisions/client.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "6945709ea3093af112d2c98886071838720565a0e41835e261cfcb8783b2c020",
       "stages": [
@@ -948,7 +2721,9 @@
       "path": "tools/playtester/__init__.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "f4aa8810d366cd63facfe03a4ce37587aa38530732bb3dbd8f015e010c121ed9",
       "stages": [
@@ -964,7 +2739,8 @@
       "path": "tools/playtester/__main__.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "5ed56de6fdf9681edaccb58eab28f42fb7ee2315a4a80d8af77f97e46b2e621e",
       "stages": [
@@ -981,7 +2757,9 @@
       "path": "tools/playtester/adapters.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "fffa9d2263d6d6503d6aae73865f2dc06c5393879d436d2ead56140e274cf952",
       "stages": [
@@ -997,7 +2775,9 @@
       "path": "tools/playtester/aria_adapter.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "51c628a9f5ad46dc6e72b62e8e15a8ed77cda35433dcbe61b98b3cf60daa2a07",
       "stages": [
@@ -1013,7 +2793,9 @@
       "path": "tools/playtester/calibration.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "d1025a214d8afd30042099da55bb6546945658c7b47b3e9259a3e056b687ced5",
       "stages": [
@@ -1021,38 +2803,46 @@
       ]
     },
     {
-      "bytes": 24715,
+      "bytes": 25544,
       "kind": "authored-code",
       "origins": [
         "tools/playtester/__main__.py:python-import",
         "tools/playtester/adapters.py:python-import",
         "tools/playtester/experiment.py:python-import",
         "tools/playtester/learning.py:python-import",
-        "tools/playtester/models.py:python-import"
+        "tools/playtester/mod_quality.py:python-import",
+        "tools/playtester/models.py:python-import",
+        "tools/playtester/rpg_adapter.py:python-import",
+        "tools/playtester/rpg_experiment.py:python-import"
       ],
       "path": "tools/playtester/core.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
-      "sha256": "bda266261665c79450a53ce3716e6851179f92a1eccb322c97e89f51cac371cc",
+      "sha256": "79970845c607d98877c2629a2ff7ec55e07383efedb9bcdb89ceca4372ae268c",
       "stages": [
         "build-and-loop"
       ]
     },
     {
-      "bytes": 16946,
+      "bytes": 18868,
       "kind": "authored-code",
       "origins": [
         "registered-recipe-entry",
+        "tools/playtester/rpg_experiment.py:python-import",
         "tools/prefab_pipeline/iteration.py:python-import"
       ],
       "path": "tools/playtester/experiment.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
-      "sha256": "cf2506ddce5074533d987268781be7f98df450e32f02d031b6929161fe9c0653",
+      "sha256": "dff001542a26b167e2540cf1c53625a3ad0414b4f3e6fdc740359e5f0d2e5975",
       "stages": [
         "build-and-loop"
       ]
@@ -1061,14 +2851,37 @@
       "bytes": 1654,
       "kind": "authored-code",
       "origins": [
-        "tools/playtester/experiment.py:python-import"
+        "tools/playtester/experiment.py:python-import",
+        "tools/playtester/rpg_experiment.py:python-import"
       ],
       "path": "tools/playtester/learning.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "74293f1904791278f157ddc53bf960e76c6638a5d1cbcdcb000b7db85e628418",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 8541,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry",
+        "tools/prefab_pipeline/artifact_reference.py:python-import",
+        "tools/prefab_pipeline/quality_dispatch.py:python-import"
+      ],
+      "path": "tools/playtester/mod_quality.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "01c7e9fa4d9806fed8542366b6326dc264ca5fdcca7f1ec73113636ff7a281af",
       "stages": [
         "build-and-loop"
       ]
@@ -1079,13 +2892,18 @@
       "origins": [
         "tools/playtester/__main__.py:python-import",
         "tools/playtester/experiment.py:python-import",
+        "tools/playtester/rpg_experiment.py:python-import",
         "tools/prefab_pipeline/iteration.py:python-import",
-        "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json"
+        "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+        "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
+        "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json"
       ],
       "path": "tools/playtester/models.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "c85a079d4c4deff7e391fc1648f209b3c3de7ceb9cf3874133f2e7fa7563f63f",
       "stages": [
@@ -1093,17 +2911,129 @@
       ]
     },
     {
-      "bytes": 7815,
+      "bytes": 1080,
+      "kind": "source-evidence",
+      "origins": [
+        "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json"
+      ],
+      "path": "tools/playtester/profiles/pokemon-rpg-weekend-fixture.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sid-rpg-weekend-original"
+      ],
+      "sha256": "07dfa90cf8b921cf6109b97ebc4e3ef1e1e8e6c29041e12667c2dfb85f4be118",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1563,
+      "kind": "source-evidence",
+      "origins": [
+        "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
+        "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json"
+      ],
+      "path": "tools/playtester/profiles/pokemon-rpg-weekend-quest.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sid-rpg-weekend-original"
+      ],
+      "sha256": "0d0cf9edf720a3040196a477ff74b64c1842ef7909aac18f45c4fe8ad895e20f",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1915,
+      "kind": "source-evidence",
+      "origins": [
+        "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
+        "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json"
+      ],
+      "path": "tools/playtester/profiles/pokemon-rpg-weekend-scenario.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sid-rpg-weekend-original"
+      ],
+      "sha256": "1486e7e5dc211f5839bbf47cf8392242d63e44be48a0811f8b6395035de174ac",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 28468,
       "kind": "authored-code",
       "origins": [
+        "registered-recipe-entry",
+        "tools/playtester/mod_quality.py:python-import",
+        "tools/playtester/rpg_experiment.py:python-import"
+      ],
+      "path": "tools/playtester/rpg_adapter.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "4afe6f1985e363a8bce504c0eef5ce9aa01773db2f64dd566c1fb8c09062d65e",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 14615,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry",
+        "tools/prefab_pipeline/artifact_reference.py:python-import"
+      ],
+      "path": "tools/playtester/rpg_experiment.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sid-rpg-weekend-original"
+      ],
+      "sha256": "659f8406212dc44e60149df8e457bbd43003e740e4801eb6e5778470be547326",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 5591,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry",
+        "tools/playtester/experiment.py:python-import",
+        "tools/playtester/mod_quality.py:python-import",
+        "tools/playtester/rpg_experiment.py:python-import",
+        "tools/prefab_pipeline/artifact_reference.py:python-import"
+      ],
+      "path": "tools/playtester/scenario.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "e109abda70eaf14c20a95297a2edfb9814984e79f85aa271a9866cd468969628",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 10566,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry",
         "tools/playtester/experiment.py:python-import"
       ],
       "path": "tools/playtester/sonic_adapter.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
-      "sha256": "806bd5737c083ca8ffb223540816557b1fca2f673043779383c5e2df1664a8bc",
+      "sha256": "dec806d5590f0fbd434554f110c2fab4bd708649e4a5db0bdd80fff448256f5e",
       "stages": [
         "build-and-loop"
       ]
@@ -1119,7 +3049,9 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "cb60d6fba744f8c5f21e1efbe4343a10bd43bd4f055dc813309e7cf7cef6dcd6",
       "stages": [
@@ -1136,9 +3068,45 @@
       "path": "tools/prefab_pipeline/__main__.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "cb49cfd7a114e7fe867dcebe4a0aa7befb622f767032bfe18a7ebb6838c75ea0",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 11035,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry",
+        "tools/prefab_pipeline/iteration.py:python-import"
+      ],
+      "path": "tools/prefab_pipeline/artifact_reference.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sid-rpg-weekend-original"
+      ],
+      "sha256": "07ae28956c824611a782bf3947da0ae9947697932722d367bd72789cb2a52c0e",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 18908,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "tools/prefab_pipeline/campaign.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "e9732803805815b22f0830a49287686987e8a1f0037e8a83610df471842e7d51",
       "stages": [
         "build-and-loop"
       ]
@@ -1147,15 +3115,21 @@
       "bytes": 11765,
       "kind": "authored-code",
       "origins": [
+        "tools/playtester/scenario.py:python-import",
+        "tools/prefab_pipeline/artifact_reference.py:python-import",
+        "tools/prefab_pipeline/campaign.py:python-import",
         "tools/prefab_pipeline/iteration.py:python-import",
-        "tools/prefab_pipeline/native_mod.py:python-import"
+        "tools/prefab_pipeline/native_mod.py:python-import",
+        "tools/prefab_pipeline/quality_dispatch.py:python-import"
       ],
       "path": "tools/prefab_pipeline/contract.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "40be3620dda136351ab0f0c2b28e4c077f36624b3b42b2752cab40f602a61482",
       "stages": [
@@ -1164,17 +3138,21 @@
       ]
     },
     {
-      "bytes": 32503,
+      "bytes": 38085,
       "kind": "authored-code",
       "origins": [
-        "registered-recipe-entry"
+        "registered-recipe-entry",
+        "tools/prefab_pipeline/artifact_reference.py:python-import",
+        "tools/prefab_pipeline/campaign.py:python-import"
       ],
       "path": "tools/prefab_pipeline/iteration.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
-      "sha256": "ed20c13a622b7eb5d876b96e9bf4b222931356d1c7467ac843167944d1e674d6",
+      "sha256": "9b8fd984b393e4843a4f797b607f910a9eed8becbe7d452e0528710fc35d29cf",
       "stages": [
         "build-and-loop"
       ]
@@ -1191,7 +3169,8 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "2d53bdfc3c828fc5dfa1eb6445846e148f96d7084accee7094be0f25d08aaada",
       "stages": [
@@ -1231,7 +3210,8 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "6727dde63ecb8e09d73c76ed73e38fd3c3b8cf6e390b9b1e0a407cd8ae450fc4",
       "stages": [
@@ -1252,7 +3232,9 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "ad8306b6fac94959e0573062d40ab9bab8aab1020cf51104ac861e01ee2e9fbf",
       "stages": [
@@ -1358,6 +3340,106 @@
       ]
     },
     {
+      "bytes": 2868,
+      "kind": "source-evidence",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sid-rpg-weekend-original"
+      ],
+      "sha256": "cc0c4797759ce21dfc475ec2c45b8d92664f26f99fa0448e2cf7d8768b9d20bc",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 10770,
+      "kind": "source-evidence",
+      "origins": [
+        "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json"
+      ],
+      "path": "tools/prefab_pipeline/profiles/sonic-coast-actions.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "c9cd488ada46406b15edca02ed983f3600bdde4db02433bbb16c3e19c8bd874f",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 233,
+      "kind": "source-evidence",
+      "origins": [
+        "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json"
+      ],
+      "path": "tools/prefab_pipeline/profiles/sonic-coast-memory.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "64a3c082aa1d4d73058cb482e8626d0a4e842c311eca212a790cc7a9ccd86243",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4110,
+      "kind": "source-evidence",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "ecd704d718661a3aff446939d615d88efcd475041fc5365fc7483070c922918d",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 2616,
+      "kind": "source-evidence",
+      "origins": [
+        "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json"
+      ],
+      "path": "tools/prefab_pipeline/profiles/sonic-coast-scenario.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "79e5b82839e361bca54762e0a759f0c68ce1803d4b1d0a5c72d0b1ade1295b01",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 3845,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry",
+        "tools/prefab_pipeline/artifact_reference.py:python-import",
+        "tools/prefab_pipeline/iteration.py:python-import"
+      ],
+      "path": "tools/prefab_pipeline/quality_dispatch.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "c8fd7990cb9dba7a7526dc92235ddb58dd57ef8a2e4b33b27df7ffac6e34215a",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
       "bytes": 1061,
       "kind": "recipe",
       "origins": [
@@ -1426,6 +3508,22 @@
       ]
     },
     {
+      "bytes": 1439,
+      "kind": "recipe",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sid-rpg-weekend-original"
+      ],
+      "sha256": "273d57bf366446c3adc2229b74c18eaccc7130b4ade95f19c0a3f50c3f28ea5e",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
       "bytes": 14385,
       "kind": "authored-code",
       "origins": [
@@ -1440,6 +3538,24 @@
       "sha256": "453fe6554c9d3f7848eaae64e7501f3eb6ffdcfef6a479c69c9c2ce925fba81d",
       "stages": [
         "build",
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 8363,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry",
+        "research/deep-extraction/sonic-metroid/request.json",
+        "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json"
+      ],
+      "path": "tools/prefab_pipeline/sonic_metroid_strategy.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "sonic-metroid-coast-campaign"
+      ],
+      "sha256": "e1432bc8ece30bf1b5a76f20025f0ac75c619bb9153d107a8bd03104491e45e8",
+      "stages": [
         "build-and-loop"
       ]
     },
@@ -1515,7 +3631,9 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "9185c64c05205b80af39644d88226c8d60c57ceb2a083f0e7f55d7992d91cb22",
       "stages": [
@@ -1523,11 +3641,13 @@
       ]
     },
     {
-      "bytes": 19264,
+      "bytes": 22944,
       "kind": "authored-code",
       "origins": [
         "native-session-build-prerequisite",
+        "tools/composition/components/sonic_metroid/extract_mzm_flyer.py:python-import",
         "tools/playtester/experiment.py:python-import",
+        "tools/playtester/rpg_adapter.py:python-import",
         "tools/playtester/sonic_adapter.py:python-import",
         "tools/prefab_pipeline/mod_rom.py:python-import"
       ],
@@ -1536,9 +3656,11 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
-      "sha256": "f509802a490309c70aa5dc15f6f1b2f165d128e8439d6efcb6b9957ebe820ea3",
+      "sha256": "d78b132c7019ac8d3c89cd42c6cea071f1fd9007fa755c35203ad4673fc0cb8c",
       "stages": [
         "bounded-qc",
         "build",
@@ -1546,7 +3668,7 @@
       ]
     },
     {
-      "bytes": 7790,
+      "bytes": 10077,
       "kind": "authored-code",
       "origins": [
         "native-session-build-prerequisite"
@@ -1556,9 +3678,11 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
-      "sha256": "50d66561815810959f61a060c4fead440e14e3828ba81216b19973edc87f7231",
+      "sha256": "fc4e1d19a2bd3367f0d88c23788352041d2603ffe361f83cecfa7bbb9505502f",
       "stages": [
         "bounded-qc"
       ]
@@ -1574,7 +3698,9 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "b6fa1737ec1cd481de4b9ed512d9c606a4d2730c808b680bae96e9f2a9145e92",
       "stages": [
@@ -1588,12 +3714,15 @@
       "kind": "authored-code",
       "origins": [
         "tools/playtester/__main__.py:python-import",
-        "tools/playtester/experiment.py:python-import"
+        "tools/playtester/experiment.py:python-import",
+        "tools/playtester/rpg_experiment.py:python-import"
       ],
       "path": "tools/whole_game/model_config.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "sha256": "757f1e0aafcc721f03aa02529cf90942faf0b8a4fbef00339697053216a8f06b",
       "stages": [
@@ -1633,6 +3762,20 @@
       "id": "aria-soulstride-controlled-lunge",
       "request_path": "tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json",
       "request_sha256": "06761833199df4f86982c3b7053b7d658566315ba195c28c7614983b3da3b146"
+    },
+    {
+      "bounded_qc": "Registered native-campaign API; first measure the pinned finite prefix, then select explicit cumulative limits without changing executable source or profile pins.",
+      "build": "python3 -B -m tools.prefab_pipeline.native_cli build-mod --request research/deep-extraction/sonic-metroid/request.json --output-dir NEW --output RESULT",
+      "id": "sonic-metroid-coast-campaign",
+      "request_path": "research/deep-extraction/sonic-metroid/request.json",
+      "request_sha256": "24792e0345bbefe63bcd846f2320b447cf4baf62a663085f01d1331269f01dfb"
+    },
+    {
+      "bounded_qc": "Registered native-campaign API with explicit finite cumulative limits; source navigation is deterministic and semantic/battle decisions use configured S1/S2 providers.",
+      "build": "Not applicable: exact authorized original ROM is reused; no native edit or source build is claimed.",
+      "id": "sid-rpg-weekend-original",
+      "request_path": "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json",
+      "request_sha256": "273d57bf366446c3adc2229b74c18eaccc7130b4ade95f19c0a3f50c3f28ea5e"
     }
   ],
   "reference_claim_checks": [
@@ -2643,10 +4786,1330 @@
       "origin": "research/deep-extraction/castlevania/acquisition.package.json",
       "path": "research/deep-extraction/castlevania/soul-inventory.h",
       "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "ce9321025fbcb648bc761174ca46f78d54ad92eecbd1bbd53696d1ce96221025",
+      "claimed_sha256": "ce9321025fbcb648bc761174ca46f78d54ad92eecbd1bbd53696d1ce96221025",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/request.json",
+      "path": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "claimed_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/request.json",
+      "path": "local/roms/Sonic Advance (USA) (En,Ja).gba",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "490da51eff7a044ae9b1a68146813d4964c82f24146449aec23006d214f87931",
+      "claimed_sha256": "490da51eff7a044ae9b1a68146813d4964c82f24146449aec23006d214f87931",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/request.json",
+      "path": "research/deep-extraction/sonic-metroid/strategy.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "e1432bc8ece30bf1b5a76f20025f0ac75c619bb9153d107a8bd03104491e45e8",
+      "claimed_sha256": "e1432bc8ece30bf1b5a76f20025f0ac75c619bb9153d107a8bd03104491e45e8",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/request.json",
+      "path": "tools/prefab_pipeline/sonic_metroid_strategy.py",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "ce9321025fbcb648bc761174ca46f78d54ad92eecbd1bbd53696d1ce96221025",
+      "claimed_sha256": "ce9321025fbcb648bc761174ca46f78d54ad92eecbd1bbd53696d1ce96221025",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json",
+      "path": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "claimed_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json",
+      "path": "local/roms/Sonic Advance (USA) (En,Ja).gba",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "490da51eff7a044ae9b1a68146813d4964c82f24146449aec23006d214f87931",
+      "claimed_sha256": "490da51eff7a044ae9b1a68146813d4964c82f24146449aec23006d214f87931",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json",
+      "path": "research/deep-extraction/sonic-metroid/strategy.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "e1432bc8ece30bf1b5a76f20025f0ac75c619bb9153d107a8bd03104491e45e8",
+      "claimed_sha256": "e1432bc8ece30bf1b5a76f20025f0ac75c619bb9153d107a8bd03104491e45e8",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json",
+      "path": "tools/prefab_pipeline/sonic_metroid_strategy.py",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c9cd488ada46406b15edca02ed983f3600bdde4db02433bbb16c3e19c8bd874f",
+      "claimed_sha256": "c9cd488ada46406b15edca02ed983f3600bdde4db02433bbb16c3e19c8bd874f",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json",
+      "path": "tools/prefab_pipeline/profiles/sonic-coast-actions.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "64a3c082aa1d4d73058cb482e8626d0a4e842c311eca212a790cc7a9ccd86243",
+      "claimed_sha256": "64a3c082aa1d4d73058cb482e8626d0a4e842c311eca212a790cc7a9ccd86243",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json",
+      "path": "tools/prefab_pipeline/profiles/sonic-coast-memory.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "82d8f298db17c54e02f3524251ff102cdd6c85f2b0e7a8af2ddf7a175cd0a6e7",
+      "claimed_sha256": "82d8f298db17c54e02f3524251ff102cdd6c85f2b0e7a8af2ddf7a175cd0a6e7",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json",
+      "path": "local-data/sonic-coast-campaign/provider/coast-start.fixture.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "79e5b82839e361bca54762e0a759f0c68ce1803d4b1d0a5c72d0b1ade1295b01",
+      "claimed_sha256": "79e5b82839e361bca54762e0a759f0c68ce1803d4b1d0a5c72d0b1ade1295b01",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json",
+      "path": "tools/prefab_pipeline/profiles/sonic-coast-scenario.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "e9476f97546a5299f7804fe4329768c692f4cd71bf6978359c80bd747058ffe7",
+      "claimed_sha256": "e9476f97546a5299f7804fe4329768c692f4cd71bf6978359c80bd747058ffe7",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/native/sonic-usa-whole-game.host.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "d00c360548cc2d105a073ad7499ed679c957fb64a1050460a0d1c8c69b850515",
+      "claimed_sha256": "d00c360548cc2d105a073ad7499ed679c957fb64a1050460a0d1c8c69b850515",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-motion-jump.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "6c13885320a49d1c1f6b1d91633a98e18c846ee0b64e1bdfbb93387f474e9a7d",
+      "claimed_sha256": "6c13885320a49d1c1f6b1d91633a98e18c846ee0b64e1bdfbb93387f474e9a7d",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-air.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "b17394902a35bde74b5e2639083fa527c3896f0c43613b922aa2a7bac2768f78",
+      "claimed_sha256": "b17394902a35bde74b5e2639083fa527c3896f0c43613b922aa2a7bac2768f78",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-impact-ir.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "bcc7e860db0dc5e31a8b5a885376a1ba7251a88813f1427ec7852c8e00882b8c",
+      "claimed_sha256": "bcc7e860db0dc5e31a8b5a885376a1ba7251a88813f1427ec7852c8e00882b8c",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-ripper.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "700cfbe8a4257ad1f83713d78500c3fbcc9fd5d6f0fe4d27336a83bf1bc3e6de",
+      "claimed_sha256": "700cfbe8a4257ad1f83713d78500c3fbcc9fd5d6f0fe4d27336a83bf1bc3e6de",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-ripper_assets.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "03043f437738d37ca645402e40162a5fb9fc9bc6479510629570ec0b2b09f7a9",
+      "claimed_sha256": "03043f437738d37ca645402e40162a5fb9fc9bc6479510629570ec0b2b09f7a9",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-state.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "d6e3efad2535b0fc2afd2216c703c63119e1a56f221d71c57b0cb8f387bea3c6",
+      "claimed_sha256": "d6e3efad2535b0fc2afd2216c703c63119e1a56f221d71c57b0cb8f387bea3c6",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-geometry.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "a271fbc2c69c34a83451a84b0148a351675c60989f93e118ce482b4ce75d5179",
+      "claimed_sha256": "a271fbc2c69c34a83451a84b0148a351675c60989f93e118ce482b4ce75d5179",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-resources.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "08d9103b9489d93964ecedc7e916c85b7de45ace3f540dc3e4b92bac921aa766",
+      "claimed_sha256": "08d9103b9489d93964ecedc7e916c85b7de45ace3f540dc3e4b92bac921aa766",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-impact_bridge.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "165fb77540f4317a436c29a0f068f2574e76602116bb255245f21bce06c8cb72",
+      "claimed_sha256": "165fb77540f4317a436c29a0f068f2574e76602116bb255245f21bce06c8cb72",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-ripper_bridge.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "ccec20cb35a01838cc66b6146b8aa1b541f5069f461b4dd92a670110389b8411",
+      "claimed_sha256": "ccec20cb35a01838cc66b6146b8aa1b541f5069f461b4dd92a670110389b8411",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-combat.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "9cf050594c9d76e91b9628be0353594a2a1a9e58531cd4e66a79c1ad201fbcfb",
+      "claimed_sha256": "9cf050594c9d76e91b9628be0353594a2a1a9e58531cd4e66a79c1ad201fbcfb",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-boss.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "38ff4244f4e783e318ed8fd147fd89458f6b9c616c2552ea0ef743d9606af0c7",
+      "claimed_sha256": "38ff4244f4e783e318ed8fd147fd89458f6b9c616c2552ea0ef743d9606af0c7",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-ecology.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "4a98216bfa1cf5929cf5ac20268606d61ef2d5ca57d538f73cc432631fd39f13",
+      "claimed_sha256": "4a98216bfa1cf5929cf5ac20268606d61ef2d5ca57d538f73cc432631fd39f13",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-progression.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c482efff15684d297258a7cc7ba181da3a4a682a2a8a7e21d2a73abcab7f2445",
+      "claimed_sha256": "c482efff15684d297258a7cc7ba181da3a4a682a2a8a7e21d2a73abcab7f2445",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-movement.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "ecde76c69787e1a91c80287851110b731e520bc3606728c7fab279c776a948e7",
+      "claimed_sha256": "ecde76c69787e1a91c80287851110b731e520bc3606728c7fab279c776a948e7",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-world.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "47cd5bc22eaa059c0dcbe010b225b7543d1d0e938cb2892352195ff34d828dd8",
+      "claimed_sha256": "47cd5bc22eaa059c0dcbe010b225b7543d1d0e938cb2892352195ff34d828dd8",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-render.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "a356f6a9f8c06224a1ec515338be36bfa2e4649b6e60b25a79e19b2d915ca23e",
+      "claimed_sha256": "a356f6a9f8c06224a1ec515338be36bfa2e4649b6e60b25a79e19b2d915ca23e",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-travel.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "327c1cc32d0e51256ded8505f5eae949fa4017718c4acc7cf5c71c0df5b74ff4",
+      "claimed_sha256": "327c1cc32d0e51256ded8505f5eae949fa4017718c4acc7cf5c71c0df5b74ff4",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-schedule.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "72c0d371871e460cda6b04447c3e89c5f19267ab8f1e887f3301ad9bf232799d",
+      "claimed_sha256": "72c0d371871e460cda6b04447c3e89c5f19267ab8f1e887f3301ad9bf232799d",
+      "matches": true,
+      "origin": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "path": "tools/composition/packages/sonic-metroid-draft-kernel.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "ce9321025fbcb648bc761174ca46f78d54ad92eecbd1bbd53696d1ce96221025",
+      "claimed_sha256": "ce9321025fbcb648bc761174ca46f78d54ad92eecbd1bbd53696d1ce96221025",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "7a15814e84c26532cc711d05ce454e3a0658a7a1b5320fa54b2e5432f6969e49",
+      "claimed_sha256": "7a15814e84c26532cc711d05ce454e3a0658a7a1b5320fa54b2e5432f6969e49",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "research/deep-extraction/sonic-metroid/progression/progression.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "93f2a0b23cbb533559f8bda481358c6f9e15eb4d75d534fb62ae20d2d4824f28",
+      "claimed_sha256": "93f2a0b23cbb533559f8bda481358c6f9e15eb4d75d534fb62ae20d2d4824f28",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "research/deep-extraction/sonic-metroid/progression/progress_adapter.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "33f6be7e7d9dd3ee8312eb1bb5078e0611b5c7324ec9e8a7486278e70c82f9dc",
+      "claimed_sha256": "33f6be7e7d9dd3ee8312eb1bb5078e0611b5c7324ec9e8a7486278e70c82f9dc",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "research/deep-extraction/sonic-metroid/progression/progress_adapter.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c1a9d6432c062d1a32381cacdacde386b2243edd7f47c8e4293706f729d70f03",
+      "claimed_sha256": "c1a9d6432c062d1a32381cacdacde386b2243edd7f47c8e4293706f729d70f03",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/acquire/component.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5aace08c1fdc13624aabbd6551b2b2476266269a8919d7b4cce2c6f89128bfd0",
+      "claimed_sha256": "5aace08c1fdc13624aabbd6551b2b2476266269a8919d7b4cce2c6f89128bfd0",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/acquire/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "cdc424d7242a656745a62f4da99caf6180c9528ee47b1c4b12eceda8dbe9e362",
+      "claimed_sha256": "cdc424d7242a656745a62f4da99caf6180c9528ee47b1c4b12eceda8dbe9e362",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/events/component.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "6410a6d5721ecaf9a9517594573f7c5c6d473d2586fb62a86c4872e1cd5cf91c",
+      "claimed_sha256": "6410a6d5721ecaf9a9517594573f7c5c6d473d2586fb62a86c4872e1cd5cf91c",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/events/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "885c2aae5398d0f2928e7448e43626bc9204ba235f230f80932dbe685c2b4723",
+      "claimed_sha256": "885c2aae5398d0f2928e7448e43626bc9204ba235f230f80932dbe685c2b4723",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "local/ir/packages/mzm.progress.acquire/l1.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "103ec8c6e248cdcee3e86f41b056579597165d60600c9104245d3b81bc6e9b53",
+      "claimed_sha256": "103ec8c6e248cdcee3e86f41b056579597165d60600c9104245d3b81bc6e9b53",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "local/ir/packages/mzm.progress.acquire/package.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "ab393d37f019ee39a8d7da0c2f6ca116210460b79c77902f20bf4a22aeaa1898",
+      "claimed_sha256": "ab393d37f019ee39a8d7da0c2f6ca116210460b79c77902f20bf4a22aeaa1898",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "local/ir/packages/mzm.progress.acquire/receipt.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "1e2dd520dd5749512a513532bba1090b1dc34486c55a5160288e17a7c825b1a5",
+      "claimed_sha256": "1e2dd520dd5749512a513532bba1090b1dc34486c55a5160288e17a7c825b1a5",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "local/ir/packages/mzm.progress.events/l1.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "914a504d0236029681d07f4e98318b6d286287d137b930f097d21c4c00e0e56e",
+      "claimed_sha256": "914a504d0236029681d07f4e98318b6d286287d137b930f097d21c4c00e0e56e",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "local/ir/packages/mzm.progress.events/package.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "60e2d67878a033d46a299e1b10bd95f06bec679684c4e1e0f94010fb57d92d9b",
+      "claimed_sha256": "60e2d67878a033d46a299e1b10bd95f06bec679684c4e1e0f94010fb57d92d9b",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "local/ir/packages/mzm.progress.events/receipt.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "3d09c3866dad651a5ff00b67a352301c6e6130bfcd1ae8b3b2bf625eef5a1d7e",
+      "claimed_sha256": "3d09c3866dad651a5ff00b67a352301c6e6130bfcd1ae8b3b2bf625eef5a1d7e",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/acquire/abi-receipt.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "909a6370660715f8462a5caa46767dadb749ac2b9f98ba4dc73d47cbc3fc1057",
+      "claimed_sha256": "909a6370660715f8462a5caa46767dadb749ac2b9f98ba4dc73d47cbc3fc1057",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/events/abi-receipt.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "64e6077b26824c5faf60c895fa584d3d522279c8cbb5cff17c4f37824386c5df",
+      "claimed_sha256": "64e6077b26824c5faf60c895fa584d3d522279c8cbb5cff17c4f37824386c5df",
+      "matches": true,
+      "origin": "research/deep-extraction/sonic-metroid/strategy.json",
+      "path": "research/deep-extraction/sonic-metroid/progression/host-receipt.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "85b334982e138cdadf3fd2d01b2507e230a4cb13688cd3ef4f176481121fa044",
+      "claimed_sha256": "85b334982e138cdadf3fd2d01b2507e230a4cb13688cd3ef4f176481121fa044",
+      "matches": true,
+      "origin": "local-data/sonic-coast-campaign/provider/coast-start.fixture.json",
+      "path": "local-data/sonic-coast-campaign/provider/coast-start.ss",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "bfb272b740830852c506817418b3f7c9c8077ab2d8cd752ca0a3337a0e732e2c",
+      "claimed_sha256": "bfb272b740830852c506817418b3f7c9c8077ab2d8cd752ca0a3337a0e732e2c",
+      "matches": true,
+      "origin": "local-data/sonic-coast-campaign/provider/coast-start.fixture.json",
+      "path": "local-data/sonic-coast-campaign/provider/coast-setup-ancestry.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "8e312edcea6c5e2455a3a9c5e3a704b873c8d4621ccd15433b06876db919eba2",
+      "claimed_sha256": "8e312edcea6c5e2455a3a9c5e3a704b873c8d4621ccd15433b06876db919eba2",
+      "matches": true,
+      "origin": "local-data/sonic-coast-campaign/provider/coast-start.fixture.json",
+      "path": "local-data/sonic-coast-campaign/provider/coast-setup-source.py",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "d6521056331a914df022a036f941743b484cacb4b0928d6592e1fd47c5f0396f",
+      "claimed_sha256": "d6521056331a914df022a036f941743b484cacb4b0928d6592e1fd47c5f0396f",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-motion-jump.json",
+      "path": "research/requests/metroid-sonic-native-bridge.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "8cdf1f08852640e238a70038e09012cfe8e15a22b62ba7784ed2749cb2ca7d54",
+      "claimed_sha256": "8cdf1f08852640e238a70038e09012cfe8e15a22b62ba7784ed2749cb2ca7d54",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-motion-jump.json",
+      "path": "research/requests/sonic-recovered-motion.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "267a01245b106f0f40d7459adedcdd7a5b6300887dd63566c58d2a5182245a8f",
+      "claimed_sha256": "267a01245b106f0f40d7459adedcdd7a5b6300887dd63566c58d2a5182245a8f",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-motion-jump.json",
+      "path": "research/requests/metroid-recovered-motion.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "723158eeec8c68659b8e2aedaaef115bcdef118acbb6829252cb84fd2c3693f9",
+      "claimed_sha256": "723158eeec8c68659b8e2aedaaef115bcdef118acbb6829252cb84fd2c3693f9",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-motion-jump.json",
+      "path": "research/requests/sonic-recovered-jump.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "469c35c07da60fe561562316862103d39616de6607ba607426c51008796f54a0",
+      "claimed_sha256": "469c35c07da60fe561562316862103d39616de6607ba607426c51008796f54a0",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-air.json",
+      "path": "research/requests/sonic-recovered-air-control.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "9b64ec5b4e457da5d186fca62dc6c7eca350daed70eb1a9cebe8a2f56c0f99e3",
+      "claimed_sha256": "9b64ec5b4e457da5d186fca62dc6c7eca350daed70eb1a9cebe8a2f56c0f99e3",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-impact-ir.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-impact-ir.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "d1553f6e708d9c1f8dfd18aad318bf1b88ba373483ddee4adcbbbaeb6e38c890",
+      "claimed_sha256": "d1553f6e708d9c1f8dfd18aad318bf1b88ba373483ddee4adcbbbaeb6e38c890",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-impact-ir.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/l1.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "f06f2e9fd258dfbd251497c112f73053c3b36f4eab0327597caf54a40c46fed1",
+      "claimed_sha256": "f06f2e9fd258dfbd251497c112f73053c3b36f4eab0327597caf54a40c46fed1",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-impact-ir.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/package.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "8fcacaac569352d10d210562cdaaf8accd4781baa3a44b2f0617c00a714fd134",
+      "claimed_sha256": "8fcacaac569352d10d210562cdaaf8accd4781baa3a44b2f0617c00a714fd134",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-impact-ir.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/abi-receipt.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "079e41fb7bcf8689ede452ef96c1781d74eb9d925f7d7e5b8955502088df23f4",
+      "claimed_sha256": "079e41fb7bcf8689ede452ef96c1781d74eb9d925f7d7e5b8955502088df23f4",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-impact-ir.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/native-proof.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "079e41fb7bcf8689ede452ef96c1781d74eb9d925f7d7e5b8955502088df23f4",
+      "claimed_sha256": "079e41fb7bcf8689ede452ef96c1781d74eb9d925f7d7e5b8955502088df23f4",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-impact-ir.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/receipt.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "67aa8ef0f5863d3734b2df989d4dbacb58706ca0808ee7196cc536ac41a7ee22",
+      "claimed_sha256": "67aa8ef0f5863d3734b2df989d4dbacb58706ca0808ee7196cc536ac41a7ee22",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-impact-ir.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/validation-adapter.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "d652252eef9e69e49b42e90396dcc0d5fb37009276983e441871a923071c8c4a",
+      "claimed_sha256": "d652252eef9e69e49b42e90396dcc0d5fb37009276983e441871a923071c8c4a",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ripper.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ripper.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "790f881c16560679a4ab209da9196b03d32dac61dbc1ffce42557bac791421dd",
+      "claimed_sha256": "790f881c16560679a4ab209da9196b03d32dac61dbc1ffce42557bac791421dd",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ripper.json",
+      "path": "research/requests/mzm-ripper-live-controller.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "fc94f65380b65b870a30b9b04b39cca1dc63d6e46a4a373d3904adc0912ebc37",
+      "claimed_sha256": "fc94f65380b65b870a30b9b04b39cca1dc63d6e46a4a373d3904adc0912ebc37",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ripper_assets.json",
+      "path": "local/roms/Metroid - Zero Mission (USA).gba",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "3599368b3e9a2c47fbf4a223f89585bd01737a99c9650e9a1278bca573c58fbd",
+      "claimed_sha256": "3599368b3e9a2c47fbf4a223f89585bd01737a99c9650e9a1278bca573c58fbd",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ripper_assets.json",
+      "path": "local/composition-assets/mzm-flyer-02/receipt.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "386f67bb7f086f69e5cecab9bac8533965848d6103b317673b80db897f89f1a8",
+      "claimed_sha256": "386f67bb7f086f69e5cecab9bac8533965848d6103b317673b80db897f89f1a8",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ripper_assets.json",
+      "path": "local/composition-assets/mzm-flyer-02/assets.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "b4d28f50061590c0a2b957ecdcb170abff4b6c2ee5c74f4f331ea31aafc0222a",
+      "claimed_sha256": "b4d28f50061590c0a2b957ecdcb170abff4b6c2ee5c74f4f331ea31aafc0222a",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ripper_assets.json",
+      "path": "local/composition-assets/mzm-flyer-02/assets.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "3599368b3e9a2c47fbf4a223f89585bd01737a99c9650e9a1278bca573c58fbd",
+      "claimed_sha256": "3599368b3e9a2c47fbf4a223f89585bd01737a99c9650e9a1278bca573c58fbd",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ripper_assets.json",
+      "path": "local/composition-assets/mzm-flyer-02/receipt.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "697928d471b3d8a09d92cd404d7571dda8416a3072c49b38be10061eadbcd670",
+      "claimed_sha256": "697928d471b3d8a09d92cd404d7571dda8416a3072c49b38be10061eadbcd670",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ripper_assets.json",
+      "path": "tools/composition/components/sonic_metroid/extract_mzm_flyer.py",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "fcda01dc83c947e0079e6dbcd0b42daaa91ecddb175af32fa71c3478c0280070",
+      "claimed_sha256": "fcda01dc83c947e0079e6dbcd0b42daaa91ecddb175af32fa71c3478c0280070",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-state.json",
+      "path": "tools/composition/components/sonic_metroid/state.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "claimed_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-state.json",
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-state.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-state.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "79c03106c81775b1c3f22d75d8daad24e3d8fabf3deb07bcb8d62b71c42f48da",
+      "claimed_sha256": "79c03106c81775b1c3f22d75d8daad24e3d8fabf3deb07bcb8d62b71c42f48da",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-geometry.json",
+      "path": "tools/composition/components/sonic_metroid/geometry.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "claimed_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-geometry.json",
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-geometry.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-geometry.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "19996b3377a535b9d1b3e1312edd3d85f9d92f46a1aea23de541a527446eea40",
+      "claimed_sha256": "19996b3377a535b9d1b3e1312edd3d85f9d92f46a1aea23de541a527446eea40",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-geometry.json",
+      "path": "research/requests/sonic-recovered-contact.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "561144e3fdc4d9092036ac3e15e9edd4434cf73b841db3fb4f46effc935334c7",
+      "claimed_sha256": "561144e3fdc4d9092036ac3e15e9edd4434cf73b841db3fb4f46effc935334c7",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-geometry.json",
+      "path": "research/requests/sonic-recovered-terrain.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "074a32e69a3c52b7b13dcd421f10fb5a298fe79e796baa381c069b84336c27ea",
+      "claimed_sha256": "074a32e69a3c52b7b13dcd421f10fb5a298fe79e796baa381c069b84336c27ea",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-geometry.json",
+      "path": "research/requests/sonic-native-traversal-contract.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "6c2ff93150f88d3126bedce5bdadaa8bd2763adbab6bb41f09ab6e17a50d21ba",
+      "claimed_sha256": "6c2ff93150f88d3126bedce5bdadaa8bd2763adbab6bb41f09ab6e17a50d21ba",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-resources.json",
+      "path": "tools/composition/components/sonic_metroid/resources.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "claimed_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-resources.json",
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-resources.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-resources.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "993e1e2d8d2a922721b33cfb6ba62cf032e1042f0cc978f35a6ccc26a3a46684",
+      "claimed_sha256": "993e1e2d8d2a922721b33cfb6ba62cf032e1042f0cc978f35a6ccc26a3a46684",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-impact_bridge.json",
+      "path": "tools/composition/components/sonic_metroid/impact_bridge.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "claimed_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-impact_bridge.json",
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-impact_bridge.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-impact_bridge.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "66cf5f8edb996de914f849b2c9bc06ff09156f8e2206499f4dd7d7110936582f",
+      "claimed_sha256": "66cf5f8edb996de914f849b2c9bc06ff09156f8e2206499f4dd7d7110936582f",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ripper_bridge.json",
+      "path": "tools/composition/components/sonic_metroid/ripper_bridge.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "claimed_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ripper_bridge.json",
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ripper_bridge.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ripper_bridge.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "b4d28f50061590c0a2b957ecdcb170abff4b6c2ee5c74f4f331ea31aafc0222a",
+      "claimed_sha256": "b4d28f50061590c0a2b957ecdcb170abff4b6c2ee5c74f4f331ea31aafc0222a",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ripper_bridge.json",
+      "path": "local/composition-assets/mzm-flyer-02/assets.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "261c9a629eac2ebcef4efd3a6f3ccf25a179b51f1deb658578a150cb2dfd79ec",
+      "claimed_sha256": "261c9a629eac2ebcef4efd3a6f3ccf25a179b51f1deb658578a150cb2dfd79ec",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-combat.json",
+      "path": "tools/composition/components/sonic_metroid/combat.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "claimed_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-combat.json",
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-combat.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-combat.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "8d06b39b658c7c3e431bfa0892b6e031f2219ea83c3439c592133236099a1340",
+      "claimed_sha256": "8d06b39b658c7c3e431bfa0892b6e031f2219ea83c3439c592133236099a1340",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-boss.json",
+      "path": "tools/composition/components/sonic_metroid/boss.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "claimed_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-boss.json",
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-boss.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-boss.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "0cb4cef8a338d1a9dc2d9e6fea385f7a01e7208c9e36e093d38b7f023c1ceadb",
+      "claimed_sha256": "0cb4cef8a338d1a9dc2d9e6fea385f7a01e7208c9e36e093d38b7f023c1ceadb",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ecology.json",
+      "path": "tools/composition/components/sonic_metroid/ecology.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "claimed_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ecology.json",
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ecology.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-ecology.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "3808f171ac906620361ab97f5b43539f75dd07a0dd00eb375a278f45cf9b5100",
+      "claimed_sha256": "3808f171ac906620361ab97f5b43539f75dd07a0dd00eb375a278f45cf9b5100",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-progression.json",
+      "path": "tools/composition/components/sonic_metroid/progression.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "claimed_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-progression.json",
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-progression.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-progression.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c0f6ae2c34483281e10165ed899b2cc89228f03fcb4d139cb382447b45dd57a0",
+      "claimed_sha256": "c0f6ae2c34483281e10165ed899b2cc89228f03fcb4d139cb382447b45dd57a0",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-movement.json",
+      "path": "tools/composition/components/sonic_metroid/movement.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "claimed_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-movement.json",
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-movement.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-movement.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "074a32e69a3c52b7b13dcd421f10fb5a298fe79e796baa381c069b84336c27ea",
+      "claimed_sha256": "074a32e69a3c52b7b13dcd421f10fb5a298fe79e796baa381c069b84336c27ea",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-movement.json",
+      "path": "research/requests/sonic-native-traversal-contract.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "b6cd4868c8ac69a15cccf9d868e14752e6e57fd8f199bf9a53382a602e495614",
+      "claimed_sha256": "b6cd4868c8ac69a15cccf9d868e14752e6e57fd8f199bf9a53382a602e495614",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-world.json",
+      "path": "tools/composition/components/sonic_metroid/world_data.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "claimed_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-world.json",
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-world.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-world.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "130e429110c5d54fb12d363f15c6135510529d47328e2ebe1f2c76757e0a4f64",
+      "claimed_sha256": "130e429110c5d54fb12d363f15c6135510529d47328e2ebe1f2c76757e0a4f64",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-world.json",
+      "path": "tools/composition/worlds/sonic-metroid-signal-descent.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "8ef2a830575dcd6e8cbb8b428a18ce8c807a1434d4c4e73f901c3c0f991e0a60",
+      "claimed_sha256": "8ef2a830575dcd6e8cbb8b428a18ce8c807a1434d4c4e73f901c3c0f991e0a60",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-world.json",
+      "path": "tools/composition/components/sonic_metroid/compile_world.py",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "ae6e63769bbf81d9beab9d5b511c05e851b6e091ba90f6ce2f4fdc952b7bd673",
+      "claimed_sha256": "ae6e63769bbf81d9beab9d5b511c05e851b6e091ba90f6ce2f4fdc952b7bd673",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-render.json",
+      "path": "tools/composition/components/sonic_metroid/render.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "claimed_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-render.json",
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-render.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-render.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "b4d28f50061590c0a2b957ecdcb170abff4b6c2ee5c74f4f331ea31aafc0222a",
+      "claimed_sha256": "b4d28f50061590c0a2b957ecdcb170abff4b6c2ee5c74f4f331ea31aafc0222a",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-render.json",
+      "path": "local/composition-assets/mzm-flyer-02/assets.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "a017627f0d0f18082b8f30a31babec73737277c6ee7928e1743405ae19739d7e",
+      "claimed_sha256": "a017627f0d0f18082b8f30a31babec73737277c6ee7928e1743405ae19739d7e",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-travel.json",
+      "path": "tools/composition/components/sonic_metroid/travel.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "claimed_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-travel.json",
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-travel.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-travel.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "48bd1b4e2abfaa8b3215f05d10365585e9de2b3c5ae92d4781669aabade2670a",
+      "claimed_sha256": "48bd1b4e2abfaa8b3215f05d10365585e9de2b3c5ae92d4781669aabade2670a",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-schedule.json",
+      "path": "tools/composition/components/sonic_metroid/frame_graph.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "claimed_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-schedule.json",
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-schedule.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-schedule.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "130e429110c5d54fb12d363f15c6135510529d47328e2ebe1f2c76757e0a4f64",
+      "claimed_sha256": "130e429110c5d54fb12d363f15c6135510529d47328e2ebe1f2c76757e0a4f64",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-schedule.json",
+      "path": "tools/composition/worlds/sonic-metroid-signal-descent.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "8ef2a830575dcd6e8cbb8b428a18ce8c807a1434d4c4e73f901c3c0f991e0a60",
+      "claimed_sha256": "8ef2a830575dcd6e8cbb8b428a18ce8c807a1434d4c4e73f901c3c0f991e0a60",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-schedule.json",
+      "path": "tools/composition/components/sonic_metroid/compile_world.py",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2b539ab7239665723973e7dfdc6481270ddbab7a5299514826dc9e96a6a6753c",
+      "claimed_sha256": "2b539ab7239665723973e7dfdc6481270ddbab7a5299514826dc9e96a6a6753c",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-kernel.json",
+      "path": "tools/composition/components/sonic_metroid/kernel.c",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "claimed_sha256": "c447827c85ba9d0d97ffa7bd5c986c74cfcb6f5406db6bd772526840c3a4421d",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-kernel.json",
+      "path": "tools/composition/components/sonic_metroid/game.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "claimed_sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-kernel.json",
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "claimed_sha256": "5320709783e0cfcc3f8d25eec5cde8ba4469914b178c4d8e894d9d8e4247de07",
+      "matches": true,
+      "origin": "tools/composition/packages/sonic-metroid-draft-kernel.json",
+      "path": "tools/composition/components/sonic_metroid/mzm_ripper.h",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "62583e0cda194d7733ae21aacb34bca07808e85a7967e2c3ca906c46d753bdcd",
+      "claimed_sha256": "62583e0cda194d7733ae21aacb34bca07808e85a7967e2c3ca906c46d753bdcd",
+      "matches": true,
+      "origin": "research/requests/mzm-ripper-live-controller.json",
+      "path": "local/re/experiments/20261016-sonic-self-decompile/mzm-ripper-qualification-05/report.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "26283b8248db0f03a924ed4e959712b2c1eb1e06129faeb3d6ee77cf2b036c8a",
+      "claimed_sha256": "26283b8248db0f03a924ed4e959712b2c1eb1e06129faeb3d6ee77cf2b036c8a",
+      "matches": true,
+      "origin": "research/requests/mzm-ripper-live-controller.json",
+      "path": "local/re/experiments/20261016-sonic-self-decompile/mzm-ripper-qualification-01/report.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "697928d471b3d8a09d92cd404d7571dda8416a3072c49b38be10061eadbcd670",
+      "claimed_sha256": "697928d471b3d8a09d92cd404d7571dda8416a3072c49b38be10061eadbcd670",
+      "matches": true,
+      "origin": "research/requests/mzm-ripper-live-controller.json",
+      "path": "tools/composition/components/sonic_metroid/extract_mzm_flyer.py",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "3599368b3e9a2c47fbf4a223f89585bd01737a99c9650e9a1278bca573c58fbd",
+      "claimed_sha256": "3599368b3e9a2c47fbf4a223f89585bd01737a99c9650e9a1278bca573c58fbd",
+      "matches": true,
+      "origin": "research/requests/mzm-ripper-live-controller.json",
+      "path": "local/composition-assets/mzm-flyer-02/receipt.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "362e89249e2e72c6ae6fc3e31ef91e6186d543b9be50bcb573a9665360e68930",
+      "claimed_sha256": "362e89249e2e72c6ae6fc3e31ef91e6186d543b9be50bcb573a9665360e68930",
+      "matches": true,
+      "origin": "research/requests/sonic-native-traversal-contract.json",
+      "path": "local/composition-builds/sonic-metroid-signal-descent-23/game.gba",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "ecd2b654fa16086dbd67e2d5f4c0e6d02f9baf90a62861962f6bde531b42bd9d",
+      "claimed_sha256": "ecd2b654fa16086dbd67e2d5f4c0e6d02f9baf90a62861962f6bde531b42bd9d",
+      "matches": true,
+      "origin": "research/requests/sonic-native-traversal-contract.json",
+      "path": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-23-qualified-factory2-chain/native-handle-transfer/report.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "b21c5406a6c1367ee6ac44e7b2a5c24f57de5d169f83c0aa3d20c53382fa059c",
+      "claimed_sha256": "b21c5406a6c1367ee6ac44e7b2a5c24f57de5d169f83c0aa3d20c53382fa059c",
+      "matches": true,
+      "origin": "research/requests/sonic-native-traversal-contract.json",
+      "path": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-23-qualified-factory2-chain/report.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "3af08afc6493b359e59e594f7254ee0620927cd2374280fadb3777687bdca635",
+      "claimed_sha256": "3af08afc6493b359e59e594f7254ee0620927cd2374280fadb3777687bdca635",
+      "matches": true,
+      "origin": "research/requests/sonic-native-traversal-contract.json",
+      "path": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-23-qualified-factory2/report.json",
+      "recipe": "sonic-metroid-coast-campaign"
+    },
+    {
+      "actual_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+      "claimed_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json",
+      "path": "local-data/rpg/registered-original/original.gba",
+      "recipe": "sid-rpg-weekend-original"
+    },
+    {
+      "actual_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+      "claimed_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json",
+      "path": "local-data/rpg/registered-original/original.gba",
+      "recipe": "sid-rpg-weekend-original"
+    },
+    {
+      "actual_sha256": "6977510d5ab798941553132ac35eed4fd8590ee2279a6c0ae09243a49e30d962",
+      "claimed_sha256": "6977510d5ab798941553132ac35eed4fd8590ee2279a6c0ae09243a49e30d962",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json",
+      "path": "local-data/rpg/registered-original/original.elf",
+      "recipe": "sid-rpg-weekend-original"
+    },
+    {
+      "actual_sha256": "21fa895f1f79dab55e729196b8e1a606f712055300b8a5da9861156ff6f4dea3",
+      "claimed_sha256": "21fa895f1f79dab55e729196b8e1a606f712055300b8a5da9861156ff6f4dea3",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json",
+      "path": "local-data/rpg/registered-original/original.sav",
+      "recipe": "sid-rpg-weekend-original"
+    },
+    {
+      "actual_sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9",
+      "claimed_sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json",
+      "path": "local-data/rpg/sid-provider-18e.json",
+      "recipe": "sid-rpg-weekend-original"
+    },
+    {
+      "actual_sha256": "0d0cf9edf720a3040196a477ff74b64c1842ef7909aac18f45c4fe8ad895e20f",
+      "claimed_sha256": "0d0cf9edf720a3040196a477ff74b64c1842ef7909aac18f45c4fe8ad895e20f",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json",
+      "path": "tools/playtester/profiles/pokemon-rpg-weekend-quest.json",
+      "recipe": "sid-rpg-weekend-original"
+    },
+    {
+      "actual_sha256": "1486e7e5dc211f5839bbf47cf8392242d63e44be48a0811f8b6395035de174ac",
+      "claimed_sha256": "1486e7e5dc211f5839bbf47cf8392242d63e44be48a0811f8b6395035de174ac",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json",
+      "path": "tools/playtester/profiles/pokemon-rpg-weekend-scenario.json",
+      "recipe": "sid-rpg-weekend-original"
+    },
+    {
+      "actual_sha256": "0d0cf9edf720a3040196a477ff74b64c1842ef7909aac18f45c4fe8ad895e20f",
+      "claimed_sha256": "0d0cf9edf720a3040196a477ff74b64c1842ef7909aac18f45c4fe8ad895e20f",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
+      "path": "tools/playtester/profiles/pokemon-rpg-weekend-quest.json",
+      "recipe": "sid-rpg-weekend-original"
+    },
+    {
+      "actual_sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9",
+      "claimed_sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
+      "path": "local-data/rpg/sid-provider-18e.json",
+      "recipe": "sid-rpg-weekend-original"
+    },
+    {
+      "actual_sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9",
+      "claimed_sha256": "d57616f264fbbed355518b445a9c41e18c6a204a43feb5d760d828834b2035d9",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
+      "path": "local-data/rpg/sid-provider-18e.json",
+      "recipe": "sid-rpg-weekend-original"
+    },
+    {
+      "actual_sha256": "07dfa90cf8b921cf6109b97ebc4e3ef1e1e8e6c29041e12667c2dfb85f4be118",
+      "claimed_sha256": "07dfa90cf8b921cf6109b97ebc4e3ef1e1e8e6c29041e12667c2dfb85f4be118",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
+      "path": "tools/playtester/profiles/pokemon-rpg-weekend-fixture.json",
+      "recipe": "sid-rpg-weekend-original"
+    },
+    {
+      "actual_sha256": "1486e7e5dc211f5839bbf47cf8392242d63e44be48a0811f8b6395035de174ac",
+      "claimed_sha256": "1486e7e5dc211f5839bbf47cf8392242d63e44be48a0811f8b6395035de174ac",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
+      "path": "tools/playtester/profiles/pokemon-rpg-weekend-scenario.json",
+      "recipe": "sid-rpg-weekend-original"
     }
   ],
   "schema": "gameverse.improvement-provider-pack/1",
-  "source_commit": "8c95e007ce95a9db0f174a92d2a4912fc16b013e",
+  "source_commit": "2e7b00f0288cb50d64d8845276ba6c1ce12d37ea",
   "static_resolution": [
     {
       "errors": [],
@@ -2668,6 +6131,13 @@
       "qualification": "read-only static resolution only",
       "recipe": "aria-soulstride-controlled-lunge",
       "resolver": "composition-static/0.1"
+    },
+    {
+      "errors": [],
+      "path": "tools/composition/plans/sonic-metroid-signal-descent.json",
+      "qualification": "read-only static resolution only",
+      "recipe": "sonic-metroid-coast-campaign",
+      "resolver": "composition-static/0.1"
     }
   ],
   "status": "runtime-file-inventory-ready",
@@ -2677,7 +6147,9 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "requirement": ">=3.10 (existing Path.is_relative_to usage)",
       "stage": "build"
@@ -2687,7 +6159,9 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "requirement": "Clang with armv4t-none-eabi/arm7tdmi/Thumb support",
       "stage": "build"
@@ -2697,7 +6171,9 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "requirement": "GNU ARM linker compatible with generated native linker script",
       "stage": "build"
@@ -2707,7 +6183,9 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "requirement": "GNU ARM binary extraction",
       "stage": "build"
@@ -2717,7 +6195,9 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "requirement": "GNU ARM symbol inspection",
       "stage": "build"
@@ -2727,7 +6207,9 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "requirement": "0.10.5-compatible headers/library and separately built tools/re/session/build/gba-session",
       "stage": "bounded-qc"
@@ -2737,7 +6219,9 @@
       "recipes": [
         "aria-double-xp",
         "aria-soulstride",
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sid-rpg-weekend-original",
+        "sonic-metroid-coast-campaign"
       ],
       "requirement": "video encoding when bounded QC records a clip",
       "stage": "bounded-qc"
@@ -2745,7 +6229,9 @@
     {
       "name": "DecisionAI System1",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sonic-metroid-coast-campaign",
+        "sid-rpg-weekend-original"
       ],
       "requirement": "Configured Decisions-compatible provider via LITELLM_BASE and LITELLM_API_KEY; defaults identify ramblerun/Decision-AI, credentials remain process-external",
       "stage": "model-playtest"
@@ -2753,10 +6239,12 @@
     {
       "name": "System2 chat model",
       "recipes": [
-        "aria-soulstride-controlled-lunge"
+        "aria-soulstride-controlled-lunge",
+        "sonic-metroid-coast-campaign",
+        "sid-rpg-weekend-original"
       ],
       "requirement": "Configured PLAYTEST_LLM_BASE_URL, PLAYTEST_LLM_MODEL and PLAYTEST_LLM_API_KEY or explicitly selected GAMEVERSE_SID_ENV_FILE; no credential values retained in manifest",
-      "stage": "model-diagnosis-and-repair"
+      "stage": "model-decisions-and-optional-repair"
     }
   ],
   "working_tree": "shared dirty working tree; exact file hashes are authoritative"

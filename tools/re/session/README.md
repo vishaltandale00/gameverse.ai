@@ -12,8 +12,9 @@ make -C tools/re/session
 ```
 
 No SDK or Python dependencies are added. The native process has private in-memory
-cartridge save data and a fresh output directory per run. It never opens a player
-save. ROMs and generated binaries/artifacts stay outside Git. The implementation
+cartridge save data and a fresh output directory per run. An optional battery
+seed is copied into that private directory before the emulator opens it; the
+emulator never opens the source save. ROMs and generated binaries/artifacts stay outside Git. The implementation
 uses mGBA's public core API; sidbot's persistent `bootshot` pipe was the design
 reference, while game-specific RAM readers and policies remain separate.
 
@@ -136,3 +137,20 @@ observations and must not be added again to parent totals. Model, queue and
 build timings are unavailable for the replay; actual experiment reports now
 separate S1/S2 wall, frames per action/call and playtest end-to-end speed from
 native action speed.
+
+
+`NativeSession(..., initial_save=path, expected_initial_save_sha256=sha256)`
+starts from a private battery-save copy loaded through mGBA before reset.
+`initial_save` and `initial_state` are mutually exclusive. A mismatched supplied
+SHA-256 fails before session allocation. The save must contain between one byte
+and one MiB; a game's provider remains responsible for its format and exact ROM
+compatibility. Initial-save provenance records the source identity, size and
+hash without copying any payload into reports. JSONL CLI equivalents are
+`--initial-save` and `--initial-save-sha256`. Native checkpoints still include
+isolated cartridge save data and can restore subsequent progress normally.
+
+The focused 2026-10-16 battery test booted 600 native frames from the explicitly
+supplied private SID Emerald save and replayed the same input from a native
+checkpoint with matching final pixels (0.123976 seconds total). Source ROM/save
+hashes remained unchanged. This checks startup/isolation/checkpoint behavior;
+RPG navigation and model timing require their separate scenario qualification.

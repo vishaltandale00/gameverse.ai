@@ -1,0 +1,113 @@
+{
+  "schema": "native-scenario-graph/1",
+  "id": "sonic-coast-upgrades-first-boss-factory/1",
+  "objective": "From the earliest coast stage0 with no upgrades, acquire coastal gear and solve locks, traverse both coastal acts, and reach native Factory stage2 with Morph, Missile, Bomb, High Jump, Ice and Speed bits retained.",
+  "scope": "Existing pinned Sonic/MZM cartridge only. Stage0\u21921\u21922 is native progression through first boss/capsule route; boss defeat and switch causality are inferred from source progression unless separately observed native callback evidence is retained. This is not full-game completion.",
+  "nodes": [
+    {
+      "id": "coast_start_no_upgrades",
+      "conditions": [
+        {
+          "field": "stage",
+          "op": "eq",
+          "value": 0
+        },
+        {
+          "field": "upgrades",
+          "op": "eq",
+          "value": 0
+        },
+        {
+          "field": "gates_opened",
+          "op": "eq",
+          "value": 0
+        },
+        {
+          "field": "relics_collected",
+          "op": "eq",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "coastal_gear_and_locks",
+      "after": [
+        "coast_start_no_upgrades"
+      ],
+      "conditions": [
+        {
+          "field": "upgrades",
+          "op": "mask_all",
+          "value": 23
+        },
+        {
+          "field": "gates_opened",
+          "op": "ge",
+          "value": 2
+        },
+        {
+          "field": "relics_collected",
+          "op": "ge",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "coastal_act2",
+      "after": [
+        "coastal_gear_and_locks"
+      ],
+      "conditions": [
+        {
+          "field": "stage",
+          "op": "eq",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "high_jump_and_speed",
+      "after": [
+        "coastal_act2"
+      ],
+      "conditions": [
+        {
+          "field": "upgrades",
+          "op": "mask_all",
+          "value": 95
+        }
+      ]
+    },
+    {
+      "id": "factory_entry_after_first_boss_route",
+      "after": [
+        "high_jump_and_speed"
+      ],
+      "conditions": [
+        {
+          "field": "stage",
+          "op": "eq",
+          "value": 2
+        },
+        {
+          "field": "upgrades",
+          "op": "mask_all",
+          "value": 95
+        },
+        {
+          "field": "gates_opened",
+          "op": "ge",
+          "value": 2
+        },
+        {
+          "field": "relics_collected",
+          "op": "ge",
+          "value": 4
+        }
+      ]
+    }
+  ],
+  "goals": [
+    "factory_entry_after_first_boss_route"
+  ]
+}

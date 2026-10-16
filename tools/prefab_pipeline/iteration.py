@@ -177,7 +177,7 @@ def run_iteration(request, config, output_dir, stages=None, *, resume=False):
                           'source': {'path': origin.filename, 'line': origin.lineno} if origin else None}
             # Registered compiler errors are local diagnostics. Provider bodies
             # and arbitrary callback exception strings never enter the report.
-            local_compilers = ('prefab_pipeline/native_mod.py', 'composition/native_build.py')
+            local_compilers = ('prefab_pipeline/native_mod.py', 'composition/native_build.py', 'prefab_pipeline/artifact_reference.py')
             if isinstance(error, IterationError) or (origin and origin.filename.endswith(local_compilers)):
                 diagnostic['message'] = str(error)[:2000]
             row.update(status='cancelled' if isinstance(error, (KeyboardInterrupt, SystemExit)) else 'failed',
@@ -196,9 +196,26 @@ def run_iteration(request, config, output_dir, stages=None, *, resume=False):
             if admitted.get('admitted') is not True:
                 report.update(status='blocked', reason='cheap_admission_failed')
                 break
-            built = stage('build', stages.build, current)
+            reference_operation = current.get('schema') == 'native-artifact-traversal-request/1'
+            built = stage('artifact-reference' if reference_operation else 'build', stages.build, current)
             artifact = built.get('artifact', {})
-            if (built.get('cheap_guard_passed') is not True or not built.get('intended_edit_witness')
+            if reference_operation:
+                receipt_ref = built.get('artifact_receipt')
+                if not verify_file_ref(receipt_ref) or not verify_file_ref(artifact):
+                    raise IterationError('artifact_reference_receipt_or_bytes_invalid')
+                receipt = json.loads(Path(receipt_ref['path']).read_text())
+                if (built.get('artifact_kind') != 'prebuilt-reference'
+                        or receipt.get('schema') != 'native-artifact-reference-result/1'
+                        or receipt.get('status') != 'artifact-reused-copy-verified'
+                        or receipt.get('request_sha256') != canonical_hash(current)
+                        or artifact['sha256'] != current['artifact']['sha256']
+                        or receipt.get('artifact', {}).get('sha256') != artifact['sha256']
+                        or built.get('source_rom_sha256') != config['base_rom_sha256']
+                        or built.get('build_seconds') is not None or receipt.get('build_seconds') is not None):
+                    raise IterationError('artifact_reference_identity_or_operation_invalid')
+                report['build_seconds'] = None
+                report['operation'] = 'pinned-artifact-traversal'
+            elif (built.get('cheap_guard_passed') is not True or not built.get('intended_edit_witness')
                     or built.get('parent_sha256') != config['base_rom_sha256'] or not verify_file_ref(artifact)
                     or artifact.get('sha256') == config['base_rom_sha256']):
                 raise IterationError('build_artifact_or_edit_witness_invalid')
@@ -208,7 +225,7 @@ def run_iteration(request, config, output_dir, stages=None, *, resume=False):
                 if not verify_file_ref(built['build_report']):
                     raise IterationError('build_report_pin_mismatch')
                 report['build_report'] = built['build_report']
-            report['artifact_status'] = 'candidate-built-cheap-integrity-passed'
+            report['artifact_status'] = 'artifact-reused' if reference_operation else 'candidate-built-cheap-integrity-passed'
             report['qualification'] = {'native_objective': 'pending', 'whole_campaign': 'untested', 'activation': 'not_performed'}
             _write(report_path, report)
             context.checkpoint = copy.deepcopy(checkpoint) if checkpoint_compatible(checkpoint, artifact, config) else None
@@ -227,10 +244,34 @@ def run_iteration(request, config, output_dir, stages=None, *, resume=False):
                 experiment = stage('experiment', stages.experiment, artifact)
             finally:
                 context.output = output
-            if (experiment.get('native') is not True or experiment.get('usage', {}).get('model_calls', 0) < 1
-                    or not experiment.get('decisions') or not experiment.get('evidence')
+            model_evidence = experiment.get('usage', {}).get('model_calls', 0) > 0 and bool(experiment.get('decisions'))
+            navigation = experiment.get('deterministic_navigation') or {}
+            navigation_records = navigation.get('decisions', [])
+            def source_navigation_record(event):
+                result = event.get('result', {})
+                record = result.get('record', {})
+                policy = record.get('policy')
+                return (event.get('event') == 'decision' and result.get('accepted') is True
+                        and isinstance(result.get('action_id'), str)
+                        and (policy in ('single_available_action', 'continue_adapter_target')
+                             or (policy == 'continue_model_wait'
+                                 and record.get('basis') == 'source_proven_noninteractive_callback_unchanged')))
+            deterministic_evidence = (reference_operation and config['adapter_version'] == 'sid-rpg-navigation/1'
+                and experiment.get('control_basis') == 'source-defined-navigation'
+                and experiment.get('usage', {}).get('model_calls') == 0
+                and experiment.get('usage', {}).get('native_frames', 0) > 0
+                and bool(navigation_records) and all(source_navigation_record(event) for event in navigation_records)
+                and bool(navigation.get('evidence')) and all(verify_file_ref(ref) for ref in navigation['evidence']))
+            if (experiment.get('native') is not True or not (model_evidence or deterministic_evidence)
+                    or not experiment.get('evidence')
                     or not all(verify_file_ref(ref) for ref in experiment['evidence'])):
                 raise IterationError('native_model_experiment_evidence_required')
+            if experiment.get('mod_quality'):
+                report['mod_quality'] = experiment['mod_quality']
+                report['qualification']['mod_quality'] = experiment['mod_quality']['status']
+            if config.get('require_mod_quality') and experiment.get('mod_quality', {}).get('status') != 'passed':
+                report.update(status='blocked', reason='declared_mod_quality_not_passed')
+                break
             checkpoint = experiment.get('checkpoint')
             report['checkpoint'] = checkpoint
             if config.get('pause_after_experiment'):
@@ -246,6 +287,9 @@ def run_iteration(request, config, output_dir, stages=None, *, resume=False):
                 report.update(status='success', reason='native_objective_observed', artifact=artifact, objective_witness=witness)
                 break
             diagnosis = stage('diagnose', stages.diagnose, current, artifact, experiment)
+            if reference_operation:
+                report.update(status='partial', reason='experiment_budget_exhausted', repair_support='unsupported without a registered build recipe')
+                break
             # The diagnosis cannot promote, mutate artifact identity, or skip guards.
             if attempt + 1 == config['limits']['attempts']:
                 report.update(status='budget', reason='attempt_budget_exhausted')
@@ -269,7 +313,8 @@ def run_iteration(request, config, output_dir, stages=None, *, resume=False):
     finally:
         if report.get('artifact') and report['status'] != 'success':
             report['experiment_outcome'] = report['status']
-            report['status'] = 'artifact-built-with-diagnostics'
+            if report.get('operation') != 'pinned-artifact-traversal':
+                report['status'] = 'artifact-built-with-diagnostics'
         report['total_wall_seconds'] = round(time.monotonic() - started, 6)
         _write(report_path, report)
     return report
@@ -277,11 +322,14 @@ def run_iteration(request, config, output_dir, stages=None, *, resume=False):
 
 def default_stages(request, config):
     """Only the explicitly registered native cartridge experiment is selectable."""
+    if config['mechanism_sha256'] != file_ref(Path(__file__))['sha256']:
+        raise IterationError('iteration_mechanism_pin_mismatch')
+    if request.get('schema') == 'native-artifact-traversal-request/1':
+        from .artifact_reference import artifact_stages
+        return artifact_stages()
     if request.get('schema') != 'native-prefab-mod-request/1':
         raise IterationError('unsupported_iteration_backend')
     from .native_mod import ROOT, build_native_mod_request
-    if config['mechanism_sha256'] != file_ref(Path(__file__))['sha256']:
-        raise IterationError('iteration_mechanism_pin_mismatch')
 
     def cached_build(value, context):
         ref = context.config.get('cached_build_report')
@@ -343,7 +391,9 @@ def default_stages(request, config):
 
     def experiment(artifact, context):
         from tools.playtester.experiment import experiment_native_candidate
-        return experiment_native_candidate(artifact, context)
+        from .quality_dispatch import attach_quality
+        observed = experiment_native_candidate(artifact, context)
+        return attach_quality(context.report['attempts'][-1]['request'], context.config, artifact, observed, context)
 
     def diagnose(value, artifact, observed, context):
         result = {'schema': 'native-iteration-diagnosis/1', 'trust': 'hypothesis_only',
@@ -411,12 +461,22 @@ def prepare_iteration_config(request, template, new_run_id):
         raise IterationError('new_run_id_required')
     if new_run_id == template.get('run_id'):
         raise IterationError('fresh_run_requires_new_identity')
-    inspected = validate_native_mod_request(request)
+    reference_operation = request.get('schema') == 'native-artifact-traversal-request/1'
+    if reference_operation:
+        from .artifact_reference import validate_artifact_reference
+        validate_artifact_reference(request, template)
+        inspected = {}
+    else:
+        inspected = validate_native_mod_request(request)
     variants = template.get('supported_requests', [])
     if not isinstance(variants, list):
         raise IterationError('invalid_supported_requests')
     supported = [copy.deepcopy(request)]
     for variant in variants:
+        if reference_operation:
+            if variant != request:
+                raise IterationError('prebuilt_artifact_repair_unsupported')
+            continue
         validate_native_mod_request(variant)
         if variant.get('rom') != request.get('rom'):
             raise IterationError('repair_variant_base_rom_mismatch')
@@ -454,6 +514,8 @@ def prepare_iteration_config(request, template, new_run_id):
         manifest_path = checked_path(authority['path'])
         inventory = json.loads(manifest_path.read_text())
         rows = [row for row in inventory.get('files', []) if authority['recipe_id'] in row.get('recipes', [])]
+        if authority.get('version_basis') == 'recipe-readset/1':
+            rows = [row for row in rows if row['path'] not in (authority['path'], 'contracts/improvement-profile-registry.json')]
         if not rows:
             raise IterationError('reviewed_runtime_recipe_missing')
         mechanisms = {}
@@ -466,20 +528,30 @@ def prepare_iteration_config(request, template, new_run_id):
         if str(Path(__file__).resolve()) not in mechanisms:
             raise IterationError('reviewed_runtime_manifest_missing_runner')
         manifest_ref = file_ref(manifest_path)
-        mechanisms[str(manifest_path)] = manifest_ref
+        if authority.get('version_basis') == 'recipe-readset/1':
+            files = sorted(({"path": path, "sha256": sha} for path, sha in {row['path']: row['sha256'] for row in rows}.items()), key=lambda row: row['path'])
+            readset = {'schema': 'gameverse.runtime-readset/1', 'recipe_id': authority['recipe_id'], 'files': files}
+            config['runtime_readset_pin'] = {**readset, 'sha256': canonical_hash(readset)}
+        else:
+            mechanisms[str(manifest_path)] = manifest_ref
     registration = inspected.get('lowering')
     if registration:
         required.append(registration['lowerer_path'])
-    plan_pin = request['plan']
-    plan_path = ROOT / plan_pin['path']
-    baseline = json.loads(plan_path.read_text())
-    host = baseline['native_build']['host']
-    host_pin = {'path': host['ref'], 'sha256': host['sha256']}
-    if not verify_file_ref(host_pin, ROOT):
-        raise IterationError('derived_host_pin_mismatch')
-    required.extend([plan_path, ROOT/host['ref']])
+    if reference_operation:
+        required.append(ROOT/'tools/prefab_pipeline/artifact_reference.py')
+    else:
+        plan_pin = request['plan']
+        plan_path = ROOT / plan_pin['path']
+        baseline = json.loads(plan_path.read_text())
+        host = baseline['native_build']['host']
+        host_pin = {'path': host['ref'], 'sha256': host['sha256']}
+        if not verify_file_ref(host_pin, ROOT):
+            raise IterationError('derived_host_pin_mismatch')
+        required.extend([plan_path, ROOT/host['ref']])
     for path in required:
         actual = checked_path(path)
+        if authority and authority.get('version_basis') == 'recipe-readset/1' and str(actual) not in mechanisms:
+            raise IterationError('reviewed_runtime_manifest_missing_dependency')
         mechanisms.setdefault(str(actual), {'path': str(actual), 'sha256': None})
     config['mechanism_refs'] = [refresh('mechanism_refs', row) for row in mechanisms.values()]
     old_runner = {'path': str(Path(__file__)), 'sha256': template.get('mechanism_sha256')}
@@ -495,7 +567,7 @@ def prepare_iteration_config(request, template, new_run_id):
     config.pop('template_status', None)
     config.update(run_id=new_run_id, loop_config_ref='prepared:' + new_run_id,
                   source_commit=subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip(),
-                  base_rom_sha256=request['rom']['sha256'], supported_requests=supported)
+                  base_rom_sha256=request['source_rom' if reference_operation else 'rom']['sha256'], supported_requests=supported)
     if manifest_ref:
         config['runtime_manifest_pin'] = manifest_ref
     config['preparation'] = {'schema': 'prefab-iteration-preparation/1', 'template_sha256': canonical_hash(template),
@@ -534,7 +606,10 @@ def prepare_continuation_config(prior_report_ref, template, new_run_id):
     if prepared['experiment'].get('models') != prior['config']['experiment'].get('models'):
         raise IterationError('continuation_model_identity_mismatch')
     prepared['initial_checkpoint'] = checkpoint
-    prepared['cached_build_report'] = prior['build_report']
+    if request.get('schema') == 'native-artifact-traversal-request/1':
+        prepared['artifact_reference_parent'] = prior['build_report']
+    else:
+        prepared['cached_build_report'] = prior['build_report']
     prepared['pause_after_experiment'] = False
     prepared['continuation_request'] = request
     prepared['continuation'] = {'schema': 'prefab-iteration-continuation/1', 'prior_report': prior_report_ref,

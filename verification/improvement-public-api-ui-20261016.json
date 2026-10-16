@@ -1,0 +1,94 @@
+{
+  "schema": "gameverse.owner-reported-verification/1",
+  "date": "2026-10-16",
+  "qualification": "Focused public API/UI checks; no native or model qualification",
+  "measurement_provenance": "Recorded from source-owning agents tool results reported to publisher; publisher did not rerun unchanged checks. Source hashes below were measured by publisher after owners declared freeze.",
+  "source_parent": "2e7b00f0288cb50d64d8845276ba6c1ce12d37ea",
+  "sourcepins": [
+    {
+      "path": "scripts/improvement-api.mjs",
+      "sha256": "917f7f2bf835513ccdcd9381c10cefe342f5b3291384f64550c3608d13b13e57"
+    },
+    {
+      "path": "scripts/improvement-client.mjs",
+      "sha256": "2e5f7345c5669dc17318e9ac55e6e5f5699f3d4537d2f4704bd510d47e03e74f"
+    },
+    {
+      "path": "scripts/serve-improvement.mjs",
+      "sha256": "1692fe871dedb7414c4005c45c525385c7da21fd54c1e43956f12a831ea8ad05"
+    },
+    {
+      "path": "scripts/improvement-ui.mjs",
+      "sha256": "8fbceb55ddb615966275269c6bfe3d61a2be6191c335d6d3c72cf6215d53134d"
+    },
+    {
+      "path": "src/improvement-workbench.js",
+      "sha256": "cab18304303aec75c04b355d58e573470957d4b96f8c8d415021459635132522"
+    },
+    {
+      "path": "src/improvement-workbench-model.js",
+      "sha256": "f0d29eeef88c3ea0c3df8004e06f313ecbb1687e7f24d93ae98fb28ecae95c92"
+    },
+    {
+      "path": "tests/improvement-api.test.js",
+      "sha256": "55de5bd5e0d47ac944c1b826f08e860e80e6ae8eda14b3daef798c977a4f18d9"
+    },
+    {
+      "path": "tests/improvement-ui.test.js",
+      "sha256": "7a83b19c3c439453264bae3dbb0697c34e00ca95760206e488e91b619b00d7b6"
+    },
+    {
+      "path": "tests/improvement-workbench.test.js",
+      "sha256": "396e35c96f3fb55a7df5dac65cd85097f14cc93b514ca86e31ab8d765ecf374c"
+    }
+  ],
+  "checks": [
+    {
+      "owner": "improvement_api_contract",
+      "command": "node --test tests/improvement-api.test.js",
+      "tests_passed": 17,
+      "wall_s": 1.964,
+      "actual_subprocess_fixture": {
+        "actions": 18,
+        "model_calls": 0,
+        "native_runs": 0,
+        "integration_test_wall_s": 0.233
+      }
+    },
+    {
+      "owner": "repro_ui_capabilities",
+      "command": "node --test tests/improvement-ui.test.js tests/improvement-workbench.test.js",
+      "tests_passed": 8,
+      "wall_s": 0.126396,
+      "node_version": "24.14.0"
+    },
+    {
+      "owner": "repro_ui_capabilities",
+      "operation": "Single normal approval-reviewed loopback HTTP GET smoke against standalone server",
+      "http_200": [
+        "/improvement",
+        "/improvement.css",
+        "/src/improvement-page.js",
+        "/src/improvement-workbench.js",
+        "/src/improvement-workbench-model.js",
+        "/api/improvement/capabilities"
+      ],
+      "unrelated_provider_contract_route_status": 404,
+      "capabilities": {
+        "public_reference_fixture": "ready",
+        "native_recipes": "setup-required"
+      },
+      "post_requests": 0,
+      "model_calls": 0,
+      "native_runs": 0,
+      "server_stopped": true,
+      "browser_playtesting": false,
+      "wall_s": null
+    }
+  ],
+  "ci": {
+    "queue_s": null,
+    "remote_execution_s": null
+  },
+  "timing_note": "Separate targeted checks. Fixture subprocess timing nests API test duration. No comparable before baseline or full campaign timing claimed."
+}
