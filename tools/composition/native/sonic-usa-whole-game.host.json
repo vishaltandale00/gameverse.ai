@@ -263,6 +263,33 @@
       "range_sha256": "75a6816b0ce3e69685120da70f5a65fa4e552932b6769973f67429e55754c038"
     },
     {
+      "id": "task_teardown",
+      "address": "0x8001954",
+      "isa": "thumb",
+      "abi": "void(u16,u16)",
+      "preimage": "30b50004020c0904",
+      "range_size": 90,
+      "range_sha256": "635699a9e6c6c2d1096eb3334c6a3df5630b2e82c35b254015c9ba7e4aec1007"
+    },
+    {
+      "id": "scene_fresh",
+      "address": "0x803ce20",
+      "isa": "thumb",
+      "abi": "void()",
+      "preimage": "70b50c4800210170",
+      "range_size": 218,
+      "range_sha256": "fc809b8d60e0e66b42d81fb0e1d7b810275618d928fce274a081acfb4a1de8f3"
+    },
+    {
+      "id": "vram_free",
+      "address": "0x8006c34",
+      "isa": "thumb",
+      "abi": "void(ptr)",
+      "preimage": "011c074800688842",
+      "range_size": 32,
+      "range_sha256": "9653e252079fe20dc793b2d0f3e4e70551d76f5069b304365d6e1669138b4aa3"
+    },
+    {
       "id": "task_create",
       "address": "0x8001588",
       "isa": "thumb",

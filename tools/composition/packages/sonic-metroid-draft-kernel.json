@@ -38,7 +38,7 @@
         }
       ],
       "lift_ref": "tools/composition/components/sonic_metroid/kernel.c",
-      "lift_sha256": "67750fef2b5b075d52e72e6d501d24c3dd68c0d0416949f47ebd164245457f27",
+      "lift_sha256": "8c552584b04ba3e356223098054953a208ea2476a308a659dded49e4517ccf9d",
       "semantic_status": "new_authored_bridge_using_recovered_mechanics",
       "dependency_closure": {
         "status": "closed",
@@ -100,11 +100,11 @@
       "sources": [
         {
           "ref": "tools/composition/components/sonic_metroid/kernel.c",
-          "sha256": "67750fef2b5b075d52e72e6d501d24c3dd68c0d0416949f47ebd164245457f27"
+          "sha256": "8c552584b04ba3e356223098054953a208ea2476a308a659dded49e4517ccf9d"
         },
         {
           "ref": "tools/composition/components/sonic_metroid/game.h",
-          "sha256": "00c97bc3aff771709b2600d420f324326bfa9d11c8bb5fa42baa0da339176cb9"
+          "sha256": "a9eac0a4f9bbae2bb518785e13a72499011d02b22575a777529fc172ebb1b90e"
         }
       ],
       "translation_units": [

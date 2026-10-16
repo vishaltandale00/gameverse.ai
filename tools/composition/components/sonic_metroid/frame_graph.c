@@ -6,4 +6,5 @@ if(!(player->flags&0x80))gv_weapons_step(state,player,keys,edges);
 if(!(player->flags&0x80))gv_progression_step(state,player,keys,edges);
 if(!(player->flags&0x80))gv_ecology_step(state,player);
 gv_draw_game(state,player);
+if(!(player->flags&0x80))gv_travel_step(state,player,keys,edges);
 }

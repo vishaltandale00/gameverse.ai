@@ -1,0 +1,73 @@
+{
+  "version": "native-game-input-scenario/1",
+  "name": "earned-return-screw-discovery",
+  "initial_state_requirement": "Native stage1 entrance after actually clearing coast, abilitiesMorph/Missile/Bomb/Ice and visitedmask3; exact ROM or explicit instruction/layout compatibility certificate required. Supply its local native state path as initial_state when running.",
+  "actions": [
+    {
+      "name": "acquire-high",
+      "keys": [
+        "RIGHT"
+      ],
+      "frames": 55
+    },
+    {
+      "name": "brake",
+      "keys": [
+        "L"
+      ],
+      "frames": 1
+    },
+    {
+      "name": "visit-coastal-relay",
+      "keys": [
+        "SELECT",
+        "LEFT",
+        "DOWN"
+      ],
+      "frames": 1
+    },
+    {
+      "name": "native-coast-return",
+      "keys": [],
+      "frames": 720
+    },
+    {
+      "name": "rediscover-screw",
+      "keys": [
+        "RIGHT"
+      ],
+      "frames": 55
+    },
+    {
+      "name": "brake-at-new-cache",
+      "keys": [
+        "L"
+      ],
+      "frames": 1,
+      "save": 20
+    },
+    {
+      "name": "approach-organic-seal",
+      "keys": [
+        "RIGHT"
+      ],
+      "frames": 75
+    },
+    {
+      "name": "screw-through-seal",
+      "keys": [
+        "RIGHT",
+        "A"
+      ],
+      "frames": 30,
+      "save": 21
+    }
+  ],
+  "semantic_expectations": [
+    "Acquire High normally:23\u219231",
+    "Relay trips0\u21921, stage1\u21920, upgrades retained31",
+    "Collected first coastal matrix variant grants Screw:31\u2192159, pickedstage0bit15",
+    "New organic seal opens independent ledgerbit14 on spin:opened169\u219216553"
+  ],
+  "not_a_fixture_mutation": "Inputs only. No RAM writes or granted abilities."
+}

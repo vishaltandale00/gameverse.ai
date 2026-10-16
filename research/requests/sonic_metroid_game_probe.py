@@ -29,6 +29,7 @@ def run(rom,out,sequence=None):
    e['state']={**{k:q(a,n) for k,a,n in [('frame',4,4),('upgrades',8,4),('visited',12,4),('tiles',20,4),('energy',24,2),('max_energy',26,2),('missiles',28,2),('max_missiles',30,2),('charge',34,2),('cooldown',36,2),('iframes',38,2),('shots_fired',44,2),('shots_hit',46,2),('native_kills',48,2),('alien_kills',50,2),('gates_opened',52,2),('relics_collected',54,2),('damage_taken',56,2),('deaths',58,2),('stage',176,1),('morph',177,1),('momentum',180,1),('active',185,1),('message',187,1)]},'picked':[q(60+i*2) for i in range(18)],'opened':[q(96+i*2) for i in range(18)]}
    def arrays(base,stride,count):
     return [s.read_memory(state+base+i*stride,stride).hex() for i in range(count)]
+   e['state']['relay']={'trips':u(state+1000,2),'from':u(state+1002,1),'to':u(state+1003,1)}
    e['shots']=arrays(188,16,8);e['aliens']=arrays(316,28,8);e['prefabs']=arrays(932,8,8)
   for task in tasks:
    callback=int(task['callback'],0);data=int(task['data'],0)

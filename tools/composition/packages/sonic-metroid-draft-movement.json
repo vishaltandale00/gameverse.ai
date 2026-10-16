@@ -135,7 +135,7 @@
         },
         {
           "ref": "tools/composition/components/sonic_metroid/game.h",
-          "sha256": "00c97bc3aff771709b2600d420f324326bfa9d11c8bb5fa42baa0da339176cb9"
+          "sha256": "a9eac0a4f9bbae2bb518785e13a72499011d02b22575a777529fc172ebb1b90e"
         }
       ],
       "translation_units": [

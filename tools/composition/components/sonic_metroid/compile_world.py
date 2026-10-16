@@ -120,7 +120,19 @@ def compile_world(doc):
     assert set(rule['abilities'])=={'ice','high_jump'}
    pf.append('{%d,%d,%d,%d,%d,%d}'%(KINDS[k],n,ident,1 if p.get('renewable') else 0,p['x'],p.get('floor_offset',0)))
   lines.append('{%s,%s,%d,%d,%d,0,{%s}},'%(json.dumps(s['region']),json.dumps(s['entry']),len(pf),s.get('heat',False),s.get('guardian',False),','.join(pf)))
- lines+=['};','const char *const gv_messages[]={']
+ lines+=['};','const GvReturnSpec gv_return_variants[]={']
+ variants=doc.get('return_variants',[]);variant_keys=set();variant_ledgers=set()
+ for v in variants:
+  key=(v['native_stage'],v['source_id']);ledger=(v['native_stage'],v['ledger_id'])
+  assert key not in variant_keys and ledger not in variant_ledgers and len(v['requires'])==len(set(v['requires']))
+  variant_keys.add(key);variant_ledgers.add(ledger)
+  stage=doc['stages'][v['native_stage']];source=next(p for p in stage['prefabs'] if p['id']==v['source_id'])
+  assert source['kind']==v['kind'] and v['kind'] in ('relic','gate')
+  assert all(p['id']!=v['ledger_id'] for p in stage['prefabs']) and 0<=v['ledger_id']<16
+  n=UPGRADES.index(v['component']) if v['kind']=='relic' else GATES.index(v['component'])+1
+  required=sum(1<<UPGRADES.index(a) for a in v['requires'])
+  lines.append('{%d,%d,%d,%d,%d,%d},'%(v['native_stage'],v['source_id'],KINDS[v['kind']],n,v['ledger_id'],required))
+ lines+=['};','const unsigned gv_return_variant_count=%d;'%len(variants),'const char *const gv_messages[]={']
  for pair in doc['messages']:
   assert len(pair)==2 and all(len(t)<=28 and all(32<=ord(c)<96 for c in t) for t in pair)
   lines.append(','.join(json.dumps(t) for t in pair)+',')
@@ -130,7 +142,7 @@ def compile_world(doc):
  lines+=['};'];return '\n'.join(lines)+'\n'
 def compile_schedule(doc):
  graph=doc['runtime_graph'];assert graph['version']=='typed-native-frame-graph/1'
- signatures={'gv_resources_step':['state','player'],'gv_weapons_step':['state','player','keys','edges'],'gv_progression_step':['state','player','keys','edges'],'gv_ecology_step':['state','player'],'gv_draw_game':['state','player']}
+ signatures={'gv_resources_step':['state','player'],'gv_weapons_step':['state','player','keys','edges'],'gv_progression_step':['state','player','keys','edges'],'gv_ecology_step':['state','player'],'gv_draw_game':['state','player'],'gv_travel_step':['state','player','keys','edges']}
  lines=['/* Generated executable typed frame graph from campaign IR. */','#include "game.h"','void gv_tick_components(GvState *state,GvPlayer *player,uint16_t keys,uint16_t edges){']
  seen=set()
  for row in graph['systems']:

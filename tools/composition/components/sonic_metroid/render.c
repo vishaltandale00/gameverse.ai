@@ -82,6 +82,15 @@ void gv_draw_game(GvState *s,GvPlayer *p)
     text(s,160,4,"M",1);number(s,168,4,s->missiles,2);
     text(s,200,4,s->morph?"BALL":s->momentum?"FLOW":"BEAM",4);
     if(s->charge>=30)text(s,88,14,"CHARGED",7);
+    if((GV_R16(0x03001b50)&0x80) && (s->visited&(s->visited-1))){
+        for(unsigned i=0;i<8;i++){
+            GvPrefab *f=&s->prefabs[i];
+            if(f->active && (f->kind==GV_RECHARGE || (f->kind==GV_RELIC && (s->picked[s->stage]&(1u<<f->id)))) &&
+               gv_abs(gv_px(p->x)-f->x)<24 && gv_abs(gv_px(p->y)-(f->y-18))<42){
+                text(s,8,116,"SELECT+LEFT/RIGHT TO RETURN",28);break;
+            }
+        }
+    }
     if(s->story_clock){
         text(s,8,128,gv_messages[s->message*2],28);text(s,8,138,gv_messages[s->message*2+1],28);
     }else if(s->frame<600){text(s,8,144,"B FIRE  R+B MISSILE  L AIM",28);}

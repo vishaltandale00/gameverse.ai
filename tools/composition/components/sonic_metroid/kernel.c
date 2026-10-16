@@ -78,6 +78,7 @@ void gv_game_task(void)
     if(!s->stage_active || s->stage!=GV_R8(0x0300514c)){gv_stage_begin(s,p);s->stage_active=1;}
     s->frame++;if(s->frozen_support)s->frozen_support--;uint16_t keys=GV_R16(0x03001b50),edges=keys&~s->old_keys;
     gv_tick_components(s,p,keys,edges);
+    if(!s->stage_active)return; /* A native relay scene transaction completed. */
     if(!(p->flags&0x80)){
         /* A collected ability remains a discoverable recharge point on return.
          * The final region's signal is resolved by its last alien guardian. */

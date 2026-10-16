@@ -31,7 +31,14 @@
       "speed->momentum_gate",
       "screw->organic_seal"
     ],
-    "failure": "Unlimited native beacon retries: on a native death, replenish the independently recovered Sonic life counter to3 before native restart decrements it; retain cached abilities/gates in persistent task, reset scene enemies, refill energy/ammo on spawn."
+    "failure": "Unlimited native beacon retries: on a native death, replenish the independently recovered Sonic life counter to3 before native restart decrements it; retain cached abilities/gates in persistent task, reset scene enemies, refill energy/ammo on spawn.",
+    "relay": {
+      "component": "campaign.visited_stage_relay",
+      "activation": "SELECT edge + DOWN + LEFT/RIGHT, at collected cache or recharge point",
+      "destinations": "nearest already visited ordinary stage0..11 in chosen direction; never unvisited/special-stage entry",
+      "native_transition": "0x08001954 task teardown retains native flag2 campaign task;0x0803CE20 fresh scene bootstrap owns spawn/camera/terrain/music",
+      "persistence": "abilities/gate ledgers retained; native level resets scene actors, original bosses can be replayed"
+    }
   },
   "messages": [
     [
@@ -1157,7 +1164,47 @@
         "after": [
           "ecology_events"
         ]
+      },
+      {
+        "id": "campaign_travel",
+        "symbol": "gv_travel_step",
+        "args": [
+          "state",
+          "player",
+          "keys",
+          "edges"
+        ],
+        "when": "alive",
+        "after": [
+          "presentation"
+        ]
       }
     ]
-  }
+  },
+  "return_variants": [
+    {
+      "native_stage": 0,
+      "source_id": 1,
+      "kind": "relic",
+      "component": "screw",
+      "ledger_id": 15,
+      "requires": [
+        "high_jump",
+        "ice"
+      ],
+      "story": "High Jump and Ice stabilize the dormant first coastal relay; revisiting it reveals Screw as an earned return reward."
+    },
+    {
+      "native_stage": 0,
+      "source_id": 3,
+      "kind": "gate",
+      "component": "screw",
+      "ledger_id": 14,
+      "requires": [
+        "high_jump",
+        "ice"
+      ],
+      "story": "The stabilized coastal relay exposes a distinct organic seal; its independent ledger cannot reuse the earlier missile opening."
+    }
+  ]
 }

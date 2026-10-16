@@ -58,13 +58,19 @@ the same backend, rather than editing a cartridge by hand.
 - Sustained running transfers to original Sonic momentum before a ramp.
   Speed Booster raises the flow ceiling. High Jump adds jump reach/power grip;
   Screw Attack permits damaging spin contact and organic seals.
-- Down at a collected cache or recharge beacon restores resources. Death uses
+- Down at a collected cache or recharge beacon restores resources. While
+  holding Down there, press SELECT with Left/Right to return to the nearest
+  previously visited ordinary stage in that direction. Original scene services
+  rebuild spawn/camera/terrain/music; the relay never unlocks an unvisited stage. Death uses
   original native restart/beacon flow with unlimited retries and retained
   acquired abilities/gates. Stage spawn refills energy/ammo.
 
 Coast Act 1 teaches Morph, missiles, bombs and Ice; Act 2 introduces High Jump,
 Speed and an original staged boss. Factory adds Varia/heat resistance, then the
-Crystal region adds Screw. Later regions combine the acquired capabilities,
+Crystal region also offers Screw. Earlier, High Jump plus Ice stabilizes the first
+coastal cache: return through a visited relay to discover Screw there, then use
+its spin attack on the newly exposed organic seal. The return reward and seal
+have independent ledgers; the earlier missile opening cannot satisfy them. Later regions combine the acquired capabilities,
 alien wardens, existing hazards/liquids and retained native campaign bosses.
 Native special stages/late boss flows require their own acceptance witnesses.
 

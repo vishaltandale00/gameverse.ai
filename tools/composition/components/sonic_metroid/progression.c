@@ -15,6 +15,12 @@ static void activate_prefab(GvState *s,GvPlayer *p,const GvPrefabSpec *spec,unsi
 {
     GvPrefab *f=&s->prefabs[slot];int ground=gv_floor_y(spec->x,gv_px(p->y)+p->oy,112);
     *f=(GvPrefab){(int16_t)spec->x,(int16_t)(ground+spec->y_offset),spec->kind,spec->param,spec->id,1};
+    for(unsigned i=0;i<gv_return_variant_count;i++){
+        const GvReturnSpec *r=&gv_return_variants[i];
+        if(r->stage==s->stage && r->source_id==spec->id && (s->upgrades&r->requires)==r->requires){
+            f->kind=r->kind;f->param=r->param;f->id=r->ledger_id;
+        }
+    }
     if(spec->kind==GV_FREEZE_GATEWAY){
         /* A typed compound prefab: a renewable freeze target plus its gate.
          * Native coast has open headroom; the Factory ingress does not. The

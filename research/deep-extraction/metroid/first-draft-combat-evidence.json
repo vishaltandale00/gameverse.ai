@@ -1,0 +1,508 @@
+{
+  "version": 1,
+  "game_id": "metroid-zero-mission",
+  "origin": "own_ROM_static_semantic_review_no_community_source",
+  "rom_sha1": "5de8536afe1f0078ee6fe1089f890e8c7aa0a6e8",
+  "rom_sha256": "fc94f65380b65b870a30b9b04b39cca1dc63d6e46a4a373d3904adc0912ebc37",
+  "source_export_ref": "local/re/experiments/20261016-binary-corpus-round2/metroid-zero-mission/metroid-zero-mission/functions.jsonl",
+  "source_export_sha256": "a0c5a3cb36b1906b6338510b59019cbe9db44dc137490ea0341494fb10c9c094",
+  "recorded_at": "2026-10-16T07:41:59.558821+00:00",
+  "source_commit": "98f75aa65d73b588102b58b8febce4478e6c5b25",
+  "scope": "Bounded shared provenance for native Sonic authoring bridge; no campaign/model/decompiler rerun",
+  "ranges": [
+    {
+      "name": "firing_scheduler",
+      "address": "0x804ee88",
+      "end_inclusive_export": "0x0804f2ec",
+      "range_bytes": 1126,
+      "instruction_sha256": "3f67e5410b88b0bb009a62e91f8c8be5893340d86625a8d57c539320b9307928",
+      "preimage8": "30b523480021405e",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [
+        "0x08007928",
+        "0x0804f304",
+        "0x0804f578",
+        "0x0804fd9c",
+        "0x080540ec",
+        "0x0808abfc"
+      ],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "active_projectile_kind_capacity_guard",
+      "address": "0x804ed94",
+      "end_inclusive_export": "0x0804ede2",
+      "range_bytes": 80,
+      "instruction_sha256": "b49dbc631a2bfc9cb7577808fb8667a32542e3ce36283de43ed2e3ae87d844df",
+      "preimage8": "f0b50006050e0906",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "projectile_enemy_aabb_hit_dispatch",
+      "address": "0x804fd9c",
+      "end_inclusive_export": "0x08050366",
+      "range_bytes": 1484,
+      "instruction_sha256": "01c907688f90971d0590257b5d55521448a2b0f1c31190e2400fa2676e240c56",
+      "preimage8": "f0b557464e464546",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [
+        "0x0800e6f8",
+        "0x080504ec"
+      ],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "enemy_vulnerability_descriptor",
+      "address": "0x8050370",
+      "end_inclusive_export": "0x0805039c",
+      "range_bytes": 46,
+      "instruction_sha256": "9d275fbb718b51e596c4e1d15cef58c07106c907114243b5e5c6351d7b9e380d",
+      "preimage8": "00b5031c32300178",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "ice_damage_or_death",
+      "address": "0x80503a0",
+      "end_inclusive_export": "0x08050420",
+      "range_bytes": 130,
+      "instruction_sha256": "8665b2cb3bb3f24a9583d21a41a254164aa4ed06d2a23d2034e88d31cf9c23cf",
+      "preimage8": "70b5031c0904090c",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "enemy_damage_or_death",
+      "address": "0x8050424",
+      "end_inclusive_export": "0x080504a6",
+      "range_bytes": 132,
+      "instruction_sha256": "7646de67edfa156b1d32f1b279f7ab0574237bb39567dddf26ef1284db644d94",
+      "preimage8": "70b5031c0904090c",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "ordinary_beam_hit_guard",
+      "address": "0x80505ac",
+      "end_inclusive_export": "0x08050654",
+      "range_bytes": 170,
+      "instruction_sha256": "1c7b20d7b4f558678cd19bd57a46073994e9cd9903f47536837914ba4086f15b",
+      "preimage8": "f0b557464e464546",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [
+        "0x08050370",
+        "0x08050424",
+        "0x080504ac",
+        "0x080504cc",
+        "0x080540ec"
+      ],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "charged_beam_hit_guard",
+      "address": "0x8050654",
+      "end_inclusive_export": "0x080506fc",
+      "range_bytes": 170,
+      "instruction_sha256": "2f9572a6b216c25dc80c8c66a4b26b0f11614b0ad7e6121e09aad69d9e37a689",
+      "preimage8": "f0b557464e464546",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [
+        "0x08050370",
+        "0x08050424",
+        "0x080504ac",
+        "0x080504cc",
+        "0x080540ec"
+      ],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "ice_hit_guard_and_freeze",
+      "address": "0x8050724",
+      "end_inclusive_export": "0x08050828",
+      "range_bytes": 262,
+      "instruction_sha256": "1f050eab26302fc01da5a4337ab7dbce3f7343ba2d98f0af04dffa3588350a61",
+      "preimage8": "f0b557464e464546",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [
+        "0x08050370",
+        "0x080503a0",
+        "0x08050424",
+        "0x080504ac",
+        "0x080504cc",
+        "0x080506fc",
+        "0x080540ec"
+      ],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "freeze_state_apply",
+      "address": "0x80506fc",
+      "end_inclusive_export": "0x08050722",
+      "range_bytes": 40,
+      "instruction_sha256": "9bece488755769752f1664641f12ac86722166036c9a49a8bd6f3257c0a062fa",
+      "preimage8": "00b5021c30300170",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [
+        "0x08002b20"
+      ],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "missile_hit",
+      "address": "0x80509dc",
+      "end_inclusive_export": "0x08050a7c",
+      "range_bytes": 162,
+      "instruction_sha256": "8a9381d211e269ebc142f3d4fea2e103a767801aacb19b602297e861e52a798e",
+      "preimage8": "f0b557464e464546",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [
+        "0x08050370",
+        "0x08050424",
+        "0x080504ac",
+        "0x080504cc",
+        "0x08050914",
+        "0x08051b74",
+        "0x080540ec"
+      ],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "super_missile_hit",
+      "address": "0x8050a7c",
+      "end_inclusive_export": "0x08050b16",
+      "range_bytes": 156,
+      "instruction_sha256": "74aade11a51aea6b782224ed01bd7373c54e05c46512bf80274d6991d4893755",
+      "preimage8": "f0b54f464646c0b4",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [
+        "0x08050370",
+        "0x08050424",
+        "0x080504ac",
+        "0x080504cc",
+        "0x08050914",
+        "0x08051cc4",
+        "0x080540ec"
+      ],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "aimed_projectile_movement",
+      "address": "0x804f954",
+      "end_inclusive_export": "0x0804fa18",
+      "range_bytes": 198,
+      "instruction_sha256": "97af7d8db66d3f5be18f2ab0cfa0973aba8002134eef40b44c688d5c748b55fa",
+      "preimage8": "30b5041c09060a0e",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [
+        "0x0808ac34"
+      ],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "ordinary_beam_update",
+      "address": "0x8050b64",
+      "end_inclusive_export": "0x08050c54",
+      "range_bytes": 242,
+      "instruction_sha256": "9ca921cb5900a07706b508eb4618e73bfcf56b0c5652b365632a481e8a3c3c00",
+      "preimage8": "10b5041c607c0228",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [
+        "0x0804f954",
+        "0x0804fa3c",
+        "0x0804fd48",
+        "0x080540ec"
+      ],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "long_beam_update",
+      "address": "0x8050c5c",
+      "end_inclusive_export": "0x08050d40",
+      "range_bytes": 230,
+      "instruction_sha256": "f4774497b5d2e3047b5f7b07dc3e483ed40866dcfa06259b0bac656ea50c8737",
+      "preimage8": "10b5041c607c0228",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [
+        "0x0804f954",
+        "0x0804fa3c",
+        "0x0804fd48",
+        "0x080540ec"
+      ],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "ice_beam_update",
+      "address": "0x8050d48",
+      "end_inclusive_export": "0x08050e5e",
+      "range_bytes": 280,
+      "instruction_sha256": "d14a1db401992ee879078ac4a05ff27ea8a72a0f004c0ccebfcbb4e87a6bd17a",
+      "preimage8": "10b5041c607c0228",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [
+        "0x0804f954",
+        "0x0804fa3c",
+        "0x0804fc38",
+        "0x0804fd48",
+        "0x080540ec"
+      ],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "missile_acceleration_update",
+      "address": "0x8051bac",
+      "end_inclusive_export": "0x08051cc4",
+      "range_bytes": 282,
+      "instruction_sha256": "60cd2336e2cbed0f7bb62f7be9ca3d0ed921f659943e104895ea9825f4e35a6b",
+      "preimage8": "10b5041c607c0228",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [
+        "0x0804f954",
+        "0x0804fa3c",
+        "0x0804fc38",
+        "0x0804fce0",
+        "0x0804fd48",
+        "0x08051b74",
+        "0x080540ec"
+      ],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "super_missile_acceleration_update",
+      "address": "0x8051cfc",
+      "end_inclusive_export": "0x08051e14",
+      "range_bytes": 282,
+      "instruction_sha256": "667382a94e9e5a1762c2557fd216af85b018f6a0bc634773c2e7dba86a549eff",
+      "preimage8": "10b5041c607c0228",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [
+        "0x0804f954",
+        "0x0804fa3c",
+        "0x0804fc38",
+        "0x0804fce0",
+        "0x0804fd48",
+        "0x08051cc4",
+        "0x080540ec"
+      ],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "incoming_enemy_contact_damage",
+      "address": "0x800e634",
+      "end_inclusive_export": "0x0800e6f8",
+      "range_bytes": 198,
+      "instruction_sha256": "c6e33cfb8e11a5688fb48129e41e08c95f408d171c3b1c98f1a60e0c3c56d798",
+      "preimage8": "f0b50b1c0006070e",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [
+        "0x080074e8",
+        "0x0808ac34"
+      ],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    },
+    {
+      "name": "collectible_resource_grants",
+      "address": "0x8012e98",
+      "end_inclusive_export": "0x08012fee",
+      "range_bytes": 344,
+      "instruction_sha256": "0fc77275627be75ce2b19216e24342b96f04b11a89d8477a80be0cb8051f5cf1",
+      "preimage8": "00b5064a101c2630",
+      "isa": "thumb",
+      "recovery_status": "ROM_static_semantic_review",
+      "dependency_calls": [],
+      "notes": "Range uses retained exported start/end, including instruction branch bodies. ABI and all paths need focused native qualification; no claim of dynamically closed package."
+    }
+  ],
+  "mechanics": {
+    "beam_equipment": {
+      "address": "0x0300153d",
+      "notes": "Beam equipped bitfield.0x0300153f is suit/movement equipment, not beam field."
+    },
+    "firing": {
+      "ref": "0x0804ee88 +0x0804ed94",
+      "projectile_capacity": {
+        "ordinary": 6,
+        "charged": 2
+      },
+      "successful_shot_cooldown": 7,
+      "successful_shot_secondary_timer": 4,
+      "timing_status": "Native timer values established; exact input/update phase must be kept by host adapter"
+    },
+    "beam_damage": {
+      "ref": "0x0804fd9c",
+      "ordinary_by_projectile_kind": {
+        "0": 2,
+        "1": 3,
+        "2": "3+equipped_bit1",
+        "3": "3+bit1+bit2",
+        "4": "branch based bits1/2/4: range3..6; reproduce branch tree, not flat sum"
+      },
+      "charged_by_kind": {
+        "6": 8,
+        "7": 12,
+        "8": "12+4*bit1",
+        "9": "12+4*bit1+4*bit2",
+        "10": "branch based bits1/2/4: range12..24"
+      },
+      "notes": "Values are accepted hit damage arguments; vulnerability/block/deflection guards apply first."
+    },
+    "vulnerability": {
+      "ref": "0x08050370",
+      "table_primary": "0x082b0d68",
+      "table_secondary": "0x082b1be4",
+      "stride": 18,
+      "species_offset": 29,
+      "flags_offset": 4,
+      "table_select": "enemy+0x32 bit0x80",
+      "ordinary_required_mask": 2,
+      "charged_required_any_mask": 3,
+      "missile_required_mask": 8,
+      "super_required_any_mask": 12,
+      "block_flag": "enemy+0x32 bit8",
+      "deflect_flag": "enemy+0x32 bit0x40"
+    },
+    "missiles": {
+      "normal_damage": 20,
+      "super_damage": 100,
+      "refs": [
+        "0x080509dc",
+        "0x08050a7c"
+      ],
+      "normal_speed": "phase1 speed=(counter+8) untilcounter12; steady48 native position units/update",
+      "super_speed": "phase1 speed=(counter+12) untilcounter16; steady48 native units/update",
+      "direction": "0x0804f954 maps aim: diagonal floor(7*speed/10); horizontal/vertical direct; direction flag and inherited Samus motion considered"
+    },
+    "beam_speed": {
+      "ordinary_entry": "0x08050b64",
+      "ordinary_steady_native_units": 20,
+      "long_entry": "0x08050c5c",
+      "long_steady_native_units": 24,
+      "ice_entry": "0x08050d48",
+      "ice_steady_native_units": 26,
+      "first_motion_native_units": 16,
+      "unit_caution": "Projectile/world positions use native quarter-pixel convention suggested by render conversion; bridge must explicitly convert to Sonic Q8 and verify displacement. Do not copy raw20 as20pixels."
+    },
+    "damage_transaction": {
+      "ref": "0x08050424",
+      "HP_offset": 20,
+      "rule": "damage<HP subtracts; damage>=HP zeros HP and enters death phase",
+      "death_writes": {
+        "+0x32": "OR0x10",
+        "+0x30": 0,
+        "+0x20": 0,
+        "+0x24": 98,
+        "+0x26": 1
+      },
+      "any_hit_writes": {
+        "+0x2b": "(old&0x80)|0x11",
+        "+0x32": "OR2"
+      },
+      "notes": "Transient fields are retained numeric flags, not all named invincibility frames. Death/drop ownership must be separately bound."
+    },
+    "ice": {
+      "ref": "0x080503a0 +0x08050724 +0x080506fc",
+      "nonlethal_freeze": 240,
+      "freeze_timer_offset": 48,
+      "animation_tick_rule": "enemy+0x20=15-(enemy+0x33+enemy+0x1f)",
+      "eligibility_mask": 64,
+      "notes": "Cannot treat every enemy as freezable: vulnerability bits, charged mask and frame/equipment interplay gate freeze."
+    },
+    "incoming_damage": {
+      "ref": "0x0800e634",
+      "source": "(u16multiplier*enemy_descriptor_contact_damage_at+2)&0xffff",
+      "suit_scaling": {
+        "0x153f&0x30==0x30": "half",
+        "0x20": "multiply7/10",
+        "0x10": "multiply8/10",
+        "neither": "unchanged"
+      },
+      "difficulty": "0x0300002c==0 halves;==2 doubles low15bits;other unchanged",
+      "minimum": 1,
+      "energy_current": "0x03001536",
+      "fatal": "damage>=energy sets energy0 and requests pose0xfa",
+      "notes": "Damage rule established; recoil/iframes require caller/state phase recovery, do not infer from constants alone."
+    },
+    "resource_pickups": {
+      "ref": "0x08012e98",
+      "by_pickup_type": {
+        "0x1f": {
+          "resource": "energy",
+          "amount": 5
+        },
+        "0x20": {
+          "resource": "energy",
+          "amount": 20
+        },
+        "0x21": {
+          "resource": "missile",
+          "amount": 2
+        },
+        "0x22": {
+          "resource": "super_missile",
+          "amount": 2
+        },
+        "0x23": {
+          "resource": "power_bomb",
+          "amount": 1
+        },
+        "0x24": {
+          "resource": "energy",
+          "amount": 60
+        }
+      },
+      "cap_rule": "Each addition clamps to current resource maximum",
+      "capacity_current_addresses": {
+        "energy": [
+          "0x03001530",
+          "0x03001536"
+        ],
+        "missile": [
+          "0x03001532",
+          "0x03001538"
+        ],
+        "super_missile": [
+          "0x03001534",
+          "0x0300153a"
+        ],
+        "power_bomb": [
+          "0x03001535",
+          "0x0300153b"
+        ]
+      }
+    }
+  },
+  "qualification": {
+    "status": "static_semantics_for_bounded_native_bridge",
+    "dynamic_witnesses": [],
+    "not_claimed": [
+      "Full enemy AI/stage ecology",
+      "All weapon combinations dynamically qualified",
+      "Drop probabilities and full pickup spawning behavior",
+      "Native iframe duration or recoil magnitude",
+      "Closed cross-game component package"
+    ]
+  }
+}

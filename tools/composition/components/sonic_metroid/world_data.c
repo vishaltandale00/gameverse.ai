@@ -20,6 +20,11 @@ const GvStageSpec gv_stages[18]={
 {"ARENA","FOLLOW THE SIGNAL",2,0,0,0,{{3,1,0,0,200,0},{4,0,1,0,500,0}}},
 {"ARENA","FOLLOW THE SIGNAL",2,0,0,0,{{3,1,0,0,200,0},{4,0,1,0,500,0}}},
 };
+const GvReturnSpec gv_return_variants[]={
+{0,1,1,7,15,24},
+{0,3,2,7,14,24},
+};
+const unsigned gv_return_variant_count=2;
 const char *const gv_messages[]={
 "","",
 "DISTRESS FROM BELOW","B FIRE  R+B MISSILE  L AIM",
