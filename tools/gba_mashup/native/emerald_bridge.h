@@ -1,7 +1,7 @@
 #ifndef GAMEVERSE_EMERALD_BRIDGE_H
 #define GAMEVERSE_EMERALD_BRIDGE_H
 
-/* Version 1: native singles encounter bridge. All state belongs to the GBA ROM.
+/* Version 2: native singles encounter bridge. All state belongs to the GBA ROM.
  * No heap, host RPC, or external model is involved in combat resolution. */
 typedef unsigned char GvU8;
 typedef unsigned short GvU16;
@@ -32,6 +32,10 @@ typedef struct {
  * A fainted active player must choose a healthy replacement; this is free.
  * Switching a healthy active player consumes a turn. Invalid actions return 0. */
 void GvBattleBegin(GvBattle *state, GvU32 seed, GvU8 area);
+void GvBattleBeginWild(GvBattle *state, GvU32 seed, GvU8 area, GvU16 species, GvU8 preserveParty);
+void GvBattleRescueParty(GvBattle *state);
+const GvU16 *GvFieldTiles(GvU16 species);
+const GvU16 *GvFieldPalette(GvU16 species);
 GvU8 GvBattleChooseEnemyAction(GvBattle *state);
 GvU8 GvBattleTurn(GvBattle *state, GvU8 action);
 const char *GvMoveName(GvU16 move);

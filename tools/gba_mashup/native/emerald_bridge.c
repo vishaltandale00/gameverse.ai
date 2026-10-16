@@ -76,6 +76,7 @@ static u16 Random(void)
 
 #include "generated/emerald_extracts.inc"
 #include "generated/emerald_sprites.inc"
+#include "generated/emerald_field_sprites.inc"
 
 static const u16 gvLoadouts[3][4] = {
     {MOVE_TACKLE, MOVE_VINE_WHIP, MOVE_RAZOR_LEAF, MOVE_MEGA_DRAIN},
@@ -99,6 +100,13 @@ const char *GvMoveName(u16 move)
     case MOVE_BUBBLE: return "BUBBLE";
     case MOVE_SURF: return "SURF";
     case MOVE_STRUGGLE: return "STRUGGLE";
+    case MOVE_BITE: return "BITE";
+    case MOVE_WING_ATTACK: return "WING ATTACK";
+    case MOVE_LEECH_LIFE: return "LEECH LIFE";
+    case MOVE_ROCK_THROW: return "ROCK THROW";
+    case MOVE_MUD_SLAP: return "MUD SLAP";
+    case MOVE_ABSORB: return "ABSORB";
+    case MOVE_PECK: return "PECK";
     default: return "UNKNOWN";
     }
 }
@@ -182,6 +190,58 @@ void GvBattleBegin(GvBattle *state, u32 seed, u8 area)
         mon->status1 = 0;
         for(j=0;j<4;j++) { mon->moves[j] = gvLoadouts[i][j]; mon->pp[j] = gBattleMoves[mon->moves[j]].pp; }
     }
+}
+
+/* Wild adaptation: one source-linked opponent; player HP/PP/status survive
+ * the transition. Only a fresh party or explicit rescue initializes members. */
+void GvBattleBeginWild(GvBattle *state, u32 seed, u8 area, u16 species, u8 preserveParty)
+{
+    GvCombatant saved[3];
+    const struct GvSpeciesSeed *info=0;
+    GvCombatant *mon;
+    u16 moves[4];
+    u8 i,j,index=state->playerIndex;
+    if(preserveParty && state->magic==0x47564231)
+        for(i=0;i<3;i++)saved[i]=state->player[i];
+    else preserveParty=0;
+    GvBattleBegin(state,seed,area);
+    if(preserveParty) {
+        for(i=0;i<3;i++)state->player[i]=saved[i];
+        state->playerIndex=index<3 && state->player[index].hp?index:GvFirstHealthy(state->player);
+    }
+    for(i=0;i<ARRAY_COUNT(gvSpeciesSeeds);i++)if(gvSpeciesSeeds[i].species==species)info=&gvSpeciesSeeds[i];
+    if(!info)info=&gvSpeciesSeeds[3];
+    mon=&state->enemy[0];
+    mon->name=info->name;mon->species=info->species;
+    mon->types[0]=info->types[0];mon->types[1]=info->types[1];mon->ability=info->ability;
+    mon->level=14+(area%4)*2;
+    mon->maxHP=(2*info->stats[0]+15)*mon->level/100+mon->level+10;mon->hp=mon->maxHP;
+    mon->attack=(2*info->stats[1]+15)*mon->level/100+5;
+    mon->defense=(2*info->stats[2]+15)*mon->level/100+5;
+    mon->spAttack=(2*info->stats[3]+15)*mon->level/100+5;
+    mon->spDefense=(2*info->stats[4]+15)*mon->level/100+5;
+    mon->speed=(2*info->stats[5]+15)*mon->level/100+5;mon->status1=0;
+    moves[0]=MOVE_TACKLE;moves[1]=MOVE_QUICK_ATTACK;moves[2]=MOVE_BITE;moves[3]=MOVE_SCRATCH;
+    switch(mon->species) {
+    case SPECIES_ZUBAT: moves[0]=MOVE_LEECH_LIFE;moves[1]=MOVE_WING_ATTACK;break;
+    case SPECIES_GEODUDE: moves[0]=MOVE_ROCK_THROW;moves[1]=MOVE_MUD_SLAP;break;
+    case SPECIES_PARAS: moves[0]=MOVE_ABSORB;moves[1]=MOVE_LEECH_LIFE;break;
+    case SPECIES_WINGULL: moves[0]=MOVE_WATER_GUN;moves[1]=MOVE_WING_ATTACK;break;
+    default: break;
+    }
+    for(j=0;j<4;j++){mon->moves[j]=moves[j];mon->pp[j]=gBattleMoves[moves[j]].pp;}
+    state->enemyIndex=0;
+    for(i=1;i<3;i++){state->enemy[i].hp=0;state->enemy[i].maxHP=0;state->enemy[i].species=0;}
+}
+
+void GvBattleRescueParty(GvBattle *state)
+{
+    u8 i,j;
+    for(i=0;i<3;i++) {
+        state->player[i].hp=state->player[i].maxHP;state->player[i].status1=0;
+        for(j=0;j<4;j++)state->player[i].pp[j]=gBattleMoves[state->player[i].moves[j]].pp;
+    }
+    state->playerIndex=0;
 }
 
 static u16 GvBestMove(GvBattle *state, GvCombatant *a, GvCombatant *d, u8 *slot)

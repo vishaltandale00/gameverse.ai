@@ -19,13 +19,15 @@ def hashed(path):
 
 def make_profile(rom, elf, source_root, source_commit):
     root = Path(source_root).resolve()
-    result = subprocess.run(['arm-none-eabi-nm', '-n', str(Path(elf).resolve())],
+    result = subprocess.run(['arm-none-eabi-nm', '-S', '-n', str(Path(elf).resolve())],
                             capture_output=True, text=True, check=True, timeout=10)
-    symbols = {}
+    symbols, sizes = {}, {}
     for line in result.stdout.splitlines():
         parts = line.split()
-        if len(parts) == 3:
-            try: symbols[parts[2]] = int(parts[0], 16)
+        if len(parts) in (3,4):
+            try:
+                symbols[parts[-1]] = int(parts[0], 16)
+                if len(parts)==4:sizes[parts[-1]]=int(parts[1],16)
             except ValueError: pass
     fields = []
     def add(name, symbol, offset, size, signed=False, source=None):
@@ -46,6 +48,8 @@ def make_profile(rom, elf, source_root, source_commit):
     add('movement_lock_timer', 'gPreventMovementTimer', 0, 2, source='include/structs/samus.h:gPreventMovementTimer')
     add('drawing_disabled', 'gDisableDrawingSamusAndScrolling', 0, 1, source='include/structs/samus.h:gDisableDrawingSamusAndScrolling')
     bridge_metadata = None
+    sprite_array = None
+    defeated_array = None
     if 'gGvBattle' in symbols:
         add('gv_magic', 'gGvBattle', 0, 4, source='tools/gba_mashup/native/emerald_bridge.h:GvBattle')
         for name, offset, size in [('active',4,1),('result',5,1),('turn',6,2),('weather',8,1),
@@ -76,16 +80,48 @@ def make_profile(rom, elf, source_root, source_commit):
                 if a in constants and b in constants and c in constants:chart.append([constants[a],constants[b],constants[c]/10])
         bridge_metadata={'moves':moves,'type_chart':chart,'species_names':{str(constants['SPECIES_'+n]):n for n in ['BULBASAUR','CHARMANDER','SQUIRTLE']},
                          'source_files':[hashed(native/p) for p in ['emerald_bridge.h','gv_native.c','generated/emerald_extracts.inc','generated/emerald_constants.h']]}
+        bridge_metadata['species_names'] = {str(v):k.removeprefix('SPECIES_') for k,v in constants.items() if k.startswith('SPECIES_')}
+    if 'gGvWildLink' in symbols:
+        for name,offset,size in [('identity',0,4),('species',4,2),('x',6,2),('y',8,2),('ram_slot',10,1),
+                ('native_sprite_id',11,1),('area',12,1),('room',13,1),('active',14,1),('resolution',15,1),('wins',16,2),('retreats',18,2)]:
+            add('gv_wild_'+name,'gGvWildLink',offset,size,source='tools/gba_mashup/native/gv_native.h:GvWildLink')
+        for name,symbol,size in [('gv_defeated_count','gGvDefeatedCount',2),('gv_party_initialized','gGvPartyInitialized',1)]:
+            add(name,symbol,0,size,source='tools/gba_mashup/native/gv_native.h:'+symbol)
+        for name,symbol,size in [('gv_world_draw_identity','gGvWorldDrawIdentity',4),('gv_world_draw_species','gGvWorldDrawSpecies',2),('gv_world_draw_count','gGvWorldDrawCount',4)]:
+            if symbol in symbols:add(name,symbol,0,size,source='tools/gba_mashup/native/gv_native.h:'+symbol)
+        if 'gGvDefeatedIdentities' in symbols:
+            if sizes.get('gGvDefeatedIdentities')!=128*4:raise ValueError('Unreviewed defeated ledger layout')
+            defeated_array={'address':hex(symbols['gGvDefeatedIdentities']),'count':128,'source_ref':'tools/gba_mashup/native/gv_native.c:gGvDefeatedIdentities'}
+        native_text=(native/'gv_native.c').read_text()
+        enum_text=(root/'include/constants/sprite.h').read_text()
+        primary=re.search(r'MAKE_ENUM\(u8, PrimarySprite\)\s*\{(.*?)\};',enum_text,re.S).group(1)
+        if '=' in primary or '#' in primary:raise ValueError('Unreviewed primary sprite enum')
+        ids={name:i for i,name in enumerate(re.findall(r'\bPSPRITE_\w+\b',primary))}
+        mapper=native_text.split('static GvU16 GvWildSpecies',1)[1].split('static GvU32 GvWildIdentity',1)[0]
+        mapping={}
+        for cases,species in re.findall(r'((?:\s*case\s+PSPRITE_\w+\s*:)+)\s*return\s+(\d+)\s*;',mapper):
+            for name in re.findall(r'case\s+(PSPRITE_\w+)',cases):mapping[str(ids[name])]=int(species)
+        if not mapping:raise ValueError('Wild species mapping unavailable')
+        bridge_metadata['wild_mapping']=mapping
+        bridge_metadata['wild_mapping_source']='GvWildSpecies switch + pinned MZM PrimarySprite enum; copied source hashes retained'
+        if sizes.get('gSpriteData')!=24*56:
+            raise ValueError('Unreviewed native sprite array layout')
+        sprite_array={'address':hex(symbols['gSpriteData']),'count':24,'stride':56,
+          'source_ref':'include/structs/sprite.h:SpriteData,MAX_AMOUNT_OF_SPRITES;include/constants/sprite.h',
+          'fields':[{'name':name,'offset':offset,'bytes':size} for name,offset,size in [
+             ('status',0,2),('y_native',2,2),('x_native',4,2),('health',20,2),('sprite_id',29,1),
+             ('room_slot',30,1),('pose',36,1),('collision_kind',37,1),('properties',50,1)]]}
     return {'schema_version': 1, 'reader': 'mzm-source-layout/1', 'rom_sha256': hashed(rom)['sha256'],
             'elf': hashed(elf), 'source_commit': source_commit,
             'source_files': [hashed(root / p) for p in ['include/structs/samus.h', 'include/constants/samus.h',
-                'include/constants/game_state.h', 'include/types.h', 'src/globals1.c']],
+                'include/constants/game_state.h', 'include/types.h', 'src/globals1.c']+
+                (['include/structs/sprite.h','include/constants/sprite.h'] if sprite_array else [])],
             'units': {'x_native': 'quarter pixels, source SUB_PIXEL_RATIO=4', 'y_native': 'quarter pixels, positive down',
                       'vx_native': '1/32 pixel/frame, applied signed shift >>3 then quarter-pixel position',
                       'vy_native': '1/32 pixel/frame; positive is rising in Samus jump integrator'},
             'phase_rules': [{'equals': {'game_mode': 4, 'sub_mode': 2}, 'phase': 'gameplay'},
                             {'equals': {'game_mode': 4}, 'phase': 'game_transition'}],
-            'fields': fields, 'battle_metadata':bridge_metadata, 'limitations': ['ARM fixed-width source struct layout; no unverified RAM writes.',
+            'fields': fields, 'battle_metadata':bridge_metadata, 'native_sprite_array':sprite_array,'defeated_identity_array':defeated_array, 'limitations': ['ARM fixed-width source struct layout; no unverified RAM writes.',
                 'gameplay phase alone does not prove player control; compare action-conditioned source RAM changes.',
                 'No objective completion or route traversability inferred merely from changed frames.']}
 

@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "recipe_id": "mzm-emerald-wilds-v2",
+  "title": "Metroid \u00d7 Pok\u00e9mon: Wilds",
+  "runtime_target": "gba",
+  "role": "separate_fork",
+  "save_policy": "fresh independent fork progress; full emulator checkpoints preserve Pok\u00e9mon party and defeated-actor ledger; vanilla MZM SRAM does not persist bridge state",
+  "parent_games": [
+    {
+      "game_id": "metroid-zero-mission",
+      "source_commit": "9caaefc0ee570f3399d86acf140fdeada9692836",
+      "role": "whole campaign foundation"
+    },
+    {
+      "game_id": "pokemon-emerald-version",
+      "source_commit": "731ad5bfd6e6f265508d0efcca0ba42f9dcf5881",
+      "role": "extracted native combat code, tables and sprite assets"
+    }
+  ],
+  "design_choices": [
+    {
+      "id": "perspective",
+      "label": "Side-view world",
+      "mode": "parent",
+      "parent_game_id": "metroid-zero-mission",
+      "implementation": "Retain actual room rendering, collision, camera, HUD and world source"
+    },
+    {
+      "id": "movement",
+      "label": "Metroid movement",
+      "mode": "parent",
+      "parent_game_id": "metroid-zero-mission",
+      "component_ids": [
+        "ground_locomotion",
+        "jump_and_gravity"
+      ],
+      "implementation": "Retain native Samus code and all campaign equipment behaviors"
+    },
+    {
+      "id": "progression",
+      "label": "Explore and unlock",
+      "mode": "parent",
+      "parent_game_id": "metroid-zero-mission",
+      "component_ids": [
+        "ability_gating_graph"
+      ],
+      "implementation": "Retain entire campaign, native equipment gates, bosses, maps and save system"
+    },
+    {
+      "id": "combat",
+      "label": "Your party versus one wild",
+      "mode": "bridge",
+      "parent_game_id": "pokemon-emerald-version",
+      "component_ids": [
+        "trainer_ai_move_scoring",
+        "trainer_ai_switch_and_items"
+      ],
+      "implementation": "One species-matched opponent from actual source actor contact; extracted Emerald damage/type data plus reduced singles turn bridge",
+      "fidelity": "adapted subset; full AI bytecode interpreter and trainer item policy are not ported"
+    },
+    {
+      "id": "weather",
+      "label": "Area changes the matchup",
+      "mode": "bridge",
+      "parent_game_id": "pokemon-emerald-version",
+      "component_ids": [
+        "overworld_weather_effects"
+      ],
+      "implementation": "Map current MZM area modulo three to clear/rain/sun; extracted Emerald damage calculation reads native weather bits",
+      "fidelity": "new cross-game mapping; Emerald overworld weather renderer is not ported"
+    },
+    {
+      "id": "setting",
+      "label": "Zebes campaign",
+      "mode": "parent",
+      "parent_game_id": "metroid-zero-mission",
+      "implementation": "Retain actual story, rooms, assets and campaign structure"
+    },
+    {
+      "id": "companions",
+      "label": "Three Pok\u00e9mon party",
+      "mode": "bridge",
+      "parent_game_id": "pokemon-emerald-version",
+      "implementation": "Bulbasaur, Charmander and Squirtle form the persistent player party; HP, PP, status and selected active member survive encounters; full-party defeat restores party at an energy cost"
+    },
+    {
+      "id": "tone",
+      "label": "Pok\u00e9mon field creatures",
+      "mode": "custom",
+      "evidence_status": "design intent",
+      "implementation": "Safe mapped native ordinary actors draw Paras, Geodude, Zigzagoon, Zubat or Wingull using extracted Pok\u00e9mon indexed pixels; source Metroid AI/hitboxes retained"
+    }
+  ],
+  "dependency_decisions": [
+    {
+      "id": "world_vs_battle_display",
+      "resolution": "Original pause resource backup and world reload path; native Mode3 during combat; original OBJ allocation replaced only if it is not shared with an unmapped/different-species actor or overlapping earlier allocation"
+    },
+    {
+      "id": "encounter_trigger",
+      "resolution": "Real native hitbox contact with an eligible rendered Pok\u00e9mon actor only. No SELECT entry or health-loss trigger. Frozen actors keep original solid collision behavior."
+    },
+    {
+      "id": "battle_world_outcome",
+      "resolution": "Victory resolves the exact area/room/roomSlot/nativeId identity through source SpriteUtilSpriteDeath and rewards8Samus energy. Ledger suppresses defeated actor on reload without duplicate drops. Retreat keeps it alive. Full-party KO restores party and halves nontrivial Samus energy.180gameplay-frame contact cooldown."
+    },
+    {
+      "id": "actor_mapping",
+      "resolution": "Zoomer yellow/red\u2192Paras; Zeela\u2192Geodude; red Zeela\u2192Zigzagoon; Ripper brown/purple\u2192Zubat; Waver/unused Waver\u2192Wingull. Bosses, story actors and shared dependent enemy graphics remain native."
+    },
+    {
+      "id": "source_art",
+      "resolution": "Wingull/Zigzagoon use Emerald overworld frames. Zubat/Geodude/Paras use actual Emerald battle-front frames adapted to32px field art, identified in extraction provenance. All battle art remains original64px source art."
+    },
+    {
+      "id": "persistence",
+      "resolution": "Party and128-entry bounded defeated-identity ledger live in native IWRAM and full browser checkpoints. No vanilla SRAM bridge extension; ledger evicts oldest only after128unique wins."
+    },
+    {
+      "id": "combat_dependencies",
+      "resolution": "Reviewed singles/no held items/no badge states; reduced damage-scoring AI. Full Emerald scripts, capture/evolution and broad effects remain unsupported."
+    },
+    {
+      "id": "original_request_bounds",
+      "resolution": "Whole source campaign is retained. Later human clarification selects side-view Metroid movement and Pok\u00e9mon combat; old toy-grid bounds do not truncate world."
+    }
+  ],
+  "build": {
+    "entry": "tools/gba_mashup/build_mzm.py",
+    "native": "tools/gba_mashup/native",
+    "extraction": "tools/gba_mashup/extract_emerald.py",
+    "rom_inputs": "local exact-hash originals only",
+    "jobs": 4,
+    "make_timeout_s": 240
+  },
+  "qualification": {
+    "entry": "tools/gba_playtest/run.py",
+    "required": [
+      "actual_source_contact",
+      "matching_single_wild",
+      "pokemon_field_rendered",
+      "party_persisted",
+      "exact_actor_resolved",
+      "world_frozen_during_battle",
+      "exploration_control_restored",
+      "native_player_attack",
+      "native_party_switch",
+      "single_wild_enemy_only",
+      "player_party_three_present",
+      "defeated_ledger_incremented"
+    ],
+    "full_campaign_completion": "unqualified"
+  },
+  "unsupported": [
+    "Arbitrary bundles are not automatically linkable",
+    "Complete Emerald runtime/AI scripts, held items, capture, evolution",
+    "Pok\u00e9mon conversion for every enemy/boss/story actor",
+    "Party/ledger persistence in vanilla MZM SRAM",
+    "Unbounded defeated history (128entries; oldest evicted)",
+    "Full campaign regression qualification"
+  ]
+}

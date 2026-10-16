@@ -12,10 +12,11 @@ import re
 import subprocess
 
 COMMIT = "731ad5bfd6e6f265508d0efcca0ba42f9dcf5881"
-SPECIES = ("BULBASAUR", "CHARMANDER", "SQUIRTLE")
+SPECIES = ("BULBASAUR", "CHARMANDER", "SQUIRTLE", "ZUBAT", "GEODUDE", "PARAS", "WINGULL", "ZIGZAGOON")
 MOVES = ("TACKLE", "VINE_WHIP", "RAZOR_LEAF", "MEGA_DRAIN", "SCRATCH",
          "EMBER", "FLAMETHROWER", "QUICK_ATTACK", "POUND", "WATER_GUN",
-         "BUBBLE", "SURF", "STRUGGLE")
+         "BUBBLE", "SURF", "STRUGGLE", "BITE", "WING_ATTACK", "LEECH_LIFE",
+         "ROCK_THROW", "MUD_SLAP", "ABSORB", "PECK")
 
 
 def sha(data):
@@ -94,7 +95,7 @@ def extract(source, out):
         types = re.search(r"\.types\s*=\s*\{([^}]+)\}", entry).group(1).strip()
         ability = re.search(r"\.abilities\s*=\s*\{\s*(\w+)", entry).group(1)
         species_rows.append('{"' + name + '", SPECIES_' + name + ', {' + types + '}, {' + ', '.join(stats) + '}, ' + ability + '}')
-    species_table = "static const struct GvSpeciesSeed gvSpeciesSeeds[3] = {\n" + ",\n".join(species_rows) + "\n};"
+    species_table = "static const struct GvSpeciesSeed gvSpeciesSeeds[] = {\n" + ",\n".join(species_rows) + "\n};"
 
     # Keep only constants reachable from selected source, including transitive
     # object-like macro references. Reject conflicts rather than guessing values.
@@ -153,10 +154,48 @@ def extract(source, out):
                 records.append({"path": asset, "sha256": sha((source / asset).read_bytes()), "transform": "first 64x64 indexed frame; canonical normal.pal; RGB555; palette0 transparent0x8000"})
     sprites.append("const GvU16 *GvSpeciesSprite(GvU16 species, GvU8 back) {\n switch(species) {\n" + "\n".join("case SPECIES_" + n + ": return back ? gvSprite_" + n + "_back : gvSprite_" + n + "_front;" for n in SPECIES) + "\n default: return 0; }\n}")
     outputs["emerald_sprites.inc"] = "\n".join(sprites) + "\n"
+
+    # Two native 32x32 field frames packed as four 16x16 OBJ parts per frame.
+    # MZM uses 2D OBJ mapping: each 16x16 part spans tile n,n+1,n+32,n+33.
+    # Packing four parts along a row leaves both frames within one 64-tile
+    # (2048 byte) original spriteset allocation. No new reserved VRAM is assumed.
+    fields = []
+    for name in SPECIES[3:]:
+        field_path = source / ("graphics/object_events/pics/pokemon/" + name.lower() + ".png")
+        if field_path.exists():
+            image = Image.open(field_path)
+            w = 16 if image.width == 16 else 32
+            colors = [tuple(image.getpalette()[i:i+3]) for i in range(0,48,3)]
+            frames = [image.crop((0, i*w, w, (i+1)*w)).resize((32,32), Image.Resampling.NEAREST) for i in (0,1)]
+            asset_path = str(field_path.relative_to(source))
+            transform = "native overworld indexed frames0,1; nearest 16to32 upscale where needed; PNG palette; packed MZM 2D OBJ"
+        else:
+            asset_path = "graphics/pokemon/" + name.lower() + "/front.png"
+            image = Image.open(source / asset_path)
+            colors = [tuple(map(int,row.split())) for row in (source / ("graphics/pokemon/" + name.lower() + "/normal.pal")).read_text().splitlines()[3:] if row.strip()]
+            frames = [image.crop((0, i*64, 64, (i+1)*64)).resize((32,32),Image.Resampling.NEAREST) for i in (0,1)]
+            transform = "source battle-front indexed frames0,1 adapted to field at32x32 nearest-neighbor; canonical normal.pal; packed MZM 2D OBJ; not original overworld art"
+        tiles = bytearray(2048)
+        for frame_index, frame in enumerate(frames):
+            for y in range(32):
+                for x in range(0,32,2):
+                    quadrant = (y//16)*2+x//16
+                    local_x,local_y=x%16,y%16
+                    tile = frame_index*8 + quadrant*2 + (local_y//8)*32 + local_x//8
+                    pos=tile*32+(local_y%8)*4+(local_x%8)//2
+                    tiles[pos]=frame.getpixel((x,y)) | (frame.getpixel((x+1,y))<<4)
+        pal=[(r>>3)|((g>>3)<<5)|((b>>3)<<10) for r,g,b in colors]
+        words=[tiles[i]|(tiles[i+1]<<8) for i in range(0,len(tiles),2)]
+        fields.append("static const GvU16 gvField_"+name+"[1024]={"+",".join(hex(x) for x in words)+"};")
+        fields.append("static const GvU16 gvFieldPal_"+name+"[16]={"+",".join(hex(x) for x in pal)+"};")
+        records.append({"path":asset_path,"sha256":sha((source/asset_path).read_bytes()),"transform":transform})
+    fields.append("const GvU16 *GvFieldTiles(GvU16 species) {switch(species){"+"".join("case SPECIES_"+n+":return gvField_"+n+";" for n in SPECIES[3:])+"default:return 0;}}")
+    fields.append("const GvU16 *GvFieldPalette(GvU16 species) {switch(species){"+"".join("case SPECIES_"+n+":return gvFieldPal_"+n+";" for n in SPECIES[3:])+"default:return 0;}}")
+    outputs["emerald_field_sprites.inc"]="\n".join(fields)+"\n"
     manifest = {"schema_version": 1, "source": "https://github.com/pret/pokeemerald", "source_commit": revision,
-                "extraction_version": 1, "source_spans": records,
+                "extraction_version": 2, "source_spans": records,
                 "output_sha256": {name: sha(data.encode()) for name, data in outputs.items()},
-                "limitations": ["Not the full Emerald battle engine or AI bytecode interpreter", "Bridge singles state, three species and selected moves only", "MZM world/gameplay retained by separate native integration", "Raw generated assets remain local and are not added to git"]}
+                "limitations": ["Not the full Emerald battle engine or AI bytecode interpreter", "Reduced singles state, eight species and selected moves; wild has exactly one opponent", "MZM world/gameplay retained by separate native integration", "Raw generated assets remain local and are not added to git"]}
     for name, data in outputs.items():
         (out / name).write_text(data)
     (out / "provenance.json").write_text(json.dumps(manifest, indent=2) + "\n")

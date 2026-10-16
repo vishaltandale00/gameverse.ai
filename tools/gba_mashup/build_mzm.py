@@ -104,6 +104,20 @@ def install_native(work, native):
     if marker not in text:
         raise ValueError("Pinned gameplay insertion marker missing")
     game.write_text(text.replace(marker, addition, 1))
+    sprite = work / "src/sprite.c"
+    text = '#include "gv_native.h"\n' + sprite.read_text()
+    text = text.replace("    prevSlot = gNextOamSlot;", "    if (GvWildDraw(pSprite, slot)) return;\n    prevSlot = gNextOamSlot;", 1)
+    text = text.replace("            SpriteDebrisProcessAll();", "            SpriteDebrisProcessAll();", 1)
+    text = text.replace("        SpriteDebrisProcessAll();", "        GvWildWorldTick();\n        SpriteDebrisProcessAll();", 1)
+    text = text.replace("    // Load spriteset\n    SpriteLoadSpriteset();", "    GvWildInvalidateGraphics();\n    // Load spriteset\n    SpriteLoadSpriteset();", 1)
+    text += "\nunsigned int GvSourceGraphicsBytes(unsigned char id) { const unsigned char *p; if (id < 17 || id >= PSPRITE_COUNT) return 0; p = (const unsigned char *)sSpritesGraphicsPointers[PSPRITE_OFFSET_FOR_GRAPHICS(id)]; return p[1] | (p[2] << 8) | (p[3] << 16); }\n"
+    sprite.write_text(text)
+    collision = work / "src/sprite_util.c"
+    text = '#include "gv_native.h"\n' + collision.read_text()
+    marker = "        gIgnoreSamusAndSpriteCollision = FALSE;"
+    if marker not in text: raise ValueError("Pinned collision hook missing")
+    text = text.replace(marker, "        if (GvWildContact(pSprite)) continue;\n\n" + marker, 1)
+    collision.write_text(text)
     return {str(p.relative_to(native)): digest(p) for p in sorted(native.rglob("*")) if p.is_file()}
 
 def main():
@@ -190,7 +204,7 @@ with Path(target).open('a') as f: f.write('\\t.align 2, 0 @ dont insert nops\\n'
         wrapper.write_text('#!/usr/bin/env python3\nimport os,sys\nfrom pathlib import Path\na=sys.argv[1:]\nos.execvp("cc",["cc","-E","-x","c"]+a+([] if any(Path(x).is_file() for x in a if not x.startswith("-")) else ["-"]))\n')
         wrapper.chmod(0o755)
         if args.native:
-            original = {name: (work / name).read_text() for name in ["src/agbmain.c", "src/in_game.c", "linker.ld", "Makefile"]}
+            original = {name: (work / name).read_text() for name in ["src/agbmain.c", "src/in_game.c", "src/sprite.c", "src/sprite_util.c", "linker.ld", "Makefile"]}
             report["native_source_sha256"] = install_native(work, args.native.resolve())
             patch = work.parent / (work.name + "-source.patch")
             chunks = []

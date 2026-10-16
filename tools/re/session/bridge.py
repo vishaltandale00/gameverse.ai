@@ -128,6 +128,31 @@ class NativeSession:
             address = int(field['address'], 0) if isinstance(field['address'], str) else field['address']
             raw = self.read_memory(address, size)
             facts[field['name']] = int.from_bytes(raw, 'little', signed=field.get('signed', False))
+        array = self.memory_profile.get('native_sprite_array')
+        if array:
+            count, stride = array['count'], array['stride']
+            if type(count) is not int or not 1 <= count <= 24 or type(stride) is not int or not 1 <= stride <= 256:
+                raise ValueError('invalid_sprite_array_profile')
+            base = int(array['address'], 0)
+            sprites = []
+            for slot in range(count):
+                raw = self.read_memory(base + slot * stride, stride)
+                sprite = {'ram_slot': slot}
+                for field in array['fields']:
+                    offset, size = field['offset'], field['bytes']
+                    if type(offset) is not int or size not in (1, 2, 4) or not 0 <= offset <= stride - size:
+                        raise ValueError('invalid_sprite_field_profile')
+                    sprite[field['name']] = int.from_bytes(raw[offset:offset + size], 'little', signed=field.get('signed', False))
+                sprites.append(sprite)
+            facts['native_sprites'] = sprites
+        ledger = self.memory_profile.get('defeated_identity_array')
+        if ledger:
+            count = ledger['count']
+            if type(count) is not int or not 1 <= count <= 128:
+                raise ValueError('invalid_ledger_profile')
+            base = int(ledger['address'], 0)
+            raw = b''.join(self.read_memory(base + offset, min(256, count * 4 - offset)) for offset in range(0, count * 4, 256))
+            facts['gv_defeated_identities'] = [int.from_bytes(raw[i:i + 4], 'little') for i in range(0, len(raw), 4)]
         return facts
 
     def start_recording(self, stride=2):
