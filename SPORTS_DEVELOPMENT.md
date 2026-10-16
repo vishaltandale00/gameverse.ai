@@ -45,6 +45,27 @@ The catalog captures immutable, content-hashed module snapshots including the se
 
 This work extends Vishal's base-world and playable-subgame infrastructure. Shishir's independently owned improvement loop, algorithms and resource policies are unchanged; no automated generation or improvement pipeline is claimed integrated.
 
+## Main qualification — 2026-10-16
+
+The sports games are merged through [PR #14](https://github.com/vishaltandale00/gameverse.ai/pull/14), commit `b86969e`. Integration preserved the newer voice character creator: **229 tests passed in 1476.274625 ms** and the clean shell build took **27.1 ms**. The final harness correction has ten focused passing tests in **65.504625 ms**. No dependency or routine CI stage was added.
+
+Lean **4.35.0** was reinstalled from the official Apple Silicon release, with SHA-256 matching the published `c0c6f34f35ba1dcc5c4a5fd106fefab9eb5e8469712624dd2c868d51b63177c2`. Download, checksum, extraction and version check took **19.69 s**, separate from verification. Fresh audit `sports-lean-2026-10-16T19-24-23.799Z` passed **15 theorems** and exact sports/geometry generated-byte checks in **4.266 s**. The numerical proof boundary in [SPORTS.md](verification/SPORTS.md) still applies; this is not whole-game verification.
+
+[Retained qualification metadata](verification/SPORTS_QUALIFICATION.json) includes source hashes, commits, toolchain, per-stage timing, API usage, replay hashes, and all four live runs. Raw request/response logs remain under ignored local `artifacts/sports-decisions/`; they are not shipped with the game.
+
+| Live run, 200 Decisions calls each | Result after 50 simulated seconds | Wall time | Offline replay |
+| --- | --- | --- | --- |
+| Original soccer policy | Remained on ready screen; no gameplay | 52.029 s | Exact final-state match, 1.693 s |
+| Original football policy | 0–24, human–CPU | 49.413 s | Exact final-state match, 2.569 s |
+| Soccer after menu-choice correction | 0–0; human team 10 passes, 5 shots, 2 tackles; CPU 13 passes, 3 shots | 56.716 s | Exact final-state match, 1.945 s |
+| Football after menu-choice correction | 0–42; six throws to receiver A, all intercepted; no human completion | 50.210 s | Exact final-state match, 2.618 s |
+
+The first soccer run spent its budget choosing ineffective gameplay buttons on the ready screen. The harness now offers confirm/wait and available play-selection buttons during menu phases, while leaving live gameplay choices unrestricted. It does not start a match or choose an outcome on the model's behalf. That correction is source commit `bea737a`; game/input/physics sources did not change. All four runs used the real Decisions endpoint with `gpt-6-luna`, `classic-sports-v1`, and the real input adapter. Each run was capped at 200 calls and 180 wall seconds, for 800 calls total. Concurrent sports runs must not have their wall times summed as critical-path duration.
+
+These are useful failures as well as positive coverage: soccer now exercises passes, shots and defense, while football exposes a weak policy that repeatedly lobs/touches the same covered receiver and fails to defend. No live run selected a right-stick skill. Therefore these runs **do not qualify skill coverage, physical-controller feel, match balance, or a complete match**. Earlier browser journeys demonstrate the skill and receiver-catch paths separately. Every recorded run replayed exactly, with source hashes unchanged and no simulation validation errors.
+
+The following sections retain earlier evidence, including the now-resolved missing-toolchain failure.
+
 ## Classic-controls verification — 2026-10-16
 
 The current controls above were checked through the real input adapter and in the rendered browser. [Verification metadata](artifacts/classic-controls/verification.json) binds source hashes, toolchain context and limitations; [test output](artifacts/classic-controls/tests.log) retains the full final local suite. **219 tests passed in 1608.074583 ms**, including receiver selection, actual catches, trajectory types, contextual action isolation, neutral gates, voice cancellation and fixed-step input retention. This is local execution time, not CI queue time. No CI job or dependency was added.
