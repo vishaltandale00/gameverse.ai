@@ -2,6 +2,8 @@
 
 Version: 0.1 · Date: 2026-10-15 · Status: proposed delivery contract
 
+Owner: Shishir. Vishal owns the base game, subgame hosting and host-controlled activation. External loop work is underway per Vishal; this document does not certify its implementation. The proposed joint handoff is recorded in [TASKS.md](../TASKS.md).
+
 Implements PRD R04–R14 and improvement-related R15 behavior, using the [base-game](BASE_GAME.md) and [subgame](SUBGAME.md) interfaces. This task changes games; base-game play and manually installed subgames must work independently.
 
 ## Ownership and integration

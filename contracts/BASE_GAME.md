@@ -2,6 +2,8 @@
 
 Version: 0.1 · Date: 2026-10-15 · Status: proposed delivery contract
 
+Owner: Vishal, including subgame navigation, play, progress and host-controlled activation. Shishir owns the separate creation/improvement loop. The base must be independently usable while that integration is unavailable.
+
 Implements PRD R01, R03, R15 and R16, and the hosting portion of R05/R10. Read alongside [the subgame contract](SUBGAME.md), [the improvement contract](IMPROVEMENT_LOOP.md) and [the task split](../TASKS.md).
 
 The base game must support a complete play journey before the improvement worker exists. This contract separates persistent home/hosting behavior from the contents of a subgame and from the system that changes games. A distinct playable home is the proposed interpretation of the latest direction; its visual layout, engine and avatar customization remain open.

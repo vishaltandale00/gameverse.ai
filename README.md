@@ -13,15 +13,19 @@ A single-player browser environment for playing games and developing them throug
 | [Subgame contract](contracts/SUBGAME.md) | Versioned games, runtime interface, progress and qualification |
 | [Improvement loop contract](contracts/IMPROVEMENT_LOOP.md) | Voice requests, builds, verification and safe updates/forks |
 | [Delivery tasks](TASKS.md) | Separate work packages, dependencies and evidence gates |
+| [Base game implementation plan](plans/BASE_GAME.md) | Staged work from the first complete play journey through two-game hosting and recovery |
+| [Tracking issue #1](https://github.com/vishaltandale00/gameverse.ai/issues/1) | Base-game and subgame-hosting contract, plan and acceptance checklist |
 | [Engineering handoff](HANDOFF.md) | Existing evidence, technical starting points and prerequisites |
 | [Domain language](CONTEXT.md) | Shared meaning of base game, subgame, version, fork and checkpoint |
 | [Publication preparation](PUBLICATION.md) | Repository contents, remaining publication decisions and checks |
 
 ## Delivery split
 
-1. **Base game and subgame hosting:** create/select a character, play in the home, enter independently installed games, save, return and resume. This journey works without an AI worker.
-2. **Complete FireRed subgame:** reproduce the pinned baseline, integrate a browser runtime and qualify controls, progress and campaign coverage through the shared host interface.
-3. **Game creation and improvement loop:** speak/correct requests, continue playing during builds, verify real behavior, apply compatible updates and create separate forks/mashups.
+1. **Vishal — base game and subgame hosting:** create/select a character, play in the home, enter independently installed games, save, return and resume. This journey works without an AI worker.
+2. **Vishal — complete FireRed baseline integration:** reproduce the pinned baseline, integrate a browser runtime and qualify controls, progress and campaign coverage through the shared host interface.
+3. **Shishir — game creation and improvement loop:** speak/correct requests, continue playing during builds, verify real behavior, apply compatible updates and create separate forks/mashups. Work is underway externally per Vishal; repository integration remains unimplemented.
+
+The shared handoff is a versioned subgame artifact/adapter, exact feedback context, verification evidence and host-controlled activation. See [TASKS.md](TASKS.md) for proposed responsibilities at each integration point.
 
 The task split changes delivery dependencies, not the full product promise. Fixtures do not replace FireRed; parameter edits alone do not satisfy the mechanic-development requirement. Browser/engine selection and home layout remain open implementation/design decisions.
 
@@ -31,4 +35,6 @@ The task split changes delivery dependencies, not the full product promise. Fixt
 
 `POC_DESIGN.md`, `BROWSER_DESIGN.md`, `BASE_GAME_CANDIDATES.md`, `ENGINE_COMPARISON.md` and `RESEARCH.md` are historical investigations. `design/processor.example.json` and `design/request_examples.json` are historical examples, not current runtime configuration. `design/game_proposal.example.json` illustrates proposal data; it is not an executable schema or test result.
 
-Publication of this planning repository is separate from distributing game artifacts. A repository license has not been selected. Third-party runtime, code and asset permissions must be evaluated separately before packaging them.
+## License
+
+Original Gameverse material is available under the [MIT license](LICENSE). Third-party research excerpts retain their original rights; see [third-party notices](THIRD_PARTY_NOTICES.md). Publishing this planning repository does not distribute FireRed or grant rights to package third-party games, runtimes or assets.
