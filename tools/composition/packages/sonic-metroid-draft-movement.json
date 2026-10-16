@@ -65,7 +65,7 @@
         }
       ],
       "lift_ref": "tools/composition/components/sonic_metroid/movement.c",
-      "lift_sha256": "9be8f5aaedb0ec40be128e11a0b1180cfbd0edaaec25b853ae9c3ca0c0811d09",
+      "lift_sha256": "c0f6ae2c34483281e10165ed899b2cc89228f03fcb4d139cb382447b45dd57a0",
       "semantic_status": "new_authored_bridge_using_recovered_mechanics",
       "dependency_closure": {
         "status": "closed",
@@ -114,7 +114,37 @@
         "jump",
         "integrate",
         "gravity"
-      ]
+      ],
+      "motion_authority": {
+        "modes": [
+          "precision",
+          "surface_flow",
+          "external_attachment",
+          "inherited_launch"
+        ],
+        "transfers": [
+          {
+            "guard": "actorflags&0x400008==0x400008",
+            "to": "external_attachment",
+            "effect": "campaign.momentum=1; nativeexternalobjectownsposition"
+          },
+          {
+            "guard": "nativeobjectfreshAedge clearsattachment",
+            "to": "inherited_launch",
+            "effect": "preserve Sonicgravity/integration/release"
+          },
+          {
+            "guard": "flatground abs(tangent)<64",
+            "to": "precision"
+          },
+          {
+            "guard": "explicitL+A,zero tangent,vx<128,true staticwall,noattachment",
+            "to": "precision",
+            "effect": "wallkick may occur"
+          }
+        ],
+        "evidence_ref": "research/requests/sonic-native-traversal-contract.json"
+      }
     }
   ],
   "authorship": {
@@ -131,11 +161,19 @@
       "sources": [
         {
           "ref": "tools/composition/components/sonic_metroid/movement.c",
-          "sha256": "9be8f5aaedb0ec40be128e11a0b1180cfbd0edaaec25b853ae9c3ca0c0811d09"
+          "sha256": "c0f6ae2c34483281e10165ed899b2cc89228f03fcb4d139cb382447b45dd57a0"
         },
         {
           "ref": "tools/composition/components/sonic_metroid/game.h",
-          "sha256": "a9eac0a4f9bbae2bb518785e13a72499011d02b22575a777529fc172ebb1b90e"
+          "sha256": "1cfc5f73d4a64284f09fabede386f21a133a5424f109b6a689ba0dc296cdf28a"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+          "sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30"
+        },
+        {
+          "ref": "research/requests/sonic-native-traversal-contract.json",
+          "sha256": "074a32e69a3c52b7b13dcd421f10fb5a298fe79e796baa381c069b84336c27ea"
         }
       ],
       "translation_units": [

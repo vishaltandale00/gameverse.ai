@@ -601,7 +601,7 @@
         "instance": "geometry",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-geometry.json",
-          "sha256": "1153b9ba94be63d1bac91b37b98c8827d9ea9ce967d8476a980549579a512533"
+          "sha256": "1c0444f0e04987a936bdf42751b2c5a4e4467b3ba143bd03c63614fccb6d231d"
         }
       },
       {
@@ -650,14 +650,14 @@
         "instance": "movement",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-movement.json",
-          "sha256": "695dff33a97c097eba0a87f6dc16be06bb790c97cfc44a8e36b39abed15a6e42"
+          "sha256": "63a424e2a3532831c15d279007b808382a7e48ce62a720c6bea0b44a7e4ed6d8"
         }
       },
       {
         "instance": "world",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-world.json",
-          "sha256": "8c3f36a3087a695e7381fe0953c13222f430a2aa3f6664ff673cc84dc412eeaf"
+          "sha256": "9d64424ea0617ef10f223e6bdea37953acf005d8250eef55ab9123a59ed6731e"
         }
       },
       {
@@ -678,7 +678,7 @@
         "instance": "schedule",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-schedule.json",
-          "sha256": "7ac873e6b259935b455e66bf8975d4f04cfdde9a1ecf9ddc19b63f6e7d79139b"
+          "sha256": "f404496c31d188e6e1b317787b8306892d9b6f126f292ae6a77d392cd5ad8075"
         }
       },
       {

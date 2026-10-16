@@ -1,0 +1,90 @@
+{
+  "schema": "gameverse.native-traversal-contract/1",
+  "candidate": {
+    "ref": "local/composition-builds/sonic-metroid-signal-descent-23/game.gba",
+    "sha256": "362e89249e2e72c6ae6fc3e31ef91e6186d543b9be50bcb573a9665360e68930"
+  },
+  "ranges": [
+    {
+      "address": "0x8087640",
+      "size": 2348,
+      "instruction_sha256": "34398324a1372927fc7bf2ee10631e62dda199ea08a32a206c9ff524874724da",
+      "role": "moving-handle attachment catch/ride/A-release",
+      "boundary_status": "own-export candidate includes indirect-return warning; no claim of full-function decompilation",
+      "semantics": "retained native implementation; only reviewed state transitions cited below"
+    },
+    {
+      "address": "0x80238cc",
+      "size": 388,
+      "instruction_sha256": "c109b7455733aee532c28aca9dac6030330b7fba6e2a7240b7762d6a41c30bfb",
+      "role": "native rectangle collision-plane transition",
+      "boundary_status": "own-export candidate includes indirect-return warning; no claim of full-function decompilation",
+      "semantics": "retained native implementation; only reviewed state transitions cited below"
+    }
+  ],
+  "state_contract": {
+    "world": "originalSonicUSA campaign; worldpixelsYdown; velocityQ8",
+    "collision_plane": {
+      "address": "0x03005a47",
+      "width": 8,
+      "selection": "actualplayerbyte lowbit; both0and1valid",
+      "transition": "original080238CC actor-rectangle trigger species0x11 clearsbit0,otherssetsbit0 (with native mode6 specialcase0x0c); retained native authority"
+    },
+    "moving_handle": {
+      "source": "0x08087640",
+      "attachment": "flags|0x400008,pose38,objectpointerplayer+0x28; original sourcecontrolsactorposition",
+      "release": "freshAedge originalnativejumpkeymask givesvy-0x500; Left/Right assignvx\u00b10x200; originalsourceclears0x400008,sets0x102,spinpose5",
+      "bridge": "attachment transfers mode toFLOW; retain nativeSonicgravity/integration/release until normalgroundarrest or explicitL+A staticwallarrest",
+      "returned_to_precision": "flatgroundabs(tangent)<64; or explicitL+A zero-tangent genuinewallarrest. Never on movingloop/attachment."
+    }
+  },
+  "native_witness": {
+    "ref": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-23-qualified-factory2-chain/native-handle-transfer/report.json",
+    "sha256": "ecd2b654fa16086dbd67e2d5f4c0e6d02f9baf90a62861962f6bde531b42bd9d"
+  },
+  "entry_witness": {
+    "ref": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-23-qualified-factory2-chain/report.json",
+    "sha256": "b21c5406a6c1367ee6ac44e7b2a5c24f57de5d169f83c0aa3d20c53382fa059c"
+  },
+  "release_event": {
+    "name": "native-release-impulse",
+    "frame": 123,
+    "x": 2206.00390625,
+    "y": 927.0,
+    "vx": -511,
+    "vy": -1238,
+    "flags": 263,
+    "pose": 5,
+    "momentum": 1
+  },
+  "upperwest_landing": {
+    "name": "upperwest-native-floor",
+    "frame": 267,
+    "x": 1933.59375,
+    "y": 899.84375,
+    "vx": 0,
+    "vy": 0,
+    "flags": 1,
+    "pose": 0,
+    "momentum": 0
+  },
+  "outcome": "wallkick/powergrip\u2192secondhandle\u2192firsthandle\u2192upperwest nativefloor passed with realinputs",
+  "retained_failed_probe": {
+    "ref": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-23-qualified-factory2/report.json",
+    "sha256": "3af08afc6493b359e59e594f7254ee0620927cd2374280fadb3777687bdca635"
+  },
+  "failed_probe_reason": "One-frame input sample preceded original task/input phase; corrected bytwoactualframes, nochange togame forprobe repair",
+  "timing": {
+    "clean_build_s": 0.7192,
+    "fresh_prefix_s": 8.77039825,
+    "factory_s": 4.682827417,
+    "factory2_chain_s": 1.572824541,
+    "queue_s": null,
+    "note": "Separate stages; noaggregatehardwareperformanceclaim"
+  },
+  "remaining": [
+    "Upperwest onward/remainingFactoryboss/latecampaign stillunqualified",
+    "Fixedwindow source-guided route depends on supplied exact-native checkpoint ancestry",
+    "Packed terrain suppression and nativeplane switches are necessary; simpleplane1floor survey isnot a routeproof"
+  ]
+}

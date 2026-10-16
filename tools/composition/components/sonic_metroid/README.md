@@ -80,7 +80,11 @@ Campaign state lives in a native persistent 1536-byte TaskCreate allocation,
 not guessed free RAM. Full emulator checkpoints preserve it. A cold boot starts
 a fresh campaign; this draft does not extend Sonic's SRAM save format. Entity
 pools and rendering allocations are bounded. Source/header layouts are explicit
-in `game.h`, and geometry uses the actual player collision plane at +0x27.
+in `game.h`, and geometry uses the actual player collision plane at +0x27. Both
+planes are valid; original native area triggers switch them. The moving-handle
+attachment transfers authority to Sonic FLOW so its release keeps the original
+flight arc. Wall kicks, powergrip, both original handles and the upperwest
+landing are witnessed in `research/requests/sonic-native-traversal-contract.json`.
 
 The complete game code and campaign graph can build, but qualification is
 tracked per actual native scenario and exact cartridge hash. A successful coast

@@ -13,6 +13,12 @@ static int ordinary(GvState *s,GvPlayer *p)
 {return s && !s->momentum && !(GV_R16(0x03005004)&128) && (p->flags&0x100) && p->pose==5 && p->angle==0;}
 void gv_movement_step(GvState *s,GvPlayer *p,uint16_t keys,uint16_t edges)
 {
+    /* Own-ROM moving-handle controller0x08087640 sets flags0x400008 while
+     * attached and releases into native5px upward/2px horizontal launch.
+     * Attachment is an explicit transfer of motion authority. Keep that
+     * launch's original tangent/gravity/release until normal ground arrest;
+     * otherwise the precision controller silently halves its reachable arc. */
+    if((p->flags&0x400008)==0x400008)s->momentum=1;
     int grounded=!(p->flags&2);
     if(grounded){
         if(!p->angle && gv_abs(p->speed)<64)s->momentum=0;

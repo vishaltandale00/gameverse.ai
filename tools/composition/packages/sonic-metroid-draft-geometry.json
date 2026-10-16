@@ -91,6 +91,10 @@
         {
           "ref": "research/requests/sonic-recovered-terrain.c",
           "sha256": "561144e3fdc4d9092036ac3e15e9edd4434cf73b841db3fb4f46effc935334c7"
+        },
+        {
+          "ref": "research/requests/sonic-native-traversal-contract.json",
+          "sha256": "074a32e69a3c52b7b13dcd421f10fb5a298fe79e796baa381c069b84336c27ea"
         }
       ],
       "translation_units": [

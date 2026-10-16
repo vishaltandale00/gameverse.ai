@@ -93,7 +93,7 @@
         },
         {
           "ref": "tools/composition/worlds/sonic-metroid-signal-descent.json",
-          "sha256": "19e1218b675cc9d2befdecc5d1d7210e5cac9f268c9fd0949bd30f9c1d761288"
+          "sha256": "8e81fff0d8742bef0dcb90da608ac4ddbd96123a773caaf78126da2e5936a34e"
         },
         {
           "ref": "tools/composition/components/sonic_metroid/compile_world.py",

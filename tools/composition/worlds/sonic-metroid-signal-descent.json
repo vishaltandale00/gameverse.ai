@@ -16,7 +16,7 @@
     "floor_offset": "pixels relative to recovered nearby floor at activation; lookup nearest player-height route",
     "activation_radius_px": 180,
     "bounded_geometry_search_px": "symmetric112px about current route floor",
-    "terrain_layer": "native player+0x27; never silently use the empty plane0",
+    "terrain_layer": "Actual native player+0x27 lowbit selects0or1; both are valid. Retain native rectangular plane switches at0x080238CC; never hardcode one plane.",
     "scripted_contact_rule": "Freeze tutorial belongs to open-air coast; Factory low ceiling and external-motion rail admit beam seals only.",
     "freeze_gateway_clearance": "Coast1130..1190 has no upper platform; do not place the support under the native elevated platforms beginning near1224."
   },
