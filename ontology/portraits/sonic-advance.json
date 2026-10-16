@@ -45,6 +45,12 @@
         ],
         "confidence": 0.85,
         "scope": "Two retained scene thumbnails inspected; supports visible framing/motifs, not control, physics, full plot or completed playthrough."
+      },
+      {
+        "kind": "self_decompilation",
+        "ref": "research/requests/sonic-self-decomp-evidence.json",
+        "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+        "scope": "Own USA gameplay bundles: jump, steering/release, geometry/scanner/headroom/attachedcontact with actual original-vs-emitted instructions; two native composition graphs produce baseline parity and bounded hybrid gameplay. Full campaign/ecology unqualified."
       }
     ],
     "category_basis": "Editorial taxonomy from mixed source, observed scenes and explicitly unverified prior; categories are not proof of implemented or extracted rules.",
@@ -118,7 +124,19 @@
       ],
       "bridge_options": [
         "Keep side-view stages and a top-down world as separate modes.",
-        "Use a shared height axis rather than interpreting northward movement as a jump."
+        "Use a shared height axis rather than interpreting northward movement as a jump.",
+        {
+          "id": "metroid_controls_sonic_momentum",
+          "label": "Metroid controls with Sonic ramps and loops",
+          "status": "partial_native_candidate_bounded_gameplay_observed",
+          "rule": "Preserve Sonic surface tangent velocity, slope gravity, loop contacts and external impulses; use compatible Metroid controls elsewhere. No blanket ordinary speed cap on inherited launches.",
+          "implementation_refs": [
+            "tools/composition/plans/sonic-metroid-jump-airborne.json",
+            "research/requests/metroid-sonic-native-bridge.package.json",
+            "research/requests/sonic-recovered-jump.package.json"
+          ],
+          "qualification": "Actual native hybrid initialvy-1536/gravity80;720frame earlytraversalzero death. Stateless transferguard/fullloops/campaign andMZMcombat/ecology remainunqualified. Sonicrelease/groundsteering stillretained."
+        }
       ],
       "evidence": [
         {
@@ -292,10 +310,23 @@
             }
           ],
           "scope": "Supports the named mechanism; preserve granular record caveats."
+        },
+        {
+          "kind": "self_decompilation",
+          "ref": "research/requests/sonic-self-decomp-evidence.json",
+          "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+          "scope": "Own USA instructions, four-leaf differential checks and bounded native input/motion witnesses; whole controller/campaign not qualified"
+        },
+        {
+          "kind": "self_decompilation",
+          "ref": "research/requests/sonic-self-decomp-evidence.json#deep_gameplay_recovery",
+          "scope": "Complete jumpentry and attached/headroomterrain dependencybundles recovered; actualnativecandidate materializes selected ordinaryairbehavior. No generic pausedcombat/perspectiveconversion requirement follows."
         }
       ],
       "status": "source_supported_partial",
-      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification.",
+      "rom_recovery_status": "partial_motion_arithmetic_differentially_checked",
+      "recovered_behavior": "Surface angle projects scalar ground speed into world X/Y. Ground/air mode and external impulses remain explicit movement authorities. Early release shortens the actual jump."
     },
     {
       "id": "sonic-advance:combat",
@@ -1287,6 +1318,15 @@
       "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f003126_scene.png": "a8243954ea699a85ce6b27e38a5312f5f1445b20bee316209735a3b06f3dfd8d",
       "local/captures-experiments/20261016-current-scripts/sonic-advance/gameplay/keyframes/f005389_scene.png": "89d03557ed8652fa881da9923000001d207c9299e8a8d5dbc69637ad235e43ee"
     },
-    "source_inspection_notes": "Canonical component evidence is inherited; direct new source story anchors, when present, are marked separately."
+    "source_inspection_notes": "Canonical component evidence is inherited; direct new source story anchors, when present, are marked separately.",
+    "direct_rom_motion_evidence": "research/requests/sonic-self-decomp-evidence.json",
+    "canonical_file_sha256": "fb5d04d6901baeb5c84abb53068300c7c1adbd1d77f1c194f8ecf2cc66041761",
+    "direct_rom_geometry_evidence": "research/requests/sonic-self-decomp-evidence.json#terrain_recovery",
+    "direct_rom_gameplay_packages": [
+      "research/requests/sonic-recovered-jump.package.json",
+      "research/requests/sonic-recovered-contact.package.json",
+      "research/requests/sonic-recovered-air-control.package.json"
+    ],
+    "native_composition_evidence": "research/requests/sonic-self-decomp-evidence.json#native_composition_candidates"
   }
 }

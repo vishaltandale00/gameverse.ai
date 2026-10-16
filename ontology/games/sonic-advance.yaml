@@ -11,6 +11,7 @@ game:
   - momentum_platformer
   - action_platformer
   evidence_basis:
+  - ghidra_function
   - decomp_source
   - static_signature
   - capture_telemetry
@@ -18,6 +19,14 @@ game:
   - derived
   - llm_knowledge
   sources:
+  - kind: self_decompilation
+    ref: 'Exact indexed USA ROM d842afa7dd1e84de08addb94a51506f1bcafd551; own Ghidra run 20261016T024124-9effb4 expands 383 to 1929 candidate functions in 26.8s; 1815 have warnings. research/requests/sonic-self-decomp-evidence.json pins ranges, instruction hashes and explicit unknowns. No full decompilation or matching rebuild claimed. Five independently recovered motion leaves now emit220bytes of ARM7TDMI code and pass18774 original/emitted vectors; terrain lookup/both-axis profile outputs pass23040 vectors over18 stage headers and both layers.'
+  - kind: native_differential
+    ref: 'research/requests/sonic_motion_differential.c executes actual USA Thumb leaf functions versus independently recovered C: 4950 finite vectors / 126381 original instructions pass. Native ROM functions 0x08046F78, 0x08047078, 0x080470B4, 0x08047100; finite arithmetic evidence, not entire controller qualification.'
+  - kind: gameplay_witness
+    ref: 'Own native ROM probe research/requests/sonic_rom_probe.py; retained local/re/experiments/20261016-sonic-self-decompile/native-motion-branch-03/report.json and MP4. 794 sampled records, held versus early-release jump and720-frame slope traversal in1.083s; whole campaign unqualified.'
+  - kind: native_composition
+    ref: 'Self-recovered USA jump/headroom/terrain/air-control bundles: research/requests/sonic-self-decomp-evidence.json. Same native IR backend emits exact Sonic parity and Metroid ordinary jump/airborne variants. Native parity794samples and identical video; hybrid720frame traversal reachesX2125.03px withzero observed deathframes. Full ecology/combat/progression and wholecampaign qualification remain unfinished.'
   - kind: decomp
     ref: https://github.com/SAT-R/sa2 @ 393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d (no license file; local/decomps/sa2). SA1 is
       built with GAME_NAME=sa1 (config.mk GAME_REGION EUROPE, sa1.sha1 eb00f101... = 'Sonic Advance (Europe) (En,Ja,Fr,De,Es)'
@@ -52,8 +61,7 @@ conventions:
   time_convention: 60 frames per second (GBA_FRAMES_PER_SECOND); TIME(m,s) = (m*60+s)*60 frames.
   space_convention: 'Screen 240x160 px. Background tiles are 8 px; stage metatiles are 12x12 tiles = 96 px (camera.h
     METATILE_DIM); entity placement regions are 256 px (CAM_REGION_WIDTH).'
-  region_note: Decomp targets the European ROM; every decomp citation is EU-build code assumed identical in mechanics
-    for USA ASOE unless a USA ROM scan (static_signature) is cited. See open_questions.
+  region_note: 'Current recovery authority is the exact USA ROM and own instruction/native traces. Inherited community decomp citations below are comparative EU observations, not proof of USA semantics or a build gate. Independently recovered USA evidence is added only to reviewed components. See open_questions.'
 components:
 - id: boot_and_mode_flow
   facet: frontend
@@ -92,6 +100,10 @@ components:
   - type: part_of
     target: title_and_attract_demo
   evidence:
+  - kind: ghidra_function
+    ref: 'USA self-decompilation: 0x08001224 input edges and0x080016AC task callback dispatch; research/requests/sonic-self-decomp-evidence.json'
+    confidence: 0.9
+    note: 'Static binary review; task boundaries/ABI beyond these anchors remain partial.'
   - kind: capture_frame
     ref: capture:attract:frame 300 keyframe (language select, Japanese/English only, idles without input)
     confidence: 0.9
@@ -629,6 +641,10 @@ components:
   - type: part_of
     target: side_view_projection
   evidence:
+  - kind: ghidra_function
+    ref: 'USA self-decompilation: 0x0803E0B0 initialization and0x0803E3DC follow/deadzone/bounds; research/requests/sonic-self-decomp-evidence.json'
+    confidence: 0.9
+    note: 'Own lifted USA camera: x/y at0x030059D0/2, targets from actor position shifted8; horizontal8px deadzone and16px step, vertical12px step. Partial instruction review; whole camera not reconstructed.'
   - kind: decomp_source
     ref: sa2:src/game/shared/stage/camera.c:UpdateCamera
     confidence: 0.9
@@ -771,6 +787,10 @@ components:
     target: water_physics
     note: same code path with halved constants underwater
   evidence:
+  - kind: ghidra_function
+    ref: 'USA self-decompilation: 0x08047078 tangent projection; actor0x03005A20 derived at0x080454D8; research/requests/sonic-self-decomp-evidence.json'
+    confidence: 0.9
+    note: 'Original Thumb differential validates projection across256angles and9 signed speeds; actual RIGHT input accelerates positive X. Acceleration/top-speed state machine still separately partial.'
   - kind: decomp_source
     ref: sa2:src/game/shared/stage/player.c:Player_8043970
     confidence: 0.95
@@ -856,6 +876,10 @@ components:
   - type: modulates
     target: rolling
   evidence:
+  - kind: ghidra_function
+    ref: 'USA self-decompilation: 0x08046F78 slope acceleration and0x08047078 tangent projection; research/requests/sonic-self-decomp-evidence.json'
+    confidence: 0.9
+    note: 'Original Thumb versus recovered C passes4950 total vectors across four leaves.720-frame actual-USA traversal observes19 surface angles; full loop witness still missing.'
   - kind: decomp_source
     ref: sa2:src/game/shared/stage/player.c:sa2__sub_8029CA0
     confidence: 0.9
@@ -907,6 +931,13 @@ components:
   - type: part_of
     target: loops_and_collision_layers
   evidence:
+  - kind: decomp_source
+    ref: 'research/requests/sonic-recovered-contact.package.json; Own USA scanner/profile/geometry/headroom/attachedresponse closure; 9216vectors each scanner,headroom,attachedresponse over18geometrydefinitions. Airborne landingresponse outsidebundle.'
+    confidence: 0.95
+  - kind: ghidra_function
+    ref: 'USA self-decompilation: 0x08040080 metatile lookup and0x0803FE10/0x0803FF50 both-axis profile/angle probes,23040 original-Thumb comparisons over18 stage definitions; 0x0804386C terrain/contact quadrant dispatch and0x08047078 angle projection; research/requests/sonic-self-decomp-evidence.json'
+    confidence: 0.9
+    note: 'Own USA control flow and real slope angles establish angle-driven behavior; sensor/material transitive dependency closure remains incomplete.'
   - kind: decomp_source
     ref: sa2:include/core.h:struct Collision
     confidence: 0.9
@@ -1057,6 +1088,13 @@ components:
     target: character_ability_matrix
   evidence:
   - kind: decomp_source
+    ref: 'research/requests/sonic-recovered-jump.package.json; Own USA completejump initializer0x0804421C, all4characters, nativeheadroom/hitbox/sound;1000original-vs-emittedvectors. Recovered release dispatch0x0804463C separatelyqualified; native gravity42/12 remains Sonicbaseline.'
+    confidence: 0.95
+  - kind: ghidra_function
+    ref: 'USA self-decompilation: 0x0804421C jump,0x0804463C release,0x080470B4 integration,0x08047100 gravity; research/requests/sonic-self-decomp-evidence.json'
+    confidence: 0.9
+    note: 'Original Thumb differential confirms gravity+42 or+12 and signed halfword wrap; native matched-checkpoint branches show early release cuts upward velocity before gravity. Heights375.43vs411.78 are world-Y samples, not universal jump-apex heights.'
+  - kind: decomp_source
     ref: sa2:src/game/shared/stage/player.c:Player_TryJump
     confidence: 0.95
   - kind: decomp_source
@@ -1100,6 +1138,9 @@ components:
   - type: part_of
     target: jump_and_gravity
   evidence:
+  - kind: decomp_source
+    ref: 'research/requests/sonic-recovered-air-control.package.json; Own USA aircontrol0x0804456C and release/airability0x0804463C:24192basevectors+24nativecharacterabilitycases. Inheritedoverspeed preserved; hurt15 skipssteering. Abilitybody/taskstateclosure partial.'
+    confidence: 0.95
   - kind: decomp_source
     ref: sa2:src/game/shared/stage/player.c:Player_AirInputControls
     confidence: 0.95
@@ -3049,6 +3090,7 @@ proposed_concepts:
   label: Tempo-modulated music
   definition: Gameplay state changes the playback tempo of the current track rather than switching tracks.
 open_questions:
+- 'Current direct-ROM recovery is partial:1929 generated lifts include1815 warning-bearing functions. Five motion leaves and tile/profile query functions have finite original-instruction differential evidence; the whole controller, collision/world graph and full native mashup lowering remain incomplete. Community EU source is comparative only.'
 - 'Region mismatch: SAT-R/sa2 builds the European SA1 ROM (config.mk GAME_REGION EUROPE, sa1.sha1 eb00f101...,
   5 languages), our ROM is USA ASOE (d842af..., En/Ja). All decomp citations are EU code. Spindash tables and
   special-stage quotas were confirmed directly in the USA ROM at shifted offsets (-0x7004 and -0x7100 vs EU), so code
@@ -3067,8 +3109,7 @@ open_questions:
   (2841 lines); the component relies partly on low-confidence recall.
 - Bosses 2, 3, 4, 6 and the X Zone trio hit counts and attack patterns were not read; only Egg Hammer Tank, Mecha
   Knuckles and Super Egg Robo counts are cited.
-- Captures cover only front end and the first seconds of Neo Green Hill 1 (paused by the scripted START presses). No
-  gameplay physics, special stage, boss or attract-demo footage exists to confirm derived values.
+- '2026-10-16 direct-USA update: native probes now include held/released jump branches and720frames of controllable slope traversal. Special stages, bosses, full loops and complete campaign still lack qualification; prior front-end-only coverage is historical.'
 - Amy's unlock condition and the exact options menu contents were not traced in options.c/course_select.c.
 - 'gUnknown_080D650C/080D661C per-level teleport offsets in sub_80232D0 look like level wrap/shift points but their
   data (incbin) was not decoded.'

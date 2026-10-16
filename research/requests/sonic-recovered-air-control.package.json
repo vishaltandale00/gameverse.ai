@@ -1,0 +1,254 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "sonic.usa.air_control_release_bundle",
+  "version": "0.1-native-oracle",
+  "concept": {
+    "role": "movement.air_control",
+    "pattern": "Directional air steering with inherited momentum, variable jump release and once-per-flight character ability dispatch",
+    "facets": [
+      "mechanics",
+      "world_geometry"
+    ],
+    "editorial_bundle_ids": [
+      "sonic-advance:movement_view"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "sonic-advance",
+    "origin": "self_decompilation",
+    "sources": [],
+    "baseline_ref": "USA ROM SHA1d842afa7dd1e84de08addb94a51506f1bcafd551; immutable original execution oracle",
+    "compiler_ref": "local/re/experiments/20261016-sonic-self-decompile/native-lowering-02/receipt.json",
+    "abi": "See explicit lowering hooks/exports; all native entry identities pinned to exact USA ROM",
+    "recovery": {
+      "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+      "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "ranges": [
+        {
+          "address": "0x0804456c",
+          "size": 208,
+          "isa": "thumb",
+          "instruction_sha256": "42e25388417380f900263b7551a5a44888d03e681287b60f6fc57f50011da55a",
+          "name": "air_steering_and_drag",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0804463c",
+          "size": 218,
+          "isa": "thumb",
+          "instruction_sha256": "c77abe0c042d4020a121ec52792c39c18ed3eb290214abe896b770cd3149cfc1",
+          "name": "release_and_air_ability_dispatch",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        }
+      ],
+      "lift_ref": "research/requests/sonic-recovered-air-control.c",
+      "lift_sha256": "469c35c07da60fe561562316862103d39616de6607ba607426c51008796f54a0",
+      "semantic_status": "dynamically_confirmed",
+      "dependency_closure": {
+        "status": "partial",
+        "calls": [
+          "Sonic0x080478AC,0x08047FF0,0x08048114 nativeairabilityhostservices"
+        ],
+        "data": [],
+        "ram": [
+          "actorreviewedprefix",
+          "jumpmask0x030060E0",
+          "gamemode0x0300505C"
+        ],
+        "hardware": [],
+        "relocations": [
+          "PublicnativeABIwrapperboundtoexplicitpinnedhostROM"
+        ]
+      },
+      "dynamic_witness_refs": [
+        "local/re/experiments/20261016-sonic-self-decompile/air-control-differential-02/report.json"
+      ],
+      "unknowns": [
+        "NativeSonic/Tails/Knucklesabilitybodies notliftedhere",
+        "24192air/releasebasevectors+24realabilitybranchvectors compare144actorbytes; spawnedtaskworldstatenotcompared",
+        "MZMreleasecutsupwardvelocitytozero; separateownROMblockidentified0x08008DD4..0x08008DEA butnotassembledyet"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "input_held",
+      "direction": "in",
+      "type": {
+        "scalar": "u16",
+        "quantity": "button_mask",
+        "unit": "gba_key_bits",
+        "frame": "controller"
+      }
+    },
+    {
+      "id": "input_edges",
+      "direction": "in",
+      "type": {
+        "scalar": "u16",
+        "quantity": "button_mask",
+        "unit": "gba_key_bits",
+        "frame": "controller"
+      }
+    },
+    {
+      "id": "velocity",
+      "direction": "out",
+      "type": {
+        "scalar": "i16x2",
+        "quantity": "velocity",
+        "unit": "1/256px/frame",
+        "frame": "world_xy_y_down"
+      }
+    },
+    {
+      "id": "ability_event",
+      "direction": "out",
+      "type": {
+        "scalar": "native_ability_event",
+        "quantity": "event",
+        "unit": "native_frame",
+        "frame": "world"
+      }
+    }
+  ],
+  "states": [
+    {
+      "id": "actor_motion",
+      "type": {
+        "scalar": "native_actor_prefix",
+        "quantity": "position_velocity",
+        "unit": "mixed_native_fixed_point",
+        "frame": "world_xy_y_down"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "air_control_release_bundle",
+      "clock": "native_simulation_frame",
+      "phases": [
+        "air_horizontal_input",
+        "overspeed_preservation",
+        "upward_drag",
+        "jump_release",
+        "fresh_edge_character_ability"
+      ],
+      "reads": [
+        "actor_motion",
+        "input_edges",
+        "held_input",
+        "game_mode"
+      ],
+      "writes": [
+        "actor_motion",
+        "ability_used",
+        "character_ability"
+      ],
+      "invariants": [
+        "Preserveinheritedoverspeed byundoing acceleration insteadblanketclamp",
+        "Hurtpose15 disables steering",
+        "Native jump release occursbeforeairintegration",
+        "Airability usesfreshjumpedge andonceperairtime guard"
+      ],
+      "authority": "Sonic aircontrol and nativeability authority; MZM ordinary-releaseadapter notimplemented"
+    }
+  ],
+  "dependencies": {
+    "status": "partial",
+    "code": [],
+    "data": [],
+    "globals": [
+      "actorreviewedprefix",
+      "jumpmask0x030060E0",
+      "gamemode0x0300505C"
+    ],
+    "macros": [],
+    "hardware": [],
+    "host_services": [
+      "Sonic0x080478AC,0x08047FF0,0x08048114 nativeairabilityhostservices"
+    ],
+    "unsupported": [
+      "NativeSonic/Tails/Knucklesabilitybodies notliftedhere",
+      "24192air/releasebasevectors+24realabilitybranchvectors compare144actorbytes; spawnedtaskworldstatenotcompared",
+      "MZMreleasecutsupwardvelocitytozero; separateownROMblockidentified0x08008DD4..0x08008DEA butnotassembledyet"
+    ]
+  },
+  "extraction": {
+    "recipe_ref": "research/requests/sonic-recovered-air-control.c",
+    "preconditions": [
+      "Exact USA ROM hash",
+      "ROM instruction ranges and table hashes match manifest"
+    ],
+    "outputs": [
+      "research/requests/sonic-recovered-air-control.c"
+    ],
+    "semantic_changes": [
+      "Native release and steering behavior retained; airborne ability bodies remain pinned native services"
+    ]
+  },
+  "prefabs": [],
+  "policies": [],
+  "world": {
+    "projection": "side view",
+    "coordinates": "Q24.8 global position, signed Q8.8 velocity; +Y down",
+    "surface_angle": "256 steps per turn",
+    "authority_obligation": "Retain Sonic slope/loop contact and inherited launch velocity under human clarification"
+  },
+  "assets": [],
+  "narrative": {},
+  "editorial": {
+    "effect": "Directional air steering with inherited momentum, variable jump release and once-per-flight character ability dispatch",
+    "status": "Own-ROM native component finitequalified; whole-campaign behavior unqualified"
+  },
+  "lowering": {
+    "status": "implemented",
+    "backend": "ARM7TDMI self-recovered component, native_v1 hooks proposed",
+    "recipe_ref": "research/requests/sonic-recovered-air-control.c",
+    "hooks": [
+      {
+        "id": "air_control",
+        "address": "0x804456c",
+        "size": 8,
+        "preimage_hex": "f0b5041c206b4600",
+        "preimage_sha256": "1f5db5ca6247f4c50b49ce253a585666b3f9943d8a2077fd11eed038703401f0",
+        "export": "sonic_recovered_air_control",
+        "return": "void",
+        "args": [
+          "ptr"
+        ]
+      },
+      {
+        "id": "release",
+        "address": "0x804463c",
+        "size": 8,
+        "preimage_hex": "10b5031c1a694020",
+        "preimage_sha256": "b336b0cd0fc15ff37221bf37045a80cb49a7acf2032e29ec288ddd0a14015ff9",
+        "export": "sonic_native_release",
+        "return": "void",
+        "args": [
+          "ptr"
+        ]
+      }
+    ],
+    "generated_outputs": []
+  },
+  "qualification": {
+    "scenarios": [
+      "local/re/experiments/20261016-sonic-self-decompile/air-control-differential-02/report.json"
+    ],
+    "required_witnesses": [
+      "Whole generatednativeROMhookintegration",
+      "Looproute and allcampaign authoritywitnesses"
+    ],
+    "known_limits": [
+      "NativeSonic/Tails/Knucklesabilitybodies notliftedhere",
+      "24192air/releasebasevectors+24realabilitybranchvectors compare144actorbytes; spawnedtaskworldstatenotcompared",
+      "MZMreleasecutsupwardvelocitytozero; separateownROMblockidentified0x08008DD4..0x08008DEA butnotassembledyet"
+    ]
+  }
+}

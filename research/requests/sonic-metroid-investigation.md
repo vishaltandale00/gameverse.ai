@@ -1,5 +1,7 @@
 # Metroid systems inside Sonic Advance: native integration investigation
 
+> **Superseded approach:** the human subsequently directed direct self-decompilation of the USA ROM, rather than using community game source as the foundation. The regional source investigation below is historical comparative material and is not a build gate. Current work, recovered code, native evidence and remaining gaps are in `sonic-self-decomp-evidence.json`, `sonic-recovered-motion.package.json`, `sonic-recovered-motion.c` and `sonic_lower_motion.py`. The own-ROM path has already produced1,929 candidate lifts and a152-byte recovered native motion component with finite original-instruction differential evidence; it has not produced the complete mashup ROM.
+
 Date: 2026-10-16. Status: source investigation; no new game, baseline build, or gameplay qualification claimed.
 
 ## Intended game

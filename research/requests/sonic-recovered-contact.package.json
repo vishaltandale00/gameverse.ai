@@ -1,0 +1,342 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "sonic.usa.terrain_contact_bundle",
+  "version": "0.1-native-oracle",
+  "concept": {
+    "role": "movement.terrain_contact",
+    "pattern": "Curved-surface contact, headroom, paired sensors, snapping and detachment with complete ROM geometry query closure",
+    "facets": [
+      "mechanics",
+      "world_geometry"
+    ],
+    "editorial_bundle_ids": [
+      "sonic-advance:movement_view"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "sonic-advance",
+    "origin": "self_decompilation",
+    "sources": [],
+    "baseline_ref": "USA ROM SHA1d842afa7dd1e84de08addb94a51506f1bcafd551; immutable original execution oracle",
+    "compiler_ref": "local/re/experiments/20261016-sonic-self-decompile/native-lowering-02/receipt.json",
+    "abi": "See explicit lowering hooks/exports; all native entry identities pinned to exact USA ROM",
+    "recovery": {
+      "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+      "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "ranges": [
+        {
+          "address": "0x0803fa40",
+          "size": 496,
+          "isa": "thumb",
+          "instruction_sha256": "5fae407b2dd790c89cea8b20eeaea410705359e80144850a53edd31964f65518",
+          "name": "neighbor_cell_distance_scanner",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x08042590",
+          "size": 214,
+          "isa": "thumb",
+          "instruction_sha256": "6f247065a6ae5aa0d3de203de20b2097078a6fee7d5e6e261c01ab5001143457",
+          "name": "left_clearance_pair",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x08042668",
+          "size": 210,
+          "isa": "thumb",
+          "instruction_sha256": "3e48e90d8563d6ce40f1b1e70c3276430ee581b7916286f5736bb75018cd76c2",
+          "name": "right_clearance_pair",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0804273c",
+          "size": 214,
+          "isa": "thumb",
+          "instruction_sha256": "150a982fca530fe5ffe477baf688462a9e72d070cf50f52b1eb29a327c7e0485",
+          "name": "ceiling_clearance_pair",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x08046eac",
+          "size": 202,
+          "isa": "thumb",
+          "instruction_sha256": "3b55b3dd0bad0a05f10a6c387e7c174a71caf82010b60040efc7c795205e143b",
+          "name": "floor_clearance_pair",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x08043aa4",
+          "size": 202,
+          "isa": "thumb",
+          "instruction_sha256": "41a20e318fa652a5e86ee56b804b71da5ae996d1174ede5eafd0eddf76f29163",
+          "name": "head_clearance_selector",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0804342c",
+          "size": 274,
+          "isa": "thumb",
+          "instruction_sha256": "5ebcfd32b8b6cc6e30f59692ce0f6778c1a98da5f96bfdd142bb62a960c22157",
+          "name": "floor_attached_contact",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x08043544",
+          "size": 266,
+          "isa": "thumb",
+          "instruction_sha256": "03b7d73985fce37777d7a9889efa1717e3a7978308b5ba2853d830a8fa7895a8",
+          "name": "ceiling_attached_contact",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x08043654",
+          "size": 266,
+          "isa": "thumb",
+          "instruction_sha256": "c55c065ab9f4dd38cf4ef9273238fddabf63c6239899ad4d240eba5478d9d468",
+          "name": "left_attached_contact",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x08043764",
+          "size": 258,
+          "isa": "thumb",
+          "instruction_sha256": "7b3578ebb9198478a052e5a901d4520b08084cddddb461639a7a686d1b35b104",
+          "name": "right_attached_contact",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x0804386c",
+          "size": 206,
+          "isa": "thumb",
+          "instruction_sha256": "d3bb079f8b8669960254697d2a66261afc3a1fb3cd7fcf28b8daf43c36f2a44c",
+          "name": "attached_contact_selector",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        }
+      ],
+      "lift_ref": "research/requests/sonic-recovered-contact.c",
+      "lift_sha256": "19996b3377a535b9d1b3e1312edd3d85f9d92f46a1aea23de541a527446eea40",
+      "semantic_status": "dynamically_confirmed",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [],
+        "data": [
+          "18 native geometrydefinitions anddescriptors/profiles/angles/flags"
+        ],
+        "ram": [
+          "actorreviewedprefix",
+          "livegeometryheader0x03005A0C"
+        ],
+        "hardware": [],
+        "relocations": [
+          "PublicnativeABIwrapperboundtoexplicitpinnedhostROM"
+        ]
+      },
+      "dynamic_witness_refs": [
+        "local/re/experiments/20261016-sonic-self-decompile/contact-differential-03/report.json",
+        "local/re/experiments/20261016-sonic-self-decompile/contact-actor-differential-02/report.json"
+      ],
+      "unknowns": [
+        "Closed only for listed attached/headroomquery operations; airborne landing/penetrationresponse remains outsidebundle",
+        "Native privatequotientcaches and unusedstackanglelocals notpreserved",
+        "All18geometrydefinitions testedfinitepoints; fullnamedcampaignroutegraph notqualified",
+        "RawROMassets remainprivate localinputs"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "actor_position",
+      "direction": "in",
+      "type": {
+        "scalar": "i32x2",
+        "quantity": "position",
+        "unit": "1/256px",
+        "frame": "world_xy_y_down"
+      }
+    },
+    {
+      "id": "probe_direction",
+      "direction": "in",
+      "type": {
+        "scalar": "u8",
+        "quantity": "angle",
+        "unit": "1/256turn",
+        "frame": "surface_tangent"
+      }
+    },
+    {
+      "id": "contact_distance",
+      "direction": "out",
+      "type": {
+        "scalar": "i32",
+        "quantity": "distance",
+        "unit": "px",
+        "frame": "probe_axis"
+      }
+    },
+    {
+      "id": "contact_angle",
+      "direction": "out",
+      "type": {
+        "scalar": "i8",
+        "quantity": "angle",
+        "unit": "1/256turn",
+        "frame": "surface_tangent"
+      }
+    }
+  ],
+  "states": [
+    {
+      "id": "actor_motion",
+      "type": {
+        "scalar": "native_actor_prefix",
+        "quantity": "position_velocity",
+        "unit": "mixed_native_fixed_point",
+        "frame": "world_xy_y_down"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "terrain_contact_bundle",
+      "clock": "native_simulation_frame",
+      "phases": [
+        "geometry_decode",
+        "profile_probe",
+        "distance_scan",
+        "paired_sensors",
+        "snap_or_detach",
+        "surface_angle_update"
+      ],
+      "reads": [
+        "actor_motion",
+        "geometry_headers",
+        "stage_flags"
+      ],
+      "writes": [
+        "actor_motion",
+        "contact_angles"
+      ],
+      "invariants": [
+        "Two eight-pixel neighbor cells maximum",
+        "Signed profile and angle flips preserved",
+        "Head clearance reads collisiongeometry, notscreenpixels",
+        "Keepnative eleven-pixel penetration/snap bound and steepcontactdetachment"
+      ],
+      "authority": "Sonic native terrain/contact authority"
+    }
+  ],
+  "dependencies": {
+    "status": "closed",
+    "code": [
+      "research/requests/sonic-recovered-terrain.c"
+    ],
+    "data": [
+      "18 native geometrydefinitions anddescriptors/profiles/angles/flags"
+    ],
+    "globals": [
+      "actorreviewedprefix",
+      "livegeometryheader0x03005A0C"
+    ],
+    "macros": [],
+    "hardware": [],
+    "host_services": [],
+    "unsupported": [
+      "Closed only for listed attached/headroomquery operations; airborne landing/penetrationresponse remains outsidebundle",
+      "Native privatequotientcaches and unusedstackanglelocals notpreserved",
+      "All18geometrydefinitions testedfinitepoints; fullnamedcampaignroutegraph notqualified",
+      "RawROMassets remainprivate localinputs"
+    ]
+  },
+  "extraction": {
+    "recipe_ref": "research/requests/sonic-recovered-contact.c",
+    "preconditions": [
+      "Exact USA ROM hash",
+      "ROM instruction ranges and table hashes match manifest"
+    ],
+    "outputs": [
+      "research/requests/sonic-recovered-contact.c"
+    ],
+    "semantic_changes": [
+      "Terrain quotientcaches removed; pure return/actor behavior retained",
+      "Runtime longdivision closed with exact bounded reciprocals for12and96; no hardwarecycleparity claim"
+    ]
+  },
+  "prefabs": [],
+  "policies": [],
+  "world": {
+    "projection": "side view",
+    "coordinates": "Q24.8 global position, signed Q8.8 velocity; +Y down",
+    "surface_angle": "256 steps per turn",
+    "authority_obligation": "Retain Sonic slope/loop contact and inherited launch velocity under human clarification"
+  },
+  "assets": [],
+  "narrative": {},
+  "editorial": {
+    "effect": "Curved-surface contact, headroom, paired sensors, snapping and detachment with complete ROM geometry query closure",
+    "status": "Own-ROM native component finitequalified; whole-campaign behavior unqualified"
+  },
+  "lowering": {
+    "status": "implemented",
+    "backend": "ARM7TDMI self-recovered component, native_v1 hooks proposed",
+    "recipe_ref": "research/requests/sonic-recovered-contact.c",
+    "hooks": [
+      {
+        "id": "head_clearance",
+        "address": "0x8043aa4",
+        "size": 8,
+        "preimage_hex": "70b585b00b1c0006",
+        "preimage_sha256": "0d59a6d2ca7ec87cf1820d4b89ffe7ff1607e54f76a6ae5addc28d9239bbde9d",
+        "export": "sonic_native_head_clearance",
+        "return": "i32",
+        "args": [
+          "u32",
+          "ptr"
+        ]
+      },
+      {
+        "id": "attached_contact",
+        "address": "0x804386c",
+        "size": 8,
+        "preimage_hex": "00b5021c10690821",
+        "preimage_sha256": "f9fe85969f677c2e51c8e97a422585ebdd57a3c2f949e89daa6ac148734ed5ab",
+        "export": "sonic_native_attached_contact",
+        "return": "void",
+        "args": [
+          "ptr",
+          "u32"
+        ]
+      }
+    ],
+    "generated_outputs": []
+  },
+  "qualification": {
+    "scenarios": [
+      "local/re/experiments/20261016-sonic-self-decompile/contact-differential-03/report.json",
+      "local/re/experiments/20261016-sonic-self-decompile/contact-actor-differential-02/report.json"
+    ],
+    "required_witnesses": [
+      "Whole generatednativeROMhookintegration",
+      "Looproute and allcampaign authoritywitnesses"
+    ],
+    "known_limits": [
+      "Closed only for listed attached/headroomquery operations; airborne landing/penetrationresponse remains outsidebundle",
+      "Native privatequotientcaches and unusedstackanglelocals notpreserved",
+      "All18geometrydefinitions testedfinitepoints; fullnamedcampaignroutegraph notqualified",
+      "RawROMassets remainprivate localinputs"
+    ]
+  }
+}

@@ -1,0 +1,209 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "metroid.usa.ordinary_air_motion",
+  "version": "0.1-rom-oracle",
+  "concept": {
+    "role": "movement.ordinary_airborne",
+    "pattern": "bounded displacement followed by gravity, and direction-relative acceleration",
+    "facets": [
+      "mechanics"
+    ],
+    "editorial_bundle_ids": [
+      "metroid-zero-mission:movement_view"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "metroid-zero-mission",
+    "origin": "self_decompilation",
+    "sources": [],
+    "baseline_ref": "Own USA ROM SHA1 5de8536afe1f0078ee6fe1089f890e8c7aa0a6e8",
+    "compiler_ref": "research/requests/metroid_motion_differential.c",
+    "abi": "accelerate(i16 acceleration,i16 cap,actor*); vertical(actor*,i16 gravity,i16 upcap,i16 downcap)",
+    "recovery": {
+      "rom_sha1": "5de8536afe1f0078ee6fe1089f890e8c7aa0a6e8",
+      "rom_sha256": "fc94f65380b65b870a30b9b04b39cca1dc63d6e46a4a373d3904adc0912ebc37",
+      "ranges": [
+        {
+          "address": "0x8008278",
+          "size": 62,
+          "isa": "thumb",
+          "instruction_sha256": "a08ad7ea26ce4dab53e9d2ada4f85c3262c83dbc82cf88fa030082948a6dcc2c",
+          "name": "directional_acceleration",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x800a5e8",
+          "size": 66,
+          "isa": "thumb",
+          "instruction_sha256": "9d00edb43b7115e9ceef6ec1f2124a5fe914870d223f73a2923b29ca127e057f",
+          "name": "ordinary_airborne_vertical_block",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x800a640",
+          "size": 6,
+          "isa": "thumb",
+          "instruction_sha256": "b6c014cf8d2743264294e09d8ccc53d664cc0b54f21a65d57410655371d3af7a",
+          "name": "vertical_position_write",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        }
+      ],
+      "lift_ref": "research/requests/metroid-recovered-motion.c",
+      "lift_sha256": "267a01245b106f0f40d7459adedcdd7a5b6300887dd63566c58d2a5182245a8f",
+      "semantic_status": "dynamically_confirmed",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [],
+        "data": [
+          "native signed velocity threshold -231, literal0xFF190000 atROM0x0800A62C"
+        ],
+        "ram": [
+          "actor offsets14,20,22,24; physics context+98,+100,+102 replaced explicit arguments"
+        ],
+        "hardware": [],
+        "relocations": [
+          "Actor/context pointer become explicit inputs"
+        ]
+      },
+      "dynamic_witness_refs": [
+        "local/re/experiments/20261016-sonic-self-decompile/metroid-motion-01/report.json"
+      ],
+      "unknowns": [
+        "Vertical recovery is a selected basic block, not the full pose dispatcher",
+        "Finite vectors do not establish universal equivalence",
+        "No MZM collision, animation or weapon system included"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "velocity",
+      "direction": "in",
+      "type": {
+        "scalar": "i16x2",
+        "quantity": "velocity",
+        "unit": "1/32px/frame",
+        "frame": "world_xy_y_up"
+      }
+    },
+    {
+      "id": "acceleration",
+      "direction": "in",
+      "type": {
+        "scalar": "i16",
+        "quantity": "acceleration",
+        "unit": "1/32px/frame2",
+        "frame": "world_xy_y_up"
+      }
+    },
+    {
+      "id": "position",
+      "direction": "out",
+      "type": {
+        "scalar": "u16x2",
+        "quantity": "position",
+        "unit": "1/4px",
+        "frame": "world_xy_y_down"
+      }
+    }
+  ],
+  "states": [
+    {
+      "id": "actor_motion",
+      "type": {
+        "scalar": "native_mzm_actor_prefix",
+        "quantity": "position_velocity",
+        "unit": "mixed_native_fixed_point",
+        "frame": "world_xy_y_up"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "ordinary_air_motion",
+      "clock": "native_simulation_frame",
+      "phases": [
+        "clamp_old_velocity_displacement",
+        "integrate_position",
+        "store_gravity_velocity"
+      ],
+      "reads": [
+        "actor_motion",
+        "physics_parameters"
+      ],
+      "writes": [
+        "actor_motion"
+      ],
+      "invariants": [
+        "Velocity positive Y upward while position positive Y downward",
+        "Cap displacement separately from stored velocity",
+        "Preserve signed shifts and halfword wrap before cap comparison"
+      ],
+      "authority": "MZM ordinary airborne motion only; host pose/contact selection is separate"
+    }
+  ],
+  "dependencies": {
+    "status": "closed",
+    "code": [],
+    "data": [
+      "Threshold literal0x0800A62C"
+    ],
+    "globals": [],
+    "macros": [],
+    "hardware": [],
+    "host_services": [],
+    "unsupported": [
+      "Pose selection, terrain collision, sprite state, equipment progression"
+    ]
+  },
+  "extraction": {
+    "recipe_ref": "research/requests/metroid_motion_differential.c",
+    "preconditions": [
+      "Exact USA ROM hash",
+      "ROM instruction ranges and table hashes match manifest"
+    ],
+    "outputs": [
+      "research/requests/metroid-recovered-motion.c"
+    ],
+    "semantic_changes": [
+      "ABI separates context gravity/caps into explicit parameters; no arithmetic semantic change"
+    ]
+  },
+  "prefabs": [],
+  "policies": [],
+  "world": {
+    "projection": "side view",
+    "coordinates": "quarter-pixel unsigned positions; signed1/32px/frame velocities, velocity+Yup"
+  },
+  "assets": [],
+  "narrative": {},
+  "editorial": {
+    "effect": "Responsive direction-relative acceleration and bounded ordinary airborne movement",
+    "status": "Own-ROM differential qualified finite component"
+  },
+  "lowering": {
+    "status": "proposed",
+    "backend": "composition native_v1",
+    "recipe_ref": "research/requests/metroid-recovered-motion.c",
+    "hooks": [],
+    "generated_outputs": []
+  },
+  "qualification": {
+    "scenarios": [
+      "5220 original-Thumb vs recovered-C vectors, 128448 original instructions"
+    ],
+    "required_witnesses": [
+      "Emitted Thumb equivalence",
+      "Host ordinary-motion authority and unit conversion witnesses"
+    ],
+    "known_limits": [
+      "Finite vectors; vertical is a reviewed basic block, not whole function",
+      "No whole-game decompilation claim"
+    ]
+  }
+}

@@ -1,0 +1,274 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "sonic.usa.jump_initializer",
+  "version": "0.1-native-differential",
+  "concept": {
+    "role": "movement.jump_initiation",
+    "pattern": "input edge, native headroom gate, angle-relative impulse, pose/hitbox/audio and roll transition",
+    "facets": [
+      "mechanics",
+      "world_geometry"
+    ],
+    "editorial_bundle_ids": [
+      "sonic-advance:movement_view"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "sonic-advance",
+    "origin": "self_decompilation",
+    "sources": [],
+    "baseline_ref": "USA ROM SHA1d842afa7dd1e84de08addb94a51506f1bcafd551; immutable original execution oracle",
+    "compiler_ref": "local/re/experiments/20261016-sonic-self-decompile/jump-differential-01/report.json",
+    "abi": "int sonic_native_jump(actor*,int profile); r0actor native input, r1profile injected; returnedr0success0/1",
+    "recovery": {
+      "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+      "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "ranges": [
+        {
+          "address": "0x804421c",
+          "size": 482,
+          "isa": "thumb",
+          "instruction_sha256": "d4e1ea5f773ba706cb5b8c26fc6e228de932873999948cf5e76033804d859c77",
+          "name": "jump_initializer_all_characters",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        }
+      ],
+      "lift_ref": "research/requests/sonic-recovered-jump.c",
+      "lift_sha256": "723158eeec8c68659b8e2aedaaef115bcdef118acbb6829252cb84fd2c3693f9",
+      "semantic_status": "dynamically_confirmed",
+      "dependency_closure": {
+        "status": "partial",
+        "calls": [
+          "0x08043AA4 head clearance selector delegates terrain contact probes",
+          "0x08045138 pose/hitbox geometry formatter",
+          "0x080977E4 native sound dispatch"
+        ],
+        "data": [
+          "Sonic signed trig table0x0809B3F0..0x0809BDF0"
+        ],
+        "ram": [
+          "actor offsets0..128 reviewed struct",
+          "held/pressed input fields",
+          "jump mask0x030060E0",
+          "stage flags0x03005004"
+        ],
+        "hardware": [],
+        "relocations": [
+          "Native Thumb service pointers are exact host-ROM capabilities, not lifted implementations"
+        ]
+      },
+      "dynamic_witness_refs": [
+        "local/re/experiments/20261016-sonic-self-decompile/jump-differential-01/report.json"
+      ],
+      "unknowns": [
+        "Native service internals remain original host assembly; dependency closure is partial",
+        "1000vectors use one private early-stage snapshot, not full campaign",
+        "Profile1 is authored typed adapter, not original Sonic semantics"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "jump_edge",
+      "direction": "in",
+      "type": {
+        "scalar": "u16",
+        "quantity": "button_mask",
+        "unit": "gba_key_bits",
+        "frame": "controller"
+      }
+    },
+    {
+      "id": "surface_angle",
+      "direction": "in",
+      "type": {
+        "scalar": "u8",
+        "quantity": "angle",
+        "unit": "1/256turn",
+        "frame": "surface_tangent"
+      }
+    },
+    {
+      "id": "velocity",
+      "direction": "out",
+      "type": {
+        "scalar": "i16x2",
+        "quantity": "velocity",
+        "unit": "1/256px/frame",
+        "frame": "world_xy_y_down"
+      }
+    },
+    {
+      "id": "success",
+      "direction": "out",
+      "type": {
+        "scalar": "i32",
+        "quantity": "predicate",
+        "unit": "bool01",
+        "frame": "controller"
+      }
+    }
+  ],
+  "states": [
+    {
+      "id": "actor_motion",
+      "type": {
+        "scalar": "native_actor_prefix",
+        "quantity": "position_velocity",
+        "unit": "mixed_native_fixed_point",
+        "frame": "world_xy_y_down"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "jump_initialization",
+      "clock": "native_simulation_frame",
+      "phases": [
+        "jump_edge",
+        "headroom_gate",
+        "state_transition",
+        "character_branch",
+        "surface_normal_impulse",
+        "sound",
+        "pose_hitbox_roll"
+      ],
+      "reads": [
+        "actor_motion",
+        "input_edges",
+        "held_input",
+        "stage_flags",
+        "trig_table",
+        "collision_world"
+      ],
+      "writes": [
+        "actor_motion",
+        "character_state",
+        "pose_hitbox",
+        "sound_events"
+      ],
+      "invariants": [
+        "Never initiate without requested fresh jump edge and >3px native head clearance",
+        "Impulse adds to inherited velocity rather than clearing tangent momentum",
+        "Amy down+jump remains separate character ability",
+        "Native gravity inversion headroom transform retained"
+      ],
+      "authority": "Sonic surface/launch rules; optional MZM ordinary jump impulse only under conservative flat low-speed Sonic guard"
+    }
+  ],
+  "dependencies": {
+    "status": "partial",
+    "code": [],
+    "data": [
+      "ROM trig table"
+    ],
+    "globals": [
+      "Native jump mask/stageflags"
+    ],
+    "macros": [],
+    "hardware": [],
+    "host_services": [
+      "Pinned headroom,posehitbox,sound native functions"
+    ],
+    "unsupported": [
+      "Recovery of underlying sound/contact dispatch service internals",
+      "Full campaign route/guard proof"
+    ]
+  },
+  "extraction": {
+    "recipe_ref": "research/requests/sonic_jump_differential.c",
+    "preconditions": [
+      "Exact USA ROM hash",
+      "ROM instruction ranges and table hashes match manifest"
+    ],
+    "outputs": [
+      "research/requests/sonic-recovered-jump.c"
+    ],
+    "semantic_changes": [
+      "Profile0 native-equivalent finitequalification",
+      "Profile1 optional ordinary jumpimpulse MZM0xC0dry/0x74slowed \u00d78; all other branches unchanged"
+    ]
+  },
+  "prefabs": [],
+  "policies": [],
+  "world": {
+    "projection": "side view",
+    "coordinates": "Q24.8 global position, signed Q8.8 velocity; +Y down",
+    "surface_angle": "256 steps per turn",
+    "authority_obligation": "Retain Sonic slope/loop contact and inherited launch velocity under human clarification"
+  },
+  "assets": [],
+  "narrative": {},
+  "editorial": {
+    "effect": "A jump is a collision/input/pose ability bundle, not an isolated gravity number",
+    "status": "Native initializer recovered and finitequalified; optionalMetroidimpulsependingwholegamecapture"
+  },
+  "lowering": {
+    "status": "implemented",
+    "backend": "composition native_v1",
+    "recipe_ref": "research/requests/sonic-recovered-jump.c",
+    "hooks": [
+      {
+        "id": "jump",
+        "address": "0x0804421c",
+        "size": 8,
+        "preimage_hex": "f0b5041c227d0025",
+        "preimage_sha256": "6dd6c14973751f4e008abf27e58a62adb3b8030a9d473681c6ed4d5f290fb167",
+        "export": "sonic_native_jump",
+        "return": "i32",
+        "args": [
+          "ptr",
+          "i32"
+        ],
+        "host_services": [
+          {
+            "name": "head_clearance",
+            "address": "0x8043aa4",
+            "mode": "thumb",
+            "range_sha256": "41a20e318fa652a5e86ee56b804b71da5ae996d1174ede5eafd0eddf76f29163",
+            "range_end": "0x8043b6e",
+            "boundary": "own-Ghidra candidate + actual called execution; not full semantic recovery"
+          },
+          {
+            "name": "pose_hitbox",
+            "address": "0x8045138",
+            "mode": "thumb",
+            "range_sha256": "6574154401ae5dc963669ff81792a9c956e6debbb494d90e00ac64e0e5d4c84b",
+            "range_end": "0x80451e8",
+            "boundary": "own-Ghidra candidate + actual called execution; not full semantic recovery"
+          },
+          {
+            "name": "play_sound",
+            "address": "0x80977e4",
+            "mode": "thumb",
+            "range_sha256": "75a6816b0ce3e69685120da70f5a65fa4e552932b6769973f67429e55754c038",
+            "range_end": "0x8097808",
+            "boundary": "own-Ghidra candidate + actual called execution; not full semantic recovery"
+          }
+        ]
+      }
+    ],
+    "generated_outputs": [
+      "local/re/experiments/20261016-sonic-self-decompile/jump-differential-01/jump.elf"
+    ]
+  },
+  "qualification": {
+    "scenarios": [
+      "1000original-vs-emittedfulljumpvectors,300successful/700blocked-or-noinput,1637482Thumbinstructions",
+      "Angles0/16/64/128/240,allfourcharacters+negative sentinel,facing,water,roll,helddown,gravityinversion"
+    ],
+    "required_witnesses": [
+      "Profile0 exactearly-stagewholeROMparity",
+      "Profile1 held/release/traversal nativegameplay witness",
+      "Complete route/headroom transfer coverage"
+    ],
+    "known_limits": [
+      "Compare144actorbytes+success only; sound side effects invokeactualservice butarenotbytecompared",
+      "No full loop/campaign proof",
+      "No combat/ecology integration yet"
+    ]
+  }
+}

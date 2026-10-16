@@ -1,0 +1,249 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "sonic.usa.motion_arithmetic",
+  "version": "0.2-detach-leaf-differential",
+  "concept": {
+    "role": "movement.surface_momentum",
+    "pattern": "angle-relative momentum, position integration and gravity",
+    "facets": [
+      "mechanics",
+      "world_geometry"
+    ],
+    "editorial_bundle_ids": [
+      "sonic-advance:movement_view"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "sonic-advance",
+    "origin": "self_decompilation",
+    "sources": [],
+    "baseline_ref": "USA ROM SHA1d842afa7dd1e84de08addb94a51506f1bcafd551; immutable original execution oracle",
+    "compiler_ref": "local/re/experiments/20261016-sonic-self-decompile/native-lowering-02/receipt.json",
+    "abi": "Thumb r0 points to native actor prefix; fields reviewed at offsets0,4,8,10,12,16,20",
+    "recovery": {
+      "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+      "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "ranges": [
+        {
+          "address": "0x8046f78",
+          "size": 56,
+          "isa": "thumb",
+          "instruction_sha256": "298ed769e1cdace670a391bf244e60b39f0a62591661b791a587d5bb3c96c924",
+          "name": "attached_slope_acceleration",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x8047078",
+          "size": 54,
+          "isa": "thumb",
+          "instruction_sha256": "da5d907b391500fab359a9c90e10494f3a51293dd64640e6be7ed361263c3295",
+          "name": "surface_tangent_projection",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x80470b4",
+          "size": 76,
+          "isa": "thumb",
+          "instruction_sha256": "f182bd4a09730f2e1ecf0b57a27f23309643df7dcb54971cee210075e457fe47",
+          "name": "position_integration",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x8047100",
+          "size": 26,
+          "isa": "thumb",
+          "instruction_sha256": "4944213d6134fb5603cda89cd7937b99adf0380aa1f282f48d0fc12a94f761e6",
+          "name": "vertical_acceleration",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x80471a0",
+          "size": 76,
+          "isa": "thumb",
+          "instruction_sha256": "bcc647adf83423be08f9276d42be4bc1eda80c1ca7e2951cfbd35004024f9611",
+          "name": "surface_detach_and_lock",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        }
+      ],
+      "lift_ref": "research/requests/sonic-recovered-motion.c",
+      "lift_sha256": "8cdf1f08852640e238a70038e09012cfe8e15a22b62ba7784ed2749cb2ca7d54",
+      "semantic_status": "dynamically_confirmed",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [],
+        "data": [
+          "ROM0x0809B3F0..0x0809BDF0 signed trigonometric table, reviewed hash in evidence manifest",
+          "detach threshold0x1df atROM0x080471EC, extracted into explicit source constant"
+        ],
+        "ram": [
+          "actor prefix offsets0,4,8,10,12,16,20",
+          "stage/current+previous flags at0x03005004/0x0300502C replaced by explicit arguments"
+        ],
+        "hardware": [],
+        "relocations": [
+          "ROM table pointer is an explicit input; actor pointer is an explicit input"
+        ]
+      },
+      "dynamic_witness_refs": [
+        "local/re/experiments/20261016-sonic-self-decompile/motion-differential-report.json",
+        "local/re/experiments/20261016-sonic-self-decompile/native-motion-branch-03/report.json",
+        "local/re/experiments/20261016-sonic-self-decompile/native-lowering-01/receipt.json",
+        "local/re/experiments/20261016-sonic-self-decompile/native-lowering-02/receipt.json"
+      ],
+      "unknowns": [
+        "Closure applies only to four leaf functions, not the player controller",
+        "Finite input vectors do not prove exhaustive equivalence",
+        "No whole-ROM rebuild or mashup gameplay is implied"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "surface_angle",
+      "direction": "in",
+      "type": {
+        "scalar": "u8",
+        "quantity": "angle",
+        "unit": "1/256turn",
+        "frame": "surface_tangent"
+      }
+    },
+    {
+      "id": "ground_speed",
+      "direction": "in",
+      "type": {
+        "scalar": "i16",
+        "quantity": "velocity",
+        "unit": "1/256px/frame",
+        "frame": "surface_tangent"
+      }
+    },
+    {
+      "id": "velocity",
+      "direction": "out",
+      "type": {
+        "scalar": "i16x2",
+        "quantity": "velocity",
+        "unit": "1/256px/frame",
+        "frame": "world_xy_y_down"
+      }
+    }
+  ],
+  "states": [
+    {
+      "id": "actor_motion",
+      "type": {
+        "scalar": "native_actor_prefix",
+        "quantity": "position_velocity",
+        "unit": "mixed_native_fixed_point",
+        "frame": "world_xy_y_down"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "surface_momentum",
+      "clock": "native_simulation_frame",
+      "phases": [
+        "slope_acceleration",
+        "surface_projection",
+        "integration",
+        "gravity"
+      ],
+      "reads": [
+        "actor_motion",
+        "surface_angle",
+        "stage_gravity_flags",
+        "trig_table"
+      ],
+      "writes": [
+        "actor_motion",
+        "surface detach/control lock"
+      ],
+      "invariants": [
+        "Signed table conversion shifts six bits before multiplication",
+        "i16 velocities wrap on native halfword stores",
+        "Integration uses native inversion flag transition exactly once",
+        "Caller owns contact correction and state-specific phase sequencing"
+      ],
+      "authority": "Sonic surface/loop/launch authority; ordinary MZM branch must not overwrite inherited momentum"
+    }
+  ],
+  "dependencies": {
+    "status": "closed",
+    "code": [],
+    "data": [
+      "ROM trig table hash in research/requests/sonic-self-decomp-evidence.json"
+    ],
+    "globals": [
+      "stage flags now explicit input"
+    ],
+    "macros": [],
+    "hardware": [],
+    "host_services": [],
+    "unsupported": [
+      "Whole controller, collisions, entity world, progression and graphics are not included"
+    ]
+  },
+  "extraction": {
+    "recipe_ref": "research/requests/sonic-self-decomp-evidence.json",
+    "preconditions": [
+      "Exact USA ROM hash",
+      "ROM instruction ranges and table hashes match manifest"
+    ],
+    "outputs": [
+      "research/requests/sonic-recovered-motion.c"
+    ],
+    "semantic_changes": [
+      "Address-bound stage flags/table dependencies represented as explicit inputs; arithmetic preserves reviewed native order"
+    ]
+  },
+  "prefabs": [],
+  "policies": [],
+  "world": {
+    "projection": "side view",
+    "coordinates": "Q24.8 global position, signed Q8.8 velocity; +Y down",
+    "surface_angle": "256 steps per turn",
+    "authority_obligation": "Retain Sonic slope/loop contact and inherited launch velocity under human clarification"
+  },
+  "assets": [],
+  "narrative": {},
+  "editorial": {
+    "effect": "Keep terrain-driven speed and curved-surface momentum while adapting compatible controls",
+    "status": "Small independently recovered arithmetic component; whole mashup not built"
+  },
+  "lowering": {
+    "status": "implemented",
+    "backend": "ARM7TDMI Thumb leaf-component compiler backend",
+    "recipe_ref": "research/requests/sonic_lower_motion.py",
+    "hooks": [],
+    "generated_outputs": [
+      "local/re/experiments/20261016-sonic-self-decompile/native-lowering-02/motion.elf",
+      "local/re/experiments/20261016-sonic-self-decompile/native-lowering-02/motion.bin"
+    ]
+  },
+  "qualification": {
+    "scenarios": [
+      "4950 original-Thumb versus recovered-C vectors across256 angles, signed speed extremes, gravity branches and inversion flags",
+      "Coldboot baseline held/early-release jump branches and720-frame early-stage traversal",
+      "Emitted152-byte ARM7TDMI component passes4950 differential vectors against original USA Thumb functions",
+      "Five-leaf220-byte ARM7TDMI component and host C agree with original ROM across18774 vectors, including detach flags/countdown"
+    ],
+    "required_witnesses": [
+      "Whole-ROM component integration against immutable host hook identities",
+      "Surface-contact transfer guards and full loop route witness"
+    ],
+    "known_limits": [
+      "Finite vector coverage",
+      "Whole game remains partially lifted",
+      "Recorded video is baseline Sonic, not a generated mashup"
+    ]
+  }
+}

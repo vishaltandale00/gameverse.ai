@@ -1,0 +1,842 @@
+{
+  "schema_version": 1,
+  "kind": "self_decompilation_component_evidence",
+  "date": "2026-10-16T06:49:24.720344+00:00",
+  "game_id": "sonic-advance",
+  "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+  "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+  "authority": "Exact USA ROM bytes and original-instruction/native-emulator traces; no community game source used for this recovery",
+  "lift": {
+    "path": "local/re/experiments/20261016-sonic-self-decompile/sonic-advance/functions.jsonl",
+    "sha256": "254bc041a72835eebb557bbda5274ed2b08be38ad85f7d5fca55fa82a83dd6e4",
+    "candidate_functions": 1929,
+    "pseudo_c_generated": 1929,
+    "functions_with_warnings": 1815,
+    "functions_with_unaff_registers": 66,
+    "process_wall_s": 26.8,
+    "analysis_ms": 4440,
+    "discovery_ms": 340,
+    "decompile_ms": 18800,
+    "prior_capture_only_functions": 383,
+    "entry_growth": 1546,
+    "coverage_note": "Not code-byte coverage or semantic completeness; expanded seeds change inputs, so timing is not a regression benchmark"
+  },
+  "recovered_leaf_functions": [
+    {
+      "address": "0x8046f78",
+      "size": 56,
+      "isa": "thumb",
+      "instruction_sha256": "298ed769e1cdace670a391bf244e60b39f0a62591661b791a587d5bb3c96c924",
+      "name": "attached_slope_acceleration",
+      "name_status": "dynamically_confirmed",
+      "boundary_status": "statically_reviewed"
+    },
+    {
+      "address": "0x8047078",
+      "size": 54,
+      "isa": "thumb",
+      "instruction_sha256": "da5d907b391500fab359a9c90e10494f3a51293dd64640e6be7ed361263c3295",
+      "name": "surface_tangent_projection",
+      "name_status": "dynamically_confirmed",
+      "boundary_status": "statically_reviewed"
+    },
+    {
+      "address": "0x80470b4",
+      "size": 76,
+      "isa": "thumb",
+      "instruction_sha256": "f182bd4a09730f2e1ecf0b57a27f23309643df7dcb54971cee210075e457fe47",
+      "name": "position_integration",
+      "name_status": "dynamically_confirmed",
+      "boundary_status": "statically_reviewed"
+    },
+    {
+      "address": "0x8047100",
+      "size": 26,
+      "isa": "thumb",
+      "instruction_sha256": "4944213d6134fb5603cda89cd7937b99adf0380aa1f282f48d0fc12a94f761e6",
+      "name": "vertical_acceleration",
+      "name_status": "dynamically_confirmed",
+      "boundary_status": "statically_reviewed"
+    },
+    {
+      "address": "0x80471a0",
+      "size": 76,
+      "isa": "thumb",
+      "instruction_sha256": "bcc647adf83423be08f9276d42be4bc1eda80c1ca7e2951cfbd35004024f9611",
+      "name": "surface_detach_and_lock",
+      "name_status": "dynamically_confirmed",
+      "boundary_status": "statically_reviewed"
+    }
+  ],
+  "candidate_higher_level_anchors": [
+    {
+      "address": "0x08001224",
+      "inferred_role": "hardware input inversion, edge/repeat processing",
+      "name_status": "inferred",
+      "boundary_status": "candidate",
+      "ghidra_body_size": 188,
+      "ghidra_end": "0x08001314",
+      "pseudocode_sha256": "abe5bb7e4ae93f39a85e7393bdf4a8c827f961ad827daf957a1f238ea8972ddc",
+      "warnings": 2,
+      "callees": [
+        "0x0804cccc",
+        "0x0804ccf8"
+      ]
+    },
+    {
+      "address": "0x080016ac",
+      "inferred_role": "linked task dispatch, callback invocation",
+      "name_status": "inferred",
+      "boundary_status": "candidate",
+      "ghidra_body_size": 184,
+      "ghidra_end": "0x08001778",
+      "pseudocode_sha256": "f3abf313d4887ba62a6e613c968ef2f0a922454a50bb080653b0a53194d2f334",
+      "warnings": 2,
+      "callees": [
+        "0x080977d8",
+        "0x08099844"
+      ]
+    },
+    {
+      "address": "0x080454d8",
+      "inferred_role": "player update dispatch, USA literal actor base0x03005A20",
+      "name_status": "inferred",
+      "boundary_status": "candidate",
+      "ghidra_body_size": 480,
+      "ghidra_end": "0x080456d6",
+      "pseudocode_sha256": "73ca414b7d756fd7ceac93a52b7e3c721fedca6b4e03b89f12cb38d1ca23f70e",
+      "warnings": 2,
+      "callees": [
+        "0x08044a38",
+        "0x08045cc8",
+        "0x08045fd4",
+        "0x080462c8",
+        "0x08046ac0",
+        "0x08047378",
+        "0x08047b6c",
+        "0x08048fcc",
+        "0x08049778",
+        "0x080977e4",
+        "0x080978b0",
+        "0x08098764"
+      ]
+    },
+    {
+      "address": "0x08045cc8",
+      "inferred_role": "actor held/edge inputs at offsets0x38/0x3A",
+      "name_status": "inferred",
+      "boundary_status": "candidate",
+      "ghidra_body_size": 214,
+      "ghidra_end": "0x08045db8",
+      "pseudocode_sha256": "b7fe9e40e29bac0fcebbc3c42a67b5cd2af35d5c29d52931085d33db43c4cfa4",
+      "warnings": 2,
+      "callees": [
+        "0x0804d108"
+      ]
+    },
+    {
+      "address": "0x08047378",
+      "inferred_role": "player ground/air/state dispatch",
+      "name_status": "inferred",
+      "boundary_status": "candidate",
+      "ghidra_body_size": 332,
+      "ghidra_end": "0x080474ce",
+      "pseudocode_sha256": "be97e8985beba4957ca58026575b5a166608025eac5c5eb2759895cf083bc6a7",
+      "warnings": 2,
+      "callees": [
+        "0x08042e08",
+        "0x0804386c",
+        "0x08043da8",
+        "0x08043e8c",
+        "0x08044070",
+        "0x0804421c",
+        "0x0804456c",
+        "0x0804463c",
+        "0x08044f48",
+        "0x08046f78",
+        "0x08046fe4",
+        "0x080470b4",
+        "0x08047100",
+        "0x080471a0",
+        "0x080471f0",
+        "0x08047238",
+        "0x0804724c",
+        "0x08047284",
+        "0x08047634",
+        "0x080476e0"
+      ]
+    },
+    {
+      "address": "0x0804421c",
+      "inferred_role": "surface-normal jump impulse and state transition",
+      "name_status": "inferred",
+      "boundary_status": "candidate",
+      "ghidra_body_size": 444,
+      "ghidra_end": "0x080443fe",
+      "pseudocode_sha256": "98598088184da39fef9ba9c5c990f7a1f9bd90ab5bfa94b3e5270cab3d1771a1",
+      "warnings": 2,
+      "callees": [
+        "0x08043aa4",
+        "0x08045138",
+        "0x080977e4"
+      ]
+    },
+    {
+      "address": "0x0804463c",
+      "inferred_role": "jump release and midair behavior",
+      "name_status": "inferred",
+      "boundary_status": "candidate",
+      "ghidra_body_size": 198,
+      "ghidra_end": "0x08044716",
+      "pseudocode_sha256": "1fcde53698464408d816585478cfc2d281eed990531d7095d54c643b3e7da8f4",
+      "warnings": 2,
+      "callees": [
+        "0x080478ac",
+        "0x08047ff0",
+        "0x08048114"
+      ]
+    },
+    {
+      "address": "0x0804386c",
+      "inferred_role": "terrain contact quadrant dispatch",
+      "name_status": "inferred",
+      "boundary_status": "candidate",
+      "ghidra_body_size": 202,
+      "ghidra_end": "0x0804393a",
+      "pseudocode_sha256": "340438edf93ed87531e9a6cea8bf11e242a9a8234cc329aa49b474b6c87cf140",
+      "warnings": 2,
+      "callees": [
+        "0x0804342c",
+        "0x08043544",
+        "0x08043654",
+        "0x08043764"
+      ]
+    },
+    {
+      "address": "0x0803e0b0",
+      "inferred_role": "stage render/camera initialization",
+      "name_status": "inferred",
+      "boundary_status": "candidate",
+      "ghidra_body_size": 680,
+      "ghidra_end": "0x0803e3c0",
+      "pseudocode_sha256": "3b47a24d861d125f9f3fe014eb691287648e9646283134562359417b6f8277ce",
+      "warnings": 2,
+      "callees": [
+        "0x08001588",
+        "0x080019c0",
+        "0x08099844",
+        "0x0809b2c4"
+      ]
+    },
+    {
+      "address": "0x0803e3dc",
+      "inferred_role": "camera follow/deadzone/bounds",
+      "name_status": "inferred",
+      "boundary_status": "candidate",
+      "ghidra_body_size": 656,
+      "ghidra_end": "0x0803e68e",
+      "pseudocode_sha256": "4652009db3059bc3aaf4af1e9a28aacb769cf8694dd6b5599b62b30269dab216",
+      "warnings": 2,
+      "callees": [
+        "0x0803e690",
+        "0x0809984c"
+      ]
+    }
+  ],
+  "data": [
+    {
+      "address": "0x0809b3f0",
+      "bytes": 2560,
+      "sha256": "78caf4fc1cb643a1f24d8e9d9efb1822cda68335adc1799d517582939d9c5c99",
+      "role": "signed Q2.14 trigonometric table, cosine base+512bytes; 256-step actor angle indexes every fourth i16",
+      "cardinal_sine": [
+        0,
+        16384,
+        0,
+        -16384
+      ],
+      "status": "instruction references and original-vs-recovered differential execution verified"
+    },
+    {
+      "address": "0x080471ec",
+      "bytes": 4,
+      "sha256": "17c44b63dd982ba946cd7b6443651d204f1fbe9ca48b1299d88b0690f10f9cf1",
+      "role": "native steep-surface detach threshold0x1df; strict greater-than retain branch",
+      "status": "original instruction differential verified finite vectors"
+    }
+  ],
+  "reconstructed_c": {
+    "path": "research/requests/sonic-recovered-motion.c",
+    "sha256": "8cdf1f08852640e238a70038e09012cfe8e15a22b62ba7784ed2749cb2ca7d54"
+  },
+  "differential": {
+    "report": "local/re/experiments/20261016-sonic-self-decompile/native-lowering-02/receipt.json",
+    "sha256": "f548cf65a2f15114f83d340270ca511c815d972327361af337edea0e66f1bcad",
+    "outcome": "pass",
+    "vectors": 18774,
+    "combined_original_and_emitted_thumb_instructions": 580122,
+    "scope": "Five recovered host-C leaves and emitted Thumb component vs original ROM, finite vectors"
+  },
+  "native_witness": {
+    "report": "local/re/experiments/20261016-sonic-self-decompile/native-motion-branch-03/report.json",
+    "sha256": "627437670a1cfd5df7453249c5d68da139e1617b0e45e102f0d20662910a99c1",
+    "wall_s": 1.082542,
+    "branches": {
+      "held_jump": {
+        "frames": 37,
+        "min_y_pixels": 375.4296875,
+        "x_range_pixels": [
+          104.0,
+          104.0
+        ],
+        "surface_angles": [
+          0
+        ],
+        "death_flag_frames": 0
+      },
+      "early_release": {
+        "frames": 37,
+        "min_y_pixels": 411.78125,
+        "x_range_pixels": [
+          104.0,
+          104.0
+        ],
+        "surface_angles": [
+          0
+        ],
+        "death_flag_frames": 0
+      },
+      "traversal": {
+        "frames": 720,
+        "min_y_pixels": 352.62109375,
+        "x_range_pixels": [
+          104.0,
+          2666.94921875
+        ],
+        "surface_angles": [
+          0,
+          2,
+          4,
+          6,
+          8,
+          10,
+          12,
+          14,
+          16,
+          212,
+          222,
+          234,
+          240,
+          242,
+          244,
+          248,
+          250,
+          252,
+          254
+        ],
+        "death_flag_frames": 0
+      }
+    },
+    "video": {
+      "start_frame": 2460,
+      "stride": 2,
+      "audio": false,
+      "description": "Actual emulator frames, no synthetic interpolation; audio not recorded",
+      "end_frame": 3255,
+      "recorded_frames": 398,
+      "encode_wall_s": 0.081358,
+      "fps": 29.863750284802915,
+      "path": "/Users/shishirtandale/Projects/gameverse.ai/local/re/experiments/20261016-sonic-self-decompile/native-motion-branch-03/playthrough.mp4",
+      "outcome": "ok",
+      "sha256": "3b90fdb4ae61f7ff8431dbf86c157cdb98d15d062004379bb1684023f222d80c",
+      "bytes": 1695617
+    },
+    "sampled_records": 794,
+    "scope": "Real USA baseline; not generated candidate; branch comparison and early-stage slopes, no full loop/campaign witness"
+  },
+  "abandoned_approach": {
+    "community_source_baseline": "Stopped on explicit human correction. No Sonic game source build attempted.",
+    "compiler_bootstrap_receipt": "local/game-builds/sonic-compiler-bootstrap.json",
+    "compiler_bootstrap_wall_s": 31.7252
+  },
+  "unknowns": [
+    "MostROMcode/data stillnotindependentlyreconstructed; wholeROMmatchingrebuildnotclaimed",
+    "Airbornecontact/landingresponse, fulloutercontroller andcompleteabilitybodies remainpartial",
+    "Fullnamedcampaign, looproute, surface/launchauthoritytransfers remainunqualified",
+    "MZMweapons/enemies/ecology/equipment/progression have notbeenintegrated",
+    "Actualnativecandidates nowexist,but onlymovementcomposition; completehumanrequestedmashupunfinished"
+  ],
+  "native_lowering": {
+    "receipt": "local/re/experiments/20261016-sonic-self-decompile/native-lowering-02/receipt.json",
+    "sha256": "f548cf65a2f15114f83d340270ca511c815d972327361af337edea0e66f1bcad",
+    "outcome": "qualified_component_subset",
+    "wall_s": 0.235279,
+    "text_bytes": 220,
+    "symbols": {
+      "sonic_recovered_slope_acceleration": "0x201006c",
+      "sonic_recovered_surface_projection": "0x2010042",
+      "sonic_recovered_integrate": "0x2010000",
+      "sonic_recovered_gravity": "0x201002e",
+      "sonic_recovered_surface_detach": "0x2010098"
+    },
+    "vectors": 18774,
+    "native_execution_note": "Original ROM and emittedARM7Thumb each18774vectors; earlier4950vectorrunretained. Component-only report; actualwholeROMintegration captured separately below."
+  },
+  "prior_differential": {
+    "report": "local/re/experiments/20261016-sonic-self-decompile/motion-differential-report.json",
+    "sha256": "baff24d36114e5563a9cb1bacc56e3b247184ee2ab164c2be65d4c3ec5183cc1",
+    "outcome": "pass",
+    "vectors": 4950,
+    "original_thumb_instructions": 126381,
+    "scope": "four leaf functions, finite chosen values; not full game equivalence"
+  },
+  "terrain_recovery": {
+    "implementation": "research/requests/sonic-recovered-terrain.c",
+    "implementation_sha256": "561144e3fdc4d9092036ac3e15e9edd4434cf73b841db3fb4f46effc935334c7",
+    "original_functions": [
+      {
+        "address": "0x8040080",
+        "bytes": 168,
+        "sha256": "acfe96b56e35e24f12c6138bbffedc485df51595d05c8d30c70cc6034c04983d"
+      },
+      {
+        "address": "0x803fe10",
+        "bytes": 318,
+        "sha256": "2eba0f1e73939ec02cf9387b67e9199c62517d1f4fa8bdf035c642c2a7fdb9f5"
+      },
+      {
+        "address": "0x803ff50",
+        "bytes": 302,
+        "sha256": "57537c5b4a4713187985911a4f0fe3a8367ec6c80528f7b52f8982a32310eddc"
+      }
+    ],
+    "native_differential": {
+      "report": "local/re/experiments/20261016-sonic-self-decompile/terrain-lookup-04/report.json",
+      "sha256": "a2c038f2da39ac7bfff6c9369cf818c068886e1e4c2353cd78ee2dac796516de",
+      "result": {
+        "outcome": "pass",
+        "stages": 18,
+        "layers": 2,
+        "vectors": 23040,
+        "original_thumb_instructions": 6292531,
+        "scope": "descriptor lookup plus both-axis profiles/angles; material meaning/full route geometry unqualified"
+      }
+    },
+    "asset_manifest": {
+      "path": "local/re/experiments/20261016-sonic-self-decompile/terrain-assets-01/manifest.json",
+      "sha256": "c19083997958b651ae234ca3eba05e511289f128a94a4cf2e1532ff7b4ec6365",
+      "stage_headers": 18,
+      "world_topology": "18 indexed geometry definitions; named stage/campaign edge graph not yet independently recovered"
+    },
+    "semantic_changes": [
+      "Private native quotient cache eliminated; pure function computes same tested return height/angle/descriptors. Cache writes/cycle timing equivalence not claimed.",
+      "Out-of-range tile_at direct calls reject rather than reading invalid memory; profile_y preserves native clamping."
+    ],
+    "remaining": [
+      "Material semantic names beyond decoded flags",
+      "Airborne landing/penetration response and full world entity graph",
+      "Complete named campaign/loop-route qualification"
+    ],
+    "followup_bundle": "research/requests/sonic-recovered-contact.package.json"
+  },
+  "deep_gameplay_recovery": {
+    "mzm_motion": {
+      "report": "local/re/experiments/20261016-sonic-self-decompile/metroid-motion-01/report.json",
+      "sha256": "0464cd2fafd6a5bc7245b0eb0dca7d7db69f1e4926ea7f6c2bf5d6da13370d05",
+      "outcome": "pass",
+      "wall_s": 0.134315417,
+      "stages": [
+        {
+          "label": "compile",
+          "wall_s": 0.05549562500000001,
+          "exit_code": 0
+        },
+        {
+          "label": "qualify",
+          "wall_s": 0.070194958,
+          "exit_code": 0,
+          "result": {
+            "outcome": "pass",
+            "vectors": 5220,
+            "original_rom_calls": 5220,
+            "original_thumb_instructions": 128448,
+            "scope": "one leaf and one ordinary-airborne basic block; finite vectors"
+          }
+        }
+      ]
+    },
+    "hybrid_arithmetic": {
+      "report": "local/re/experiments/20261016-sonic-self-decompile/hybrid-differential-01/report.json",
+      "sha256": "8efa4cc317b6a97d2179748b7c933a6a6aa19fb08e6033f5410b2f8d732a5e84",
+      "outcome": "pass",
+      "wall_s": 0.224686792,
+      "stages": [
+        {
+          "label": "compile",
+          "wall_s": 0.062638792,
+          "exit_code": 0
+        },
+        {
+          "label": "qualify",
+          "wall_s": 0.15409925,
+          "exit_code": 0,
+          "result": {
+            "outcome": "pass",
+            "vectors": 57344,
+            "original_rom_calls": 57344,
+            "original_thumb_instructions": 1119638,
+            "adapted_pairs": 288,
+            "bypassed_pairs": 28384,
+            "scope": "two-cart arithmetic bridge; authority predicate not a campaign proof"
+          }
+        }
+      ]
+    },
+    "jump_initializer": {
+      "report": "local/re/experiments/20261016-sonic-self-decompile/jump-differential-01/report.json",
+      "sha256": "3a9bea260154f62343608bb473fb11fde4adad1895ba5bea459efa992296c6c6",
+      "outcome": "pass",
+      "wall_s": 0.19327287499999998,
+      "stages": [
+        {
+          "label": "compile_arm",
+          "wall_s": 0.023625333999999998,
+          "exit_code": 0
+        },
+        {
+          "label": "link",
+          "wall_s": 0.004284584000000001,
+          "exit_code": 0
+        },
+        {
+          "label": "emit",
+          "wall_s": 0.003577249999999997,
+          "exit_code": 0
+        },
+        {
+          "label": "compile_oracle",
+          "wall_s": 0.05291437499999999,
+          "exit_code": 0
+        },
+        {
+          "label": "qualify",
+          "wall_s": 0.095673292,
+          "exit_code": 0,
+          "result": {
+            "outcome": "pass",
+            "vectors": 1000,
+            "jumped": 300,
+            "blocked_or_no_input": 700,
+            "original_plus_emitted_calls": 2000,
+            "thumb_instructions": 1637482,
+            "scope": "full jump entry, 144 actor bytes and return; actual native clearance/pose/sound; one private early-stage snapshot"
+          }
+        }
+      ]
+    },
+    "air_control_release": {
+      "report": "local/re/experiments/20261016-sonic-self-decompile/air-control-differential-02/report.json",
+      "sha256": "3e643ef0a82b00d539da956eb8e8ea5c05769503f76e2f8bf1d428312d773451",
+      "outcome": "pass",
+      "wall_s": 0.544988334,
+      "stages": [
+        {
+          "label": "compile_driver",
+          "wall_s": 0.05415199999999999,
+          "exit_code": 0
+        },
+        {
+          "label": "qualify_sonic_recovered_air_control",
+          "wall_s": 0.291611042,
+          "exit_code": 0,
+          "result": {
+            "outcome": "pass",
+            "vectors": 12096,
+            "ability_vectors": 0,
+            "calls": 24192,
+            "thumb_instructions": 755664,
+            "original_entry": 134497644,
+            "scope": "144 actor bytes; actual native character abilities invoked, their full spawned-task state is not compared"
+          }
+        },
+        {
+          "label": "qualify_sonic_native_release",
+          "wall_s": 0.194785292,
+          "exit_code": 0,
+          "result": {
+            "outcome": "pass",
+            "vectors": 12120,
+            "ability_vectors": 24,
+            "calls": 24240,
+            "thumb_instructions": 728964,
+            "original_entry": 134497852,
+            "scope": "144 actor bytes; actual native character abilities invoked, their full spawned-task state is not compared"
+          }
+        }
+      ]
+    },
+    "terrain_scanner": {
+      "report": "local/re/experiments/20261016-sonic-self-decompile/contact-differential-03/report.json",
+      "sha256": "16dcb934099efa94d355100cfe5109210080e346cf6be135a3f2a9f2b708dcf2",
+      "outcome": "pass",
+      "wall_s": 0.124533833,
+      "stages": [
+        {
+          "label": "compile_arm",
+          "wall_s": 0.028302584000000002,
+          "exit_code": 0
+        },
+        {
+          "label": "link",
+          "wall_s": 0.003878875000000004,
+          "exit_code": 0
+        },
+        {
+          "label": "emit",
+          "wall_s": 0.0033668329999999996,
+          "exit_code": 0
+        },
+        {
+          "label": "qualify",
+          "wall_s": 0.07691141699999998,
+          "exit_code": 0,
+          "result": {
+            "outcome": "pass",
+            "vectors": 9216,
+            "calls": 18432,
+            "thumb_instructions": 13978757,
+            "stages": 18,
+            "scope": "full scanner/profile/geometry dependency chain; returned distance/angle; no quotient-cache or cycle parity claim"
+          }
+        }
+      ]
+    },
+    "headroom_attached_contact": {
+      "report": "local/re/experiments/20261016-sonic-self-decompile/contact-actor-differential-02/report.json",
+      "sha256": "0a600c5560e8c7fff4bae49bc0c2b9a62d39b908cda6a3231ed1e4f58252f67f",
+      "outcome": "pass",
+      "wall_s": 0.641365375,
+      "stages": [
+        {
+          "label": "compile_arm",
+          "wall_s": 0.034837292,
+          "exit_code": 0
+        },
+        {
+          "label": "link",
+          "wall_s": 0.004310583999999999,
+          "exit_code": 0
+        },
+        {
+          "label": "emit",
+          "wall_s": 0.0032635000000000025,
+          "exit_code": 0
+        },
+        {
+          "label": "qualify_head",
+          "wall_s": 0.311497208,
+          "exit_code": 0,
+          "result": {
+            "outcome": "pass",
+            "vectors": 9216,
+            "calls": 18432,
+            "thumb_instructions": 28566608,
+            "original_entry": 134494884,
+            "scope": "144 actor bytes+head distance,18geometrydefinitions; pure recovered scanner/profile/lookup chain; caches notcompared"
+          }
+        },
+        {
+          "label": "qualify_contact",
+          "wall_s": 0.283585417,
+          "exit_code": 0,
+          "result": {
+            "outcome": "pass",
+            "vectors": 9216,
+            "calls": 18432,
+            "thumb_instructions": 21005158,
+            "original_entry": 134494316,
+            "scope": "144 actor bytes+head distance,18geometrydefinitions; pure recovered scanner/profile/lookup chain; caches notcompared"
+          }
+        }
+      ]
+    }
+  },
+  "native_composition_candidates": {
+    "backend_commit": "da05f8c",
+    "builder": "tools/composition/native_build.py",
+    "candidates": [
+      {
+        "id": "sonic-native-parity",
+        "status": "parity_observed",
+        "rom": "local/composition-builds/sonic-native-parity-01/game.gba",
+        "rom_sha256": "c417958ce3ff6c47ff93798de9f0db0746b4a18f764aebab911b144af218f295",
+        "bytes": 16777216,
+        "build_receipt": "local/composition-builds/sonic-native-parity-01/receipt.json",
+        "build_receipt_sha256": "5ae3d0e6a8d20f6187376059fa0403b60e73caab9c6ee1ba8ac227f5e856a9bc",
+        "build_wall_s": 0.135216,
+        "play_report": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-native-parity-01/report.json",
+        "play_report_sha256": "2097e90628a00761a928c311394795b4ed1746f1a307b6cf3888e6411e9995ae",
+        "play_wall_s": 1.08141,
+        "samples": 794,
+        "video": {
+          "start_frame": 2460,
+          "stride": 2,
+          "audio": false,
+          "description": "Actual emulator frames, no synthetic interpolation; audio not recorded",
+          "end_frame": 3255,
+          "recorded_frames": 398,
+          "encode_wall_s": 0.076785,
+          "fps": 29.863750284802915,
+          "path": "/Users/shishirtandale/Projects/gameverse.ai/local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-native-parity-01/playthrough.mp4",
+          "outcome": "ok",
+          "sha256": "3b90fdb4ae61f7ff8431dbf86c157cdb98d15d062004379bb1684023f222d80c",
+          "bytes": 1695617
+        },
+        "traversal": {
+          "frames": 720,
+          "end_world_x_px": 2666.94921875,
+          "dead_flag_frames": 0
+        },
+        "scope": "Freshindependentnativeemulation; originalSoniccampaignassets/asmretained; movementonly, notcompletedmashup"
+      },
+      {
+        "id": "sonic-metroid-airborne",
+        "status": "failed_traversal_retained",
+        "rom": "local/composition-builds/sonic-metroid-airborne-01/game.gba",
+        "rom_sha256": "8f8b72d769a89de6074fb9a5b5a2b19c29b105f137ec9b7d65a0f59204c122fc",
+        "bytes": 16777216,
+        "build_receipt": "local/composition-builds/sonic-metroid-airborne-01/receipt.json",
+        "build_receipt_sha256": "568a52c8ac0e2816f9bd60f67cf5c760cd43c75aaf53ce7a0165386a636b411d",
+        "build_wall_s": 0.122859,
+        "play_report": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-airborne-01/report.json",
+        "play_report_sha256": "865d689980ab0fae27442071eed93fb6c4a2447fbc9f4e1b1f7729309dd8c4d5",
+        "play_wall_s": 1.060754,
+        "samples": 794,
+        "video": {
+          "start_frame": 2460,
+          "stride": 2,
+          "audio": false,
+          "description": "Actual emulator frames, no synthetic interpolation; audio not recorded",
+          "end_frame": 3255,
+          "recorded_frames": 398,
+          "encode_wall_s": 0.071426,
+          "fps": 29.863750284802915,
+          "path": "/Users/shishirtandale/Projects/gameverse.ai/local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-airborne-01/playthrough.mp4",
+          "outcome": "ok",
+          "sha256": "9ff7029e0c35cbf9159118bf7bc07b87b61a73c9bb58a940b6c962d5de6fa301",
+          "bytes": 1184733
+        },
+        "traversal": {
+          "frames": 720,
+          "end_world_x_px": 104.0,
+          "dead_flag_frames": 129
+        },
+        "scope": "Freshindependentnativeemulation; originalSoniccampaignassets/asmretained; movementonly, notcompletedmashup"
+      },
+      {
+        "id": "sonic-native-jump-parity",
+        "status": "parity_observed",
+        "rom": "local/composition-builds/sonic-native-jump-parity-01/game.gba",
+        "rom_sha256": "783982b5d21052b4d79127d512c9cb1f5ae827f7b673e42614f52d413fcad413",
+        "bytes": 16777216,
+        "build_receipt": "local/composition-builds/sonic-native-jump-parity-01/receipt.json",
+        "build_receipt_sha256": "c249501d9b50b1e85d290d37fc9850f0ac4ba7ea7b65e2926f885395d3f5c399",
+        "build_wall_s": 0.144046,
+        "play_report": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-native-jump-parity-01/report.json",
+        "play_report_sha256": "216b6f8410f06e233c7aed6a5529b82682b282c80764cfdf943e61b01dd7b0fe",
+        "play_wall_s": 1.066984,
+        "samples": 794,
+        "video": {
+          "start_frame": 2460,
+          "stride": 2,
+          "audio": false,
+          "description": "Actual emulator frames, no synthetic interpolation; audio not recorded",
+          "end_frame": 3255,
+          "recorded_frames": 398,
+          "encode_wall_s": 0.07859,
+          "fps": 29.863750284802915,
+          "path": "/Users/shishirtandale/Projects/gameverse.ai/local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-native-jump-parity-01/playthrough.mp4",
+          "outcome": "ok",
+          "sha256": "3b90fdb4ae61f7ff8431dbf86c157cdb98d15d062004379bb1684023f222d80c",
+          "bytes": 1695617
+        },
+        "traversal": {
+          "frames": 720,
+          "end_world_x_px": 2666.94921875,
+          "dead_flag_frames": 0
+        },
+        "scope": "Freshindependentnativeemulation; originalSoniccampaignassets/asmretained; movementonly, notcompletedmashup"
+      },
+      {
+        "id": "sonic-metroid-jump-airborne",
+        "status": "bounded_gameplay_observed",
+        "rom": "local/composition-builds/sonic-metroid-jump-airborne-01/game.gba",
+        "rom_sha256": "8557a191b3b94b1cc5070c69f32f993fa12c8b566ecaa361ab5c14e3e244df4c",
+        "bytes": 16777216,
+        "build_receipt": "local/composition-builds/sonic-metroid-jump-airborne-01/receipt.json",
+        "build_receipt_sha256": "a140a2fa4afdf3bb7ef0ca0df056ab05f94f7fbefc06ce15aef3c843cb30f650",
+        "build_wall_s": 0.14247,
+        "play_report": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-jump-airborne-01/report.json",
+        "play_report_sha256": "c1478b45f6124dbef00cb72b610e97e68cb50ef93316a5e164eeee778784d0f5",
+        "play_wall_s": 1.102486,
+        "samples": 794,
+        "video": {
+          "start_frame": 2460,
+          "stride": 2,
+          "audio": false,
+          "description": "Actual emulator frames, no synthetic interpolation; audio not recorded",
+          "end_frame": 3255,
+          "recorded_frames": 398,
+          "encode_wall_s": 0.073271,
+          "fps": 29.863750284802915,
+          "path": "/Users/shishirtandale/Projects/gameverse.ai/local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-jump-airborne-01/playthrough.mp4",
+          "outcome": "ok",
+          "sha256": "006e14dfd8ed8bcf10a193d1986070839e74c22924453ff2c253f4fe16ac4bc3",
+          "bytes": 1495433
+        },
+        "traversal": {
+          "frames": 720,
+          "end_world_x_px": 2125.03125,
+          "dead_flag_frames": 0
+        },
+        "scope": "Freshindependentnativeemulation; originalSoniccampaignassets/asmretained; movementonly, notcompletedmashup"
+      }
+    ],
+    "comparison_reports": [
+      "local/re/experiments/20261016-sonic-self-decompile/composition-play-comparison-01.json",
+      "local/re/experiments/20261016-sonic-self-decompile/composition-play-comparison-02.json"
+    ],
+    "lesson": "Gravity alone failed earlyroute; fulljumpinit+gravity/cappeddisplacement succeededboundedroute. Mandatoryabilitybundle dependency, not isolatednumeric tuning. Sonicrelease/aircontrolstillnative."
+  },
+  "owned_recovered_packages": [
+    {
+      "path": "research/requests/metroid-recovered-motion.package.json",
+      "sha256": "67705be142f3bf4d2da76367da37366989845db095d92510476f43a46c8aa5db"
+    },
+    {
+      "path": "research/requests/metroid-sonic-native-bridge.package.json",
+      "sha256": "e7a6305eae3910868e5a3248714a6d0e81eb0c7d314bed685b89480405ef57d0"
+    },
+    {
+      "path": "research/requests/sonic-recovered-air-control.package.json",
+      "sha256": "c4ea1f8a3d3044010f47cc8ccc477c886ff49db6e8d3961d412d80837f9766ba"
+    },
+    {
+      "path": "research/requests/sonic-recovered-contact.package.json",
+      "sha256": "b2970749924a74bf23fdee4a0ec15410b30afd9610b1879dedb440b8d02cf6f0"
+    },
+    {
+      "path": "research/requests/sonic-recovered-jump.package.json",
+      "sha256": "0286ec9f2e59a17e2f02a848e3b73a6fc1d83cf4eed210fe5b3fadda72bb4d9d"
+    },
+    {
+      "path": "research/requests/sonic-recovered-motion.package.json",
+      "sha256": "ce74b3ad019ae831e70a9ac0065804a1204b8fd82d1e50a2832f4907c76bc236"
+    }
+  ],
+  "validation": {
+    "scope": "Only Sonic game and six own recoveredpackages; notwholecorpus",
+    "first_outcome": "3newcomponent evidencetype enumfailures; correctedtoexistingdecomp_source forownrecoveredC",
+    "schema_change": "none"
+  }
+}
