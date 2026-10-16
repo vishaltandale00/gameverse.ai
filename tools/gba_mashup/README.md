@@ -1,3 +1,8 @@
+# Component-driven native builds
+
+For new IR compositions use [BUILD_COMPONENTS.md](BUILD_COMPONENTS.md).
+The legacy source-based experiment described below remains separately available.
+
 # Native GBA composition
 
 The output is an actual `.gba` cartridge. The first reviewed recipe retains the

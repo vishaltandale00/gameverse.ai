@@ -1,0 +1,318 @@
+{
+  "version": "native-assembly-proof/1",
+  "scope": "Actual native whole-ROM component assembly; incompleteSonic\u00d7Metroid movement milestone",
+  "foundation_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+  "comparison": {
+    "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-comparison-02.json",
+    "sha256": "9c10b9d55942ee4d44e59ad638abf721a3117f0dbd5554a5f5292a68abc1006d"
+  },
+  "plans": {
+    "sonic-native-jump-parity": {
+      "plan": {
+        "ref": "tools/composition/plans/sonic-native-jump-parity.json",
+        "sha256": "f04bde593bc7d8d191e633be38c0917e1531a5f4e28340dabd520576eed1e0f9"
+      },
+      "build_receipt": {
+        "ref": "local/composition-builds/sonic-native-jump-parity-02/receipt.json",
+        "sha256": "42712715720c7a8fa0565879462835ce48ce48f3244ef13bf8ee7bdda282c520"
+      },
+      "lock": {
+        "ref": "local/composition-builds/sonic-native-jump-parity-02/composition.lock.json",
+        "sha256": "7c7c8fe3031bc0840dc35e93468b738032a395e6da364bd6c444897a35f6ad64"
+      },
+      "output_rom_sha256": "783982b5d21052b4d79127d512c9cb1f5ae827f7b673e42614f52d413fcad413",
+      "payload_bytes": 1202,
+      "build_wall_s": 0.14716,
+      "packages": {
+        "motion": {
+          "ref": "tools/composition/packages/sonic-metroid-motion-jump.json",
+          "sha256": "d00c360548cc2d105a073ad7499ed679c957fb64a1050460a0d1c8c69b850515"
+        }
+      },
+      "native_trace": {
+        "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-native-jump-parity-01/report.json",
+        "sha256": "216b6f8410f06e233c7aed6a5529b82682b282c80764cfdf943e61b01dd7b0fe"
+      },
+      "sample_count": 794,
+      "observations": [
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-native-jump-parity-01/observation-000001.png",
+          "sha256": "9dec31c57c4adb4b96c9f0e23684d5cf39b71d4987afcfd65a0bfe886e5391aa",
+          "branch": "held_jump"
+        },
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-native-jump-parity-01/observation-000002.png",
+          "sha256": "4cefc3afb8c8afd10fc8f98858f5484071792ae47d3d9240751a0efe853d2b1e",
+          "branch": "early_release"
+        },
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-native-jump-parity-01/observation-000003.png",
+          "sha256": "f98df6b64529e2de7c23996db8513f423b3669ffec749b206d3c5c0057334b33",
+          "branch": "traversal"
+        },
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-native-jump-parity-01/observation-000004.png",
+          "sha256": "acbdb8114a406fa79cb13b933d962f442972da9db5734cbfe355fc7ad32db21c",
+          "branch": "traversal"
+        },
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-native-jump-parity-01/observation-000005.png",
+          "sha256": "3f9e27575ae6a1ab54c66c6614ffcf647e16c6cced56d283c7c4e0da2cac584f",
+          "branch": "traversal"
+        },
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-native-jump-parity-01/observation-000006.png",
+          "sha256": "3e406670c6bfd2e8d8a5dff882009a4abea39fdad673b72422aae018724fcc37",
+          "branch": "traversal"
+        },
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-native-jump-parity-01/observation-000007.png",
+          "sha256": "c7af82a4c3f28dec7865113d9f5fe6987e0a56ace871435fd7d62d86781fb6ca",
+          "branch": "traversal"
+        },
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-native-jump-parity-01/observation-000008.png",
+          "sha256": "7aa60ece35d53328d697cf4b8b88ef84923e1c3eaf3d1ea3660d9ff96f0eeedc",
+          "branch": "traversal"
+        }
+      ],
+      "video": {
+        "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-native-jump-parity-01/playthrough.mp4",
+        "sha256": "3b90fdb4ae61f7ff8431dbf86c157cdb98d15d062004379bb1684023f222d80c"
+      },
+      "simulation_wall_s": 1.066984,
+      "summary": {
+        "wall_s": 1.066984,
+        "guard_active": 221,
+        "mismatch_samples": 0,
+        "branches": {
+          "held_jump": {
+            "minimum_y": 375.4296875,
+            "last_x": 104.0,
+            "first_vys": [
+              0,
+              -1248,
+              -1206,
+              -1164,
+              -1122,
+              -1080,
+              -1038,
+              -996
+            ],
+            "dead_frames": 0
+          },
+          "early_release": {
+            "minimum_y": 411.78125,
+            "last_x": 104.0,
+            "first_vys": [
+              0,
+              -1248,
+              -1206,
+              -1164,
+              -726,
+              -684,
+              -642,
+              -600
+            ],
+            "dead_frames": 0
+          },
+          "traversal": {
+            "minimum_y": 352.62109375,
+            "last_x": 2666.94921875,
+            "first_vys": [
+              -1248,
+              -1206,
+              -1164,
+              -1122,
+              -1080,
+              -1038,
+              -996,
+              -954
+            ],
+            "dead_frames": 0
+          }
+        },
+        "video": {
+          "start_frame": 2460,
+          "stride": 2,
+          "audio": false,
+          "description": "Actual emulator frames, no synthetic interpolation; audio not recorded",
+          "end_frame": 3255,
+          "recorded_frames": 398,
+          "encode_wall_s": 0.07859,
+          "fps": 29.863750284802915,
+          "path": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-native-jump-parity-01/playthrough.mp4",
+          "outcome": "ok",
+          "sha256": "3b90fdb4ae61f7ff8431dbf86c157cdb98d15d062004379bb1684023f222d80c",
+          "bytes": 1695617
+        }
+      }
+    },
+    "sonic-metroid-jump-airborne": {
+      "plan": {
+        "ref": "tools/composition/plans/sonic-metroid-jump-airborne.json",
+        "sha256": "3400e87666415b7c6bb2e68523f4f294c3a02e738346e66ea7ce6e3dcbef87cf"
+      },
+      "build_receipt": {
+        "ref": "local/composition-builds/sonic-metroid-jump-airborne-02/receipt.json",
+        "sha256": "fc6fd8ae02d6a547796076beb2ebf0fa7ab1a128d053c627fb532ffa9ca979a3"
+      },
+      "lock": {
+        "ref": "local/composition-builds/sonic-metroid-jump-airborne-02/composition.lock.json",
+        "sha256": "040b889f5cab3a06d21961289834daa8066c6eb242b7855c2bd4e9acb66cfd44"
+      },
+      "output_rom_sha256": "8557a191b3b94b1cc5070c69f32f993fa12c8b566ecaa361ab5c14e3e244df4c",
+      "payload_bytes": 1210,
+      "build_wall_s": 0.149088,
+      "packages": {
+        "motion": {
+          "ref": "tools/composition/packages/sonic-metroid-motion-jump.json",
+          "sha256": "d00c360548cc2d105a073ad7499ed679c957fb64a1050460a0d1c8c69b850515"
+        }
+      },
+      "native_trace": {
+        "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-jump-airborne-01/report.json",
+        "sha256": "c1478b45f6124dbef00cb72b610e97e68cb50ef93316a5e164eeee778784d0f5"
+      },
+      "sample_count": 794,
+      "observations": [
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-jump-airborne-01/observation-000001.png",
+          "sha256": "1c4b6794fc3ddaf04bdf3b2c874e54bc53cbfc8541923e5c81f93fbe8cb9a586",
+          "branch": "held_jump"
+        },
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-jump-airborne-01/observation-000002.png",
+          "sha256": "012bd8a3af6eef2458cf34c8da49bd0890d54f754d4c5c1598178a98907b7a6e",
+          "branch": "early_release"
+        },
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-jump-airborne-01/observation-000003.png",
+          "sha256": "1ecbcbfbe4e12103b26f4f896d5f82d299ef7578fdc5234360c9afa09c7c5624",
+          "branch": "traversal"
+        },
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-jump-airborne-01/observation-000004.png",
+          "sha256": "152936a282002c824c84b86979b2fb7c77762e3d34091fcfc8a2d21717ef62aa",
+          "branch": "traversal"
+        },
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-jump-airborne-01/observation-000005.png",
+          "sha256": "aa9c23e9fd9769e280443a4f4f5fc804ba1cd16663698e5e71a5557179484c64",
+          "branch": "traversal"
+        },
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-jump-airborne-01/observation-000006.png",
+          "sha256": "2805ea6d6aac3d3b1eed680721f6f1fa83e7dfa169a382a485a6db8737c96441",
+          "branch": "traversal"
+        },
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-jump-airborne-01/observation-000007.png",
+          "sha256": "27b24b8c92f3b8e7d8f61e090746351423b7bb56ce7fb1fb0f426931b2da2f52",
+          "branch": "traversal"
+        },
+        {
+          "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-jump-airborne-01/observation-000008.png",
+          "sha256": "6028f184f1c561d0643165face7f7332d159c4454e440e17b71e323e41b49bbb",
+          "branch": "traversal"
+        }
+      ],
+      "video": {
+        "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-jump-airborne-01/playthrough.mp4",
+        "sha256": "006e14dfd8ed8bcf10a193d1986070839e74c22924453ff2c253f4fe16ac4bc3"
+      },
+      "simulation_wall_s": 1.102486,
+      "summary": {
+        "wall_s": 1.102486,
+        "guard_active": 136,
+        "mismatch_samples": 794,
+        "branches": {
+          "held_jump": {
+            "minimum_y": 390.125,
+            "last_x": 104.0,
+            "first_vys": [
+              0,
+              -1536,
+              -1456,
+              -1376,
+              -1296,
+              -1216,
+              -1136,
+              -1056
+            ],
+            "dead_frames": 0
+          },
+          "early_release": {
+            "minimum_y": 423.125,
+            "last_x": 104.0,
+            "first_vys": [
+              0,
+              -1536,
+              -1456,
+              -1376,
+              -688,
+              -608,
+              -528,
+              -448
+            ],
+            "dead_frames": 0
+          },
+          "traversal": {
+            "minimum_y": 355.9453125,
+            "last_x": 2125.03125,
+            "first_vys": [
+              -1536,
+              -1456,
+              -1376,
+              -1296,
+              -1216,
+              -1136,
+              -1056,
+              -976
+            ],
+            "dead_frames": 0
+          }
+        },
+        "video": {
+          "start_frame": 2460,
+          "stride": 2,
+          "audio": false,
+          "description": "Actual emulator frames, no synthetic interpolation; audio not recorded",
+          "end_frame": 3255,
+          "recorded_frames": 398,
+          "encode_wall_s": 0.073271,
+          "fps": 29.863750284802915,
+          "path": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-jump-airborne-01/playthrough.mp4",
+          "outcome": "ok",
+          "sha256": "006e14dfd8ed8bcf10a193d1986070839e74c22924453ff2c253f4fe16ac4bc3",
+          "bytes": 1495433
+        }
+      }
+    }
+  },
+  "validation": {
+    "ref": "local/composition-builds/validation.json",
+    "sha256": "7afc20b5029bea4c0d4131243a824bbc97afc6640a790a009ee118232edfe537"
+  },
+  "known_limits": [
+    "Finite early-stage trace and finite instruction vectors, not fullcampaign compatibility",
+    "No completed ecology/combat/ability/progression mashup",
+    "No portgraph transform interpreter; reusable executable Cbridge packages are explicit inputs",
+    "No newstaticmutableRAM allocation, terrain6argABI,or SMA4globalpacketadapter support",
+    "No comparable prior componentbuild baseline; originalsourcebuild fromothergames isnotcomparable"
+  ],
+  "timing_accounting": "Build stages nested within buildtotal; simulationincludesvideoencoding; queue unavailable",
+  "environment": "macOS-27.0.1-arm64-arm-64bit",
+  "retained_failed_candidate": {
+    "trace": {
+      "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-sonic-metroid-airborne-01/report.json",
+      "sha256": "865d689980ab0fae27442071eed93fb6c4a2447fbc9f4e1b1f7729309dd8c4d5"
+    },
+    "rom_sha256": "8f8b72d769a89de6074fb9a5b5a2b19c29b105f137ec9b7d65a0f59204c122fc",
+    "outcome": "Arithmeticbridgeexecutesbuttraversalfailedbeforejumpdependencyclosed",
+    "comparison": {
+      "ref": "local/re/experiments/20261016-sonic-self-decompile/composition-play-comparison-01.json",
+      "sha256": "ff6ac23dc7eb9276fec1a3cde9b8ca2cbf2a1f5cc0a7382be85301d7e2bac23a"
+    }
+  }
+}

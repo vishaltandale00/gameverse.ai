@@ -1,0 +1,127 @@
+{
+  "version": "gba-thumb-host/1",
+  "game_id": "sonic-advance",
+  "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+  "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+  "rom_bytes": 8388608,
+  "append_address": "0x8800000",
+  "output_bytes": 16777216,
+  "abi": "aapcs-arm7tdmi-thumb-leaf-replacement",
+  "campaign": {
+    "preserve": "Entire8MiB campaign unchanged except declared leaf entries; no source rebuild",
+    "argument_constants": [
+      "0x0809b3f0"
+    ],
+    "argument_reads": [
+      {
+        "address": "0x03005004",
+        "width": 16
+      },
+      {
+        "address": "0x0300502c",
+        "width": 16
+      },
+      {
+        "address": "0x030060e0",
+        "width": 16
+      }
+    ]
+  },
+  "hooks": [
+    {
+      "id": "slope",
+      "address": "0x8046f78",
+      "preimage": "10b5021c137d181c",
+      "cardinality": 1,
+      "abi": "r0-actor-void-thumb",
+      "phase": "control",
+      "writes": [
+        "actor_motion"
+      ]
+    },
+    {
+      "id": "projection",
+      "address": "0x8047078",
+      "preimage": "30b50c21445e0c4b",
+      "cardinality": 1,
+      "abi": "r0-actor-void-thumb",
+      "phase": "control",
+      "writes": [
+        "actor_motion"
+      ]
+    },
+    {
+      "id": "integrate",
+      "address": "0x80470b4",
+      "preimage": "021c0820115e1068",
+      "cardinality": 1,
+      "abi": "r0-actor-void-thumb",
+      "phase": "integrate",
+      "writes": [
+        "actor_motion"
+      ]
+    },
+    {
+      "id": "gravity",
+      "address": "0x8047100",
+      "preimage": "021c106940210840",
+      "cardinality": 1,
+      "abi": "r0-actor-void-thumb",
+      "phase": "gravity",
+      "writes": [
+        "actor_motion"
+      ]
+    },
+    {
+      "id": "detach",
+      "address": "0x80471a0",
+      "preimage": "10b5021c13698020",
+      "cardinality": 1,
+      "abi": "r0-actor-void-thumb",
+      "phase": "control",
+      "writes": [
+        "actor_motion"
+      ]
+    },
+    {
+      "id": "jump",
+      "address": "0x0804421c",
+      "preimage": "f0b5041c227d0025",
+      "cardinality": 1,
+      "abi": "r0-actor-i32-thumb",
+      "phase": "control",
+      "writes": [
+        "actor_motion"
+      ]
+    }
+  ],
+  "services": [
+    {
+      "id": "head_clearance",
+      "address": "0x8043aa4",
+      "isa": "thumb",
+      "abi": "i32(u8,actor_ptr)",
+      "preimage": "70b585b00b1c0006",
+      "range_size": 202,
+      "range_sha256": "41a20e318fa652a5e86ee56b804b71da5ae996d1174ede5eafd0eddf76f29163"
+    },
+    {
+      "id": "pose_hitbox",
+      "address": "0x8045138",
+      "isa": "thumb",
+      "abi": "void(actor_ptr,i32)",
+      "preimage": "10b5031c0c1c0f20",
+      "range_size": 176,
+      "range_sha256": "6574154401ae5dc963669ff81792a9c956e6debbb494d90e00ac64e0e5d4c84b"
+    },
+    {
+      "id": "play_sound",
+      "address": "0x80977e4",
+      "isa": "thumb",
+      "abi": "void(u16)",
+      "preimage": "00b50004074a0849",
+      "range_size": 36,
+      "range_sha256": "75a6816b0ce3e69685120da70f5a65fa4e552932b6769973f67429e55754c038"
+    }
+  ]
+}

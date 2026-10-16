@@ -653,6 +653,10 @@
           "items": {
             "$ref": "#/$defs/obligation"
           }
+        },
+        "native_build": {
+          "type": "object",
+          "description": "Versioned executable native lowering extension; validated by native_build.py, not the static checker."
         }
       },
       "required": [
@@ -1087,6 +1091,10 @@
                 "type": "string",
                 "minLength": 1
               }
+            },
+            "native_v1": {
+              "type": "object",
+              "description": "Freestanding-C/Thumb lowering contract; native_build.py performs executable validation."
             }
           },
           "required": [

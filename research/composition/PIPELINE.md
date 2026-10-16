@@ -2,6 +2,17 @@
 
 2026-10-16 · v0.1 research checkpoint · Owner: Shishir's creation/improvement loop.
 
+**Implementation update:** the static-only checkpoint below is now followed by
+an executable [native component builder](../../tools/gba_mashup/BUILD_COMPONENTS.md).
+It compiles pinned packages and generated ABI/state/link bindings, assembles exact
+host hooks and records a graph-to-cartridge lockfile. Two Sonic plans use the same
+backend/package; original behavior passed sampled parity, while the first hybrid
+exposed a real jump/gravity compatibility failure. That failure is retained and
+must be repaired through component dependencies. The full hybrid game remains
+incomplete. The earlier description below records the architecture and original
+checkpoint; “not yet implemented” statements refer to that checkpoint unless
+superseded by the build document.
+
 The output remains a native GBA cartridge containing a whole playable game. The
 missing middle is an executable component contract between recovered ROM behavior
 and native assembly. A searchable description is a discovery index; it is not yet

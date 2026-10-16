@@ -2,7 +2,8 @@
 
 Research contract and bounded static analysis for composing recovered native game
 components. See [pipeline, gaps and migration](../../research/composition/PIPELINE.md).
-This does not generate a ROM or turn unverified pseudo-C into a reusable package.
+The static checker does not generate a ROM. The native backend now consumes pinned
+plans/packages and emits whole cartridges; see [build instructions and limits](../gba_mashup/BUILD_COMPONENTS.md). Unverified pseudo-C still cannot become a reusable package merely through a label.
 
 ```sh
 python3 tools/composition/resolve.py tools/composition/examples/sonic-mzm-unadapted.json
@@ -20,3 +21,6 @@ No network, paid calls, ROM build, CI stage or new dependency is required.
 Examples preserve provenance and missing evidence rather than implying complete
 decompilation. Own ROM recovery is authoritative for the Sonic request; previous
 community-source motion descriptions remain comparative hypotheses.
+
+Native graph entry point: `python3 -m tools.gba_mashup.build --help`.
+Focused native contract checks: `python3 -m unittest tools.composition.test_native_build`.

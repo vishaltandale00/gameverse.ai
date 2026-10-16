@@ -26,7 +26,7 @@ def resolve(doc):
         return report(doc, errors, obligations, checked)
     supported = {"ir_version", "kind", "id", "target", "intent", "evidence", "execution",
                  "states", "components", "bindings", "transforms", "budgets",
-                 "route_obligations", "obligations"}
+                 "route_obligations", "obligations", "native_build"}
     for key in sorted(set(doc) - supported):
         issue("UNSUPPORTED_FIELD", key, "No static semantics registered for this field", True)
     try:

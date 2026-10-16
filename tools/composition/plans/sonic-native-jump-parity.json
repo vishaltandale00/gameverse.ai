@@ -1,0 +1,193 @@
+{
+  "ir_version": "0.1",
+  "kind": "composition_plan",
+  "id": "sonic-recovered-jump-native-parity",
+  "target": {
+    "platform": "gba",
+    "foundation_game": "sonic-advance",
+    "preserve_campaign": true,
+    "requested_rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+    "authoritative_origin": "self_decompilation",
+    "baseline_status": "exact-ROM host with self-recovered native component hooks"
+  },
+  "execution": {
+    "clock": "native-simulation-frame",
+    "modes": [
+      "native"
+    ],
+    "phases": [
+      "control",
+      "integrate",
+      "gravity"
+    ],
+    "transitions": []
+  },
+  "states": [
+    {
+      "id": "actor_motion",
+      "type": {
+        "scalar": "native_actor",
+        "quantity": "motion",
+        "unit": "Q24.8-position-Q8.8-velocity",
+        "frame": "sonic-world-y-down"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "components": [
+    {
+      "id": "motion",
+      "provides": [
+        "motion.native@1"
+      ],
+      "requires": [],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "actor_motion",
+          "phase": "control",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "actor_motion",
+          "phase": "integrate",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "actor_motion",
+          "phase": "gravity",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "local/re/experiments/20261016-sonic-self-decompile/motion-differential-report.json",
+          "local/re/experiments/20261016-sonic-self-decompile/native-motion-branch-03/report.json",
+          "local/re/experiments/20261016-sonic-self-decompile/native-lowering-01/receipt.json",
+          "local/re/experiments/20261016-sonic-self-decompile/native-lowering-02/receipt.json"
+        ]
+      }
+    }
+  ],
+  "bindings": [],
+  "transforms": [],
+  "route_obligations": [],
+  "obligations": [
+    {
+      "id": "campaign-qualification",
+      "detail": "Build candidate only. Entire campaign/loop route proof and ecology/weapons/progression not completed."
+    }
+  ],
+  "native_build": {
+    "version": "gba-component-native/1",
+    "host": {
+      "ref": "tools/composition/native/sonic-usa-jump.host.json",
+      "sha256": "3587ccf373eb75a73dd3c574a8e0e3c7f5cfb5c071b5d45a6ef366db981dc127"
+    },
+    "packages": [
+      {
+        "instance": "motion",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-motion-jump.json",
+          "sha256": "d00c360548cc2d105a073ad7499ed679c957fb64a1050460a0d1c8c69b850515"
+        }
+      }
+    ],
+    "hooks": [
+      {
+        "host_hook": "slope",
+        "instance": "motion",
+        "symbol": "sonic_recovered_slope_acceleration",
+        "args": [
+          {
+            "arg": 0
+          },
+          {
+            "constant": "0x0809b3f0"
+          }
+        ]
+      },
+      {
+        "host_hook": "projection",
+        "instance": "motion",
+        "symbol": "sonic_recovered_surface_projection",
+        "args": [
+          {
+            "arg": 0
+          },
+          {
+            "constant": "0x0809b3f0"
+          }
+        ]
+      },
+      {
+        "host_hook": "integrate",
+        "instance": "motion",
+        "symbol": "sonic_recovered_integrate",
+        "args": [
+          {
+            "arg": 0
+          },
+          {
+            "read": {
+              "address": "0x03005004",
+              "width": 16
+            }
+          },
+          {
+            "read": {
+              "address": "0x0300502c",
+              "width": 16
+            }
+          }
+        ]
+      },
+      {
+        "host_hook": "gravity",
+        "instance": "motion",
+        "symbol": "sonic_recovered_gravity",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      },
+      {
+        "host_hook": "detach",
+        "instance": "motion",
+        "symbol": "sonic_recovered_surface_detach",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      },
+      {
+        "host_hook": "jump",
+        "instance": "motion",
+        "symbol": "sonic_native_jump",
+        "args": [
+          {
+            "arg": 0
+          },
+          {
+            "constant": 0
+          }
+        ]
+      }
+    ],
+    "max_payload_bytes": 16384,
+    "timeout_s": 15
+  }
+}

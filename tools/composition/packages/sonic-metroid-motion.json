@@ -1,0 +1,395 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "composition.sonic_metroid_motion_bundle",
+  "version": "1.0.0",
+  "concept": {
+    "role": "movement.ordinary_airborne_adapter",
+    "pattern": "MZM gravity and bounded vertical displacement under Sonic retained contact/world",
+    "facets": [
+      "mechanics"
+    ],
+    "editorial_bundle_ids": [
+      "sonic-advance:movement_view",
+      "metroid-zero-mission:movement_view"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "sonic-advance",
+    "origin": "self_decompilation",
+    "sources": [],
+    "baseline_ref": "Exact Sonic USA ROM host plus independently recovered MZM USA motion component",
+    "compiler_ref": "local/re/experiments/20261016-sonic-self-decompile/native-lowering-02/receipt.json",
+    "abi": "hybrid_gravity(actor*,u32stageFlags); hybrid_integrate(actor*,u32stageFlags,u32priorFlags)",
+    "recovery": {
+      "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+      "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "ranges": [
+        {
+          "address": "0x8046f78",
+          "size": 56,
+          "isa": "thumb",
+          "instruction_sha256": "298ed769e1cdace670a391bf244e60b39f0a62591661b791a587d5bb3c96c924",
+          "name": "attached_slope_acceleration",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x8047078",
+          "size": 54,
+          "isa": "thumb",
+          "instruction_sha256": "da5d907b391500fab359a9c90e10494f3a51293dd64640e6be7ed361263c3295",
+          "name": "surface_tangent_projection",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x80470b4",
+          "size": 76,
+          "isa": "thumb",
+          "instruction_sha256": "f182bd4a09730f2e1ecf0b57a27f23309643df7dcb54971cee210075e457fe47",
+          "name": "position_integration",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x8047100",
+          "size": 26,
+          "isa": "thumb",
+          "instruction_sha256": "4944213d6134fb5603cda89cd7937b99adf0380aa1f282f48d0fc12a94f761e6",
+          "name": "vertical_acceleration",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x80471a0",
+          "size": 76,
+          "isa": "thumb",
+          "instruction_sha256": "bcc647adf83423be08f9276d42be4bc1eda80c1ca7e2951cfbd35004024f9611",
+          "name": "surface_detach_and_lock",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        }
+      ],
+      "lift_ref": "research/requests/metroid-sonic-native-bridge.c",
+      "lift_sha256": "d6521056331a914df022a036f941743b484cacb4b0928d6592e1fd47c5f0396f",
+      "semantic_status": "hypothesis",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [],
+        "data": [
+          "ROM0x0809B3F0..0x0809BDF0 signed trigonometric table, reviewed hash in evidence manifest",
+          "detach threshold0x1df atROM0x080471EC, extracted into explicit source constant"
+        ],
+        "ram": [
+          "actor prefix offsets0,4,8,10,12,16,20",
+          "stage/current+previous flags at0x03005004/0x0300502C replaced by explicit arguments"
+        ],
+        "hardware": [],
+        "relocations": [
+          "ROM table pointer is an explicit input; actor pointer is an explicit input"
+        ]
+      },
+      "dynamic_witness_refs": [
+        "local/re/experiments/20261016-sonic-self-decompile/motion-differential-report.json",
+        "local/re/experiments/20261016-sonic-self-decompile/native-motion-branch-03/report.json",
+        "local/re/experiments/20261016-sonic-self-decompile/native-lowering-01/receipt.json",
+        "local/re/experiments/20261016-sonic-self-decompile/native-lowering-02/receipt.json"
+      ],
+      "unknowns": [
+        "Adapter is newly authored glue using independently recovered ROM arithmetic, not a recovered original game function",
+        "Stateless guard has no full-campaign transfer/hysteresis proof",
+        "No jump impulse, ground acceleration, combat/ecology/progression integration yet"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "surface_angle",
+      "direction": "in",
+      "type": {
+        "scalar": "u8",
+        "quantity": "angle",
+        "unit": "1/256turn",
+        "frame": "surface_tangent"
+      }
+    },
+    {
+      "id": "ground_speed",
+      "direction": "in",
+      "type": {
+        "scalar": "i16",
+        "quantity": "velocity",
+        "unit": "1/256px/frame",
+        "frame": "surface_tangent"
+      }
+    },
+    {
+      "id": "velocity",
+      "direction": "out",
+      "type": {
+        "scalar": "i16x2",
+        "quantity": "velocity",
+        "unit": "1/256px/frame",
+        "frame": "world_xy_y_down"
+      }
+    }
+  ],
+  "states": [
+    {
+      "id": "actor_motion",
+      "type": {
+        "scalar": "native_actor_prefix",
+        "quantity": "position_velocity",
+        "unit": "mixed_native_fixed_point",
+        "frame": "world_xy_y_down"
+      },
+      "lifetime": "entity"
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "hybrid_air_motion",
+      "clock": "native_simulation_frame",
+      "phases": [
+        "guard",
+        "bounded_old_velocity_displacement",
+        "integrate",
+        "gravity"
+      ],
+      "reads": [
+        "actor_motion",
+        "stage_flags",
+        "character_state",
+        "character_selector"
+      ],
+      "writes": [
+        "actor_motion"
+      ],
+      "invariants": [
+        "No persistent scratch RAM or actor growth",
+        "No blanket speed clamp on slopes/loops/inherited overspeed",
+        "Native Sonic contact and stage inversion retained"
+      ],
+      "authority": "MZM only when jumpflag0x100,flags&6==6,pose5,character0,angle0,abs(vx)<=768,stage not inverted; otherwise Sonic"
+    }
+  ],
+  "dependencies": {
+    "status": "partial",
+    "code": [
+      "research/requests/sonic-recovered-motion.c",
+      "research/requests/metroid-recovered-motion.c"
+    ],
+    "data": [
+      "MZM dry/slowed gravity10/5 and displacement caps192/40(up),128/40(down), reviewed ownROM0x0800761C"
+    ],
+    "globals": [
+      "Host stage/current+prior flags supplied as explicit arguments"
+    ],
+    "macros": [],
+    "hardware": [],
+    "host_services": [
+      "Original Sonic controller ordering/contact/world retained"
+    ],
+    "unsupported": [
+      "Full-campaign transfer proof",
+      "MZM weapon/ecology/assets/progression"
+    ]
+  },
+  "extraction": {
+    "recipe_ref": "research/requests/metroid-recovered-motion.package.json",
+    "preconditions": [
+      "Exact Sonic and MZM ROM hashes",
+      "Included recovered source hashes match package provenance"
+    ],
+    "outputs": [
+      "research/requests/metroid-sonic-native-bridge.c"
+    ],
+    "semantic_changes": [
+      "Convert1/32px velocity to1/256px by8x with Ysign reversal",
+      "Retain Sonic subpixel precision instead of MZM quarter-pixel position quantization",
+      "Only guard-qualified normal flat Sonic jumps use MZM gravity/caps; all others use recovered Sonic arithmetic"
+    ]
+  },
+  "prefabs": [],
+  "policies": [],
+  "world": {
+    "projection": "side view",
+    "coordinates": "Q24.8 global position, signed Q8.8 velocity; +Y down",
+    "surface_angle": "256 steps per turn",
+    "authority_obligation": "Stateless conservative guard; route/transition proof remains unqualified"
+  },
+  "assets": [],
+  "narrative": {},
+  "editorial": {
+    "effect": "First native movement composition milestone; whole Sonic world retained",
+    "status": "Partial movement candidate pending native ROM qualification; not the full requested mashup"
+  },
+  "lowering": {
+    "status": "proposed",
+    "backend": "composition native_v1",
+    "recipe_ref": "research/requests/metroid-sonic-native-bridge.c",
+    "hooks": [
+      {
+        "id": "integrate",
+        "address": "0x80470b4",
+        "size": 8,
+        "preimage_hex": "021c0820115e1068",
+        "preimage_sha256": "c6e713061525343b6f7f402fed84ca8ba93379ab3438a3baa4fd79b26eeae9c7",
+        "export": "sonic_metroid_hybrid_integrate",
+        "abi": "r0 actor; injectedr1 stageu16,r2prioru16"
+      },
+      {
+        "id": "gravity",
+        "address": "0x8047100",
+        "size": 8,
+        "preimage_hex": "021c106940210840",
+        "preimage_sha256": "8ea30e33c4964a574abd0015cf483753b0c351e400c84259b4de810ed9738dda",
+        "export": "sonic_metroid_hybrid_gravity",
+        "abi": "r0 actor; injectedr1stageu16"
+      }
+    ],
+    "generated_outputs": [],
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "research/requests/metroid-sonic-native-bridge.c",
+          "sha256": "d6521056331a914df022a036f941743b484cacb4b0928d6592e1fd47c5f0396f"
+        },
+        {
+          "ref": "research/requests/sonic-recovered-motion.c",
+          "sha256": "8cdf1f08852640e238a70038e09012cfe8e15a22b62ba7784ed2749cb2ca7d54"
+        },
+        {
+          "ref": "research/requests/metroid-recovered-motion.c",
+          "sha256": "267a01245b106f0f40d7459adedcdd7a5b6300887dd63566c58d2a5182245a8f"
+        }
+      ],
+      "translation_units": [
+        "research/requests/metroid-sonic-native-bridge.c"
+      ],
+      "requires": [],
+      "exports": [
+        {
+          "symbol": "sonic_recovered_slope_acceleration",
+          "return": "void",
+          "args": [
+            "ptr",
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "sonic_recovered_surface_projection",
+          "return": "void",
+          "args": [
+            "ptr",
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "sonic_recovered_integrate",
+          "return": "void",
+          "args": [
+            "ptr",
+            "u32",
+            "u32"
+          ]
+        },
+        {
+          "symbol": "sonic_recovered_gravity",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "sonic_recovered_surface_detach",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "sonic_metroid_hybrid_gravity",
+          "return": "void",
+          "args": [
+            "ptr",
+            "u32"
+          ]
+        },
+        {
+          "symbol": "sonic_metroid_hybrid_integrate",
+          "return": "void",
+          "args": [
+            "ptr",
+            "u32",
+            "u32"
+          ]
+        }
+      ],
+      "state_bindings": [
+        {
+          "id": "actor_motion",
+          "storage": "host-r0-actor",
+          "bytes": 92,
+          "lifetime": "native-entity",
+          "writes": [
+            {
+              "offset": 0,
+              "width": 32,
+              "quantity": "world_x_Q24.8"
+            },
+            {
+              "offset": 4,
+              "width": 32,
+              "quantity": "world_y_Q24.8"
+            },
+            {
+              "offset": 8,
+              "width": 16,
+              "quantity": "vx_Q8.8"
+            },
+            {
+              "offset": 10,
+              "width": 16,
+              "quantity": "vy_Q8.8"
+            },
+            {
+              "offset": 12,
+              "width": 16,
+              "quantity": "ground_speed_Q8.8"
+            },
+            {
+              "offset": 16,
+              "width": 32,
+              "quantity": "native_flags"
+            },
+            {
+              "offset": 26,
+              "width": 16,
+              "quantity": "native_slope_lock"
+            }
+          ],
+          "allocation": "none; retains host actor storage"
+        }
+      ]
+    }
+  },
+  "qualification": {
+    "scenarios": [
+      "ROM-oracle qualified input components; bridge guard and units statically reviewed"
+    ],
+    "required_witnesses": [
+      "Generated native variants from same backend",
+      "Guard activation observed in native jump trace",
+      "Sonic baseline leaf replacement parity",
+      "Surface/launch bypass and whole loop route witness"
+    ],
+    "known_limits": [
+      "No completed whole mashup",
+      "No equipment/enemy/ecology integration",
+      "Only conservative ordinary airborne branch adapted; jumps still initialize with Sonic impulse"
+    ]
+  }
+}
