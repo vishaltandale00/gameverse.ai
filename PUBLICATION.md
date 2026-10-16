@@ -55,4 +55,4 @@ There is no app test/build command to execute yet. Checks on these files validat
 
 There is still no runnable game or game deployment. Repository T1–T3 integration remains unimplemented; Shishir's external loop work is user-reported. This publication contains contracts, planning and research.
 
-T1 now has a repository issue. T2/T3 remain separate task specifications. No separate Codex implementation chats have been created by this publication.
+Vishal's environment requirements are tracked in [issue #1](https://github.com/vishaltandale00/gameverse.ai/issues/1), assigned to `vishaltandale00`. Shishir's build/improvement requirements are tracked in [issue #2](https://github.com/vishaltandale00/gameverse.ai/issues/2), with Shishir (`tandalesc`) named as owner; GitHub rejected assigning that account. T2 remains a separate qualification work package. No separate Codex implementation chats have been created.

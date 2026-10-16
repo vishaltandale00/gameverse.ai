@@ -1,18 +1,18 @@
 # Base game contract
 
-Version: 0.1 · Date: 2026-10-15 · Status: proposed delivery contract
+Version: 0.2 · Date: 2026-10-15 · Status: updated requirements; exact interfaces remain proposed
 
 Owner: Vishal, including subgame navigation, play, progress and host-controlled activation. Shishir owns the separate creation/improvement loop. The base must be independently usable while that integration is unavailable.
 
 Implements PRD R01, R03, R15 and R16, and the hosting portion of R05/R10. Read alongside [the subgame contract](SUBGAME.md), [the improvement contract](IMPROVEMENT_LOOP.md) and [the task split](../TASKS.md).
 
-The base game must support a complete play journey before the improvement worker exists. This contract separates persistent home/hosting behavior from the contents of a subgame and from the system that changes games. A distinct playable home is the proposed interpretation of the latest direction; its visual layout, engine and avatar customization remain open.
+The base game must support a complete play journey without the improvement worker. Start with one simple existing/reused game world, with source/runtime selection still open. The base remains replaceable through adapters. It owns subgame discovery and game-specific session policy; neither a custom-built hub nor a universal library UI is required. [PARALLEL_DEVELOPMENT.md](PARALLEL_DEVELOPMENT.md) records the config/version/simulation handoff to Shishir.
 
 ## Ownership
 
 | Module | Owns |
 | --- | --- |
-| Base game | Playable home, character/profile entry, discoverable subgame entrances and return location |
+| Base game | Playable world, character/profile entry, subgame discovery/presentation, configured session policy and return location |
 | Shell | Profile/library records, semantic controls, active session, overlays, history and recoverable navigation |
 | Subgame adapter | The loaded game's simulation, controls, progress format and truthful runtime state |
 | Version coordinator | Accepted versions, compatible checkpoints and transactional switching/recovery |
@@ -25,7 +25,7 @@ These are logical responsibilities, not prescribed processes or packages. The ba
 | ID | Obligation | Acceptance evidence |
 | --- | --- | --- |
 | B01 | Launch locally in a supported browser; create/select a profile and character; enter a playable home. | Move and interact with a subgame entrance using controller or keyboard; profile survives refresh. Appearance depth remains O02. |
-| B02 | Present installed/available subgames with their identity, accepted version, progress/resume state and readiness. | Distinguish ready, unavailable and failed entries; an absent artifact cannot appear playable. |
+| B02 | Let the base game's config/implementation discover and present available subgames, including accepted version, progress/resume state and readiness. | Demonstrate discovery through the chosen base world; distinguish ready/unavailable/failed entries without prescribing doors, NPCs or menus in the shared interface. |
 | B03 | Enter a pinned subgame version and return to the home through a shell-owned action. | Home → game → home → resume game; preserve profile, return location and independent progress. |
 | B04 | Own one shared semantic control mapping and input focus. | Both controller families and keyboard complete entry/return; overlays receive each action once; no stuck movement or leaked confirmation presses. |
 | B05 | Preserve a shell recovery path when a game fails, hangs or refuses an operation. | Deliberately crash/stall an adapter; bounded recovery returns to a usable home and last confirmed checkpoint without claiming unsaved progress was saved. |
@@ -34,6 +34,9 @@ These are logical responsibilities, not prescribed processes or packages. The ba
 | B08 | Remain playable when improvement capability is absent, offline or failed. | Disable the worker: play, save, return and resume still work; feedback opens an honest unavailable state and does not pretend a request was durably queued. |
 | B09 | Load each version from an immutable manifest/artifact reference. | Refresh and failed base updates cannot combine code/assets from different versions or lose existing library/profile references. |
 | B10 | Expose target context for a later improvement integration. | Captured context identifies base game or subgame, exact version, session/profile and available checkpoint; opening an overlay does not change the target. |
+| B11 | Resolve versioned base/subgame config manifests and adapter references under a separately versioned environment harness. | Record exact config/source/artifact/adapter versions; load a compatible new base revision without rewriting the loop or silently resetting player/library state. |
+| B12 | Support declared background simulation/session capabilities independently of player progress. | Two pinned simulation sessions can operate on copied/fresh state and fail/clean up without modifying the player's accepted state. |
+| B13 | Measure host/game build and runtime-operation timings using the shared run context. | Establish observed baselines and report failure/cancellation, cache/build mode and unavailable measurements; follow AGENTS.md for CI overhead. |
 
 For B07, fixtures are small playable games with actions, an outcome and saved progress. They prove hosting behavior; they do not satisfy the complete FireRed requirement. Fixture choices and the home renderer are implementation decisions to demonstrate and review.
 
@@ -45,7 +48,7 @@ Exit order: request pause → capture and durably store a checkpoint when suppor
 
 Only the active game or overlay receives gameplay actions. Clear held inputs on focus changes/disconnects, require release before forwarding a held button into another screen, and restore audio/focus on return. The shell retains exit/recovery and feedback actions independently of the game.
 
-One active gameplay session is the initial default. Another tab must not write the same progress concurrently: enforce ownership or make the second session read-only with visible recovery. Exact storage and coordination mechanisms are open.
+Whether the player's base world pauses or continues when entering a subgame is game-configured policy, not a fixed improvement-loop requirement. Respect declared adapter capabilities and protect player progress from concurrent writers. Background simulations have separate session identities and copied/fresh state. Exact storage and coordination mechanisms remain open.
 
 ## Interface with the other tasks
 

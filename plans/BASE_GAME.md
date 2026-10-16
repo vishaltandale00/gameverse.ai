@@ -2,15 +2,17 @@
 
 Date: 2026-10-15 · Owner: Vishal · Status: planning; implementation has not started.
 
-Contract: [base game](../contracts/BASE_GAME.md) B01–B10 and [subgame interface](../contracts/SUBGAME.md) S01–S07. Product context: [PRD](../PRD.md). Workstream split: [TASKS.md](../TASKS.md).
+Contract: [base game](../contracts/BASE_GAME.md) B01–B13, [subgame interface](../contracts/SUBGAME.md) S01–S08 and [parallel development](../contracts/PARALLEL_DEVELOPMENT.md) X01–X10. Product context: [PRD](../PRD.md). Workstream split: [TASKS.md](../TASKS.md).
 
-Tracking issue: [#1 — Base game and subgame hosting: contract and implementation plan](https://github.com/vishaltandale00/gameverse.ai/issues/1).
+Tracking issue: [#1 — Vishal's versioned game environment requirements](https://github.com/vishaltandale00/gameverse.ai/issues/1). Counterpart: [#2 — Shishir's versioned build/improvement harness](https://github.com/vishaltandale00/gameverse.ai/issues/2).
 
 ## Intended result
 
 Launch in a browser → create/select a character → move and interact in a playable home → enter a subgame → play/save → return home → enter another subgame → restart the browser → resume independent progress.
 
 The home and installed subgames work while the improvement worker is absent. Complete FireRed integration is T2; this plan delivers T1 using small playable fixtures. The fixtures exercise hosting behavior and do not replace FireRed or count as generated games.
+
+Begin with one reused existing game world rather than designing a custom hub. Base and subgames are selected by versioned config manifests; base-specific discovery/session behavior stays in the base. Both the environment harness and Shishir's construction/improvement harness are independently versioned. Their first shared task is to agree v0 config, adapter/session, submission/result and timing examples, plus an executable reference target for parallel work.
 
 ## Owners and integration
 
@@ -20,10 +22,11 @@ The joint interface must exchange pinned artifacts/manifests, game/version/sessi
 
 ## 1. Resolve the minimum experience and runtime choices
 
-- Review one minimal playable-home concept with the owner: character movement, one interactable entrance, a return location and access to the library. World style, dimension, renderer and avatar customization depth remain decisions, not implied requirements.
+- Select and prove a reusable game world can build/run before committing to it as the initial base. Keep its discovery interaction and return location minimal; the base decides its own presentation and session policy. Source/runtime and avatar depth remain open.
 - Select and record a target browser/OS and the actual DualSense/Xbox connection modes to qualify. Keep keyboard fallback from the start.
 - Choose runtime hosting/isolation based on demonstrated load, input, checkpoint and shell recovery behavior. A stalled game must not prevent the shell from responding.
 - Define the manifest/session/progress records and the supported host-interface version from the subgame contract. Keep framework-specific details behind the adapter.
+- Agree shared config/submission/result/timing examples with Shishir. Pin source/config/artifact/adapter and both harness versions; demonstrate separate copied/fresh simulation state. Numeric budgets follow measured baselines under [AGENTS.md](../AGENTS.md).
 - Choose progress storage and export/recovery behavior. State its durability limits and prevent concurrent tabs from writing the same profile/game progress.
 
 **Exit:** a reviewable experience/runtime decision record, declared fixture core loops, a proposed interface shape and runnable setup instructions once scaffolding exists. Selection of a technology is not evidence of passing the later gates.
@@ -68,7 +71,7 @@ The fixture needs actual actions, an outcome and saveable state. A navigation-on
 
 Measure frame rate, input response, load, checkpoint and recovery times on the declared target. Set concrete playability/recovery budgets from the spike; no invented build-latency SLA or untested browser/controller claim.
 
-**Exit:** B01–B10 and fixture-applicable S01–S07 pass with retained browser evidence and meaningful checks. S06 automatic-update eligibility stays visibly unavailable until its game-specific behavior is implemented and verified.
+**Exit:** B01–B13 and applicable S01–S08 pass with retained browser evidence and meaningful checks. Exercise the parallel contract's pinned runs, isolated simulation, candidate receipt/rejection and timing handoff. S06 automatic-update eligibility stays visibly unavailable until its game-specific behavior is implemented and verified.
 
 ## 5. Hand off the playable host
 

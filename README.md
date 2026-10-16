@@ -9,23 +9,26 @@ A single-player browser environment for playing games and developing them throug
 | Document | Purpose |
 | --- | --- |
 | [PRD](PRD.md) | Product scope, acceptance requirements and open decisions |
+| [Parallel development contract](contracts/PARALLEL_DEVELOPMENT.md) | Configs, independent harness versions, simulations, candidate submissions and timing handoff |
 | [Base game contract](contracts/BASE_GAME.md) | Persistent playable home, profiles, subgame hosting and recovery |
 | [Subgame contract](contracts/SUBGAME.md) | Versioned games, runtime interface, progress and qualification |
 | [Improvement loop contract](contracts/IMPROVEMENT_LOOP.md) | Voice requests, builds, verification and safe updates/forks |
 | [Delivery tasks](TASKS.md) | Separate work packages, dependencies and evidence gates |
 | [Base game implementation plan](plans/BASE_GAME.md) | Staged work from the first complete play journey through two-game hosting and recovery |
-| [Tracking issue #1](https://github.com/vishaltandale00/gameverse.ai/issues/1) | Base-game and subgame-hosting contract, plan and acceptance checklist |
+| [Vishal — issue #1](https://github.com/vishaltandale00/gameverse.ai/issues/1) | Versioned environment harness, swappable base and subgame adapters |
+| [Shishir — issue #2](https://github.com/vishaltandale00/gameverse.ai/issues/2) | Versioned build/improvement loop for base games and subgames |
+| [Development instructions](AGENTS.md) | Lean CI/builds and comparable timing reports |
 | [Engineering handoff](HANDOFF.md) | Existing evidence, technical starting points and prerequisites |
 | [Domain language](CONTEXT.md) | Shared meaning of base game, subgame, version, fork and checkpoint |
 | [Publication record](PUBLICATION.md) | Published contents, visibility, license and verification receipts |
 
 ## Delivery split
 
-1. **Vishal — base game and subgame hosting:** create/select a character, play in the home, enter independently installed games, save, return and resume. This journey works without an AI worker.
+1. **Vishal — game environment harness:** start with one simple reused world, configured and replaceable through adapters; own base-game discovery, subgame play/navigation, progress and host-controlled activation. This journey works without an AI worker.
 2. **Vishal — complete FireRed baseline integration:** reproduce the pinned baseline, integrate a browser runtime and qualify controls, progress and campaign coverage through the shared host interface.
-3. **Shishir — game creation and improvement loop:** speak/correct requests, continue playing during builds, verify real behavior, apply compatible updates and create separate forks/mashups. Work is underway externally per Vishal; repository integration remains unimplemented.
+3. **Shishir ([tandalesc](https://github.com/tandalesc)) — build/improvement harness:** config-defined and independently versioned; operates during initial game creation and later improvement for base games and subgames. Simulate pinned versions with isolated state and submit verified new games, updates or forks. Work is underway externally per Vishal; repository integration remains unimplemented.
 
-The shared handoff is a versioned subgame artifact/adapter, exact feedback context, verification evidence and host-controlled activation. See [TASKS.md](TASKS.md) for proposed responsibilities at each integration point.
+The shared handoff pins game/config/artifact references and both harness versions, exposes adapter/session capabilities, and exchanges candidate submissions/results and timing reports. Base-specific discovery/session policy and Shishir's internal algorithm remain separately configurable. See [the parallel contract](contracts/PARALLEL_DEVELOPMENT.md) and [TASKS.md](TASKS.md); exact schemas still need joint review.
 
 The task split changes delivery dependencies, not the full product promise. Fixtures do not replace FireRed; parameter edits alone do not satisfy the mechanic-development requirement. Browser/engine selection and home layout remain open implementation/design decisions.
 

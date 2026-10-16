@@ -1,10 +1,12 @@
 # Gameverse — Product Requirements Document
 
-Version: 0.2 · Date: 2026-10-15 · Status: implementation-planning baseline
+Version: 0.3 · Date: 2026-10-15 · Status: implementation-planning baseline
 
 This PRD consolidates the design conversation. User decisions are requirements; proposed defaults and unresolved decisions are labeled. It is not a claim that the product has been built. Engineering execution starts in [HANDOFF.md](HANDOFF.md).
 
 Delivery is split into the base game/hosting, complete FireRed subgame integration, and the creation/improvement loop. See [TASKS.md](TASKS.md), [base game contract](contracts/BASE_GAME.md), [subgame contract](contracts/SUBGAME.md) and [improvement loop contract](contracts/IMPROVEMENT_LOOP.md). These contracts propose interfaces and task-level gates; this PRD retains the complete MVP acceptance requirements.
+
+The current parallel-work requirements are in [PARALLEL_DEVELOPMENT.md](contracts/PARALLEL_DEVELOPMENT.md): Vishal owns the versioned environment harness; Shishir owns the separately versioned config-defined build/improvement harness. Start with one simple reused base world, keep games swappable through adapters and manifests, and let the base own discovery/session policy. The loop operates during initial builds and later improvements and can simulate isolated versions before submitting candidates. Exact schemas and Shishir's acceptance remain joint work.
 
 ## 1. Product and intended outcome
 
@@ -36,9 +38,11 @@ Browser execution is required. A local companion worker may perform transcriptio
 | Verification | Core loop defined in the game proposal before build | Confirmed |
 | Human interaction | Editable live transcript and a builder channel/sidebar or workshop setting | Confirmed |
 | Backward compatibility | A formal rule is required; progress-preserving rule below operationalizes it | Rule proposed for implementation |
-| Base/subgame separation | Persistent base game hosting independently delivered subgames; improvement loop delivered separately | Confirmed logical separation; visual world layout unresolved |
+| Base/subgame separation | One initial reused world; replaceable base and growing subgame set via configs/adapters; base-owned discovery | Confirmed; source/runtime and world-specific presentation remain open |
+| Harness/config versions | Independently version environment and LLM harnesses, base/subgames and their config/object references | Confirmed; exact schema/transport remains joint work |
+| Loop scope | Initial game construction and later improvement of base games/subgames; isolated simulation; update/fork submissions | Confirmed; internal algorithms/search representation belong to Shishir |
 | Character creation | Required; presets versus deeper appearance controls and avatar mapping | Unresolved detail |
-| Technology | Outer browser shell, local worker, FireRed source plus GBA adapter; Godot city remains an option | Recommended architecture, not a user-mandated stack |
+| Technology | Browser environment and supported game adapters; reused source/world choice and local worker implementation to qualify | Open; older Godot-city and FireRed-adapter proposals are research inputs |
 
 The base game and subgame interface must support play without an improvement worker. Complete FireRed is a separate integration task. Keep the shell and adapter independent of the home/world presentation, which remains open; a host fixture does not replace the complete-game requirement.
 
@@ -69,7 +73,7 @@ Public game distribution, native console builds, multiplayer, crowd voting/beam-
 | R03 | Controller-first operation and keyboard fallback. Reserve one semantic feedback action across all games and overlays. | Both controller families complete routine journeys; no double actions from overlay/game focus; reconnect and input loss recover. |
 | R04 | Live transcription and correction. Display provisional/final text and captured game/version context; allow voice replacement, rerecord, append, playback and controller navigation. | Correct a deliberate misrecognition before queuing without typing at a laptop. A final transcript is never labeled verified intent. |
 | R05 | Durable request submission. Freeze reviewed text, context and active baseline under a request ID; revisions must be explicit. | Refresh/reconnect recovers submitted work, retries do not duplicate jobs, and switching games does not retarget a request. |
-| R06 | Configurable asynchronous processor capable of durable source/content/mechanic changes. | Real source changes build into an artifact; gameplay continues during work; algorithm/provider and resource policies are configurable. |
+| R06 | Config-defined, independently versioned asynchronous build/improvement harness targeting base games and subgames during construction and later improvement. | Pin exact loop and environment/game/config versions; real source/content/mechanic changes build into artifacts; internal algorithms remain configurable. |
 | R07 | Persistent builder channel scoped to game/request. Show interpretation, proposal, classification reasoning, work state and verification evidence. | Controller can reply, refine, cancel, retry, pause/resume and inspect history; failed work is visible without opening an editor. |
 | R08 | Versioned proposal defines the core loop and acceptance scenarios before each build attempt. | Preconditions, actions and assertions are executable; proposal revision is attached to evidence; repairs do not silently weaken checks. |
 | R09 | Agent chooses update/fork and explains the choice. | Update retains game identity; fork has a new identity and pinned parent lineage. Failed intended updates cannot be relabeled to evade checks. |
@@ -77,9 +81,9 @@ Public game distribution, native console builds, multiplayer, crowd voting/beam-
 | R11 | Backward-compatible updates preserve recognized progress. | Copied supported save fixtures load/migrate, preserve progress and remain reachable; failed compatibility blocks promotion. |
 | R12 | Forks/mashups have independent progress and explicit adapters when transferring progress. | Parent is unchanged; lineage is inspectable; transfer preview identifies mapped/dropped fields; target validates the copied result. |
 | R13 | Blank/fork/mashup workshop creation produces a playable game. | A proposal becomes a verified artifact/library entry with a repeatable core loop and the shared feedback action. |
-| R14 | Shared verification pipeline for updates and new games. | Build, boot, input, core loop, requested behavior and save/adapter checks have retained evidence before availability. |
+| R14 | Shared verification/submission contract for updates and new games, with isolated background simulation. | Build, boot, input, core loop, requested behavior and save/adapter checks bind to exact artifacts and run context; parallel simulations preserve accepted player state. |
 | R15 | Version history, rollback and failure recovery. | Compatible old artifact/checkpoint can be restored; newer saves retained; potential progress loss is disclosed and explicitly chosen. |
-| R16 | Versioned base-world deployment. A new deployment updates the same base game identity. | Artifact/manifest version is recorded; reload cannot silently mix cached code/assets; profile/library references survive supported base updates. |
+| R16 | Config-defined, versioned and replaceable base world under versioned environment/adapter contracts. | Pin config/source/build/artifact/adapter references; base owns discovery/session policy; supported updates preserve profile/library/progress and do not mix cached versions. |
 
 ### Proposed recording defaults
 
@@ -127,18 +131,20 @@ The suggested quest stories, rewards and mechanics are candidate interpretations
 - Prove failed verification and stale candidates cannot replace a current game; replay a failed job without duplicate promotion.
 - Verify supported save fixtures and actual rollback recovery. No silent resets or parent-save mutation.
 - Measure frame rate, input response, recording/transcription time, queue/build time and recovery time on the target computer. Establish a playability budget during the runtime spike. No user-approved build-latency SLA exists.
+- Track CI queue/job/critical-path time and clean/incremental build plus loop/simulation/evaluation timings under [AGENTS.md](AGENTS.md). Compare representative baselines and justify added work; broad qualification/expensive simulations are separate from routine CI.
 - No recurring editor/terminal use in routine journeys. Provide visible recovery when external setup or developer work is genuinely needed.
 
 ## 9. Open decisions and risks
 
 | ID | Open item | Impact / next action |
 | --- | --- | --- |
-| O01 | Visual form and minimum playable extent of the base home and its subgame entrances | Base/subgame responsibilities are separate; resolve presentation before substantial world/avatar UI work. Host and FireRed adapter spikes can proceed independently. |
+| O01 | Which existing world to reuse, its minimum playable extent and base-specific discovery/session policy | Resolve source/build/runtime feasibility and minimal interaction before major world/UI work; source selection is not settled by the split. |
 | O02 | Avatar customization depth and mapping into FireRed | Define minimum controls and identity behavior before character UI acceptance. |
-| O03 | Final city renderer, GBA adapter and exact browser/OS matrix | Benchmark candidates; Godot/EmulatorJS are recommendations, not completed selections. |
+| O03 | Environment/runtime adapters and browser/OS matrix | Benchmark the selected source/runtime; older Godot/EmulatorJS suggestions are not completed selections. |
 | O04 | Streaming transcription/provider, capture retention and request review default | Prototype live text/correction and configure processing/data handling explicitly. |
 | O05 | Repair/cost budgets and human-escalation thresholds | Set configurable limits before autonomous builds; no latency target does not authorize unlimited work. |
 | O06 | Supported save/version ranges and reverse adapters | Declare support before promotions; retain older saves/artifacts beyond the tested range. |
+| O07 | Exact config/run/submission/timing schemas, transport and first executable reference target | Agree v0 across issues #1/#2 before parallel implementations harden incompatible assumptions; observation/action and simulation details remain open. |
 
 Source/build prerequisites, physical controller behavior and full-campaign verification remain risks documented in the handoff. The old desktop/two-subgame config is historical and must not override this PRD.
 

@@ -1,6 +1,6 @@
 # Gameverse — Engineering Handoff
 
-Version: 0.2 · Date: 2026-10-15 · Companion: [PRD.md](PRD.md)
+Version: 0.3 · Date: 2026-10-15 · Companion: [PRD.md](PRD.md)
 
 ## 1. Start here
 
@@ -13,6 +13,8 @@ The agent decides update versus fork. Every build has a proposal defining a veri
 This handoff is sufficient to begin technical spikes. Do not block shell, toolchain or adapter work waiting for every design question. Resolve O01/O02 before committing to world layout and avatar mapping; preserve the complete FireRed requirement.
 
 ### Delivery split, 2026-10-15
+
+Current requirements: [parallel development contract](contracts/PARALLEL_DEVELOPMENT.md), [Vishal's issue #1](https://github.com/vishaltandale00/gameverse.ai/issues/1) and [Shishir's issue #2](https://github.com/vishaltandale00/gameverse.ai/issues/2). Vishal supplies the independently versioned environment/adapter harness and one simple reused/swappable base world. Shishir supplies the config-defined build/improvement harness targeting both game roles, during construction and later improvement. Config manifests, isolated simulations, submissions/results and timing reports are the shared seam; base discovery/session policy and loop internals stay with their owners. Exact v0 schemas and the first executable reference remain joint work. Follow [AGENTS.md](AGENTS.md) for CI/build/loop turnaround.
 
 Use [TASKS.md](TASKS.md) for separate implementation assignments: T1 base game plus hosting, T2 complete FireRed subgame, T3 creation/improvement loop. T1 must deliver a complete playable home/entry/save/return/resume journey while T3 is unavailable. T2's toolchain/adapter work can run independently of T1 against [the subgame contract](contracts/SUBGAME.md). Two small playable fixtures qualify host behavior without claiming FireRed completion. [The base contract](contracts/BASE_GAME.md) and [improvement contract](contracts/IMPROVEMENT_LOOP.md) assign ownership and integration gates.
 
@@ -29,7 +31,7 @@ The M0–M6 table below remains a technical dependency/reference checklist, not 
 
 Later explicit user directions take precedence. Where older documents disagree, the consolidated PRD is the current implementation baseline; do not silently resolve an item marked open.
 
-Read the new delivery contracts and TASKS.md before using the older MVP contract. The earlier FireRed-as-home alternative is historical after the logical base/subgame split; the home's appearance and avatar mapping remain open. [CONTEXT.md](CONTEXT.md) defines the shared terms.
+Read the current parallel/delivery contracts and TASKS.md before using the older MVP contract. The latest direction is to reuse a simple existing world as the base, with the actual source/runtime still open; a custom city/hub is not required. This does not remove the separate full-FireRed qualification item. [CONTEXT.md](CONTEXT.md) defines the shared terms.
 
 ### Historical material, not active configuration
 
@@ -70,7 +72,7 @@ These are implementation recommendations, not existing modules or final stack se
 | Version coordinator | Immutable versions/lineage, copied saves, compatibility evidence and transactional activation | Assuming emulator snapshots are compatible across changed code |
 | Verification adapters | Generic checks plus game-specific executable core-loop/change/save scenarios | Silently weakening failed assertions |
 
-Suggested shell/worker stack is TypeScript plus a small Node service and SQLite, subject to the first spike. A Godot web city remains an option, using an adapter boundary. FireRed should initially use a GBA browser adapter around its rebuilt cartridge; do not rewrite the complete game in Godot merely to keep one runtime.
+The earlier TypeScript/Node/SQLite shell and Godot-city suggestions are research inputs, not selected requirements. Start by qualifying the reused world's build/runtime and adapter under the shared contract. The separate FireRed integration can use a GBA browser adapter around its rebuilt cartridge; preserving one runtime is not a reason to rewrite the complete game.
 
 EmulatorJS and a documented mGBA-WASM SDK were researched but not integrated. Pin the selected wrapper, core, worker toolchain and build flags. Measure memory/input/performance on the actual machine before finalizing the renderer/emulator combination. Keep only the active gameplay input owner while the shell reserves feedback/navigation actions.
 
@@ -181,7 +183,7 @@ There is no `npm run dev`/app test command to hand over yet. Add accurate run/te
 
 ## 9. Decisions to resolve during implementation
 
-O01: minimum playable home/world presentation and subgame entrances. O02: character appearance depth/mapping. O03: exact browser/OS support, home renderer and emulator adapter. O04: transcription/provider/retention and review defaults. O05: resource/repair escalation policy. O06: save/version ranges and reverse adapters.
+O01: selected reused world and base-owned discovery/session policy. O02: character appearance depth/mapping. O03: runtime/adapter and browser/OS support. O04: transcription/provider/retention and review defaults. O05: resource/repair escalation policy. O06: save/version ranges and reverse adapters. O07: v0 config/run/submission/timing schemas, transport and executable reference for the parallel handoff.
 
 Implementation can begin on independent contracts and M0 now. Do not manufacture user answers. Escalate a decision in the builder/product channel when it materially affects the next irreversible layout or compatibility choice. The longer-term community search mechanism is deferred; preserve lineage/evidence now without building multiplayer infrastructure.
 

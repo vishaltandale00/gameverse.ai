@@ -1,10 +1,12 @@
 # Improvement loop contract
 
-Version: 0.1 · Date: 2026-10-15 · Status: proposed delivery contract
+Version: 0.2 · Date: 2026-10-15 · Status: updated requirements; exact interfaces remain proposed
 
 Owner: Shishir. Vishal owns the base game, subgame hosting and host-controlled activation. External loop work is underway per Vishal; this document does not certify its implementation. The proposed joint handoff is recorded in [TASKS.md](../TASKS.md).
 
 Implements PRD R04–R14 and improvement-related R15 behavior, using the [base-game](BASE_GAME.md) and [subgame](SUBGAME.md) interfaces. This task changes games; base-game play and manually installed subgames must work independently.
+
+The loop is an independently versioned, config-defined LLM harness. It operates during initial game construction as well as later improvement, targeting base games and subgames. It may run multiple isolated simulations and choose its own internal algorithms, search and iteration representations. [PARALLEL_DEVELOPMENT.md](PARALLEL_DEVELOPMENT.md) defines the shared versioned inputs, candidate submissions and timing reports consumed by Vishal's environment harness.
 
 ## Ownership and integration
 
@@ -50,5 +52,9 @@ Failure or interruption restores the compatible original pair. Preserve newer sa
 | I05 | PRD E01–E03 run against actual FireRed integration, including pre-Misty reachability and meaningful infiltration behavior. |
 | I06 | Blank/fork/mashup workshop journeys satisfy E04–E05, create independent playable entries and preserve parent progress. |
 | I07 | The base game can be an explicit improvement target through the same contract; a failed base candidate retains a usable home/library. |
+| I08 | Initial game construction and later improvement use pinned game/config inputs, a separately versioned loop config and the same external candidate-submission meanings. |
+| I09 | Multiple simulated versions use isolated state; failed/abandoned experiments cannot mutate player progress. Internal candidate representations may vary while submissions remain compatible. |
+| I10 | Updates/forks carry immutable config/source/artifact references, parents, compatibility and artifact-bound evidence; durable submission receipts reject duplicate/stale/cancelled work. |
+| I11 | Report total/queue/build/simulation/evaluation/repair timing and outcomes with exact run/config/harness context; preserve failed/cancelled attempts and configured budgets. |
 
 Build latency has no user-approved SLA. Measure it and configure cost/repair limits; keep gameplay responsive throughout. Passing a fixture-only improvement test proves the interface but does not satisfy I05 or overall MVP acceptance.

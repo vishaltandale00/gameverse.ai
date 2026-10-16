@@ -1,8 +1,10 @@
 # Subgame contract
 
-Version: 0.1 · Date: 2026-10-15 · Status: proposed delivery contract
+Version: 0.2 · Date: 2026-10-15 · Status: updated requirements; exact interfaces remain proposed
 
 Defines the seam between the [base game](BASE_GAME.md) and independently delivered games. Complete FireRed remains PRD R02; hosting fixtures are not a substitute.
+
+Game configs are versioned manifests that may reference larger objects, source trees and artifacts. The same environment/adapter concepts support replaceable base games and growing subgame sets. Base-owned discovery and the independently versioned loop use [PARALLEL_DEVELOPMENT.md](PARALLEL_DEVELOPMENT.md); internal loop candidate/search representations are Shishir's responsibility.
 
 ## Registration record
 
@@ -12,6 +14,7 @@ Every installable version supplies the following information. Serialization and 
 | --- | --- |
 | Contract version | Host-interface version; unsupported versions fail before execution |
 | Game ID and version ID | Stable game identity plus immutable playable revision |
+| Config/source/settings references | Exact resolved config revision, game role, settings and source/build definition; configuration can refer to larger objects |
 | Artifact reference and digest | Exact entrypoint, assets and runtime/core dependencies; no floating latest references |
 | Adapter kind/version | How the host loads and controls this artifact; compatible host versions |
 | Display metadata | Name, controls and entry/resume information |
@@ -60,5 +63,6 @@ For FireRed, in-game battery saves and emulator execution snapshots are differen
 | S05 | Boot failure, runtime crash and unresponsive operations leave a usable host recovery path. |
 | S06 | Game-specific safe states and compatible copied-save continuation are verified before automatic update eligibility. |
 | S07 | One game's failure/update/rollback does not change another game's accepted artifact or progress. |
+| S08 | Isolated background sessions pin versions, report outcomes/timings and leave accepted player progress unchanged; unsupported simulation capabilities are explicit. |
 
 Complete FireRed additionally requires reproducible pinned baseline/build evidence, representative early/mid/late saves, campaign/progression QA, real browser play and both-controller evidence. The current research patch and headless alternative-game observations do not pass this gate. Source selection, packaging rights and runtime dependencies must be recorded before bundling a distributable artifact.
