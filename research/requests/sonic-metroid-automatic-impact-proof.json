@@ -1,0 +1,129 @@
+{
+  "schema": "gameverse.native-ir-consumer-proof/1",
+  "status": "pass",
+  "candidate": {
+    "ref": "local/composition-builds/sonic-metroid-signal-descent-22/game.gba",
+    "sha256": "c4c2f21168a03b591420faed6a8959941ea5a4bca35eed5a7fc8eb5e3428b207"
+  },
+  "build": {
+    "ref": "local/composition-builds/sonic-metroid-signal-descent-22-reviewed/receipt.json",
+    "sha256": "1bd2bf19b5bb1bd15f7b8f38118f3c03486985d70433665a63ce4bb59d6b45fb"
+  },
+  "generated_abi": {
+    "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/abi-receipt.json",
+    "sha256": "8fcacaac569352d10d210562cdaaf8accd4781baa3a44b2f0617c00a714fd134"
+  },
+  "l1": {
+    "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/l1.json",
+    "sha256": "d1553f6e708d9c1f8dfd18aad318bf1b88ba373483ddee4adcbbbaeb6e38c890"
+  },
+  "bridge": {
+    "ref": "tools/composition/components/sonic_metroid/impact_bridge.c",
+    "sha256": "993e1e2d8d2a922721b33cfb6ba62cf032e1042f0cc978f35a6ccc26a3a46684"
+  },
+  "native_report": {
+    "ref": "local/re/experiments/20261016-sonic-self-decompile/signal-descent-22-impact-smoke/report.json",
+    "sha256": "dda7ebdf2932a899aa40736649ebbc52344662fb095939655d7b62bdcc136bb7"
+  },
+  "events": {
+    "nonlethal": {
+      "calls": 1,
+      "deaths": 0,
+      "context_counter": 0,
+      "native": [
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000"
+      ],
+      "alien": [
+        "02000000001100000200",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000"
+      ]
+    },
+    "lethal": {
+      "calls": 2,
+      "deaths": 1,
+      "context_counter": 0,
+      "native": [
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000"
+      ],
+      "alien": [
+        "00000062011100001200",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000"
+      ]
+    }
+  },
+  "field_order": [
+    "HPu16",
+    "field1u8",
+    "poseu8",
+    "field3u8",
+    "field4u8",
+    "field5u8",
+    "field6u8",
+    "flagsu8",
+    "sharedcontextu8"
+  ],
+  "assertions": [
+    "One emitted-IR invocation performs first real beam impact4\u21922HP; reactionfield4=17 andflags2",
+    "Second emitted-IR invocation returnsdeath,HP0,pose98,field3=1,flags18; actualalien kill/drop ledger increments",
+    "Alloriginalsplitfieldwrites persist in entity-owned sidecars; sharedcontextcopied in/out per invocation",
+    "Gameplay branch uses realinput/HP; no synthetic memory writes"
+  ],
+  "scope_limits": [
+    "New hostbridge owns collision/vulnerability/drop/removal; unknownMZM splitfields are preserved, not claimed mapped to unknownSonic fields",
+    "Boss eight-unit phase meter consumes sameimpact behavior; originalSonic caller retains HP/phases/death",
+    "Wholelatercampaign/finale not yet qualified"
+  ],
+  "timing": {
+    "build_before_s": 0.636281,
+    "build_after_s": 0.699349,
+    "mode": "clean_no_cache",
+    "comparable": "Same macOSarm64/AppleClang21/nativebackend;2extraTUs;separatequalification",
+    "smoke_s": 0.671267292,
+    "freshprefix_s": 8.805294333,
+    "factory_s": 4.413848542,
+    "queue_s": null,
+    "stage_accounting": "Reports nested stages are not added to wall totals"
+  }
+}

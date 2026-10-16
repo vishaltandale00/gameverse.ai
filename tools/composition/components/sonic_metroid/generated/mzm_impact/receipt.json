@@ -1,0 +1,105 @@
+{
+  "schema": "gameverse.ir.qualification/0.2",
+  "source_commit": "acc56819395d7ca51b5d0b17c9ae3e5d968698fa",
+  "machine": "macOS-27.0.1-arm64-arm-64bit",
+  "queue_s": null,
+  "build_mode": "clean",
+  "cache": "none",
+  "limits": {
+    "vectors": 16384,
+    "instructions_per_call": 2048,
+    "stage_timeout_s": 30
+  },
+  "stages": [
+    {
+      "label": "compile",
+      "wall_s": 0.021189084000000025,
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "label": "link",
+      "wall_s": 0.0044002499999999944,
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "label": "symbols",
+      "wall_s": 0.004125625000000022,
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": "02020000 T behavior_0\n"
+    },
+    {
+      "label": "emit",
+      "wall_s": 0.004089583000000008,
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "label": "compile_oracle",
+      "wall_s": 0.05951416599999998,
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": ""
+    },
+    {
+      "label": "native_parity",
+      "wall_s": 0.09224320800000002,
+      "exit_code": 0,
+      "stderr": "parameter_low8_distinct: 256\n",
+      "stdout": "{\"outcome\":\"pass\",\"vectors\":16384,\"instructions_total\":1085574}\n"
+    }
+  ],
+  "rom_sha256": "fc94f65380b65b870a30b9b04b39cca1dc63d6e46a4a373d3904adc0912ebc37",
+  "fixture_scope": "deterministic boundary and random synthetic fields; not gameplay traces",
+  "parameter_grid_low8": false,
+  "assumptions": [
+    {
+      "kind": "terminal_incoming_lr_boundary",
+      "provenance": "op72",
+      "status": "requires_differential_check"
+    }
+  ],
+  "harness_sha256": "21f0ed67ee9d2b7e1dc65049322b7fcf3009a57d7aa1ffa8f661b264b7e1e153",
+  "harness_version": "automatic-native-oracle/0.2",
+  "abi_checks": [
+    "callee_saved_r4_r11",
+    "stack_balance",
+    "qualified_return_width"
+  ],
+  "compiler_version": "Apple clang version 21.0.0 (clang-2100.0.123.102)",
+  "capture_fixtures": null,
+  "parity": {
+    "outcome": "pass",
+    "vectors": 16384,
+    "instructions_total": 1085574
+  },
+  "outcome": "pass",
+  "wall_s": 0.20845387500000007,
+  "artifacts": {
+    "l1.json": {
+      "sha256": "d1553f6e708d9c1f8dfd18aad318bf1b88ba373483ddee4adcbbbaeb6e38c890",
+      "bytes": 22724
+    },
+    "validation-adapter.json": {
+      "sha256": "67aa8ef0f5863d3734b2df989d4dbacb58706ca0808ee7196cc536ac41a7ee22",
+      "bytes": 1827
+    },
+    "generated.c": {
+      "sha256": "fc0aa5ec9f21ef6da6d2c9c0c10ef2a43e321cbc3511c35dbea724a734808b34",
+      "bytes": 3349
+    },
+    "generated.bin": {
+      "sha256": "1a8c188c46710d2c2e119e8ea5fcaf5606e2876badb537366d8850d807e7e2fe",
+      "bytes": 88
+    },
+    "validation-adapter.c": {
+      "sha256": "6a24002a72617b48aebca0916147bbb3f6e9c9b0d6c3d3d3e07e8c87318275f8",
+      "bytes": 6161
+    }
+  }
+}

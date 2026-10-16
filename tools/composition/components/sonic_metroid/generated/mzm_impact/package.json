@@ -1,0 +1,137 @@
+{
+  "schema": "gameverse.executable-component/0.2",
+  "id": "mzm.combat.impact",
+  "version": "0.1.0",
+  "title": "Damage, lethal transition and reaction state",
+  "source_game": "metroid-zero-mission",
+  "origin": "automatic_highfunction_lift",
+  "behavior": "l1.json",
+  "behavior_sha256": "d1553f6e708d9c1f8dfd18aad318bf1b88ba373483ddee4adcbbbaeb6e38c890",
+  "qualification": {
+    "status": "pass",
+    "receipt": "receipt.json",
+    "vectors": 16384,
+    "scope": "deterministic boundary and random synthetic fields; not gameplay traces"
+  },
+  "effects": {
+    "reads": [
+      "field_0",
+      "field_4",
+      "field_6",
+      "field_7",
+      "field_8"
+    ],
+    "writes": [
+      "field_0",
+      "field_1",
+      "field_2",
+      "field_3",
+      "field_4",
+      "field_5",
+      "field_6",
+      "field_7",
+      "field_8"
+    ]
+  },
+  "field_meanings": {
+    "field_0": {
+      "quantity": "energy",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "enemy",
+      "confidence": 0.85,
+      "evidence": [
+        "own_rom_state_usage_and_existing_motion_unit_review"
+      ],
+      "naming_status": "analysis_annotation_not_a_behavior_input"
+    },
+    "field_1": {
+      "quantity": "unknown",
+      "unit": "unknown",
+      "frame": "unknown",
+      "confidence": 0.0,
+      "evidence": []
+    },
+    "field_2": {
+      "quantity": "pose",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "enemy",
+      "confidence": 0.85,
+      "evidence": [
+        "own_rom_state_usage_and_existing_motion_unit_review"
+      ],
+      "naming_status": "analysis_annotation_not_a_behavior_input"
+    },
+    "field_3": {
+      "quantity": "unknown",
+      "unit": "unknown",
+      "frame": "unknown",
+      "confidence": 0.0,
+      "evidence": []
+    },
+    "field_4": {
+      "quantity": "unknown",
+      "unit": "unknown",
+      "frame": "unknown",
+      "confidence": 0.0,
+      "evidence": []
+    },
+    "field_5": {
+      "quantity": "unknown",
+      "unit": "unknown",
+      "frame": "unknown",
+      "confidence": 0.0,
+      "evidence": []
+    },
+    "field_6": {
+      "quantity": "unknown",
+      "unit": "unknown",
+      "frame": "unknown",
+      "confidence": 0.0,
+      "evidence": []
+    },
+    "field_7": {
+      "quantity": "bitset",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "enemy",
+      "confidence": 0.85,
+      "evidence": [
+        "own_rom_state_usage_and_existing_motion_unit_review"
+      ],
+      "naming_status": "analysis_annotation_not_a_behavior_input"
+    },
+    "field_8": {
+      "quantity": "counter",
+      "unit": {
+        "numerator": 1,
+        "denominator": 1
+      },
+      "frame": "world",
+      "confidence": 0.85,
+      "evidence": [
+        "own_rom_state_usage_and_existing_motion_unit_review"
+      ],
+      "naming_status": "analysis_annotation_not_a_behavior_input"
+    }
+  },
+  "owned_collections": [],
+  "lifecycle": {
+    "storage": "component_or_entity_instance",
+    "clock": "explicit_invocation",
+    "phase": "selected_by_composition",
+    "ordering": "declared_graph_edges"
+  },
+  "gaps": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced",
+    "Semantic annotation has not been independently scored against game rendering"
+  ]
+}

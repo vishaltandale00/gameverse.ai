@@ -26,13 +26,18 @@ def run(rom,out,sequence=None):
   e={'name':name,'frame':s.frame,'x':v(0,4,True)/256,'y':v(4,4,True)/256,'vx':v(8,2,True),'vy':v(10,2,True),'speed':v(12,2,True),'flags':hex(v(16,4)),'pose':v(64,1),'player_task':hex(v(96,4)),'level':u(0x300514c,1),'tasks':tasks,'state_address':hex(state)}
   if state:
    b=s.read_memory(state,188);q=lambda a,n=2:int.from_bytes(b[a:a+n],'little')
-   e['state']={**{k:q(a,n) for k,a,n in [('frame',4,4),('upgrades',8,4),('visited',12,4),('tiles',20,4),('energy',24,2),('max_energy',26,2),('missiles',28,2),('max_missiles',30,2),('charge',34,2),('cooldown',36,2),('iframes',38,2),('shots_fired',44,2),('shots_hit',46,2),('native_kills',48,2),('alien_kills',50,2),('gates_opened',52,2),('relics_collected',54,2),('damage_taken',56,2),('deaths',58,2),('stage',176,1),('morph',177,1),('momentum',180,1),('active',185,1),('message',187,1)]},'picked':[q(60+i*2) for i in range(18)],'opened':[q(96+i*2) for i in range(18)]}
+   e['state']={**{k:q(a,n) for k,a,n in [('frame',4,4),('upgrades',8,4),('visited',12,4),('tiles',20,4),('energy',24,2),('max_energy',26,2),('missiles',28,2),('max_missiles',30,2),('charge',34,2),('cooldown',36,2),('iframes',38,2),('shots_fired',44,2),('shots_hit',46,2),('native_kills',48,2),('alien_kills',50,2),('gates_opened',52,2),('relics_collected',54,2),('damage_taken',56,2),('deaths',58,2),('stage',176,1),('morph',177,1),('ledge',178,1),('wall_kicks',182,1),('ledge_grabs',183,1),('momentum',180,1),('active',185,1),('message',187,1)]},'picked':[q(60+i*2) for i in range(18)],'opened':[q(96+i*2) for i in range(18)]}
    def arrays(base,stride,count):
     return [s.read_memory(state+base+i*stride,stride).hex() for i in range(count)]
    e['state']['relay']={'trips':u(state+1000,2),'from':u(state+1002,1),'to':u(state+1003,1)}
+   e['state']['mzm_impact']={'calls':u(state+1246,2),'deaths':u(state+1248,2),'context_counter':u(state+1244,1),'native':arrays(1004,10,16),'alien':arrays(1164,10,8)}
    e['shots']=arrays(188,16,8);e['aliens']=arrays(316,28,8);e['prefabs']=arrays(932,8,8)
   for task in tasks:
    callback=int(task['callback'],0);data=int(task['data'],0)
+   if callback==0x08087641:
+    task['handle_data']=s.read_memory(data,184).hex()
+    task['handle_screen_xy']=[u(data+162,2),u(data+164,2)]
+    task['handle_attached_mask']=u(data+180,1)
    if 0x08025000<=callback<0x0803b000 and 0x030023a0<=data<0x03007f00:
     task['boss_candidate_data']=s.read_memory(data,192).hex()
   events.append(e);return e

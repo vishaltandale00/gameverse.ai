@@ -87,6 +87,23 @@
       }
     },
     {
+      "id": "impact_ir",
+      "provides": [
+        "combat.automatically_lifted_mzm_impact@1"
+      ],
+      "requires": [],
+      "requires_components": [],
+      "ports": [],
+      "accesses": [],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    },
+    {
       "id": "state",
       "provides": [
         "campaign.task_owned_state@1"
@@ -157,6 +174,26 @@
       }
     },
     {
+      "id": "impact_bridge",
+      "provides": [
+        "combat.symbolic_impact_to_native_entity_adapter@1"
+      ],
+      "requires": [],
+      "requires_components": [
+        "state",
+        "impact_ir"
+      ],
+      "ports": [],
+      "accesses": [],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    },
+    {
       "id": "combat",
       "provides": [
         "combat.realtime_projectiles_native_entity_lifecycle@1"
@@ -165,7 +202,8 @@
       "requires_components": [
         "state",
         "resources",
-        "geometry"
+        "geometry",
+        "impact_bridge"
       ],
       "ports": [],
       "accesses": [
@@ -546,94 +584,108 @@
         }
       },
       {
+        "instance": "impact_ir",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-draft-impact-ir.json",
+          "sha256": "b17394902a35bde74b5e2639083fa527c3896f0c43613b922aa2a7bac2768f78"
+        }
+      },
+      {
         "instance": "state",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-state.json",
-          "sha256": "0e7e9478a8d171bae4503104a04cabfbf973a8594bfe3fb4facee6b2cf5315d1"
+          "sha256": "7a909501937a34763fc33d08ec3b628360554737a30941ce24e95c279bbabf7c"
         }
       },
       {
         "instance": "geometry",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-geometry.json",
-          "sha256": "bcdd21cbdc2c8654547f51c5a15b7c8953f2abd130d1b33d02085c22261bdc51"
+          "sha256": "1153b9ba94be63d1bac91b37b98c8827d9ea9ce967d8476a980549579a512533"
         }
       },
       {
         "instance": "resources",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-resources.json",
-          "sha256": "e425b4f91bf05b87c07d44ec6575973409d03c175b3e3c06075775309d73e4d4"
+          "sha256": "4cf16c4412c094d97f66c8383c799f54c365d7b108824a01c7ea2d995c4683b1"
+        }
+      },
+      {
+        "instance": "impact_bridge",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-draft-impact_bridge.json",
+          "sha256": "072328863646a3cd49bb279e775ed7d9d127a6e853ca95a802fd4fc93bf9d4ec"
         }
       },
       {
         "instance": "combat",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-combat.json",
-          "sha256": "5219971ab032765a6a9858fc952243244e93322295164e2b941317451292436a"
+          "sha256": "d0943d1bd9d1dcc7cd9d33d3c12c47a69e6478995f82c17d0587dd0a16c43964"
         }
       },
       {
         "instance": "boss",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-boss.json",
-          "sha256": "7cd37ede93f9a16e0da63c38006419e760808542913494d722e9633e613adecd"
+          "sha256": "f535e364229c69212acc72979f5bf33e9334328dad9aaf89300b111a9ca2abfb"
         }
       },
       {
         "instance": "ecology",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-ecology.json",
-          "sha256": "c679b370bfcf2b3e0ee12498501c5e199229be858fb8982ff395c3b5261eb3e0"
+          "sha256": "65ee248d26e43c733ec9aedb7affb0b23804be0655f957d0388bd974c12ec342"
         }
       },
       {
         "instance": "progression",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-progression.json",
-          "sha256": "67b59a20d9ddbff5a32699e5e2d5aa784ec7eb87b58f92f1fdc214f0ec0f3eb6"
+          "sha256": "c7d63e01f2eeb4e97a1f1f9354e1d8c975e18ccb169b26355f36dabca2b70352"
         }
       },
       {
         "instance": "movement",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-movement.json",
-          "sha256": "ee5d099b2554e07a65a176514ffdb3d7f857cfaa0329613ee80a8e2645a5688c"
+          "sha256": "695dff33a97c097eba0a87f6dc16be06bb790c97cfc44a8e36b39abed15a6e42"
         }
       },
       {
         "instance": "world",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-world.json",
-          "sha256": "e269ce011063c169b07a1e44317ab6c75ccc53c06bde637877bd779cc51f7027"
+          "sha256": "8c3f36a3087a695e7381fe0953c13222f430a2aa3f6664ff673cc84dc412eeaf"
         }
       },
       {
         "instance": "render",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-render.json",
-          "sha256": "9bc0c1f3848b34425397521892313789ba042b9520b11357a8e6672da5a9dd2c"
+          "sha256": "d851cb4445db32d4db8566ef3af4a105c4ff3945c421f7c998ec6a2277ad7d27"
         }
       },
       {
         "instance": "travel",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-travel.json",
-          "sha256": "f1279fe6d0ff4382c57131b0329732dfc44a59731e5b867252491a92e3691e55"
+          "sha256": "5549bcf439023f0af28c31b0bbfd539ade7757f3989277b4c43a3069f5a9e166"
         }
       },
       {
         "instance": "schedule",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-schedule.json",
-          "sha256": "a6737c2f524aa39ab19baa9ed966fb79e25fd4e26bafebf37702c4774d7f369c"
+          "sha256": "7ac873e6b259935b455e66bf8975d4f04cfdde9a1ecf9ddc19b63f6e7d79139b"
         }
       },
       {
         "instance": "kernel",
         "package": {
           "ref": "tools/composition/packages/sonic-metroid-draft-kernel.json",
-          "sha256": "6728fb7ef3dc9aef56b181745ea8cc10e6f3adc7678105c9c2cdf1f2141ab3f9"
+          "sha256": "9a5573d2ad7edfae4262331673d979112b8c98e177be33be28d277fa6d79d060"
         }
       }
     ],

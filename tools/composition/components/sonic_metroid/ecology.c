@@ -25,13 +25,13 @@ void gv_ecology_step(GvState *s,GvPlayer *p)
              * permanent once-only rewards. Killing the tutorial prey cannot
              * remove the only way through its gate. State128 is a timed
              * despawn phase; active2 is the explicit renewable population. */
-            if(a->state&128){if(a->clock)a->clock--;else{a->active=2;a->state=0;a->hp=6;a->freeze=0;a->vx=0;a->x=a->home_x;a->y=(int32_t)a->home_y*256;}}
+            if(a->state&128){if(a->clock)a->clock--;else{gv_zero(&s->mzm_alien[i],sizeof(s->mzm_alien[0]));a->active=2;a->state=0;a->hp=6;a->freeze=0;a->vx=0;a->x=a->home_x;a->y=(int32_t)a->home_y*256;}}
             if(!a->active)continue;
         }
         int x=gv_px(a->x),y=gv_px(a->y),px=gv_px(p->x),py=gv_px(p->y);
         if(gv_abs(x-px)>360)continue;
-        int hit=gv_hit_shots(s,x,y,a->species==GV_GUARDIAN?18:10,a->species==GV_GUARDIAN?22:10,
-                            &a->hp,&a->freeze,a->species==GV_GUARDIAN && a->state==0?8|16:2|8|16);
+        int hit=gv_hit_shots_state(s,x,y,a->species==GV_GUARDIAN?18:10,a->species==GV_GUARDIAN?22:10,
+                            &a->hp,&a->freeze,a->species==GV_GUARDIAN && a->state==0?8|16:2|8|16,&s->mzm_alien[i]);
         if(hit==2){defeat(s,a,x,y);continue;}
         if(a->freeze){
             a->freeze--;
@@ -72,7 +72,7 @@ void gv_ecology_step(GvState *s,GvPlayer *p)
         x=gv_px(a->x);y=gv_px(a->y);
         if(gv_abs(x-px)<(a->species==GV_GUARDIAN?22:16) && gv_abs(y-py)<(a->species==GV_GUARDIAN?30:20)){
             if((s->upgrades&GV_SCREW) && (p->flags&4) && (p->flags&2)){
-                a->hp=0;defeat(s,a,x,y);
+                gv_apply_impact(s,&s->mzm_alien[i],&a->hp,a->hp);defeat(s,a,x,y);
             }else gv_damage_player(s,p,a->species==GV_GUARDIAN?30:15);
         }
     }

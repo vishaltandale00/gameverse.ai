@@ -1,0 +1,862 @@
+{
+  "schema": "gameverse.l1.behavior/0.2",
+  "id": "behavior_0",
+  "parameters": [
+    {
+      "name": "param_0",
+      "storage_type": "u16"
+    }
+  ],
+  "return_type": "u32",
+  "collections": [],
+  "state": [
+    {
+      "name": "field_0",
+      "owner": "entity_r0",
+      "storage_type": "u16",
+      "semantic_type": {
+        "quantity": "energy",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "enemy",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "name": "field_1",
+      "owner": "entity_r0",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "unknown",
+        "unit": "unknown",
+        "frame": "unknown",
+        "confidence": 0.0,
+        "evidence": []
+      }
+    },
+    {
+      "name": "field_2",
+      "owner": "entity_r0",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "pose",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "enemy",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "name": "field_3",
+      "owner": "entity_r0",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "unknown",
+        "unit": "unknown",
+        "frame": "unknown",
+        "confidence": 0.0,
+        "evidence": []
+      }
+    },
+    {
+      "name": "field_4",
+      "owner": "entity_r0",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "unknown",
+        "unit": "unknown",
+        "frame": "unknown",
+        "confidence": 0.0,
+        "evidence": []
+      }
+    },
+    {
+      "name": "field_5",
+      "owner": "entity_r0",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "unknown",
+        "unit": "unknown",
+        "frame": "unknown",
+        "confidence": 0.0,
+        "evidence": []
+      }
+    },
+    {
+      "name": "field_6",
+      "owner": "entity_r0",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "unknown",
+        "unit": "unknown",
+        "frame": "unknown",
+        "confidence": 0.0,
+        "evidence": []
+      }
+    },
+    {
+      "name": "field_7",
+      "owner": "entity_r0",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "bitset",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "enemy",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    },
+    {
+      "name": "field_8",
+      "owner": "context",
+      "storage_type": "u8",
+      "semantic_type": {
+        "quantity": "counter",
+        "unit": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "frame": "world",
+        "confidence": 0.85,
+        "evidence": [
+          "own_rom_state_usage_and_existing_motion_unit_review"
+        ],
+        "naming_status": "analysis_annotation_not_a_behavior_input"
+      }
+    }
+  ],
+  "locals": [
+    {
+      "name": "value_6",
+      "storage_type": "u16"
+    },
+    {
+      "name": "value_22",
+      "storage_type": "u8"
+    },
+    {
+      "name": "value_46",
+      "storage_type": "u8"
+    },
+    {
+      "name": "value_54",
+      "storage_type": "u8"
+    },
+    {
+      "name": "value_96",
+      "storage_type": "u32"
+    },
+    {
+      "name": "value_103",
+      "storage_type": "u8"
+    },
+    {
+      "name": "value_112",
+      "storage_type": "u8"
+    }
+  ],
+  "assets": [],
+  "body": [
+    {
+      "op": "assign_local",
+      "local": "value_6",
+      "value": {
+        "op": "field",
+        "type": "u16",
+        "name": "field_0"
+      },
+      "provenance": "op3"
+    },
+    {
+      "op": "if",
+      "condition": {
+        "op": "less_unsigned",
+        "type": "u8",
+        "args": [
+          {
+            "op": "parameter",
+            "type": "u16",
+            "name": "param_0"
+          },
+          {
+            "op": "local",
+            "type": "u16",
+            "name": "value_6",
+            "provenance": "op3"
+          }
+        ],
+        "provenance": "op4"
+      },
+      "then": [
+        {
+          "op": "assign_field",
+          "field": "field_0",
+          "value": {
+            "op": "sub_wrap",
+            "type": "u16",
+            "args": [
+              {
+                "op": "local",
+                "type": "u16",
+                "name": "value_6",
+                "provenance": "op3"
+              },
+              {
+                "op": "parameter",
+                "type": "u16",
+                "name": "param_0"
+              }
+            ],
+            "provenance": "op50"
+          },
+          "provenance": "op54"
+        },
+        {
+          "op": "assign_local",
+          "local": "value_96",
+          "value": {
+            "op": "const",
+            "type": "u32",
+            "value": 0
+          },
+          "provenance": "op57"
+        },
+        {
+          "op": "assign_local",
+          "local": "value_103",
+          "value": {
+            "op": "field",
+            "type": "u8",
+            "name": "field_4"
+          },
+          "provenance": "op62"
+        },
+        {
+          "op": "assign_field",
+          "field": "field_4",
+          "value": {
+            "op": "bit_or",
+            "type": "u8",
+            "args": [
+              {
+                "op": "bit_and",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "local",
+                    "type": "u8",
+                    "name": "value_103",
+                    "provenance": "op62"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u8",
+                    "value": 128
+                  }
+                ],
+                "provenance": "op63"
+              },
+              {
+                "op": "const",
+                "type": "u8",
+                "value": 17
+              }
+            ],
+            "provenance": "op64"
+          },
+          "provenance": "op66"
+        },
+        {
+          "op": "assign_local",
+          "local": "value_112",
+          "value": {
+            "op": "field",
+            "type": "u8",
+            "name": "field_7"
+          },
+          "provenance": "op67"
+        },
+        {
+          "op": "assign_field",
+          "field": "field_7",
+          "value": {
+            "op": "bit_or",
+            "type": "u8",
+            "args": [
+              {
+                "op": "local",
+                "type": "u8",
+                "name": "value_112",
+                "provenance": "op67"
+              },
+              {
+                "op": "const",
+                "type": "u8",
+                "value": 2
+              }
+            ],
+            "provenance": "op68"
+          },
+          "provenance": "op70"
+        },
+        {
+          "op": "return",
+          "value": {
+            "op": "local",
+            "type": "u32",
+            "name": "value_96",
+            "provenance": "op57"
+          },
+          "provenance": "op72"
+        }
+      ],
+      "else": [
+        {
+          "op": "assign_field",
+          "field": "field_0",
+          "value": {
+            "op": "const",
+            "type": "u16",
+            "value": 0
+          },
+          "provenance": "op9"
+        },
+        {
+          "op": "assign_local",
+          "local": "value_22",
+          "value": {
+            "op": "field",
+            "type": "u8",
+            "name": "field_7"
+          },
+          "provenance": "op12"
+        },
+        {
+          "op": "assign_field",
+          "field": "field_7",
+          "value": {
+            "op": "bit_or",
+            "type": "u8",
+            "args": [
+              {
+                "op": "local",
+                "type": "u8",
+                "name": "value_22",
+                "provenance": "op12"
+              },
+              {
+                "op": "const",
+                "type": "u8",
+                "value": 16
+              }
+            ],
+            "provenance": "op13"
+          },
+          "provenance": "op15"
+        },
+        {
+          "op": "assign_field",
+          "field": "field_5",
+          "value": {
+            "op": "const",
+            "type": "u8",
+            "value": 0
+          },
+          "provenance": "op19"
+        },
+        {
+          "op": "assign_field",
+          "field": "field_1",
+          "value": {
+            "op": "const",
+            "type": "u8",
+            "value": 0
+          },
+          "provenance": "op23"
+        },
+        {
+          "op": "assign_local",
+          "local": "value_46",
+          "value": {
+            "op": "field",
+            "type": "u8",
+            "name": "field_6"
+          },
+          "provenance": "op26"
+        },
+        {
+          "op": "if",
+          "condition": {
+            "op": "not_equal",
+            "type": "u8",
+            "args": [
+              {
+                "op": "local",
+                "type": "u8",
+                "name": "value_46",
+                "provenance": "op26"
+              },
+              {
+                "op": "const",
+                "type": "u8",
+                "value": 0
+              }
+            ],
+            "provenance": "op27"
+          },
+          "then": [
+            {
+              "op": "assign_local",
+              "local": "value_54",
+              "value": {
+                "op": "field",
+                "type": "u8",
+                "name": "field_8"
+              },
+              "provenance": "op31"
+            },
+            {
+              "op": "if",
+              "condition": {
+                "op": "equal",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "local",
+                    "type": "u8",
+                    "name": "value_54",
+                    "provenance": "op31"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u8",
+                    "value": 1
+                  }
+                ],
+                "provenance": "op32"
+              },
+              "then": [
+                {
+                  "op": "assign_field",
+                  "field": "field_8",
+                  "value": {
+                    "op": "const",
+                    "type": "u8",
+                    "value": 2
+                  },
+                  "provenance": "op37"
+                },
+                {
+                  "op": "assign_field",
+                  "field": "field_6",
+                  "value": {
+                    "op": "const",
+                    "type": "u8",
+                    "value": 0
+                  },
+                  "provenance": "op39"
+                },
+                {
+                  "op": "assign_field",
+                  "field": "field_2",
+                  "value": {
+                    "op": "const",
+                    "type": "u8",
+                    "value": 98
+                  },
+                  "provenance": "op44"
+                },
+                {
+                  "op": "assign_field",
+                  "field": "field_3",
+                  "value": {
+                    "op": "const",
+                    "type": "u8",
+                    "value": 1
+                  },
+                  "provenance": "op48"
+                },
+                {
+                  "op": "assign_local",
+                  "local": "value_96",
+                  "value": {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 1
+                  },
+                  "provenance": "op57"
+                },
+                {
+                  "op": "assign_local",
+                  "local": "value_103",
+                  "value": {
+                    "op": "field",
+                    "type": "u8",
+                    "name": "field_4"
+                  },
+                  "provenance": "op62"
+                },
+                {
+                  "op": "assign_field",
+                  "field": "field_4",
+                  "value": {
+                    "op": "bit_or",
+                    "type": "u8",
+                    "args": [
+                      {
+                        "op": "bit_and",
+                        "type": "u8",
+                        "args": [
+                          {
+                            "op": "local",
+                            "type": "u8",
+                            "name": "value_103",
+                            "provenance": "op62"
+                          },
+                          {
+                            "op": "const",
+                            "type": "u8",
+                            "value": 128
+                          }
+                        ],
+                        "provenance": "op63"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u8",
+                        "value": 17
+                      }
+                    ],
+                    "provenance": "op64"
+                  },
+                  "provenance": "op66"
+                },
+                {
+                  "op": "assign_local",
+                  "local": "value_112",
+                  "value": {
+                    "op": "field",
+                    "type": "u8",
+                    "name": "field_7"
+                  },
+                  "provenance": "op67"
+                },
+                {
+                  "op": "assign_field",
+                  "field": "field_7",
+                  "value": {
+                    "op": "bit_or",
+                    "type": "u8",
+                    "args": [
+                      {
+                        "op": "local",
+                        "type": "u8",
+                        "name": "value_112",
+                        "provenance": "op67"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u8",
+                        "value": 2
+                      }
+                    ],
+                    "provenance": "op68"
+                  },
+                  "provenance": "op70"
+                },
+                {
+                  "op": "return",
+                  "value": {
+                    "op": "local",
+                    "type": "u32",
+                    "name": "value_96",
+                    "provenance": "op57"
+                  },
+                  "provenance": "op72"
+                }
+              ],
+              "else": [
+                {
+                  "op": "assign_field",
+                  "field": "field_2",
+                  "value": {
+                    "op": "const",
+                    "type": "u8",
+                    "value": 98
+                  },
+                  "provenance": "op44"
+                },
+                {
+                  "op": "assign_field",
+                  "field": "field_3",
+                  "value": {
+                    "op": "const",
+                    "type": "u8",
+                    "value": 1
+                  },
+                  "provenance": "op48"
+                },
+                {
+                  "op": "assign_local",
+                  "local": "value_96",
+                  "value": {
+                    "op": "const",
+                    "type": "u32",
+                    "value": 1
+                  },
+                  "provenance": "op57"
+                },
+                {
+                  "op": "assign_local",
+                  "local": "value_103",
+                  "value": {
+                    "op": "field",
+                    "type": "u8",
+                    "name": "field_4"
+                  },
+                  "provenance": "op62"
+                },
+                {
+                  "op": "assign_field",
+                  "field": "field_4",
+                  "value": {
+                    "op": "bit_or",
+                    "type": "u8",
+                    "args": [
+                      {
+                        "op": "bit_and",
+                        "type": "u8",
+                        "args": [
+                          {
+                            "op": "local",
+                            "type": "u8",
+                            "name": "value_103",
+                            "provenance": "op62"
+                          },
+                          {
+                            "op": "const",
+                            "type": "u8",
+                            "value": 128
+                          }
+                        ],
+                        "provenance": "op63"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u8",
+                        "value": 17
+                      }
+                    ],
+                    "provenance": "op64"
+                  },
+                  "provenance": "op66"
+                },
+                {
+                  "op": "assign_local",
+                  "local": "value_112",
+                  "value": {
+                    "op": "field",
+                    "type": "u8",
+                    "name": "field_7"
+                  },
+                  "provenance": "op67"
+                },
+                {
+                  "op": "assign_field",
+                  "field": "field_7",
+                  "value": {
+                    "op": "bit_or",
+                    "type": "u8",
+                    "args": [
+                      {
+                        "op": "local",
+                        "type": "u8",
+                        "name": "value_112",
+                        "provenance": "op67"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u8",
+                        "value": 2
+                      }
+                    ],
+                    "provenance": "op68"
+                  },
+                  "provenance": "op70"
+                },
+                {
+                  "op": "return",
+                  "value": {
+                    "op": "local",
+                    "type": "u32",
+                    "name": "value_96",
+                    "provenance": "op57"
+                  },
+                  "provenance": "op72"
+                }
+              ],
+              "provenance": "op33"
+            }
+          ],
+          "else": [
+            {
+              "op": "assign_field",
+              "field": "field_2",
+              "value": {
+                "op": "const",
+                "type": "u8",
+                "value": 98
+              },
+              "provenance": "op44"
+            },
+            {
+              "op": "assign_field",
+              "field": "field_3",
+              "value": {
+                "op": "const",
+                "type": "u8",
+                "value": 1
+              },
+              "provenance": "op48"
+            },
+            {
+              "op": "assign_local",
+              "local": "value_96",
+              "value": {
+                "op": "const",
+                "type": "u32",
+                "value": 1
+              },
+              "provenance": "op57"
+            },
+            {
+              "op": "assign_local",
+              "local": "value_103",
+              "value": {
+                "op": "field",
+                "type": "u8",
+                "name": "field_4"
+              },
+              "provenance": "op62"
+            },
+            {
+              "op": "assign_field",
+              "field": "field_4",
+              "value": {
+                "op": "bit_or",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "bit_and",
+                    "type": "u8",
+                    "args": [
+                      {
+                        "op": "local",
+                        "type": "u8",
+                        "name": "value_103",
+                        "provenance": "op62"
+                      },
+                      {
+                        "op": "const",
+                        "type": "u8",
+                        "value": 128
+                      }
+                    ],
+                    "provenance": "op63"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u8",
+                    "value": 17
+                  }
+                ],
+                "provenance": "op64"
+              },
+              "provenance": "op66"
+            },
+            {
+              "op": "assign_local",
+              "local": "value_112",
+              "value": {
+                "op": "field",
+                "type": "u8",
+                "name": "field_7"
+              },
+              "provenance": "op67"
+            },
+            {
+              "op": "assign_field",
+              "field": "field_7",
+              "value": {
+                "op": "bit_or",
+                "type": "u8",
+                "args": [
+                  {
+                    "op": "local",
+                    "type": "u8",
+                    "name": "value_112",
+                    "provenance": "op67"
+                  },
+                  {
+                    "op": "const",
+                    "type": "u8",
+                    "value": 2
+                  }
+                ],
+                "provenance": "op68"
+              },
+              "provenance": "op70"
+            },
+            {
+              "op": "return",
+              "value": {
+                "op": "local",
+                "type": "u32",
+                "name": "value_96",
+                "provenance": "op57"
+              },
+              "provenance": "op72"
+            }
+          ],
+          "provenance": "op28"
+        }
+      ],
+      "provenance": "op5"
+    }
+  ],
+  "phase": {
+    "name": "unknown",
+    "ordering": [],
+    "confidence": 0.0
+  },
+  "verification": {
+    "status": "pending",
+    "receipt": null
+  },
+  "preconditions": [
+    "Entity objects occupy mutable RAM and are disjoint from immutable ROM assets",
+    "No unresolved pointer alias escapes the recovered state views"
+  ],
+  "limitations": [
+    "Acyclic structured CFG only",
+    "Semantic units and human names remain unknown unless separately evidenced"
+  ]
+}

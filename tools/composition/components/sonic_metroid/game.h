@@ -2,6 +2,7 @@
 #define GV_SONIC_METROID_GAME_H
 #include <stdint.h>
 #include <stddef.h>
+#include "generated/mzm_impact/component.h"
 enum { GV_MORPH=1,GV_MISSILE=2,GV_BOMB=4,GV_HIGH=8,GV_ICE=16,GV_VARIA=32,GV_SPEED=64,GV_SCREW=128 };
 enum { GV_BEAM=1,GV_CHARGED=2,GV_MISSILE_SHOT=3,GV_BOMB_SHOT=4,GV_ENEMY_SHOT=5 };
 enum { GV_CRAWLER=1,GV_FLYER=2,GV_PIRATE=3,GV_GUARDIAN=4 };
@@ -38,6 +39,8 @@ typedef struct {
     uint8_t momentum,frozen_support,wall_kicks,ledge_grabs;
     uint8_t palette_valid,stage_active,last_dead,message;
     GvShot shots[8];GvAlien aliens[8];GvDrop drops[6];GvNativeEnemy natives[16];GvPrefab prefabs[8];uint16_t control_steps,observed_steps,relay_trips;uint8_t relay_from,relay_to;
+    gv_mzm_impact_State mzm_native[16],mzm_alien[8];
+    uint8_t mzm_context_counter,mzm_reserved;uint16_t mzm_impact_calls,mzm_impact_deaths;
 } GvState;
 typedef struct {uint8_t kind,param,id,reserved;uint16_t x;int16_t y_offset;} GvPrefabSpec;
 typedef struct {const char *region,*entry;uint8_t count,heat,guardian,reserved;GvPrefabSpec prefabs[8];} GvStageSpec;
@@ -59,6 +62,8 @@ _Static_assert(offsetof(GvPlayer,task)==96,"player task ABI");
 _Static_assert(sizeof(GvState)<=GV_STATE_BYTES,"native task allocation extent");
 _Static_assert(offsetof(GvState,prefabs)==932,"native observation prefab ABI");
 _Static_assert(offsetof(GvState,relay_trips)==1000,"native observation relay ABI");
+_Static_assert(offsetof(GvState,mzm_native)==1004,"native observation impact sidecars ABI");
+_Static_assert(offsetof(GvState,mzm_impact_calls)==1246,"native observation impact counters ABI");
 static inline int gv_abs(int v){return v<0?-v:v;}
 static inline int gv_px(int32_t v){return v>=0?v/256:-((255-v)/256);}
 static inline void gv_zero(void *p,unsigned bytes){uint8_t *b=p;while(bytes--)*b++=0;}
@@ -82,6 +87,8 @@ void gv_resources_step(GvState *,GvPlayer *);
 int gv_damage_player(GvState *,GvPlayer *,unsigned);
 void gv_make_drop(GvState *,int,int,unsigned,unsigned);
 int gv_hit_shots(GvState *,int,int,int,int,uint16_t *,uint16_t *,unsigned);
+int gv_hit_shots_state(GvState *,int,int,int,int,uint16_t *,uint16_t *,unsigned,gv_mzm_impact_State *);
+uint32_t gv_apply_impact(GvState *,gv_mzm_impact_State *,uint16_t *,uint16_t);
 void gv_restore_palette(GvState *);
 void gv_draw_game(GvState *,GvPlayer *);
 void gv_message(GvState *,unsigned);

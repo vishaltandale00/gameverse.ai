@@ -1,0 +1,96 @@
+{
+  "schema": "gameverse.l0.validation-adapter/0.2",
+  "entry": "08050424",
+  "parameters": [
+    {
+      "name": "param_0",
+      "type": "u16",
+      "register": "r1"
+    }
+  ],
+  "return_type": "u32",
+  "collections": [],
+  "fields": [
+    {
+      "name": "field_0",
+      "width": 16,
+      "owner": "entity",
+      "argument": "r0",
+      "address": null,
+      "offset": 20
+    },
+    {
+      "name": "field_1",
+      "width": 8,
+      "owner": "entity",
+      "argument": "r0",
+      "address": null,
+      "offset": 32
+    },
+    {
+      "name": "field_2",
+      "width": 8,
+      "owner": "entity",
+      "argument": "r0",
+      "address": null,
+      "offset": 36
+    },
+    {
+      "name": "field_3",
+      "width": 8,
+      "owner": "entity",
+      "argument": "r0",
+      "address": null,
+      "offset": 38
+    },
+    {
+      "name": "field_4",
+      "width": 8,
+      "owner": "entity",
+      "argument": "r0",
+      "address": null,
+      "offset": 43
+    },
+    {
+      "name": "field_5",
+      "width": 8,
+      "owner": "entity",
+      "argument": "r0",
+      "address": null,
+      "offset": 48
+    },
+    {
+      "name": "field_6",
+      "width": 8,
+      "owner": "entity",
+      "argument": "r0",
+      "address": null,
+      "offset": 49
+    },
+    {
+      "name": "field_7",
+      "width": 8,
+      "owner": "entity",
+      "argument": "r0",
+      "address": null,
+      "offset": 50
+    },
+    {
+      "name": "field_8",
+      "width": 8,
+      "owner": "global",
+      "argument": null,
+      "address": 0,
+      "offset": 50336725
+    }
+  ],
+  "assets": [],
+  "assumptions": [
+    {
+      "kind": "terminal_incoming_lr_boundary",
+      "provenance": "op72",
+      "status": "requires_differential_check"
+    }
+  ],
+  "l0_sha256": "438e3e3059e3575f957e9d8287a0045f2a360b907ee7b757efbbe87e3dd24a70"
+}

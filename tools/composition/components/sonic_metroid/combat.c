@@ -55,7 +55,7 @@ void gv_weapons_step(GvState *s,GvPlayer *p,uint16_t keys,uint16_t edges)
         if(q->kind==GV_ENEMY_SHOT && gv_abs(q->x-p->x)<10*256 && gv_abs(q->y-p->y)<16*256){gv_damage_player(s,p,20);q->life=0;}
     }
 }
-int gv_hit_shots(GvState *s,int x,int y,int rx,int ry,uint16_t *hp,uint16_t *freeze,unsigned vulnerability)
+int gv_hit_shots_state(GvState *s,int x,int y,int rx,int ry,uint16_t *hp,uint16_t *freeze,unsigned vulnerability,gv_mzm_impact_State *effect)
 {
     for(unsigned i=0;i<8;i++){
         GvShot *q=&s->shots[i];if(!q->life || q->kind==GV_ENEMY_SHOT)continue;
@@ -69,11 +69,15 @@ int gv_hit_shots(GvState *s,int x,int y,int rx,int ry,uint16_t *hp,uint16_t *fre
         /* Original MZM policy separates nonlethal ice freeze from lethal
          * damage/death. Newly authored prefabs advertise explicit capability. */
         if((s->upgrades&GV_ICE) && freeze && (q->kind==GV_BEAM || q->kind==GV_CHARGED) && *hp>damage)*freeze=240;
-        *hp=*hp>damage?*hp-damage:0;q->life=0;s->shots_hit++;
-        return *hp?1:2;
+        unsigned lethal;
+        if(effect)lethal=gv_apply_impact(s,effect,hp,(uint16_t)damage);
+        else{*hp=*hp>damage?*hp-damage:0;lethal=!*hp;} /* Authored ephemeral lock transaction. */
+        q->life=0;s->shots_hit++;return lethal?2:1;
     }
     return 0;
 }
+int gv_hit_shots(GvState *s,int x,int y,int rx,int ry,uint16_t *hp,uint16_t *freeze,unsigned vulnerability)
+{return gv_hit_shots_state(s,x,y,rx,ry,hp,freeze,vulnerability,0);}
 static int overlap(int ax,int ay,const int8_t *a,int bx,int by,const int8_t *b)
 {return ax+a[0]<=bx+b[2] && ax+a[2]>=bx+b[0] && ay+a[1]<=by+b[3] && ay+a[3]>=by+b[1];}
 static GvNativeEnemy *native_slot(GvState *s,void *sprite,int x,int y,unsigned initial_hp)
@@ -85,6 +89,7 @@ static GvNativeEnemy *native_slot(GvState *s,void *sprite,int x,int y,unsigned i
         if(!n->task || GV_R32(n->task+8)==0x080019bd)free=n;
     }
     if(!free)free=&s->natives[(task>>2)&15];
+    gv_zero(&s->mzm_native[free-s->natives],sizeof(s->mzm_native[0]));
     *free=(GvNativeEnemy){task,GV_R32(task+8),(uint32_t)(uintptr_t)sprite,(int16_t)x,(int16_t)y,0,(uint8_t)initial_hp,0};return free;
 }
 static void killed_native(GvState *s,int x,int y)
@@ -100,7 +105,7 @@ int32_t gv_native_enemy(void *sprite,int16_t x,int16_t y)
     GvNativeEnemy *n=native_slot(s,sprite,x,y,4);n->x=x;n->y=y;
     const int8_t *bounds=(const int8_t *)sprite+0x2c;
     int cx=x+(bounds[0]+bounds[2])/2,cy=y+(bounds[1]+bounds[3])/2;
-    uint16_t hp=n->hp;int hit=gv_hit_shots(s,cx,cy,(bounds[2]-bounds[0])/2,(bounds[3]-bounds[1])/2,&hp,&n->freeze,2|8|16);n->hp=(uint8_t)hp;
+    uint16_t hp=n->hp;int hit=gv_hit_shots_state(s,cx,cy,(bounds[2]-bounds[0])/2,(bounds[3]-bounds[1])/2,&hp,&n->freeze,2|8|16,&s->mzm_native[n-s->natives]);n->hp=(uint8_t)hp;
     if(hit==2 || n->pending_kill){killed_native(s,x,y);n->task=0;return 1;}
     if(n->freeze){n->callback=GV_R32(n->task+8);GV_R32(n->task+8)=(uint32_t)(uintptr_t)gv_frozen_native|1u;return 0;}
     GvPlayer *p=GV_PLAYER;if(p->flags&0x80)return 0;
@@ -109,6 +114,7 @@ int32_t gv_native_enemy(void *sprite,int16_t x,int16_t y)
     int damaging=(s->upgrades&GV_SCREW) && (p->flags&6)==6;
     if((s->upgrades&GV_SPEED) && gv_abs(p->speed)>=1280)damaging=1;
     if(damaging && GV_R32((uintptr_t)render+0x3c)!=0xffffffffu && overlap(x,y,enemy,px,py,(const int8_t *)render+0x40)){
+        uint16_t killed_hp=n->hp;gv_apply_impact(s,&s->mzm_native[n-s->natives],&killed_hp,killed_hp);
         if(p->vy>0)p->vy=-p->vy;killed_native(s,x,y);n->task=0;return 1;
     }
     if(GV_R32((uintptr_t)render+0x34)!=0xffffffffu && overlap(x,y,enemy,px,py,(const int8_t *)render+0x38))gv_damage_player(s,p,20);
@@ -119,7 +125,7 @@ void gv_frozen_native(void)
     GvState *s=gv_find_state();if(!s)return;unsigned task=GV_R32(0x03001f90);
     for(unsigned i=0;i<16;i++){
         GvNativeEnemy *n=&s->natives[i];if(n->task!=task)continue;
-        uint16_t hp=n->hp;int hit=gv_hit_shots(s,n->x,n->y,12,12,&hp,&n->freeze,2|8|16);n->hp=(uint8_t)hp;
+        uint16_t hp=n->hp;int hit=gv_hit_shots_state(s,n->x,n->y,12,12,&hp,&n->freeze,2|8|16,&s->mzm_native[i]);n->hp=(uint8_t)hp;
         if(hit==2){n->pending_kill=1;GV_R32(task+8)=n->callback;((void (*)(void))(uintptr_t)n->callback)();return;}
         GvPlayer *p=GV_PLAYER;
         if(p->vy>=0 && gv_abs(gv_px(p->x)-n->x)<18 && gv_px(p->y)+p->oy>=n->y-12 && gv_px(p->y)+p->oy<=n->y+4){
@@ -141,7 +147,8 @@ int gv_boss_projectile(GvState *s,void *sprite,int x,int y)
 {
     GvNativeEnemy *n=native_slot(s,sprite,x,y,8);uint16_t hp=n->hp;
     const int8_t *b=(const int8_t *)sprite+0x2c;
-    int hit=gv_hit_shots(s,x+(b[0]+b[2])/2,y+(b[1]+b[3])/2,(b[2]-b[0])/2,(b[3]-b[1])/2,&hp,0,2|8|16);
+    int hit=gv_hit_shots_state(s,x+(b[0]+b[2])/2,y+(b[1]+b[3])/2,(b[2]-b[0])/2,(b[3]-b[1])/2,&hp,0,2|8|16,&s->mzm_native[n-s->natives]);
+    if(hit==2)gv_zero(&s->mzm_native[n-s->natives],sizeof(s->mzm_native[0])); /* Phase-local meter consumed by original boss. */
     n->hp=hit==2?8:(uint8_t)hp;
     return hit==2;
 }

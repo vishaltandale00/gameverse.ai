@@ -19,7 +19,7 @@
       "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
       "ranges": [],
       "lift_ref": "tools/composition/components/sonic_metroid/progression.c",
-      "lift_sha256": "5bc77e67f7ac5e2bbd6b371ae1a374c102142a676c48488048e9654ca727ad08",
+      "lift_sha256": "55f8223c20195e4d7b380ef3fe93c3522e3825f45a424401c76ecb0fc1b39993",
       "semantic_status": "new_authored_bridge_using_recovered_mechanics",
       "dependency_closure": {
         "status": "closed",
@@ -89,11 +89,15 @@
       "sources": [
         {
           "ref": "tools/composition/components/sonic_metroid/progression.c",
-          "sha256": "5bc77e67f7ac5e2bbd6b371ae1a374c102142a676c48488048e9654ca727ad08"
+          "sha256": "55f8223c20195e4d7b380ef3fe93c3522e3825f45a424401c76ecb0fc1b39993"
         },
         {
           "ref": "tools/composition/components/sonic_metroid/game.h",
-          "sha256": "a9eac0a4f9bbae2bb518785e13a72499011d02b22575a777529fc172ebb1b90e"
+          "sha256": "1cfc5f73d4a64284f09fabede386f21a133a5424f109b6a689ba0dc296cdf28a"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+          "sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30"
         }
       ],
       "translation_units": [

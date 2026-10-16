@@ -1,0 +1,278 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "composition.mzm_automatic_impact",
+  "version": "0.1.0",
+  "concept": {
+    "role": "combat.automatically_lifted_mzm_impact"
+  },
+  "native_implementation": {
+    "origin": "self_decompilation",
+    "game_id": "metroid-zero-mission",
+    "recovery": {
+      "rom_sha1": "5de8536afe1f0078ee6fe1089f890e8c7aa0a6e8",
+      "rom_sha256": "fc94f65380b65b870a30b9b04b39cca1dc63d6e46a4a373d3904adc0912ebc37",
+      "entry": "0x08050424",
+      "semantic_status": "automatically_lifted_address_free_L1_with_original_instruction_differential_qualification",
+      "lift_ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/l1.json",
+      "lift_sha256": "d1553f6e708d9c1f8dfd18aad318bf1b88ba373483ddee4adcbbbaeb6e38c890",
+      "ranges": [],
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [],
+        "data": [],
+        "ram": [
+          "explicit symbolic entity fields and shared context counter; bridge owns allocation"
+        ],
+        "hardware": [],
+        "relocations": []
+      },
+      "dynamic_witness_refs": [
+        "tools/composition/components/sonic_metroid/generated/mzm_impact/native-proof.json"
+      ],
+      "unknowns": [
+        "Acyclic structured CFG only",
+        "Semantic units and human names remain unknown unless separately evidenced",
+        "Semantic annotation has not been independently scored against game rendering"
+      ]
+    }
+  },
+  "typed_abi": {
+    "schema": "gameverse.ir.emitted-abi/0.1",
+    "component": "mzm.combat.impact",
+    "version": "0.1.0",
+    "symbol": "gv_mzm_impact",
+    "state_type": "gv_mzm_impact_State",
+    "source_package_sha256": "f06f2e9fd258dfbd251497c112f73053c3b36f4eab0327597caf54a40c46fed1",
+    "behavior_sha256": "d1553f6e708d9c1f8dfd18aad318bf1b88ba373483ddee4adcbbbaeb6e38c890",
+    "native_qualification_sha256": "079e41fb7bcf8689ede452ef96c1781d74eb9d925f7d7e5b8955502088df23f4",
+    "emitter_sha256": "9fd918a5e97cc4f06e7e8685f8c52b64fe380680e9c9c1f46af61df251531034",
+    "lowerer_sha256": "773fad1896cc8fccd53c6f2a2cb9cf716ec39147c4b8f307695af4a336022e29",
+    "outputs": {
+      "component.c": "9b64ec5b4e457da5d186fca62dc6c7eca350daed70eb1a9cebe8a2f56c0f99e3",
+      "component.h": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30"
+    },
+    "state": [
+      {
+        "name": "field_0",
+        "owner": "entity_r0",
+        "storage_type": "u16",
+        "semantic_type": {
+          "quantity": "energy",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "enemy",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_state_usage_and_existing_motion_unit_review"
+          ],
+          "naming_status": "analysis_annotation_not_a_behavior_input"
+        }
+      },
+      {
+        "name": "field_1",
+        "owner": "entity_r0",
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "unknown",
+          "unit": "unknown",
+          "frame": "unknown",
+          "confidence": 0.0,
+          "evidence": []
+        }
+      },
+      {
+        "name": "field_2",
+        "owner": "entity_r0",
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "pose",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "enemy",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_state_usage_and_existing_motion_unit_review"
+          ],
+          "naming_status": "analysis_annotation_not_a_behavior_input"
+        }
+      },
+      {
+        "name": "field_3",
+        "owner": "entity_r0",
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "unknown",
+          "unit": "unknown",
+          "frame": "unknown",
+          "confidence": 0.0,
+          "evidence": []
+        }
+      },
+      {
+        "name": "field_4",
+        "owner": "entity_r0",
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "unknown",
+          "unit": "unknown",
+          "frame": "unknown",
+          "confidence": 0.0,
+          "evidence": []
+        }
+      },
+      {
+        "name": "field_5",
+        "owner": "entity_r0",
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "unknown",
+          "unit": "unknown",
+          "frame": "unknown",
+          "confidence": 0.0,
+          "evidence": []
+        }
+      },
+      {
+        "name": "field_6",
+        "owner": "entity_r0",
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "unknown",
+          "unit": "unknown",
+          "frame": "unknown",
+          "confidence": 0.0,
+          "evidence": []
+        }
+      },
+      {
+        "name": "field_7",
+        "owner": "entity_r0",
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "bitset",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "enemy",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_state_usage_and_existing_motion_unit_review"
+          ],
+          "naming_status": "analysis_annotation_not_a_behavior_input"
+        }
+      },
+      {
+        "name": "field_8",
+        "owner": "context",
+        "storage_type": "u8",
+        "semantic_type": {
+          "quantity": "counter",
+          "unit": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "frame": "world",
+          "confidence": 0.85,
+          "evidence": [
+            "own_rom_state_usage_and_existing_motion_unit_review"
+          ],
+          "naming_status": "analysis_annotation_not_a_behavior_input"
+        }
+      }
+    ],
+    "collections": [],
+    "parameters": [
+      {
+        "name": "param_0",
+        "storage_type": "u16"
+      }
+    ],
+    "return_type": "u32",
+    "effects": {
+      "reads": [
+        "field_0",
+        "field_4",
+        "field_6",
+        "field_7",
+        "field_8"
+      ],
+      "writes": [
+        "field_0",
+        "field_1",
+        "field_2",
+        "field_3",
+        "field_4",
+        "field_5",
+        "field_6",
+        "field_7",
+        "field_8"
+      ]
+    },
+    "preconditions": [
+      "Entity objects occupy mutable RAM and are disjoint from immutable ROM assets",
+      "No unresolved pointer alias escapes the recovered state views"
+    ],
+    "limitations": [
+      "Acyclic structured CFG only",
+      "Semantic units and human names remain unknown unless separately evidenced",
+      "Semantic annotation has not been independently scored against game rendering"
+    ],
+    "timing": {
+      "queue_s": null,
+      "mode": "emit_only_no_native_retest",
+      "wall_s": 0.0010648750000000016
+    }
+  },
+  "lowering": {
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.c",
+          "sha256": "9b64ec5b4e457da5d186fca62dc6c7eca350daed70eb1a9cebe8a2f56c0f99e3"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+          "sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/l1.json",
+          "sha256": "d1553f6e708d9c1f8dfd18aad318bf1b88ba373483ddee4adcbbbaeb6e38c890"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/package.json",
+          "sha256": "f06f2e9fd258dfbd251497c112f73053c3b36f4eab0327597caf54a40c46fed1"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/abi-receipt.json",
+          "sha256": "8fcacaac569352d10d210562cdaaf8accd4781baa3a44b2f0617c00a714fd134"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/native-proof.json",
+          "sha256": "079e41fb7bcf8689ede452ef96c1781d74eb9d925f7d7e5b8955502088df23f4"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/receipt.json",
+          "sha256": "079e41fb7bcf8689ede452ef96c1781d74eb9d925f7d7e5b8955502088df23f4"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/validation-adapter.json",
+          "sha256": "67aa8ef0f5863d3734b2df989d4dbacb58706ca0808ee7196cc536ac41a7ee22"
+        }
+      ],
+      "translation_units": [
+        "tools/composition/components/sonic_metroid/generated/mzm_impact/component.c"
+      ],
+      "requires": [],
+      "exports": [],
+      "state_bindings": [],
+      "host_calls": []
+    }
+  }
+}

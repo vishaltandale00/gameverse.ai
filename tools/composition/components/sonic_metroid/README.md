@@ -88,3 +88,20 @@ route is not a claim that all fourteen campaign/special definitions, special
 stages and final boss routes have been traversed. Failed geometry/ABI/route runs
 remain in the local evidence tree. No browser tests or synthetic ability/HP
 writes are used as natural-play acceptance.
+
+## Automatically recovered executable impact component
+
+Enemy projectile/body impacts now call `generated/mzm_impact/component.c`,
+emitted solely from the qualified address-free L1 recovered from the user's
+MZM ROM at 0x08050424. The package pins serialized L1, original-instruction
+differential receipt, emitted ABI and byte-identical generated C/header.
+`impact_bridge.c` binds HP/death results into the host and preserves all other
+split fields in durable entity sidecars. The one context counter remains shared.
+Unknown fields remain unknown; the bridge does not write them into guessed
+Sonic offsets. Native Sonic enemy/drop/boss phase ownership remains explicit.
+
+`research/requests/sonic-metroid-automatic-impact-proof.json` records actual
+beam4→2→0HP, emitted reaction/death fields, native creature removal/drop, and
+exact cartridge identity. The fresh coast→firstboss→Factory route and Factory
+Varia/heat route also pass on that cartridge. These are bounded witnesses;
+later bosses/finale still need their own natural-play acceptance.

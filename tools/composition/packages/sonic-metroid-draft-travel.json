@@ -84,7 +84,11 @@
         },
         {
           "ref": "tools/composition/components/sonic_metroid/game.h",
-          "sha256": "a9eac0a4f9bbae2bb518785e13a72499011d02b22575a777529fc172ebb1b90e"
+          "sha256": "1cfc5f73d4a64284f09fabede386f21a133a5424f109b6a689ba0dc296cdf28a"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+          "sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30"
         }
       ],
       "translation_units": [

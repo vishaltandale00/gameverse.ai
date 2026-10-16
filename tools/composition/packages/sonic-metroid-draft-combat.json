@@ -29,14 +29,15 @@
         }
       ],
       "lift_ref": "tools/composition/components/sonic_metroid/combat.c",
-      "lift_sha256": "45e7b63f20a1340889b8efa119c6db62164f7b8d0bdf3de98984a7be2e31b400",
+      "lift_sha256": "261c9a629eac2ebcef4efd3a6f3ccf25a179b51f1deb658578a150cb2dfd79ec",
       "semantic_status": "new_authored_bridge_using_recovered_mechanics",
       "dependency_closure": {
         "status": "closed",
         "calls": [
           "state",
           "resources",
-          "geometry"
+          "geometry",
+          "impact_bridge"
         ],
         "data": [],
         "ram": [
@@ -97,11 +98,15 @@
       "sources": [
         {
           "ref": "tools/composition/components/sonic_metroid/combat.c",
-          "sha256": "45e7b63f20a1340889b8efa119c6db62164f7b8d0bdf3de98984a7be2e31b400"
+          "sha256": "261c9a629eac2ebcef4efd3a6f3ccf25a179b51f1deb658578a150cb2dfd79ec"
         },
         {
           "ref": "tools/composition/components/sonic_metroid/game.h",
-          "sha256": "a9eac0a4f9bbae2bb518785e13a72499011d02b22575a777529fc172ebb1b90e"
+          "sha256": "1cfc5f73d4a64284f09fabede386f21a133a5424f109b6a689ba0dc296cdf28a"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/generated/mzm_impact/component.h",
+          "sha256": "2fa50798094369727d99782c81ec34a412fec78559064d21787c199da4a90f30"
         }
       ],
       "translation_units": [
@@ -129,6 +134,10 @@
         },
         {
           "id": "composition.sonic_metroid_geometry",
+          "version": "0.1.0-draft"
+        },
+        {
+          "id": "composition.sonic_metroid_impact_bridge",
           "version": "0.1.0-draft"
         }
       ],
