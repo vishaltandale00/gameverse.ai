@@ -1,0 +1,31 @@
+{
+  "schema": "gameverse.improvement-native-cli-smoke/1",
+  "note": "Narrow native_cli dispatch verification after export seam change; synthetic host context; no model calls",
+  "request_id": "3b2f8b17-9595-40c2-958d-bf35680a42d1",
+  "status": "completed",
+  "error": null,
+  "artifact_sha256": "6f52161e9826a16f2f063e452d6b63ef554d4efcce867eece0be418b401b86c8",
+  "timings": {
+    "queue_s": null,
+    "execution_wall_s": 0.387401292,
+    "build_s": 0.292334,
+    "simulation_s": null,
+    "evaluation_s": null,
+    "accounting": "Backend stages are nested in worker execution; queue unavailable (direct dispatch).",
+    "backend_total_s": 0.346289
+  },
+  "quality": {
+    "scope": "build-only",
+    "coverage": null,
+    "witnesses": null,
+    "gaps": [
+      "Gameplay objective and full campaign untested; native build/ABI preservation only."
+    ],
+    "reconstruction_qc": "unavailable",
+    "whole_game_equivalent": null,
+    "save_compatibility": "unverified"
+  },
+  "loop_version": "a7bea486ee33bd915ae7d6d72d2f701220c1ddd244c02a3b6f111474acf02fdf",
+  "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+  "environment": "macOS-27.0.1-arm64-arm-64bit"
+}

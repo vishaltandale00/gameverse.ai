@@ -1,0 +1,29 @@
+{
+  "schema": "native-prefab-mod-request/1",
+  "request_id": "aria-soulstride-20261016-v1",
+  "intent": "Winged Skeleton Soulstride: successful native bone birth lunges the player and transfers momentum into combat; moving defeats restore MP and request real first souls; persistent native owned souls strengthen future lunges.",
+  "limits": {
+    "max_build_s": 60,
+    "max_payload_bytes": 16384,
+    "subprocess_s": 20
+  },
+  "strategy_lowering": {
+    "backend": "connected-strategy/1",
+    "strategy": {
+      "path": "research/deep-extraction/castlevania/soulstride-strategy.json",
+      "sha256": "c564b1642712c23ac3b1075ab4d66a2d2755ed0269a33f44af4a66129cb6ed3f"
+    },
+    "lowerer": {
+      "path": "tools/prefab_pipeline/momentum_strategy.py",
+      "sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a"
+    }
+  },
+  "plan": {
+    "path": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+    "sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef"
+  },
+  "rom": {
+    "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+    "sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5"
+  }
+}

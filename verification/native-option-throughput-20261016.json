@@ -1,0 +1,183 @@
+{
+  "schema": "gameverse.native-option-throughput/1",
+  "source_commit": "fbfd49521f8092534ec59e7c91849ad361723b14",
+  "environment": "macOS-27.0.1-arm64-arm-64bit",
+  "rom_sha256": "50757987593917bddafe6b32c3355cb9af32d899468850af69115bad59f3d855",
+  "state_sha256": "8930c02323aec6032a1bbbf0543d0495277d0b1b520da75025f918361cb37d83",
+  "native_sha256": "b49c68d39b00e10bece91c824074cd1e21b32173910f114a457d3902c62cf315",
+  "model_calls": 0,
+  "scope": "Same pinned Factory2 state, held RIGHT240 frames, baseline24-frame observations versus watched up-to240 option with120-frame position samples. Diagnostic input replay only, no model/campaign speed claim. All native commands include IPC+emulation; PNG metric overlaps observation. Queue/build/model unavailable in replay.",
+  "runs": [
+    {
+      "mode": "baseline",
+      "repeat": 0,
+      "total_wall_s": 0.273309958,
+      "setup_wall_s": 0.13978912500000001,
+      "action_wall_s": 0.09162429299999991,
+      "observation_wall_s": 0.04188149999999996,
+      "frames": 240,
+      "observations": 11,
+      "boundaries": [],
+      "native_metrics": {
+        "command_count": {
+          "frame": 11,
+          "read": 378,
+          "step": 10
+        },
+        "command_wall_s": {
+          "frame": 0.002422208999999953,
+          "read": 0.016020664999999823,
+          "step": 0.09156816800000012
+        },
+        "png_wall_s": 0.019490875999999935,
+        "rgba_read_wall_s": 0.00041874899999999604
+      },
+      "end_progress": {
+        "x": 2265.25,
+        "y": 1139.4765625,
+        "stage": 3,
+        "plane": 1,
+        "upgrades": 127,
+        "energy": 113,
+        "missiles": 10,
+        "gates_opened": 7,
+        "relics_collected": 7,
+        "deaths": 2
+      },
+      "image_sha256": "a041c229bfaf865bb1c8a08b0c7b4f1aadd83b15469ae576649a9d74fbe9db39"
+    },
+    {
+      "mode": "watched",
+      "repeat": 0,
+      "total_wall_s": 0.13187137499999996,
+      "setup_wall_s": 0.03512120799999996,
+      "action_wall_s": 0.08872991600000002,
+      "observation_wall_s": 0.008016583000000022,
+      "frames": 240,
+      "observations": 2,
+      "boundaries": [
+        "position_unchanged_at_periodic_sample"
+      ],
+      "native_metrics": {
+        "command_count": {
+          "frame": 2,
+          "read": 71,
+          "unwatch": 2,
+          "watch": 20,
+          "stepw": 2
+        },
+        "command_wall_s": {
+          "frame": 0.00045675000000000576,
+          "read": 0.0028829610000003503,
+          "unwatch": 2.524999999997668e-05,
+          "watch": 0.0002672930000000018,
+          "stepw": 0.08865316699999998
+        },
+        "png_wall_s": 0.003385165999999995,
+        "rgba_read_wall_s": 0.0003266670000000027
+      },
+      "end_progress": {
+        "x": 2265.25,
+        "y": 1139.4765625,
+        "stage": 3,
+        "plane": 1,
+        "upgrades": 127,
+        "energy": 113,
+        "missiles": 10,
+        "gates_opened": 7,
+        "relics_collected": 7,
+        "deaths": 2
+      },
+      "image_sha256": "a041c229bfaf865bb1c8a08b0c7b4f1aadd83b15469ae576649a9d74fbe9db39"
+    },
+    {
+      "mode": "baseline",
+      "repeat": 1,
+      "total_wall_s": 0.16421666700000004,
+      "setup_wall_s": 0.03505454200000002,
+      "action_wall_s": 0.08859670799999991,
+      "observation_wall_s": 0.04055399900000006,
+      "frames": 240,
+      "observations": 11,
+      "boundaries": [],
+      "native_metrics": {
+        "command_count": {
+          "frame": 11,
+          "read": 378,
+          "step": 10
+        },
+        "command_wall_s": {
+          "frame": 0.0021680439999999246,
+          "read": 0.015687910000000582,
+          "step": 0.0885479990000001
+        },
+        "png_wall_s": 0.018948167000000238,
+        "rgba_read_wall_s": 0.0003731240000001135
+      },
+      "end_progress": {
+        "x": 2265.25,
+        "y": 1139.4765625,
+        "stage": 3,
+        "plane": 1,
+        "upgrades": 127,
+        "energy": 113,
+        "missiles": 10,
+        "gates_opened": 7,
+        "relics_collected": 7,
+        "deaths": 2
+      },
+      "image_sha256": "a041c229bfaf865bb1c8a08b0c7b4f1aadd83b15469ae576649a9d74fbe9db39"
+    },
+    {
+      "mode": "watched",
+      "repeat": 1,
+      "total_wall_s": 0.1314845,
+      "setup_wall_s": 0.035113417000000036,
+      "action_wall_s": 0.08854808300000006,
+      "observation_wall_s": 0.007819291999999978,
+      "frames": 240,
+      "observations": 2,
+      "boundaries": [
+        "position_unchanged_at_periodic_sample"
+      ],
+      "native_metrics": {
+        "command_count": {
+          "frame": 2,
+          "read": 71,
+          "unwatch": 2,
+          "watch": 20,
+          "stepw": 2
+        },
+        "command_wall_s": {
+          "frame": 0.00047229199999987426,
+          "read": 0.00293745799999956,
+          "unwatch": 1.891600000003546e-05,
+          "watch": 0.00015637300000015397,
+          "stepw": 0.08847729100000001
+        },
+        "png_wall_s": 0.003285207999999984,
+        "rgba_read_wall_s": 0.00028533300000010975
+      },
+      "end_progress": {
+        "x": 2265.25,
+        "y": 1139.4765625,
+        "stage": 3,
+        "plane": 1,
+        "upgrades": 127,
+        "energy": 113,
+        "missiles": 10,
+        "gates_opened": 7,
+        "relics_collected": 7,
+        "deaths": 2
+      },
+      "image_sha256": "a041c229bfaf865bb1c8a08b0c7b4f1aadd83b15469ae576649a9d74fbe9db39"
+    }
+  ],
+  "run_id": "sonic-native-options-20261016",
+  "baseline_adapter_ref": "fbfd49521f8092534ec59e7c91849ad361723b14",
+  "source_hashes": {
+    "tools/re/session/session.c": "fa93c2c454fc20e5018567ca18fe3af516562cc0f7fb685318871687906cee46",
+    "tools/re/session/bridge.py": "2822d3b9921ad19ab9fb98250653a112ba3f7457d933b6dd827ad6b7b0a486bb",
+    "tools/playtester/sonic_adapter.py": "798c1610074e07ac3d1bb536b8b395ef8a8b803355836495270e877101a72b12"
+  }
+}

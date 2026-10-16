@@ -1,0 +1,40 @@
+{
+  "schema": "gameverse.improvement-profile-registry/1",
+  "recipes": [
+    {
+      "id": "sonic-metroid-coast-campaign",
+      "game_id": "sonic-metroid-signal-descent",
+      "baseline_artifact_sha256": "50757987593917bddafe6b32c3355cb9af32d899468850af69115bad59f3d855",
+      "command": "build-mod",
+      "file": "research/deep-extraction/sonic-metroid/request.json",
+      "quality": "build-only",
+      "description": "Existing pinned native Sonic/MZM coast to first-boss route to Factory cartridge; source-observed section DAG, not a new game or whole-game completion."
+    },
+    {
+      "id": "sid-rpg-weekend-original",
+      "game_id": "siddarth-emerald",
+      "baseline_artifact_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+      "file": "tools/prefab_pipeline/requests/sid-rpg-weekend-original.json",
+      "operations": [
+        "native-improve",
+        "native-campaign"
+      ],
+      "quality": "traversal-only",
+      "description": "Existing original SID Emerald postgame quest baseline, source-defined stages0 to6; no new build, changed mechanic or mod comparison."
+    }
+  ],
+  "iteration_profiles": [
+    {
+      "id": "sonic-coast-prefix-iteration",
+      "recipe_id": "sonic-metroid-coast-campaign",
+      "file": "tools/prefab_pipeline/profiles/sonic-coast-prefix-iteration.json",
+      "version_basis": "recipe-readset/1"
+    },
+    {
+      "id": "sid-rpg-weekend-iteration",
+      "recipe_id": "sid-rpg-weekend-original",
+      "file": "tools/prefab_pipeline/profiles/sid-rpg-weekend-iteration.json",
+      "version_basis": "recipe-readset/1"
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "schema": "gameverse.sonic-metroid-strategy/1",
+  "id": "sonic-metroid-native-ir-progress-v1",
+  "baseline_plan": {
+    "path": "tools/composition/plans/sonic-metroid-signal-descent.json",
+    "sha256": "ce9321025fbcb648bc761174ca46f78d54ad92eecbd1bbd53696d1ce96221025"
+  },
+  "source_modules": {
+    "progression.c": {
+      "path": "research/deep-extraction/sonic-metroid/progression/progression.c",
+      "sha256": "7a15814e84c26532cc711d05ce454e3a0658a7a1b5320fa54b2e5432f6969e49"
+    },
+    "progress_adapter.c": {
+      "path": "research/deep-extraction/sonic-metroid/progression/progress_adapter.c",
+      "sha256": "93f2a0b23cbb533559f8bda481358c6f9e15eb4d75d534fb62ae20d2d4824f28"
+    },
+    "progress_adapter.h": {
+      "path": "research/deep-extraction/sonic-metroid/progression/progress_adapter.h",
+      "sha256": "33f6be7e7d9dd3ee8312eb1bb5078e0611b5c7324ec9e8a7486278e70c82f9dc"
+    },
+    "generated/mzm_progress/acquire/component.c": {
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/acquire/component.c",
+      "sha256": "c1a9d6432c062d1a32381cacdacde386b2243edd7f47c8e4293706f729d70f03"
+    },
+    "generated/mzm_progress/acquire/component.h": {
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/acquire/component.h",
+      "sha256": "5aace08c1fdc13624aabbd6551b2b2476266269a8919d7b4cce2c6f89128bfd0"
+    },
+    "generated/mzm_progress/events/component.c": {
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/events/component.c",
+      "sha256": "cdc424d7242a656745a62f4da99caf6180c9528ee47b1c4b12eceda8dbe9e362"
+    },
+    "generated/mzm_progress/events/component.h": {
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/events/component.h",
+      "sha256": "6410a6d5721ecaf9a9517594573f7c5c6d473d2586fb62a86c4872e1cd5cf91c"
+    }
+  },
+  "provenance": {
+    "acquire_l1.json": {
+      "path": "local/ir/packages/mzm.progress.acquire/l1.json",
+      "sha256": "885c2aae5398d0f2928e7448e43626bc9204ba235f230f80932dbe685c2b4723"
+    },
+    "acquire_package.json": {
+      "path": "local/ir/packages/mzm.progress.acquire/package.json",
+      "sha256": "103ec8c6e248cdcee3e86f41b056579597165d60600c9104245d3b81bc6e9b53"
+    },
+    "acquire_receipt.json": {
+      "path": "local/ir/packages/mzm.progress.acquire/receipt.json",
+      "sha256": "ab393d37f019ee39a8d7da0c2f6ca116210460b79c77902f20bf4a22aeaa1898"
+    },
+    "events_l1.json": {
+      "path": "local/ir/packages/mzm.progress.events/l1.json",
+      "sha256": "1e2dd520dd5749512a513532bba1090b1dc34486c55a5160288e17a7c825b1a5"
+    },
+    "events_package.json": {
+      "path": "local/ir/packages/mzm.progress.events/package.json",
+      "sha256": "914a504d0236029681d07f4e98318b6d286287d137b930f097d21c4c00e0e56e"
+    },
+    "events_receipt.json": {
+      "path": "local/ir/packages/mzm.progress.events/receipt.json",
+      "sha256": "60e2d67878a033d46a299e1b10bd95f06bec679684c4e1e0f94010fb57d92d9b"
+    },
+    "acquire_abi": {
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/acquire/abi-receipt.json",
+      "sha256": "3d09c3866dad651a5ff00b67a352301c6e6130bfcd1ae8b3b2bf625eef5a1d7e"
+    },
+    "events_abi": {
+      "path": "tools/composition/components/sonic_metroid/generated/mzm_progress/events/abi-receipt.json",
+      "sha256": "909a6370660715f8462a5caa46767dadb749ac2b9f98ba4dc73d47cbc3fc1057"
+    },
+    "host_adapter_receipt": {
+      "path": "research/deep-extraction/sonic-metroid/progression/host-receipt.json",
+      "sha256": "64e6077b26824c5faf60c895fa584d3d522279c8cbb5cff17c4f37824386c5df"
+    }
+  },
+  "state_extension": {
+    "base_bytes": 1536,
+    "allocation_bytes": 1600,
+    "sidecar_bytes": 36
+  },
+  "save_policy": "fresh"
+}

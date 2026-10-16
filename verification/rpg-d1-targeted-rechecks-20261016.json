@@ -1,0 +1,138 @@
+{
+  "schema": "gameverse.rpg-targeted-d1-rechecks/1",
+  "source_commit": "e2b7e661d5057cc74d44ec44b0c185936f89248b",
+  "calls": 4,
+  "results": [
+    {
+      "step": 34,
+      "observation_sha256": "2c3626cccee9bdb252ecd542b3d952240120d2a9e576a94c576aab19baa47c31",
+      "observation_frame": 2785,
+      "option_count": 25,
+      "choice_ids_sha256": "181f8dc441bf1f2af1671d5b06549707b1fcbc35d6467973300ecc036cc8e2d0",
+      "request_sha256": "8b2f023b14c6a7f0a424644e92fb693daecaee4bcd92f80d1e8d1b17abb78cc6",
+      "status": "success",
+      "http_status": 200,
+      "input_size": {
+        "wire_bytes": 38130,
+        "state_utf8_bytes": 22829,
+        "image_data_url_bytes": 9990,
+        "image_count": 1,
+        "question_count": 1,
+        "choice_counts": {
+          "action": 26
+        }
+      },
+      "accepted": false,
+      "gate_reason": "low_confidence_or_margin",
+      "confidence": 0.23453646794660227,
+      "margin": 0.014209846251430042,
+      "attempts": 1,
+      "retries": 0,
+      "wall_s": 0.431758,
+      "model": "ramblerun/Decision-AI",
+      "cost_usd": null
+    },
+    {
+      "step": 48,
+      "observation_sha256": "e270fc21a75d593289925e87b39075ae405d33d3a7dbe213a6394a2e6bc07acb",
+      "observation_frame": 3103,
+      "option_count": 23,
+      "choice_ids_sha256": "da3a491d9133494b69b41059f494653b532552bf0a99cab9c3b45337edbfb105",
+      "request_sha256": "a8350c9b0342896a78fe332982a677079810159deace674b9d93972d5dd116e1",
+      "status": "success",
+      "http_status": 200,
+      "input_size": {
+        "wire_bytes": 32390,
+        "state_utf8_bytes": 23034,
+        "image_data_url_bytes": 3818,
+        "image_count": 1,
+        "question_count": 1,
+        "choice_counts": {
+          "action": 24
+        }
+      },
+      "accepted": false,
+      "gate_reason": "low_confidence_or_margin",
+      "confidence": 0.3446436563084822,
+      "margin": 0.058924029832592206,
+      "attempts": 1,
+      "retries": 0,
+      "wall_s": 0.473452,
+      "model": "ramblerun/Decision-AI",
+      "cost_usd": null
+    },
+    {
+      "step": 82,
+      "observation_sha256": "6d97ff8c4a1ada66813847966fc3af5b78b184e8156b634a548cce22e53d23e7",
+      "observation_frame": 4468,
+      "option_count": 23,
+      "choice_ids_sha256": "da3a491d9133494b69b41059f494653b532552bf0a99cab9c3b45337edbfb105",
+      "request_sha256": "9c4ad331b04794e3b99fba8cea8ca5ecfe22fdf9dbe89218a5eb31a33b0706b1",
+      "status": "success",
+      "http_status": 200,
+      "input_size": {
+        "wire_bytes": 30558,
+        "state_utf8_bytes": 21401,
+        "image_data_url_bytes": 3818,
+        "image_count": 1,
+        "question_count": 1,
+        "choice_counts": {
+          "action": 24
+        }
+      },
+      "accepted": false,
+      "gate_reason": "low_confidence_or_margin",
+      "confidence": 0.25768754718206316,
+      "margin": 0.05700028364892279,
+      "attempts": 1,
+      "retries": 0,
+      "wall_s": 0.382021,
+      "model": "ramblerun/Decision-AI",
+      "cost_usd": null
+    },
+    {
+      "step": 87,
+      "observation_sha256": "c99d7f83c1515758eafd5b3596fff50fd6a4e1bc16f9f21ab5e5379d121c974b",
+      "observation_frame": 4820,
+      "option_count": 23,
+      "choice_ids_sha256": "da3a491d9133494b69b41059f494653b532552bf0a99cab9c3b45337edbfb105",
+      "request_sha256": "d29f9a12d1170f6c48f1a975bb58c50db91e721c82213fcebb6789521611ea41",
+      "status": "success",
+      "http_status": 200,
+      "input_size": {
+        "wire_bytes": 35897,
+        "state_utf8_bytes": 24325,
+        "image_data_url_bytes": 5934,
+        "image_count": 1,
+        "question_count": 1,
+        "choice_counts": {
+          "action": 24
+        }
+      },
+      "accepted": false,
+      "gate_reason": "low_confidence_or_margin",
+      "confidence": 0.23383164420467606,
+      "margin": 0.06275675876224462,
+      "attempts": 1,
+      "retries": 0,
+      "wall_s": 0.483192,
+      "model": "ramblerun/Decision-AI",
+      "cost_usd": null
+    }
+  ],
+  "wall_s": 1.862158,
+  "scope": "Exactly four retained previously HTTP413 observations/images/options, reconstructed decision memory; no emulator/game traversal or checkpoint adoption. Current authority payload compaction only; original confidence .65 margin .20.",
+  "native_frames": 0,
+  "cost_usd": null,
+  "spend_ledger": {
+    "v2_prefix_calls": 14,
+    "these_targeted_calls": 4,
+    "remaining_campaign_call_cap": 82,
+    "total_call_ceiling": 100,
+    "v1_prior_calls_separate": 20
+  },
+  "loop_version": "9c2a56ee73d2deb8e4fec7c880dfa229d83ca0a302e37330ec9a7882419b78db",
+  "runtime_readset_sha256": "e9a1f7d033876658e05b6eaa7a5a9a3a5dcb297a8e869d0cb1a0d5c79fc8881e",
+  "profile_sha256": "58204de6163c9084eec33853a8ee27109099c9b19546c6fdba6d31d3675f98d6",
+  "interpretation": "All four previous HTTP413 observations now received HTTP200; all remain rejected by unchanged confidence/margin gate, so a live traversal must use S2. Provider payload cutoff remains unknown. These are targeted transport checks, not gameplay progress or model-accuracy qualification."
+}

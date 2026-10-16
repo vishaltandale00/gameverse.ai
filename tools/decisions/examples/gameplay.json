@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "state": "Classify the supplied GBA screenshot using only visible evidence. A screenshot does not prove live player control versus a demo.",
+  "questions": [
+    {
+      "name": "gameplay",
+      "type": "predicate",
+      "instructions": "Is this screenshot showing in-world gameplay or a player-facing battle?",
+      "true_description": "Exploration, platforming, racing, combat, or a tactical board; a HUD is allowed.",
+      "false_description": "Title, menu, logo, blank transition, or story narration without an active battle."
+    },
+    {
+      "name": "segment",
+      "type": "choice",
+      "instructions": "Choose the visible screen segment.",
+      "choices": [
+        {"value": "gameplay", "description": "Exploration, action, platforming or racing"},
+        {"value": "battle_or_tactics", "description": "Player-facing battle, card battle or tactical board"},
+        {"value": "menu_or_title", "description": "Title, name/file selection, settings or inventory"},
+        {"value": "story_or_dialogue", "description": "Story scene or narration without an active battle"},
+        {"value": "logo_or_transition", "description": "Logo, legal text, blank, loading or transition"},
+        {"value": "uncertain", "description": "Insufficient visible evidence"}
+      ]
+    },
+    {
+      "name": "visible_mechanics_evidence",
+      "type": "score",
+      "instructions": "How much observable evidence of game mechanics is visible? This is a triage signal, not proof of internal implementation.",
+      "levels": [
+        {"label": "none", "description": "No visible game mechanic evidence"},
+        {"label": "limited", "description": "One visible interaction, HUD resource or board rule"},
+        {"label": "rich", "description": "Several distinct interactions, resources or rules visible together"}
+      ]
+    }
+  ],
+  "context": {
+    "game_id": null,
+    "game_version": null,
+    "environment_harness_version": null,
+    "adapter_version": null,
+    "loop_config_ref": "tools/decisions/examples/gameplay.json:v1",
+    "evidence_ref": null
+  }
+}

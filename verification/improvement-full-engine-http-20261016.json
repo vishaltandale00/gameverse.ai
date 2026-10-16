@@ -1,0 +1,357 @@
+{
+  "schema": "gameverse.full-engine-http-verification/1",
+  "date": "2026-10-16",
+  "outcome": "verified-scoped-native-model-repair-and-continuation",
+  "scope": "Explicit controlled integration regression: legal 1px/frame Soulstride Skeleton-birth lunge against declared 3px/frame objective, model-selected reviewed scalar repair, rebuilt candidate and fresh native retest. Not a naturally discovered defect or full campaign qualification.",
+  "tested_source": {
+    "parent_commit": "8c95e007ce95a9db0f174a92d2a4912fc16b013e",
+    "staged_diff_sha256": "8623a9328d651082072bfe4fbd326ce1bcf699e5b73d48ffe69b8f1907a11c75",
+    "api_loop_version": "013358ffb4ed6f090caaa1229eca1f47dafe34221cefef72d9ed2e48a8638014",
+    "provider_manifest": "contracts/improvement-provider-pack.json",
+    "provider_manifest_sha256": "d78e62e88140b3cd2b4e220fff1ee73fff8b60085c3f2986f3d8876edfb5191b"
+  },
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "python": "3.9.6",
+    "node": "v24.14.0",
+    "emulator": "libmgba/0.10.5",
+    "compiler": "Apple clang 21.0.0 (clang-2100.0.123.102), ARMv4T; existing ARM GNU binutils",
+    "native_bridge_sha256": "4fba278a70f5343051768a1adcec74a2bd8f348d6f574c3adb68cd79dce8bd2c",
+    "bridge_clean_build": {
+      "mode": "clean",
+      "cache": "missing binary before build",
+      "wall_s": 0.160166,
+      "outcome": "passed"
+    }
+  },
+  "operation": "native-improve",
+  "recipe_id": "aria-soulstride-controlled-lunge",
+  "profile_id": "aria-soulstride-iteration",
+  "input_rom_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+  "chunks": [
+    {
+      "request_id": "ac498df0-a3e4-4750-8abd-e36ece9625e8",
+      "api_status": "completed",
+      "engine_status": "artifact-built-with-diagnostics",
+      "reason": "awaiting_explicit_continuation",
+      "experiment_outcome": "partial",
+      "limits": {
+        "attempts": 2,
+        "model_calls": 36,
+        "native_frames": 13000,
+        "wall_seconds": 180,
+        "cost_usd": null
+      },
+      "usage": {
+        "model_calls": 15,
+        "native_frames": 6233,
+        "cost_usd": null
+      },
+      "usage_complete": true,
+      "attempts": 1,
+      "repair_count": 0,
+      "timings": {
+        "queue_s": null,
+        "execution_wall_s": 9.390099792,
+        "build_s": 0.335447,
+        "simulation_s": 8.934003,
+        "evaluation_s": null,
+        "accounting": "Backend stages are nested in worker execution; queue unavailable (direct dispatch).",
+        "backend_total_s": 9.295018
+      },
+      "artifact_sha256": "98038eb214fa36b0648b48ba89eb641ff1a0bce3f51fe4bbdf5f58e2447e155a",
+      "report_sha256": "74da0644bc5f9e693c72f088f103c0a50d1d0815e3396f4c26ca4efea8e1034b",
+      "models": {
+        "system1": 12,
+        "system2_play": 3,
+        "system2_diagnosis": 0
+      },
+      "experiments": [
+        {
+          "phase": "start",
+          "attempt": 1,
+          "status": "stopped",
+          "reason": "step_limit",
+          "model_calls": 15,
+          "system1_calls": 12,
+          "system2_calls": 3,
+          "native_frames_including_setup_and_render": 6233,
+          "model_selected_action_frames": 200,
+          "fixture_frames": 6032,
+          "experiment_wall_s": 8.934003,
+          "timing": {
+            "total_wall_s": 7.251387,
+            "observation_wall_s": 0.073084,
+            "action_wall_s": 0.28105,
+            "policy_wall_s": 6.886903,
+            "deadline_overshoot_s": 0.0,
+            "queue_s": null,
+            "build_s": null,
+            "fixture_wall_s": 1.563146,
+            "native_unthrottled": true,
+            "simulated_action_seconds": 3.348541259765625,
+            "native_step_fps": 711.6171499733143,
+            "native_nominal_fps": 59.72750056960583,
+            "resume_render_integration_frames": 1,
+            "precomputed_setup_not_double_counted": false
+          },
+          "native_event_count_retained": 4,
+          "success": false,
+          "scope": "Bounded model-selected native actions; native source event audit. Setup remains separate.",
+          "native_event_velocities_pixels_per_frame": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "standalone_headless_host_fixture": true,
+      "model_calls_are_actual_provider_requests": true
+    },
+    {
+      "request_id": "9b7afe8f-306b-4fb9-b841-5fbb7504668c",
+      "api_status": "completed",
+      "engine_status": "success",
+      "reason": "native_objective_observed",
+      "experiment_outcome": null,
+      "limits": {
+        "attempts": 2,
+        "model_calls": 36,
+        "native_frames": 13000,
+        "wall_seconds": 180,
+        "cost_usd": null
+      },
+      "usage": {
+        "model_calls": 19,
+        "native_frames": 6302,
+        "cost_usd": null
+      },
+      "usage_complete": true,
+      "attempts": 2,
+      "repair_count": 1,
+      "timings": {
+        "queue_s": null,
+        "execution_wall_s": 15.727448083999999,
+        "build_s": 0.355956,
+        "simulation_s": 13.291972,
+        "evaluation_s": 1.885974,
+        "accounting": "Backend stages are nested in worker execution; queue unavailable (direct dispatch).",
+        "backend_total_s": 15.618727
+      },
+      "artifact_sha256": "6f52161e9826a16f2f063e452d6b63ef554d4efcce867eece0be418b401b86c8",
+      "report_sha256": "d30649daab67e533c1d16b659a456073dc06c5e4026db66115afc3f3b0ec078f",
+      "models": {
+        "system1": 13,
+        "system2_play": 5,
+        "system2_diagnosis": 1
+      },
+      "experiments": [
+        {
+          "phase": "continue",
+          "attempt": 1,
+          "status": "stopped",
+          "reason": "step_limit",
+          "model_calls": 16,
+          "system1_calls": 12,
+          "system2_calls": 4,
+          "native_frames_including_setup_and_render": 267,
+          "model_selected_action_frames": 266,
+          "fixture_frames": 0,
+          "experiment_wall_s": 10.573849,
+          "timing": {
+            "total_wall_s": 10.453233,
+            "observation_wall_s": 0.073457,
+            "action_wall_s": 0.298109,
+            "policy_wall_s": 10.071212,
+            "deadline_overshoot_s": 0.0,
+            "queue_s": null,
+            "build_s": null,
+            "fixture_wall_s": 0.000362,
+            "native_unthrottled": true,
+            "simulated_action_seconds": 4.453559875488281,
+            "native_step_fps": 892.2910747411181,
+            "native_nominal_fps": 59.72750056960583,
+            "resume_render_integration_frames": 1,
+            "precomputed_setup_not_double_counted": false
+          },
+          "native_event_count_retained": 5,
+          "success": false,
+          "scope": "Bounded model-selected native actions; native source event audit. Setup remains separate.",
+          "native_event_velocities_pixels_per_frame": [
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "phase": "continue",
+          "attempt": 2,
+          "status": "success",
+          "reason": "objective_observed",
+          "model_calls": 2,
+          "system1_calls": 1,
+          "system2_calls": 1,
+          "native_frames_including_setup_and_render": 6035,
+          "model_selected_action_frames": 2,
+          "fixture_frames": 6032,
+          "experiment_wall_s": 2.718123,
+          "timing": {
+            "total_wall_s": 1.045881,
+            "observation_wall_s": 0.011376,
+            "action_wall_s": 0.004068,
+            "policy_wall_s": 1.029162,
+            "deadline_overshoot_s": 0.0,
+            "queue_s": null,
+            "build_s": null,
+            "fixture_wall_s": 1.566675,
+            "native_unthrottled": true,
+            "simulated_action_seconds": 0.03348541259765625,
+            "native_step_fps": 491.6420845624386,
+            "native_nominal_fps": 59.72750056960583,
+            "resume_render_integration_frames": 1,
+            "precomputed_setup_not_double_counted": false
+          },
+          "native_event_count_retained": 1,
+          "success": true,
+          "scope": "Bounded model-selected native actions; native source event audit. Setup remains separate.",
+          "native_event_velocities_pixels_per_frame": [
+            3.0
+          ]
+        }
+      ],
+      "standalone_headless_host_fixture": true,
+      "model_calls_are_actual_provider_requests": true
+    }
+  ],
+  "corrected_campaign_totals": {
+    "model_calls": 34,
+    "native_frames_including_setup_and_render": 12535,
+    "model_selected_action_frames": 468,
+    "actual_calls_by_role": {
+      "system1": 25,
+      "system2_play": 8,
+      "system2_diagnosis": 1
+    },
+    "provider_call_outcomes": {
+      "success": 34
+    },
+    "confidence_gate": {
+      "accepted": 17,
+      "rejected": 8,
+      "low_confidence_or_margin": 8,
+      "confidence_threshold": 0.65,
+      "margin_threshold": 0.2,
+      "basis": "uncalibrated_provider_score; no measured accuracy claim"
+    },
+    "provider_request_wall_s": 19.837543,
+    "worker_execution_wall_s": 25.117547875999996,
+    "builds": {
+      "weak_source_build_s": 0.335447,
+      "continuation_exact_cached_artifact_validation_s": 0.00639,
+      "repaired_source_build_s": 0.349566
+    },
+    "actual_source_repair_count": 1,
+    "native_unthrottled": true,
+    "audited_action_wall_s": 0.5832269999999999,
+    "audited_action_fps": 802.4319861734797,
+    "nominal_fps": 59.72750056960583,
+    "audited_action_speed_vs_nominal": 13.434883069287881,
+    "throughput_scope": "Only model-selected native action integration including source event audit/IPC. Excludes model/network, fixture boot, observation, build and human restart interval; no fixed speed guarantee."
+  },
+  "continuation_proof": {
+    "server_stopped_and_restarted_between_chunks": true,
+    "worker_processes": "separate CLI worker processes",
+    "prior_report_sha256": "74da0644bc5f9e693c72f088f103c0a50d1d0815e3396f4c26ca4efea8e1034b",
+    "exact_rom_sha256": "98038eb214fa36b0648b48ba89eb641ff1a0bce3f51fe4bbdf5f58e2447e155a",
+    "exact_state_sha256": "06ad9e1f3e42ecce48f1644f78c6fa22cf725e7bef42c63657f5f29f3639cc83",
+    "profile_sha256": "8ef835f15578023e235429d6bc4168a6b2856c2152bc80ace9ea70112cb7f122",
+    "observation_profile_sha256": "15a9091166b7b3b5541b0cffc520e24155605e1f5fa42a659925276f26618204",
+    "native_runtime_code_and_model_binding_equal": true,
+    "learning_context_file_sha256": "c98b47a4ea210925c3c8c509edd6521e69645a89323dbdeaaa9da9e3e11c934b",
+    "checkpoint_observation_sha256": "12db7675dd874d89062167c3f1321d2821faa5903153755c7f102aa6a5eb174d",
+    "current_observation_hash_verified_for_each_play_provider_call": true,
+    "original_request_config_input_identity_immutable": true,
+    "native_load": "Exact saved state bytes loaded; one explicitly accounted real integration frame renders fresh current observation. No assertion of byte-equal post-render observation.",
+    "cross_rom_snapshot_reuse": false,
+    "repaired_candidate_setup": "Fresh exact repaired-ROM source-guided native fixture, not old-ROM snapshot migration."
+  },
+  "repair_proof": {
+    "baseline_native_events_pixels_per_frame": 1,
+    "required_pixels_per_frame": 3,
+    "model_selected_variant_sha256": "b54a471603957af5974a151537695cee59d05d9b6146ada04dec475c96c172ff",
+    "selection": "Actual System2 provider success returned exact reviewed request hash linked to native evidence; arbitrary source edits unsupported.",
+    "changed_parameter": "lunge_speed_q16: 65536 to 196608; other reviewed strategy settings unchanged",
+    "final_artifact_sha256": "6f52161e9826a16f2f063e452d6b63ef554d4efcce867eece0be418b401b86c8",
+    "observed_native_birth_pixels_per_frame": 3.0,
+    "native_event_witness": "Newly observed initialized Skeleton birth with source-owned player parent; per-frame observation, not instruction-level hook proof.",
+    "native_mp_debit": 12,
+    "qualification": {
+      "native_objective": "observed",
+      "whole_campaign": "untested",
+      "activation": "not_performed"
+    }
+  },
+  "http_verification": {
+    "result_iteration_and_rom_artifact_gets": "All HTTP 200 and digest verified for both corrected chunks",
+    "negative_controls": [
+      {
+        "name": "stale-loop",
+        "status": 409,
+        "code": "stale_pins"
+      },
+      {
+        "name": "stale-profile",
+        "status": 409,
+        "code": "stale_profile"
+      },
+      {
+        "name": "stale-prior-report",
+        "status": 409,
+        "code": "stale_prior_report"
+      },
+      {
+        "name": "changed-engine-prior-continuation",
+        "status": 409,
+        "code": "continuation_context_conflict",
+        "prior_loop_version": "1a543901766e7e65d7fb44fcb95fc16fc3f1f15f27b34c3c39851a6b79c0f13c",
+        "current_loop_version": "013358ffb4ed6f090caaa1229eca1f47dafe34221cefef72d9ed2e48a8638014",
+        "model_calls": 0
+      }
+    ]
+  },
+  "retained_original_campaign": {
+    "tested_staged_diff_sha256": "e434b55b1afe7d9c16f0fb02cb36957765bc80a8d5acb90bd403e61e4350f654",
+    "request_ids": [
+      "e1278a88-ffa2-4d64-a238-3f20fdab9908",
+      "aa42cfe5-8570-4caf-b9e8-5cf4aa0054a1"
+    ],
+    "outcome": "Native objective observed but independent provenance validation failed: shared checkpoint native event list mutated original config (4 to 5 entries).",
+    "model_calls": 47,
+    "native_frames_including_setup_and_render": 12679,
+    "remediation": "Defensive deepcopy of checkpoint before callback; focused regression passed. Strict prior/current API loop identity added. Original reports preserved unchanged; corrected campaign started fresh because engine pins changed."
+  },
+  "all_actual_campaign_resource_totals": {
+    "campaigns": 2,
+    "model_calls": 81,
+    "native_frames_including_setup_and_render": 25214,
+    "failed_or_invalidated_campaign_retained": true
+  },
+  "accounting_and_gaps": {
+    "queue_time_s": null,
+    "provider_billing_cost_usd": null,
+    "provider_queue_vs_inference_split": null,
+    "ci_queue_and_job_measurements": null,
+    "comparable_before_after_full_engine_baseline": null,
+    "timing": "Per-stage timings are nested within worker totals; provider timings are nested within policy/diagnosis. Do not sum overlapping totals. Setup and render frames are counted explicitly. Human time between chunks excluded from worker execution total.",
+    "build_cache": "New candidate source builds use existing installed machine toolchain. Continuation validates and reuses the exact cached weak build; it does not rebuild it.",
+    "qualification_limits": [
+      "Controlled native event objective only; full campaign untested",
+      "No browser playtest, player activation, save migration, game-wide equivalence or empirical model accuracy benchmark",
+      "No fixed native speed or latency SLA established"
+    ]
+  },
+  "distribution": "Sanitized summary only. ROMs, checkpoints, screenshots, memory captures, model transcripts, credentials and absolute private paths remain local and are not included."
+}

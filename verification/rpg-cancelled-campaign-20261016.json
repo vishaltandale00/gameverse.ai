@@ -1,0 +1,255 @@
+{
+  "schema": "gameverse.rpg-cancelled-campaign-verification/1",
+  "run_id": "961f2a47-b56a-4142-b87d-5274368db9ca",
+  "source_commit": "e2b7e661d5057cc74d44ec44b0c185936f89248b",
+  "identity": {
+    "loop_version": "9c2a56ee73d2deb8e4fec7c880dfa229d83ca0a302e37330ec9a7882419b78db",
+    "profile_sha256": "58204de6163c9084eec33853a8ee27109099c9b19546c6fdba6d31d3675f98d6",
+    "rom_sha256": "edc7d0fae3c7dc9448230aaa7a49c01c719286ff19fc96415063347340ba9d2f",
+    "campaign_input_sha256": "c0eae66501ab732529a4e28ea5997a03136e4fb9d7c41801c57fd829c59b5547",
+    "campaign_report_sha256": "a6b90e52ce5dc47e51c0af6d20f52d199eea58e5ad1d4ccdf4d21cc6ec1ff089"
+  },
+  "outcome": "cancelled",
+  "reason": "Supported boundary cancellation after observed controller checkpoint ancestry loss; partial source progress retained.",
+  "limits": {
+    "chunks": 32,
+    "repairs": 0,
+    "model_calls": 82,
+    "native_frames": 120000,
+    "wall_seconds": 600,
+    "cost_usd": null
+  },
+  "observed": {
+    "calls": 48,
+    "provider_statuses": [
+      {
+        "kind": "decision",
+        "status": "success",
+        "count": 14
+      },
+      {
+        "kind": "system2",
+        "status": "success",
+        "count": 34
+      }
+    ],
+    "native_frames": 13383,
+    "setup_frames": 3384,
+    "resume_render_integration_frames": 1,
+    "play_frames": 9998,
+    "quest_stages": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "in_battle_observations": 4,
+    "battle_win_observed": false,
+    "gym_complete_observed": false,
+    "whole_quest_qualified": false,
+    "repairs": 0
+  },
+  "chunks": [
+    {
+      "number": 1,
+      "status": "partial",
+      "reason": "experiment_budget_exhausted",
+      "usage": {
+        "model_calls": 14,
+        "native_frames": 5490,
+        "cost_usd": null
+      },
+      "wall_s": 28.025362,
+      "had_initial_checkpoint": false,
+      "checkpoint_hashes": {
+        "state": "d836666db7c87ff8ddf8948cc96f1bd6617b9a9f3d1b34f5a052e2caa1efdb60",
+        "learning_context": "a06cc91baab213f7cefd79d72d20e944f20aefd2121f6ae28d72630ca0a1c70c",
+        "observation": "d6f7e893402180e4bf5ba1efe6a1ed20f1bef0c04411137c16dd201284eda6d5"
+      },
+      "quest_stages": [
+        0,
+        1,
+        2
+      ],
+      "battle_observations": 0,
+      "actions": 99,
+      "play_frames": 3798,
+      "setup_frames": 1692,
+      "resume_render_integration_frames": 0,
+      "model_calls": {
+        "decision": 5,
+        "system2": 9
+      },
+      "play_loop_timing": {
+        "total_wall_s": 25.984802,
+        "observation_wall_s": 0.38101,
+        "action_wall_s": 5.234554,
+        "model_wall_s": {
+          "system1": 1.9464273319999967,
+          "system2": 18.372936876000004
+        },
+        "frames_per_action": 38.36363636363637,
+        "frames_per_model_call": 271.2857142857143,
+        "policy_wall_s": 20.332131,
+        "deadline_overshoot_s": 0.0,
+        "queue_s": null,
+        "build_s": null
+      }
+    },
+    {
+      "number": 2,
+      "status": "partial",
+      "reason": "campaign_cancel_requested",
+      "usage": {
+        "model_calls": 0,
+        "native_frames": 0,
+        "cost_usd": 0.0
+      },
+      "wall_s": 0.004836,
+      "had_initial_checkpoint": true
+    },
+    {
+      "number": 3,
+      "status": "partial",
+      "reason": "experiment_budget_exhausted",
+      "usage": {
+        "model_calls": 14,
+        "native_frames": 5490,
+        "cost_usd": null
+      },
+      "wall_s": 23.138325,
+      "had_initial_checkpoint": false,
+      "checkpoint_hashes": {
+        "state": "a02416dc57f4155949df515ca74a8b03840696d92918542a734aaf77e435fcf7",
+        "learning_context": "2e34274a97ef03fca3902f5d86449a133c8e785f2bef2acc35ecffa46a653780",
+        "observation": "23405cb4d73cf7a8acab319641467e3d0d0b727f868dda03bbc7942feafb7481"
+      },
+      "quest_stages": [
+        0,
+        1,
+        2
+      ],
+      "battle_observations": 0,
+      "actions": 99,
+      "play_frames": 3798,
+      "setup_frames": 1692,
+      "resume_render_integration_frames": 0,
+      "model_calls": {
+        "decision": 5,
+        "system2": 9
+      },
+      "play_loop_timing": {
+        "total_wall_s": 21.134872,
+        "observation_wall_s": 0.387348,
+        "action_wall_s": 5.297034,
+        "model_wall_s": {
+          "system1": 1.901698500000002,
+          "system2": 13.498275167000001
+        },
+        "frames_per_action": 38.36363636363637,
+        "frames_per_model_call": 271.2857142857143,
+        "policy_wall_s": 15.412369,
+        "deadline_overshoot_s": 0.0,
+        "queue_s": null,
+        "build_s": null
+      }
+    },
+    {
+      "number": 4,
+      "status": "artifact-built-with-diagnostics",
+      "reason": "campaign_cancel_requested",
+      "usage": {
+        "model_calls": 20,
+        "native_frames": 2403,
+        "cost_usd": null
+      },
+      "wall_s": 31.172304,
+      "had_initial_checkpoint": true,
+      "checkpoint_hashes": {
+        "state": "802568b9515285311a208521bc40331935edf612f1380f1201234463e80137ec",
+        "learning_context": "c39c7c540a6404816b6efbc8877a36eafea16cdba1d5cc00f3912af2b5369cbd",
+        "observation": "d0c72e655b4d0e7a1832e60f61a94dbf4f15179c6d5554b5e4e5bcd7d3f58d06"
+      },
+      "quest_stages": [
+        2,
+        3,
+        4
+      ],
+      "battle_observations": 4,
+      "actions": 65,
+      "play_frames": 2402,
+      "setup_frames": 1,
+      "resume_render_integration_frames": 1,
+      "model_calls": {
+        "decision": 4,
+        "system2": 16
+      },
+      "play_loop_timing": {
+        "total_wall_s": 30.146567,
+        "observation_wall_s": 0.405945,
+        "action_wall_s": 3.182616,
+        "model_wall_s": {
+          "system1": 1.4710158750000026,
+          "system2": 25.046006832999996
+        },
+        "frames_per_action": 36.95384615384615,
+        "frames_per_model_call": 120.1,
+        "policy_wall_s": 26.52995,
+        "deadline_overshoot_s": 0.0,
+        "queue_s": null,
+        "build_s": null
+      }
+    }
+  ],
+  "timing": {
+    "api": {
+      "queue_s": null,
+      "execution_wall_s": 83.430079791,
+      "build_s": null,
+      "simulation_s": null,
+      "evaluation_s": null,
+      "accounting": "Campaign total includes resume downtime and retained prefix; active wall nests chunk stages. Composite experiment includes model calls; queue unavailable.",
+      "backend_total_s": 83.798558
+    },
+    "campaign_elapsed_wall_s": 83.798558,
+    "campaign_active_wall_s": 83.22458,
+    "model_wall_s": {
+      "system1": 5.319141707000002,
+      "system2": 56.91721887600001
+    },
+    "simulated_play_seconds": 167.3935775756836,
+    "simulated_play_seconds_per_worker_wall_second": 2.006393593234237,
+    "accounting": "Duplicate restarted chunk gameplay counts actual simulation/work but adds no novel quest milestone. Startup/render frames excluded from play numerator. Model and stage wall times overlap; no compilation, cost or provider queue split measured."
+  },
+  "verification": {
+    "canonical_campaign_and_chunk_inputs": true,
+    "artifact_and_chunk_report_digests": true,
+    "native_learning_observation_checkpoint_digests": true,
+    "all48_provider_requests_bound_to_current_observation": true,
+    "api_cancel_resume_invoked": true,
+    "new_controller_resume_count": 1,
+    "initial_cancel_resume_preserved_gameplay": false,
+    "later_same_rom_checkpoint_resume_matches_prior_refs": true,
+    "checkpoint_resume_actual_source_stages": [
+      2,
+      3,
+      4
+    ]
+  },
+  "defect": {
+    "cause": "Pre-experiment cancellation produced a zero-usage child with initial_checkpoint but no checkpoint in report; resuming from that newest child selected fresh template and discarded earlier usable checkpoint.",
+    "wasted_restart_row": 3,
+    "stop": "Cancelled at supported stage boundary; known usage retained, no automatic further resume."
+  },
+  "ledger": {
+    "v2_prefix_calls": 14,
+    "targeted_d1_calls": 4,
+    "this_campaign_calls": 48,
+    "current_total_calls": 66,
+    "current_total_call_ceiling": 100,
+    "remaining_calls": 34,
+    "prior_separately_authorized_v1_calls": 20
+  },
+  "next_step": "Offline/reviewed controller cancellation ancestry fix, exact source authority handling, then only explicitly approved remaining resources. No old checkpoint silently rebound to changed runtime."
+}

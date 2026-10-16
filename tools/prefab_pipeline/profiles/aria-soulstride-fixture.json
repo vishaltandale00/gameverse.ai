@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "boot_until_frame": 5800,
+  "boot_inputs": "180:6:START,240:6:A,300:6:START,360:6:A,420:6:START,480:6:A,540:6:START,600:6:A,660:6:START,700:6:A,740:6:A,780:6:A,820:6:A,860:6:A,900:6:A,940:6:A,980:6:A,1020:6:A,1060:6:A,1100:6:A,1140:6:A,1180:6:A,1220:6:A,1260:6:A,1300:6:A,1340:6:A,1380:6:A,1420:6:A,1460:6:A,1500:6:A,1540:6:A,1580:6:A,1620:6:A,1660:6:A,1700:6:A,1740:6:A,1780:6:A,1820:6:A,1860:6:A,1900:6:A,1940:6:A,1980:6:A,2020:6:A,2060:6:A,2100:6:A,2140:6:A,2180:6:A,2220:6:A,2260:6:A,2300:6:A,2340:6:A,2380:6:A,2420:6:A,2460:6:A,2500:6:A,2540:6:A,2580:6:A,2620:6:A,2660:6:A,2700:6:A,2740:6:A,2780:6:A,2820:6:A,2860:6:A,2900:6:A,2940:6:A,2980:6:A,3020:6:A,3060:6:A,3100:6:A,3140:6:A,3180:6:A,3220:6:A,3260:6:A,3300:6:A,3340:6:A,3380:6:A,3420:6:A,3460:6:A,3500:6:A,3540:6:A,3580:6:A,3620:6:A,3660:6:A,3700:6:A,3740:6:A,3780:6:A,3820:6:A,3860:6:A,3900:6:A,3940:6:A,3980:6:A,4020:6:A,4060:6:A,4100:6:A,4140:6:A,4180:6:A,4220:6:A,4260:6:A,4300:6:A,4340:6:A,4380:6:A,4420:6:A,4460:6:A,4500:6:A,4540:6:A,4580:6:A,4620:6:A,4660:6:A,4700:6:A,4740:6:A,4780:6:A,4800:130:RIGHT,4840:20:A,4900:6:B,4950:15:A,4990:6:B,5020:60:LEFT,5100:6:B,5130:120:RIGHT,5160:25:A,5230:6:B,5280:130:RIGHT,5320:20:A,5380:6:B,5430:15:A,5470:6:B,5500:60:LEFT,5580:6:B,5610:120:RIGHT,5640:25:A,5710:6:B,5760:130:RIGHT,5800:20:A,5860:6:B,5910:15:A,5950:6:B,5980:60:LEFT,6060:6:B,6090:120:RIGHT,6120:25:A,6190:6:B,6240:130:RIGHT,6280:20:A,6340:6:B,6390:15:A,6430:6:B,6460:60:LEFT,6540:6:B,6570:120:RIGHT,6600:25:A,6670:6:B,6720:130:RIGHT,6760:20:A,6820:6:B,6870:15:A,6910:6:B,6940:60:LEFT,7020:6:B,7050:120:RIGHT,7080:25:A,7150:6:B,7200:130:RIGHT,7240:20:A,7300:6:B,7350:15:A,7390:6:B,7420:60:LEFT,7500:6:B,7530:120:RIGHT,7560:25:A,7630:6:B,7680:130:RIGHT,7720:20:A,7780:6:B,7830:15:A,7870:6:B,7900:60:LEFT,7980:6:B",
+  "play_steps": 50,
+  "frames_per_step": 12,
+  "policy": "First120stepsRIGHT thenLEFT;Battack12held/24released;Ajump12held/192released",
+  "scope": "Bounded early corridor enemy defeat; not full campaign",
+  "fixture_readiness": {
+    "kind": "aria-soma-directional-response/1",
+    "max_frames": 360,
+    "batch_frames": 4,
+    "scope": "Scripted setup only: opposite LEFT then RIGHT velocity/facing responses plus source cast blocker reads. Not a decoded universal unlock flag, guaranteed cast, or model gameplay.",
+    "source_refs": [
+      "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "research/deep-extraction/castlevania/soma-cast/probe.py"
+    ],
+    "prior_native_trace": "local/prefab-mods/soma-cast-reachability-001/report.json"
+  }
+}

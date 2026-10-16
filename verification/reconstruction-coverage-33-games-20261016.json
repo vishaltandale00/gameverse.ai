@@ -1,0 +1,344 @@
+{
+  "schema": "gameverse.reconstruction-coverage-wave/1",
+  "recorded_at": "2026-10-16 21:13:04 UTC",
+  "scope": "Frozen producer wave metadata; scoped installed research results are separate from central-library publication and composition eligibility. Source-derived private IR, assets and evidence are not distributed.",
+  "producer_ledger_sha256": "c200b38f1c205d0bdf3eff565123371f7ab9c82f74f9be0debe7bf4f6acd53fd",
+  "producer_pin_validation": {
+    "pins_verified": 52,
+    "outcome": "passed",
+    "wall_s": 0.005114,
+    "provenance": "producer owner retained validation; publisher verified ledger digest and reused result without duplicate native/testing runs"
+  },
+  "indexed_games": 33,
+  "producer_qc_packets": 15,
+  "subtotal": {
+    "games_with_installed_scoped_candidate_ir": 13,
+    "emitted_executable_behavior_bytes_across_variant_artifacts": 8594,
+    "installed_executable_behavior_bytes": 2420,
+    "mechanical_binding_bytes_installed": 2766,
+    "emitted_behavior_bytes_outside_cartridge_only": 6174,
+    "new_distinct_source_roots": 11,
+    "prior_roots_freshly_installed": 16,
+    "new_proven_source_profile_domains": 2,
+    "games_with_whole_game_executable_ir_closure": 0
+  },
+  "whole_game_complete_count": 0,
+  "coverage_denominators": {
+    "whole_game_executable_code_bytes": null,
+    "all_assets_bytes": null,
+    "all_semantic_components": null
+  },
+  "games": [
+    {
+      "game_id": "metroid-fusion",
+      "status": "independent_qc_pass_scoped",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Genericv2freshIRreplay complete/QC passed; expand source-caller schedule/domain closure and classify9830 still-untyped embedded bytes without rebenchmarking existing root."
+    },
+    {
+      "game_id": "pokemon-mystery-dungeon-red-rescue-team",
+      "status": "data_qc_pass_ir_installation_blocked",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Review992 regenerated data bytes and118 emitted uninstalled behavior bytes; exact32MiB ownership prevents append and modules exceed original spans."
+    },
+    {
+      "game_id": "legend-of-zelda-the-the-minish-cap",
+      "status": "independent_qc_pass_scoped",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Genericv2freshIRreplay complete/QC passed; close actual inventory caller/save-load/script/schedule and concurrentstate ownership, not repeat two leaf proofs."
+    },
+    {
+      "game_id": "final-fantasy-tactics-advance",
+      "status": "independent_qc_pass_scoped",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Keep512 serialized bytes separate from palette semantic consumer proof; connect content indices/RNG to actual game callers."
+    },
+    {
+      "game_id": "castlevania-aria-of-sorrow",
+      "status": "independent_qc_pass_scoped",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Review paired unrestricted motionX/Y installed IR; palette consumer source proof explicit; whole actor/controller schedule remains open."
+    },
+    {
+      "game_id": "crash-bandicoot-the-huge-adventure",
+      "status": "independent_qc_pass_scoped",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Actual motion/apply installed group scoped proof passed; close allocator/controller/latch/rearm source lifecycle and seed-pointer callers. Tinyseed audit8-byte boundary is superseded by14-byte exactL0."
+    },
+    {
+      "game_id": "dragon-ball-advanced-adventure",
+      "status": "independent_qc_pass_scoped",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Route exact callback/allocator repro to sole shared compiler; qualify one coherent callback consumer without erasing effect; original capture is separate baseline."
+    },
+    {
+      "game_id": "driv3r",
+      "status": "independent_qc_pass_scoped_arm_entry",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "NewARMcontactbankinitializer installed+QCPASS; exact40Bbank maincontact consumer remains unlowered. Implement reviewedframealias/low32PIECEcallerreturnview/live-r0SSA contracts before any math/contactIR claim."
+    },
+    {
+      "game_id": "final-fantasy-i-and-ii-dawn-of-souls",
+      "status": "independent_qc_pass_scoped",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Newsortedbucket reset14B IR/sourcewrapper\u2192emptyconsumer qualified; canonical writablelinkcell mainqueue remains unsupported,128record initializer64iterationlimit notbypassed."
+    },
+    {
+      "game_id": "final-fantasy-vi-advance",
+      "status": "read_only_frontier_audit_complete",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Recover the shared flag's source-level role and caller ABI, then emit the paired set/clear leaves as one IR unit with explicit global-state ownership."
+    },
+    {
+      "game_id": "grand-theft-auto",
+      "status": "read_only_frontier_audit_complete",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Trace the sole caller and state lifetime to establish whether this is an independently executable reset operation; pin its live-in/global contract before lowering the leaf. The discovery-repair exports do not yet establish an installable source closure."
+    },
+    {
+      "game_id": "kingdom-hearts-chain-of-memories",
+      "status": "terminal_source_recovery_only_ir_representation_blocked",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Reviewed guardedloaded-target\u2192indexswitch normalizer+escapeaudit required for real4block source53index/2nativeaddresslabel L0; no newIR/native thiswave and no unchangedJVMretry."
+    },
+    {
+      "game_id": "kirby-and-the-amazing-mirror",
+      "status": "read_only_frontier_audit_complete",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Recover the exact record type, caller register inputs, and teardown/dispatch dependency at 0x0814f890 before emitting this paired refcount cluster. Keep unresolved indirect dispatch explicit."
+    },
+    {
+      "game_id": "kirby-nightmare-in-dream-land",
+      "status": "read_only_frontier_audit_complete",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Recover the caller's state transition and confirm the RAM byte ownership, then lower this setter with an explicit global binding. Expand only after the caller proves the operation's lifecycle."
+    },
+    {
+      "game_id": "legend-of-zelda-the-a-link-to-the-past-and-four-swords",
+      "status": "read_only_frontier_audit_complete",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Do not give a Sol lane an unchanged generic-lifter retry. First close shared compiler return/ABI and shared-state bindings; then use retained L0 for the gated controller cluster and require emitted IR parity before asset work. Source closure v004 explicitly says phase pending and no source-complete/whole-game result."
+    },
+    {
+      "game_id": "mario-and-luigi-superstar-saga",
+      "status": "independent_qc_pass_scoped",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Freeze source actor_step/update/reset IR and exact title data reconstruction; initializer r3 live remains native and blocks full lifecycle closure."
+    },
+    {
+      "game_id": "mario-kart-super-circuit",
+      "status": "read_only_frontier_audit_complete",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "First resolve which candidate root corresponds to exact USA Rev0 bytes, then establish baseline ELF/map and only then pick/export one function plus its direct table/asset consumer. Do not add suffix-counted resources to the target."
+    },
+    {
+      "game_id": "megaman-zero",
+      "status": "independent_qc_pass_outside_rom_domains_only",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Two exact source-map domains0/1 now qualified via readonlycallee hook; unspecialized selector0..2 still pointerlikeROMliteral escape. No cartridgehook/generalROMeligibility; defaultsetupwrapper nextstaticonly."
+    },
+    {
+      "game_id": "metal-slug-advance",
+      "status": "read_only_frontier_audit_complete",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Sol priority 2, after shared compiler fixes: reuse exported targets; close nested entity/pool pointers, real BXr1 callback scheduling, callee-owned collection-to-global view binding and exact presentation domain; then qualify bounded child completion and availability writers. The current report explicitly says central worker is done and forbids broad re-export/rerun."
+    },
+    {
+      "game_id": "metroid-zero-mission",
+      "status": "semantic_running_limited_one_lane",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "MZM limited lane static frontier frozen: SamusSetPose effects and stride56/count24 parent-view copyback remain open; no extra native work this wave."
+    },
+    {
+      "game_id": "need-for-speed-underground",
+      "status": "read_only_frontier_audit_complete",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Use existing L0 and source contract; resolve canonical shared state and timer2/service ownership, then qualify source consumer cadence and dispatcher as a finite ordered scenario. Keep race-driving, track, lap, collision unclaimed until separate source roots and systems are found."
+    },
+    {
+      "game_id": "pokemon-emerald-version",
+      "status": "semantic_running",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Prove own-ROM HighFunction/typed species tables and native traits/PP dependency cluster in Ruby Rev2/LeafGreen Rev1; matching source target hash is not a complete baseline ELF proof."
+    },
+    {
+      "game_id": "pokemon-firered-version",
+      "status": "semantic_running",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Prove own-ROM HighFunction/typed species tables and native traits/PP dependency cluster in Ruby Rev2/LeafGreen Rev1; matching source target hash is not a complete baseline ELF proof."
+    },
+    {
+      "game_id": "pokemon-leafgreen-version",
+      "status": "independent_qc_pass_scoped",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "OwnROM gender+ability installed+QCPASS; close PPcalculator signeddivision and actual monster/battleparent/sourceownership. Matching whole-source ELF absent; no wholegame/codeassetdenominator."
+    },
+    {
+      "game_id": "pokemon-ruby-version",
+      "status": "independent_qc_pass_scoped",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "OwnROM gender+ability installed+QCPASS; close PPcalculator signeddivision and actual monster/battleparent/sourceownership. Matching whole-source ELF absent; no wholegame/codeassetdenominator."
+    },
+    {
+      "game_id": "prince-of-persia-the-sands-of-time",
+      "status": "read_only_frontier_audit_complete",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Avoid repeated export. First resolve nested object refs/aliases and fifth stack argument/return ABI with existing pins; then qualify finite hazard-hit, expiry and same-update re-hit/restore boundary cases. Retain failures. The accepted pulse graph alone is not a meaningful damage/protection connection."
+    },
+    {
+      "game_id": "shaman-king-master-of-spirits",
+      "status": "read_only_frontier_audit_complete",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Do not continue from the scroll leaf until its caller, scroll state owner and display/scheduling dependencies are pinned; first establish address ownership for the selected original function."
+    },
+    {
+      "game_id": "sonic-advance",
+      "status": "read_only_frontier_audit_complete",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Exact next action is title/revision mapping of sa2 against the ASOE ROM. Until resolved, no function or asset cluster from that root can be credited to Sonic Advance."
+    },
+    {
+      "game_id": "super-mario-advance",
+      "status": "read_only_frontier_audit_complete",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "If prioritizing SMA1, extend the controller through source-addressed acceleration/input, contact/terrain and carry-state producers before combining motion operators. Keep Mario Bros minigame separate."
+    },
+    {
+      "game_id": "super-mario-advance-2-super-mario-world",
+      "status": "read_only_frontier_audit_complete",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Use the retained partial export to identify one bounded motion/collision caller chain, then pin its original function boundaries, state owner and address mapping before qualification. SMA1 and SMA4 operators are separate games and cannot transfer by shared Mario branding."
+    },
+    {
+      "game_id": "super-mario-advance-4-super-mario-bros-3",
+      "status": "independent_qc_pass_projected_ram_scope",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Prove source parent cyclicSSA induction and complete RAM/r2ABI domain;768B projected RAM not proven deadstack. Existing5helperinstallation qualified only finite projected cases."
+    },
+    {
+      "game_id": "tekken-advance",
+      "status": "read_only_frontier_audit_complete",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Closest executable frontier is one actual source separator function, with the next qualification effort on true full-state native comparison and aliases/caller lifecycle. It remains single invocation, not a recovered multi-function scheduler. Do not bundle admission-authored materialize->clear schedule as original source call order."
+    },
+    {
+      "game_id": "wario-land-4",
+      "status": "independent_qc_pass_scoped",
+      "whole_game_executable_ir_complete": false,
+      "remaining_semantic_closure_count": null,
+      "missing_executable_code_bytes": null,
+      "raw_capture_ir_credit_bytes": 0,
+      "next_action": "Newafterimagehelper actualIR installed88B; parentage nestedpersistentROMpointer outputs remain unresolved.2706sourcegraphics/OAM candidate bytes not regenerated/partitioncredited."
+    }
+  ],
+  "limits": [
+    "Exact capture/reassembly and object-span ownership are not executable IR regeneration.",
+    "Installed behavior, mechanical binding, variant/outside-cartridge emitted code and typed captured data remain separate credit categories.",
+    "Two MMZ source-profile domains do not establish the unspecialized default; DBA remains ineligible for composition because alias closure is unresolved.",
+    "SMA4 retains omitted 768-byte RAM, no dead-stack proof and low-16-bit r2 scope; installed research is not general replacement eligibility.",
+    "Central discovery/admission publication is a separate record; no Composer readiness follows from this producer ledger.",
+    "No percentages are inferred from unknown whole-game denominators."
+  ],
+  "publisher_work": {
+    "new_native_runs": 0,
+    "model_calls": 0,
+    "queue_s": null,
+    "note": "Read/hash and sanitize frozen metadata only."
+  }
+}

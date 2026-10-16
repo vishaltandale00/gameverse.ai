@@ -1,0 +1,29 @@
+{
+  "schema": "native-prefab-mod-request/1",
+  "request_id": "sonic-metroid-native-ir-progress-20261016-v1",
+  "intent": "Retained full native Sonic campaign with original MZM combat/controller/assets; emitted source acquisition/events own connected upgrade progression in task-owned persistent state",
+  "limits": {
+    "max_build_s": 60,
+    "max_payload_bytes": 65536,
+    "subprocess_s": 20
+  },
+  "plan": {
+    "path": "tools/composition/plans/sonic-metroid-signal-descent.json",
+    "sha256": "ce9321025fbcb648bc761174ca46f78d54ad92eecbd1bbd53696d1ce96221025"
+  },
+  "rom": {
+    "path": "local/roms/Sonic Advance (USA) (En,Ja).gba",
+    "sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020"
+  },
+  "strategy_lowering": {
+    "backend": "sonic-metroid-strategy/1",
+    "strategy": {
+      "path": "research/deep-extraction/sonic-metroid/strategy.json",
+      "sha256": "490da51eff7a044ae9b1a68146813d4964c82f24146449aec23006d214f87931"
+    },
+    "lowerer": {
+      "path": "tools/prefab_pipeline/sonic_metroid_strategy.py",
+      "sha256": "e1432bc8ece30bf1b5a76f20025f0ac75c619bb9153d107a8bd03104491e45e8"
+    }
+  }
+}

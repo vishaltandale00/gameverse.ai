@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "game_id": "castlevania-aria-of-sorrow-double-xp",
+  "game_version": "6f42b0b50c42df23518feb897a12beba5319736bece29c8f79fa3f0c9f5366ac",
+  "objective": "Declared controlled integration test, not a naturally discovered game defect: observe a real successful Winged Skeleton projectile birth and its source-native horizontal impulse against required minimum abs(vx)=196608 Q16 (3px/frame). The baseline intentionally configures legal1px/frame. Use supported native inputs to trigger a genuine directional UP+attack cast while controller is ready. Inspect actual birth audit and MP debit; endpoint animation is not birth proof. If event evidence shows insufficient impulse, report it for selection among reviewed source repairs. Never assert success without the native event.",
+  "awareness": {
+    "perspective": "side_view",
+    "locomotion": "platform",
+    "basis": "Configured Aria/source control hypothesis; source stats are readonly observations.",
+    "progress_evidence_scope": "partial"
+  },
+  "actions": [
+    {
+      "id": "wait",
+      "description": "Release buttons and allow animation/recovery to advance",
+      "keys": [],
+      "frames": 48
+    },
+    {
+      "id": "right",
+      "description": "Move RIGHT briefly",
+      "keys": [
+        "RIGHT"
+      ],
+      "frames": 24
+    },
+    {
+      "id": "left",
+      "description": "Move LEFT briefly",
+      "keys": [
+        "LEFT"
+      ],
+      "frames": 24
+    },
+    {
+      "id": "jump",
+      "description": "Jump using A",
+      "keys": [
+        "A"
+      ],
+      "frames": 24
+    },
+    {
+      "id": "attack",
+      "description": "Attack using B",
+      "keys": [
+        "B"
+      ],
+      "frames": 24
+    },
+    {
+      "id": "right_attack",
+      "description": "Move RIGHT while attacking with B",
+      "keys": [
+        "RIGHT",
+        "B"
+      ],
+      "frames": 24
+    },
+    {
+      "id": "left_attack",
+      "description": "Move LEFT while attacking with B",
+      "keys": [
+        "LEFT",
+        "B"
+      ],
+      "frames": 24
+    },
+    {
+      "id": "right_jump",
+      "description": "Move RIGHT while jumping with A",
+      "keys": [
+        "RIGHT",
+        "A"
+      ],
+      "frames": 24
+    },
+    {
+      "id": "right_jump_attack",
+      "description": "Move RIGHT and jump with A while attacking with B",
+      "keys": [
+        "RIGHT",
+        "A",
+        "B"
+      ],
+      "frames": 24
+    },
+    {
+      "id": "right_cast",
+      "keys": [
+        "RIGHT",
+        "UP",
+        "B"
+      ],
+      "description": "Move RIGHT and cast with UP+B; successful cast may lunge; new lunge requires equipped Winged Skeleton descriptor1 and successful native projectile birth",
+      "frames": 24
+    },
+    {
+      "id": "left_cast",
+      "keys": [
+        "LEFT",
+        "UP",
+        "B"
+      ],
+      "description": "Move LEFT and cast with UP+B; successful cast may lunge; new lunge requires equipped Winged Skeleton descriptor1 and successful native projectile birth",
+      "frames": 24
+    },
+    {
+      "id": "right_jump_cast",
+      "keys": [
+        "RIGHT",
+        "A",
+        "UP",
+        "B"
+      ],
+      "description": "Jump RIGHT and attempt UP+B soul cast; new lunge requires equipped Winged Skeleton descriptor1 and successful native projectile birth",
+      "frames": 24
+    },
+    {
+      "id": "left_jump",
+      "keys": [
+        "LEFT",
+        "A"
+      ],
+      "description": "Jump LEFT",
+      "frames": 24
+    }
+  ]
+}

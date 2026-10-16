@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "game_id": "siddarth-emerald",
+  "objective": "Complete the explicitly pinned mod-quality dungeon, quest or boss scenario. Use provider navigation targets for deterministic traversal. Choose battle/menu/semantic actions from actual source state. Escalate when the existing confidence gate rejects a decision. A path traversal or action budget alone is not scenario completion.",
+  "awareness": {
+    "perspective": "top_down",
+    "locomotion": "tile_rpg",
+    "basis": "Recovered SID Game RAM decoder and Bot BFS planner; exact provider/source/ROM/ELF installation manifest required.",
+    "progress_evidence_scope": "partial"
+  },
+  "notes": [
+    "A local explicit provider manifest is generated with python3 -m tools.playtester.rpg_adapter. External provider source, ROM, ELF, compiler and saves are not included in the repository.",
+    "RPGNavigationAdapter prepares only the caller's bounded boot recipe. Same-map targets are supplied by game configuration. Cross-map route discovery remains the provider/game configuration's responsibility.",
+    "Wrap the adapter with ScenarioAdapter using actual source milestone predicates and use the existing DecisionPolicy/System2 policies and campaign resource limits.",
+    "Native checkpoint resume must match the exact game version and provider manifest. Ordinary saves and native checkpoints are different startpoint kinds.",
+    "The mod_quality contract compares retained original and candidate observation events at matched proven boundaries. Missing objective/reachability evidence stays unknown."
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "schema": "gameverse.owner-reported-verification/1",
+  "date": "2026-10-16",
+  "qualification": "Private admitted IR plus separate asset-partition replay; generic tooling source only is published. No original payload, extracted L1 or asset bytes are included.",
+  "measurement_provenance": "retained_native_services source owner and independent read-only QC reported same-bundle exact-hash rebuild and guard controls; publisher records frozen generic source hashes without repeating native runs.",
+  "sourcepins": [
+    {
+      "path": "tools/roundtrip/ir_bundle.py",
+      "sha256": "b5f792b35767cfc22e011efea15101b743344f2e6f043e52d173ebeb6553eeb6"
+    },
+    {
+      "path": "tools/roundtrip/test_ir_bundle.py",
+      "sha256": "cec95aa18d5ab2b663b05308e474a9e1932cd72e326972997d8345b079757a69"
+    },
+    {
+      "path": "tools/roundtrip/bundle_assets.py",
+      "sha256": "911378402543c5ebb2b435c225d45e3d8e44bad8f79a15d4f5a366594e25ab21"
+    },
+    {
+      "path": "tools/roundtrip/test_bundle_assets.py",
+      "sha256": "d476b0cf0d8467f4e6a4d855c3a075ab085ff1ed8c57d5f3f50862c89afbedbf"
+    },
+    {
+      "path": "tools/roundtrip/elf_provider.py",
+      "sha256": "6218d4891b0aa25c5f692065ce3751dce50939f7a8f70e8c629aad053720e210"
+    },
+    {
+      "path": "tools/whole_game/elf_symbols.py",
+      "sha256": "b6fa1737ec1cd481de4b9ed512d9c606a4d2730c808b680bae96e9f2a9145e92"
+    }
+  ],
+  "input_scope": {
+    "ir_components": 3,
+    "typed_asset_files": 3,
+    "typed_asset_bytes": 2067,
+    "payload_or_asset_bytes_public": false,
+    "native_or_mixed_unknown_regions_preserved": true
+  },
+  "result": {
+    "exact_same_candidate_hash": true,
+    "fresh_lowered_payload_bytes": 568,
+    "entry_veneer_bytes": 24,
+    "negative_controls": 11,
+    "guard_denials": 765,
+    "independent_qc": "clear"
+  },
+  "measurement": {
+    "comparison": "same admitted private bundle, machine and guarded rebuild path; guard implementation optimization only",
+    "before_worker_s": 9.800882,
+    "after_worker_s": 0.419803,
+    "before_parent_s": 9.841032,
+    "after_parent_s": 0.456081,
+    "timing_note": "Worker nests inside parent; do not add. Queue, dependency setup and remote CI measurements unavailable.",
+    "queue_s": null,
+    "remote_ci_s": null
+  },
+  "focused_tests": {
+    "passed": 5,
+    "wall_s": 0.036
+  },
+  "runtime_scope": "rebuild uses standard library and sealed compiler/binder/assembler snapshots from an admitted private bundle; source admission needs the compatible authoring snapshot inputs documented in the handoff, not arbitrary game source",
+  "api_support": false,
+  "asset_classification": {
+    "api": "create_asset_overlay(bundle_dir, profile_json, new_overlay_dir); rebuild_with_asset_overlay(bundle_dir, overlay_dir, new_rom_path)",
+    "proof_categories": [
+      "source-typed u16 palette copy",
+      "source-bound voice-pointer incbin"
+    ],
+    "filename_or_object_heuristics": false,
+    "unknown_regions_remain_unknown": true,
+    "focused_tests_passed": 6,
+    "focused_tests_wall_s": 0.006,
+    "independent_qc": "clear"
+  }
+}

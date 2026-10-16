@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "game_id": "metroid-zero-mission",
+  "objective": "Explore toward a visible passage or useful target using short moves, react to hazards, and record what controls and barriers are actually observed. Escalate if unclear. Completion requires runtime evidence; a changed image alone is not progress.",
+  "awareness": {
+    "perspective": "side_view",
+    "locomotion": "platform",
+    "basis": "Configured starting hypothesis from game/source ontology, not a runtime physics measurement",
+    "source_refs": ["ontology/games/metroid-zero-mission.yaml"]
+  },
+  "actions": [
+    {"id": "wait", "description": "Release buttons for 24 frames; observe a transition or cooldown", "keys": [], "frames": 24},
+    {"id": "right", "description": "Try moving right toward a visible passage or target for 12 frames", "keys": ["RIGHT"], "frames": 12},
+    {"id": "left", "description": "Try moving left for 12 frames, including avoiding a hazard or testing another route", "keys": ["LEFT"], "frames": 12},
+    {"id": "jump", "description": "Try A briefly as the configured jump control; verify its actual effect", "keys": ["A"], "frames": 4},
+    {"id": "attack", "description": "Try B briefly as the configured attack control; verify its actual effect", "keys": ["B"], "frames": 4},
+    {"id": "right_jump", "description": "Try moving right while pressing A for 12 frames; reobserve before continuing", "keys": ["RIGHT", "A"], "frames": 12},
+    {"id": "up", "description": "Try UP briefly when an observed passage or interaction suggests it", "keys": ["UP"], "frames": 8}
+  ]
+}
