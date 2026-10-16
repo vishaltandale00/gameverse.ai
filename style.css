@@ -1,0 +1,731 @@
+:root {
+  font-family:Arial,Helvetica,sans-serif;
+  color:#252b24;
+  background:#f7f5ef;
+  font-synthesis:none;
+  --green:#37553f;
+  --line:#d8dbce;
+  --muted:#70766a}
+* {
+  box-sizing:border-box}
+body {
+  margin:0}
+button,input {
+  font:inherit}
+button,a,input {
+  outline-offset:5px}
+button:focus-visible,a:focus-visible,input:focus-visible {
+  outline:3px solid #bc6528}
+button {
+  cursor:pointer;
+  border:1px solid var(--line);
+  background:transparent;
+  color:inherit;
+  border-radius:7px;
+  padding:13px 20px;
+  font-size:14px;
+  font-weight:600}
+button:hover:not(:disabled) {
+  background:#e8ecdf}
+button:disabled {
+  cursor:default;
+  opacity:.45}
+button.primary,.card-bottom button:not(:disabled) {
+  background:var(--green);
+  color:#fff;
+  border-color:var(--green)}
+button.primary:hover,.card-bottom button:not(:disabled):hover {
+  background:#253d2c}
+.text-button {
+  border:0;
+  padding:8px 0;
+  font-size:13px;
+  color:var(--muted)}
+[hidden] {
+  display:none!important}
+.topbar {
+  height:103px;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 max(5.2vw,24px);
+  gap:20px}
+.brand {
+  text-decoration:none;
+  color:#252b24;
+  font-weight:800;
+  font-size:28px;
+  letter-spacing:-1.5px;
+  display:flex;
+  align-items:center}
+.brand-mark {
+  font-size:36px;
+  color:var(--green);
+  padding-right:11px}
+.brand-dot {
+  color:#cd6b39}
+.edition,.mono,.eyebrow,.pill,.game-state,footer {
+  font:10px 'Courier New',monospace;
+  letter-spacing:1px}
+.edition {
+  color:var(--muted);
+  display:flex;
+  align-items:center;
+  gap:14px}
+.tiny-dot {
+  display:inline-block;
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:#9ca28d;
+  vertical-align:middle}
+.green {
+  background:#5a8159}
+.profile-button {
+  font-size:13px;
+  font-weight:500;
+  border-radius:30px;
+  padding:10px 17px}
+.profile-button span {
+  padding-left:12px}
+main {
+  max-width:1360px;
+  margin:0 auto;
+  padding:0 5.2vw}
+.intro {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  min-height:390px;
+  gap:40px;
+  padding:52px 0}
+.eyebrow {
+  font-size:10px;
+  font-weight:600;
+  color:#65745c;
+  letter-spacing:1.5px}
+.eyebrow .tiny-dot {
+  margin-right:9px}
+h1 {
+  font-size:64px;
+  line-height:1.06;
+  letter-spacing:-3.7px;
+  font-weight:500;
+  margin:23px 0 22px}
+h1 span {
+  color:#7e8873}
+.intro-copy {
+  font-size:15px;
+  line-height:1.65;
+  color:var(--muted);
+  margin:0}
+.intro-note {
+  padding:10px 20px 0;
+  text-align:center;
+  transform:rotate(3deg)}
+.orbit {
+  font-size:94px;
+  color:#8e9d70;
+  display:inline-block;
+  line-height:1}
+.intro-note p {
+  font-family:Georgia,serif;
+  font-style:italic;
+  font-size:19px;
+  color:#657158;
+  line-height:1.4}
+.intro-note .mono {
+  font-size:8px;
+  color:#89907d}
+.section-heading {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:1px solid var(--line);
+  padding-bottom:20px;
+  margin-bottom:24px;
+  gap:15px}
+.section-heading h2 {
+  margin:0;
+  font-size:17px;
+  letter-spacing:-.3px;
+  font-weight:500}
+.section-heading h2 span {
+  font:10px 'Courier New',monospace;
+  margin-left:10px;
+  border:1px solid var(--line);
+  border-radius:4px;
+  padding:3px 5px;
+  color:var(--muted)}
+.section-heading p {
+  font-size:11px;
+  color:var(--muted);
+  margin:0;
+  max-width:50%;
+  text-align:right}
+.games {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:26px}
+.game-card {
+  border:1px solid #d6d8ca;
+  border-radius:10px;
+  overflow:hidden;
+  background:#fbfaf6}
+.game-art {
+  height:276px;
+  position:relative;
+  overflow:hidden;
+  padding:21px 23px}
+.art-label {
+  display:flex;
+  justify-content:space-between;
+  position:relative;
+  z-index:2;
+  font:8px 'Courier New',monospace;
+  letter-spacing:1.2px}
+.firered .game-art {
+  background:#e1e5c5;
+  color:#425d41}
+.sma4 .game-art {
+  background:#b7d4e1;
+  color:#234d62}
+.art-title {
+  position:absolute;
+  z-index:3;
+  font-weight:900;
+  line-height:.95;
+  letter-spacing:-4px;
+  font-size:55px;
+  left:30px;
+  top:94px;
+  text-shadow:2px 2px 0 #ffffff40;
+  transform:rotate(-3deg)}
+.firered .art-title span {
+  display:block;
+  color:#ba5836}
+.sma4 .art-title {
+  font-size:40px;
+  letter-spacing:-2px;
+  top:82px;
+  color:#fff3cd;
+  text-shadow:3px 3px #a85c3d}
+.sma4 .art-title span {
+  display:block;
+  font:12px 'Courier New',monospace;
+  letter-spacing:4px;
+  padding:14px 0;
+  color:#234d62;
+  text-shadow:none}
+.art-caption {
+  position:absolute;
+  z-index:4;
+  bottom:20px;
+  left:23px;
+  font:italic 12px Georgia,serif}
+.pixel-sun {
+  position:absolute;
+  width:99px;
+  height:99px;
+  border-radius:50%;
+  background:#eee4a3;
+  right:72px;
+  top:57px}
+.land {
+  position:absolute;
+  width:450px;
+  height:150px;
+  transform:rotate(-23deg);
+  background:#a3b279;
+  right:-116px;
+  bottom:-28px;
+  border-radius:45px}
+.land-front {
+  background:#7b955f;
+  bottom:-100px;
+  right:-90px;
+  width:460px}
+.tree {
+  position:absolute;
+  width:60px;
+  height:30px;
+  background:#4c724f;
+  right:88px;
+  bottom:82px;
+  box-shadow:10px -20px #4c724f,-10px -20px #4c724f,0 -40px #4c724f}
+.tree:after {
+  content:'';
+  position:absolute;
+  left:24px;
+  top:30px;
+  width:12px;
+  height:30px;
+  background:#69744b}
+.tree-two {
+  transform:scale(.65);
+  right:19px;
+  bottom:101px}
+.cloud {
+  position:absolute;
+  top:70px;
+  right:34px;
+  width:72px;
+  height:18px;
+  background:#eff2da;
+  box-shadow:14px -14px #eff2da;
+  border-radius:2px}
+.cloud-two {
+  transform:scale(.6);
+  right:185px;
+  top:58px}
+.pipe {
+  position:absolute;
+  right:55px;
+  bottom:-10px;
+  width:60px;
+  height:101px;
+  background:#759c63;
+  border-left:9px solid #92b176;
+  border-right:9px solid #4e7956}
+.pipe:before {
+  content:'';
+  position:absolute;
+  left:-16px;
+  top:0;
+  width:74px;
+  height:25px;
+  background:#759c63;
+  border-left:9px solid #92b176;
+  border-right:9px solid #4e7956;
+  border-bottom:4px solid #4e7956}
+.pipe-two {
+  right:139px;
+  height:58px;
+  transform:scale(.75);
+  bottom:-19px}
+.coin {
+  position:absolute;
+  right:73px;
+  top:105px;
+  width:19px;
+  height:25px;
+  background:#f0cc63;
+  border:4px solid #cd9d44;
+  box-shadow:3px 3px #6893a580}
+.coin-two {
+  right:112px;
+  top:85px}
+.card-info {
+  padding:23px 24px 17px}
+.card-top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px}
+.card-top .eyebrow {
+  font-size:8px;
+  margin:0;
+  letter-spacing:1px}
+.game-state {
+  font-size:8px;
+  letter-spacing:.5px;
+  color:#8d7656}
+.game-state.ready {
+  color:#587147}
+.card-info h3 {
+  font-size:24px;
+  font-weight:500;
+  letter-spacing:-.7px;
+  margin:14px 0 7px}
+.game-subtitle {
+  color:var(--muted);
+  font-size:13px;
+  margin:0}
+.card-bottom {
+  margin-top:23px;
+  border-top:1px solid #e7e7dc;
+  padding-top:17px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  min-height:68px}
+.card-bottom p {
+  font-size:11px;
+  line-height:1.5;
+  max-width:66%;
+  color:var(--muted);
+  margin:0}
+.card-bottom button {
+  white-space:nowrap;
+  border-radius:5px;
+  padding:11px 17px;
+  font-size:12px}
+.card-bottom button span {
+  margin-left:16px}
+.qualification {
+  font-size:10px;
+  color:#8c917f;
+  margin:9px 0 0}
+.collection-foot {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin:14px 0 34px;
+  gap:20px}
+.collection-foot p {
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.5}
+.collection-foot p .tiny-dot {
+  margin-right:6px}
+.workshop-note {
+  padding:25px 0;
+  display:flex;
+  align-items:center;
+  border-top:1px solid var(--line);
+  gap:19px}
+.workshop-icon {
+  width:40px;
+  height:40px;
+  background:#e8ebde;
+  border-radius:8px;
+  display:grid;
+  place-items:center;
+  font-size:23px;
+  color:#637651}
+.workshop-note h3 {
+  font-weight:500;
+  font-size:14px;
+  margin:0 0 7px}
+.workshop-note p {
+  font-size:12px;
+  color:var(--muted);
+  margin:0;
+  line-height:1.6}
+.pill {
+  margin-left:auto;
+  white-space:nowrap;
+  font-size:8px;
+  letter-spacing:.5px;
+  color:#8a907f;
+  padding:8px 12px;
+  border:1px solid var(--line);
+  border-radius:20px}
+footer {
+  border-top:1px solid var(--line);
+  display:flex;
+  justify-content:space-between;
+  margin-top:29px;
+  padding:23px 5.2vw;
+  color:#858c7a;
+  font-size:9px;
+  letter-spacing:.6px}
+.footer-star {
+  margin-left:18px;
+  font-size:14px;
+  color:var(--green)}
+#notice:empty {
+  display:none}
+#notice {
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#263e2d;
+  color:#f7f5ef;
+  border-radius:8px;
+  box-shadow:0 5px 30px #263e2d22;
+  padding:15px 22px;
+  max-width:650px;
+  width:max-content;
+  font-size:13px;
+  line-height:1.5;
+  z-index:5}
+dialog {
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#f7f5ef;
+  color:inherit;
+  padding:35px;
+  max-width:500px;
+  width:calc(100% - 32px);
+  box-shadow:0 20px 80px #1a2a1e33}
+dialog::backdrop {
+  background:#1e2d2577;
+  backdrop-filter:blur(4px)}
+dialog h2 {
+  font-weight:500;
+  font-size:29px;
+  letter-spacing:-1px;
+  line-height:1.15;
+  margin:19px 0 24px}
+dialog p {
+  font-size:13px;
+  line-height:1.65;
+  color:var(--muted)}
+dialog label {
+  display:block;
+  font-size:12px;
+  font-weight:600;
+  margin:20px 0 10px}
+dialog input {
+  width:100%;
+  padding:13px 15px;
+  background:#fffef9;
+  border:1px solid #bbc5af;
+  border-radius:6px}
+dialog .primary {
+  display:flex;
+  justify-content:space-between;
+  width:100%;
+  margin-top:23px}
+.small {
+  font-size:11px!important;
+  margin:18px 0 0}
+.close {
+  position:absolute;
+  top:15px;
+  right:16px;
+  border:0;
+  font-size:22px;
+  padding:3px 8px}
+.avatars {
+  display:flex;
+  gap:12px}
+.avatars button {
+  font-size:28px;
+  padding:11px 18px;
+  background:#ebece0;
+  border:2px solid transparent}
+.avatars button[aria-pressed=true] {
+  border-color:var(--green);
+  background:#dde4d0}
+.existing-profile {
+  margin:0 6px 6px 0}
+.dialog-actions {
+  display:flex;
+  flex-direction:column;
+  gap:11px}
+.dialog-actions .primary {
+  margin-top:5px;
+  display:block}
+.danger {
+  color:#9d4e33}
+#letters {
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:5px;
+  margin-top:12px}
+#letters button {
+  padding:9px}
+.player-heading {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:20px;
+  padding:30px 0}
+.player-heading h1 {
+  font-size:25px;
+  letter-spacing:-1px;
+  margin:8px 0 0}
+.screen {
+  background:#17251d;
+  border-radius:12px;
+  padding:25px;
+  display:flex;
+  justify-content:center;
+  min-height:200px}
+.screen canvas {
+  image-rendering:pixelated;
+  aspect-ratio:3/2;
+  width:min(100%,calc((100vh - 300px)*1.5));
+  height:auto;
+  max-height:calc(100vh - 300px);
+  object-fit:contain;
+  background:#000}
+.play-controls {
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:20px;
+  font-size:11px;
+  color:var(--muted);
+  padding:20px}
+kbd {
+  font-family:inherit;
+  border:1px solid var(--line);
+  border-radius:3px;
+  padding:2px 5px;
+  font-size:10px}
+#session-status {
+  text-align:center;
+  font-size:12px;
+  color:var(--muted)}
+@media(min-width:1500px) {
+  main {
+  padding:0 40px}
+.intro {
+  min-height:425px}
+.game-art {
+  height:310px}
+.art-title {
+  top:105px}
+}
+@media(max-width:780px) {
+  .edition,.intro-note {
+  display:none}
+.topbar {
+  height:80px}
+.brand {
+  font-size:24px}
+.intro {
+  min-height:300px;
+  padding:40px 0}
+h1 {
+  font-size:50px;
+  letter-spacing:-3px}
+.games {
+  gap:15px}
+.game-art {
+  height:230px}
+.art-title {
+  font-size:43px;
+  left:20px}
+.sma4 .art-title {
+  font-size:32px;
+  left:20px}
+.card-info {
+  padding:18px}
+.card-top {
+  align-items:flex-start;
+  flex-direction:column;
+  gap:10px}
+.card-info h3 {
+  font-size:21px;
+  min-height:50px}
+.workshop-note .pill {
+  display:none}
+.card-bottom {
+  flex-direction:column;
+  align-items:stretch;
+  gap:12px}
+.card-bottom p {
+  max-width:100%;
+  min-height:34px}
+.card-bottom button {
+  width:100%}
+.game-subtitle {
+  min-height:32px}
+.section-heading p {
+  font-size:10px}
+.tree-one {
+  right:40px}
+.pipe-one {
+  right:25px}
+.coin-one {
+  right:44px}
+.pixel-sun {
+  right:40px}
+.collection-foot {
+  align-items:flex-start}
+.collection-foot .text-button {
+  white-space:nowrap}
+.player-heading h1 {
+  font-size:20px}
+}
+@media(max-width:540px) {
+  .games {
+  grid-template-columns:1fr}
+.game-art {
+  height:260px}
+.art-title {
+  font-size:58px;
+  left:28px}
+.sma4 .art-title {
+  font-size:42px;
+  left:28px}
+.card-info h3,.game-subtitle {
+  min-height:0}
+.card-top {
+  flex-direction:row;
+  align-items:center}
+.card-bottom {
+  flex-direction:row;
+  align-items:center}
+.card-bottom p {
+  max-width:65%;
+  min-height:0}
+.card-bottom button {
+  width:auto}
+.collection-foot {
+  flex-direction:column;
+  gap:0}
+.section-heading p {
+  max-width:45%}
+.intro-copy {
+  font-size:14px}
+h1 {
+  font-size:47px}
+.profile-button {
+  font-size:11px;
+  padding:10px}
+.topbar {
+  gap:10px}
+.brand-mark {
+  padding-right:6px}
+.avatars button {
+  padding:8px 12px}
+.screen {
+  padding:10px}
+.player-heading {
+  align-items:flex-start}
+.player-heading button {
+  font-size:11px;
+  padding:10px}
+.play-controls {
+  gap:12px}
+.screen canvas {
+  max-height:none;
+  width:100%}
+.pill {
+  display:none}
+footer {
+  font-size:8px;
+  gap:20px}
+#notice {
+  max-width:calc(100vw - 30px)}
+}
+@media(prefers-reduced-motion:reduce) {
+  * {
+  scroll-behavior:auto!important}
+}
+
+
+/* Give the initial FireRed adventure the full collection row. */
+.games.single-game {
+  grid-template-columns: 1fr;
+}
+.games.single-game .game-card {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  align-items: center;
+}
+.games.single-game .game-art {
+  height: 320px;
+}
+.games.single-game .card-info {
+  padding: 28px;
+}
+@media (max-width: 780px) {
+  .games.single-game .game-card {
+    grid-template-columns: 1fr;
+  }
+  .games.single-game .game-art {
+    height: 260px;
+  }
+  .games.single-game .card-info {
+    padding: 22px;
+  }
+}

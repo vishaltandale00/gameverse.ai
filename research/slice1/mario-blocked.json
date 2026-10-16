@@ -1,0 +1,88 @@
+{
+  "runId": "9cf7b2a6-6dc7-4beb-af91-d871b7b952be",
+  "operation": "build",
+  "gameId": "sma4",
+  "startedAt": "2026-10-16T02:35:30.725Z",
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "node": "v22.23.2"
+  },
+  "config": "games/sources.json@1",
+  "environmentHarness": "gameverse-environment/0.1.0",
+  "loop": null,
+  "queueMs": null,
+  "simulationMs": null,
+  "evaluationMs": null,
+  "stages": [
+    {
+      "label": "environment source",
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "startedAt": "2026-10-16T02:35:30.726Z",
+      "outcome": "passed",
+      "wallMs": 8
+    },
+    {
+      "label": "source revision",
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "startedAt": "2026-10-16T02:35:30.734Z",
+      "outcome": "passed",
+      "wallMs": 6
+    },
+    {
+      "label": "source diff",
+      "command": [
+        "git",
+        "diff",
+        "--binary",
+        "HEAD"
+      ],
+      "startedAt": "2026-10-16T02:35:30.741Z",
+      "outcome": "passed",
+      "wallMs": 161
+    },
+    {
+      "label": "untracked source",
+      "command": [
+        "git",
+        "ls-files",
+        "--others",
+        "--exclude-standard"
+      ],
+      "startedAt": "2026-10-16T02:35:30.902Z",
+      "outcome": "passed",
+      "wallMs": 8
+    }
+  ],
+  "limits": {
+    "jobs": 2,
+    "perCommandTimeoutMs": 300000
+  },
+  "outcome": "failed",
+  "sourceCommit": "d431b8183f1001722d7bc9a326da28088930c344",
+  "gameSource": {
+    "name": "Super Mario Advance 4",
+    "subtitle": "Super Mario Bros. 3",
+    "repository": "https://github.com/KarisaAdvynia/sma4-disasm.git",
+    "commit": "f49422e0416f154abe89432d11202641cebc3e3a",
+    "directory": "vendor/sma4-disasm",
+    "artifact": "sma4-disasm.gba",
+    "baselineSha1": "532f3307021637474b6dd37da059ca360f612337",
+    "baseDataSha256": "53ec98fc672d94e3962ba854805ce5005e07e10a4c7ed4e7dbec7a2ca7846562",
+    "sourceKind": "ARM/Thumb assembly disassembly (USA revision 1)",
+    "gameCode": "AX4E"
+  },
+  "sourceDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "error": "Mario build blocked: original USA revision 1 graphics/sound are absent. Supply local base data with --base /path/to/sma4.gba; this does not replace the editable assembly source.",
+  "totalMs": 184,
+  "finishedAt": "2026-10-16T02:35:30.911Z",
+  "buildMs": null
+}

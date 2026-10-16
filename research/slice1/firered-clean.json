@@ -1,0 +1,144 @@
+{
+  "runId": "311d06a7-9444-4c3a-8ce8-c7d17c25a034",
+  "operation": "build",
+  "gameId": "firered",
+  "startedAt": "2026-10-16T02:35:29.607Z",
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "node": "v22.23.2"
+  },
+  "config": "games/sources.json@1",
+  "environmentHarness": "gameverse-environment/0.1.0",
+  "loop": null,
+  "queueMs": null,
+  "simulationMs": null,
+  "evaluationMs": null,
+  "stages": [
+    {
+      "label": "environment source",
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "startedAt": "2026-10-16T02:35:29.608Z",
+      "outcome": "passed",
+      "wallMs": 8
+    },
+    {
+      "label": "source revision",
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "startedAt": "2026-10-16T02:35:29.616Z",
+      "outcome": "passed",
+      "wallMs": 6
+    },
+    {
+      "label": "source diff",
+      "command": [
+        "git",
+        "diff",
+        "--binary",
+        "HEAD"
+      ],
+      "startedAt": "2026-10-16T02:35:29.622Z",
+      "outcome": "passed",
+      "wallMs": 1308
+    },
+    {
+      "label": "untracked source",
+      "command": [
+        "git",
+        "ls-files",
+        "--others",
+        "--exclude-standard"
+      ],
+      "startedAt": "2026-10-16T02:35:30.930Z",
+      "outcome": "passed",
+      "wallMs": 42
+    },
+    {
+      "label": "assembler version",
+      "command": [
+        "arm-none-eabi-as",
+        "--version"
+      ],
+      "startedAt": "2026-10-16T02:35:30.973Z",
+      "outcome": "passed",
+      "wallMs": 4
+    },
+    {
+      "label": "host compiler",
+      "command": [
+        "cc",
+        "--version"
+      ],
+      "startedAt": "2026-10-16T02:35:30.976Z",
+      "outcome": "passed",
+      "wallMs": 13
+    },
+    {
+      "label": "source revision",
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "startedAt": "2026-10-16T02:35:30.989Z",
+      "outcome": "passed",
+      "wallMs": 5
+    },
+    {
+      "label": "clean",
+      "command": [
+        "make",
+        "clean",
+        "CPP=clang -E -Wno-invalid-pp-token"
+      ],
+      "startedAt": "2026-10-16T02:35:30.995Z",
+      "outcome": "passed",
+      "wallMs": 268
+    },
+    {
+      "label": "game build",
+      "command": [
+        "make",
+        "-j2",
+        "CPP=clang -E -Wno-invalid-pp-token"
+      ],
+      "startedAt": "2026-10-16T02:35:31.264Z",
+      "outcome": "passed",
+      "wallMs": 55184
+    }
+  ],
+  "limits": {
+    "jobs": 2,
+    "perCommandTimeoutMs": 300000
+  },
+  "outcome": "passed",
+  "sourceCommit": "d431b8183f1001722d7bc9a326da28088930c344",
+  "gameSource": {
+    "name": "Pokémon FireRed",
+    "repository": "https://github.com/pret/pokefirered.git",
+    "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+    "directory": "vendor/pokefirered",
+    "artifact": "pokefirered.gba",
+    "baselineSha1": "41cb23d8dccc8ebd7c649cd8fbb58eeace6e2fdc",
+    "sourceKind": "C and assembly decompilation",
+    "gameCode": "BPRE"
+  },
+  "sourceDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "assembler": "GNU assembler (GNU Binutils) 2.47.20260726\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis program is free software; you may redistribute it under the terms of\nthe GNU General Public License version 3 or later.\nThis program has absolutely no warranty.\nThis assembler was configured for a target of `arm-none-eabi'.",
+  "hostCompiler": "Apple clang version 17.0.0 (clang-1700.6.3.2)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin",
+  "buildMode": "clean",
+  "cacheState": "no build directory",
+  "artifactSha1": "41cb23d8dccc8ebd7c649cd8fbb58eeace6e2fdc",
+  "baselineMatches": true,
+  "totalMs": 56869,
+  "finishedAt": "2026-10-16T02:36:26.476Z",
+  "buildMs": 55184
+}

@@ -1,90 +1,30 @@
-# Base game and subgame hosting implementation plan
+# Base game implementation plan
 
-Date: 2026-10-15 · Owner: Vishal · Status: planning; implementation has not started.
+> 2026-10-16 scope update: Pokémon FireRed is the sole initial game, compiled from editable source. Mario is deferred and does not block slice 1. Finish FireRed play, controls, save/return/resume and recovery before expanding. [Current setup, evidence and remaining gates](../DEVELOPMENT.md).
+Date: 2026-10-15 · Owner: Vishal · Status: agreed three-slice plan; slice 1 implementation is in progress; acceptance remains open.
 
-Contract: [base game](../contracts/BASE_GAME.md) B01–B13, [subgame interface](../contracts/SUBGAME.md) S01–S08 and [parallel development](../contracts/PARALLEL_DEVELOPMENT.md) X01–X10. Product context: [PRD](../PRD.md). Workstream split: [TASKS.md](../TASKS.md).
+Scope and acceptance: [overall PRD](../PRD.md), [environment PRD](ENVIRONMENT_PRD.md) and [three vertical slices](ENVIRONMENT_SLICES.md). Parent: [#1](https://github.com/vishaltandale00/gameverse.ai/issues/1). Shared integration starts from [PARALLEL_DEVELOPMENT.md](../contracts/PARALLEL_DEVELOPMENT.md).
 
-Tracking issue: [#1 — Vishal's versioned game environment requirements](https://github.com/vishaltandale00/gameverse.ai/issues/1). Counterpart: [#2 — Shishir's versioned build/improvement harness](https://github.com/vishaltandale00/gameverse.ai/issues/2).
+## Slice 1 Build the character creator and FireRed selector
 
-## Intended result
+Start with a name/preset-avatar profile and a FireRed menu entry. FireRed keeps its own trainer creation. Integrate the full GBA game in the browser and expose the smallest useful load/input/pause/checkpoint/restore/dispose interface. Pin source/build/cartridge/emulator identities and keep progress outside disposable runtimes.
 
-Launch in a browser → create/select a character → move and interact in a playable home → enter a subgame → play/save → return home → enter another subgame → restart the browser → resume independent progress.
+First prove real browser play, controller input and snapshot export/store/restart/import. On explicit return, confirm the snapshot durably before disposal. Resume the captured moment, including mid-battle, using the matching game/core. Keep ordinary in-game saves as a separate fallback; preserve confirmed records on failures. Abrupt termination can recover only the last confirmed checkpoint.
 
-The home and installed subgames work while the improvement worker is absent. Complete FireRed integration is T2; this plan delivers T1 using small playable fixtures. The fixtures exercise hosting behavior and do not replace FireRed or count as generated games.
+Deliver creation → selector → FireRed play → return → close/reopen → exact resume, on both controller families and keyboard. Qualify focus/reconnect, storage/write exclusion, failed load/save and responsive runtime recovery. Retain browser/campaign/save evidence and actual timing baselines. No open world or running loop is required. FireRed is the only game in the current scope. [Issue #3](https://github.com/vishaltandale00/gameverse.ai/issues/3) contains the acceptance checklist. Pause for Vishal's hands-on review before expansion.
 
-Begin with one reused existing game world rather than designing a custom hub. Base and subgames are selected by versioned config manifests; base-specific discovery/session behavior stays in the base. Both the environment harness and Shishir's construction/improvement harness are independently versioned. Their first shared task is to agree v0 config, adapter/session, submission/result and timing examples, plus an executable reference target for parallel work.
+## Slice 2 Build the open world and game entrances
 
-## Owners and integration
+Select and qualify a small reused open-world base. Bring the existing Gameverse character into it and add movement, discovery, FireRed entry and valid return placement through the same host interface. Preserve existing FireRed snapshots/in-game saves and profile identity through the transition and restart. The base decides its presentation and session policy, subject to real adapter capabilities.
 
-Vishal owns the home, shell, profile/library, subgame runtime integration, controls, progress persistence and host-controlled version activation/recovery. Shishir owns the separate request/proposal/build/verification improvement loop, including its voice/transcript and builder workflow.
+Prove world → FireRed → world → restart → revisit/resume, including failed-entry recovery and both controllers/keyboard. Measure world overhead separately and compare equivalent FireRed operations with slice 1. [Issue #4](https://github.com/vishaltandale00/gameverse.ai/issues/4) contains the acceptance checklist; no additional initial installed game is required.
 
-The joint interface must exchange pinned artifacts/manifests, game/version/session context, verification evidence and optional migration adapters. The host enforces activation and save protection; the worker cannot mutate accepted saves directly. The detailed interface remains proposed until reviewed by both workstreams. This task does not require Shishir's work to finish before the first playable journey.
+## Slice 3 Connect the environment to improvement loops
 
-## 1. Resolve the minimum experience and runtime choices
+Agree v0 configs/capabilities/run/submission/result/timing examples with Shishir. Integrate scoped feedback and his transcript/builder workflow, isolated pinned simulation sessions, durable candidate receipts and accepted discovery. The host controls copied-save validation, safe activation, progress integrity and interruption recovery for both base and subgame targets.
 
-- Select and prove a reusable game world can build/run before committing to it as the initial base. Keep its discovery interaction and return location minimal; the base decides its own presentation and session policy. Source/runtime and avatar depth remain open.
-- Select and record a target browser/OS and the actual DualSense/Xbox connection modes to qualify. Keep keyboard fallback from the start.
-- Choose runtime hosting/isolation based on demonstrated load, input, checkpoint and shell recovery behavior. A stalled game must not prevent the shell from responding.
-- Define the manifest/session/progress records and the supported host-interface version from the subgame contract. Keep framework-specific details behind the adapter.
-- Agree shared config/submission/result/timing examples with Shishir. Pin source/config/artifact/adapter and both harness versions; demonstrate separate copied/fresh simulation state. Numeric budgets follow measured baselines under [AGENTS.md](../AGENTS.md).
-- Choose progress storage and export/recovery behavior. State its durability limits and prevent concurrent tabs from writing the same profile/game progress.
+Exact execution snapshots remain tied to their matching original game/core. Changed FireRed versions need verified in-game-save compatibility/migration, not assumed snapshot portability. Demonstrate real loop exchange, two durable cycles including a mechanic/quest, base targeting, forks, stale/cancelled rejection and recovery. [Issue #5](https://github.com/vishaltandale00/gameverse.ai/issues/5) tracks integration; [#2](https://github.com/vishaltandale00/gameverse.ai/issues/2) retains Shishir's harness implementation. Overall PRD scenarios remain staged qualification.
 
-**Exit:** a reviewable experience/runtime decision record, declared fixture core loops, a proposed interface shape and runnable setup instructions once scaffolding exists. Selection of a technology is not evidence of passing the later gates.
+## Checks and timing
 
-## 2. Complete one play journey end to end
-
-Implement one thin but real journey before expanding the world:
-
-1. Create/select a persistent profile and character; enter a small playable home.
-2. Move to an entrance and launch fixture A from a pinned manifest/artifact.
-3. Play its declared loop, reach an observable outcome and persist meaningful progress.
-4. Use the shell action to checkpoint and return to the original home location.
-5. Refresh/restart and resume the saved game with the same profile and progress.
-
-The fixture needs actual actions, an outcome and saveable state. A navigation-only mock cannot qualify. Input ownership must prevent an entrance/menu press from triggering an unintended game action. The feedback action captures the active target and visibly reports that improvement is unavailable.
-
-**Exit:** a continuous user-tryable browser demonstration, artifact/session identifiers and observed save/return/resume results. Pause for hands-on review of this complete interaction before expanding scope.
-
-## 3. Prove the subgame interface with a second game
-
-- Add fixture B with a different declared loop through registration/adapter data rather than host-specific gameplay branches.
-- Show independent IDs, immutable versions and progress for both games.
-- Demonstrate A → home → B → home → A and resume A after browser restart without altering B.
-- Reject unsupported contract versions, missing artifacts, digest mismatches and incompatible saves before accepting a playable session.
-- Release input/audio/session resources on exit; ignore late callbacks from disposed sessions.
-
-**Exit:** B02/B03/B06/B07/B09 and applicable S01–S04/S07 evidence across both games. Preserve registration examples and useful automated interface checks for later adapter authors.
-
-## 4. Qualify controls, persistence and recovery
-
-| Case | Required result |
-| --- | --- |
-| DualSense, Xbox and keyboard | Each completes routine home/entry/play/return/resume; record tested connections and mappings |
-| Overlay/focus change | Each press is delivered once; held inputs are cleared; audio/focus recover |
-| Controller disconnect/reconnect | Visible loss/recovery, no stuck movement or duplicate action |
-| Failed load or corrupt save | Home stays usable; original progress survives; retry/return is explicit |
-| Crashed or stalled game | Bounded shell-owned recovery works without the game cooperating |
-| Unsafe checkpoint or failed write | No false saved status; waiting/cancel and forced-exit consequences are clear |
-| Second tab | No concurrent writes to the same active progress |
-| Browser restart | Profile, library and accepted version/checkpoint pairs recover |
-| Worker absent or offline | Play/save/return/resume remain usable; no false durable request receipt |
-
-Measure frame rate, input response, load, checkpoint and recovery times on the declared target. Set concrete playability/recovery budgets from the spike; no invented build-latency SLA or untested browser/controller claim.
-
-**Exit:** B01–B13 and applicable S01–S08 pass with retained browser evidence and meaningful checks. Exercise the parallel contract's pinned runs, isolated simulation, candidate receipt/rejection and timing handoff. S06 automatic-update eligibility stays visibly unavailable until its game-specific behavior is implemented and verified.
-
-## 5. Hand off the playable host
-
-Deliver:
-
-- Accurate install/run/test instructions and pinned versions.
-- Host-interface definition, two manifest/adapter examples and progress/session semantics.
-- Verified lifecycle/input/checkpoint/recovery behavior and known unsupported capabilities.
-- The visible complete journey plus failure/recovery evidence from stage 4.
-- A target-context and shell-surface integration example for Shishir, with an unavailable worker path.
-
-T2 can use the same interface for complete FireRed; toolchain and adapter feasibility work may proceed alongside T1. T3 can integrate artifact publication, request context and host-mediated activation without replacing the home or implementing a second input/save system.
-
-## Completion and next scope
-
-T1 is complete only when the two-game browser journey, both-controller operation, persistent progress and recovery are demonstrated. Full FireRed, autonomous builds, generated quests, forks/mashups and the complete improvement acceptance loop retain their own gates. No implementation begins as part of publishing this plan.
+Follow [AGENTS.md](../AGENTS.md). Explain coverage/cost before adding checks/dependencies and reuse existing timestamps. Establish real build/runtime/snapshot baselines in slice 1; compare affected turnaround using comparable inputs, environments and cache conditions. Keep broad campaigns, browser/version matrices and expensive loop runs separately triggered with configured limits. Plans and recorded requirements are not measured acceptance evidence.

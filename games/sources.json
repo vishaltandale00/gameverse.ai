@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "initialGames": ["firered"],
+  "games": {
+    "firered": {
+      "name": "Pokémon FireRed",
+      "repository": "https://github.com/pret/pokefirered.git",
+      "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+      "directory": "vendor/pokefirered",
+      "artifact": "pokefirered.gba",
+      "baselineSha1": "41cb23d8dccc8ebd7c649cd8fbb58eeace6e2fdc",
+      "sourceKind": "C and assembly decompilation",
+      "gameCode": "BPRE"
+    },
+    "sma4": {
+      "name": "Super Mario Advance 4",
+      "subtitle": "Super Mario Bros. 3",
+      "repository": "https://github.com/KarisaAdvynia/sma4-disasm.git",
+      "commit": "f49422e0416f154abe89432d11202641cebc3e3a",
+      "directory": "vendor/sma4-disasm",
+      "artifact": "sma4-disasm.gba",
+      "baselineSha1": "532f3307021637474b6dd37da059ca360f612337",
+      "baseDataSha256": "53ec98fc672d94e3962ba854805ce5005e07e10a4c7ed4e7dbec7a2ca7846562",
+      "sourceKind": "ARM/Thumb assembly disassembly (USA revision 1)",
+      "gameCode": "AX4E"
+    }
+  },
+  "tools": {
+    "agbcc": {
+      "repository": "https://github.com/pret/agbcc.git",
+      "commit": "da598c1d918402c42c0c0d7128ba14567f3175e9",
+      "directory": "vendor/agbcc"
+    },
+    "armips": {
+      "repository": "https://github.com/Kingcom/armips.git",
+      "commit": "62adab4ef30da765f5cf22a451eb08a59c54dc8b",
+      "directory": "vendor/armips"
+    }
+  }
+}

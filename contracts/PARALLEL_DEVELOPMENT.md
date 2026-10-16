@@ -1,16 +1,19 @@
 # Parallel development contract
 
-Version: 0.1 · Date: 2026-10-15 · Status: requirements confirmed by Vishal; exact wire formats and joint implementation remain to be agreed with Shishir.
+> 2026-10-16 scope update: Pokémon FireRed is the sole initial game, compiled from editable source. Mario is deferred and does not block slice 1. Finish FireRed play, controls, save/return/resume and recovery before expanding. [Current setup, evidence and remaining gates](../DEVELOPMENT.md).
+Version: 0.2 · Date: 2026-10-15 · Status: requirements confirmed by Vishal; exact wire formats and joint implementation remain to be agreed with Shishir.
 
 Vishal builds the game environment harness: the base-game integration, adapters, subgame navigation/play, progress and activation/recovery. Shishir builds the LLM build/improvement harness, targeting both base games and subgames. Shishir is delivering the loop; a runnable candidate game version is an output of that loop, not his only deliverable.
 
 Read the [base](BASE_GAME.md), [subgame](SUBGAME.md) and [improvement](IMPROVEMENT_LOOP.md) contracts for detailed behavior; [AGENTS.md](../AGENTS.md) governs development turnaround and CI overhead.
 
+Delivery follows [three slices](../plans/ENVIRONMENT_SLICES.md): character/menu plus FireRed and exact resume first; open-world discovery second; loop integration third. FireRed is the sole initial game. Mario is deferred. This sequence supersedes fixture-first/world-first delivery language; it does not change workstream ownership.
+
 ## Confirmed split
 
 | ID | Requirement | Owner / evidence |
 | --- | --- | --- |
-| X01 | Start with one simple base world, preferably reused from an existing game; keep the base replaceable through defined adapters. | Vishal: demonstrate the same environment contract can load different base revisions/adapters without rewriting the improvement loop. Exact source/runtime selection remains open. |
+| X01 | Start with a character creator/menu base and FireRed in slice 1; introduce a simple reused open-world base in slice 2 and keep the base replaceable through adapters. | Vishal: preserve profile/FireRed progress through menu-to-world transition without rewriting the loop; exact world/runtime selection remains open. |
 | X02 | Base-game and subgame configs are manifests that can reference larger source trees, code, assets, artifacts, adapters and settings. | Vishal defines the supported environment side; Shishir consumes it and can submit changed configs with their referenced objects. A universal config-only game language is not required. |
 | X03 | Independently version the environment harness and the LLM build/improvement harness. Version each base game, subgame and relevant configuration as well. | Each run pins exact input versions/config references; each resulting artifact has immutable identity. A moving file path or latest branch alone is insufficient. |
 | X04 | The base game owns subgame discovery and presentation. | Vishal: base config/implementation decides doors, NPCs, menus or other discovery. Shared infrastructure exposes available accepted game/version descriptors and entry/return operations without mandating a library UI. |
@@ -47,7 +50,7 @@ The host enforces accepted-version and player-save integrity. The loop can choos
 
 ## Independent starting points and joint gate
 
-Vishal can build and play the environment with manually supplied compatible games and an absent-loop state. Shishir can build against a small reference adapter/session implementation satisfying the agreed interface without waiting for the final base world. Which implementation supplies the first executable reference is a joint task; this repository has not supplied one yet.
+Vishal can build and play slice 1 with a manually supplied pinned FireRed baseline, exact matching-version session snapshots, normal-save fallback and an absent-loop state. Shishir can build against a small reference adapter/session implementation satisfying the agreed interface without waiting for the final base world. Which implementation supplies the first executable reference is a joint task; this repository has not supplied one yet.
 
 Before parallel implementations lock in incompatible assumptions, agree on a v0 schema/transport and exchange example game/loop configs, a candidate submission/result and timing report. Then demonstrate:
 
@@ -58,4 +61,4 @@ Before parallel implementations lock in incompatible assumptions, agree on a v0 
 5. Show newly available subgames through base-owned discovery, without making Shishir implement the world's navigation UI.
 6. Reject/recover from unsupported adapters, failed checks, stale baselines and duplicate/cancelled submissions.
 
-This is a requirements and integration gate. The algorithms, runtime/source choice, exact schemas, adapters and timing instrumentation remain implementation work. Full FireRed qualification and other PRD scenarios are separate from agreeing this parallel-development seam.
+This is a requirements and integration gate. The algorithms, runtime/source choice, exact schemas, adapters and timing instrumentation remain implementation work. Full FireRed qualification belongs inside slice 1; agreement on the seam does not certify that game or actual slice 3 integration. Other PRD improvement scenarios remain staged qualification in slice 3.

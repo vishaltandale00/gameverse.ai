@@ -1,6 +1,7 @@
 # Gameverse — Engineering Handoff
 
-Version: 0.3 · Date: 2026-10-15 · Companion: [PRD.md](PRD.md)
+> 2026-10-16 scope update: Pokémon FireRed is the sole initial game, compiled from editable source. Mario is deferred and does not block slice 1. Finish FireRed play, controls, save/return/resume and recovery before expanding. [Current setup, evidence and remaining gates](DEVELOPMENT.md).
+Version: 0.4 · Date: 2026-10-15 · Companion: [PRD.md](PRD.md)
 
 ## 1. Start here
 
@@ -8,21 +9,21 @@ Build a single-player browser environment where the owner uses a controller to p
 
 The agent decides update versus fork. Every build has a proposal defining a verifiable core loop. Work runs asynchronously while the current game stays playable. Verified updates apply by checkpoint/reload at a safe boundary. Forks have separate identity, lineage and optional progress adapters. Live editable transcription and a controller-accessible builder conversation are core product behavior.
 
-**Starting state: design/research repository, not a running application.** No app package, server entrypoint or Gameverse run/test command was present in the inspected workspace. Do not report a working game based on these documents or the example JSON.
+**Current state: slice 1 in development.** A local character/collection shell, worker-based mGBA adapter and matching source-built FireRed boot/input/snapshot path now exist. Mario is deferred. See [DEVELOPMENT.md](DEVELOPMENT.md) for actual commands/evidence; the original research below remains historical.
 
-This handoff is sufficient to begin technical spikes. Do not block shell, toolchain or adapter work waiting for every design question. Resolve O01/O02 before committing to world layout and avatar mapping; preserve the complete FireRed requirement.
+Begin with slice 1 FireRed/browser and exact-session persistence feasibility. Gameverse character creation is name plus preset avatar, with separate FireRed trainer creation. World selection/representation belongs to slice 2; it does not block the launcher. Preserve the complete FireRed requirement.
 
-### Delivery split, 2026-10-15
+### Three agreed vertical slices
 
-Current requirements: [parallel development contract](contracts/PARALLEL_DEVELOPMENT.md), [Vishal's issue #1](https://github.com/vishaltandale00/gameverse.ai/issues/1) and [Shishir's issue #2](https://github.com/vishaltandale00/gameverse.ai/issues/2). Vishal supplies the independently versioned environment/adapter harness and one simple reused/swappable base world. Shishir supplies the config-defined build/improvement harness targeting both game roles, during construction and later improvement. Config manifests, isolated simulations, submissions/results and timing reports are the shared seam; base discovery/session policy and loop internals stay with their owners. Exact v0 schemas and the first executable reference remain joint work. Follow [AGENTS.md](AGENTS.md) for CI/build/loop turnaround.
+1. [Slice 1 / #3](https://github.com/vishaltandale00/gameverse.ai/issues/3): persistent name/preset character, FireRed selector, complete GBA browser integration, both controller families/keyboard and exact-session resume after confirmed return and browser restart. Keep normal saves separately as fallback. No world or running loop is required. FireRed is the only game required in slice 1.
+2. [Slice 2 / #4](https://github.com/vishaltandale00/gameverse.ai/issues/4): reused open-world base, character navigation, FireRed entrance and return with slice 1 profile/progress retained.
+3. [Slice 3 / #5](https://github.com/vishaltandale00/gameverse.ai/issues/5): real integration with Shishir's independently versioned harness in [#2](https://github.com/vishaltandale00/gameverse.ai/issues/2), for feedback, builds, verification, isolated sessions, candidate registration and safe base/subgame updates/forks.
 
-Use [TASKS.md](TASKS.md) for separate implementation assignments: T1 base game plus hosting, T2 complete FireRed subgame, T3 creation/improvement loop. T1 must deliver a complete playable home/entry/save/return/resume journey while T3 is unavailable. T2's toolchain/adapter work can run independently of T1 against [the subgame contract](contracts/SUBGAME.md). Two small playable fixtures qualify host behavior without claiming FireRed completion. [The base contract](contracts/BASE_GAME.md) and [improvement contract](contracts/IMPROVEMENT_LOOP.md) assign ownership and integration gates.
-
-The M0–M6 table below remains a technical dependency/reference checklist, not a requirement to serialize these tasks. The forest edit and autonomous builder are not prerequisites for finishing T1. No implementation milestone has been completed by this split.
+The [environment PRD](plans/ENVIRONMENT_PRD.md), [slice checklists](plans/ENVIRONMENT_SLICES.md), [TASKS.md](TASKS.md) and [parallel contract](contracts/PARALLEL_DEVELOPMENT.md) record scope and ownership. Vishal owns the environment/navigation/progress/activation; Shishir owns loop internals/workflow. Harness and v0 interface work can proceed in parallel. The former T1/T2/T3 and eight-slice breakdown is superseded; FireRed baseline integration is now inside slice 1. Follow [AGENTS.md](AGENTS.md) for lean checks and comparable timing. No slice has been implemented by this planning update.
 
 ## 2. Read order and authority
 
-1. [PRD.md](PRD.md): current consolidated product scope, R01–R16, E01–E05 and O01–O06.
+1. [PRD.md](PRD.md): current consolidated product scope, R01–R17, E01–E05 and O01–O07.
 2. This handoff: recommended engineering approach, observed evidence and staged work.
 3. [MVP_CONTRACT.md](MVP_CONTRACT.md): detailed design draft behind the PRD; proposed behaviors remain distinguishable from user decisions.
 4. [POKEMON_SOURCE_RESEARCH.md](POKEMON_SOURCE_RESEARCH.md): pinned candidate audit and its limits.
@@ -31,7 +32,7 @@ The M0–M6 table below remains a technical dependency/reference checklist, not 
 
 Later explicit user directions take precedence. Where older documents disagree, the consolidated PRD is the current implementation baseline; do not silently resolve an item marked open.
 
-Read the current parallel/delivery contracts and TASKS.md before using the older MVP contract. The latest direction is to reuse a simple existing world as the base, with the actual source/runtime still open; a custom city/hub is not required. This does not remove the separate full-FireRed qualification item. [CONTEXT.md](CONTEXT.md) defines the shared terms.
+Read the current three-slice PRD and parallel/delivery contracts before using the older MVP contract. Start with a character/menu base and full FireRed plus exact session resume; reuse a simple open world in slice 2. Exact snapshots restore matching unchanged game/core versions and are not assumed portable into slice 3 code changes. [CONTEXT.md](CONTEXT.md) defines the shared terms.
 
 ### Historical material, not active configuration
 
@@ -72,7 +73,7 @@ These are implementation recommendations, not existing modules or final stack se
 | Version coordinator | Immutable versions/lineage, copied saves, compatibility evidence and transactional activation | Assuming emulator snapshots are compatible across changed code |
 | Verification adapters | Generic checks plus game-specific executable core-loop/change/save scenarios | Silently weakening failed assertions |
 
-The earlier TypeScript/Node/SQLite shell and Godot-city suggestions are research inputs, not selected requirements. Start by qualifying the reused world's build/runtime and adapter under the shared contract. The separate FireRed integration can use a GBA browser adapter around its rebuilt cartridge; preserving one runtime is not a reason to rewrite the complete game.
+The earlier TypeScript/Node/SQLite shell and Godot-city suggestions are research inputs, not selected requirements. Start by qualifying FireRed browser play and snapshot persistence; qualify the reused world in slice 2. FireRed integration can use a GBA browser adapter around its rebuilt cartridge; preserving one runtime is not a reason to rewrite the complete game.
 
 EmulatorJS and a documented mGBA-WASM SDK were researched but not integrated. Pin the selected wrapper, core, worker toolchain and build flags. Measure memory/input/performance on the actual machine before finalizing the renderer/emulator combination. Keep only the active gameplay input owner while the shell reserves feedback/navigation actions.
 
@@ -139,32 +140,26 @@ Keep credentials and builds in the companion, not generated game code. If genera
 
 ## 7. Delivery sequence and acceptance gates
 
-These are work packages to execute, not completed milestones. A small technical slice may precede the MVP, but it must not be reported as satisfying complete FireRed.
+The three slices contain their own technical work and qualification; adapter/storage/recovery/loop stages are not additional vertical slices. [The acceptance checklists](plans/ENVIRONMENT_SLICES.md) are the delivery baseline.
 
-| Stage | Work package | Required exit evidence | PRD coverage |
-| --- | --- | --- | --- |
-| M0 | Reproducible FireRed toolchain and browser-adapter spike | Pinned baseline builds; reference checksum verified; browser boots/plays; save export/import; both controllers tested; documented performance and safe-state feasibility | R02, R03 |
-| M1 | Shell/profile, world entry, workshop entry and versioned base | Reload/transition preserves profile/library; keyboard and both controller families navigate; base manifest avoids mixed cached assets | R01, R03, R16 |
-| M2 | Voice review, builder channel, durable queue and configurable processor contract | Live interim/final text, voice correction and explicit request receipt; reconnect/idempotency; game scope frozen; builder controls usable | R04–R07 |
-| M3 | Isolated edits, proposals and verification runner | First durable forest change built and exercised in game; new mechanic/quest candidate follows; baseline regressions checked; all checks attached to proposal/artifact | R06, R08, R14; E01–E03 |
-| M4 | Compatible update, safe swap and recovery | Application-time migration; safe-boundary checkpoint/reload; stale/cancel race and crash recovery; two consecutive improvement cycles; explicit rollback consequence | R09–R11, R15 |
-| M5 | Blank creation, forks/mashups and adapters | Basketball core loop playable; a separate composed game has real lineage/mechanic; parent unaffected; any offered progress transfer previewed and verified | R09, R12, R13; E04–E05 |
-| M6 | MVP qualification | Complete FireRed evidence and all E01–E05 results; both-controller routine journeys; failed candidate recovery; measured playability and no recurring laptop workflow | R01–R16 |
+| Slice | Required visible proof |
+| --- | --- |
+| 1 | Creator/selector/real FireRed → confirmed mid-battle snapshot → return → browser restart → exact continuation, plus normal-save fallback, controller/keyboard and runtime/storage recovery. Retain baseline/campaign evidence and actual timings. |
+| 2 | Character movement in reused world → discover FireRed → play → return/revisit/resume, retaining existing profile/progress and valid world placement. |
+| 3 | Actual loop exchange → two playable improvement cycles including a mechanic/quest, base and FireRed targets, isolated simulations, new/fork discovery and safe activation/recovery; staged PRD E01–E05 qualification. |
 
-Keep the forest patch as the cheapest first integration probe, not the finish line. The user's Misty quest and Rocket infiltration requests are explicitly meant to exercise creation of new behavior. Do not make the user pre-author those quests or hard-code a system that only handles the five qualification phrases.
+Pause for hands-on review before expanding each player experience. Keep the forest patch as an initial slice 3 integration probe; Misty quest/infiltration and workshop examples retain their actual behavior and progression requirements in [research/pokemon/scenarios.json](research/pokemon/scenarios.json). Do not replace the complete baseline with a source checksum or source-level patch result.
 
-Use [research/pokemon/scenarios.json](research/pokemon/scenarios.json) for the source locations and request-specific checks. Its proposed reward/story interpretations can change; preserve the actual requested outcome. In particular, a pre-Misty quest cannot require a later HM or badge, and infiltration must change gameplay rather than only dialogue.
+## 8. Slice 1 FireRed technical work package
 
-## 8. FireRed spike work package (T2)
+This work is inside slice 1 and needs no forest candidate or improvement worker. First prove browser FireRed, controller input and exact-session persistence with the selected emulator; then complete the character/selector journey.
 
-This sequence starts T2. T1 starts from its independent play journey in [TASKS.md](TASKS.md); it does not wait for the forest candidate or FireRed build. Step 6 below continues T2 integration with the shared host rather than assigning shell/queue ownership to the FireRed task.
-
-1. Inspect the workspace and read PRD R01–R16/O01–O06. Confirm no later implementation already exists before scaffolding.
+1. Inspect the workspace and read PRD R01–R17/O01–O07 and the slice 1 checklist. Confirm no later implementation already exists before scaffolding.
 2. Recreate the pinned FireRed checkout in a deliberate dependency workspace. Check its pinned INSTALL.md/Makefile and bootstrap host tools plus its required compiler/toolchain. Choose an available reproducible native or container route; this handoff does not supply an already working build image.
 3. Build the unmodified baseline and verify the reference hash using the repository's checksums. Preserve full logs and exact tool versions. Do this before applying the forest patch.
-4. Evaluate one browser GBA adapter for load, real controller input, in-game save export/import, pause/dispose and recovery. Pin the wrapper/core and record licensing/build dependencies separately. Select the adapter on observed behavior.
-5. Apply the existing scoped forest patch to an isolated candidate checkout. Build and run it against a copied baseline save; check requested forest encounters and unaffected adjacent areas. Do not mutate the player's accepted save.
-6. Report these observations and the next limiting dependency. Integrate the validated adapter with T1's host interface and hand source/build/save evidence to T3; do not substitute a tiny Red recreation to avoid the complete FireRed requirement.
+4. Evaluate one browser GBA adapter for load, real controller/keyboard input, audio, in-game save export/import, pause/dispose, emulator snapshot export/import and recovery. Pin wrapper/core versions and qualify actual behavior.
+5. Capture and durably confirm a mid-battle snapshot, return to the selector, close/reopen and resume the matching cartridge/core at the captured moment. Retain normal saves separately; exercise failed capture/write/restore and explicit fallback without destroying confirmed records. Abrupt shutdown recovers the last confirmed checkpoint.
+6. Integrate this adapter with the name/preset character and FireRed selector, record continuous player/campaign/recovery evidence and actual timings, and give Vishal the complete journey for review. The existing forest patch is a slice 3 probe, not a slice 1 prerequisite.
 
 Example checkout commands, **instructions for the next work package, not commands executed by this handoff**:
 
@@ -179,13 +174,13 @@ After provisioning the pinned project's prerequisites, use its documented build 
 git -C vendor/pokefirered apply --check ../../research/pokemon/forest-candidate.patch
 ```
 
-There is no `npm run dev`/app test command to hand over yet. Add accurate run/test instructions once those commands actually exist. Do not assume the old temporary clones, browser debugging endpoint or compiler are still available.
+`npm run dev` and `npm test` now exist; setup and current proof are in [DEVELOPMENT.md](DEVELOPMENT.md). Do not assume the old temporary clones, browser debugging endpoint or compiler are still available.
 
 ## 9. Decisions to resolve during implementation
 
-O01: selected reused world and base-owned discovery/session policy. O02: character appearance depth/mapping. O03: runtime/adapter and browser/OS support. O04: transcription/provider/retention and review defaults. O05: resource/repair escalation policy. O06: save/version ranges and reverse adapters. O07: v0 config/run/submission/timing schemas, transport and executable reference for the parallel handoff.
+O01: slice 2 reused world and base-owned discovery/session policy. O02: preset assets/world representation; name/preset identity and separate FireRed trainer creation are settled. O03: runtime/adapter and browser/OS support. O04: transcription/provider/retention and review defaults. O05: resource/repair escalation policy. O06: save/version ranges and reverse adapters. O07: v0 config/run/submission/timing schemas, transport and executable reference for the parallel handoff.
 
-Implementation can begin on independent contracts and M0 now. Do not manufacture user answers. Escalate a decision in the builder/product channel when it materially affects the next irreversible layout or compatibility choice. The longer-term community search mechanism is deferred; preserve lineage/evidence now without building multiplayer infrastructure.
+Implementation can begin on slice 1 feasibility and the independently developed harness/interface now. Do not manufacture user answers. Escalate a decision in the builder/product channel when it materially affects the next irreversible layout or compatibility choice. The longer-term community search mechanism is deferred; preserve lineage/evidence now without building multiplayer infrastructure.
 
 ## 10. Handoff checklist and status
 
