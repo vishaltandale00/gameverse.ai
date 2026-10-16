@@ -32,12 +32,23 @@ const curated = {
  story:{label:'Rivals, regional stakes & scripted encounters',ids:['scripted_story_events','dialogue_text_printer']},
  },
 };
-export function bundlesFor(game) {
+const portraitSlots={traversal:['movement_view'],combat:['combat'],progression:['progression'],world:[],resources:[],opposition:['ai'],atmosphere:['setting','presentation','tone'],story:['story']};
+export function evidenceLabel(bundle){
+ const statuses=(bundle.portrait_pieces||[]).map(p=>p.status);
+ if(statuses.some(s=>s==='candidate_unverified'||s?.includes('model_prior')))return 'Unverified direction · research needed';
+ if(statuses.some(s=>s==='source_supported_partial'))return statuses.every(s=>s==='source_supported_partial')?'Source-supported · partial':'Mixed source & observed context';
+ if(statuses.length)return 'Observed interpretation · not extracted rules';
+ return bundle.component_ids.length?'Component references · evidence varies':'Research needed · inspiration only';
+}
+export function bundlesFor(game){
  return Object.fromEntries(DIMENSIONS.map(d=>{
-  const known=curated[game.id]?.[d.id], components=known?known.ids.map(id=>game.components.find(c=>c.id===id)).filter(Boolean):game.components.filter(c=>d.pattern.test(c.id)).slice(0,4);
+  const pieces=(game.portrait?.pieces||[]).filter(p=>portraitSlots[d.id].includes(p.slot));
+  const known=curated[game.id]?.[d.id],components=known?known.ids.map(id=>game.components.find(c=>c.id===id)).filter(Boolean):game.components.filter(c=>d.pattern.test(c.id)).slice(0,4);
   if(!components.length&&!known)components.push(...game.components.filter(c=>d.facets.includes(c.facet)).slice(0,3));
-  const label=known?.label || (components.length?components[0].label.replace(/\s*\([^)]*\)/g,'').slice(0,75):`${game.shortName}’s ${d.label.toLowerCase()} — to investigate`);
-  return[d.id,{label,component_ids:components.map(c=>c.id),components,evidence_status:components.length?'component_references':'research_needed',source_game_id:game.id}];
+  for(const piece of pieces)for(const ref of piece.component_refs||[]){const component=game.components.find(c=>c.id===ref.component_id&&ref.game_id===game.id);if(component&&!components.some(c=>c.id===component.id))components.push(component);}
+  const label=pieces[0]?.label||known?.label||(components.length?components[0].label.replace(/\s*\([^)]*\)/g,'').slice(0,75):`${game.shortName}’s ${d.label.toLowerCase()} — to investigate`);
+  const statuses=[...new Set(pieces.map(p=>p.status))],status=statuses.length===1?statuses[0]:statuses.length?'mixed_evidence':components.length?'component_references':'research_needed';
+  return[d.id,{label,component_ids:components.map(c=>c.id),components,evidence_status:status,source_game_id:game.id,portrait_pieces:pieces,story_beats:d.id==='story'?game.portrait?.story?.beats||[]:[],story_delivery:d.id==='story'?game.portrait?.story?.delivery||null:null,vibes:d.id==='atmosphere'?game.portrait?.identity?.vibe||[]:[],vibe_status:d.id==='atmosphere'?game.portrait?.identity?.vibe_status||null:null}];
  }));
 }
 export function defaultChoices(parents){return Object.fromEntries(DIMENSIONS.map((d,i)=>[d.id,{mode:i>=6?'bridge':'parent',parent_game_id:parents[i===1||i===3||i===4||i===5?1:0]?.id,bridge_id:d.bridges[0][0],notes:''}]));}
@@ -84,10 +95,10 @@ export function createMashupRequest(catalog,parentIds,choices,intent,foundationI
  const c=choices[d.id];if(!c)throw Error('Choose how to handle each active dimension.');if(!['parent','bridge'].includes(c.mode))throw Error('Choose a parent or a bridge for each active dimension.');if((c.notes||'').length>1500)throw Error('Keep each direction note within 1,500 characters.');
  const selectedParents=c.mode==='parent'?parents.filter(g=>g.id===c.parent_game_id):parents;
  if(!selectedParents.length)throw Error('A design choice references a removed parent.');
- const bundles=selectedParents.map(g=>{const b=bundlesFor(g)[d.id];return{game_id:g.id,label:b.label,component_ids:b.component_ids,evidence_status:b.evidence_status};});
+ const bundles=selectedParents.map(g=>{const b=bundlesFor(g)[d.id];return{game_id:g.id,label:b.label,component_ids:b.component_ids,evidence_status:b.evidence_status,portrait_pieces:b.portrait_pieces,story_beats:b.story_beats,story_delivery:b.story_delivery,vibes:b.vibes,vibe_status:b.vibe_status};});
  const bridge=c.mode==='bridge'?d.bridges.find(b=>b[0]===c.bridge_id):null;if(c.mode==='bridge'&&!bridge)throw Error('Choose an available bridge approach.');
  return{id:d.id,label:d.label,mode:c.mode,parent_game_id:c.mode==='parent'?c.parent_game_id:null,bridge:bridge?{id:bridge[0],label:bridge[1],status:'proposed'}:null,bundles,required_companions:d.requires,adaptation:(c.notes||'').trim(),implementation_status:'requested'};
  });
  if(design_choices.length>8)throw Error('Keep the brief to eight broad choices.');
- return{schema_version:2,kind:'gameverse_mashup_request',candidate_id:'workshop-mashup-draft',title:'Gameverse mashup build brief',runtime_target:'gba',intent:intent.trim(),parent_games:parents.map(g=>({game_id:g.id,title:g.name,rom_sha1:g.romSha1,ontology_path:g.ontologyPath||null})),foundation:{game_id:foundationId,preserve_world_and_campaign:true},design_choices,dependency_decisions:dependencyNotes(parents,choices,foundationId).map(n=>({...n,status:'requires_implementation_review'})),constraints:{target_platform:'gba',max_design_choices:8,original_or_permitted_assets:true},research_snapshot:{date:catalog.snapshotDate,source_commit:catalog.sourceCommit},status:'build_brief',notes:'A source-linked request for a native GBA build. No generated artifact, verified compatibility, or completed integration is implied.'};
+ return{schema_version:2,kind:'gameverse_mashup_request',candidate_id:'workshop-mashup-draft',title:'Gameverse mashup build brief',runtime_target:'gba',intent:intent.trim(),parent_games:parents.map(g=>({game_id:g.id,title:g.name,rom_sha1:g.romSha1,ontology_path:g.ontologyPath||null})),foundation:{game_id:foundationId,preserve_world_and_campaign:true},design_choices,dependency_decisions:dependencyNotes(parents,choices,foundationId).map(n=>({...n,status:'requires_implementation_review'})),constraints:{target_platform:'gba',max_design_choices:8,original_or_permitted_assets:true},research_snapshot:{date:catalog.snapshotDate,source_commit:catalog.sourceCommit,version:catalog.researchVersion||null,updated_at:catalog.updatedAt||null,embedding_snapshot_date:catalog.embeddingSnapshotDate||catalog.snapshotDate},status:'build_brief',notes:'A source-linked request for a native GBA build. No generated artifact, verified compatibility, or completed integration is implied.'};
 }

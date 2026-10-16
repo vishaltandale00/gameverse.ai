@@ -4,6 +4,7 @@ import { resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { root, runtimeDirectory, runtimeIdentity } from './runtime.mjs';
 import { gameCatalog } from './catalog.mjs';
+import { researchState } from './research-cache.mjs';
 
 const appRoot = fileURLToPath(root);
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.wasm': 'application/wasm', '.gba': 'application/octet-stream' };
@@ -17,6 +18,10 @@ const server = http.createServer(async (req, res) => {
     const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
     if (path === '/runtime/identity.json') {
       res.setHeader('Content-Type', mime['.json']); res.end(JSON.stringify(runtime)); return;
+    }
+    if (path === '/research/status.json' || path === '/games/research.json') {
+      const state = await researchState(new URL(req.url, 'http://localhost').searchParams.get('refresh') === '1');
+      res.setHeader('Content-Type', mime['.json']); res.end(req.method === 'HEAD' ? undefined : JSON.stringify(path === '/research/status.json' ? state.status : state.snapshot)); return;
     }
     if (path === '/games/catalog.json') {
       const games = await gameCatalog();

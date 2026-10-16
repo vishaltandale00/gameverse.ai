@@ -63,3 +63,31 @@ Genre is a derived tag computed from components, not a decomposition axis. Tunab
 Only abstractions and evidence references are committed. Decompiled code, ROM bytes and captured frames stay in `local/`.
 
 The current work is comprehensive extraction and mining across the corpus: rules, entities, resources, player skills and strategies, hardware, assets/style and narrative. Composition is a later use of the extracted material. A source-file inventory is not a recovered asset-use graph, and a screenshot label is not evidence of live player control. Missing ROM decompilation remains required work.
+
+### Publishing mining updates to the local app
+
+The development server checks canonical `ontology/games/*.yaml` records and
+`ontology/portraits/*.json` portraits for changes. It refreshes the public research
+summary on demand, using the existing PyYAML exporter in source-only mode. The
+interface checks when visible or focused and every 20 seconds while idle. A refresh
+retains the current parents, design choices and notes; research refreshes are
+skipped while a GBA game is active. Editing a field defers automatic application
+until the user is ready. The research bar reports freshness and offers a manual
+refresh. A failed export retains the last successful snapshot.
+
+Source-only refreshes preserve the cached embedding coordinates and neighbors.
+They do not load vectors, recompute the 18 views, run models, decompile ROMs, or
+qualify builds. Portrait grades remain distinct: partial source support, observed
+interpretation and unverified/model-prior directions are not interchangeable.
+Story beats retain local-evidence grades and do not imply a complete plot graph.
+
+Future source-mining agents should publish validated canonical records and graded
+portraits incrementally so the watcher can reflect their work. Raw decompiler
+leads, anonymous helpers and research logs are not automatically promoted into
+usable design components or published by this watcher.
+
+Manual export: `python3 scripts/export-research.py . --source-only`. Set
+`RESEARCH_PYTHON` for the development server if its default Python does not have
+PyYAML. Static builds retain the last exported snapshot and do not run a watcher.
+The public export excludes ROM bytes, local media, raw vectors and private machine
+paths. No new Python package, browser dependency or CI job is required.
