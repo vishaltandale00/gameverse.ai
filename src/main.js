@@ -69,6 +69,7 @@ async function startGame(game, mode = 'snapshot') {
     current = { game, identity, key, release, state: 'loading', head: await storage.get(key) || { revision: 0 } };
     session = current;
     $('#profile-button').disabled = true;
+    for (const button of document.querySelectorAll('[data-view]')) button.disabled = true;
     const romResponse = await fetch(game.artifactUrl);
     if (!romResponse.ok) throw Error('Built cartridge is unavailable. The confirmed progress is retained.');
     const rom = new Uint8Array(await romResponse.arrayBuffer());
@@ -143,6 +144,7 @@ function leaveSession() {
   if (!current) return;
   session = undefined; current.adapter?.dispose(); current.release();
   $('#profile-button').disabled = false;
+  for (const button of document.querySelectorAll('[data-view]')) button.disabled = false;
   clearInput(); $('#session-dialog').close(); $('#player').hidden = true; $('#home').hidden = false; $('#screen').replaceChildren();
   renderGames().catch(handleError);
 }
@@ -227,7 +229,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { cle
 window.addEventListener('gamepaddisconnected', () => { clearInput(); openMenu(); });
 window.addEventListener('beforeunload', event => { if (session) { event.preventDefault(); event.returnValue = ''; } });
 function focusDirection(direction) {
-  const scope = $('dialog[open]') || $('#home');
+  const scope = $('dialog[open]') || document.body;
   const candidates = [...scope.querySelectorAll('button:not(:disabled), input, a')].filter(el => el.getClientRects().length);
   const active = document.activeElement;
   if (!candidates.includes(active)) { candidates[0]?.focus(); return; }
@@ -260,7 +262,8 @@ function pollInput(now) {
     if (next !== inputMask) { inputMask = next; session.adapter.input(next); }
   }
   padPrevious = buttons;
-  $('#controller-status').textContent = pad ? `${pad.id} · controller ready` : 'Keyboard ready · Connect a controller to play';
+  const controllerStatus = pad ? `${pad.id} · controller ready` : 'Keyboard ready · Connect a controller to play';
+  if ($('#controller-status').textContent !== controllerStatus) $('#controller-status').textContent = controllerStatus;
   requestAnimationFrame(pollInput);
 }
 requestAnimationFrame(pollInput);
