@@ -13,12 +13,15 @@ test('root and explicit version routes select separate source configurations', (
   assert.throws(() => applicationConfigPath('/v2'), /unavailable/);
   assert.deepEqual(configs.map(config => config.base.kind), ['collection', 'neighborhood']);
 });
-test('both configurations bind the same catalog game and preserve its progress identity', () => {
+test('collection games expand while both configurations preserve FireRed progress identity', () => {
   const catalogGame = { id: 'firered', ready: true, receipt: { sha256: 'cartridge' } };
   const catalog = [catalogGame, { id: 'deferred-game', ready: true }];
   const keys = configs.map(config => {
     const games = configuredGames(config, catalog);
-    assert.deepEqual(games, [catalogGame]); assert.equal(games[0], catalogGame);
+    assert.deepEqual(games.map(game => game.id), config.subgames.map(binding => binding.id));
+    assert.equal(games.find(game => game.id === 'firered'), catalogGame);
+    assert.ok(!games.some(game => game.id === 'deferred-game'));
+    assert.equal(config.base.kind === 'neighborhood' ? games.length : games.filter(game => game.id.startsWith('mzm-emerald-')).length, config.base.kind === 'neighborhood' ? 1 : 2);
     validateGameBinding(config, catalogGame, { adapter: 'gameverse-gba-worker/0.1.0' });
     return progressKey({ profileId: 'same-player', gameId: games[0].id, cartridgeSha256: 'cartridge', wasmSha256: 'core', loaderSha256: 'loader', adapter: 'gameverse-gba-worker/0.1.0', snapshotFormat: 'format' });
   });

@@ -43,8 +43,10 @@ def portrait_summary(raw):
         out['evidence']=[{k:v for k,v in e.items() if k in ('kind','ref','scope','file_sha256','span_sha256','source_evidence')} for e in piece.get('evidence',[])[:3]]
         pieces.append(out)
     story=raw.get('story',{})
-    coverage=raw.get('coverage',{})
-    return public({'identity':identity,'pieces':pieces,'story':story,'coverage':{k:coverage[k] for k in ('status','depth','canonical_component_count','source_supported_piece_count','missing','not_claimed') if k in coverage},'recordedAt':raw.get('provenance',{}).get('recorded_at')})
+    coverage=dict(raw.get('coverage',{}))
+    progress=coverage.get('research_progress')
+    if isinstance(progress,dict): coverage['research_progress']={k:progress[k] for k in ('campaign_id','recorded_at','status','function_records','pseudo_c_generated','process_wall_s','queue_s','scope','whole_game_decompiled','mechanic_validation','gaps','failure','reviewed_operator_count','semantic_review_ref') if k in progress}
+    return public({'identity':identity,'pieces':pieces,'story':story,'coverage':{k:coverage[k] for k in ('status','depth','canonical_component_count','source_supported_piece_count','missing','not_claimed','research_progress') if k in coverage},'recordedAt':raw.get('provenance',{}).get('recorded_at')})
 games=[]
 source_files=[]
 for rom in roms:

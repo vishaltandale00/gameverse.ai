@@ -3,7 +3,11 @@
 The app combines the original source-built GBA player, a 33-game research map and
 an eight-dimension mashup workspace. It adds no runtime dependency, external font,
 model call, CI job or generation service. `npm run dev` serves the normal app on
-port 4173. `/?view=play`, `/?view=workshop` and `/?view=discover` select its views.
+port 4173. The default `/` and `/v1` preserve Vishal’s Alder District world.
+`/v0` opens the collection; `/v0?view=play`, `/v0?view=workshop` and
+`/v0?view=discover` select its Play, Mashup and Explore views. The world menu
+links to all three, and the collection links back to Alder District. Research
+code and styling load only for the collection; Three.js loads only for the world.
 
 ## Design flow
 
@@ -70,10 +74,15 @@ published by this watcher.
 
 Normal Play registers actual source-built GBA artifacts through the existing
 catalog and `GbaAdapter`, preserving cartridge/core/profile save identity. FireRed
-and `mzm-emerald-encounters-v1` are the current local entries. The latter retains
+, `mzm-emerald-encounters-v1` and `mzm-emerald-wilds-v2` are the current local entries. The first Metroid fork retains
 the Zero Mission campaign and adds native three-Pokémon encounters. Its battle
 subset, reset party and hazard-inclusive entry limitations are documented in
-`tools/gba_mashup/recipes/mzm-emerald-encounters-v1.json`.
+`tools/gba_mashup/recipes/mzm-emerald-encounters-v1.json`. The Wilds fork uses
+actual eligible source-actor contact, one matching wild opponent and a persistent
+three-member party. Its full emulator checkpoints preserve party and a bounded
+128-entry defeated-actor ledger; vanilla MZM SRAM does not. V1 and V2 keep separate
+game IDs, ROM hashes, receipts and progress. The v1 world’s arcade binding stays FireRed-only;
+the v0 collection adds the two qualified native forks.
 
 A research entry does not become playable without a matching source/artifact
 receipt. The native composition receipt additionally pins its recipe. Build
@@ -122,3 +131,37 @@ Four existing workshop tests passed in 44.5 ms. Reports are under
 No old manual-refresh timing was captured, so these observations do not establish
 a comparable before/after feature-overhead improvement. Queue time and CI duration
 are unavailable. No new CI job, dependency, model call or ROM campaign was added.
+
+
+## Upstream neighborhood alignment
+
+Merged `origin/main` at `0d98de68e0f6664b65022a0a53763d0a25b1b716` in an isolated
+managed worktree. The six content conflicts retained the upstream world entry,
+controller-first host menu and full-viewport GBA presentation, together with the
+research workspace, native covers, cached map and mining refresh. The upstream
+async Web Locks release is awaited before immediate retry. App/base versions do
+not enter cartridge/core/profile progress identity. No new city architecture or
+arcade binding was introduced.
+
+Upstream’s locked Three.js 0.186.0 is necessary for its existing 3D renderer; the
+merge adds no additional runtime package. Locked dependency installation reported
+484 ms for two packages. One clean-dist shell-copy build took 12.8 ms with existing
+dependencies; it bundles Three and public research assets, and excludes cartridges.
+OS filesystem-cache hit/miss information was not instrumented. No comparable
+before/after build or world-render baseline was captured for this merge.
+
+The existing focused Node checks initially passed 35/36 in 55.2 ms. The remaining
+assertion assumed both configurations expose FireRed only; updating that existing
+case to cover the expanded collection while retaining FireRed save identity made
+all three affected application checks pass in 32.3 ms. The other passed checks
+were not rerun. An isolated browser smoke took 11.17 s: default v1 world rendered
+(first render 775.1 ms), its three menu links reached the v0 workspace, Explore
+remained available, all three real native cards were ready, and Wilds booted then
+saved and restored exactly at frame 72. Native load/restore took 38.5/33.0 ms;
+no runtime errors occurred. This is an entry/save smoke, not another ROM campaign.
+Reports and screenshots: `local/re/main-alignment/`.
+
+Portrait `coverage.research_progress` is exported through a small field whitelist
+and shown as partial self-decompilation research in the inspector. Failed runs and
+unknown counts remain visible; generated pseudo-C counts are not presented as
+validated mechanics or whole-game decompilation.
