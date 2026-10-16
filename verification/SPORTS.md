@@ -30,10 +30,10 @@ The swept checker is a **noncontact certificate**. A `false` result means no cer
 
 ## Reproduce the check
 
-With the pinned Lean installation used for this run:
+With Lean 4.35.0 installed at the documented local path:
 
 ```sh
-npm run verify:sports -- --lean /Users/vishaltandale/.codex/worktrees/82f4/gameverse.ai/local-data/lean-verification/lean-4.35.0-darwin_aarch64/bin/lean
+npm run verify:sports
 node --test tests/sports-physics.test.js tests/custom-catalog.test.js
 ```
 
@@ -49,6 +49,7 @@ These are separate runs, not a before/after performance comparison. Later gamepl
 
 | Run | Outcome | Observed wall time | What it establishes |
 | --- | --- | --- | --- |
+| `sports-lean-2026-10-16T19-24-23.799Z` | Passed | 4266.440375 ms (4.27 s) | Fresh audit after merging classic controls to main at `b86969e`: fifteen audited theorems and exact sports/geometry generated-byte matches. Official Lean archive checksum verified before installation. Full source, axiom and stage metadata retained in [qualification record](SPORTS_QUALIFICATION.json). |
 | `sports-lean-2026-10-16T15-55-19.625Z` | Passed | 4740.6415 ms (4.74 s) | Fifteen audited theorems including six sports theorems; sports and reused geometry generated-byte matches. Node v22.23.2, arm64 macOS, Lean 4.35.0, base commit `b58ae3ee1aa5f7c24f67ddcc9c872a03e23fba27` with working-tree changes recorded in the report. |
 | `sports-lean-2026-10-16T15-56-08.655Z` | Expected failure | 4372.2467 ms (4.37 s) | An altered temporary generated-JavaScript copy was rejected for byte mismatch. The real generated file was not modified. Recorded separately in `sports-tamper-check.json`; this is a successful negative check, not a passing proof run. |
 | `sports-lean-2026-10-16T16-05-45.891Z` | Passed | 4587.861208 ms (4.59 s) | Fresh final audit passed all fifteen required theorems and exact generated-byte matches. Source hashes and stage timings are retained in its run report. |
