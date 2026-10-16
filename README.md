@@ -27,6 +27,7 @@ FireRed fills the browser view while preserving its 3:2 aspect ratio. Controller
 | [Improvement loop contract](contracts/IMPROVEMENT_LOOP.md) | Voice requests, builds, verification and safe updates/forks |
 | [Delivery tasks](TASKS.md) | Separate work packages, dependencies and evidence gates |
 | [Base game implementation plan](plans/BASE_GAME.md) | FireRed launcher, open-world navigation and improvement integration |
+| [Hosting plan](plans/HOSTING.md) | AWS managed hosting, Daytona coding/verification jobs, handoff and per-customer costs |
 | [Environment PRD](plans/ENVIRONMENT_PRD.md) | Issue #1 scope, player journeys, acceptance, shared interface decisions and timing gates |
 | [Environment vertical slices](plans/ENVIRONMENT_SLICES.md) | Three agreed slices with GitHub subissues, dependencies and acceptance criteria |
 | [Vishal — issue #1](https://github.com/vishaltandale00/gameverse.ai/issues/1) | Versioned environment harness, swappable base and subgame adapters |
