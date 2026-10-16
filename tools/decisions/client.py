@@ -404,6 +404,14 @@ class DecisionClient:
                                   "build_simulation_s": "not performed by this client"}}
         try:
             body = to_wire(request, config)
+            # Size diagnostics only: never persist request bodies or credentials.
+            report["input_size"] = {
+                "wire_bytes": len(json.dumps(body, allow_nan=False).encode()),
+                "state_utf8_bytes": len((request.get("state") or "").encode()),
+                "image_data_url_bytes": sum(len(image.encode()) for image in request.get("images", [])),
+                "image_count": len(request.get("images", [])),
+                "question_count": len(request["questions"]),
+                "choice_counts": {q["name"]: len(q["choices"]) for q in request["questions"] if q["type"] == "choice"}}
             report["context"] = request.get("context", {})
             report["request_sha256"] = hashlib.sha256(json.dumps(request, sort_keys=True, allow_nan=False).encode()).hexdigest()
             report["attempts"] = 1

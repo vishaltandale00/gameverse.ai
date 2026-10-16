@@ -2711,7 +2711,7 @@
       ]
     },
     {
-      "bytes": 22031,
+      "bytes": 22658,
       "kind": "authored-code",
       "origins": [
         "tools/decisions/__init__.py:python-import",
@@ -2725,7 +2725,7 @@
         "sid-rpg-weekend-original",
         "sonic-metroid-coast-campaign"
       ],
-      "sha256": "6945709ea3093af112d2c98886071838720565a0e41835e261cfcb8783b2c020",
+      "sha256": "d2f241933bdaa1a996c6e8c05593e3251da99176eff63993f5a0d76170739522",
       "stages": [
         "build-and-loop"
       ]
@@ -2905,7 +2905,7 @@
       ]
     },
     {
-      "bytes": 17870,
+      "bytes": 21400,
       "kind": "authored-code",
       "origins": [
         "tools/playtester/__main__.py:python-import",
@@ -2923,7 +2923,7 @@
         "sid-rpg-weekend-original",
         "sonic-metroid-coast-campaign"
       ],
-      "sha256": "c85a079d4c4deff7e391fc1648f209b3c3de7ceb9cf3874133f2e7fa7563f63f",
+      "sha256": "e765d1ed258225654525772bf721ee936a3571f285f5f5b567c81e7ff7433623",
       "stages": [
         "build-and-loop"
       ]
@@ -6127,7 +6127,7 @@
     }
   ],
   "schema": "gameverse.improvement-provider-pack/1",
-  "source_commit": "8361605a97f376c2cc162d2a7f38b10e837bae97",
+  "source_commit": "02ac5b6e806b5166b2254427bac3b9b91cc0ab9c",
   "static_resolution": [
     {
       "errors": [],

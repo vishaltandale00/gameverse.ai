@@ -17,11 +17,47 @@ from tools.decisions.client import NoRedirect
 from .core import PlaytestError, digest, require
 from .calibration import fingerprint
 
+MODEL_CONTEXT_SCHEMA = "semantic-progress-deltas/2"
+
+
+def same_json(left, right):
+    return json.dumps(left, sort_keys=True, allow_nan=False) == json.dumps(right, sort_keys=True, allow_nan=False)
+
+
+def progress_delta(before, after):
+    """Lossless changed leaves; absent fields remain distinct from JSON null."""
+    delta = {}
+    for key in dict.fromkeys([*before, *after]):
+        left, right = before.get(key), after.get(key)
+        if key in before and key in after and same_json(left, right):
+            continue
+        if key in before and key in after and isinstance(left, dict) and isinstance(right, dict):
+            delta[key] = {"fields": progress_delta(left, right)}
+        else:
+            delta[key] = {"before_present": key in before, "after_present": key in after,
+                          "before": left, "after": right}
+    return delta
+
 
 def evidence_context(context, options=()):
     """Keep full forensic traces locally; send relevant bounded decision memory."""
     obs = dict(context["observation"])
     obs.pop("image", None)
+    if options:
+        # Criteria carry ID/description. Preserve every other action argument;
+        # reference a POI only when its entire JSON value is already in facts.
+        obs.pop("options", None)
+        pois = obs.get("facts", {}).get("source_pois", [])
+        metadata = {}
+        for action in options:
+            residual = {k: v for k, v in action.items() if k not in ("id", "description")}
+            target = residual.get("target")
+            match = next((i for i, poi in enumerate(pois) if same_json(poi, target)), None) if target is not None else None
+            metadata[action["id"]] = {"fields": {k: v for k, v in residual.items() if k != "target" or match is None}}
+            if match is not None:
+                metadata[action["id"]]["target_source_poi_index"] = match
+        obs["option_metadata"] = metadata
+        obs["option_metadata_encoding"] = "IDs/descriptions are in supplied choices. fields retains all other action fields; target_source_poi_index means the exact target object at observation.facts.source_pois[index]."
     evidence = dict(obs.get("evidence", {}))
     evidence.pop("initial_state", None)
     evidence.pop("memory_profile", None)
@@ -35,16 +71,37 @@ def evidence_context(context, options=()):
     visits = memory.get("state_visits", {})
     memory["states_observed_total"] = len(visits)
     memory["state_visits"] = {key: value for key, value in visits.items() if key in relevant}
-    memory["recent_transitions"] = [{key: transition[key] for key in
-        ("from", "action_id", "to", "frame_before", "frame_after", "unchanged", "progress_basis", "before_progress", "after_progress")
-        if key in transition} for transition in recent]
+    memory["recent_transitions"] = []
+    previous_after = None
+    for transition in recent:
+        row = {key: transition[key] for key in
+            ("from", "action_id", "to", "frame_before", "frame_after", "unchanged", "progress_basis")
+            if key in transition}
+        before, after = transition.get("before_progress"), transition.get("after_progress")
+        if isinstance(before, dict) and isinstance(after, dict):
+            if previous_after is None or not same_json(previous_after, before):
+                row["progress_baseline"] = before
+                row["progress_continuity"] = "anchor" if previous_after is None else "gap_anchor"
+            else:
+                row["progress_continuity"] = "previous_transition"
+            row["progress_delta"] = progress_delta(before, after)
+            row["progress_unchanged"] = same_json(before, after)
+            previous_after = after
+        else:
+            # Do not reinterpret missing or non-map historical observations.
+            row.update({key: transition[key] for key in ("before_progress", "after_progress") if key in transition})
+            previous_after = None
+        memory["recent_transitions"].append(row)
+    memory["transition_encoding"] = {
+        "schema": MODEL_CONTEXT_SCHEMA,
+        "meaning": "Replay in order: progress_baseline anchors before state; otherwise use previous transition's after state. gap_anchor marks discontinuity. Apply changed fields from progress_delta; omitted fields are unchanged. Current observation is separate and authoritative for now. Full snapshots remain in local trace."}
     memory["barrier_candidates"] = [{key: barrier[key] for key in
         ("status", "state_key", "action_id", "attempts_without_progress", "step", "basis", "unknowns")
         if key in barrier} for barrier in memory.get("barrier_candidates", [])[-6:]]
     if isinstance(memory.get("system2_plan"), dict):
         memory["system2_plan"] = dict(memory["system2_plan"], authoritative_current_state=False,
             interpretation="Historical model hypothesis; revalidate every factual claim against the current observation")
-    return dict(context, observation=obs, memory=memory, evidence_precedence={
+    return dict(context, observation=obs, memory=memory, model_context_schema=MODEL_CONTEXT_SCHEMA, evidence_precedence={
         "schema": "current-observation-authority/1", "run_id": context.get("run_id"),
         "step": context.get("step"), "as_of_frame": obs.get("frame"),
         "context_assembled_at_utc": context.get("context_assembled_at_utc"),
@@ -71,7 +128,7 @@ class DecisionPolicy:
                 "provider": self.client.config.provider, "model": self.client.config.model,
                 "endpoint": self.client.config.base_url,
                 "policy_sha256": fingerprint({"action_question": action_question,
-                    "evidence_context_version": "current-observation-authority/1"})}
+                    "evidence_context_version": MODEL_CONTEXT_SCHEMA})}
 
     def choose(self, context, options, timeout_s):
         questions = [{"name": "action", "type": "choice", "instructions":
@@ -95,11 +152,13 @@ class DecisionPolicy:
                 {"name": "locomotion", "type": "choice", "instructions": "Classify the evidenced control/mechanic family. A screenshot alone may not establish physics or movement; use unknown then.",
                  "choices": [{"value": k} for k in ("grid", "continuous_ground", "platform", "vehicle", "tactical_turns", "unknown")]}
             ]
-        request = {"schema_version": 1, "state": json.dumps(evidence_context(context, options), allow_nan=False),
+        request = {"schema_version": 1, "state": json.dumps(evidence_context(context, options), allow_nan=False, separators=(",", ":")),
                    "questions": questions, "context": {"playtest_run_id": context["run_id"],
                    "game_id": context["game_id"], "game_version": context.get("game_version"),
                    "adapter_version": context.get("adapter_version"), "profile_sha256": context.get("profile_sha256"),
-                   "observation_sha256": digest(context["observation"])}}
+                   "observation_sha256": digest(context["observation"]),
+                   "input_descriptor": {"schema": MODEL_CONTEXT_SCHEMA, "encoding": "compact-json",
+                                        "available_action_count": len(options)}}}
         if context["observation"].get("image"):
             request["images"] = [image_data_url(context["observation"]["image"])]
         old = self.client.config
@@ -176,7 +235,7 @@ class ChatPolicy:
     def choose(self, context, options, timeout_s):
         started = time.monotonic()
         action_ids = {a["id"] for a in options} | {"STOP"}
-        prompt = json.dumps({"context": evidence_context(context, options), "available_actions": options}, allow_nan=False)
+        prompt = json.dumps({"context": evidence_context(context, options), "available_actions": options}, allow_nan=False, separators=(",", ":"))
         content = [{"type": "text", "text": prompt}]
         if context["observation"].get("image"):
             content.append({"type": "image_url", "image_url": {"url": image_data_url(context["observation"]["image"])}})
@@ -196,7 +255,7 @@ class ChatPolicy:
                   "status": "failed", "attempts": 1, "retries": 0, "usage": None,
                   "observation_frame": context["observation"].get("frame"),
                   "observation_sha256": digest(context["observation"]),
-                  "context_schema": "current-observation-authority/1",
+                  "context_schema": MODEL_CONTEXT_SCHEMA,
                   "queue_s": None, "cost_usd": None}
         result = {"accepted": False, "reason": "llm_failed", "record": record}
         try:
