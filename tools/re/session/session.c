@@ -76,15 +76,24 @@ int main(int argc, char** argv) {
     unsigned long long recorded = 0, recordingFrame = 0;
     unsigned stride = 2;
     FILE* video = NULL;
+    unsigned watchAddress[32], watchWidth[32], watchMask[32], watchCount = 0;
     puts("OK ready"); fflush(stdout);
     while (fgets(line, sizeof(line), stdin)) {
         unsigned a = 0, b = 0;
         int fields = sscanf(line, "%31s %u %u", op, &a, &b);
         if (fields < 1) { puts("ERR command"); }
-        else if (!strcmp(op, "step") && fields == 3 && a < 1024 && b <= 3600) {
+        else if ((!strcmp(op, "step") || !strcmp(op, "stepw")) && fields == 3 && a < 1024 && b <= 3600) {
             core->setKeys(core, a);
             int videoOk = 1;
             unsigned advanced = 0;
+            int watchHit = -1;
+            unsigned watchBefore[32];
+            for (unsigned w = 0; w < watchCount; ++w) {
+                unsigned value = 0;
+                for (unsigned j = 0; j < watchWidth[w]; ++j)
+                    value |= (unsigned) core->busRead8(core, watchAddress[w] + j) << (8 * j);
+                watchBefore[w] = value & watchMask[w];
+            }
             unsigned callbackBefore = callbackAddress ? core->busRead32(core, callbackAddress) : 0;
             for (unsigned i = 0; i < b; ++i) {
                 core->runFrame(core); drain(core); ++advanced;
@@ -92,6 +101,15 @@ int main(int argc, char** argv) {
                     if (!writePixels(video, pixels)) videoOk = 0;
                     else ++recorded;
                 }
+                /* Source words sampled after EVERY frame, before another
+                 * frame can hide a transient boundary. Read-only RAM only. */
+                for (unsigned w = 0; w < watchCount; ++w) {
+                    unsigned value = 0;
+                    for (unsigned j = 0; j < watchWidth[w]; ++j)
+                        value |= (unsigned) core->busRead8(core, watchAddress[w] + j) << (8 * j);
+                    if ((value & watchMask[w]) != watchBefore[w]) { watchHit = (int) w; break; }
+                }
+                if (watchHit >= 0) break;
                 /* Stop at the source-owned region export boundary; never skip
                  * a READY travel event while running a longer input batch. */
                 if (callbackAddress && core->busRead32(core, callbackAddress) != callbackBefore) break;
@@ -100,7 +118,20 @@ int main(int argc, char** argv) {
                     core->busRead32(core, mailboxBase + 20) == 2) break;
             }
             core->setKeys(core, 0); frames += advanced;
-            if (videoOk) printf("OK %llu\n", frames); else puts("ERR recording");
+            if (!videoOk) puts("ERR recording");
+            else if (!strcmp(op, "stepw")) printf("OK %llu %d\n", frames, watchHit);
+            else printf("OK %llu\n", frames);
+        } else if (!strcmp(op, "unwatch")) {
+            watchCount = 0; puts("OK cleared");
+        } else if (!strcmp(op, "watch") && fields == 3 && watchCount < 32 &&
+                   (b == 1 || b == 2 || b == 4) &&
+                   ((a >= 0x02000000 && a <= 0x02040000 - b) ||
+                    (a >= 0x03000000 && a <= 0x03008000 - b))) {
+            unsigned mask;
+            if (sscanf(line, "%*s %*u %*u %u", &mask) == 1 && mask) {
+                watchAddress[watchCount] = a; watchWidth[watchCount] = b;
+                watchMask[watchCount++] = mask; puts("OK watching");
+            } else puts("ERR watch");
         } else if (!strcmp(op, "frame")) {
             snprintf(path, sizeof(path), "%s/frame.rgba", argv[2]);
             FILE* f = fopen(path, "wb");

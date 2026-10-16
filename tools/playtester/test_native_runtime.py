@@ -50,4 +50,37 @@ class NativeRuntimeTests(unittest.TestCase):
         self.assertEqual(event['velocity_x_q16'],196608);self.assertIsNotNone(a.objective_witness)
 
 
+    def test_source_watch_rejects_invalid_ram_and_mask_before_mutating(self):
+        from tools.re.session.bridge import NativeSession
+        native=NativeSession.__new__(NativeSession); calls=[]; native._command=lambda command:calls.append(command)
+        for watch in [dict(name='io',address=0x04000000,bytes=4,mask=1),dict(name='bad',address=0x02000000,bytes=1,mask=256)]:
+            with self.assertRaises(ValueError):native.configure_watches([watch])
+        self.assertEqual(calls,[])
+        native.configure_watches([dict(name='stage',address=0x0300514c,bytes=1,mask=255)])
+        self.assertEqual(calls,['unwatch','watch 50352460 1 255'])
+
+    def test_source_watch_stops_even_at_exact_requested_last_frame(self):
+        from tools.re.session.bridge import NativeSession
+        native=NativeSession.__new__(NativeSession); native.max_frames=600; native.native_counter=0; native.frame=0
+        native.mailbox_profile=None; native.callback_profile=None
+        native._step=lambda keys,frames:(frames,'upgrades')
+        self.assertEqual(native.act({'keys':['RIGHT'],'frames':120},120),
+            {'frames':120,'source_breakpoint':True,'decision_boundary':'upgrades'})
+
+    def test_sonic_option_stops_on_source_event_and_keeps_jump_release(self):
+        from tools.playtester.sonic_adapter import SonicTraversalAdapter
+        class Native:
+            def __init__(self):self.calls=[]
+            def read_memory(self,*args):return bytes(8)
+            def act(self,action,limit):
+                self.calls.append(action)
+                return {'frames':1 if len(self.calls)==1 else 7,'decision_boundary':None if len(self.calls)==1 else 'deaths'}
+        adapter=SonicTraversalAdapter.__new__(SonicTraversalAdapter);adapter.inner=Native()
+        adapter.max_option_frames=600;adapter.motion_sample_frames=120;adapter.option_source_ready=True
+        receipt=adapter.act({'keys':['RIGHT','A','B'],'frames':600},600)
+        self.assertEqual(receipt['frames'],8);self.assertEqual(receipt['decision_boundary'],'deaths')
+        self.assertEqual(adapter.inner.calls[0]['keys'],['RIGHT','B'])
+        self.assertEqual(adapter.inner.calls[1]['keys'],['RIGHT','A','B'])
+
+
 if __name__=='__main__':unittest.main()

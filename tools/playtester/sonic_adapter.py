@@ -14,19 +14,22 @@ VERSION = 'sonic-native-traversal/1'
 
 
 class SonicTraversalAdapter:
-    def __init__(self, rom, out, initial_state, *, expected_rom_sha256=None):
+    def __init__(self, rom, out, initial_state, *, expected_rom_sha256=None, max_option_frames=120, motion_sample_frames=120):
         rom = Path(rom).resolve()
         actual = hashlib.sha256(rom.read_bytes()).hexdigest()
         if expected_rom_sha256 is not None and actual != expected_rom_sha256:
             raise ValueError('sonic_candidate_rom_mismatch')
-        self.inner = NativeSession(rom, out, ROOT / 'tools/re/session/build/gba-session', initial_state=initial_state)
+        if type(max_option_frames) is not int or not 1 <= max_option_frames <= 3600 or type(motion_sample_frames) is not int or not 1 <= motion_sample_frames <= 120:
+            raise ValueError('invalid_native_option_budget')
+        self.max_option_frames, self.motion_sample_frames = max_option_frames, motion_sample_frames
+        self.inner = NativeSession(rom, out, ROOT / 'tools/re/session/build/gba-session', initial_state=initial_state, max_frames=max_option_frames)
         self.tokens = {}
 
     def hello(self):
         return {'schema_version': 1, 'adapter_version': VERSION,
             'session_id': self.inner.session_id, 'isolated': True,
             'game_id': 'sonic-metroid-signal-descent', 'game_version': self.inner.game_version,
-            'capabilities': ['observe', 'act', 'checkpoint', 'restore'], 'max_action_frames': 120,
+            'capabilities': ['observe', 'act', 'checkpoint', 'restore'], 'max_action_frames': self.max_option_frames,
             'source_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             'native_sha256': self.inner.binary_sha256, 'emulator': self.inner.emulator,
             'scenario': 'Bounded original native campaign traversal; explicit scripted checkpoint setup; no full campaign completion claim'}
@@ -94,24 +97,48 @@ class SonicTraversalAdapter:
         observation['phase'] = 'native_factory2_traversal' if facts['stage'] == 3 else 'native_campaign_traversal'
         observation['evidence']['decoder'] = VERSION
         self.last_observation = copy.deepcopy(observation)
+        watches = [{'name': 'stage', 'address': 0x0300514c, 'bytes': 1, 'mask': 255},
+                   {'name': 'attachment', 'address': 0x03005a30, 'bytes': 4, 'mask': 0x400008}]
+        if state is not None:
+            for name, offset, width in [('state_identity',0,4),('upgrades',8,4),('visited',12,4),
+                ('energy',24,2),('deaths',58,2),('gates_opened',52,2),('relics_collected',54,2),('active',185,1)]:
+                watches.append({'name': name, 'address': state+offset, 'bytes': width, 'mask': (1 << (width*8))-1})
+        # Extended options require discovered source state, never a guessed address.
+        self.inner.configure_watches(watches)
+        self.option_source_ready = state is not None
+        observation['evidence']['native_watch'] = {'sampling': 'every emulated frame; stop on first changed masked source word',
+            'boundaries': [w['name'] for w in watches], 'motion_sample_frames': self.motion_sample_frames}
+
         return observation
 
     def act(self, action, max_frames):
-        # Profile jump actions mean a fresh A press, followed by held jump.
-        # Sample its release within the selected frame budget; retain direction
-        # and aim. B remains held so the source charge/release lifecycle works.
         frames, keys = action.get('frames'), action.get('keys', [])
-        if 'A' in keys and type(frames) is int and 1 < frames <= min(max_frames, 120):
-            first = self.inner.act(dict(action, keys=[key for key in keys if key != 'A'], frames=1), max_frames)
-            second = self.inner.act(dict(action, frames=frames-1), max_frames-first['frames'])
-            result = {'frames': first['frames']+second['frames'], 'sampled_A_release_frames': 1}
-        else:
-            result = self.inner.act(action, max_frames)
+        if type(frames) is not int or not 1 <= frames <= min(max_frames, self.max_option_frames):
+            raise ValueError('invalid_native_option_frames')
+        if frames > 120 and not getattr(self, 'option_source_ready', False):
+            raise ValueError('extended_option_source_state_unavailable')
+        spent, reason, release = 0, None, 0
+        previous = self.inner.read_memory(0x03005a20, 8)
+        # A fresh press edge precedes held jump; B remains held for charge/release.
+        if 'A' in keys and frames > 1:
+            receipt = self.inner.act(dict(action, keys=[key for key in keys if key != 'A'], frames=1), max_frames)
+            spent += receipt['frames']; release = 1
+            reason = receipt.get('decision_boundary') or ('source_boundary' if receipt.get('source_breakpoint') else None)
+        while spent < frames and reason is None:
+            count = min(self.motion_sample_frames, frames-spent)
+            receipt = self.inner.act(dict(action, frames=count), max_frames-spent)
+            spent += receipt['frames']
+            reason = receipt.get('decision_boundary') or ('source_boundary' if receipt.get('source_breakpoint') else None)
+            current = self.inner.read_memory(0x03005a20, 8)
+            if reason is None and current == previous and count == self.motion_sample_frames:
+                reason = 'position_unchanged_at_periodic_sample'
+            previous = current
         self.restored_observation = None
-        return result
+        return {'frames': spent, 'sampled_A_release_frames': release, 'decision_boundary': reason or 'bounded_option_timeout',
+                'source_watch_sampling': 'every emulated frame', 'motion_sample_frames': self.motion_sample_frames}
 
     def checkpoint(self):
-        if len(self.tokens) >= 64:
+        if len(self.tokens) >= 31:
             raise ValueError('checkpoint_limit')
         observation = self.observe()
         index = len(self.tokens) + 1

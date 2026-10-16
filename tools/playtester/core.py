@@ -122,6 +122,7 @@ class Playtester:
         self.system2_plan = None
         self.safe_wait_callback = None
         self.continue_action_id = None
+        self.model_wall_s = {'system1': 0., 'system2': 0.}
         self.decisions = self.escalations = self.frames = self.steps = 0
         self.awareness = profile.get("awareness", {"perspective": "unknown", "locomotion": "unknown"})
         self.run_id = uuid.uuid4().hex
@@ -173,7 +174,9 @@ class Playtester:
             request_context = dict(context, escalation_reason=reason)
             if repair:
                 request_context["invalid_response_repair"] = repair
+            model_started = time.monotonic()
             result = self.system2.choose(request_context, options, self._timeout())
+            self.model_wall_s['system2'] += time.monotonic() - model_started
             self._event({"event": "system2", "step": self.steps, "reason": reason,
                          "repair_attempt": attempt, "result": result})
             error = result.get("record", {}).get("error")
@@ -270,7 +273,10 @@ class Playtester:
                     else:
                         if self.policy.requires_model:
                             self.decisions += 1
+                        model_started = time.monotonic()
                         result = self.policy.choose(context, candidates, self._timeout())
+                        if self.policy.requires_model:
+                            self.model_wall_s['system1'] += time.monotonic() - model_started
                     self._event({"event": "decision", "step": self.steps, "result": result})
                     if result.get("awareness"):
                         self.awareness = result["awareness"]
@@ -346,7 +352,9 @@ class Playtester:
                   "states_observed": len(self.states), "transitions": self.transitions,
                   "barrier_candidates": self.barriers,
                   "timing": {"total_wall_s": round(elapsed, 6), "observation_wall_s": round(observe_s, 6),
-                             "action_wall_s": round(action_s, 6), "policy_wall_s": round(policy_s, 6),
+                             "action_wall_s": round(action_s, 6), "model_wall_s": self.model_wall_s,
+                             "frames_per_action": self.frames/self.steps if self.steps else None,
+                             "frames_per_model_call": self.frames/(self.decisions+self.escalations) if self.decisions+self.escalations else None, "policy_wall_s": round(policy_s, 6),
                              "deadline_overshoot_s": round(max(0., elapsed - self.limits.max_seconds), 6),
                              "queue_s": None, "build_s": None},
                   "timing_note": "Stages are nested in total; policy includes model/network/queue. Deadline checked between operations; socket/adapter timeouts bound individual operations.",

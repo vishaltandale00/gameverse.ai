@@ -100,3 +100,39 @@ ffmpeg installation. It records no audio and removes temporary raw frames only
 after successful encoding. Explicitly stop recording to obtain its MP4 metadata.
 See `tools/gba_playtest/README.md` for the bounded source-aware episode runner,
 retained baseline failures and actual compiled-candidate screenshots/video.
+
+## Bounded native options and source boundaries
+
+The direct Python session API supports `configure_watches([{name,address,bytes,mask}])`
+for up to 32 read-only RAM fields (1, 2 or 4 bytes). Only version-pinned game adapters
+choose these addresses. C samples every watched field after every emulated frame
+and ends the selected action at the first changed masked value, including a
+change on its final requested frame. This is a frame-boundary observation, not
+an instruction-level trace; changes that occur and revert within one frame are
+outside this guarantee. Existing callback/export breakpoints remain active.
+
+Sonic's adapter additionally accepts `max_option_frames` (default 120, bounded 3600)
+and `motion_sample_frames` (default 120, at most 120). Extended options require
+currently discovered task-owned source state. Stage, equipment, health, deaths,
+gates, relics, active state and attachment changes return control to the existing
+S1/confidence-to-S2 decision path. Unchanged position at a periodic motion sample
+also ends the option. No model decision is inferred from a cached confidence.
+A fresh A release remains inside the selected budget; B retains its source
+charge/release behavior. Profiles and configured limits must explicitly offer
+longer options; defaults remain short.
+
+`python3 -B -m tools.playtester.benchmark_native_options --help` exposes an opt-in,
+no-model paired replay benchmark. It uses an explicit baseline Git ref, private
+ROM/state, a fresh private output directory, at most 3600 frames and three paired
+repetitions. It adds no CI stage or dependency. Its source-watch/frame checks and
+synthetic integrity tests cost under one second locally. The retained
+[paired receipt](../../../verification/native-option-throughput-20261016.json)
+compares identical held RIGHT inputs and exact end pixels/progress. The warm pair
+reduced total wall from 0.164217s to 0.131485s; observation work fell 0.040554s to
+0.007819s while action work remained 0.088597s versus 0.088548s. These are replay
+measurements with zero model calls, not campaign or end-to-end model speed.
+Command timings include native execution and IPC; PNG/read timings overlap
+observations and must not be added again to parent totals. Model, queue and
+build timings are unavailable for the replay; actual experiment reports now
+separate S1/S2 wall, frames per action/call and playtest end-to-end speed from
+native action speed.

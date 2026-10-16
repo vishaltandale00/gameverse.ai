@@ -39,6 +39,8 @@ class NativeSession:
         self.max_frames, self.timeout = max_frames, timeout
         self.frame, self.sequence, self.checkpoints = 0, 0, {}
         self.native_counter = 0
+        self.watches = []
+        self.metrics = {'command_count': {}, 'command_wall_s': {}, 'png_wall_s': 0., 'rgba_read_wall_s': 0.}
         self.memory_profile = None
         if memory_profile:
             profile = json.loads(Path(memory_profile).read_text())
@@ -116,18 +118,28 @@ class NativeSession:
         return line[3:].decode().strip()
 
     def _command(self, text):
-        self.process.stdin.write((text + '\n').encode())
-        self.process.stdin.flush()
-        return self._read()
+        started = time.monotonic()
+        try:
+            self.process.stdin.write((text + '\n').encode())
+            self.process.stdin.flush()
+            return self._read()
+        finally:
+            operation = text.split()[0]
+            self.metrics['command_count'][operation] = self.metrics['command_count'].get(operation, 0) + 1
+            self.metrics['command_wall_s'][operation] = self.metrics['command_wall_s'].get(operation, 0.) + time.monotonic() - started
 
     def observe(self):
         self._command('frame')
+        started = time.monotonic()
         raw = (self.out / 'frame.rgba').read_bytes()
+        self.metrics['rgba_read_wall_s'] += time.monotonic() - started
         if len(raw) != 240 * 160 * 4:
             raise ValueError('invalid_frame')
         self.sequence += 1
         target = self.out / ('observation-%06d.png' % self.sequence)
+        started = time.monotonic()
         target.write_bytes(png(raw))
+        self.metrics['png_wall_s'] += time.monotonic() - started
         # Quantized 30x20 screen sample. Animation can still cause false novelty.
         coarse = bytes((raw[(y * 240 + x) * 4 + c] // 32)
                        for y in range(4, 160, 8) for x in range(4, 240, 8) for c in range(3))
@@ -232,6 +244,27 @@ class NativeSession:
             raw.unlink()
         return report
 
+    def configure_watches(self, watches):
+        """Version-pinned adapter supplies named read-only source boundaries."""
+        if not isinstance(watches, list) or len(watches) > 32:
+            raise ValueError('invalid_source_watches')
+        for watch in watches:
+            address, width, mask = watch.get('address'), watch.get('bytes'), watch.get('mask')
+            if (type(address) is not int or width not in (1, 2, 4) or type(mask) is not int or
+                not 0 < mask < 1 << (width * 8) or not isinstance(watch.get('name'), str) or
+                not any(base <= address <= end - width for base, end in
+                        ((0x02000000, 0x02040000), (0x03000000, 0x03008000)))):
+                raise ValueError('invalid_source_watch')
+        self._command('unwatch')
+        for watch in watches:
+            self._command('watch %d %d %d' % (watch['address'], watch['bytes'], watch['mask']))
+        self.watches = copy.deepcopy(watches)
+
+    def _step(self, mask, frames):
+        response = self._command('%s %d %d' % ('stepw' if self.watches else 'step', mask, frames)).split()
+        hit = int(response[1]) if self.watches else -1
+        return int(response[0]), (self.watches[hit]['name'] if hit >= 0 else None)
+
     def act(self, action, limit):
         frames, keys = action.get('frames'), action.get('keys', [])
         if (type(frames) is not int or not 1 <= frames <= min(limit, self.max_frames)
@@ -244,15 +277,16 @@ class NativeSession:
         # consecutive model taps are distinct GBA newKeys events. The release
         # stays inside the requested frame budget. Export breakpoint wins.
         press_frames = frames - 1 if (self.mailbox_profile or self.callback_profile) and keys and frames > 1 else frames
-        counter = int(self._command('step %d %d' % (mask, press_frames)))
-        if press_frames < frames and counter - self.native_counter == press_frames:
-            counter = int(self._command('step 0 1'))
+        counter, boundary = self._step(mask, press_frames)
+        if not boundary and press_frames < frames and counter - self.native_counter == press_frames:
+            counter, boundary = self._step(0, 1)
         advanced = counter - self.native_counter
         if not 0 < advanced <= frames:
             raise ValueError('invalid_native_frame_receipt')
         self.native_counter = counter
         self.frame += advanced
-        return {'frames': advanced, 'source_breakpoint': advanced < frames}
+        return {'frames': advanced, 'source_breakpoint': advanced < frames or boundary is not None,
+                'decision_boundary': boundary}
 
     def close(self):
         process = getattr(self, 'process', None)

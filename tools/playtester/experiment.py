@@ -71,6 +71,8 @@ def experiment_native_candidate(artifact, context):
     rom=Path(artifact['path']).resolve()
     if sha(rom)!=artifact['sha256']:raise ValueError('experiment_candidate_hash_mismatch')
     profile_path=checked(config['profile']);memory_path=checked(config['memory_profile']);recipe_path=checked(config['fixture_recipe'])
+    scenario_path=checked(config['scenario_ref']) if config.get('scenario_ref') else None
+    scenario=json.loads(scenario_path.read_text()) if scenario_path else None
     profile=json.loads(profile_path.read_text());memory=json.loads(memory_path.read_text());recipe=json.loads(recipe_path.read_text())
     adapter_id=config.get('adapter_id','aria-readonly-reward-fragment/1')
     if adapter_id not in ('aria-readonly-reward-fragment/1','sonic-native-traversal/1'):raise ValueError('unsupported_experiment_adapter')
@@ -94,10 +96,13 @@ def experiment_native_candidate(artifact, context):
         for name in ('system1','system2'):
             for key in ('provider','model'):
                 if declared[name][key]!=model_binding[name][key]:raise ValueError('experiment_model_identity_mismatch')
-    runtime={'model_binding':model_binding,'native_sha256':sha(binary),'bridge_sha256':sha(ROOT/'tools/re/session/bridge.py'),
+    runtime={'model_binding':model_binding,'native_option':config.get('native_option',{}),'native_sha256':sha(binary),'bridge_sha256':sha(ROOT/'tools/re/session/bridge.py'),
         'adapter_sha256':sha(ROOT/('tools/playtester/sonic_adapter.py' if adapter_id=='sonic-native-traversal/1' else 'tools/playtester/aria_adapter.py')),
         'core_sha256':sha(ROOT/'tools/playtester/core.py'),'policy_sha256':sha(ROOT/'tools/playtester/models.py'),
         'experiment_sha256':sha(Path(__file__))}
+    if scenario is not None:
+        runtime['scenario_ref']=pin(scenario_path)
+        runtime['scenario_adapter_sha256']=sha(ROOT/'tools/playtester/scenario.py')
     prior=getattr(context,'checkpoint',None)
     if prior and prior.get('runtime_identity')!=runtime:raise ValueError('experiment_checkpoint_runtime_mismatch')
     if prior and (prior.get('profile_sha256')!=digest(profile) or prior.get('observation_profile_sha256')!=digest(memory)):
@@ -147,12 +152,15 @@ def experiment_native_candidate(artifact, context):
     if calls<1 or frames<1 or seconds<=0:return {'native':True,'success':False,'reason':'experiment_resource_budget','usage':{'model_calls':0,'native_frames':setup_frames,'cost_usd':None},'decisions':[],'evidence':[pin(fixture_path)]}
     limits=Limits(max_steps=config.get('max_steps',40),max_model_calls=calls,max_decisions=calls,max_escalations=None,
                   max_frames=frames,max_seconds=seconds,model_timeout_s=min(config.get('model_timeout',10),seconds),
+                  max_action_frames=config.get('native_option',{}).get('max_frames',120),
                   stationary_min_frames=60,confidence_threshold=config.get('confidence',.65),margin_threshold=config.get('margin',.20))
     confidence,margin=limits.confidence_threshold,limits.margin_threshold
     policy=DecisionPolicy(s1_config,confidence=confidence,margin=margin)
     if adapter_id=='sonic-native-traversal/1':
         from .sonic_adapter import SonicTraversalAdapter
-        adapter=SonicTraversalAdapter(rom,out/'native-session',state)
+        adapter=SonicTraversalAdapter(rom,out/'native-session',state,
+            max_option_frames=config.get('native_option',{}).get('max_frames',120),
+            motion_sample_frames=config.get('native_option',{}).get('motion_sample_frames',120))
     else:
         adapter=AriaRewardAdapter([sys.executable,'-B',str(ROOT/'tools/re/session/bridge.py'),'--rom',str(rom),
             '--game-id',profile['game_id'],'--out',str(out/'native-session'),'--initial-state',str(state),
@@ -161,6 +169,9 @@ def experiment_native_candidate(artifact, context):
     if adapter_id=='aria-readonly-reward-fragment/1' and prior and prior.get('scenario_state'):
         old=prior['scenario_state'];adapter.initial_xp=old.get('initial_xp');adapter.initial_inventory=old.get('initial_inventory')
         adapter.reward_frame=1 if old.get('reward_frame') is not None else None;adapter.objective_witness=old.get('objective_witness');adapter.native_events=old.get('native_events',[]);adapter.bone_seen=set(old.get('bone_seen',[]))
+    if scenario is not None:
+        from .scenario import ScenarioAdapter
+        adapter=ScenarioAdapter(adapter,scenario,prior.get('scenario_state') if prior else None)
     try:
         meta=adapter.hello()
         if prior and (prior.get('adapter_version')!=meta['adapter_version'] or prior.get('environment_version')!=meta['emulator']['name']+'/'+meta['emulator']['version']):
@@ -197,11 +208,21 @@ def experiment_native_candidate(artifact, context):
             result['diagnosis'].update(native_events=adapter.native_events,source_target={'kind':'skeleton_birth_impulse',
                 'target_abs_velocity_q16':adapter.target_abs_velocity_q16,'events_observed':len(adapter.native_events),
                 'predicate_satisfied':bool(adapter.objective_witness)})
+        native_session=getattr(adapter,'inner',None)
+        if hasattr(native_session,'metrics'):
+            result['timing']['native_session_metrics']=native_session.metrics
+            result['timing']['native_metrics_accounting']='Command wall includes IPC and emulation; png and rgba reads overlap observation. Not additive with parent stages.'
         action_wall=report['timing']['action_wall_s'];nominal=meta['emulator']['frequency_hz']/meta['emulator']['frame_cycles']
         result['timing'].update(native_unthrottled=True,simulated_action_seconds=report['frames']/nominal,
             native_step_fps=(report['frames']/action_wall if action_wall else None),native_nominal_fps=nominal,
+            action_only_speed_ratio=(report['frames']/nominal/action_wall if action_wall else None),
+            playtest_end_to_end_speed_ratio=(report['frames']/nominal/report['timing']['total_wall_s'] if report['timing']['total_wall_s'] else None),
             resume_render_integration_frames=1,precomputed_setup_not_double_counted=bool(fixture.get('setup_precomputed')))
-        if result['success']:
+        if result['success'] and scenario is not None:
+            result['objective_witness']={'source':'native-observation','artifact_sha256':artifact['sha256'],
+                'observed_predicate':adapter.objective_witness['observed_predicate'],
+                'evidence':[pin(out/'playtest/events.jsonl')], 'facts':adapter.objective_witness}
+        elif result['success']:
             predicates={'soul_acquisition':'Native soul inventory acquired an unowned entry, then game advanced',
                 'reward':'Native XP increased by at least2 and game advanced',
                 'skeleton_birth_impulse':'Source native initialized Skeleton birth observed with player horizontal impulse meeting configured threshold'}
