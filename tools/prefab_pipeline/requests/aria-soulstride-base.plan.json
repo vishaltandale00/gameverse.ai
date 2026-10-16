@@ -1,0 +1,331 @@
+{
+  "ir_version": "0.1",
+  "kind": "composition_plan",
+  "id": "aria-soulstride-resource-base",
+  "target": {
+    "platform": "gba",
+    "foundation_game": "castlevania-aria-of-sorrow",
+    "preserve_campaign": true,
+    "requested_rom_sha1": "abd71fe01ebb201bcc133074db1dd8c5253776c7",
+    "authoritative_origin": "self_decompilation"
+  },
+  "execution": {
+    "clock": "native_enemy_defeat",
+    "modes": [
+      "native"
+    ],
+    "phases": [
+      "control",
+      "effect",
+      "defeat",
+      "acquire"
+    ],
+    "transitions": []
+  },
+  "states": [
+    {
+      "id": "enemy_reward",
+      "type": {
+        "scalar": "native_actor_reward",
+        "quantity": "reward_once_flag",
+        "unit": "boolean_bit",
+        "frame": "enemy_local"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "progression",
+      "type": {
+        "scalar": "GvAosRewardState.v1",
+        "quantity": "XP_bestiary_and_drop_discovery",
+        "unit": "XP_points_and_species_bitsets",
+        "frame": "campaign"
+      },
+      "lifetime": "campaign"
+    },
+    {
+      "id": "cast_actor",
+      "type": {
+        "scalar": "native_actor",
+        "quantity": "cast_actor",
+        "unit": "native_state_fields_and_handles",
+        "frame": "aria_native_world"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "bone_actor",
+      "type": {
+        "scalar": "native_actor",
+        "quantity": "bone_actor",
+        "unit": "native_state_fields_and_handles",
+        "frame": "aria_native_world"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "effect_ownership",
+      "type": {
+        "scalar": "native_cast_ownership",
+        "quantity": "effect_ownership",
+        "unit": "native_state_fields_and_handles",
+        "frame": "aria_native_world"
+      },
+      "lifetime": "session"
+    },
+    {
+      "id": "pickup_actor",
+      "type": {
+        "scalar": "native_actor",
+        "quantity": "pickup_motion_lifetime_and_collection_flags",
+        "unit": "native_Q16_motion_and_timers",
+        "frame": "aria_world"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "inventory_progress",
+      "type": {
+        "scalar": "native_inventory_campaign_record",
+        "quantity": "soul_item_currency_and_persistence",
+        "unit": "nibble_counts_item_counts_and_flags",
+        "frame": "campaign"
+      },
+      "lifetime": "campaign"
+    }
+  ],
+  "components": [
+    {
+      "id": "reward",
+      "provides": [
+        "enemy.reward@1"
+      ],
+      "requires": [],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "enemy_reward",
+          "phase": "defeat",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "progression",
+          "phase": "defeat",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/deep-extraction/castlevania/defeat-qualification.json"
+      }
+    },
+    {
+      "id": "ability",
+      "provides": [
+        "ability.bone@1"
+      ],
+      "requires": [],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "cast_actor",
+          "phase": "control",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "effect_ownership",
+          "phase": "control",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "bone_actor",
+          "phase": "effect",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "effect_ownership",
+          "phase": "effect",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "progression",
+          "phase": "control",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "cast_actor",
+          "phase": "effect",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/deep-extraction/castlevania/ability-qualification.json"
+      }
+    },
+    {
+      "id": "acquisition",
+      "provides": [
+        "reward.acquisition@1"
+      ],
+      "requires": [],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "pickup_actor",
+          "phase": "acquire",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "inventory_progress",
+          "phase": "acquire",
+          "modes": [
+            "native"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/deep-extraction/castlevania/acquisition-qualification.json"
+      }
+    }
+  ],
+  "bindings": [],
+  "transforms": [],
+  "route_obligations": [],
+  "obligations": [
+    {
+      "id": "campaign-qualification",
+      "detail": "Candidate subsystem; verify actual combat/pickup/campaign routes before user-facing registration"
+    }
+  ],
+  "native_build": {
+    "version": "gba-component-native/1",
+    "host": {
+      "ref": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "sha256": "4ac11905f4f3fb5bfcf5e1702f7b110bc83ba18ba30c291ef87d66d11d21ea64"
+    },
+    "packages": [
+      {
+        "instance": "reward",
+        "package": {
+          "ref": "research/deep-extraction/castlevania/defeat.package.json",
+          "sha256": "40aa98bf837ef2845fba93dfc69dcffbe4d2238ddd6efc298fcba6676a450777"
+        }
+      },
+      {
+        "instance": "ability",
+        "package": {
+          "ref": "research/deep-extraction/castlevania/ability.package.json",
+          "sha256": "414eb681fbe1065e8cb0ef008bb127647e8b20aebc5ba311b099db33701d314c"
+        }
+      },
+      {
+        "instance": "acquisition",
+        "package": {
+          "ref": "research/deep-extraction/castlevania/acquisition.package.json",
+          "sha256": "d23346be9f3e998e6b3039e3b576de5c2e4a144dde64d4b977cd7eaf5cafa860"
+        }
+      }
+    ],
+    "hooks": [
+      {
+        "host_hook": "enemy_defeat",
+        "instance": "reward",
+        "symbol": "gv_aos_defeat_native",
+        "args": [
+          {
+            "arg": 0
+          },
+          {
+            "constant": 1
+          }
+        ]
+      },
+      {
+        "host_hook": "cast",
+        "instance": "ability",
+        "symbol": "gv_aos_cast_native",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      },
+      {
+        "host_hook": "bone",
+        "instance": "ability",
+        "symbol": "gv_aos_bone_step",
+        "args": [
+          {
+            "arg": 0
+          },
+          {
+            "constant": 32
+          }
+        ]
+      },
+      {
+        "host_hook": "bone_partner",
+        "instance": "ability",
+        "symbol": "gv_aos_bone_partner",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      },
+      {
+        "host_hook": "pickup_collect",
+        "instance": "acquisition",
+        "symbol": "gv_aos_pickup_collect",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      },
+      {
+        "host_hook": "soul_pickup",
+        "instance": "acquisition",
+        "symbol": "gv_aos_soul_pickup_tick",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      }
+    ],
+    "max_payload_bytes": 16384,
+    "timeout_s": 20,
+    "max_build_s": 60
+  }
+}

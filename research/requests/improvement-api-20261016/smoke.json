@@ -1,0 +1,217 @@
+{
+  "schema": "gameverse.improvement-api-smoke/1",
+  "transport": "Direct service methods; sandbox local listening unavailable (EPERM)",
+  "host_context": "Synthetic host base digest for API contract only; actual source commit/toolchain/baseline in native backend receipts",
+  "runs": [
+    {
+      "request_id": "f8c9c4a7-4de4-47a7-8071-4ee831b23388",
+      "recipe": "aria-soulstride",
+      "status": "completed",
+      "error": null,
+      "timings": {
+        "queue_s": null,
+        "execution_wall_s": 0.3889555,
+        "build_s": 0.293429,
+        "simulation_s": null,
+        "evaluation_s": null,
+        "accounting": "Backend stages are nested in worker execution; queue unavailable (direct dispatch).",
+        "backend_total_s": 0.346847
+      },
+      "artifact_sha256": "6f52161e9826a16f2f063e452d6b63ef554d4efcce867eece0be418b401b86c8",
+      "quality": {
+        "scope": "build-only",
+        "coverage": null,
+        "witnesses": null,
+        "gaps": [],
+        "reconstruction_qc": "unavailable",
+        "whole_game_equivalent": null,
+        "save_compatibility": "unverified"
+      },
+      "result_path": "local-data/improvement-runs/f8c9c4a7-4de4-47a7-8071-4ee831b23388/result.json",
+      "context": {
+        "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+        "environment": "macOS-27.0.1-arm64-arm-64bit",
+        "build_mode": "clean native payload; existing compiler/toolchain; no dependency setup",
+        "limits": {
+          "max_build_s": 60,
+          "max_payload_bytes": 16384,
+          "subprocess_s": 20
+        },
+        "request_sha256": "16e033684258463939ce8a4b3a8f1f7c0a6164a58d1c823f206b780a150a0718",
+        "frontend_sha256": "ad8306b6fac94959e0573062d40ab9bab8aab1020cf51104ac861e01ee2e9fbf"
+      },
+      "input_pins": {
+        "intent": "Winged Skeleton Soulstride: successful native bone birth lunges the player and transfers momentum into combat; moving defeats restore MP and request real first souls; persistent native owned souls strengthen future lunges.",
+        "limits": {
+          "max_build_s": 60,
+          "max_payload_bytes": 16384,
+          "subprocess_s": 20
+        },
+        "plan": {
+          "path": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+          "sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef"
+        },
+        "request_id": "f8c9c4a7-4de4-47a7-8071-4ee831b23388",
+        "rom": {
+          "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+          "sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5"
+        },
+        "schema": "native-prefab-mod-request/1",
+        "strategy_lowering": {
+          "backend": "connected-strategy/1",
+          "lowerer": {
+            "path": "tools/prefab_pipeline/momentum_strategy.py",
+            "sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a"
+          },
+          "strategy": {
+            "path": "research/deep-extraction/castlevania/soulstride-strategy.json",
+            "sha256": "c564b1642712c23ac3b1075ab4d66a2d2755ed0269a33f44af4a66129cb6ed3f"
+          }
+        }
+      },
+      "stages": [
+        {
+          "name": "admit",
+          "outcome": "passed",
+          "wall_s": 0.003628
+        },
+        {
+          "name": "strategy-lowering",
+          "outcome": "passed",
+          "wall_s": 0.023573
+        },
+        {
+          "name": "merge-strategy",
+          "outcome": "passed",
+          "wall_s": 0.004981
+        },
+        {
+          "name": "prepare",
+          "outcome": "passed",
+          "wall_s": 0.003413
+        },
+        {
+          "name": "build",
+          "outcome": "passed",
+          "wall_s": 0.293429
+        }
+      ],
+      "adapter_revision_note": "Smoke ran before expansion of recorded mechanism-file inventory and build-only gap wording; worker implementation and recipe pins unchanged."
+    },
+    {
+      "request_id": "b588b40f-cbf5-42ec-93c7-6e7a65c81d6d",
+      "recipe": "aria-double-xp",
+      "status": "completed",
+      "error": null,
+      "timings": {
+        "queue_s": null,
+        "execution_wall_s": 6.404337708,
+        "build_s": 0.28141099999999997,
+        "simulation_s": 5.717522000000001,
+        "evaluation_s": 0.32108099999999995,
+        "accounting": "Backend stages are nested in worker execution; queue unavailable (direct dispatch).",
+        "backend_total_s": 6.355663
+      },
+      "artifact_sha256": "6f42b0b50c42df23518feb897a12beba5319736bece29c8f79fa3f0c9f5366ac",
+      "quality": {
+        "scope": "bounded-native-corridor",
+        "coverage": "Recovered defeat reward transaction; retained native services; 6400-frame early corridor",
+        "witnesses": {
+          "modified_xp": 2,
+          "original_parity_trace_equal": true,
+          "original_parity_video_equal": true,
+          "original_xp": 1,
+          "parity_xp": 1
+        },
+        "gaps": [
+          "Full campaign/routes untested",
+          "Not whole-game IR recovery",
+          "No FireRed/Emerald mashup",
+          "Level growth, pickups and RNG retain original native services"
+        ],
+        "reconstruction_qc": "unavailable",
+        "whole_game_equivalent": null,
+        "save_compatibility": "unverified"
+      },
+      "result_path": "local-data/improvement-runs/b588b40f-cbf5-42ec-93c7-6e7a65c81d6d/result.json",
+      "context": {
+        "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+        "environment": "macOS-27.0.1-arm64-arm-64bit",
+        "build_mode": "clean native payload, no dependency setup/cache",
+        "limits": {
+          "cartridges": 3,
+          "frames_per_cartridge": 6400,
+          "subprocess_s": 30,
+          "vectors": 14720
+        },
+        "request_sha256": null,
+        "frontend_sha256": "2d53bdfc3c828fc5dfa1eb6445846e148f96d7084accee7094be0f25d08aaada"
+      },
+      "input_pins": {
+        "intent": "Double actual enemy defeat XP in the complete original Aria cartridge using its recovered reward prefab",
+        "modification": {
+          "behavior": "defeat_rewards",
+          "parameter": "xp_scale",
+          "value": 2
+        },
+        "package": {
+          "path": "research/deep-extraction/castlevania/defeat.package.json",
+          "sha256": "40aa98bf837ef2845fba93dfc69dcffbe4d2238ddd6efc298fcba6676a450777"
+        },
+        "plan": {
+          "path": "research/deep-extraction/castlevania/defeat-parity.plan.json",
+          "sha256": "7ff21f6104d7ba6756bb1e262a7ffd3caf4c11c3c4fa961ffb483a2f21beb66b"
+        },
+        "prefab_id": "castlevania.aria.enemy_defeat_rewards",
+        "qualification": {
+          "path": "research/deep-extraction/castlevania/defeat-qualification.json",
+          "sha256": "6c6785b69fdc883f3b373aaa23e1f847adb1899c54c0ac59cc7bd579057780f5"
+        },
+        "request_id": "b588b40f-cbf5-42ec-93c7-6e7a65c81d6d",
+        "rom": {
+          "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+          "sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5"
+        },
+        "schema": "prefab-mod-request/1"
+      },
+      "stages": [
+        {
+          "name": "build-parity",
+          "outcome": "passed",
+          "wall_s": 0.143214
+        },
+        {
+          "name": "build-modified",
+          "outcome": "passed",
+          "wall_s": 0.138197
+        },
+        {
+          "name": "compile-native-oracle",
+          "outcome": "passed",
+          "wall_s": 0.061997
+        },
+        {
+          "name": "instruction-differential",
+          "outcome": "passed",
+          "wall_s": 0.259084
+        },
+        {
+          "name": "native-play-original",
+          "outcome": "passed",
+          "wall_s": 1.9145
+        },
+        {
+          "name": "native-play-parity",
+          "outcome": "passed",
+          "wall_s": 1.893002
+        },
+        {
+          "name": "native-play-modified",
+          "outcome": "passed",
+          "wall_s": 1.91002
+        }
+      ],
+      "adapter_revision_note": "Smoke ran before expansion of recorded mechanism-file inventory and build-only gap wording; worker implementation and recipe pins unchanged."
+    }
+  ]
+}

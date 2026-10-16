@@ -1,0 +1,1684 @@
+{
+  "closure": {
+    "complete": true,
+    "gaps": [],
+    "method": "recursive JSON pins/source_pins, selected Python imports, quoted C includes, explicit reviewed hardcoded lowerer inputs; shared composition.resolve reused",
+    "provenance_warnings": [
+      {
+        "claimed_sha256": "c18f3827c70299c1d23781fd4aa6cc70282c952d8946f17af0ec50821d93baa1",
+        "code": "historical-plan-claim-not-runtime-input",
+        "detail": "Retained claim is not repinned or imported as current qualification; fresh runtime proof remains mandatory.",
+        "origin": "research/deep-extraction/castlevania/defeat-qualification.json:runtime-source-pins",
+        "path": "research/deep-extraction/castlevania/defeat-parity.plan.json",
+        "recipe": "aria-double-xp"
+      },
+      {
+        "claimed_sha256": "3cb3e33ac0f76baadc1fe6f00fe8cd2a6062725dde8a16938785b60b76a5f926",
+        "code": "historical-plan-claim-not-runtime-input",
+        "detail": "Retained claim is not repinned or imported as current qualification; fresh runtime proof remains mandatory.",
+        "origin": "research/deep-extraction/castlevania/defeat-qualification.json:runtime-source-pins",
+        "path": "research/deep-extraction/castlevania/defeat-double-xp.plan.json",
+        "recipe": "aria-double-xp"
+      }
+    ],
+    "unverified": [
+      "No compiler/native/model run was performed",
+      "Dynamic Python file accesses are not generally statically provable",
+      "Soulstride bounded QC needs an explicit portable experiment recipe",
+      "Recovered C/header redistribution provenance requires review",
+      "External assembly and ROM are metadata-only user-supplied inputs; never provider payload",
+      "Generated state-layout.h and lowered packages/IR outputs are build outputs, not provider inputs"
+    ]
+  },
+  "files": [
+    {
+      "bytes": 30469,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/aria-usa-soulstride.host.json"
+      ],
+      "path": "local/decomps/cvaos/include/structs/ewram.h",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "0b2da160c82e168e78acf275f281666c586b87d3183e2011321e56ce652b5549",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 50787,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/aria-usa-soulstride.host.json"
+      ],
+      "path": "local/decomps/cvaos/src/code_08033CAC.c",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "70974dba4bb5bc2e723ca8eff4e07a1f52e2b80cd53cc0782168e06f8479108e",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 428,
+      "kind": "source-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/aria-usa-soulstride.host.json"
+      ],
+      "path": "local/prefab-mods/soma-cast-pc-witness-003/report.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "7d3d2a1dde713effd072c0048c1872290b4b27c4d7c20f3bda874306ae04523d",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 8388608,
+      "kind": "local-rom",
+      "origins": [
+        "tools/prefab_pipeline/requests/aria-double-xp.json",
+        "tools/prefab_pipeline/requests/aria-soulstride.json"
+      ],
+      "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 17581,
+      "kind": "source-evidence",
+      "origins": [
+        "reviewed-hardcoded-lowerer-or-validator-input",
+        "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json"
+      ],
+      "path": "research/deep-extraction/castlevania/ability.package.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "414eb681fbe1065e8cb0ef008bb127647e8b20aebc5ba311b099db33701d314c",
+      "stages": [
+        "build",
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 5282,
+      "kind": "source-evidence",
+      "origins": [
+        "reviewed-hardcoded-lowerer-or-validator-input"
+      ],
+      "path": "research/deep-extraction/castlevania/acquisition-qualification.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "f32b73e39a8f98990bf708a417036233399b65bd72b2d94eb30e658b862aa877",
+      "stages": [
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 13465,
+      "kind": "source-evidence",
+      "origins": [
+        "reviewed-hardcoded-lowerer-or-validator-input",
+        "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json"
+      ],
+      "path": "research/deep-extraction/castlevania/acquisition.package.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "d23346be9f3e998e6b3039e3b576de5c2e4a144dde64d4b977cd7eaf5cafa860",
+      "stages": [
+        "build",
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 9599,
+      "kind": "source-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/aria-usa-soulstride.host.json"
+      ],
+      "path": "research/deep-extraction/castlevania/aria-usa-acquisition.host.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "edf4bed15b7a9969d0608bd67a68f0c445e23302fd2ed68a8400991eacaf3db1",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 2611,
+      "kind": "source-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/defeat-parity.plan.json"
+      ],
+      "path": "research/deep-extraction/castlevania/aria-usa-rewards.host.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp"
+      ],
+      "sha256": "2a4d77b339d6d2269bf1b6e3bdc3fab7d015fd29025d809353cfca09df749a99",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 12641,
+      "kind": "source-evidence",
+      "origins": [
+        "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json"
+      ],
+      "path": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "4ac11905f4f3fb5bfcf5e1702f7b110bc83ba18ba30c291ef87d66d11d21ea64",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 4322,
+      "kind": "reconstructed-code",
+      "origins": [
+        "research/deep-extraction/castlevania/ability.package.json",
+        "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+        "reviewed-hardcoded-lowerer-or-validator-input"
+      ],
+      "path": "research/deep-extraction/castlevania/bone-policy.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "81fb1a139357cbc40b1cf9912d10c25551fb826ebe39bdd4f9edbd82dbcebcef",
+      "stages": [
+        "build",
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 2331,
+      "kind": "reconstructed-code",
+      "origins": [
+        "research/deep-extraction/castlevania/ability.package.json",
+        "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+        "reviewed-hardcoded-lowerer-or-validator-input"
+      ],
+      "path": "research/deep-extraction/castlevania/cast-host.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "a9402440f90667d2316eb531da630db6b200847a90cca8808b6f3616f0804639",
+      "stages": [
+        "build",
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 2172,
+      "kind": "reconstructed-code",
+      "origins": [
+        "research/deep-extraction/castlevania/ability.package.json",
+        "reviewed-hardcoded-lowerer-or-validator-input"
+      ],
+      "path": "research/deep-extraction/castlevania/cast-policy.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "2ce8a26f3b255c461ff81140d7bcc6b1364a37c27d0a4c393186d592e41f6c25",
+      "stages": [
+        "build",
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 2342,
+      "kind": "reconstructed-code",
+      "origins": [
+        "research/deep-extraction/castlevania/ability.package.json",
+        "research/deep-extraction/castlevania/cast-host.c:include",
+        "research/deep-extraction/castlevania/cast-policy.c:include",
+        "reviewed-hardcoded-lowerer-or-validator-input"
+      ],
+      "path": "research/deep-extraction/castlevania/cast-policy.h",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "17ea46fb18d09a4ae764f4f6957858f7a3a5488188aaa273ba6f87f32222c25c",
+      "stages": [
+        "build",
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 5081,
+      "kind": "reconstructed-code",
+      "origins": [
+        "research/deep-extraction/castlevania/defeat-qualification.json:runtime-source-pins",
+        "reviewed-hardcoded-lowerer-or-validator-input"
+      ],
+      "path": "research/deep-extraction/castlevania/defeat-differential.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "aria-double-xp"
+      ],
+      "sha256": "1fc56e94cbeece7aec072066436173d8f72acc9f7d4a8b280383cc89ecccdece",
+      "stages": [
+        "build",
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 2013,
+      "kind": "source-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/defeat-qualification.json:runtime-source-pins",
+        "reviewed-hardcoded-lowerer-or-validator-input"
+      ],
+      "path": "research/deep-extraction/castlevania/defeat-gameplay.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp"
+      ],
+      "sha256": "a69350e8436b30c8adb8a9d272c095c36e179d805e401b2fc78d22f343436699",
+      "stages": [
+        "build",
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 2818,
+      "kind": "reconstructed-code",
+      "origins": [
+        "research/deep-extraction/castlevania/defeat-qualification.json:runtime-source-pins",
+        "research/deep-extraction/castlevania/defeat.package.json",
+        "reviewed-hardcoded-lowerer-or-validator-input"
+      ],
+      "path": "research/deep-extraction/castlevania/defeat-host.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "a27d2fa878e38e97d7a7f886f5293d1cc4762c89f40fffe113e11ffccb1fad51",
+      "stages": [
+        "build",
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 2790,
+      "kind": "source-evidence",
+      "origins": [
+        "tools/prefab_pipeline/requests/aria-double-xp.json"
+      ],
+      "path": "research/deep-extraction/castlevania/defeat-parity.plan.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp"
+      ],
+      "sha256": "7ff21f6104d7ba6756bb1e262a7ffd3caf4c11c3c4fa961ffb483a2f21beb66b",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 2122,
+      "kind": "reconstructed-code",
+      "origins": [
+        "research/deep-extraction/castlevania/defeat-qualification.json:runtime-source-pins",
+        "research/deep-extraction/castlevania/defeat.package.json",
+        "reviewed-hardcoded-lowerer-or-validator-input"
+      ],
+      "path": "research/deep-extraction/castlevania/defeat-policy.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "7737885f3946a07f4faf46b98a77e4959fb628220d9f8b16d2741e1a6eb38ea8",
+      "stages": [
+        "build",
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 1387,
+      "kind": "reconstructed-code",
+      "origins": [
+        "research/deep-extraction/castlevania/defeat-host.c:include",
+        "research/deep-extraction/castlevania/defeat-policy.c:include",
+        "research/deep-extraction/castlevania/defeat-qualification.json:runtime-source-pins",
+        "research/deep-extraction/castlevania/defeat.package.json",
+        "reviewed-hardcoded-lowerer-or-validator-input"
+      ],
+      "path": "research/deep-extraction/castlevania/defeat-policy.h",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "c7d5b98e770e407919fc9757384567bb2e390e22e8ca76b46e4e7805debbf80e",
+      "stages": [
+        "build",
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 7683,
+      "kind": "source-evidence",
+      "origins": [
+        "tools/prefab_pipeline/requests/aria-double-xp.json"
+      ],
+      "path": "research/deep-extraction/castlevania/defeat-qualification.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp"
+      ],
+      "sha256": "6c6785b69fdc883f3b373aaa23e1f847adb1899c54c0ac59cc7bd579057780f5",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 11275,
+      "kind": "source-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/defeat-parity.plan.json",
+        "reviewed-hardcoded-lowerer-or-validator-input",
+        "tools/prefab_pipeline/requests/aria-double-xp.json",
+        "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json"
+      ],
+      "path": "research/deep-extraction/castlevania/defeat.package.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "40aa98bf837ef2845fba93dfc69dcffbe4d2238ddd6efc298fcba6676a450777",
+      "stages": [
+        "build",
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 38746,
+      "kind": "source-evidence",
+      "origins": [
+        "reviewed-hardcoded-lowerer-or-validator-input"
+      ],
+      "path": "research/deep-extraction/castlevania/enemy-reward-descriptors.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "c7e5a6917943824056e4e1ebd15bdc98e4f8e3e2bd57a6c73fc468b5fd3eaae4",
+      "stages": [
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 3716,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/movement-contact/source-evidence.json"
+      ],
+      "path": "research/deep-extraction/castlevania/movement-contact/backdash.asm.txt",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "bb254db53f4055e302cc516a4c110c12b8d31b50c502a5b55e14a1d375a406af",
+      "stages": [
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 13865,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/movement-contact/source-evidence.json"
+      ],
+      "path": "research/deep-extraction/castlevania/movement-contact/bone_lifecycle.asm.txt",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "03a3947fa0f57c8dce23eb536e362fb9e76748b125f966f6b593657a7430405c",
+      "stages": [
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 3997,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/movement-contact/source-evidence.json"
+      ],
+      "path": "research/deep-extraction/castlevania/movement-contact/cast_followers.asm.txt",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "bd372b4e9a8d9620602d3b6c1d4cad964585dffcc6db5d94b6bacbeaeccc39ef",
+      "stages": [
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 7277,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/movement-contact/source-evidence.json"
+      ],
+      "path": "research/deep-extraction/castlevania/movement-contact/cast_transaction.asm.txt",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "156706e515ef1b8fd570b07ec6d841810d878f7fd1ed1080265ce06c65a5960f",
+      "stages": [
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 690,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/movement-contact/source-evidence.json"
+      ],
+      "path": "research/deep-extraction/castlevania/movement-contact/jump_guard.asm.txt",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "c956212f01906f93872fb3f2835c99d3034c90cfbfeeaba370fc0f7079c50dbf",
+      "stages": [
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 411,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/movement-contact/source-evidence.json"
+      ],
+      "path": "research/deep-extraction/castlevania/movement-contact/native_player_dispatch.asm.txt",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "8ce1c423c7c0d515de5823d90f283036121abad089ceb80b559c4a79796dc2d0",
+      "stages": [
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 2889,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/movement-contact/source-evidence.json"
+      ],
+      "path": "research/deep-extraction/castlevania/movement-contact/player_integrate.asm.txt",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "10d242b20147e640110348d52bc2300cf3a5db1ea99e5142399e7b2db88a15c3",
+      "stages": [
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 1417,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/movement-contact/source-evidence.json"
+      ],
+      "path": "research/deep-extraction/castlevania/movement-contact/soma_cast_caller.asm.txt",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "953c90e760021e3955ddc2b226534289f593cba6ffb7047e51666f282a5fd487",
+      "stages": [
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 15295,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/movement-contact/source-evidence.json"
+      ],
+      "path": "research/deep-extraction/castlevania/movement-contact/soma_cast_transaction.asm.txt",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "3efea90d25fb9eaf5f3804283697f7d026e4cf60b4e622e5ace2a951020284ed",
+      "stages": [
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 3061,
+      "kind": "external-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/movement-contact/source-evidence.json"
+      ],
+      "path": "research/deep-extraction/castlevania/movement-contact/soma_player_integrate.asm.txt",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "feff7fc6512176ac641bb5d86b41f22d8dd6a668105de2756c372b468c3336d0",
+      "stages": [
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 6416,
+      "kind": "source-evidence",
+      "origins": [
+        "reviewed-hardcoded-lowerer-or-validator-input"
+      ],
+      "path": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "9204aadead4d957aef3c15ddda9ecf67f6db1122509f5ced8cdac0961aa81390",
+      "stages": [
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 4329,
+      "kind": "reconstructed-code",
+      "origins": [
+        "research/deep-extraction/castlevania/acquisition.package.json"
+      ],
+      "path": "research/deep-extraction/castlevania/pickup-policy.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "5eaad6a15ecb445be915d6646182ae59468dac4c63580ff7fce3aae924305093",
+      "stages": [
+        "build",
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 5975,
+      "kind": "authored-code",
+      "origins": [
+        "reviewed-hardcoded-lowerer-or-validator-input"
+      ],
+      "path": "research/deep-extraction/castlevania/qualify_defeat.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp"
+      ],
+      "sha256": "cca03eb61e767d7f6ee98f76776a88fc4c23f82eb21c93efae1f372faa411d77",
+      "stages": [
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 5956,
+      "kind": "source-evidence",
+      "origins": [
+        "research/deep-extraction/castlevania/soulstride-strategy.json"
+      ],
+      "path": "research/deep-extraction/castlevania/soma-cast/evidence.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "de7950d209f58e7a8963de0b5a8b901a557fcd6221f436e1d04e73b7fb3dffd6",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 103084,
+      "kind": "external-evidence",
+      "origins": [
+        "reviewed-hardcoded-lowerer-or-validator-input"
+      ],
+      "path": "research/deep-extraction/castlevania/soul-eligibility/source-evidence.json",
+      "payload_policy": "metadata-only-user-provided",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "75378e40c0fbc50f84ff997ccf17a9d54a98a1d4885ea7ea155f367c06269d37",
+      "stages": [
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 1556,
+      "kind": "reconstructed-code",
+      "origins": [
+        "research/deep-extraction/castlevania/acquisition-qualification.json:runtime-source-pins",
+        "research/deep-extraction/castlevania/acquisition.package.json",
+        "reviewed-hardcoded-lowerer-or-validator-input"
+      ],
+      "path": "research/deep-extraction/castlevania/soul-inventory.c",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "9a7d0ee0cf4ed6d051b8688fac7b7092370eb8703a257f11a395a6cb6b6a08ef",
+      "stages": [
+        "build",
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 689,
+      "kind": "reconstructed-code",
+      "origins": [
+        "research/deep-extraction/castlevania/acquisition.package.json",
+        "research/deep-extraction/castlevania/pickup-policy.c:include",
+        "research/deep-extraction/castlevania/soul-inventory.c:include"
+      ],
+      "path": "research/deep-extraction/castlevania/soul-inventory.h",
+      "payload_policy": "provider-only-pending-provenance-review",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "7f02ecedfd4cebb5512fd673996d430c9320c97c79cba276c9ab4b5f898246dd",
+      "stages": [
+        "build",
+        "build-and-evidence"
+      ]
+    },
+    {
+      "bytes": 3739,
+      "kind": "source-evidence",
+      "origins": [
+        "tools/prefab_pipeline/requests/aria-soulstride.json"
+      ],
+      "path": "research/deep-extraction/castlevania/soulstride-strategy.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "c564b1642712c23ac3b1075ab4d66a2d2755ed0269a33f44af4a66129cb6ed3f",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 42534,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry",
+        "tools/prefab_pipeline/mod_rom.py:python-import",
+        "tools/prefab_pipeline/native_mod.py:python-import"
+      ],
+      "path": "tools/composition/native_build.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "50148ff195ac6ce3f683ad824b6ff79bf5ef59bb80569fdadef68e2558425a81",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 11449,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry",
+        "tools/composition/native_build.py:python-import"
+      ],
+      "path": "tools/composition/resolve.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "4b3959e5b77a4c453858c11e8859adee059c3d3832a9c1aff525d64f11041be0",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 98,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "tools/prefab_pipeline/__init__.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "cb60d6fba744f8c5f21e1efbe4343a10bd43bd4f055dc813309e7cf7cef6dcd6",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 11765,
+      "kind": "authored-code",
+      "origins": [
+        "tools/prefab_pipeline/native_mod.py:python-import"
+      ],
+      "path": "tools/prefab_pipeline/contract.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "40be3620dda136351ab0f0c2b28e4c077f36624b3b42b2752cab40f602a61482",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 13927,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry",
+        "tools/prefab_pipeline/native_cli.py:python-import"
+      ],
+      "path": "tools/prefab_pipeline/mod_rom.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "2d53bdfc3c828fc5dfa1eb6445846e148f96d7084accee7094be0f25d08aaada",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 11475,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry",
+        "tools/prefab_pipeline/requests/aria-soulstride.json"
+      ],
+      "path": "tools/prefab_pipeline/momentum_strategy.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 1538,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "tools/prefab_pipeline/native_cli.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "6727dde63ecb8e09d73c76ed73e38fd3c3b8cf6e390b9b1e0a407cd8ae450fc4",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 15221,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry",
+        "tools/prefab_pipeline/native_cli.py:python-import"
+      ],
+      "path": "tools/prefab_pipeline/native_mod.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "ad8306b6fac94959e0573062d40ab9bab8aab1020cf51104ac861e01ee2e9fbf",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 1061,
+      "kind": "recipe",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "tools/prefab_pipeline/requests/aria-double-xp.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp"
+      ],
+      "sha256": "27bae62b0508b44c4c9bfd299e04aca085a0ce06dccdeebd72135f3c15f616af",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 7703,
+      "kind": "recipe",
+      "origins": [
+        "tools/prefab_pipeline/requests/aria-soulstride.json"
+      ],
+      "path": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 1187,
+      "kind": "recipe",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "tools/prefab_pipeline/requests/aria-soulstride.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "c613a05ee8a7e48c876d2ea710b684610de3f5233ad617124796d92aab0c7738",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 14385,
+      "kind": "authored-code",
+      "origins": [
+        "tools/prefab_pipeline/momentum_strategy.py:python-import"
+      ],
+      "path": "tools/prefab_pipeline/reward_strategy.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "453fe6554c9d3f7848eaae64e7501f3eb6ffdcfef6a479c69c9c2ce925fba81d",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 6164,
+      "kind": "authored-code",
+      "origins": [
+        "tools/prefab_pipeline/reward_strategy.py:python-import",
+        "tools/prefab_pipeline/soulstride_progression.py:python-import"
+      ],
+      "path": "tools/prefab_pipeline/soul_eligibility.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "159e3644542bbde44571e3406e23e3baa41b26e737a318733703f8de6ea1c323",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 3340,
+      "kind": "authored-code",
+      "origins": [
+        "research/deep-extraction/castlevania/soulstride-strategy.json",
+        "tools/prefab_pipeline/momentum_strategy.py:python-import"
+      ],
+      "path": "tools/prefab_pipeline/soulstride_movement.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "7150bc7c951a429a165288cbb6dfdf7e59742ecf9dcf0748579f5165e05fbc90",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 3898,
+      "kind": "authored-code",
+      "origins": [
+        "research/deep-extraction/castlevania/soulstride-strategy.json",
+        "tools/prefab_pipeline/momentum_strategy.py:python-import"
+      ],
+      "path": "tools/prefab_pipeline/soulstride_progression.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride"
+      ],
+      "sha256": "3dd810e99ca4527cd26fddf5fcbcb1c896e27f33e980ccb64c9fc238344942ac",
+      "stages": [
+        "build"
+      ]
+    },
+    {
+      "bytes": 297,
+      "kind": "authored-code",
+      "origins": [
+        "native-session-build-prerequisite"
+      ],
+      "path": "tools/re/session/Makefile",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "9185c64c05205b80af39644d88226c8d60c57ceb2a083f0e7f55d7992d91cb22",
+      "stages": [
+        "bounded-qc"
+      ]
+    },
+    {
+      "bytes": 18883,
+      "kind": "authored-code",
+      "origins": [
+        "native-session-build-prerequisite",
+        "tools/prefab_pipeline/mod_rom.py:python-import"
+      ],
+      "path": "tools/re/session/bridge.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "1b60b5368e0319c9254e7caa7fbb3a803e9e603593b054962a912a0a5aba692e",
+      "stages": [
+        "bounded-qc",
+        "build"
+      ]
+    },
+    {
+      "bytes": 7790,
+      "kind": "authored-code",
+      "origins": [
+        "native-session-build-prerequisite"
+      ],
+      "path": "tools/re/session/session.c",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "50d66561815810959f61a060c4fead440e14e3828ba81216b19973edc87f7231",
+      "stages": [
+        "bounded-qc"
+      ]
+    },
+    {
+      "bytes": 1944,
+      "kind": "authored-code",
+      "origins": [
+        "tools/re/session/bridge.py:python-import"
+      ],
+      "path": "tools/whole_game/elf_symbols.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "sha256": "b6fa1737ec1cd481de4b9ed512d9c606a4d2730c808b680bae96e9f2a9145e92",
+      "stages": [
+        "bounded-qc",
+        "build"
+      ]
+    }
+  ],
+  "limits": {
+    "max_files": 1024,
+    "max_metadata_bytes": 67108864
+  },
+  "measurement": {
+    "build_s": null,
+    "model_calls": 0,
+    "note": "read/hash inventory only; each distinct file including ROM hashed once per generator invocation",
+    "simulation_s": null
+  },
+  "privacy": "File paths are normalized relative to repository root; external host paths are omitted. File contents are not copied by this generator.",
+  "recipes": [
+    {
+      "bounded_qc": "tools.prefab_pipeline.mod_rom.execute_mod_request (currently includes fresh builds and bounded QC)",
+      "build": "tools.prefab_pipeline.mod_rom.prepare_mod_request + tools.composition.native_build.build",
+      "id": "aria-double-xp",
+      "request_path": "tools/prefab_pipeline/requests/aria-double-xp.json",
+      "request_sha256": "27bae62b0508b44c4c9bfd299e04aca085a0ce06dccdeebd72135f3c15f616af"
+    },
+    {
+      "bounded_qc": "No single portable bounded-QC command registered in this inventory; requires separately pinned experiment configuration and local emulator setup",
+      "build": "python3 -B -m tools.prefab_pipeline.native_cli build-mod --request tools/prefab_pipeline/requests/aria-soulstride.json --output-dir NEW --output RESULT",
+      "id": "aria-soulstride",
+      "request_path": "tools/prefab_pipeline/requests/aria-soulstride.json",
+      "request_sha256": "c613a05ee8a7e48c876d2ea710b684610de3f5233ad617124796d92aab0c7738"
+    }
+  ],
+  "reference_claim_checks": [
+    {
+      "actual_sha256": "40aa98bf837ef2845fba93dfc69dcffbe4d2238ddd6efc298fcba6676a450777",
+      "claimed_sha256": "40aa98bf837ef2845fba93dfc69dcffbe4d2238ddd6efc298fcba6676a450777",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-double-xp.json",
+      "path": "research/deep-extraction/castlevania/defeat.package.json",
+      "recipe": "aria-double-xp"
+    },
+    {
+      "actual_sha256": "7ff21f6104d7ba6756bb1e262a7ffd3caf4c11c3c4fa961ffb483a2f21beb66b",
+      "claimed_sha256": "7ff21f6104d7ba6756bb1e262a7ffd3caf4c11c3c4fa961ffb483a2f21beb66b",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-double-xp.json",
+      "path": "research/deep-extraction/castlevania/defeat-parity.plan.json",
+      "recipe": "aria-double-xp"
+    },
+    {
+      "actual_sha256": "6c6785b69fdc883f3b373aaa23e1f847adb1899c54c0ac59cc7bd579057780f5",
+      "claimed_sha256": "6c6785b69fdc883f3b373aaa23e1f847adb1899c54c0ac59cc7bd579057780f5",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-double-xp.json",
+      "path": "research/deep-extraction/castlevania/defeat-qualification.json",
+      "recipe": "aria-double-xp"
+    },
+    {
+      "actual_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+      "claimed_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-double-xp.json",
+      "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+      "recipe": "aria-double-xp"
+    },
+    {
+      "actual_sha256": "7737885f3946a07f4faf46b98a77e4959fb628220d9f8b16d2741e1a6eb38ea8",
+      "claimed_sha256": "7737885f3946a07f4faf46b98a77e4959fb628220d9f8b16d2741e1a6eb38ea8",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat.package.json",
+      "path": "research/deep-extraction/castlevania/defeat-policy.c",
+      "recipe": "aria-double-xp"
+    },
+    {
+      "actual_sha256": "c7d5b98e770e407919fc9757384567bb2e390e22e8ca76b46e4e7805debbf80e",
+      "claimed_sha256": "c7d5b98e770e407919fc9757384567bb2e390e22e8ca76b46e4e7805debbf80e",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat.package.json",
+      "path": "research/deep-extraction/castlevania/defeat-policy.h",
+      "recipe": "aria-double-xp"
+    },
+    {
+      "actual_sha256": "a27d2fa878e38e97d7a7f886f5293d1cc4762c89f40fffe113e11ffccb1fad51",
+      "claimed_sha256": "a27d2fa878e38e97d7a7f886f5293d1cc4762c89f40fffe113e11ffccb1fad51",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat.package.json",
+      "path": "research/deep-extraction/castlevania/defeat-host.c",
+      "recipe": "aria-double-xp"
+    },
+    {
+      "actual_sha256": "2a4d77b339d6d2269bf1b6e3bdc3fab7d015fd29025d809353cfca09df749a99",
+      "claimed_sha256": "2a4d77b339d6d2269bf1b6e3bdc3fab7d015fd29025d809353cfca09df749a99",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat-parity.plan.json",
+      "path": "research/deep-extraction/castlevania/aria-usa-rewards.host.json",
+      "recipe": "aria-double-xp"
+    },
+    {
+      "actual_sha256": "40aa98bf837ef2845fba93dfc69dcffbe4d2238ddd6efc298fcba6676a450777",
+      "claimed_sha256": "40aa98bf837ef2845fba93dfc69dcffbe4d2238ddd6efc298fcba6676a450777",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat-parity.plan.json",
+      "path": "research/deep-extraction/castlevania/defeat.package.json",
+      "recipe": "aria-double-xp"
+    },
+    {
+      "actual_sha256": "a69350e8436b30c8adb8a9d272c095c36e179d805e401b2fc78d22f343436699",
+      "claimed_sha256": "a69350e8436b30c8adb8a9d272c095c36e179d805e401b2fc78d22f343436699",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat-qualification.json:runtime-source-pins",
+      "path": "research/deep-extraction/castlevania/defeat-gameplay.json",
+      "recipe": "aria-double-xp"
+    },
+    {
+      "actual_sha256": "a27d2fa878e38e97d7a7f886f5293d1cc4762c89f40fffe113e11ffccb1fad51",
+      "claimed_sha256": "a27d2fa878e38e97d7a7f886f5293d1cc4762c89f40fffe113e11ffccb1fad51",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat-qualification.json:runtime-source-pins",
+      "path": "research/deep-extraction/castlevania/defeat-host.c",
+      "recipe": "aria-double-xp"
+    },
+    {
+      "actual_sha256": "c7d5b98e770e407919fc9757384567bb2e390e22e8ca76b46e4e7805debbf80e",
+      "claimed_sha256": "c7d5b98e770e407919fc9757384567bb2e390e22e8ca76b46e4e7805debbf80e",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat-qualification.json:runtime-source-pins",
+      "path": "research/deep-extraction/castlevania/defeat-policy.h",
+      "recipe": "aria-double-xp"
+    },
+    {
+      "actual_sha256": "1fc56e94cbeece7aec072066436173d8f72acc9f7d4a8b280383cc89ecccdece",
+      "claimed_sha256": "1fc56e94cbeece7aec072066436173d8f72acc9f7d4a8b280383cc89ecccdece",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat-qualification.json:runtime-source-pins",
+      "path": "research/deep-extraction/castlevania/defeat-differential.c",
+      "recipe": "aria-double-xp"
+    },
+    {
+      "actual_sha256": "7737885f3946a07f4faf46b98a77e4959fb628220d9f8b16d2741e1a6eb38ea8",
+      "claimed_sha256": "7737885f3946a07f4faf46b98a77e4959fb628220d9f8b16d2741e1a6eb38ea8",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat-qualification.json:runtime-source-pins",
+      "path": "research/deep-extraction/castlevania/defeat-policy.c",
+      "recipe": "aria-double-xp"
+    },
+    {
+      "actual_sha256": "c564b1642712c23ac3b1075ab4d66a2d2755ed0269a33f44af4a66129cb6ed3f",
+      "claimed_sha256": "c564b1642712c23ac3b1075ab4d66a2d2755ed0269a33f44af4a66129cb6ed3f",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride.json",
+      "path": "research/deep-extraction/castlevania/soulstride-strategy.json",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a",
+      "claimed_sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride.json",
+      "path": "tools/prefab_pipeline/momentum_strategy.py",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef",
+      "claimed_sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride.json",
+      "path": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+      "claimed_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride.json",
+      "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "2ce8a26f3b255c461ff81140d7bcc6b1364a37c27d0a4c393186d592e41f6c25",
+      "claimed_sha256": "2ce8a26f3b255c461ff81140d7bcc6b1364a37c27d0a4c393186d592e41f6c25",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/cast-policy.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "17ea46fb18d09a4ae764f4f6957858f7a3a5488188aaa273ba6f87f32222c25c",
+      "claimed_sha256": "17ea46fb18d09a4ae764f4f6957858f7a3a5488188aaa273ba6f87f32222c25c",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/cast-policy.h",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "a9402440f90667d2316eb531da630db6b200847a90cca8808b6f3616f0804639",
+      "claimed_sha256": "a9402440f90667d2316eb531da630db6b200847a90cca8808b6f3616f0804639",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/cast-host.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "81fb1a139357cbc40b1cf9912d10c25551fb826ebe39bdd4f9edbd82dbcebcef",
+      "claimed_sha256": "81fb1a139357cbc40b1cf9912d10c25551fb826ebe39bdd4f9edbd82dbcebcef",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/bone-policy.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "5eaad6a15ecb445be915d6646182ae59468dac4c63580ff7fce3aae924305093",
+      "claimed_sha256": "5eaad6a15ecb445be915d6646182ae59468dac4c63580ff7fce3aae924305093",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/acquisition.package.json",
+      "path": "research/deep-extraction/castlevania/pickup-policy.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "9a7d0ee0cf4ed6d051b8688fac7b7092370eb8703a257f11a395a6cb6b6a08ef",
+      "claimed_sha256": "9a7d0ee0cf4ed6d051b8688fac7b7092370eb8703a257f11a395a6cb6b6a08ef",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/acquisition.package.json",
+      "path": "research/deep-extraction/castlevania/soul-inventory.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "7f02ecedfd4cebb5512fd673996d430c9320c97c79cba276c9ab4b5f898246dd",
+      "claimed_sha256": "7f02ecedfd4cebb5512fd673996d430c9320c97c79cba276c9ab4b5f898246dd",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/acquisition.package.json",
+      "path": "research/deep-extraction/castlevania/soul-inventory.h",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "7737885f3946a07f4faf46b98a77e4959fb628220d9f8b16d2741e1a6eb38ea8",
+      "claimed_sha256": "7737885f3946a07f4faf46b98a77e4959fb628220d9f8b16d2741e1a6eb38ea8",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat.package.json",
+      "path": "research/deep-extraction/castlevania/defeat-policy.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "c7d5b98e770e407919fc9757384567bb2e390e22e8ca76b46e4e7805debbf80e",
+      "claimed_sha256": "c7d5b98e770e407919fc9757384567bb2e390e22e8ca76b46e4e7805debbf80e",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat.package.json",
+      "path": "research/deep-extraction/castlevania/defeat-policy.h",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "a27d2fa878e38e97d7a7f886f5293d1cc4762c89f40fffe113e11ffccb1fad51",
+      "claimed_sha256": "a27d2fa878e38e97d7a7f886f5293d1cc4762c89f40fffe113e11ffccb1fad51",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat.package.json",
+      "path": "research/deep-extraction/castlevania/defeat-host.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "9a7d0ee0cf4ed6d051b8688fac7b7092370eb8703a257f11a395a6cb6b6a08ef",
+      "claimed_sha256": "9a7d0ee0cf4ed6d051b8688fac7b7092370eb8703a257f11a395a6cb6b6a08ef",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/acquisition-qualification.json:runtime-source-pins",
+      "path": "research/deep-extraction/castlevania/soul-inventory.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "10d242b20147e640110348d52bc2300cf3a5db1ea99e5142399e7b2db88a15c3",
+      "claimed_sha256": "10d242b20147e640110348d52bc2300cf3a5db1ea99e5142399e7b2db88a15c3",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/player_integrate.asm.txt",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "bd372b4e9a8d9620602d3b6c1d4cad964585dffcc6db5d94b6bacbeaeccc39ef",
+      "claimed_sha256": "bd372b4e9a8d9620602d3b6c1d4cad964585dffcc6db5d94b6bacbeaeccc39ef",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/cast_followers.asm.txt",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "c956212f01906f93872fb3f2835c99d3034c90cfbfeeaba370fc0f7079c50dbf",
+      "claimed_sha256": "c956212f01906f93872fb3f2835c99d3034c90cfbfeeaba370fc0f7079c50dbf",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/jump_guard.asm.txt",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "bb254db53f4055e302cc516a4c110c12b8d31b50c502a5b55e14a1d375a406af",
+      "claimed_sha256": "bb254db53f4055e302cc516a4c110c12b8d31b50c502a5b55e14a1d375a406af",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/backdash.asm.txt",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "156706e515ef1b8fd570b07ec6d841810d878f7fd1ed1080265ce06c65a5960f",
+      "claimed_sha256": "156706e515ef1b8fd570b07ec6d841810d878f7fd1ed1080265ce06c65a5960f",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/cast_transaction.asm.txt",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "03a3947fa0f57c8dce23eb536e362fb9e76748b125f966f6b593657a7430405c",
+      "claimed_sha256": "03a3947fa0f57c8dce23eb536e362fb9e76748b125f966f6b593657a7430405c",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/bone_lifecycle.asm.txt",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "feff7fc6512176ac641bb5d86b41f22d8dd6a668105de2756c372b468c3336d0",
+      "claimed_sha256": "feff7fc6512176ac641bb5d86b41f22d8dd6a668105de2756c372b468c3336d0",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/soma_player_integrate.asm.txt",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "3efea90d25fb9eaf5f3804283697f7d026e4cf60b4e622e5ace2a951020284ed",
+      "claimed_sha256": "3efea90d25fb9eaf5f3804283697f7d026e4cf60b4e622e5ace2a951020284ed",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/soma_cast_transaction.asm.txt",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "953c90e760021e3955ddc2b226534289f593cba6ffb7047e51666f282a5fd487",
+      "claimed_sha256": "953c90e760021e3955ddc2b226534289f593cba6ffb7047e51666f282a5fd487",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/soma_cast_caller.asm.txt",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "8ce1c423c7c0d515de5823d90f283036121abad089ceb80b559c4a79796dc2d0",
+      "claimed_sha256": "8ce1c423c7c0d515de5823d90f283036121abad089ceb80b559c4a79796dc2d0",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/native_player_dispatch.asm.txt",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "7150bc7c951a429a165288cbb6dfdf7e59742ecf9dcf0748579f5165e05fbc90",
+      "claimed_sha256": "7150bc7c951a429a165288cbb6dfdf7e59742ecf9dcf0748579f5165e05fbc90",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/soulstride-strategy.json",
+      "path": "tools/prefab_pipeline/soulstride_movement.py",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "3dd810e99ca4527cd26fddf5fcbcb1c896e27f33e980ccb64c9fc238344942ac",
+      "claimed_sha256": "3dd810e99ca4527cd26fddf5fcbcb1c896e27f33e980ccb64c9fc238344942ac",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/soulstride-strategy.json",
+      "path": "tools/prefab_pipeline/soulstride_progression.py",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "de7950d209f58e7a8963de0b5a8b901a557fcd6221f436e1d04e73b7fb3dffd6",
+      "claimed_sha256": "de7950d209f58e7a8963de0b5a8b901a557fcd6221f436e1d04e73b7fb3dffd6",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/soulstride-strategy.json",
+      "path": "research/deep-extraction/castlevania/soma-cast/evidence.json",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "4ac11905f4f3fb5bfcf5e1702f7b110bc83ba18ba30c291ef87d66d11d21ea64",
+      "claimed_sha256": "4ac11905f4f3fb5bfcf5e1702f7b110bc83ba18ba30c291ef87d66d11d21ea64",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "path": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "40aa98bf837ef2845fba93dfc69dcffbe4d2238ddd6efc298fcba6676a450777",
+      "claimed_sha256": "40aa98bf837ef2845fba93dfc69dcffbe4d2238ddd6efc298fcba6676a450777",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "path": "research/deep-extraction/castlevania/defeat.package.json",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "414eb681fbe1065e8cb0ef008bb127647e8b20aebc5ba311b099db33701d314c",
+      "claimed_sha256": "414eb681fbe1065e8cb0ef008bb127647e8b20aebc5ba311b099db33701d314c",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "path": "research/deep-extraction/castlevania/ability.package.json",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "d23346be9f3e998e6b3039e3b576de5c2e4a144dde64d4b977cd7eaf5cafa860",
+      "claimed_sha256": "d23346be9f3e998e6b3039e3b576de5c2e4a144dde64d4b977cd7eaf5cafa860",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "path": "research/deep-extraction/castlevania/acquisition.package.json",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "0b2da160c82e168e78acf275f281666c586b87d3183e2011321e56ce652b5549",
+      "claimed_sha256": "0b2da160c82e168e78acf275f281666c586b87d3183e2011321e56ce652b5549",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "path": "local/decomps/cvaos/include/structs/ewram.h",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "70974dba4bb5bc2e723ca8eff4e07a1f52e2b80cd53cc0782168e06f8479108e",
+      "claimed_sha256": "70974dba4bb5bc2e723ca8eff4e07a1f52e2b80cd53cc0782168e06f8479108e",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "path": "local/decomps/cvaos/src/code_08033CAC.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "edf4bed15b7a9969d0608bd67a68f0c445e23302fd2ed68a8400991eacaf3db1",
+      "claimed_sha256": "edf4bed15b7a9969d0608bd67a68f0c445e23302fd2ed68a8400991eacaf3db1",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "path": "research/deep-extraction/castlevania/aria-usa-acquisition.host.json",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "0b2da160c82e168e78acf275f281666c586b87d3183e2011321e56ce652b5549",
+      "claimed_sha256": "0b2da160c82e168e78acf275f281666c586b87d3183e2011321e56ce652b5549",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "path": "local/decomps/cvaos/include/structs/ewram.h",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "a9402440f90667d2316eb531da630db6b200847a90cca8808b6f3616f0804639",
+      "claimed_sha256": "a9402440f90667d2316eb531da630db6b200847a90cca8808b6f3616f0804639",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "path": "research/deep-extraction/castlevania/cast-host.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "81fb1a139357cbc40b1cf9912d10c25551fb826ebe39bdd4f9edbd82dbcebcef",
+      "claimed_sha256": "81fb1a139357cbc40b1cf9912d10c25551fb826ebe39bdd4f9edbd82dbcebcef",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "path": "research/deep-extraction/castlevania/bone-policy.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "7d3d2a1dde713effd072c0048c1872290b4b27c4d7c20f3bda874306ae04523d",
+      "claimed_sha256": "7d3d2a1dde713effd072c0048c1872290b4b27c4d7c20f3bda874306ae04523d",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "path": "local/prefab-mods/soma-cast-pc-witness-003/report.json",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "7737885f3946a07f4faf46b98a77e4959fb628220d9f8b16d2741e1a6eb38ea8",
+      "claimed_sha256": "7737885f3946a07f4faf46b98a77e4959fb628220d9f8b16d2741e1a6eb38ea8",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat.package.json",
+      "path": "research/deep-extraction/castlevania/defeat-policy.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "c7d5b98e770e407919fc9757384567bb2e390e22e8ca76b46e4e7805debbf80e",
+      "claimed_sha256": "c7d5b98e770e407919fc9757384567bb2e390e22e8ca76b46e4e7805debbf80e",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat.package.json",
+      "path": "research/deep-extraction/castlevania/defeat-policy.h",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "a27d2fa878e38e97d7a7f886f5293d1cc4762c89f40fffe113e11ffccb1fad51",
+      "claimed_sha256": "a27d2fa878e38e97d7a7f886f5293d1cc4762c89f40fffe113e11ffccb1fad51",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat.package.json",
+      "path": "research/deep-extraction/castlevania/defeat-host.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "2ce8a26f3b255c461ff81140d7bcc6b1364a37c27d0a4c393186d592e41f6c25",
+      "claimed_sha256": "2ce8a26f3b255c461ff81140d7bcc6b1364a37c27d0a4c393186d592e41f6c25",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/cast-policy.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "17ea46fb18d09a4ae764f4f6957858f7a3a5488188aaa273ba6f87f32222c25c",
+      "claimed_sha256": "17ea46fb18d09a4ae764f4f6957858f7a3a5488188aaa273ba6f87f32222c25c",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/cast-policy.h",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "a9402440f90667d2316eb531da630db6b200847a90cca8808b6f3616f0804639",
+      "claimed_sha256": "a9402440f90667d2316eb531da630db6b200847a90cca8808b6f3616f0804639",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/cast-host.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "81fb1a139357cbc40b1cf9912d10c25551fb826ebe39bdd4f9edbd82dbcebcef",
+      "claimed_sha256": "81fb1a139357cbc40b1cf9912d10c25551fb826ebe39bdd4f9edbd82dbcebcef",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/bone-policy.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "5eaad6a15ecb445be915d6646182ae59468dac4c63580ff7fce3aae924305093",
+      "claimed_sha256": "5eaad6a15ecb445be915d6646182ae59468dac4c63580ff7fce3aae924305093",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/acquisition.package.json",
+      "path": "research/deep-extraction/castlevania/pickup-policy.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "9a7d0ee0cf4ed6d051b8688fac7b7092370eb8703a257f11a395a6cb6b6a08ef",
+      "claimed_sha256": "9a7d0ee0cf4ed6d051b8688fac7b7092370eb8703a257f11a395a6cb6b6a08ef",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/acquisition.package.json",
+      "path": "research/deep-extraction/castlevania/soul-inventory.c",
+      "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "7f02ecedfd4cebb5512fd673996d430c9320c97c79cba276c9ab4b5f898246dd",
+      "claimed_sha256": "7f02ecedfd4cebb5512fd673996d430c9320c97c79cba276c9ab4b5f898246dd",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/acquisition.package.json",
+      "path": "research/deep-extraction/castlevania/soul-inventory.h",
+      "recipe": "aria-soulstride"
+    }
+  ],
+  "schema": "gameverse.improvement-provider-pack/1",
+  "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+  "static_resolution": [
+    {
+      "errors": [],
+      "path": "research/deep-extraction/castlevania/defeat-parity.plan.json",
+      "qualification": "read-only static resolution only",
+      "recipe": "aria-double-xp",
+      "resolver": "composition-static/0.1"
+    },
+    {
+      "errors": [],
+      "path": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "qualification": "read-only static resolution only",
+      "recipe": "aria-soulstride",
+      "resolver": "composition-static/0.1"
+    }
+  ],
+  "status": "runtime-file-inventory-ready",
+  "tools": [
+    {
+      "name": "python3",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "requirement": ">=3.10 (existing Path.is_relative_to usage)",
+      "stage": "build"
+    },
+    {
+      "name": "cc",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "requirement": "Clang with armv4t-none-eabi/arm7tdmi/Thumb support",
+      "stage": "build"
+    },
+    {
+      "name": "arm-none-eabi-ld",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "requirement": "GNU ARM linker compatible with generated native linker script",
+      "stage": "build"
+    },
+    {
+      "name": "arm-none-eabi-objcopy",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "requirement": "GNU ARM binary extraction",
+      "stage": "build"
+    },
+    {
+      "name": "arm-none-eabi-nm",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "requirement": "GNU ARM symbol inspection",
+      "stage": "build"
+    },
+    {
+      "name": "libmgba",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "requirement": "0.10.5-compatible headers/library and separately built tools/re/session/build/gba-session",
+      "stage": "bounded-qc"
+    },
+    {
+      "name": "ffmpeg",
+      "recipes": [
+        "aria-double-xp",
+        "aria-soulstride"
+      ],
+      "requirement": "video encoding when bounded QC records a clip",
+      "stage": "bounded-qc"
+    }
+  ],
+  "working_tree": "shared dirty working tree; exact file hashes are authoritative"
+}
