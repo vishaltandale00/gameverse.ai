@@ -4,7 +4,7 @@ import { resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnvFile } from 'node:process';
 import { root, runtimeDirectory, runtimeIdentity } from './runtime.mjs';
-import { gameCatalog } from './catalog.mjs';
+import { gameCatalog, customArtifacts } from './catalog.mjs';
 import { createVoiceApi } from './voice-api.mjs';
 import { attachVoiceStream, realtimeTranscriptionProviders } from './voice-stream.mjs';
 
@@ -27,6 +27,14 @@ const server = http.createServer(async (req, res) => {
     if (path === '/games/catalog.json') {
       const games = await gameCatalog();
       res.setHeader('Content-Type', mime['.json']); res.end(JSON.stringify(games)); return;
+    }
+    const custom = path.match(/^\/custom\/([a-f0-9]{64})\/([a-z.-]+\.js)$/);
+    if (custom) {
+      if (!customArtifacts.has(custom[1])) await gameCatalog();
+      const bytes = customArtifacts.get(custom[1])?.get(custom[2]);
+      if (!bytes) { res.writeHead(404).end('This game version is unavailable. Reload the catalog.'); return; }
+      res.setHeader('Content-Type', mime['.js']); res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.end(req.method === 'HEAD' ? undefined : bytes); return;
     }
     let file;
     if (/^\/artifacts\/[a-f0-9]{64}\.gba$/.test(path)) file = new URL(`local-data/games/${path.split('/').pop()}`, root);

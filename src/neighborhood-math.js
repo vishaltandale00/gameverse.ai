@@ -11,6 +11,14 @@ export const FIRE_RED_ENTRANCE = Object.freeze({ x: -43, z: -19.8, radius: 2.8, 
 // The arcade door/frame projects in front of the structural building. Keep its
 // walkable facade envelope explicit so camera and player use the same surface.
 export const ARCADE_FRONTAGE = Object.freeze({ minX: -54.5, maxX: -31.5, minZ: -22, maxZ: -21.42, minY: 0, maxY: 3.2 });
+export const SPORT_ENTRANCES = Object.freeze([
+  Object.freeze({ x: 22, z: -14.8, radius: 3, gameId: 'soccer', name: 'Juniper Pitch', title: 'Alder Five', color: '#73edce' }),
+  Object.freeze({ x: 22, z: 14.8, radius: 3, gameId: 'football', name: 'Foundry Field', title: 'Alder Gridiron', color: '#ffad70' }),
+]);
+export const GAME_ENTRANCES = Object.freeze([{ ...FIRE_RED_ENTRANCE, title: 'Pokémon FireRed' }, ...SPORT_ENTRANCES]);
+export function nearestEntrance(position, gameIds = ['firered', 'soccer', 'football']) {
+  return GAME_ENTRANCES.filter(e => gameIds.includes(e.gameId)).map(e => ({ ...e, distance: Math.hypot(position.x - e.x, position.z - e.z) })).sort((a, b) => a.distance - b.distance)[0];
+}
 
 export function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
 export function angleDelta(from, to) { return Math.atan2(Math.sin(to - from), Math.cos(to - from)); }

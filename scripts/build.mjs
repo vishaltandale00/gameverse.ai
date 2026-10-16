@@ -1,6 +1,6 @@
 import { cp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { root, runtimeDirectory, runtimeIdentity } from './runtime.mjs';
-import { gameCatalog } from './catalog.mjs';
+import { gameCatalog, customArtifacts } from './catalog.mjs';
 const start = performance.now();
 await rm(new URL('dist/', root), { recursive: true, force: true });
 await mkdir(new URL('dist/runtime/', root), { recursive: true });
@@ -17,7 +17,11 @@ for (const path of ['mgba.js', 'mgba.wasm']) await cp(new URL(path, runtimeDirec
 for (const path of ['three.module.js', 'three.core.js']) await cp(new URL(`node_modules/three/build/${path}`, root), new URL(`dist/runtime/three/${path}`, root));
 await cp(new URL('node_modules/three/LICENSE', root), new URL('dist/runtime/three/LICENSE', root));
 await writeFile(new URL('dist/runtime/identity.json', root), JSON.stringify(await runtimeIdentity(), null, 2));
-// Build the shell only. Game artifacts stay in ignored local-data and are served by the local host.
-const catalog = (await gameCatalog()).map(game => ({ ...game, ready: false, reason: 'Use the local development server to load source-built games.' }));
+// Bundle original custom games. GBA cartridges remain local and are never bundled.
+const catalog = (await gameCatalog()).map(game => game.kind === 'custom-sports' ? game : ({ ...game, ready: false, reason: 'Use the local development server to load source-built games.' }));
+for (const [id, files] of customArtifacts) {
+  await mkdir(new URL(`dist/custom/${id}/`, root), { recursive: true });
+  for (const [name, bytes] of files) await writeFile(new URL(`dist/custom/${id}/${name}`, root), bytes);
+}
 await writeFile(new URL('dist/games/catalog.json', root), JSON.stringify(catalog));
-console.log(`Shell copied in ${(performance.now() - start).toFixed(1)} ms. No game artifacts bundled; npm run dev serves source-built games.`);
+console.log(`Shell copied in ${(performance.now() - start).toFixed(1)} ms. Original sports bundled. GBA cartridges stay local; npm run dev serves them.`);

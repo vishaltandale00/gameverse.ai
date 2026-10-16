@@ -13,7 +13,8 @@
     "verify:geometry": "node scripts/verify-geometry.mjs",
     "source:setup": "node scripts/sources.mjs setup",
     "game:build": "node scripts/sources.mjs build",
-    "game:status": "node scripts/sources.mjs status"
+    "game:status": "node scripts/sources.mjs status",
+    "verify:sports": "node scripts/verify-sports.mjs"
   },
   "dependencies": {
     "@wasm-gaming/mgba-wasm": "0.1.1",

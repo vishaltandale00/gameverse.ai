@@ -1,5 +1,5 @@
 import * as THREE from '/runtime/three/three.module.js';
-import { FIRE_RED_ENTRANCE, ARCADE_FRONTAGE } from './neighborhood-math.js';
+import { FIRE_RED_ENTRANCE, ARCADE_FRONTAGE, SPORT_ENTRANCES } from './neighborhood-math.js';
 
 // Everything in this scene is authored here: geometry, lettering and seeded textures.
 // No remote assets, captured game content, or downloaded city models are used.
@@ -271,10 +271,10 @@ export function createNeighborhoodWorld(renderer, { hasFireRed = true } = {}) {
     { x: -66, z: -34, w: 18, d: 36, h: 10.2, color: 0xc9b6a2, name: 'ALDER & CO.', brickwork: true },
     { x: -43, z: -37, w: 23, d: 30, h: 16.5, color: 0xe0e2dc, name: 'ALDER ARCADE', arcade: true },
     { x: -20, z: -35, w: 16, d: 36, h: 12.8, color: 0xa6b1a2, name: 'NORTHLINE BOOKS' },
-    { x: 22, z: -35, w: 20, d: 36, h: 13.2, color: 0xb4bfc5, name: 'JUNIPER', balconies: true },
+    { x: 22, z: -35, w: 20, d: 36, h: 13.2, color: 0xb4bfc5, name: 'JUNIPER PITCH', balconies: true },
     { x: 45, z: -38, w: 20, d: 30, h: 19.4, color: 0xc8c7bc, name: 'COURT No. 08' },
     { x: 67, z: -34, w: 18, d: 38, h: 10.1, color: 0xe0c8a6, name: 'WEST END SUPPLY', brickwork: true },
-    { x: 22, z: 35, w: 20, d: 36, h: 10.2, color: 0xe8d9bc, name: 'CORNER MARKET', facing: -1, brickwork: true },
+    { x: 22, z: 35, w: 20, d: 36, h: 10.2, color: 0xe8d9bc, name: 'FOUNDRY FIELD', facing: -1, brickwork: true },
     { x: 45, z: 39, w: 20, d: 28, h: 16.3, color: 0xc6cbbb, name: 'THE TERRACE', facing: -1, balconies: true },
     { x: 67, z: 35, w: 18, d: 36, h: 9.8, color: 0xe1d2b4, name: 'SUNDAY STUDIO', facing: -1 },
   ].forEach(building);
@@ -336,6 +336,16 @@ export function createNeighborhoodWorld(renderer, { hasFireRed = true } = {}) {
     if (!batches.has(key)) batches.set(key, { geometry: branchGeometry, material: materials.wood, matrices: [] });
     batches.get(key).matrices.push(dummy.matrix.clone());
   }
+  for (const entrance of SPORT_ENTRANCES) {
+    const north = entrance.z < 0, facing = north ? 0 : Math.PI;
+    const accent = material(entrance.color, { emissive: entrance.color, emissiveIntensity: .4 });
+    sign(entrance.name.toUpperCase(), entrance.x, 2.3, north ? -16.85 : 16.85, 7.5, 1.2, facing, '#172c31', entrance.color,
+      entrance.gameId === 'soccer' ? '5v5 SOCCER · PLAY HERE' : '7v7 AMERICAN FOOTBALL · PLAY HERE');
+    const ring = new THREE.RingGeometry(1.15, 1.3, 48); resources.add(ring);
+    const marker = new THREE.Mesh(ring, accent); marker.rotation.x = -Math.PI / 2; marker.position.set(entrance.x, .245, entrance.z); scene.add(marker);
+    for (const side of [-1, 1]) box(accent, entrance.x + side * 3.9, 2.3, north ? -16.8 : 16.8, .08, 1.6, .08);
+  }
+
   function tree(x, z, height = 7, spread = 2.5) {
     branch(x, 0.22, z, x + 0.12, height * 0.77, z - 0.1, 0.19);
     obstacle(x, z, 0.4, 0.4, height * 0.65);

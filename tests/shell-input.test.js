@@ -19,7 +19,7 @@ function fixture() {
   const context = { pads: [pad()], clicks: 0, menuOpens: 0, inputs: [], focused: true, busy: false, dialog: null, resumes: 0, closes: 0,
     neighborhoodOpen: false, padArmed: false, padPrevious: [], keyboard: new Set(), inputMask: -1,
     shellPadDevice: null, shellPadIndex: null, lastPadAction: 0, session: undefined,
-    nameEntry: { voice: { poll() {} }, back: () => false }, voice: { poll() {} }, padMask, sampleStandardGamepad, requestAnimationFrame() {}, focusDirection() {},
+    voiceOwnsSportsB: false, nameEntry: { voice: { poll() {} }, back: () => false }, voice: { poll() {} }, padMask, sampleStandardGamepad, requestAnimationFrame() {}, focusDirection() {},
     $: selector => selector.startsWith('dialog[open]') ? context.dialog : context.elements[selector] || status,
   };
   context.elements = {
@@ -53,6 +53,29 @@ test('hidden and unfocused host polling cannot rearm and activate menu buttons',
 
 function press(context, index, down = true) { context.pads[0].buttons[index] = { pressed: down, value: Number(down) }; }
 function play(context) { context.session = { state: 'playing', adapter: { input: value => context.inputs.push(value) } }; context.pollInput(100); }
+
+test('keyboard arrows move through the actual world menu after a mouse opens it', () => {
+  const context = fixture();
+  const candidates = ['Return', 'Soccer', 'Football'].map((label, index) => ({
+    label, getClientRects: () => [1], getBoundingClientRect: () => ({ x: 0, y: index * 46, width: 398, height: 44 }),
+    focus() { context.document.activeElement = this; },
+  }));
+  context.dialog = { id: 'world-menu', querySelectorAll: () => candidates };
+  context.document.activeElement = candidates[0];
+  context.window = { addEventListener: (_type, handler) => { context.keydown = handler; } };
+  const focusStart = source.indexOf('function focusDirection(direction) {');
+  vm.runInContext(source.slice(focusStart, start), context);
+  const keyStart = source.indexOf("window.addEventListener('keydown', event => {");
+  vm.runInContext(source.slice(keyStart, source.indexOf("window.addEventListener('keyup'", keyStart)), context);
+  for (const [code, expected] of [['ArrowDown', 'Soccer'], ['ArrowDown', 'Football'], ['ArrowUp', 'Soccer']]) {
+    let prevented = false;
+    context.keydown({ code, target: { tagName: 'BUTTON' }, preventDefault() { prevented = true; } });
+    assert.equal(context.document.activeElement.label, expected);
+    assert.equal(prevented, true, 'menu arrows must not scroll the page');
+  }
+  context.keydown({ code: 'ArrowUp', target: { tagName: 'INPUT' }, preventDefault() { throw Error('text editing must retain arrows'); } });
+  assert.equal(context.document.activeElement.label, 'Soccer');
+});
 
 test('Y opens Gameverse pause while Start and Back remain GBA buttons', () => {
   const context = fixture(); play(context);
@@ -152,4 +175,23 @@ test('name dictation owns cancelling B and review consumes B without closing the
   let edits = 0; context.nameEntry.back = () => { edits++; return true; };
   press(context, 1); context.pollInput(400);
   assert.equal(edits, 1); assert.equal(context.closes, 0);
+});
+
+test('custom sport Start opens pause without receiving GBA input masks', () => {
+  const context = fixture();
+  context.session = { game: { kind: 'custom-sports' }, state: 'playing', adapter: { input: value => context.inputs.push(value) } };
+  context.pollInput(100); press(context, 0); context.pollInput(200);
+  assert.equal(context.inputs.filter(Boolean).length, 0);
+  press(context, 0, false); press(context, 3); context.pollInput(250);
+  assert.equal(context.menuOpens, 0, 'Y is a gameplay action in sports');
+  press(context, 3, false);
+  press(context, 0, false); context.pollInput(300); press(context, 9); context.pollInput(400);
+  assert.equal(context.menuOpens, 1);
+});
+
+
+test('sports sprint and protect together do not open the host menu', () => {
+  const context = fixture(); context.session = { game: { kind: 'custom-sports' }, state: 'playing', adapter: { input() {} } };
+  context.pollInput(100); press(context, 6); press(context, 7); context.pollInput(200);
+  assert.equal(context.menuOpens, 0);
 });

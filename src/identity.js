@@ -3,6 +3,7 @@ export async function digest(bytes) {
   return Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('');
 }
 export function progressKey(identity) {
+  if (identity.kind === 'custom-sports') return ['custom-progress', identity.profileId, identity.gameId, identity.version, identity.artifactSha256, identity.adapter, identity.snapshotFormat].join(':');
   return ['progress', identity.profileId, identity.gameId, identity.cartridgeSha256,
     identity.wasmSha256, identity.loaderSha256, identity.adapter, identity.snapshotFormat].join(':');
 }
