@@ -46,3 +46,25 @@ _Avoid_: Emulator snapshot as a synonym for a portable save
 **Progress adapter**: An explicit, verified mapping of copied progress from one game's schema into another's.
 
 **Improvement loop**: The recurring journey from player intent through proposal, build, verification and safe activation to further player feedback.
+
+### Factory and verification
+
+**Game factory**: Gameverse's system for turning player intent into constructed, evaluated and accepted playable game versions.
+
+**Construction agent**: The agent that proposes and produces candidate game changes.
+
+**Gameplay agent**: The agent that plays a pinned game version in an isolated simulation session to pursue scenario goals and collect evidence.
+
+**Verification plan**: The approved, versioned definition of the claims, checks and evidence required to assess a candidate.
+
+**Game law**: A precisely stated property that a game's rules or state transitions must preserve, under declared assumptions.
+
+**Decision circuit**: A versioned composition of evidence-based decision questions and rules for combining or routing their outcomes.
+
+**Gameplay evaluation**: An assessment of requested behavior and player experience using actual game execution.
+
+**Verifier**: The component that assesses candidate evidence against the approved verification plan.
+
+**Verification evidence**: Retained observations, execution traces and check results associated with the exact candidate assessed.
+
+**Verifier qualification**: Evaluation of the verification pipeline against known working, broken and ambiguous cases.
