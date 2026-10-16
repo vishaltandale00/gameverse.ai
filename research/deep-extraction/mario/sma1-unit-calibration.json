@@ -1,0 +1,100 @@
+{
+  "schema": "gameverse.mario.unit-calibration/0.1",
+  "game": "super-mario-advance",
+  "source_receipt": "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-motion-gameplay-receipt.json",
+  "source_receipt_sha256": "77a6a9feb8aa2302c07b91ab504dc9117f03b4bb6744f661fddec7471979fb94",
+  "scope": "Reuses original-ROM retained Mario/Peach native traces; no new gameplay run.",
+  "storage_vs_semantics": "Position raw integer is Q16.16 world pixels; velocity has16 internal fractional bits but is scaled by16 again at position integration. A raw velocity unit corresponds1/1048576 worldpixels per invocation, not1/65536.",
+  "position_unit": {
+    "numerator": 1,
+    "denominator": 65536,
+    "quantity": "position",
+    "frame": "world.y.down"
+  },
+  "velocity_unit": {
+    "numerator": 1,
+    "denominator": 1048576,
+    "quantity": "velocity_per_update",
+    "frame": "world.y.down"
+  },
+  "native_integration_entries": [
+    "080ac11c",
+    "080abf40"
+  ],
+  "integration_equation": "position32 += arithmetic_shift_right4(velocity32 + carrier32); position mirror=position32>>16; carrier saved then reset",
+  "example": "raw velocity -96<<16 gives -6 worldpx/update (before other phases/contacts); gravity parameter4<<16 gives +0.25px/update squared when applied once/update",
+  "trace_samples": [
+    {
+      "case": "mario_ordinary",
+      "from_frame": 2,
+      "to_frame": 3,
+      "position_before": 17498112,
+      "position_after": 17186816,
+      "raw_velocity": -4980736,
+      "raw_displacement": -311296,
+      "physical_displacement_pixels": -4.75,
+      "velocity_in_pixels_per_update": -4.75
+    },
+    {
+      "case": "mario_ordinary",
+      "from_frame": 3,
+      "to_frame": 4,
+      "position_before": 17186816,
+      "position_after": 16891904,
+      "raw_velocity": -4718592,
+      "raw_displacement": -294912,
+      "physical_displacement_pixels": -4.5,
+      "velocity_in_pixels_per_update": -4.5
+    },
+    {
+      "case": "mario_ordinary",
+      "from_frame": 4,
+      "to_frame": 5,
+      "position_before": 16891904,
+      "position_after": 16613376,
+      "raw_velocity": -4456448,
+      "raw_displacement": -278528,
+      "physical_displacement_pixels": -4.25,
+      "velocity_in_pixels_per_update": -4.25
+    },
+    {
+      "case": "mario_ordinary",
+      "from_frame": 5,
+      "to_frame": 6,
+      "position_before": 16613376,
+      "position_after": 16351232,
+      "raw_velocity": -4194304,
+      "raw_displacement": -262144,
+      "physical_displacement_pixels": -4.0,
+      "velocity_in_pixels_per_update": -4.0
+    },
+    {
+      "case": "mario_ordinary",
+      "from_frame": 6,
+      "to_frame": 7,
+      "position_before": 16351232,
+      "position_after": 16105472,
+      "raw_velocity": -3932160,
+      "raw_displacement": -245760,
+      "physical_displacement_pixels": -3.75,
+      "velocity_in_pixels_per_update": -3.75
+    },
+    {
+      "case": "mario_ordinary",
+      "from_frame": 7,
+      "to_frame": 8,
+      "position_before": 16105472,
+      "position_after": 15876096,
+      "raw_velocity": -3670016,
+      "raw_displacement": -229376,
+      "physical_displacement_pixels": -3.5,
+      "velocity_in_pixels_per_update": -3.5
+    }
+  ],
+  "limits": [
+    "Unit is per native scheduler invocation, not assumed SI seconds.",
+    "World orientation/wrap/collision/carrier phase must remain explicit.",
+    "Adjacent-frame trace excludes states where terrain/other phase overrides position."
+  ],
+  "new_native_runs": 0
+}

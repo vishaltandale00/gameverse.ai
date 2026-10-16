@@ -1,0 +1,91 @@
+{
+  "schema": "gameverse.mario.native-context-observation/0.1",
+  "scope": "Three retained own-ROM checkpoints; restore renders one native frame, read-only object roots only; no accepted save/ram writes/actions/campaign",
+  "queue_s": null,
+  "environment": "macOS-27.0.1-arm64-arm-64bit",
+  "records": [
+    {
+      "case": "sma1-mario",
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "checkpoint_ref": "local/re/experiments/20261016-binary-corpus-round2/sma1-motion-gameplay-01/mario_ordinary-baseline/checkpoint-0.ss",
+      "checkpoint_sha256": "3dd8e3bbc90397791938ec75dec80f31b8bbb93e6059ab3ef6e29b78c267979b",
+      "relative_frame": 1,
+      "object_roots": {
+        "0x3005cf0": "0x3001c48",
+        "0x3001110": "0x30019ec",
+        "0x3005cd8": "0x3001dd0",
+        "0x3005cf4": "0x8368838"
+      },
+      "nested_fields": {},
+      "emulator": {
+        "name": "libmgba",
+        "version": "0.10.5",
+        "frequency_hz": 16777216,
+        "frame_cycles": 280896,
+        "bios": "mGBA HLE; skipBios=true",
+        "rtc": "fixed 2024-01-01 UTC"
+      }
+    },
+    {
+      "case": "sma1-peach",
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "checkpoint_ref": "local/re/experiments/20261016-binary-corpus-round2/sma1-motion-gameplay-01/peach_held-baseline/checkpoint-0.ss",
+      "checkpoint_sha256": "028a4d16b9011d8fd602f6fa7c905a3b41bf9d0bb6182c9435b3b58c964b4f4e",
+      "relative_frame": 1,
+      "object_roots": {
+        "0x3005cf0": "0x3001c48",
+        "0x3001110": "0x30019ec",
+        "0x3005cd8": "0x3001dd0",
+        "0x3005cf4": "0x8368880"
+      },
+      "nested_fields": {},
+      "emulator": {
+        "name": "libmgba",
+        "version": "0.10.5",
+        "frequency_hz": 16777216,
+        "frame_cycles": 280896,
+        "bios": "mGBA HLE; skipBios=true",
+        "rtc": "fixed 2024-01-01 UTC"
+      }
+    },
+    {
+      "case": "sma2-mario",
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "checkpoint_ref": "local/re/experiments/20261016-binary-corpus-round2/sma2-motion-gameplay-01/baseline/checkpoint-0.ss",
+      "checkpoint_sha256": "db4504d3f6cab2b09fa6c802a7a5ec9e88bd0bf6bc23edbb2794713b140049d7",
+      "relative_frame": 1,
+      "object_roots": {
+        "0x3003f98": "0x3004378",
+        "0x3003f9c": "0x300556c",
+        "0x3002360": "0x3004220",
+        "0x3007a48": "0x300302c"
+      },
+      "nested_fields": {
+        "0x3003f98+0x10fa": {
+          "address": "0x3005472",
+          "bytes": 1,
+          "value": 0
+        },
+        "0x3002360+0xdc": {
+          "address": "0x30042fc",
+          "bytes": 1,
+          "value": 0
+        },
+        "0x3002360+0xe0": {
+          "address": "0x3004300",
+          "bytes": 1,
+          "value": 0
+        }
+      },
+      "emulator": {
+        "name": "libmgba",
+        "version": "0.10.5",
+        "frequency_hz": 16777216,
+        "frame_cycles": 280896,
+        "bios": "mGBA HLE; skipBios=true",
+        "rtc": "fixed 2024-01-01 UTC"
+      }
+    }
+  ],
+  "wall_s": 0.09230158399999999
+}

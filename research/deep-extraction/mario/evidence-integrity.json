@@ -1,0 +1,9 @@
+{
+  "outcome": "pass_metadata_integrity_only",
+  "target_instruction_spans": 43,
+  "l0_context_hashes": 3,
+  "games": 5,
+  "families": 44,
+  "wall_s": 0.140369625,
+  "scope": "Distinct IDs, original-ROM/export/L0 pins and truthful incomplete flags; not gameplay qualification."
+}

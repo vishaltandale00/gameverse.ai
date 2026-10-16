@@ -1,0 +1,462 @@
+{
+  "schema": "gameverse.mario.l0-context-evidence/0.1",
+  "boundary": "Own-ROM instruction+L0 provenance and observed native pointer maps. Annotations restrict validation domains; they do not replace automatically lifted behavior or assert full-game mechanics closure.",
+  "profiles": [
+    {
+      "id": "super-mario-advance.context.080a7618",
+      "game": "super-mario-advance",
+      "entry": "080a7618",
+      "isa": "thumb",
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "path": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac",
+        "entry": "0x080a7618",
+        "c_is_analysis_only": true
+      },
+      "l0": {
+        "path": "local/ir/dependency-exports/20261016T092348267583/super-mario-advance/l0/080a7618.json",
+        "sha256": "34e6a879c2c705ee14f16e20124ec87244d265623960b06b85652c81b207ded5"
+      },
+      "instruction_span": {
+        "address": "0x080a7618",
+        "size": 308,
+        "sha256": "e5c537c0f2cedb49794cd47058177b9613359f3da1c71df4f55f2bade1837fdc",
+        "boundary_status": "exported_function_size; return-tail previously independently reviewed in motion packet"
+      },
+      "qualification_state": "evidence_profile_not_new_executable_package",
+      "native_context_observation": "research/deep-extraction/mario/context-observations.json",
+      "fields": {
+        "player": [
+          {
+            "offset": "0x10",
+            "width_bits": 32,
+            "access": "read_write",
+            "meaning": "vertical_velocity_internal_fraction16_scaled_by16",
+            "signed": true,
+            "physical_unit": {
+              "numerator": 1,
+              "denominator": 1048576,
+              "quantity": "velocity_per_update",
+              "frame": "world.y.down"
+            }
+          },
+          {
+            "offset": "0x30",
+            "width_bits": 8,
+            "access": "read",
+            "meaning": "air_mode",
+            "signed": false
+          },
+          {
+            "offset": "0x36",
+            "width_bits": 8,
+            "access": "read_write",
+            "meaning": "remaining_hover",
+            "signed": false
+          }
+        ],
+        "character_parameters": [
+          {
+            "offset": "0xd",
+            "width_bits": 8,
+            "access": "read",
+            "meaning": "initial_hover_frames",
+            "signed": false
+          },
+          {
+            "offset": "0xe",
+            "width_bits": 8,
+            "access": "read",
+            "meaning": "gravity_unheld",
+            "signed": true
+          },
+          {
+            "offset": "0xf",
+            "width_bits": 8,
+            "access": "read",
+            "meaning": "gravity_held",
+            "signed": true
+          },
+          {
+            "offset": "0x10",
+            "width_bits": 8,
+            "access": "read",
+            "meaning": "special_air_gravity",
+            "signed": true
+          }
+        ]
+      },
+      "alias_contract": {
+        "basis": "Own native checkpoint values + source instruction dataflow, not allocation-size guess",
+        "precondition": "Borrow separate per-role accessed windows. Check any relocated pointer ranges for overlapping mutable/read-only windows and reject or preserve aliases; never silently duplicate shared storage.",
+        "universal_nonalias_proof": false
+      },
+      "references": [
+        {
+          "id": "player",
+          "root": {
+            "kind": "global_pointer_u32",
+            "address": "0x03005cf0"
+          },
+          "storage": "mutable_ram",
+          "max_accessed_extent": 354,
+          "observed_bases": [
+            "0x03001c48"
+          ]
+        },
+        {
+          "id": "character_parameters",
+          "root": {
+            "kind": "global_pointer_u32",
+            "address": "0x03005cf4"
+          },
+          "storage": "readonly_rom",
+          "max_accessed_extent": 17,
+          "observed_bases": [
+            "0x08368838",
+            "0x08368880"
+          ]
+        }
+      ],
+      "scalar_globals": [
+        {
+          "address": "0x0300117a",
+          "width_bits": 16,
+          "access": "read",
+          "meaning": "held_keys",
+          "mask_used": 1
+        },
+        {
+          "address": "0x03001993",
+          "width_bits": 8,
+          "access": "read",
+          "meaning": "frame_phase"
+        }
+      ],
+      "readonly_arrays": [
+        {
+          "address": "0x08367d24",
+          "element_type": "i8",
+          "elements": 4,
+          "index_domain": [
+            0,
+            3
+          ],
+          "index_proof": "(frame_u8 >> 3) & 3",
+          "meaning": "hover_velocity_phase"
+        }
+      ],
+      "dependencies": [],
+      "unit_calibration_ref": "research/deep-extraction/mario/sma1-unit-calibration.json"
+    },
+    {
+      "id": "super-mario-advance.context.080a9808",
+      "game": "super-mario-advance",
+      "entry": "080a9808",
+      "isa": "thumb",
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "path": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac",
+        "entry": "0x080a9808",
+        "c_is_analysis_only": true
+      },
+      "l0": {
+        "path": "local/ir/dependency-exports/20261016T092348267583/super-mario-advance/l0/080a9808.json",
+        "sha256": "64bf3c2edf06711453c567b0bfb55603215939d3ce746366bddfd534d219c4e4"
+      },
+      "instruction_span": {
+        "address": "0x080a9808",
+        "size": 346,
+        "sha256": "01985c687dd92acc4deb878c32d7ce1febfe6a7fe2998ab4e8b2dfd66a4363df",
+        "boundary_status": "exported_function_size; return-tail previously independently reviewed in motion packet"
+      },
+      "qualification_state": "evidence_profile_not_new_executable_package",
+      "native_context_observation": "research/deep-extraction/mario/context-observations.json",
+      "fields": {
+        "player": [
+          {
+            "offset": "0xc",
+            "width_bits": 32,
+            "access": "read",
+            "meaning": "horizontal_velocity_internal_fraction16_scaled_by16",
+            "signed": true,
+            "physical_unit": {
+              "numerator": 1,
+              "denominator": 1048576,
+              "quantity": "velocity_per_update",
+              "frame": "world.x.right"
+            }
+          },
+          {
+            "offset": "0x10",
+            "width_bits": 32,
+            "access": "write",
+            "meaning": "vertical_velocity_internal_fraction16_scaled_by16",
+            "signed": true,
+            "physical_unit": {
+              "numerator": 1,
+              "denominator": 1048576,
+              "quantity": "velocity_per_update",
+              "frame": "world.y.down"
+            }
+          },
+          {
+            "offset": "0x2c",
+            "width_bits": 8,
+            "access": "read",
+            "meaning": "jump_variant_selector",
+            "signed": false
+          },
+          {
+            "offset": "0x30",
+            "width_bits": 8,
+            "access": "read",
+            "meaning": "air_mode",
+            "signed": false
+          },
+          {
+            "offset": "0x36",
+            "width_bits": 8,
+            "access": "write",
+            "meaning": "remaining_hover",
+            "signed": false
+          },
+          {
+            "offset": "0x37",
+            "width_bits": 8,
+            "access": "read_write",
+            "meaning": "crouch_charge",
+            "signed": false
+          },
+          {
+            "offset": "0x90",
+            "width_bits": 8,
+            "access": "read",
+            "meaning": "carried_object_present",
+            "signed": false
+          },
+          {
+            "offset": "0x93",
+            "width_bits": 8,
+            "access": "read_write",
+            "meaning": "charged_jump_phase",
+            "signed": false
+          },
+          {
+            "offset": "0x160",
+            "width_bits": 16,
+            "access": "read",
+            "meaning": "carried_object_type",
+            "signed": false
+          }
+        ],
+        "character_parameters": [
+          {
+            "offset": "0x6",
+            "width_bits": 8,
+            "access": "read",
+            "signed": true,
+            "meaning": "onset_velocity_by_variant",
+            "index_domain": [
+              0,
+              5
+            ],
+            "index_proof": "mode chosen0/1/2 then (mode<<1)|player+2c; require explicit selector domain{0,1}"
+          },
+          {
+            "offset": "0xc",
+            "width_bits": 8,
+            "access": "read",
+            "meaning": "special_jump_velocity",
+            "signed": true
+          },
+          {
+            "offset": "0xd",
+            "width_bits": 8,
+            "access": "read",
+            "meaning": "initial_hover_frames",
+            "signed": false
+          }
+        ]
+      },
+      "alias_contract": {
+        "basis": "Own native checkpoint values + source instruction dataflow, not allocation-size guess",
+        "precondition": "Borrow separate per-role accessed windows. Check any relocated pointer ranges for overlapping mutable/read-only windows and reject or preserve aliases; never silently duplicate shared storage.",
+        "universal_nonalias_proof": false
+      },
+      "references": [
+        {
+          "id": "player",
+          "root": {
+            "kind": "global_pointer_u32",
+            "address": "0x03005cf0"
+          },
+          "storage": "mutable_ram",
+          "max_accessed_extent": 354,
+          "observed_bases": [
+            "0x03001c48"
+          ]
+        },
+        {
+          "id": "character_parameters",
+          "root": {
+            "kind": "global_pointer_u32",
+            "address": "0x03005cf4"
+          },
+          "storage": "readonly_rom",
+          "max_accessed_extent": 17,
+          "observed_bases": [
+            "0x08368838",
+            "0x08368880"
+          ]
+        }
+      ],
+      "input_domains": {
+        "player.jump_variant_selector": [
+          0,
+          1
+        ]
+      },
+      "dependencies": [],
+      "unit_calibration_ref": "research/deep-extraction/mario/sma1-unit-calibration.json"
+    },
+    {
+      "id": "super-mario-advance-2-super-mario-world.context.0806f714",
+      "game": "super-mario-advance-2-super-mario-world",
+      "entry": "0806f714",
+      "isa": "thumb",
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "path": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b",
+        "entry": "0x0806f714",
+        "c_is_analysis_only": true
+      },
+      "l0": {
+        "path": "local/ir/dependency-exports/20261016T092351186293/super-mario-advance-2-super-mario-world/l0/0806f714.json",
+        "sha256": "6aa6360cdd1a9ce7a46d154c8e99bd90049d48eb0e563d8382923898ad62a41a"
+      },
+      "instruction_span": {
+        "address": "0x0806f714",
+        "size": 134,
+        "sha256": "e6e118d5aa1edd6d562adba2c7e6290ffc16e97aa2e3c69c980e261e1287482e",
+        "boundary_status": "exported_function_size; return-tail previously independently reviewed in motion packet"
+      },
+      "qualification_state": "evidence_profile_not_new_executable_package",
+      "native_context_observation": "research/deep-extraction/mario/context-observations.json",
+      "fields": {
+        "profile": [
+          {
+            "offset": "0xdc",
+            "width_bits": 8,
+            "access": "read",
+            "meaning": "character_selector",
+            "signed": false
+          }
+        ],
+        "engine": [
+          {
+            "offset": "0x10fa",
+            "width_bits": 8,
+            "access": "read",
+            "meaning": "environment_air_mode",
+            "signed": false
+          }
+        ]
+      },
+      "alias_contract": {
+        "basis": "Own native checkpoint values + source instruction dataflow, not allocation-size guess",
+        "precondition": "Borrow separate per-role accessed windows. Check any relocated pointer ranges for overlapping mutable/read-only windows and reject or preserve aliases; never silently duplicate shared storage.",
+        "universal_nonalias_proof": false,
+        "observed_layout_warning": "Broad former engine[0x1200] overlaps map at0300556c; broad scene[0x1000] includes player03003fa0. Those padded analysis buffers are NOT safe allocation contracts. This target only touches engine byte+10fa and profile byte+dc."
+      },
+      "references": [
+        {
+          "id": "profile",
+          "root": {
+            "kind": "global_pointer_u32",
+            "address": "0x03002360"
+          },
+          "storage": "readonly_during_call_ram",
+          "max_accessed_extent": 221,
+          "observed_bases": [
+            "0x03004220"
+          ]
+        },
+        {
+          "id": "engine",
+          "root": {
+            "kind": "global_pointer_u32",
+            "address": "0x03003f98"
+          },
+          "storage": "readonly_during_call_ram",
+          "max_accessed_extent": 4347,
+          "observed_bases": [
+            "0x03004378"
+          ],
+          "sparse_windows_only": true
+        }
+      ],
+      "scalar_globals": [
+        {
+          "address": "0x3003fad",
+          "width_bits": 8,
+          "access": "read_write",
+          "meaning": "vertical_velocity_high_signed"
+        },
+        {
+          "address": "0x3003fa1",
+          "width_bits": 8,
+          "access": "read_write",
+          "meaning": "player_air_phase"
+        },
+        {
+          "address": "0x3003fa0",
+          "width_bits": 8,
+          "access": "read",
+          "meaning": "ground_contact_state"
+        },
+        {
+          "address": "0x3003fe3",
+          "width_bits": 8,
+          "access": "read",
+          "meaning": "air_mode_override"
+        }
+      ],
+      "input_domains": {
+        "argument_0": [
+          0,
+          1,
+          2
+        ],
+        "basis": "All direct callers in own-ROM exported controller use held-key bool or literal2; qualification must explicitly pin this domain rather than permit all255indices"
+      },
+      "readonly_arrays": [
+        {
+          "address": "0x0810a404",
+          "element_type": "u8",
+          "elements": 3,
+          "index_domain": [
+            0,
+            2
+          ],
+          "meaning": "positive_terminal_velocity_cap"
+        },
+        {
+          "address": "0x0810a3f0",
+          "element_type": "i8",
+          "elements": 13,
+          "index_domain": [
+            0,
+            12
+          ],
+          "index_proof": "argument0\u2208{0,1,2}; conditional character/environment path adds10 then &255",
+          "meaning": "gravity_delta"
+        }
+      ],
+      "dependencies": []
+    }
+  ]
+}

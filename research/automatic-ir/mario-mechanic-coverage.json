@@ -1,0 +1,2436 @@
+{
+  "schema": "gameverse.ir.mechanic-coverage/0.2",
+  "updated_utc": "2026-10-16T09:44:41.592749+00:00",
+  "objective": "Comprehensive actual mechanics recovery, closed owned-state/dependency/service contracts and executable IR. Partial packages remain useful outputs, never game completion.",
+  "enumeration_status": "expanded_game_specific_inventory_still_open_to_discovery",
+  "completion_rule": "No game/family is complete until its discovered modes/states/transitions, world interactions, dependencies, persistence and qualification obligations are closed with evidence and unknown-coverage review. A fixed family checklist is not proof all mechanics were discovered.",
+  "games": [
+    {
+      "game": "super-mario-advance",
+      "readiness": "partial_not_complete",
+      "completion_claim": false,
+      "priority": "active_depth",
+      "discovery_limit": "Bounded saved-project candidate pools and instruction-hashed gameplay seeds; not exhaustive ROM/mechanic coverage",
+      "counts": {
+        "native_qualified": 4,
+        "composable_ports_ready": 0,
+        "mechanics_closure_ready": 0
+      },
+      "families": [
+        {
+          "id": "movement_controller",
+          "state": "partial_manual_native_qualified",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Character jump onset/held gravity/finite hover/friction/carrier integration",
+              "state": "covered_subset_only",
+              "coverage_complete": false
+            },
+            {
+              "description": "Input acceleration/run/brake/skid and crouch-charge production",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Every character profile and special-air mode",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Permission gates and phase order\u2192terrain\u2192integration",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/SMA1_MOTION.md",
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-controller-lift-evidence.json",
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-native-controller-receipt.json"
+          ],
+          "discovery_target_ids": [
+            "sma1.player_update_order"
+          ],
+          "remaining_unknowns": [
+            "Automatic typed ports remain0; two automatic storage behaviors are not a controller",
+            "Native movement witnesses cover Mario/Peach, not every Luigi/Toad/special state"
+          ]
+        },
+        {
+          "id": "terrain_contacts",
+          "state": "static_causal_target",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Floor/ceiling/wall/contact and movement permission",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Tile queries, slope/edge/platform/carrier/wrap transitions",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Solid vs passable vs interactable terrain, moving objects",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Player dimensions and one-way collision state",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-controller-lift-evidence.json"
+          ],
+          "discovery_target_ids": [
+            "sma1.movement_contact_legality",
+            "sma1.terrain_response"
+          ],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "carry_pickup_throw",
+          "state": "partial_manual_native_qualified",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Native controller release and clearance policy",
+              "state": "covered_subset_only",
+              "coverage_complete": false
+            },
+            {
+              "description": "Acquire carried actor, attach/update/detach, pluck action and legality",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Thrown actor trajectory\u2192enemy/prop contact\u2192damage\u2192retirement",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Held-state/input consumption and failed-clearance behavior",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-native-controller-receipt.json",
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma1-controller-lift-evidence.json"
+          ],
+          "discovery_target_ids": [
+            "sma1.carried_actor_release",
+            "sma1.plucked_actor_create",
+            "sma1.ground_interaction_dispatch"
+          ],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "player_health_death_respawn",
+          "state": "static_causal_target",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Contact eligibility\u2192health loss\u2192hurt/invulnerability",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Lethal damage/fall/hazard\u2192death once",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Life decrement\u2192respawn/checkpoint/reset",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Temporary modes and damage immunity boundaries",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [
+            "sma1.terrain_hurt_transaction",
+            "sma1.actor_hurt_transaction",
+            "sma1.player_death_release",
+            "sma1.death_update_lives"
+          ],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "enemy_ecology_and_bosses",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Actor dispatcher/species registration and spawn/despawn",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Per-species targeting/movement/attack phase graphs",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Thrown/carryable/rideable actor exceptions",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Boss hit windows, HP/phases, death\u2192door/reward",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "character_abilities_and_items",
+          "state": "partial_manual_native_qualified",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Mario/Peach finite jump/hover profiles",
+              "state": "covered_subset_only",
+              "coverage_complete": false
+            },
+            {
+              "description": "Luigi/Toad actual profile selection and distinct behavior",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Item pickup\u2192timer/resource/size/ability\u2192expiration",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Character selection/room transition/reset semantics",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/SMA1_MOTION.md"
+          ],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "resources_collectibles_rewards",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Health/recovery/lives/coins or game-specific equivalents",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Enemy/object rewards once-only and item caps",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Temporary/reserved resources and stage tally",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Any shop/bonus subsystem mechanics, not menu display",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "world_progression_gates",
+          "state": "static_causal_target",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Room entrances/exits/doors and locks",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Stage completion\u2192next route/world and boss gates",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Checkpoint acquisition/respawn dependency",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "World interaction state surviving offscreen/room return",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [
+            "sma1.ground_object_interaction",
+            "sma1.room_transition_begin"
+          ],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "persistence_lifecycle",
+          "state": "static_causal_target",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Player update guards and ordering",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Actor creation/destruction and carried-reference cleanup",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Save/load/new game/file separation and reset",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Scene unload/reload\u2192owned state retention/clear",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [
+            "sma1.player_update_order"
+          ],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "bundled_mario_bros_engine",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Independently identify bundled minigame player/terrain/actors",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Separate combat/score/waves/progression and persistence",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Do not count SMB2 controller extraction as bundled-engine support",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        }
+      ],
+      "known_family_enumeration_complete": false,
+      "name_basis": "Existing own-ROM packets where linked; otherwise observed portrait/editorial prior defines a verification question, never a recovered rule.",
+      "automatic_target_rows": [
+        {
+          "id": "sma1.player_death_release",
+          "role": "combat",
+          "entry": "080ad8dc",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "ed2c85768e94d2ce5ac442973d040e9960a38a6d44e85db709e872402620b878",
+          "attempt_count": 1,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.0011154580000010128,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.actor_hurt_transaction",
+          "role": "combat",
+          "entry": "080afc64",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "08f8100834bcb410975db186867969e7008f138421fc6e97a72a3ab8efe9e18c",
+          "attempt_count": 1,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.001903208000001655,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.terrain_hurt_transaction",
+          "role": "combat",
+          "entry": "080afe44",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "bac0d6c72425f6b37ea11bf919d99714c321388d0046100da1a354639692ae25",
+          "attempt_count": 1,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.0013695829999988973,
+          "closure_ready": false
+        },
+        {
+          "id": "sma.motion.sma1_integrate_x",
+          "role": "movement",
+          "entry": "080abf40",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "a92a7f28369122086e14d25660c5e5026c96bc762ba045e7b83d47d587d63dbd",
+          "attempt_count": 2,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.0010016660000005118,
+          "closure_ready": false
+        },
+        {
+          "id": "sma.motion.sma1_ctl_sample_tile",
+          "role": "movement",
+          "entry": "0804b270",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "68c924ee713efc6c93d8db4fb236d94a93b544a7d873a857f8475be11b88105c",
+          "attempt_count": 2,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.000850499999998533,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.player_update_order",
+          "role": "movement",
+          "entry": "080a7570",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "dcaf06bb08030a60e4df2ce51fa0fd9ad5364e1eb59a26b4f8ee611918276f72",
+          "attempt_count": 2,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.0008879159999999331,
+          "closure_ready": false
+        },
+        {
+          "id": "sma.motion.sma1_ctl_control",
+          "role": "movement",
+          "entry": "080a7774",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "a2d6487a12453c17d60ce20d916e6d50e8bc1d4c8017c1ef9b6c81256ef455a1",
+          "attempt_count": 2,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.0038014169999982528,
+          "closure_ready": false
+        },
+        {
+          "id": "sma.motion.sma1_ctl_gait",
+          "role": "movement",
+          "entry": "080a7c7c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "888d2623d8e131ad7955a7616a0874ba1ad48b95a58746359378985d8397653e",
+          "attempt_count": 2,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.0007097910000020136,
+          "closure_ready": false
+        },
+        {
+          "id": "sma.motion.sma1_gravity_hover",
+          "role": "movement",
+          "entry": "080a7618",
+          "outcome": "native_qualified",
+          "input_signature": "78de295e2e7f5eb112d93eb5deb85ad3a105deef29e88280be986f69b1d440ab",
+          "attempt_count": 3,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T093733/super-mario-advance/sma.motion.sma1_gravity_hover",
+          "wall_s": 0.279784125
+        },
+        {
+          "id": "sma.motion.sma1_jump_onset",
+          "role": "movement",
+          "entry": "080a9808",
+          "outcome": "native_qualified",
+          "input_signature": "e71247af53b6927d7b23c2bb1924f8ec96fe7577f4d4f4b39f5210ede56924e5",
+          "attempt_count": 4,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 11848,
+          "artifacts": "local/ir/depth-runs/20261016T094112/super-mario-advance/sma.motion.sma1_jump_onset",
+          "wall_s": 0.289622667
+        },
+        {
+          "id": "sma.motion.sma1_integrate_y",
+          "role": "movement",
+          "entry": "080ac11c",
+          "outcome": "native_qualified",
+          "ports_ready": false,
+          "closure_ready": false,
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T092601/super-mario-advance/sma.motion.sma1_integrate_y",
+          "wall_s": 0.27744854199999996
+        },
+        {
+          "id": "sma.motion.sma1_friction",
+          "role": "movement",
+          "entry": "080a7e80",
+          "outcome": "native_qualified",
+          "ports_ready": false,
+          "closure_ready": false,
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T092601/super-mario-advance/sma.motion.sma1_friction",
+          "wall_s": 0.21129033400000002
+        },
+        {
+          "id": "sma.motion.sma1_ctl_speed_cap_throw",
+          "role": "movement",
+          "entry": "080a8008",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "3264e301c24117858a0f3cd14ddc3842726a0211d55dadc505ef095459052ef1",
+          "attempt_count": 2,
+          "reason": "dynamic entity index unresolved",
+          "wall_s": 0.0007746669999999511,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.movement_contact_legality",
+          "role": "movement",
+          "entry": "080a821c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "5e9a39cd455039d768851647cffa4ee57f99efc27adec06c91922f8e94bdb9bf",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080a8780",
+          "wall_s": 0.0027472090000006943,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.terrain_response",
+          "role": "movement",
+          "entry": "080a8950",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "72781ca0284ef8b38fee8015a1643c2d521f182d9c6f3258b47978391f09200a",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.000376874999998833,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.death_update_lives",
+          "role": "combat",
+          "entry": "080a9334",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "2bd8673c9c3f31242a5e05c42d3e3ad4b2b4b1ac01939a6ca1ef8dfd4cd24131",
+          "attempt_count": 1,
+          "reason": "callee entity reference mapping unsupported",
+          "wall_s": 0.002423709000000329,
+          "closure_ready": false
+        },
+        {
+          "id": "sma.motion.sma1_ctl_throw_probe",
+          "role": "movement",
+          "entry": "080a9dd0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "d8484748766c168afdc4ab21d24ad4c49e999984a22140a293f3052a84af4998",
+          "attempt_count": 2,
+          "reason": "not constant v0",
+          "wall_s": 0.0005905830000010326,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.ground_interaction_dispatch",
+          "role": "movement",
+          "entry": "080aa5bc",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "547f926ce027a2da2d77f0cc019c215a2bf0268d81cd81ddb53678199f71b94d",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080aa63c",
+          "wall_s": 0.0003284580000002535,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.plucked_actor_create",
+          "role": "combat",
+          "entry": "080aa83c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "7275b276723632e4af795059cd7b1a03ef96a6c79ff0dedd65ea1792877035d5",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080b6f20",
+          "wall_s": 0.002438625000001693,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.ground_object_interaction",
+          "role": "movement",
+          "entry": "080aad60",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "9fe8ee71fd4266c8cb6eb1ac224e356f8d3d63bc45f0de5aa47051e72949c5e5",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080a9cf8",
+          "wall_s": 0.0009087500000006798,
+          "closure_ready": false
+        },
+        {
+          "id": "sma1.room_transition_begin",
+          "role": "progression",
+          "entry": "080ab05c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "97202a40e3b474e9b07eac1f5016deaac458405b76df02bd46237a438927ac4f",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080ab3b8",
+          "wall_s": 0.0013355409999995516,
+          "closure_ready": false
+        },
+        {
+          "id": "sma.motion.sma1_ctl_throw",
+          "role": "movement",
+          "entry": "080ab60c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "a9b766df4864b44c2a560e72e45e4e5985d219cf8e17dd8ea932bc10ad519638",
+          "attempt_count": 1,
+          "reason": "dynamic entity index unresolved",
+          "wall_s": 0.0018319580000000016,
+          "closure_ready": false
+        },
+        {
+          "id": "sma.motion.sma1_charged_state_decay",
+          "role": "movement",
+          "entry": "080abaa0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "ecd24a8f400f8bda7fd36d4d8ceabc26c49516301eeeafc23eed69c3c946d7ab",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.0003269169999999995,
+          "closure_ready": false
+        },
+        {
+          "id": "sma.motion.sma1_ctl_character_sound",
+          "role": "movement",
+          "entry": "080b1358",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "988c64aeb0a68fb97bd8e7b12e6b5e3cb122092718480803da48290397c6ed4f",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080b551c",
+          "wall_s": 0.0002297919999999995,
+          "closure_ready": false
+        },
+        {
+          "id": "sma.motion.sma1_ctl_skid_effect",
+          "role": "movement",
+          "entry": "080b1c9c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "6122b8daf3e004619eb73192badfc22fae9daf2f65871410f01e2c7f51bce2d4",
+          "attempt_count": 1,
+          "reason": "dynamic entity index unresolved",
+          "wall_s": 0.00029950000000000115,
+          "closure_ready": false
+        }
+      ],
+      "automatic_status_ref": "local/ir/depth-status/super-mario-advance.json",
+      "count_scope": "Native function parity and typed helpers only; cannot count as complete mechanic families.",
+      "source_evidence": [
+        "research/corpus-mining/20261016-binary-corpus-round2/super-mario-advance.json",
+        "ontology/portraits/super-mario-advance.json"
+      ],
+      "counts_snapshot_utc": "2026-10-16T09:44:41.592749+00:00"
+    },
+    {
+      "game": "super-mario-advance-2-super-mario-world",
+      "readiness": "partial_not_complete",
+      "completion_claim": false,
+      "priority": "active_depth",
+      "discovery_limit": "Bounded saved-project candidate pools and instruction-hashed gameplay seeds; not exhaustive ROM/mechanic coverage",
+      "counts": {
+        "native_qualified": 9,
+        "composable_ports_ready": 2,
+        "mechanics_closure_ready": 2
+      },
+      "families": [
+        {
+          "id": "movement_controller",
+          "state": "partial_automatic_typed_ready",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Automatic signed pixel/subpixelX/Y integration",
+              "state": "covered_subset_only",
+              "coverage_complete": false
+            },
+            {
+              "description": "Run/charge/normal/spin jump legality and sequencing",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Gravity/held jump/release/cape/air-mode transitions",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "All locomotion modes and original terrain-sensitive limits",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-gameplay-receipt.json",
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-lift-evidence.json"
+          ],
+          "discovery_target_ids": [],
+          "remaining_unknowns": [
+            "Typed integration works in clean-ROM composition; authored steering/jump/runtime is not complete Mario controller"
+          ]
+        },
+        {
+          "id": "terrain_water_moving_world",
+          "state": "partial_manual_native_qualified",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Local special-surface/controller branches",
+              "state": "covered_subset_only",
+              "coverage_complete": false
+            },
+            {
+              "description": "Floor/ceiling/wall/slope/climb/water/contact sampling",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Platform/riding/carrier and layer transitions",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Terrain collisions\u2192block mutation/reward/ability conditions",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-lift-evidence.json"
+          ],
+          "discovery_target_ids": [],
+          "remaining_unknowns": [
+            "Manual finite controller cases do not close terrain producers"
+          ]
+        },
+        {
+          "id": "forms_cape_riding_abilities",
+          "state": "partial_manual_native_qualified",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Recovered local cape/gravity/run-charge policy in finite domain",
+              "state": "covered_subset_only",
+              "coverage_complete": false
+            },
+            {
+              "description": "Form pickup/application/removal and ability legality",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Cape flight/dive/recovery natural native witnesses",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Riding acquisition/dismount, carried/shell abilities and cleanup",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-motion-lift-evidence.json"
+          ],
+          "discovery_target_ids": [
+            "sma2.accepted_top_contact",
+            "sma2.reserve_item_drop_on_hurt",
+            "sma2.carried_attachment_release"
+          ],
+          "remaining_unknowns": [
+            "Existing natural movement route does not witness cape; riding branches are not full companion recovery"
+          ]
+        },
+        {
+          "id": "combat_contact_stomp_spin",
+          "state": "partial_manual_native_qualified",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Accepted spin stomp terminal/particles/chain transaction",
+              "state": "covered_subset_only",
+              "coverage_complete": false
+            },
+            {
+              "description": "Player-actor eligibility and top/side collision dispatch",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Ordinary stomp/kick/carry/projectile/shell interactions",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Immunity/resistance/transformation and hitbox timing",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-native-spin-receipt.json",
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-spin-gameplay-receipt.json"
+          ],
+          "discovery_target_ids": [
+            "sma2.actor_player_contact_dispatch",
+            "sma2.accepted_top_contact"
+          ],
+          "remaining_unknowns": [
+            "Automatic terminal/effect helpers are not full combat closure"
+          ]
+        },
+        {
+          "id": "projectile_actions",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Input\u2192legal projectile creation/limits",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Projectile flight/terrain/actor damage and ownership",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Hit/expiration/offscreen destruction/resource cleanup",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Form-dependent action availability and cooldowns",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "player_damage_death_respawn",
+          "state": "static_causal_target",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Damaging contact path to player-hurt entry",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Current form\u2192downgrade/iframes or lethal death",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Hazards/fall\u2192life/checkpoint/respawn",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Invulnerability/re-entry and state cleanup",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [
+            "sma2.player_hurt_entry",
+            "sma2.death_state_begin",
+            "sma2.death_countdown_life_retry",
+            "sma2.small_hurt_recovery",
+            "sma2.powered_hurt_recovery"
+          ],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "enemy_ai_and_bosses",
+          "state": "static_causal_target",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Shared contact/actor-state response identified",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Per-species movement/targeting/attack lifecycle",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Boss phase/HP/vulnerability/reward gates",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Actor spawn/activation/offscreen/despawn and saved defeat flags",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [
+            "sma2.actor_player_contact_dispatch"
+          ],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "rewards_score_lives",
+          "state": "partial_manual_native_qualified",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Spin chain\u2192bounded reward record and native score-resource handling",
+              "state": "covered_subset_only",
+              "coverage_complete": false
+            },
+            {
+              "description": "Threshold>=8 increments scene-owned resource",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Coin/collectible/extra-life/cap and duplication rules",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Reward visual pool lifetime and accumulated persistent counters",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma2-native-spin-receipt.json"
+          ],
+          "discovery_target_ids": [
+            "sma2.stomp_chain_to_resource",
+            "sma2.reward_record_allocation"
+          ],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "world_progression_secrets",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Normal/alternate exits\u2192overworld route graph",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Checkpoint acquisition and return location",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Persistent stage flags/collectibles/switch state",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Boss/world completion and optional route gates",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "persistence_lifecycle",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Per-level vs persistent state ownership",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Save/load/newgame/character sharing and version identity",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Death/room transition/warp/load resets",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Entity/task allocation/destruction and memory identity",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "bundled_mario_bros_engine",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Separate bundled engine movement/combat/waves/resources",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Its own progression/state persistence and player modes",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        }
+      ],
+      "known_family_enumeration_complete": false,
+      "name_basis": "Existing own-ROM packets where linked; otherwise observed portrait/editorial prior defines a verification question, never a recovered rule.",
+      "automatic_target_rows": [
+        {
+          "id": "sma-2-super-mario-world.combat.sma2_spin_stomp",
+          "role": "combat",
+          "entry": "0802fd38",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "443544ebc0c7f86cc9dc5c45663234e4af4a3445ab6ebf3380bd6d1e6d6fae5f",
+          "attempt_count": 3,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.0013566249999996671,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.accepted_top_contact",
+          "role": "combat",
+          "entry": "0802bd9c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "a746fa00000438ef97d6a9a67376f76f16ce79e79f9eb344e25d948fe2f4eda9",
+          "attempt_count": 2,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.00472379200000006,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-2-super-mario-world.combat.sma2_contact_effect",
+          "role": "combat",
+          "entry": "0802fc0c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "5c77124345e4e01c877c7bab1b799e76b65ef50c6836cbdaf0fdb2bb34bbbe75",
+          "attempt_count": 3,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.00046733399999965286,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-2-super-mario-world.combat.sma2_bounce",
+          "role": "combat",
+          "entry": "0802fcb8",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "0c76d30b1bc60e83021a00fcada77b416fe413a890925b45ef222ec80815623c",
+          "attempt_count": 3,
+          "reason": "unresolved pointer phi v62",
+          "wall_s": 0.0003974169999985122,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-2-super-mario-world.combat.sma2_particles",
+          "role": "combat",
+          "entry": "0802fde0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "976bd24e8a7f8410c7045c0766b3c762736b7f4828c47b2e46425caa54935fa9",
+          "attempt_count": 3,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.000408000000000186,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-2-super-mario-world.combat.sma2_chain_reward",
+          "role": "combat",
+          "entry": "0802fe64",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "eb234b2515f64d169c863cff38c2ceb9cdbcb8930bc1901a8259cbf938a30cd9",
+          "attempt_count": 3,
+          "reason": "unresolved pointer phi v193",
+          "wall_s": 0.0006489589999993939,
+          "closure_ready": false
+        },
+        {
+          "id": "sma2.actor_player_contact_dispatch",
+          "role": "combat",
+          "entry": "08034264",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "302ee102f7b871006c8a0188bc2d9e947c986741005f26df5122eb5dfb25638c",
+          "attempt_count": 2,
+          "reason": "multiple object reference alias closure unresolved",
+          "wall_s": 0.007384584000000416,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-2-super-mario-world.combat.sma2_reward_slot",
+          "role": "combat",
+          "entry": "0803d804",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "17625715c50208435cc93defc641197c4db0e84fff20f5cd36e94c317d953271",
+          "attempt_count": 2,
+          "reason": "unbounded or unaligned state collection",
+          "wall_s": 0.0006396660000014265,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-2-super-mario-world.motion.sma2_integrate",
+          "role": "movement",
+          "entry": "0806b52c",
+          "outcome": "native_qualified",
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T092749/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.motion.sma2_integrate",
+          "wall_s": 0.0069248750000000005
+        },
+        {
+          "id": "sma-2-super-mario-world.motion.sma2_integrate_x",
+          "role": "movement",
+          "entry": "0806b5a8",
+          "outcome": "native_qualified",
+          "ports_ready": true,
+          "closure_ready": true,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T092749/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.motion.sma2_integrate_x",
+          "wall_s": 0.0037376249999999944
+        },
+        {
+          "id": "sma-2-super-mario-world.motion.sma2_integrate_y",
+          "role": "movement",
+          "entry": "0806b604",
+          "outcome": "native_qualified",
+          "ports_ready": true,
+          "closure_ready": true,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T092749/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.motion.sma2_integrate_y",
+          "wall_s": 0.003691209000000001
+        },
+        {
+          "id": "sma-2-super-mario-world.motion.sma2_gravity",
+          "role": "movement",
+          "entry": "0806f714",
+          "outcome": "native_qualified",
+          "input_signature": "20dba08baca6d5aa7bb9ba36a06c4a98e958db0294d63fb69547220e97edd393",
+          "attempt_count": 4,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 1024,
+          "artifacts": "local/ir/depth-runs/20261016T093901/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.motion.sma2_gravity",
+          "wall_s": 0.26525525
+        },
+        {
+          "id": "sma-2-super-mario-world.combat.sma2_effect_suppressed",
+          "role": "combat",
+          "entry": "0802e978",
+          "outcome": "native_qualified",
+          "ports_ready": false,
+          "closure_ready": false,
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T092601/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.combat.sma2_effect_suppressed",
+          "wall_s": 0.2064659579999999
+        },
+        {
+          "id": "sma-2-super-mario-world.combat.sma2_terminal_state",
+          "role": "combat",
+          "entry": "0802faac",
+          "outcome": "native_qualified",
+          "ports_ready": false,
+          "closure_ready": false,
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T092601/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.combat.sma2_terminal_state",
+          "wall_s": 0.19915687500000012
+        },
+        {
+          "id": "sma-2-super-mario-world.combat.sma2_reward_record",
+          "role": "combat",
+          "entry": "0803da0c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "2203de9fdb5b7efb7c4b3a96bb268131fa5ef9355c0ac72baa070861a89bdb05",
+          "attempt_count": 1,
+          "reason": "dynamic entity index unresolved",
+          "wall_s": 0.00100220800000006,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-2-super-mario-world.combat.sma2_reward",
+          "role": "combat",
+          "entry": "0803daa0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "660e8d377fc4790a5ffff4c0995175ba7a02d3a131f04dadb4b0ba7a96c1f1d2",
+          "attempt_count": 1,
+          "reason": "dynamic entity index unresolved",
+          "wall_s": 0.0010747500000003463,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-2-super-mario-world.motion.sma2_special_surface",
+          "role": "movement",
+          "entry": "0806e838",
+          "outcome": "native_qualified",
+          "input_signature": "54f9d6070df99de84aa5841515596c0fd1067510009cc3de781b1c739024addf",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T093342/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.motion.sma2_special_surface",
+          "wall_s": 0.45520341600000025
+        },
+        {
+          "id": "sma-2-super-mario-world.motion.sma2_control",
+          "role": "movement",
+          "entry": "0806e88c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "b2197bf7eedf0de7fd5443600500d1005fa0f6166b0bdd9f7ae76e11b5c1fa4f",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 0809b5cc",
+          "wall_s": 0.009936874999999734,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-2-super-mario-world.motion.sma2_vertical",
+          "role": "movement",
+          "entry": "0806f240",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "b0d13d8c273fa3ed5049dabd0c7c17aeb887fe7e24acf8e7c2420af207553c30",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.005067834000000104,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-2-super-mario-world.motion.sma2_cape_limit",
+          "role": "movement",
+          "entry": "0806f7b8",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "715757d9dad35e03dcead1198b13aadc03fb76c06f2ea671ea7359715aab32b4",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.0003430830000006324,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-2-super-mario-world.motion.sma2_decay_run_charge",
+          "role": "movement",
+          "entry": "0806f828",
+          "outcome": "native_qualified",
+          "input_signature": "9c09106806960be0d18200aae5717c00a5e15010a3b8a5b3064d776121d978b3",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T093349/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.motion.sma2_decay_run_charge",
+          "wall_s": 0.23044229100000102
+        },
+        {
+          "id": "sma-2-super-mario-world.motion.sma2_run_charge",
+          "role": "movement",
+          "entry": "0806f834",
+          "outcome": "native_qualified",
+          "input_signature": "08c7f6d20610b4815a7e985a9010dc2b4eaf0c5b608b2dd205034010337b5895",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T093349/super-mario-advance-2-super-mario-world/sma-2-super-mario-world.motion.sma2_run_charge",
+          "wall_s": 0.21210750000000012
+        },
+        {
+          "id": "sma2.player_hurt_entry",
+          "role": "combat",
+          "entry": "0807081c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "606f936632d9da7b24a6ca59cf364042f6d1d29380ff00ab018a5555db009697",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 0806c8f0",
+          "wall_s": 0.001703833000000543,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-2-super-mario-world.motion.sma2_ground_effect",
+          "role": "movement",
+          "entry": "08071810",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "815f50c43ca3be85994d0c0cd8181b4ac9379b3e283f60c09db3e55b62a45d01",
+          "attempt_count": 1,
+          "reason": "unresolved pointer v84",
+          "wall_s": 0.0010908339999993188,
+          "closure_ready": false
+        }
+      ],
+      "automatic_status_ref": "local/ir/depth-status/super-mario-advance-2-super-mario-world.json",
+      "count_scope": "Native function parity and typed helpers only; cannot count as complete mechanic families.",
+      "source_evidence": [
+        "research/corpus-mining/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world.json",
+        "ontology/portraits/super-mario-advance-2-super-mario-world.json"
+      ],
+      "counts_snapshot_utc": "2026-10-16T09:44:41.592749+00:00"
+    },
+    {
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "readiness": "partial_not_complete",
+      "completion_claim": false,
+      "priority": "active_depth",
+      "discovery_limit": "Bounded saved-project candidate pools and instruction-hashed gameplay seeds; not exhaustive ROM/mechanic coverage",
+      "counts": {
+        "native_qualified": 4,
+        "composable_ports_ready": 0,
+        "mechanics_closure_ready": 0
+      },
+      "families": [
+        {
+          "id": "movement_controller",
+          "state": "partial_manual_native_qualified",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Local jump buffering/hold height/oriented integration/wall response",
+              "state": "covered_subset_only",
+              "coverage_complete": false
+            },
+            {
+              "description": "Full acceleration/brake/run meter\u2192jump/flight sequencing",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Ground/air/water/climb/riding and special-world modes",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Controller legality and scheduler/collision phase ownership",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-motion-evidence.json",
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-jump-native-receipt.json"
+          ],
+          "discovery_target_ids": [
+            "sma4.player_terrain_phase"
+          ],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "terrain_contact_world_interactions",
+          "state": "static_causal_target",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Wall/ceiling/floor sampling and response pipeline",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Special rotating geometry temporarily swaps contact arrays",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Block bump/break/reward/hidden/one-way state transitions",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Water/climb/conveyor/moving terrain and scene transitions",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [
+            "sma4.player_terrain_phase"
+          ],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "forms_pickup_application",
+          "state": "partial_manual_native_qualified",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Growth/fire/leaf accepted item local effects",
+              "state": "covered_subset_only",
+              "coverage_complete": false
+            },
+            {
+              "description": "Queued form+50\u2192active form+37 application and palette/state refresh",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Generic category descriptor mapping and timed-mode acquisition",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Transformed ability action/expiration/retained item/save semantics",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-powerup-build-receipt.json"
+          ],
+          "discovery_target_ids": [
+            "sma4.player_tick_form_commit",
+            "sma4.generic_item_effect",
+            "sma4.form_palette_refresh"
+          ],
+          "remaining_unknowns": [
+            "Growth natural collection observed; fire/leaf natural collection remains unqualified",
+            "Finite pickup effect is not complete form/ability implementation"
+          ]
+        },
+        {
+          "id": "combat_contact_stomp_shell",
+          "state": "partial_manual_native_qualified",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Eight-type accepted stomp bounce/health/type/chain response",
+              "state": "covered_subset_only",
+              "coverage_complete": false
+            },
+            {
+              "description": "Actual top/side eligibility\u2192hurt/stomp/shell dispatch",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Kick/carry/shell-to-enemy chain and transformed attacks",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Resistance and special type118 terrain interactions",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [
+            "research/corpus-mining/20261016-binary-corpus-round2/reviewed/sma4-stomp-native-receipt.json"
+          ],
+          "discovery_target_ids": [
+            "sma4.actor_player_contact_dispatch",
+            "sma4.stomp_side_contact_policy"
+          ],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "weapon_projectile_and_flight_actions",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Fire/form-dependent legal actions and state machines",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Projectile allocation/update/terrain/actor-hit/destruction",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Flying/attack special action resource/timing/interrupt rules",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Action availability after queued form commit or downgrade",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "player_damage_death_respawn",
+          "state": "static_causal_target",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Immunity checks and powered downgrade queue",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Invulnerability113 and transition timer47 semantics",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Small-form death begin exactly once with velocity/timer and release cleanup",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Life decrement\u2192room/checkpoint/respawn/reset closure",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [
+            "sma4.player_damage_transaction",
+            "sma4.player_death_begin",
+            "sma4.player_tick_form_commit"
+          ],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "enemy_ai_bosses_hazards",
+          "state": "static_causal_target",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Shared actor contact dispatcher found",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Every species movement/target/attack/animation timing",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Boss HP/vulnerability/phases\u2192persistent route reward",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Hazard/environment immunity and non-stompable object interactions",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [
+            "sma4.actor_player_contact_dispatch"
+          ],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "entity_lifecycle_allocators",
+          "state": "static_causal_target",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Normal actor pool15slots, reset from species and full-returnff",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Separate15slot visual reward pool full-overwrite slot4",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Actor activate/offscreen/suspend/retire/respawn/ref cleanup",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Projectiles/particles/boss pools and shared alias ownership",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [
+            "sma4.normal_actor_pool_allocate",
+            "sma4.actor_reset_from_species",
+            "sma4.visual_reward_pool_select"
+          ],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "score_coins_lives_items",
+          "state": "static_causal_target",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Scorecode>12 increments world resource+cd3",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "World score/life/coin counters and caps",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Reserve item inventory/use/worldmap items and temporary effects",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Reward once-only and rendering lifetime cannot replace resource mutation",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [
+            "sma4.reward_event_to_world_state",
+            "sma4.generic_item_effect"
+          ],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "world_progression_gates",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Stage goal/card/exit\u2192worldmap progression",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Locks/keys/fortress/boss completion and route edges",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Checkpoints/room transitions/optional exits",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Special-card/eReader content boundaries and mechanics if present",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "persistence_lifecycle",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Save/load/newgame/character sharing",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Forms/inventory/coins/lives/world flags persistence",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Death/level-exit/reset and failed-save boundaries",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Script/event ownership of scene gates",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "bundled_mario_bros_engine",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Separate minigame engine mechanics/AI/score/waves",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Separate players/resources/persistence",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        }
+      ],
+      "known_family_enumeration_complete": false,
+      "name_basis": "Existing own-ROM packets where linked; otherwise observed portrait/editorial prior defines a verification question, never a recovered rule.",
+      "automatic_target_rows": [
+        {
+          "id": "sma4.reward_event_to_world_state",
+          "role": "combat",
+          "entry": "08091050",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "808e23fdd508e8acc8e2807235477916b137084489ca70c127861183f2ddcd03",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 08091000",
+          "wall_s": 0.0005483329999975695,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.player_outer_tick",
+          "role": "movement",
+          "entry": "08092240",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "c3dc4250b40c543e678be9a68ed841917cce9b683790932ec05fd096871ab0c9",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080928f8",
+          "wall_s": 0.0034478750000026537,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.player_mode_gate",
+          "role": "movement",
+          "entry": "08092684",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "8c7e86710396104d64e9fe1c3be2003959b0bb9a311078418cf2ec4e0f79834d",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080a59e0",
+          "wall_s": 0.0005157079999982273,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.player_tick_form_commit",
+          "role": "progression",
+          "entry": "08092d9c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "121109ccbc1d30179035e0610171e6c9730660c6ce254565e779d270d472a49d",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 08095268",
+          "wall_s": 0.006945999999999231,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.player_terrain_phase",
+          "role": "movement",
+          "entry": "08097bf0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "1416358c9a9797980bf9a5dc3718f7c6b3ef33836e59113cdfa0d292e6c12bca",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 0809bdd4",
+          "wall_s": 0.0008690419999979326,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.form_palette_refresh",
+          "role": "movement",
+          "entry": "0809d51c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "31e920ccee39bb901fae98cf64f6939e71540588ef75fbabed7fa44751921554",
+          "attempt_count": 1,
+          "reason": "dynamic or nested object reference unresolved",
+          "wall_s": 0.0005077910000004238,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.death_phase_dispatch",
+          "role": "combat",
+          "entry": "080a66c4",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "66e00cb8ab48231d3575fad13198257bc92210f68c0868cd402ab874206cc64e",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080e7634",
+          "wall_s": 0.0002724159999978326,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.death_phase_1",
+          "role": "combat",
+          "entry": "080a66e8",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "0c1d37fada853fe4a489b45474be647165c1a074b60ae092f58b884593135e56",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080e3e7c",
+          "wall_s": 0.00037395800000084023,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.combat.stomp_resolution",
+          "role": "combat",
+          "entry": "08046744",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "ae2d44b4d682efd2c391b39d752531389ed066d21baf868d62bca79256e7bea8",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.004374084000000167,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.stomp_side_contact_policy",
+          "role": "combat",
+          "entry": "08046b88",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "d24cd3099070ca7accfc2cd14b32044882370387e915a1ebdb21d7552c95694b",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 08046b44",
+          "wall_s": 0.002181124999999895,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.combat.actor_x_integration",
+          "role": "combat",
+          "entry": "080479c0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "9fa82d38e81a635eb82a682aa0708654bcd2f737e78b4566b612e77eb489778d",
+          "attempt_count": 1,
+          "reason": "multiple object reference alias closure unresolved",
+          "wall_s": 0.00025345800000131646,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.combat.wrapped_actor_x_integration",
+          "role": "combat",
+          "entry": "080479e8",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "cdd3c6955f5ae3f2f8e078a920f25a2e2af2343ca1cfa77503346e44331e27ea",
+          "attempt_count": 1,
+          "reason": "multiple object reference alias closure unresolved",
+          "wall_s": 0.00040766599999919606,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.progression.growth_pickup",
+          "role": "progression",
+          "entry": "08068cd4",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "4d99001cf4a61c1cd93fdf61157de7b1344dcc38d35376f76862b006a747fbe3",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.0007818329999995655,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.progression.fire_pickup",
+          "role": "progression",
+          "entry": "08068d60",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "83466e130572fe6263c089a2b0fcb2e9b6143ebe45a01ffc3e60168103ce92f0",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.0007115420000012307,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.progression.leaf_pickup",
+          "role": "progression",
+          "entry": "08068dd0",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "1139bfb62865e3623182c12251709709b65ce60febe5b8ed01c2e061c613080e",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.0007546669999989319,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.motion.jump_gravity_policy",
+          "role": "movement",
+          "entry": "0809a42c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "cf7a09dd70e4e384b60e63266af21e2b83711c9db0ea2047ff6f99601f315eaf",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.002476959000000889,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.motion.horizontal_integration",
+          "role": "movement",
+          "entry": "080a0f68",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "e562428a54641e02ea68faa4b00be23206ea50c76a90e31d2b237b50e81b95ee",
+          "attempt_count": 1,
+          "reason": "multiple object reference alias closure unresolved",
+          "wall_s": 0.0006563750000001534,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.motion.vertical_integration",
+          "role": "movement",
+          "entry": "080a1040",
+          "outcome": "native_qualified",
+          "input_signature": "f164581ff130ee6d410110f16f3c04ff657713267edcb3d05e6b589c904e3568",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T093345/super-mario-advance-4-super-mario-bros-3/sma-4-super-mario-bros-3.motion.vertical_integration",
+          "wall_s": 0.23360154199999972
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.combat.flatten_initializer",
+          "role": "combat",
+          "entry": "08046738",
+          "outcome": "native_qualified",
+          "input_signature": "aaa8d029bdd525278087da63cb9e1b9ff3419e8bd1972f7863b719f3ea3a5ad4",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T093345/super-mario-advance-4-super-mario-bros-3/sma-4-super-mario-bros-3.combat.flatten_initializer",
+          "wall_s": 0.20519791600000037
+        },
+        {
+          "id": "sma4.actor_player_contact_dispatch",
+          "role": "combat",
+          "entry": "08046fb4",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "195d33156c691abced18b88629b6b7065b9a0113695895911f103be0d9416aae",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080466bc",
+          "wall_s": 0.0006550000000000722,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.player_death_begin",
+          "role": "combat",
+          "entry": "0804807c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "feb2dd2a942ca5091452049b291462510e7117ed7fa8691f3e76f9a8fa94877c",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080e43c8",
+          "wall_s": 0.0016027499999999861,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.player_damage_transaction",
+          "role": "combat",
+          "entry": "080481fc",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "bb4930cf2c981355d8e085ffd1cfa10ad769050a9af8962fec113772cda14874",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.006763915999998815,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.actor_reset_from_species",
+          "role": "combat",
+          "entry": "0804a650",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "87abce9e80e55466d78844d03ccc4951091335d0cb68c59c76edae082c1cb00f",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.0011606659999987556,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.normal_actor_pool_allocate",
+          "role": "combat",
+          "entry": "0804a758",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "e1c42b2dcd8ef84e53e42bf6de03419487ad114e740c986009f72d0a7e99e8a7",
+          "attempt_count": 1,
+          "reason": "maximum recursion depth exceeded in comparison",
+          "wall_s": 0.003802624999998727,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.progression.growth_audio_helper",
+          "role": "progression",
+          "entry": "08068aa4",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "a7db48d8a4674ef474ef2ca98cb30a34c421cb3e18a1cd7a2a8fdbf630a45f56",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080e4040",
+          "wall_s": 0.0004449580000001063,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.progression.reward_consume_helper",
+          "role": "progression",
+          "entry": "08068ae4",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "34c5fb6793c4b918bcc968395ac2a7dc3af586938dbb2c75d5fb7f4531da17be",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 08091050",
+          "wall_s": 0.00024474999999934965,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.progression.special_growth_helper",
+          "role": "progression",
+          "entry": "08068b90",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "9ef2105e6fd3e7d9fa379b35cb6c95dd757834bdb52cd270c41e4867b64d7668",
+          "attempt_count": 1,
+          "reason": "missing L0 dependency 080e4040",
+          "wall_s": 0.00031133400000005196,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.generic_item_effect",
+          "role": "progression",
+          "entry": "08068bd4",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "6966f590d6ee6a6a08d8808962b62a1d18ac799574182ad811f08aecff92a67f",
+          "attempt_count": 1,
+          "reason": "unbounded read-only asset index",
+          "wall_s": 0.00161549999999977,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.visual_reward_pool_select",
+          "role": "combat",
+          "entry": "08090f6c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "f52582299ab0f17377c3a49f09396915e76714eb829217166616c48e7566cab4",
+          "attempt_count": 1,
+          "reason": "maximum recursion depth exceeded in comparison",
+          "wall_s": 0.0035429580000005956,
+          "closure_ready": false
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.motion.run_boost_helper",
+          "role": "movement",
+          "entry": "0809b0f4",
+          "outcome": "native_qualified",
+          "input_signature": "4aea65c4000f9a6324f3327ab2ca22d969f5630dd057afa5bda8403c57030dce",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T093345/super-mario-advance-4-super-mario-bros-3/sma-4-super-mario-bros-3.motion.run_boost_helper",
+          "wall_s": 0.20678783299999992
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.combat.bounce_initializer",
+          "role": "combat",
+          "entry": "0809b190",
+          "outcome": "native_qualified",
+          "input_signature": "a706878e94e873533b5950e8dc45b732b6a3f435f2c2ca0c50b48bb7afbaecca",
+          "attempt_count": 1,
+          "ports_ready": false,
+          "closure_ready": false,
+          "dependency_closure": "closed",
+          "vectors": 16384,
+          "artifacts": "local/ir/depth-runs/20261016T093345/super-mario-advance-4-super-mario-bros-3/sma-4-super-mario-bros-3.combat.bounce_initializer",
+          "wall_s": 0.21044525000000025
+        },
+        {
+          "id": "sma-4-super-mario-bros-3.motion.sampled_wall_response",
+          "role": "movement",
+          "entry": "0809c02c",
+          "outcome": "pending_dependency_or_compiler",
+          "input_signature": "a56218f29d2f117e05c084b6b9e9eb55bff1453042ad49aa719656862409eea5",
+          "attempt_count": 1,
+          "reason": "dynamic entity index unresolved",
+          "wall_s": 0.0010152909999998627,
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.death_phase_2",
+          "role": "combat",
+          "entry": "080a674c",
+          "outcome": "pending_unattempted",
+          "closure_ready": false
+        },
+        {
+          "id": "sma4.death_phase_3",
+          "role": "combat",
+          "entry": "080a678c",
+          "outcome": "pending_unattempted",
+          "closure_ready": false
+        }
+      ],
+      "automatic_status_ref": "local/ir/depth-status/super-mario-advance-4-super-mario-bros-3.json",
+      "count_scope": "Native function parity and typed helpers only; cannot count as complete mechanic families.",
+      "source_evidence": [
+        "research/corpus-mining/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3.json",
+        "ontology/portraits/super-mario-advance-4-super-mario-bros-3.json"
+      ],
+      "counts_snapshot_utc": "2026-10-16T09:44:41.592749+00:00"
+    },
+    {
+      "game": "mario-and-luigi-superstar-saga",
+      "readiness": "partial_not_complete",
+      "completion_claim": false,
+      "priority": "pending_depth",
+      "discovery_limit": "Bounded saved-project candidate pools and instruction-hashed gameplay seeds; not exhaustive ROM/mechanic coverage",
+      "counts": {},
+      "families": [
+        {
+          "id": "paired_overworld_controller",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Observed room staging is not executable movement proof",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Character separation/following/action mappings and terrain",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Jump/hammer or other candidate action modes must be ROM verified",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Interaction legality/animation timing and object ownership",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "battle_commands_timing_defense",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Turn ownership/action selection and resources",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Timing-sensitive attack/defense state machines and targets",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Damage/status/death/revive/escape/victory transitions",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Combined-character attacks and interruption dependencies",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "enemy_boss_ecology",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Enemy setup/AI/attack telegraphs and timing",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Boss phase/vulnerability/reward conditions",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Overworld contact\u2192battle transition and actor retirement",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "abilities_equipment_resources",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Ability acquisition/equip/action legality",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "HP/points/items/currency and limits",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Gear/stats/status modifiers and healing transaction",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "progression_world_story",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "XP/levels/stat choices/learned action changes",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Quest flags/locks/room scripts/boss gates",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Persistent story/world graph and alternate interactions",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "persistence_lifecycle",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Battle\u2194overworld shared party state",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Scene/task/entity allocation and return cleanup",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Save/load/newgame/death recovery and persistent flags",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        }
+      ],
+      "known_family_enumeration_complete": false,
+      "name_basis": "Existing own-ROM packets where linked; otherwise observed portrait/editorial prior defines a verification question, never a recovered rule.",
+      "source_evidence": [
+        "research/corpus-mining/20261016-binary-corpus-round2/mario-and-luigi-superstar-saga.json",
+        "ontology/portraits/mario-and-luigi-superstar-saga.json"
+      ]
+    },
+    {
+      "game": "mario-kart-super-circuit",
+      "readiness": "partial_not_complete",
+      "completion_claim": false,
+      "priority": "pending_depth",
+      "discovery_limit": "Bounded saved-project candidate pools and instruction-hashed gameplay seeds; not exhaustive ROM/mechanic coverage",
+      "counts": {},
+      "families": [
+        {
+          "id": "vehicle_controller_surface_dynamics",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Observed race view is not tire/controller extraction",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Steer/throttle/brake/slip/drift/hop/boost candidate behaviors",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Speed/heading/surface/contact/gravity and terrain limits",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Character/vehicle configuration and race-start legality",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "items_combat_hazards",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Pickup/roulette/owned item/use eligibility",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Item projectile/target/contact/effect/expiration",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Damage/spin/shrink/invulnerability candidate state transitions",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Barrier/fall/rescue/re-entry and temporary resource lifecycle",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "opponent_ai_racing_world",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Track route/following/target/rubber-band rules if present",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Opponent item policy and interaction",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Track terrain/collision/water/height and object activation",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "race_progression_rules",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Lap/checkpoint crossing and shortcut legality",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Ranking/finish/win/loss/timer/points",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Cup/track/class unlock and selected mode rules",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Course changes/transitions and opponent persistence",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        },
+        {
+          "id": "persistence_lifecycle",
+          "state": "unknown_not_recovered",
+          "coverage_complete": false,
+          "obligations": [
+            {
+              "description": "Records/coins/unlocks/cup state save/load",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Race reset/finish/rescue/task/object cleanup",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            },
+            {
+              "description": "Single/multi mode differences if present",
+              "state": "unresolved_or_unknown",
+              "coverage_complete": false
+            }
+          ],
+          "evidence_refs": [],
+          "discovery_target_ids": [],
+          "remaining_unknowns": []
+        }
+      ],
+      "known_family_enumeration_complete": false,
+      "name_basis": "Existing own-ROM packets where linked; otherwise observed portrait/editorial prior defines a verification question, never a recovered rule.",
+      "source_evidence": [
+        "research/corpus-mining/20261016-binary-corpus-round2/mario-kart-super-circuit.json",
+        "ontology/portraits/mario-kart-super-circuit.json"
+      ]
+    }
+  ],
+  "evidence_packets": [
+    "research/deep-extraction/mario/mechanics-targets.json",
+    "research/deep-extraction/mario/l0-context-evidence.json",
+    "research/deep-extraction/mario/context-observations.json"
+  ],
+  "status_definitions": {
+    "partial_manual_native_qualified": "Existing finite original/recovered/emitted and native source-host evidence; NOT automatically lifted whole family.",
+    "partial_automatic_typed_ready": "At least one automatic package with typed ports; does NOT close parent family.",
+    "static_causal_target": "Own-ROM export traced to actual mechanic/state/service dependencies; no new native executable qualification.",
+    "unknown_not_recovered": "No sufficient own-ROM executable evidence currently recorded. Candidate names are investigation obligations, not claims of recovered mechanics.",
+    "coverage_complete": "Requires defended mode/state/transition/dependency/data/persistence and native acceptance closure, never helper count."
+  }
+}

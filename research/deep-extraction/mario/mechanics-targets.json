@@ -1,0 +1,2091 @@
+{
+  "schema": "gameverse.mario.mechanics-discovery-targets/0.1",
+  "updated_utc": "2026-10-16T09:38:33.135381+00:00",
+  "whole_game_complete": false,
+  "scope": "Causal mechanic/dependency target discovery from independently exported own ROM, not compilation input or universal closure claim.",
+  "targets": [
+    {
+      "id": "sma1.player_update_order",
+      "game": "super-mario-advance",
+      "family": "movement_lifecycle",
+      "entry": "080a7570",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Gates on player+15a/+33, entities+650 and profile+5e/+240, then decay\u2192gravity\u2192control\u2192contact predicate\u2192terrain response\u2192Y\u2192X integration. Complete scheduling entry is outside current motion package.",
+      "context_roles": [
+        "player",
+        "character_parameters",
+        "profile",
+        "entities"
+      ],
+      "direct_callees": [
+        "0x080a7618",
+        "0x080a7774",
+        "0x080a821c",
+        "0x080a8950",
+        "0x080abaa0",
+        "0x080abf40",
+        "0x080ac11c"
+      ],
+      "callers": [],
+      "focus_dependencies": [
+        "080a821c",
+        "080a8950"
+      ],
+      "instruction_span": {
+        "address": "0x080a7570",
+        "size": 152,
+        "sha256": "f3a5b600de355762516f9fa559cc1cd416aa56132e6d9c26cb390baefa08f35f",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma1.movement_contact_legality",
+      "game": "super-mario-advance",
+      "family": "terrain_contact",
+      "entry": "080a821c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "080a821c is full terrain contact phase, not only predicate: directional080a9984 sampling sets player+41; floor sets airborne+29/airmode+30/snappedY; slopes/platform offsets update+38; invokes hurt080afe44 on tile202 and grounded interaction080aa5bc, then side response080ad490. Return from080a8780 can bypass remaining motion.",
+      "context_roles": [
+        "player",
+        "profile",
+        "entities"
+      ],
+      "direct_callees": [
+        "0x080a8760",
+        "0x080a8780",
+        "0x080a9984",
+        "0x080aa5bc",
+        "0x080ad490",
+        "0x080afe44",
+        "0x080b0a60"
+      ],
+      "callers": [
+        "0x080a7570",
+        "0x080a9594"
+      ],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x080a821c",
+        "size": 1236,
+        "sha256": "42e0d34e41727b8ba4d9fe176eb1e46f135f304548622650bbc4ee124d6fabb9",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma1.terrain_response",
+      "game": "super-mario-advance",
+      "family": "terrain_contact",
+      "entry": "080a8950",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "080a8950 is additional scene-edge horizontal response: profilemode1 and direction+42 plus byte+43 boundary set contactbits+41 then080ad490 zero opposed velocity/carrier. Main floor/ceiling/tile phase is080a821c.",
+      "context_roles": [
+        "player",
+        "profile",
+        "entities"
+      ],
+      "direct_callees": [
+        "0x080ad490"
+      ],
+      "callers": [
+        "0x080a7570",
+        "0x080a9594"
+      ],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x080a8950",
+        "size": 128,
+        "sha256": "2d3284f99a38f66dbda56825f5ea8bcbd584aa1760adbadfeb66139e8e924184",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma1.carried_actor_release",
+      "game": "super-mario-advance",
+      "family": "combat_carry_throw",
+      "entry": "080ab60c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "PressedB and player+2c gate; carried index player+5c chooses entities[index*0x70], status entities+5c0+index and type entities+5ce+2index. Clearance080a9dd0 decides release velocities, pressed mask consumed, actor+4a/+4b/+43 changed. Throw-hit collision and pickup acquisition remain separate.",
+      "context_roles": [
+        "player",
+        "entities"
+      ],
+      "direct_callees": [
+        "0x080a9dd0",
+        "0x080b1358",
+        "0x080b551c"
+      ],
+      "callers": [
+        "0x080a8008"
+      ],
+      "focus_dependencies": [
+        "080a9dd0",
+        "080b1358",
+        "080b551c"
+      ],
+      "instruction_span": {
+        "address": "0x080ab60c",
+        "size": 1040,
+        "sha256": "b9092a144bb7141828c6ec925408f0444c862f4765f0a897b946e8d8b36cdf8e",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": {
+        "ref": "local/ir/dependency-exports/20261016T092348267583/super-mario-advance/l0/080ab60c.json",
+        "sha256": "9e5ca21d84bed9b97d82127e6b50372b63aa7d22899393557b26834e5b621dad"
+      },
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma2.actor_player_contact_dispatch",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "combat_contact",
+      "entry": "08034264",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Checks player/actor collision/layers, actor+23 debounce, flags+3e/+41/+42/+43 and relative player/actor Y to choose hurt, bounce, ordinary stomp, spin or transformed responses. Contains actor-type mutation; not equivalent to spin-stomp helper.",
+      "context_roles": [
+        "player",
+        "scene",
+        "engine",
+        "actor"
+      ],
+      "direct_callees": [
+        "0x0802bd9c",
+        "0x0802eb44",
+        "0x0802f1b8",
+        "0x0802f290",
+        "0x0802f578",
+        "0x0802fc0c",
+        "0x0802fcb8",
+        "0x0802fd38",
+        "0x0802fe64",
+        "0x0802ff54",
+        "0x08030430",
+        "0x0803407c",
+        "0x08034198",
+        "0x08034864",
+        "0x0807081c"
+      ],
+      "callers": [
+        "0x080347a4",
+        "0x080350f0",
+        "0x0806288c"
+      ],
+      "focus_dependencies": [
+        "0803407c",
+        "08034198",
+        "0802f290",
+        "0807081c"
+      ],
+      "instruction_span": {
+        "address": "0x08034264",
+        "size": 1104,
+        "sha256": "ccb4a0a53be6c4d4b04e9f75d32707d826267d6ffef934e5135b98f586e09fbe",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma2.accepted_top_contact",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "combat_contact",
+      "entry": "0802bd9c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Called from contact dispatcher when actor state+1c==9; chooses spin destroy if player spin flag03004011 or engine+10fa and actor+3e bit10, otherwise bounces/kicks/riding transitions with type checks.",
+      "context_roles": [
+        "player",
+        "scene",
+        "engine",
+        "profile",
+        "actor"
+      ],
+      "direct_callees": [
+        "0x0802a8dc",
+        "0x0802c0cc",
+        "0x0802f1b8",
+        "0x0802fd38",
+        "0x0802fe64",
+        "0x0809b348",
+        "0x0809b40c",
+        "0x0809b5cc"
+      ],
+      "callers": [
+        "0x08034264"
+      ],
+      "focus_dependencies": [
+        "0802c0cc",
+        "0802f1b8",
+        "0809b348",
+        "0809b40c"
+      ],
+      "instruction_span": {
+        "address": "0x0802bd9c",
+        "size": 618,
+        "sha256": "4848a69e43d6ace2606088f1c082e463db7a78ada05430752d0e1517ede909e2",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma2.player_hurt_entry",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "health_damage",
+      "entry": "0807081c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "0807081c rejects playerstate03003fa0,iframes0300402d,engine+1158,map+5c. Drops reserve/release ifneeded. Profile+e0==0\u2192709f8death. Poweredform2/3\u2192form1,state14; else\u2192form0,state1. Cape exception canconsume capephaseinstead with48iframes. Normaldowngrade timer47 andengine+1190=47.",
+      "context_roles": [
+        "player",
+        "profile",
+        "scene"
+      ],
+      "direct_callees": [
+        "0x080381f8",
+        "0x0806c8f0",
+        "0x080709f8",
+        "0x0809b5cc"
+      ],
+      "callers": [
+        "0x08030d04",
+        "0x080312c4",
+        "0x08034264",
+        "0x080349c4",
+        "0x0803a510",
+        "0x0803db68",
+        "0x08041df4",
+        "0x08044c88",
+        "0x08046c34",
+        "0x08049cc0",
+        "0x0804bb4c",
+        "0x080502dc",
+        "0x080504a8",
+        "0x08054904",
+        "0x08054e50",
+        "0x08057d2c",
+        "0x0805982c",
+        "0x08059a9c",
+        "0x08065dc0",
+        "0x080660f8",
+        "0x08066294",
+        "0x08066c18",
+        "0x0806d4d0"
+      ],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x0807081c",
+        "size": 362,
+        "sha256": "7c698d8b686329bf3439a698a8d7fc68048956b4116130c38c0e8775fbb73690",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma2.stomp_chain_to_resource",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "combat_rewards",
+      "entry": "0802fe64",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Combines global chain0300408c and actor+3a; increments chain, requests score code up to8; at>=8 increments scene+6be or+6c0 depending engine+1158. This resource mutation must not be dropped with visual score events.",
+      "context_roles": [
+        "actor",
+        "scene",
+        "engine"
+      ],
+      "direct_callees": [
+        "0x0803daa0"
+      ],
+      "callers": [
+        "0x0802bd9c",
+        "0x0802fd38",
+        "0x08034264",
+        "0x08044c88",
+        "0x08054904"
+      ],
+      "focus_dependencies": [
+        "0803daa0"
+      ],
+      "instruction_span": {
+        "address": "0x0802fe64",
+        "size": 178,
+        "sha256": "02d3b6662248aeab700d396ee752505cbdbb1ee4295aebaf961488cbfc9db9d4",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": {
+        "ref": "local/ir/dependency-exports/20261016T092351186293/super-mario-advance-2-super-mario-world/l0/0802fe64.json",
+        "sha256": "6c0041e9b3b2d0176a35ab5bc03b108784c7364c0f3642f07eb2dd421d144580"
+      },
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma2.reward_record_allocation",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "combat_rewards",
+      "entry": "0803da0c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Allocates scene reward records stride24 at+200, clamps reward code16, stores relative actor position and lifetime48. Rendering lifecycle/consumption remains missing.",
+      "context_roles": [
+        "actor",
+        "scene"
+      ],
+      "direct_callees": [
+        "0x0803d804"
+      ],
+      "callers": [
+        "0x0803daa0"
+      ],
+      "focus_dependencies": [
+        "0803d804"
+      ],
+      "instruction_span": {
+        "address": "0x0803da0c",
+        "size": 86,
+        "sha256": "9b78ff849a7e51e7f5907da04a5e7bc014f260e4781cebc246474ff6099719f0",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": {
+        "ref": "local/ir/dependency-exports/20261016T092351186293/super-mario-advance-2-super-mario-world/l0/0803da0c.json",
+        "sha256": "eedce92f3a1b029ae5e63e93b2799614b6c0f12744afd0b6bbacc23026ac76e7"
+      },
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma4.player_tick_form_commit",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "forms_lifecycle",
+      "entry": "08092d9c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Player+50 is pending command: low positive<15 commits (pending&15)-1 to active form+37, refreshes animation08095268, writes per-character03002ce2[character];80 increments+4f,40 increments+4c,other commands set+52=c0. Clears pending then palette0809d51c. Same tick later movement\u2192collision pipeline. Not safe to claim pickup closes form without this phase.",
+      "context_roles": [
+        "player",
+        "contact",
+        "world"
+      ],
+      "direct_callees": [
+        "0x08042b00",
+        "0x0804807c",
+        "0x0804a758",
+        "0x08092678",
+        "0x08092684",
+        "0x080931f8",
+        "0x080932f4",
+        "0x08095268",
+        "0x08095534",
+        "0x080960fc",
+        "0x08097bf0",
+        "0x080981a8",
+        "0x08098a4c",
+        "0x08098be0",
+        "0x08098ff8",
+        "0x08099344",
+        "0x08099930",
+        "0x0809d368",
+        "0x0809d51c",
+        "0x080a0b20",
+        "0x080a161c",
+        "0x080a837c"
+      ],
+      "callers": [
+        "0x08092240"
+      ],
+      "focus_dependencies": [
+        "08095268",
+        "0809d51c"
+      ],
+      "instruction_span": {
+        "address": "0x08092d9c",
+        "size": 972,
+        "sha256": "fc929588af2783ccc5b51c171cf752cbacbddcd90337b83a7d86748aafa6801a",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma4.player_damage_transaction",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "health_damage",
+      "entry": "080481fc",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Rejects many immunity/transition flags; small activeform0\u2192death0804807c; powered forms queue downgrade through player+50, set transformation+3b=47 and invulnerability+3c=113. Rule flags03002d52 alter downgrade; can spawn dropped reserve item via allocator.",
+      "context_roles": [
+        "player",
+        "world",
+        "contact"
+      ],
+      "direct_callees": [
+        "0x08048028",
+        "0x0804807c",
+        "0x0804a758",
+        "0x080a83a0",
+        "0x080e4040",
+        "0x080e6d7c"
+      ],
+      "callers": [
+        "0x080466dc",
+        "0x080466e8",
+        "0x08046990",
+        "0x0804d56c",
+        "0x0804fe14",
+        "0x08056bcc",
+        "0x08057ff4",
+        "0x080585b8",
+        "0x08058870",
+        "0x08059040",
+        "0x080599ac",
+        "0x0805d5d8",
+        "0x08060478",
+        "0x08060e84",
+        "0x080632cc",
+        "0x08063b3c",
+        "0x080685d4",
+        "0x08068afc",
+        "0x0806a394",
+        "0x0806c9bc",
+        "0x0806cec4",
+        "0x0806d820",
+        "0x08070788",
+        "0x080710e4",
+        "0x080714dc",
+        "0x0807163c",
+        "0x08076d9c",
+        "0x08077c14",
+        "0x08078084",
+        "0x0807b47c",
+        "0x0807bd24",
+        "0x0807e728",
+        "0x08081778",
+        "0x08081da4",
+        "0x080837fc",
+        "0x0808517c",
+        "0x0808a5dc",
+        "0x0808fb20",
+        "0x08098a4c",
+        "0x0809b2e4",
+        "0x0809b398",
+        "0x0809b3dc",
+        "0x0809b9f8",
+        "0x0809c260"
+      ],
+      "focus_dependencies": [
+        "0804807c",
+        "08048028",
+        "0804a758",
+        "080e6d7c"
+      ],
+      "instruction_span": {
+        "address": "0x080481fc",
+        "size": 600,
+        "sha256": "e46ae922056edfdf7ad56b9484f3a0f3752641ec35cd00b3bcf97915230cf1d8",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma4.player_death_begin",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "health_death",
+      "entry": "0804807c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Guard player+62==0; clears movement/ability/riding state, pendingform1, vertical velocity c0, timer+64=48, deathphase+62=1; releases actor references and invokes audio/control services. Does not close life decrement/respawn/save by itself.",
+      "context_roles": [
+        "player",
+        "world",
+        "contact"
+      ],
+      "direct_callees": [
+        "0x0808e984",
+        "0x080a4328",
+        "0x080a83a0",
+        "0x080e3d78",
+        "0x080e4040",
+        "0x080e43c8"
+      ],
+      "callers": [
+        "0x080481fc",
+        "0x0807c7c8",
+        "0x08087064",
+        "0x080871c0",
+        "0x08092d9c",
+        "0x0809b4d4",
+        "0x0809b69c"
+      ],
+      "focus_dependencies": [
+        "0808e984",
+        "080a4328",
+        "080a83a0",
+        "080e3d78",
+        "080e4040",
+        "080e43c8"
+      ],
+      "instruction_span": {
+        "address": "0x0804807c",
+        "size": 344,
+        "sha256": "313c7878c6d0765ee8475dc89dcf15f47926ec82e9cee6bdc15abd33404e31f4",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma4.actor_player_contact_dispatch",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "combat_contact",
+      "entry": "08046fb4",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "080466bc/08046568 gate and08046e6c special118 terrain test precede side/top response08046b88/08046e2c. This dispatch called by many actor updates; sender-type eligibility and all response paths remain unqualified.",
+      "context_roles": [
+        "player",
+        "world",
+        "actor"
+      ],
+      "direct_callees": [
+        "0x080466bc",
+        "0x08046b88",
+        "0x08046e2c",
+        "0x08046e6c",
+        "0x08047164"
+      ],
+      "callers": [
+        "0x0804707c",
+        "0x0804ccc8",
+        "0x0804ed70",
+        "0x0804f094",
+        "0x0804f274",
+        "0x0804f334",
+        "0x08050184",
+        "0x0805020c",
+        "0x080504ac",
+        "0x080508e0",
+        "0x08050e6c",
+        "0x0805130c",
+        "0x0805180c",
+        "0x080518e4",
+        "0x08052014",
+        "0x080520f0",
+        "0x08052164",
+        "0x08052748",
+        "0x08052c50",
+        "0x08052edc",
+        "0x08053844",
+        "0x080539bc",
+        "0x080540c4",
+        "0x080609c8",
+        "0x08060ee8",
+        "0x080636e0",
+        "0x0806c46c",
+        "0x0806c5f4",
+        "0x0806c704",
+        "0x0806ce78",
+        "0x0806dd94",
+        "0x0806e3b8",
+        "0x0806f17c",
+        "0x080728b4",
+        "0x08076710",
+        "0x08076a5c",
+        "0x08077188",
+        "0x0807733c",
+        "0x080788c4",
+        "0x0807af98",
+        "0x0807bc74",
+        "0x08083d44"
+      ],
+      "focus_dependencies": [
+        "080466bc",
+        "08046568",
+        "08046e6c",
+        "08046b88",
+        "08046e2c",
+        "08047164"
+      ],
+      "instruction_span": {
+        "address": "0x08046fb4",
+        "size": 174,
+        "sha256": "f77fd6353b98e751a61eeea6cd95297520470c34c566a622102694d7c4b9717a",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma4.stomp_side_contact_policy",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "combat_contact",
+      "entry": "08046b88",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Relative actorY(+8) minus type/context height and playerY(+4) choose hurt branch08046a94 vs stomp/shell/special response. Uses actorflags+64 and per-type trait arrays; calls recovered stomp only after legality.",
+      "context_roles": [
+        "player",
+        "world",
+        "actor"
+      ],
+      "direct_callees": [
+        "0x08046744",
+        "0x08046990",
+        "0x08046a60",
+        "0x08046a94",
+        "0x08046b44",
+        "0x080479e8"
+      ],
+      "callers": [
+        "0x08046e2c",
+        "0x08046fb4"
+      ],
+      "focus_dependencies": [
+        "08046a94",
+        "08046a60",
+        "08046b44",
+        "08046990",
+        "08046744"
+      ],
+      "instruction_span": {
+        "address": "0x08046b88",
+        "size": 634,
+        "sha256": "77a6116164e74adc7e55cf26ee9e07d76fe417823fabb1663605cc76100296e0",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma4.normal_actor_pool_allocate",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "entity_lifecycle",
+      "entry": "0804a758",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Searches slots14\u21920, stride112 at world+0..620, activebyte+16==0; resets chosen slot0804a650, marksactive2 and returns index; exhaustion returnsff. Do not infer27 slots from later world offsets.",
+      "context_roles": [
+        "world"
+      ],
+      "direct_callees": [
+        "0x0804a650"
+      ],
+      "callers": [
+        "0x080481fc",
+        "0x0804b0dc",
+        "0x0804b2a0",
+        "0x0804b4d4",
+        "0x0804b7b4",
+        "0x0804bb90",
+        "0x0804c408",
+        "0x08058450",
+        "0x08068740",
+        "0x080773b8",
+        "0x08078e7c",
+        "0x0807c934",
+        "0x08081c40",
+        "0x08081da4",
+        "0x08083990",
+        "0x08083c38",
+        "0x0808ae68",
+        "0x08092804",
+        "0x08092d9c",
+        "0x0809c5b0",
+        "0x0809e144",
+        "0x0809e420",
+        "0x0809e6e4",
+        "0x0809effc"
+      ],
+      "focus_dependencies": [
+        "0804a650"
+      ],
+      "instruction_span": {
+        "address": "0x0804a758",
+        "size": 64,
+        "sha256": "20a8a5b5f21218754317be0fee6699321c4da77cf6121f20782433fb9f9edc42",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma4.actor_reset_from_species",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "entity_lifecycle",
+      "entry": "0804a650",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Clears actor lifecycle/velocity/contact/timer fields and loads species traits08155762 and u16flags081552ae[type]. Some types7d/7f preserveYhigh; caller sets type/state after reset.",
+      "context_roles": [
+        "actor"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x0804146c",
+        "0x08048f3c",
+        "0x0804a758",
+        "0x0804a7a0",
+        "0x0804a7e8",
+        "0x0804bb90",
+        "0x0804e030",
+        "0x0804e57c",
+        "0x0804e88c",
+        "0x08050840",
+        "0x08052640",
+        "0x080526e8",
+        "0x080682a4",
+        "0x0806fed8",
+        "0x08071a9c",
+        "0x080742a0",
+        "0x0807cd44",
+        "0x0807d3f4",
+        "0x08082aac",
+        "0x08083990",
+        "0x08083c38",
+        "0x080917d4",
+        "0x0809809c"
+      ],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x0804a650",
+        "size": 254,
+        "sha256": "525aa2c809a2af55172efaa89ac08f5132f3695584750dfd9c3effd0c9161fb7",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma4.generic_item_effect",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "forms_resources",
+      "entry": "08068bd4",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Item+17==0 starts player+3d=e0 timed mode and music; otherwise ROM08159ea0[item+17] selects active-form target+1 pending, clears+52, common pickup consume/reward. Descriptor/category domain must be recovered before naming every item.",
+      "context_roles": [
+        "player",
+        "actor"
+      ],
+      "direct_callees": [
+        "0x08068aa4",
+        "0x08068ae4",
+        "0x08068b90",
+        "0x080e3d78",
+        "0x080e3e04",
+        "0x080e4040"
+      ],
+      "callers": [],
+      "focus_dependencies": [
+        "08068aa4",
+        "08068ae4",
+        "08068b90",
+        "080e3d78",
+        "080e3e04",
+        "080e4040"
+      ],
+      "instruction_span": {
+        "address": "0x08068bd4",
+        "size": 216,
+        "sha256": "67937542b6ca5851b0a8d404add9da44d4a14fa62785febad632438a50344eb3",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma4.reward_event_to_world_state",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "combat_rewards",
+      "entry": "08091050",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Code>12 increments world+cd3 by code-12 and invokes08091000; allocates one of15 visual slots stride12 world+afc, records screen-relative actor pos/type and lifetime48. This mixes resources and presentation; blindly stubbing score would lose world mutation.",
+      "context_roles": [
+        "world",
+        "actor"
+      ],
+      "direct_callees": [
+        "0x08090f6c",
+        "0x08091000"
+      ],
+      "callers": [
+        "0x08041278",
+        "0x08042368",
+        "0x080464ec",
+        "0x08056bcc",
+        "0x08058870",
+        "0x080599ac",
+        "0x0805a744",
+        "0x08060478",
+        "0x08060e84",
+        "0x080677d0",
+        "0x08068a44",
+        "0x08068ae4",
+        "0x08068afc",
+        "0x0806a3c8",
+        "0x0806f22c",
+        "0x0806f2f4",
+        "0x080754b8",
+        "0x080758d0",
+        "0x08078e7c",
+        "0x0807cd44",
+        "0x0807e728",
+        "0x08081778",
+        "0x0808517c",
+        "0x08085e70",
+        "0x08086368",
+        "0x080867d4",
+        "0x08088de0",
+        "0x08091144"
+      ],
+      "focus_dependencies": [
+        "08090f6c",
+        "08091000"
+      ],
+      "instruction_span": {
+        "address": "0x08091050",
+        "size": 198,
+        "sha256": "7d2606cd2f9a5185e8b4fbc61d2421f2207ad8baf7d540a7c510b56fdb768894",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": {
+        "ref": "local/ir/dependency-exports/20261016T093346164209/super-mario-advance-4-super-mario-bros-3/l0/08091050.json",
+        "sha256": "84d1cbfc4ee2646e20f9fc15b564b0beff8b6e596ce1c1b8f58a1383909aa412"
+      },
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma4.visual_reward_pool_select",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "entity_lifecycle",
+      "entry": "08090f6c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Select free visual reward slot14\u21920 at world+afc+i*12 activecode+8; exhaustion forcibly reuses slot4. Separate from normal15actor pool.",
+      "context_roles": [
+        "world"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x0807e0f0",
+        "0x0807fe90",
+        "0x0808a3d0",
+        "0x0808cac4",
+        "0x08090fa4",
+        "0x08091050"
+      ],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x08090f6c",
+        "size": 46,
+        "sha256": "953d40e2fdb803b7f80e5bc695ec02235018018334589afb197f4bbeab12a04d",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma4.form_palette_refresh",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "presentation_service",
+      "entry": "0809d51c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Select ROM pointer table0815dd9c by active form/character/specialstate; calls color transform080079b4 and writes 16 palette entries to two EWRAM buffers, sets uploadflag03003782 bit2. Presentation output contract must be explicit when form commit is separated.",
+      "context_roles": [
+        "player"
+      ],
+      "direct_callees": [
+        "0x080079b4"
+      ],
+      "callers": [
+        "0x0800b344",
+        "0x08065eb8",
+        "0x080928f8",
+        "0x08092d9c",
+        "0x08095a48",
+        "0x0809cbc4",
+        "0x080a59e0"
+      ],
+      "focus_dependencies": [
+        "080079b4"
+      ],
+      "instruction_span": {
+        "address": "0x0809d51c",
+        "size": 156,
+        "sha256": "0a0d02e82490df1072fa2b19b8424ec1dc24456b0ca8cbb62a8291935752158e",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma4.player_terrain_phase",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "terrain_contact",
+      "entry": "08097bf0",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Wall query08097d7c\u2192wallresponse0809c02c, vertical direction incl riding velocity chooses ceiling0809c260 or floor0809c3c8+0809c670; alternative rotating geometry08098248/080988b8 temporarily swaps contact arrays.",
+      "context_roles": [
+        "player",
+        "contact",
+        "world"
+      ],
+      "direct_callees": [
+        "0x08097d7c",
+        "0x08098248",
+        "0x080988b8",
+        "0x0809bdd4",
+        "0x0809c02c",
+        "0x0809c260",
+        "0x0809c3c8",
+        "0x0809c670"
+      ],
+      "callers": [
+        "0x08092d9c"
+      ],
+      "focus_dependencies": [
+        "08097d7c",
+        "0809bdd4",
+        "0809c260",
+        "0809c3c8",
+        "0809c670",
+        "08098248",
+        "080988b8"
+      ],
+      "instruction_span": {
+        "address": "0x08097bf0",
+        "size": 360,
+        "sha256": "52ba17da0f94824bc0f47a2255b3e6a9a542eca897b8a4edd8c39b061d4c3205",
+        "boundary_status": "exported candidate; native tail and ABI need instruction review before automatic package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Export/reuse actual L0, resolve explicit context/collection/service contracts, automatically lift full causal closure then original/emitted native parity; no recovered-C generator input."
+    },
+    {
+      "id": "sma1.terrain_hurt_transaction",
+      "game": "super-mario-advance",
+      "family": "health_damage",
+      "entry": "080afe44",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "If player+35 invulnerability==0, healthmeter+2e<16 routes death080ad8dc with vy=-0x400000, deathflagentities+656=1; otherwise subtract16, set invulnerability127, zeroVX and set/reset upward recoil. Full hurt timer decay/collision eligibility remain separate.",
+      "context_roles": [
+        "player",
+        "entities"
+      ],
+      "direct_callees": [
+        "0x080ad8dc",
+        "0x080b1358",
+        "0x080b551c"
+      ],
+      "callers": [
+        "0x080a821c"
+      ],
+      "focus_dependencies": [
+        "080ad8dc",
+        "080b1358",
+        "080b551c"
+      ],
+      "instruction_span": {
+        "address": "0x080afe44",
+        "size": 246,
+        "sha256": "2d1f0d5af16714e32ebeadd3e6b1082dffe15c4ccba740a3c97464068efab88c",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Use actual L0 + evidenced context contracts, automatic lift, original/emitted native parity then connected input witness."
+    },
+    {
+      "id": "sma1.actor_hurt_transaction",
+      "game": "super-mario-advance",
+      "family": "health_damage",
+      "entry": "080afc64",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Same health/invulnerability gate as terrain hurt; actor arg0 and index arg1 determine recoil relativeX and species-dependent audio. Last-health representation and exactly-once timing need qualification, not assumed heart counts.",
+      "context_roles": [
+        "player",
+        "entities",
+        "actor"
+      ],
+      "direct_callees": [
+        "0x080ad8dc",
+        "0x080b1358",
+        "0x080b551c"
+      ],
+      "callers": [
+        "0x080aeaa0",
+        "0x080aefd0"
+      ],
+      "focus_dependencies": [
+        "080ad8dc",
+        "080b1358",
+        "080b551c"
+      ],
+      "instruction_span": {
+        "address": "0x080afc64",
+        "size": 432,
+        "sha256": "f89b3b68367a2ff420352fc570ac7206c3e325d57d608301a974636b069622da",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Use actual L0 + evidenced context contracts, automatic lift, original/emitted native parity then connected input witness."
+    },
+    {
+      "id": "sma1.player_death_release",
+      "game": "super-mario-advance",
+      "family": "health_death",
+      "entry": "080ad8dc",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Writes health0,state+27=7,action+2d=11,timer+168=180; clears charge/locks; if carrying decrements carriedflag and releases actor+4a/+4b and velocity. Audio leaves only explicit services; subsequent life/respawn still unresolved.",
+      "context_roles": [
+        "player",
+        "entities"
+      ],
+      "direct_callees": [
+        "0x080b1358",
+        "0x080b551c",
+        "0x080b55e8"
+      ],
+      "callers": [
+        "0x080ad520",
+        "0x080afc64",
+        "0x080afe44",
+        "0x080b0a60"
+      ],
+      "focus_dependencies": [
+        "080b1358",
+        "080b551c",
+        "080b55e8"
+      ],
+      "instruction_span": {
+        "address": "0x080ad8dc",
+        "size": 444,
+        "sha256": "16c3db18a6e2df5519df19fd9142fbb4345f26d36ba8aa2748bddb6633db2a34",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Use actual L0 + evidenced context contracts, automatic lift, original/emitted native parity then connected input witness."
+    },
+    {
+      "id": "sma1.ground_interaction_dispatch",
+      "game": "super-mario-advance",
+      "family": "world_interactions",
+      "entry": "080aa5bc",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "After grounded tile response, checks carrying/interaction predicate080aa63c then candidate door/object080aad60 and commits080ab05c on returned descriptor-1. This is actual interaction chain, not mere terrain renderer.",
+      "context_roles": [
+        "player",
+        "profile",
+        "entities"
+      ],
+      "direct_callees": [
+        "0x080aa63c",
+        "0x080aad60",
+        "0x080ab05c"
+      ],
+      "callers": [
+        "0x080a821c"
+      ],
+      "focus_dependencies": [
+        "080aa63c",
+        "080aad60",
+        "080ab05c"
+      ],
+      "instruction_span": {
+        "address": "0x080aa5bc",
+        "size": 112,
+        "sha256": "d08739968eebcaf96f52d01f4f42c599110a9054afed33c57d646c1331a29831",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Use actual L0 + evidenced context contracts, automatic lift, original/emitted native parity then connected input witness."
+    },
+    {
+      "id": "sma1.plucked_actor_create",
+      "game": "super-mario-advance",
+      "family": "carry_pickup_spawn",
+      "entry": "080aa83c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Searches object status12slots index0..11, exhaustionff; fills112Bactor from ROM08344cbc template, maps item descriptor08367db6, sets type/status/timers and state-specificflags, mutates worldtile0804b694, writes carriedindexplayer+5c and attach080b04cc. Despawn/throwhit still open.",
+      "context_roles": [
+        "player",
+        "profile",
+        "entities"
+      ],
+      "direct_callees": [
+        "0x08045540",
+        "0x0804b694",
+        "0x080b04cc",
+        "0x080b1358",
+        "0x080b6f20"
+      ],
+      "callers": [
+        "0x080aa63c",
+        "0x080aad60"
+      ],
+      "focus_dependencies": [
+        "08045540",
+        "0804b694",
+        "080b04cc",
+        "080b1358",
+        "080b6f20"
+      ],
+      "instruction_span": {
+        "address": "0x080aa83c",
+        "size": 1206,
+        "sha256": "61d1dd6d93cda1b9ac7950ac1878ad7f8af7d35cd7f7a78ddf37f432d1f1ba27",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Use actual L0 + evidenced context contracts, automatic lift, original/emitted native parity then connected input witness."
+    },
+    {
+      "id": "sma1.ground_object_interaction",
+      "game": "super-mario-advance",
+      "family": "world_interactions",
+      "entry": "080aad60",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Tile/type tests and pressedB can create pluckedactor via080aa83c, then replace tile by080a33a0; bounded8entry door/object descriptor table08368954 can return transitionselector1..8. Category names need table/context confirmation.",
+      "context_roles": [
+        "player",
+        "profile",
+        "entities"
+      ],
+      "direct_callees": [
+        "0x080a33a0",
+        "0x080a9cf8",
+        "0x080aa83c",
+        "0x080aaff0",
+        "0x080b1f48"
+      ],
+      "callers": [
+        "0x080aa5bc"
+      ],
+      "focus_dependencies": [
+        "080a33a0",
+        "080a9cf8",
+        "080aa83c",
+        "080aaff0",
+        "080b1f48"
+      ],
+      "instruction_span": {
+        "address": "0x080aad60",
+        "size": 564,
+        "sha256": "5809e18d778b27f62d9a3e1b762dc2bacfe6ec6c9112d034f7412c42344e9bd5",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Use actual L0 + evidenced context contracts, automatic lift, original/emitted native parity then connected input witness."
+    },
+    {
+      "id": "sma1.room_transition_begin",
+      "game": "super-mario-advance",
+      "family": "world_progression",
+      "entry": "080ab05c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Aligns playerX, records previous mode, locks movement/setsinvulnerability1, action13 when not carrying, saves descriptor+5e, special2/3/4mode bits and080b0ba8; generic profile+67=1 then080b6cc4. Needs script/room-load commit and persistence closure.",
+      "context_roles": [
+        "player",
+        "profile",
+        "entities"
+      ],
+      "direct_callees": [
+        "0x080ab3b8",
+        "0x080b0ba8",
+        "0x080b1358",
+        "0x080b1398",
+        "0x080b551c",
+        "0x080b6cc4"
+      ],
+      "callers": [
+        "0x080aa5bc"
+      ],
+      "focus_dependencies": [
+        "080ab3b8",
+        "080b0ba8",
+        "080b1358",
+        "080b1398",
+        "080b551c",
+        "080b6cc4"
+      ],
+      "instruction_span": {
+        "address": "0x080ab05c",
+        "size": 776,
+        "sha256": "565b9f472977283608ddeb7787f46ef3d06ed0008160e23e6bc4f5db87aff24b",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Use actual L0 + evidenced context contracts, automatic lift, original/emitted native parity then connected input witness."
+    },
+    {
+      "id": "sma1.death_update_lives",
+      "game": "super-mario-advance",
+      "family": "health_death",
+      "entry": "080a9334",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Decays death timer+168. When+32==0,+45==2,timer0 clears action+2d, decrements global lives03001161, setsplayer+55=2ifzeroelse1. Else verticalintegration080ac11c then gravity+0x20000 whilevy<0x390000. Respawn-selector consumption and action scheduling still unresolved.",
+      "context_roles": [
+        "player"
+      ],
+      "direct_callees": [
+        "0x080ac11c"
+      ],
+      "callers": [],
+      "focus_dependencies": [
+        "080ac11c"
+      ],
+      "instruction_span": {
+        "address": "0x080a9334",
+        "size": 316,
+        "sha256": "50f1fc3bfee1d2f6bed579845d46dba71859d8ceb81a6ac08939a8d2b578eff2",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "d29dec02caacbf449e2a93c6042258b0669542e102eb0e6fd0eb92a5411e0244",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance/super-mario-advance/functions.jsonl",
+        "sha256": "3ed19b8048d4d284ca7df8ca8945fb176c54933d7ff4a5366af70cddf51e24ac"
+      },
+      "l0": null,
+      "next_step": "Automatic L0/dependency closure and original/emitted parity plus native causal witness; no recovered-C behaviorinput."
+    },
+    {
+      "id": "sma4.player_outer_tick",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "player_lifecycle",
+      "entry": "08092240",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Calls preprocessing928f8, freeze9cbc4, then92d9c; ORsdeath+62/ability+4a/transition+3e/+3f/+3b into world+bd1. Decrements timerbytes+64..70 (NOT+3c invulnerability) only outside scene19. Other mode timers have different ownership.",
+      "context_roles": [
+        "player",
+        "world",
+        "contact"
+      ],
+      "direct_callees": [
+        "0x0808e5c4",
+        "0x08092574",
+        "0x080928f8",
+        "0x08092d9c",
+        "0x0809cbc4",
+        "0x080e3d78"
+      ],
+      "callers": [
+        "0x08015fac",
+        "0x0802886c",
+        "0x08028cb8",
+        "0x08031d7c",
+        "0x0803f1fc",
+        "0x080c17f8",
+        "0x080c56cc"
+      ],
+      "focus_dependencies": [
+        "080928f8",
+        "0809cbc4",
+        "08092d9c"
+      ],
+      "instruction_span": {
+        "address": "0x08092240",
+        "size": 680,
+        "sha256": "4b5fa824de1d18b7468767a5abafd7ac4bf55ce482dd9b817e9a60ea4ef58d42",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Automatic L0/dependency closure and original/emitted parity plus native causal witness; no recovered-C behaviorinput."
+    },
+    {
+      "id": "sma4.player_mode_gate",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "player_lifecycle",
+      "entry": "08092684",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Captures playertransition/death fields, calls abilitystatea59e0, masksinputsandbypassesnormalcontrollerwhen modesactive; invokes9c87c alternate update. These are phase gates, not UI.",
+      "context_roles": [
+        "player",
+        "contact"
+      ],
+      "direct_callees": [
+        "0x0809c87c",
+        "0x080a59e0"
+      ],
+      "callers": [
+        "0x08092d9c"
+      ],
+      "focus_dependencies": [
+        "080a59e0",
+        "0809c87c"
+      ],
+      "instruction_span": {
+        "address": "0x08092684",
+        "size": 192,
+        "sha256": "a415766ab6f5f5a33a199cb01475f71c59a3f454292680b6a8452bffdcf78dfe",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Automatic L0/dependency closure and original/emitted parity plus native causal witness; no recovered-C behaviorinput."
+    },
+    {
+      "id": "sma4.death_phase_dispatch",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "health_death",
+      "entry": "080a66c4",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Dispatches through readonlypointertable0815e55c indexedplayer+62; bridge080e7634 is indirectcallmechanism, mustresolve exactdomain/targets instead ofignore.",
+      "context_roles": [
+        "player"
+      ],
+      "direct_callees": [
+        "0x080e7634"
+      ],
+      "callers": [
+        "0x080a59e0"
+      ],
+      "focus_dependencies": [
+        "080e7634"
+      ],
+      "instruction_span": {
+        "address": "0x080a66c4",
+        "size": 26,
+        "sha256": "3df75f6f8fa2605d44b43224940eb0f21e975d22227984f07d10e509da45f227",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Automatic L0/dependency closure and original/emitted parity plus native causal witness; no recovered-C behaviorinput."
+    },
+    {
+      "id": "sma4.death_phase_1",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "health_death",
+      "entry": "080a66e8",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "AtYintegeralignedb0 andtimer+64==0 waits audio completion080e3e7c then incrementsstageevent03003ae7 andsets03003851=1; otherwise timer branch chooses a68e4 vs a6900motion.",
+      "context_roles": [
+        "player"
+      ],
+      "direct_callees": [
+        "0x080a68e4",
+        "0x080a6900",
+        "0x080e3e7c"
+      ],
+      "callers": [],
+      "focus_dependencies": [
+        "080a68e4",
+        "080a6900",
+        "080e3e7c"
+      ],
+      "instruction_span": {
+        "address": "0x080a66e8",
+        "size": 80,
+        "sha256": "b1c93ad642a08bbdf82dee6c816eba695f62ea07269373758dc59435f09a64ba",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Automatic L0/dependency closure and original/emitted parity plus native causal witness; no recovered-C behaviorinput."
+    },
+    {
+      "id": "sma4.death_phase_2",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "health_death",
+      "entry": "080a674c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Timer+64zero plus audio-completion080e3e7c==0 increments03003ae7 andwrites03003851=1. Life decrement and next-scene persistence remain caller-owned.",
+      "context_roles": [
+        "player"
+      ],
+      "direct_callees": [
+        "0x080e3e7c"
+      ],
+      "callers": [],
+      "focus_dependencies": [
+        "080e3e7c"
+      ],
+      "instruction_span": {
+        "address": "0x080a674c",
+        "size": 46,
+        "sha256": "c20ad715bbcc5c16bb77c5b12919803c2de29ce2044775516a6a0b2c34c42150",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Automatic L0/dependency closure and original/emitted parity plus native causal witness; no recovered-C behaviorinput."
+    },
+    {
+      "id": "sma4.death_phase_3",
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "family": "health_death",
+      "entry": "080a678c",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "SpecialYalignedb0 updatesmotion/sprite andtimer112; timer/audio completion submits same stage event; otherwise timer selectsdeathmotion a68e4/a6900. Spritebuffer effects explicit adapter requirement.",
+      "context_roles": [
+        "player"
+      ],
+      "direct_callees": [
+        "0x080a4748",
+        "0x080a68e4",
+        "0x080a6900",
+        "0x080e3e7c"
+      ],
+      "callers": [],
+      "focus_dependencies": [
+        "080a68e4",
+        "080a6900",
+        "080a4748",
+        "080e3e7c"
+      ],
+      "instruction_span": {
+        "address": "0x080a678c",
+        "size": 298,
+        "sha256": "56fbe89b8eb4115ab00aa4c2b1137f431dcb4ddb8a776079d1d3b7edd44fa540",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "d99f8e5288b9ae17bdb3cc440cdc6870f5ea0fa99f6eb6c22a5a1197ad7f62d9",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-4-super-mario-bros-3/super-mario-advance-4-super-mario-bros-3/functions.jsonl",
+        "sha256": "d6e1051571d924df4045806eac0165107329e1039acfd1b8425fc5ecfd501b31"
+      },
+      "l0": null,
+      "next_step": "Automatic L0/dependency closure and original/emitted parity plus native causal witness; no recovered-C behaviorinput."
+    },
+    {
+      "id": "sma2.player_state_dispatch",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "player_lifecycle",
+      "entry": "08068dfc",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Dispatch table08108490 indexed fixedplayerstate03003fa0 through0809e43c. Table state0normal,1smallhurt,9death,14poweredshrink; all states and callback continuationABI still need bounded closure review.",
+      "context_roles": [
+        "player"
+      ],
+      "direct_callees": [
+        "0x0809e43c"
+      ],
+      "callers": [
+        "0x0800409c",
+        "0x080040d0",
+        "0x0800ae88",
+        "0x080689d8"
+      ],
+      "focus_dependencies": [
+        "0809e43c"
+      ],
+      "instruction_span": {
+        "address": "0x08068dfc",
+        "size": 28,
+        "sha256": "0851df16884654489868786dc4aa5fc7bfaaccce9fac56b7671ca8de27983716",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": null,
+      "next_step": "Automatic L0/dependency closure and original/emitted parity plus native causal witness; no recovered-C behaviorinput."
+    },
+    {
+      "id": "sma2.death_velocity_begin",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "health_death",
+      "entry": "080709f8",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Sets vertical high value 03003fad to 0x90, then invokes 08070a14. This 16-bit write must preserve the exact overlapping global-width semantics.",
+      "context_roles": [
+        "player"
+      ],
+      "direct_callees": [
+        "0x08070a14"
+      ],
+      "callers": [
+        "0x0800a1c0",
+        "0x0807081c",
+        "0x08070ab8"
+      ],
+      "focus_dependencies": [
+        "08070a14"
+      ],
+      "instruction_span": {
+        "address": "0x080709f8",
+        "size": 20,
+        "sha256": "eb2dfbf14b5d36f1029ec7d0cca4d94191b1152df9cd45b3a0eba32f84c92ef9",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": null,
+      "next_step": "Automatic L0/dependency closure and original/emitted parity plus native causal witness; no recovered-C behaviorinput."
+    },
+    {
+      "id": "sma2.death_state_begin",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "health_death",
+      "entry": "08070a14",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Sets profile+fc to u16 0xff, player state 03003fa0 to u16 9, spin 03004011 to u16 0, timer 0300402c to u16 48 and engine+1190 to u8 48. Clears cape 0300400e, scene+66b and held-entity 03003fe5. Audio services 0809b348/0809b5cc are explicit dependencies.",
+      "context_roles": [
+        "player",
+        "profile",
+        "engine",
+        "scene"
+      ],
+      "direct_callees": [
+        "0x0809b348",
+        "0x0809b5cc"
+      ],
+      "callers": [
+        "0x0806d3d8",
+        "0x080709f8"
+      ],
+      "focus_dependencies": [
+        "0809b348",
+        "0809b5cc"
+      ],
+      "instruction_span": {
+        "address": "0x08070a14",
+        "size": 120,
+        "sha256": "e3d9d293c8462cd7fadad88cc7c7d058ae878bfe6593af4341dfa4b7d4d11371",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": null,
+      "next_step": "Automatic L0/dependency closure and original/emitted parity plus native causal witness; no recovered-C behaviorinput."
+    },
+    {
+      "id": "sma2.death_countdown_life_retry",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "health_death",
+      "entry": "08069d60",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Forces profile form+e0 to zero. Decrements timer 0300402c only when frame 03002bd3&3==0; below38 integrates movement and gravity. At zero sets map+2b=0x80, clears checkpoint fields according to map+55 and decrements signed16 profile+9c lives. Negative lives selects game-over events through engine+1199..119b and 03002bc6=0x25; otherwise flags select retry 0x1b/0x25. Calls 0800c938, whose persistence effects remain unresolved.",
+      "context_roles": [
+        "player",
+        "profile",
+        "engine",
+        "map"
+      ],
+      "direct_callees": [
+        "0x0800c938",
+        "0x0806b52c",
+        "0x0806f714",
+        "0x0809b348"
+      ],
+      "callers": [],
+      "focus_dependencies": [
+        "0806b52c",
+        "0806f714",
+        "0809b348",
+        "0800c938"
+      ],
+      "instruction_span": {
+        "address": "0x08069d60",
+        "size": 330,
+        "sha256": "f39757618a7e57b8c265c70b890e1a691628fff312a209b27fb5ee65000dc30e",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": null,
+      "next_step": "Automatic L0/dependency closure and original/emitted parity plus native causal witness; no recovered-C behaviorinput."
+    },
+    {
+      "id": "sma2.small_hurt_recovery",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "health_damage",
+      "entry": "08069530",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "At timer 0300402c zero: sets invulnerability 0300402d=127, player state 03003fa0=u16 zero and engine+1190=zero. Otherwise selects animation from ROM081085f8[timer>>2] and decrements timer. Caller timer domain must bound the table.",
+      "context_roles": [
+        "player",
+        "engine"
+      ],
+      "direct_callees": [],
+      "callers": [],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x08069530",
+        "size": 74,
+        "sha256": "e2b224faf9525f7342558fc50b4596fa3ad701897847398b4c41cd1fe200c692",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": null,
+      "next_step": "Automatic L0/dependency closure and original/emitted parity plus native causal witness; no recovered-C behaviorinput."
+    },
+    {
+      "id": "sma2.powered_hurt_recovery",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "health_damage",
+      "entry": "080711d4",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Uses the same timing contract as small hurt, with ROM081095b0[timer>>2]. At timer zero sets invulnerability127, player state0 and engine+1190 zero. Compose with the prior powered-form downgrade, rather than using the death tick.",
+      "context_roles": [
+        "player",
+        "engine"
+      ],
+      "direct_callees": [],
+      "callers": [],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x080711d4",
+        "size": 74,
+        "sha256": "e75a209480057ad73daba8c7211a1ed099d36dde11d551e9fc1d3566274594f5",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": null,
+      "next_step": "Automatic L0/dependency closure and original/emitted parity plus native causal witness; no recovered-C behaviorinput."
+    },
+    {
+      "id": "sma2.reserve_item_drop_on_hurt",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "resources_forms",
+      "entry": "080381f8",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "If profile+e1 reserve item exists, engine+8ee permits it and no mode freeze applies: clears reserve ownership; selects one of12 actor records at scene+6cc with stride100 or a fallback rotating slot; sets state8/type=reserve+0x73; invokes initializer0802ebec; writes cameraX+112 and cameraY. The dropped actor lifecycle remains a separate dependency.",
+      "context_roles": [
+        "profile",
+        "engine",
+        "scene"
+      ],
+      "direct_callees": [
+        "0x0802ebec",
+        "0x0809b5cc"
+      ],
+      "callers": [
+        "0x080689d8",
+        "0x0807081c"
+      ],
+      "focus_dependencies": [
+        "0802ebec",
+        "0809b5cc"
+      ],
+      "instruction_span": {
+        "address": "0x080381f8",
+        "size": 238,
+        "sha256": "13fe1c3489711f762e5d220e1c8cfd36e7f89fa1b1fb78a4e15a7094089ad717",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": null,
+      "next_step": "Automatic L0/dependency closure and original/emitted parity plus native causal witness; no recovered-C behaviorinput."
+    },
+    {
+      "id": "sma2.carried_attachment_release",
+      "game": "super-mario-advance-2-super-mario-world",
+      "family": "entity_lifecycle",
+      "entry": "0806c910",
+      "role": "discovery_target_not_executable_component",
+      "semantic_status": "own_export_static_causal_analysis; not new native transaction qualification",
+      "mechanic": "Input direction0/1 selects horizontal velocity ROM0810a8c0 and X offset ROM0810a8c2. Moves playerY by8 when small or16 when powered, sets air phase0x24 and vertical high velocity0xe0, then clears held-entity03003fe5. Called during the hurt release path.",
+      "context_roles": [
+        "player",
+        "profile"
+      ],
+      "direct_callees": [],
+      "callers": [
+        "0x0806bcac",
+        "0x0806c8f0"
+      ],
+      "focus_dependencies": [],
+      "instruction_span": {
+        "address": "0x0806c910",
+        "size": 102,
+        "sha256": "477c3d3a1391f3db25644a4b632371d4d9d29048269247122b06269818d79dd4",
+        "boundary_status": "Exported candidate; confirm native tail/ABI before package promotion"
+      },
+      "rom_sha256": "63d9fff04c635990a5c205a99ea64bfa698aa5cb9ec1333360063bbee949a4f3",
+      "source_export": {
+        "ref": "local/re/experiments/20261016-binary-corpus-round2/super-mario-advance-2-super-mario-world/super-mario-advance-2-super-mario-world/functions.jsonl",
+        "sha256": "34732421a8116206fa6d66b66efb90701b8f18da6196bc971af63da8d290bb6b"
+      },
+      "l0": null,
+      "next_step": "Automatic L0/dependency closure and original/emitted parity plus native causal witness; no recovered-C behaviorinput."
+    }
+  ],
+  "priority_closures": [
+    {
+      "id": "sma4_contact_damage_forms",
+      "sequence": [
+        "sma4.actor_player_contact_dispatch",
+        "sma4.stomp_side_contact_policy",
+        "sma4.player_damage_transaction",
+        "sma4.player_tick_form_commit",
+        "sma4.player_death_begin"
+      ],
+      "acceptance": [
+        "Top vs side contact changes branch under same actor geometry",
+        "Invulnerable repeat does not duplicate damage",
+        "Powered hit queues then commits correct downgrade in next update",
+        "Small hit starts exactly once death lifecycle",
+        "Full respawn/life persistence stays unresolved until separately traced"
+      ]
+    },
+    {
+      "id": "sma4_item_to_ability",
+      "sequence": [
+        "existing_growth_fire_leaf_pickups",
+        "sma4.player_tick_form_commit",
+        "sma4.form_palette_refresh",
+        "weapon_action_update_TBD"
+      ],
+      "acceptance": [
+        "Pickup is consumed once",
+        "Pending form differs from active until commit phase",
+        "Form modifies actual legal action/update, not only sprite",
+        "Save/respawn persistence unknown until traced"
+      ]
+    },
+    {
+      "id": "sma2_spin_with_contact_rewards",
+      "sequence": [
+        "sma2.actor_player_contact_dispatch",
+        "sma2.accepted_top_contact",
+        "existing_spin_stomp",
+        "sma2.stomp_chain_to_resource",
+        "sma2.reward_record_allocation"
+      ],
+      "acceptance": [
+        "Accepted top contact vs damaging side contact",
+        "Actor dead state cannot reward repeatedly",
+        "Chain threshold changes actual owned resource",
+        "Transient visual reward pool full fallback preserved"
+      ]
+    },
+    {
+      "id": "sma1_carry_hurt_release",
+      "sequence": [
+        "sma1.plucked_actor_create",
+        "existing_carried_attach",
+        "sma1.carried_actor_release",
+        "sma1.actor_hurt_transaction",
+        "sma1.player_death_release"
+      ],
+      "acceptance": [
+        "Creation allocation full\u2192ff",
+        "Acquiredactor\u2192held\u2192clearance-testedrelease",
+        "Thrown collision damages correct actor and retires or transforms exactly once",
+        "Invulnerability blocks repeat damage",
+        "Lethal path releases held actor and clears references; respawn/lives later"
+      ]
+    },
+    {
+      "id": "sma2_contact_form_life",
+      "sequence": [
+        "sma2.actor_player_contact_dispatch",
+        "sma2.player_hurt_entry",
+        "sma2.reserve_item_drop_on_hurt",
+        "sma2.death_velocity_begin",
+        "sma2.death_state_begin",
+        "sma2.player_state_dispatch",
+        "sma2.death_countdown_life_retry"
+      ],
+      "acceptance": [
+        "Sidecontacthurt vs topstomp on same actor",
+        "Powered downgrades then recovers with127iframes",
+        "Smallform entersdeathonce",
+        "Deathcountdown decrementslives andselectsretry/gameover",
+        "Reserveitem consumed+spawnedonce",
+        "Actualsave/loadresumes onlyafterpersistence serviceclosed"
+      ]
+    }
+  ],
+  "bounded_dispatches": [
+    {
+      "game": "super-mario-advance-4-super-mario-bros-3",
+      "entry": "080a66c4",
+      "table": {
+        "address": "0x0815e55c",
+        "size": 16,
+        "sha256": "1b0de92b541605317d8ab9731a5d5e0045d0148f1d1e68886b44227206e6f2c3",
+        "element_type": "thumb_code_pointer_u32",
+        "values": [
+          "080a60d1",
+          "080a66e9",
+          "080a674d",
+          "080a678d"
+        ]
+      },
+      "selector": {
+        "root": "player03007818",
+        "offset": "0x62",
+        "width_bits": 8,
+        "proposed_domain": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "domain_basis": "Observed literalwrites in reviewed source death/transition entries; caller/runtime adapter must enforce this domain, not assume bytealwaysbounded"
+      },
+      "unknowns": [
+        "Target080a60d0 absent from round2 function export; cannot claimtablecomplete until independent entry analysis/export.",
+        "Audio-completion080e3e7c is control-state input, not output-only notification; model explicit handshake instead ofignore.",
+        "Life decrement/worldmap event consumer remains unresolved."
+      ]
+    },
+    {
+      "game": "super-mario-advance-2-super-mario-world",
+      "entry": "08068dfc",
+      "table": {
+        "address": "0x08108490",
+        "size": 60,
+        "sha256": "c8a9ce2a9d5805de0f7a1737e0eca16d76bb05fc2b1cd5414eede5af25c7ecb5",
+        "element_type": "thumb_code_pointer_u32",
+        "values": [
+          "08068e25",
+          "08069531",
+          "0806959d",
+          "08069641",
+          "0806969d",
+          "08069711",
+          "08069925",
+          "08069b35",
+          "08069c75",
+          "08069d61",
+          "0806a3d5",
+          "0806a615",
+          "0806a69d",
+          "08068e21",
+          "080711d5"
+        ]
+      },
+      "selector": {
+        "address": "0x03003fa0",
+        "width_bits": 8,
+        "proposed_domain": [
+          0,
+          14
+        ],
+        "domain_basis": "Explicit caller adapter must constrain0..14; selectedstates1/9/14 independently linked from own damage stores, remaining states require review"
+      },
+      "selected_edges": {
+        "normal0": "08068e24",
+        "hurt1": "08069530",
+        "death9": "08069d60",
+        "shrink14": "080711d4"
+      },
+      "unknowns": [
+        "Notall15state semantics recovered",
+        "Generic0809e43c callback ABI/tail closure must be verified",
+        "0c938 persistence/progressionservice unresolved"
+      ]
+    }
+  ]
+}
