@@ -1,0 +1,233 @@
+{
+  "ir_version": "0.1",
+  "kind": "composition_plan",
+  "id": "mzm-pokemon-wild-lifecycle-audit",
+  "target": {
+    "platform": "gba",
+    "foundation_game": "metroid-zero-mission",
+    "preserve_campaign": true,
+    "baseline_status": "separate_existing_receipt"
+  },
+  "intent": {
+    "recipe_ref": "tools/gba_mashup/recipes/mzm-emerald-wilds-v2.json",
+    "human_decisions": [
+      {
+        "id": "single-wild",
+        "text": "Persistent player team battles the matching single wild field Pokemon",
+        "source": "human follow-up"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "ref": "tools/gba_mashup/recipes/mzm-emerald-wilds-v2.json",
+      "status": "existing_adapted_recipe"
+    }
+  ],
+  "execution": {
+    "clock": "gba_vblank",
+    "modes": [
+      "field",
+      "battle"
+    ],
+    "phases": [
+      "input",
+      "simulation",
+      "render"
+    ],
+    "transitions": [
+      {
+        "id": "enter-wild",
+        "from": "field",
+        "to": "battle",
+        "guard": "eligible exact source actor contact",
+        "transfer": "capture actor identity and party; pause world; backup display; transfer input/render lease"
+      },
+      {
+        "id": "return-field",
+        "from": "battle",
+        "to": "field",
+        "guard": "win/retreat/party defeat outcome",
+        "transfer": "resolve exact actor once on win; restore resources and world; cooldown before reentry"
+      }
+    ]
+  },
+  "states": [
+    {
+      "id": "display.owner",
+      "lifetime": "session",
+      "type": {
+        "scalar": "enum",
+        "quantity": "lease",
+        "unit": "exclusive",
+        "frame": "display"
+      },
+      "required_writers": [
+        {
+          "phase": "render",
+          "modes": [
+            "field",
+            "battle"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "party",
+      "lifetime": "campaign",
+      "type": {
+        "scalar": "record",
+        "quantity": "party",
+        "unit": "pokemon_party_v1",
+        "frame": "logical"
+      },
+      "required_writers": [
+        {
+          "phase": "simulation",
+          "modes": [
+            "battle"
+          ]
+        }
+      ],
+      "persistence": {
+        "required": true,
+        "owner": "bridge.party",
+        "mechanisms": [
+          "snapshot.party@1",
+          "cartridge.party@1"
+        ]
+      }
+    }
+  ],
+  "components": [
+    {
+      "id": "mzm.field",
+      "provides": [
+        "world.pause_restore@1"
+      ],
+      "requires": [],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "display.owner",
+          "phase": "render",
+          "modes": [
+            "field"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "proposed",
+        "lowering_ref": null
+      }
+    },
+    {
+      "id": "bridge.battle",
+      "provides": [
+        "encounter.single_wild@1"
+      ],
+      "requires": [
+        "world.pause_restore@1",
+        "actor.identity@1"
+      ],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "display.owner",
+          "phase": "render",
+          "modes": [
+            "battle"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "proposed",
+        "lowering_ref": null
+      }
+    },
+    {
+      "id": "bridge.party",
+      "provides": [
+        "party.persist_encounters@1",
+        "snapshot.party@1"
+      ],
+      "requires": [],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "party",
+          "phase": "simulation",
+          "modes": [
+            "battle"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "proposed",
+        "lowering_ref": null
+      }
+    },
+    {
+      "id": "bridge.actor",
+      "provides": [
+        "actor.identity@1"
+      ],
+      "requires": [],
+      "ports": [],
+      "accesses": [],
+      "implementation": {
+        "status": "proposed",
+        "lowering_ref": null
+      },
+      "entity": {
+        "prototype": "wild_contact",
+        "identity": [
+          "area",
+          "room",
+          "roomSlot",
+          "nativeId"
+        ],
+        "composition": {
+          "ai": "retained MZM source actor",
+          "art": "mapped source Pokemon indexed frame",
+          "combat": "single matching wild"
+        },
+        "lifecycle": {
+          "spawn": "native allocation",
+          "despawn": "camera exit is not defeat",
+          "defeat": "source actor death/drop once",
+          "ledger": "128 entries; oldest evicted"
+        },
+        "render": {
+          "owner": "host OBJ allocator",
+          "allocation_guard": "reject shared or overlapping allocations",
+          "hitbox": "retained native MZM actor"
+        }
+      }
+    }
+  ],
+  "bindings": [],
+  "transforms": [],
+  "route_obligations": [],
+  "obligations": [
+    {
+      "id": "native-save-gap",
+      "detail": "Current native party/ledger survive full emulator checkpoints, not vanilla SRAM. Cannot satisfy cartridge.party@1 without a versioned serialization bridge."
+    },
+    {
+      "id": "ledger-scope",
+      "detail": "Bounded128 identity ledger evicts old wins; campaign-wide permanent defeated identities are not guaranteed."
+    },
+    {
+      "id": "asset-budget",
+      "detail": "Extract source art transformations, palette/OAM/VRAM allocation peaks and exact guards into package resource contracts; do not infer visual hitbox equivalence."
+    },
+    {
+      "id": "outcome-coupling",
+      "detail": "Exact-ROM witnesses needed for contact, same wild, team persistence, victory actor outcome, retreat, defeat and field restoration."
+    }
+  ]
+}

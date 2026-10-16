@@ -1,0 +1,82 @@
+{
+  "run_id": "composition-ir-v0-20261016",
+  "created_at": "2026-10-16T06:47:18.232624+00:00",
+  "source_commit": "da4aa7b3d8539d87e0383f991a10004c90834243",
+  "working_tree_note": "composition files uncommitted; file hashes pin this checkpoint",
+  "resolver_version": "composition-static/0.1",
+  "environment": {
+    "python": "3.14.3",
+    "machine": "macOS-27.0.1-arm64-arm-64bit-Mach-O"
+  },
+  "schema_sha256": "5f116ff1472c624c7baf0ed316835a9ddff072746cc7e3b98162cb223c6331a5",
+  "resolver_sha256": "6c7bef0f9231131955624ecae02c24dfaf08987da50faea66595282d1b40b8c6",
+  "queue_s": null,
+  "build_s": null,
+  "simulation_s": null,
+  "model_evaluation_s": null,
+  "unavailable_note": "No queue, ROM build, simulation or model evaluation in this checkpoint; unavailable metrics are not zero.",
+  "schema_and_examples_wall_s": 0.039571,
+  "before_measurement": null,
+  "before_note": "No prior resolver implementation; no comparable before/after claim.",
+  "examples": [
+    {
+      "path": "tools/composition/examples/mzm-pokemon-wild-lifecycle-audit.json",
+      "sha256": "364d91ecb0436ddfbfa19a4a23858eef056fcfb98bdd91557d96fad38f964777",
+      "schema_errors": [],
+      "status": "rejected",
+      "errors": [
+        "SAVE_CAPABILITY_MISSING"
+      ],
+      "obligations": 11,
+      "resolver_wall_s": 1.9e-05
+    },
+    {
+      "path": "tools/composition/examples/sonic-mzm-hybrid-proposal.json",
+      "sha256": "f8cf05c6521037c888d4fbee04d0dcdda3462b196bc2fd3e85c0d1f7a65db818",
+      "schema_errors": [],
+      "status": "unresolved",
+      "errors": [],
+      "obligations": 20,
+      "resolver_wall_s": 2.2e-05
+    },
+    {
+      "path": "tools/composition/examples/sonic-mzm-unadapted.json",
+      "sha256": "12af565c8529354fb39a2cb5e46e4c1a74c123cf2fa141661bb3b2d66587d6f3",
+      "schema_errors": [],
+      "status": "rejected",
+      "errors": [
+        "WRITE_CONFLICT",
+        "AUTHORITY_COVERAGE",
+        "TYPE_MISMATCH",
+        "ROUTE_CAPABILITY_MISSING"
+      ],
+      "obligations": 6,
+      "resolver_wall_s": 1.3e-05
+    },
+    {
+      "path": "tools/composition/examples/sonic-own-recovery-partial.json",
+      "sha256": "89a666bc337570c8081b933d1ea376f397d428096dbc2aa1fd98f4f4f29fe558",
+      "schema_errors": []
+    }
+  ],
+  "outcome": "passed",
+  "unit_test_history": [
+    {
+      "command": "python3 -m unittest tools.composition.test_resolve -v",
+      "count": 8,
+      "outcome": "passed",
+      "runner_reported_wall_s": 0.001,
+      "measured_separately": true
+    }
+  ],
+  "unit_tests": {
+    "command": "python3 -m unittest tools.composition.test_resolve -v",
+    "count": 9,
+    "outcome": "passed",
+    "runner_reported_wall_s": 0.001,
+    "measured_separately": true,
+    "reason_repeated": "Resolver added explicit unsupported-field, invariant, prefab, qualification and budget-policy fail-closed handling."
+  },
+  "resolver_recheck_wall_s": 0.000241,
+  "schema_validation_note": "Examples and schema unchanged after original structural pass. Resolver-only recheck follows fail-closed handling changes; timings are separate, not additive build stages."
+}

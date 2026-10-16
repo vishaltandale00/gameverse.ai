@@ -1,0 +1,109 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "sonic.rom.function_080000c0",
+  "version": "0.1-unverified",
+  "concept": {
+    "role": "unclassified",
+    "pattern": "unknown",
+    "facets": [
+      "mechanics"
+    ],
+    "editorial_bundle_ids": []
+  },
+  "native_implementation": {
+    "game_id": "sonic-advance",
+    "origin": "self_decompilation",
+    "sources": [],
+    "baseline_ref": "indexed USA ROM; no rebuilt baseline claimed",
+    "compiler_ref": "not lowered",
+    "abi": "ARM function boundary/calling convention unverified",
+    "recovery": {
+      "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+      "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "ranges": [
+        {
+          "address": "0x080000c0",
+          "size": 52,
+          "isa": "arm",
+          "instruction_sha256": "f3a48cf22e11cffef80ceab0c6a6a6c18669283101553771c96f87e6b2375a59",
+          "name": "FUN_080000c0",
+          "name_status": "address_only",
+          "boundary_status": "candidate"
+        }
+      ],
+      "lift_ref": "local/re/experiments/20261016-corpus-decompile/shard-c/sonic-advance/functions.jsonl",
+      "semantic_status": "unverified_lift",
+      "dependency_closure": {
+        "status": "unknown",
+        "calls": [
+          "lift mentions0x08001494; exported callees empty; not resolved"
+        ],
+        "data": [
+          "lift mentions0x080000fc; data/code role unresolved"
+        ],
+        "ram": [
+          "INTR_VECTOR alias is decompiler output, not a verified write contract"
+        ],
+        "hardware": [],
+        "relocations": []
+      },
+      "dynamic_witness_refs": [],
+      "unknowns": [
+        "function bounds and ABI",
+        "raw instruction review",
+        "own function semantics",
+        "transitive closure",
+        "lift statement equivalence"
+      ],
+      "lift_sha256": "3bba538bb52819de78c229012facc0c00331ccaab903a15ce0381011f6635aab"
+    }
+  },
+  "ports": [],
+  "states": [],
+  "behaviors": [],
+  "dependencies": {
+    "status": "unknown",
+    "code": [],
+    "data": [],
+    "globals": [],
+    "macros": [],
+    "hardware": [],
+    "host_services": [],
+    "unsupported": [
+      "No assembly of this package permitted; presence of pseudo-C is not semantic extraction."
+    ]
+  },
+  "extraction": {
+    "recipe_ref": "tools/re/ghidra/",
+    "preconditions": [
+      "Recover and verify own instruction/data closure"
+    ],
+    "outputs": [
+      "existing unverified lift record"
+    ],
+    "semantic_changes": []
+  },
+  "prefabs": [],
+  "policies": [],
+  "world": {},
+  "assets": [],
+  "narrative": {},
+  "editorial": {},
+  "lowering": {
+    "status": "unknown",
+    "backend": "not selected",
+    "recipe_ref": "not_implemented",
+    "hooks": [],
+    "generated_outputs": []
+  },
+  "qualification": {
+    "scenarios": [],
+    "required_witnesses": [
+      "paired raw execution and recovered function traces against known inputs"
+    ],
+    "known_limits": [
+      "Illustrates honest direct-ROM provenance, not a recovered gameplay component."
+    ]
+  }
+}

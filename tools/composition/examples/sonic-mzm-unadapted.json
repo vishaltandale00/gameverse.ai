@@ -1,0 +1,156 @@
+{
+  "ir_version": "0.1",
+  "kind": "composition_plan",
+  "id": "sonic-mzm-unadapted",
+  "target": {
+    "platform": "gba",
+    "foundation_game": "sonic-advance",
+    "preserve_campaign": true,
+    "requested_rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+    "baseline_status": "self_recovery_pending",
+    "authoritative_origin": "self_decompilation"
+  },
+  "intent": {
+    "human_decisions": [
+      {
+        "id": "sonic-momentum",
+        "text": "Keep Sonic momentum on loops and ramps",
+        "source": "human follow-up"
+      }
+    ],
+    "brief_id": "workshop-mashup-draft"
+  },
+  "evidence": [
+    {
+      "ref": "research/requests/sonic-metroid-source-evidence.json",
+      "sha256": "4f7871ef4ef43443af7faaac856eff2b7203996053a8efb43a7b6f1ccbc18da9",
+      "status": "comparative_only_not_assembly_authority"
+    }
+  ],
+  "execution": {
+    "clock": "gba_vblank",
+    "modes": [
+      "ordinary"
+    ],
+    "phases": [
+      "input",
+      "control",
+      "integrate",
+      "collision",
+      "render"
+    ],
+    "transitions": []
+  },
+  "states": [
+    {
+      "id": "player.world_dy",
+      "lifetime": "session",
+      "type": {
+        "scalar": "s32",
+        "quantity": "displacement",
+        "unit": "1/256_pixel",
+        "frame": "world_y_down"
+      },
+      "required_writers": [
+        {
+          "phase": "integrate",
+          "modes": [
+            "ordinary"
+          ]
+        }
+      ]
+    }
+  ],
+  "components": [
+    {
+      "id": "mzm.motion",
+      "provides": [
+        "motion.cartesian@1"
+      ],
+      "requires": [],
+      "ports": [
+        {
+          "id": "vertical",
+          "direction": "out",
+          "type": {
+            "scalar": "s16",
+            "quantity": "velocity",
+            "unit": "mzm_velocity_step",
+            "frame": "world_y_up"
+          },
+          "required": true
+        }
+      ],
+      "accesses": [
+        {
+          "state": "player.world_dy",
+          "phase": "integrate",
+          "modes": [
+            "ordinary"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "proposed",
+        "lowering_ref": null
+      }
+    },
+    {
+      "id": "sonic.motion",
+      "provides": [
+        "terrain.surface@1"
+      ],
+      "requires": [],
+      "ports": [
+        {
+          "id": "displacement",
+          "direction": "in",
+          "type": {
+            "scalar": "s32",
+            "quantity": "displacement",
+            "unit": "1/256_pixel",
+            "frame": "world_y_down"
+          },
+          "required": true
+        }
+      ],
+      "accesses": [
+        {
+          "state": "player.world_dy",
+          "phase": "integrate",
+          "modes": [
+            "ordinary"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "proposed",
+        "lowering_ref": null
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "from": "mzm.motion.vertical",
+      "to": "sonic.motion.displacement"
+    }
+  ],
+  "transforms": [],
+  "route_obligations": [
+    {
+      "id": "sonic.mini_loop",
+      "requires": [
+        "motion.surface_momentum@1"
+      ],
+      "scope": "retained campaign speed-dependent loop; no route witness yet"
+    }
+  ],
+  "obligations": [
+    {
+      "id": "own-recovery",
+      "detail": "Motion numbers and formulas from earlier imported-source investigation are hypotheses for this plan until verified against our own ROM recovery. USA cart is authoritative; community source region mismatch is not a build gate for self-decompilation."
+    }
+  ]
+}

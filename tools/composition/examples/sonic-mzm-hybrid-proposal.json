@@ -1,0 +1,300 @@
+{
+  "ir_version": "0.1",
+  "kind": "composition_plan",
+  "id": "sonic-mzm-hybrid-proposal",
+  "target": {
+    "platform": "gba",
+    "foundation_game": "sonic-advance",
+    "preserve_campaign": true,
+    "requested_rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+    "baseline_status": "self_recovery_pending",
+    "authoritative_origin": "self_decompilation"
+  },
+  "intent": {
+    "human_decisions": [
+      {
+        "id": "sonic-momentum",
+        "text": "Keep Sonic momentum on loops and ramps",
+        "source": "human follow-up"
+      }
+    ],
+    "brief_id": "workshop-mashup-draft"
+  },
+  "evidence": [
+    {
+      "ref": "research/requests/sonic-metroid-source-evidence.json",
+      "sha256": "4f7871ef4ef43443af7faaac856eff2b7203996053a8efb43a7b6f1ccbc18da9",
+      "status": "comparative_only_not_assembly_authority"
+    }
+  ],
+  "execution": {
+    "clock": "gba_vblank",
+    "modes": [
+      "ordinary",
+      "surface",
+      "launch"
+    ],
+    "phases": [
+      "input",
+      "control",
+      "integrate",
+      "collision",
+      "render"
+    ],
+    "transitions": [
+      {
+        "id": "attach-surface",
+        "from": "ordinary",
+        "to": "surface",
+        "guard": "source terrain contact + qualified surface tag",
+        "transfer": "project world velocity onto tangent; no discontinuous energy creation",
+        "hysteresis": "unresolved contact/angle thresholds"
+      },
+      {
+        "id": "leave-surface",
+        "from": "surface",
+        "to": "launch",
+        "guard": "source detach/jump/launch state",
+        "transfer": "tangent plus normal impulse becomes world velocity; retain excess speed",
+        "hysteresis": "unresolved reattachment boundary"
+      },
+      {
+        "id": "release-launch",
+        "from": "launch",
+        "to": "ordinary",
+        "guard": "no external impulse authority and bounded compatible speed",
+        "transfer": "MZM control resumes without one-frame cap loss",
+        "hysteresis": "unresolved"
+      }
+    ]
+  },
+  "states": [
+    {
+      "id": "player.world_dy",
+      "lifetime": "session",
+      "type": {
+        "scalar": "s32",
+        "quantity": "displacement",
+        "unit": "1/256_pixel",
+        "frame": "world_y_down"
+      },
+      "required_writers": [
+        {
+          "phase": "integrate",
+          "modes": [
+            "ordinary",
+            "surface",
+            "launch"
+          ]
+        }
+      ]
+    }
+  ],
+  "components": [
+    {
+      "id": "mzm.motion",
+      "provides": [
+        "motion.cartesian@1"
+      ],
+      "requires": [],
+      "ports": [
+        {
+          "id": "vertical",
+          "direction": "out",
+          "type": {
+            "scalar": "s16",
+            "quantity": "velocity",
+            "unit": "mzm_velocity_step",
+            "frame": "world_y_up"
+          },
+          "required": true
+        }
+      ],
+      "accesses": [],
+      "implementation": {
+        "status": "proposed",
+        "lowering_ref": null
+      }
+    },
+    {
+      "id": "bridge.mzm_displacement",
+      "provides": [
+        "motion.cartesian_adapter@1"
+      ],
+      "requires": [
+        "motion.cartesian@1"
+      ],
+      "ports": [
+        {
+          "id": "vertical",
+          "direction": "in",
+          "type": {
+            "scalar": "s32",
+            "quantity": "displacement",
+            "unit": "1/256_pixel",
+            "frame": "world_y_down"
+          },
+          "required": true
+        }
+      ],
+      "accesses": [
+        {
+          "state": "player.world_dy",
+          "phase": "integrate",
+          "modes": [
+            "ordinary"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "proposed",
+        "lowering_ref": null
+      }
+    },
+    {
+      "id": "sonic.surface",
+      "provides": [
+        "terrain.surface@1",
+        "motion.surface_momentum@1"
+      ],
+      "requires": [],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "player.world_dy",
+          "phase": "integrate",
+          "modes": [
+            "surface"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "proposed",
+        "lowering_ref": null
+      }
+    },
+    {
+      "id": "bridge.launch",
+      "provides": [
+        "motion.inherited_impulse@1"
+      ],
+      "requires": [
+        "terrain.surface@1"
+      ],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "player.world_dy",
+          "phase": "integrate",
+          "modes": [
+            "launch"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "proposed",
+        "lowering_ref": null
+      }
+    },
+    {
+      "id": "bridge.progression",
+      "provides": [
+        "progression.typed_gates@1"
+      ],
+      "requires": [],
+      "ports": [],
+      "accesses": [],
+      "implementation": {
+        "status": "proposed",
+        "lowering_ref": null
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "from": "mzm.motion.vertical",
+      "to": "bridge.mzm_displacement.vertical",
+      "transform": "mzm_y_quantized_to_sonic"
+    }
+  ],
+  "transforms": [
+    {
+      "id": "mzm_y_quantized_to_sonic",
+      "input_type": {
+        "scalar": "s16",
+        "quantity": "velocity",
+        "unit": "mzm_velocity_step",
+        "frame": "world_y_up"
+      },
+      "output_type": {
+        "scalar": "s32",
+        "quantity": "displacement",
+        "unit": "1/256_pixel",
+        "frame": "world_y_down"
+      },
+      "operations": [
+        {
+          "op": "arithmetic_shift_right",
+          "bits": 3
+        },
+        {
+          "op": "multiply_integer",
+          "value": 64
+        },
+        {
+          "op": "negate"
+        }
+      ],
+      "preserves": [
+        "signed shift before sign reversal",
+        "MZM pre-gravity displacement ordering",
+        "range check before s32 write"
+      ],
+      "preconditions": [
+        "MZM native s16 input; no u16 global position narrowing"
+      ],
+      "source_ref": "research/requests/sonic-metroid-investigation.md#exact-units-and-update-order-bridge",
+      "implementation_status": "proposed"
+    }
+  ],
+  "route_obligations": [
+    {
+      "id": "sonic.mini_loop",
+      "requires": [
+        "motion.surface_momentum@1"
+      ],
+      "scope": "retained campaign speed-dependent loop; no route witness yet"
+    },
+    {
+      "id": "sonic.spring_exit",
+      "requires": [
+        "motion.inherited_impulse@1"
+      ],
+      "scope": "authored launch impulses and landing"
+    },
+    {
+      "id": "metroid.upgrade_order",
+      "requires": [
+        "progression.typed_gates@1"
+      ],
+      "scope": "new unlock before first mandatory gate"
+    }
+  ],
+  "obligations": [
+    {
+      "id": "world-origin",
+      "detail": "Keep Sonic signed32 global position; provide checked local MZM probe origin and sprite-anchor transforms."
+    },
+    {
+      "id": "motion-remainder",
+      "detail": "Hybrid example covers vertical displacement and single state authority only; horizontal motion, gravity, jump normal, camera and collision contracts remain to extract."
+    },
+    {
+      "id": "own-recovery",
+      "detail": "Motion numbers and formulas from earlier imported-source investigation are hypotheses for this plan until verified against our own ROM recovery. USA cart is authoritative; community source region mismatch is not a build gate for self-decompilation."
+    }
+  ]
+}

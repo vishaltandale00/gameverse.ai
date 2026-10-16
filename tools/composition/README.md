@@ -1,0 +1,22 @@
+# Composition IR v0.1
+
+Research contract and bounded static analysis for composing recovered native game
+components. See [pipeline, gaps and migration](../../research/composition/PIPELINE.md).
+This does not generate a ROM or turn unverified pseudo-C into a reusable package.
+
+```sh
+python3 tools/composition/resolve.py tools/composition/examples/sonic-mzm-unadapted.json
+python3 tools/composition/resolve.py tools/composition/examples/sonic-mzm-hybrid-proposal.json
+python3 -m unittest tools.composition.test_resolve -v
+```
+
+The first plan is rejected (exit2); the hybrid is unresolved (exit3). Exit0 means
+only consistency of declared checks. Reports always mark lowering as not ready.
+`ir.schema.json` separately defines plans and packages. The checker supports only
+the documented plan subset, not full JSON Schema, source closure or behavioral
+proof. Optional native/prefab/policy/narrative details require future validators.
+
+No network, paid calls, ROM build, CI stage or new dependency is required.
+Examples preserve provenance and missing evidence rather than implying complete
+decompilation. Own ROM recovery is authoritative for the Sonic request; previous
+community-source motion descriptions remain comparative hypotheses.
