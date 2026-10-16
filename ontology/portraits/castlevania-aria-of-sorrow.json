@@ -109,7 +109,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#side_view_scene",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "capture_frame",
@@ -132,7 +132,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#room_transition_lookup",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -145,7 +145,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#map_completion",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -168,7 +168,7 @@
       "id": "castlevania-aria-of-sorrow:combat",
       "label": "Equip a monster-power loadout",
       "slot": "combat",
-      "effect": "Combine weapon, armor and soul slots; a red soul casts only when its MP and active-entity constraints permit.",
+      "effect": "Cast equipped abilities under strict MP and active-effect constraints; allocation is charged only on success, and some casts lock movement.",
       "flavor": "A haunted castle becomes a collection of rooms, equipment and monster powers.",
       "knobs": [
         {
@@ -203,7 +203,11 @@
       "requires": [
         "combatant state",
         "legal actions",
-        "damage and resource rules"
+        "damage and resource rules",
+        "ability resource, active-type and capacity constraints",
+        "entity allocation before resource debit",
+        "effect init/destruction owns active count and cast-slot release",
+        "exclusive casting-pose movement authority"
       ],
       "exposes": [
         "damage events",
@@ -225,7 +229,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#character_equipment_state",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -238,7 +242,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#red_soul_cast",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -254,14 +258,26 @@
               "kind": "decomp_source",
               "ref": "cvaos:include/structs/ewram.h:EwramData_unk1325C",
               "confidence": 0.9
+            },
+            {
+              "kind": "capture_telemetry",
+              "ref": "research/deep-extraction/castlevania/cast-native-receipt.json",
+              "confidence": 0.98,
+              "note": "Own ROM cast policy plus original descriptor/count/slot helpers versus normalized C and emitted ARM7TDMI:5376 finite cases,550 successful casts. Allocator and two animation service boundaries are explicitly stubbed; no projectile or player-session qualification."
+            },
+            {
+              "kind": "static_signature",
+              "ref": "research/deep-extraction/castlevania/cast-recovery.json; USA cast transaction0x08034624 and original descriptor/slot helpers; IR research/deep-extraction/castlevania/cast.package.json",
+              "confidence": 0.98,
+              "note": "Actual ROM instructions and ability table decoded independently; old community-source evidence remains separately attributed."
             }
           ],
-          "scope": "Supports the named mechanism; preserve granular record caveats."
+          "scope": "Casting transaction now independently ROM-recovered and emitted-Thumb compared; host services and complete projectile behavior still unresolved."
         },
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#soul_equipment_validity",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -279,7 +295,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#incoming_damage",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -291,7 +307,7 @@
         }
       ],
       "status": "source_supported_partial",
-      "assembly_status": "Source/design lookup; requires target-specific build recipe and qualification."
+      "assembly_status": "Native casting-policy component and typed IR available; complete projectile prefab and host adapter still required."
     },
     {
       "id": "castlevania-aria-of-sorrow:progression",
@@ -354,7 +370,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#soul_completion",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -372,7 +388,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#soul_collection_counter",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -395,7 +411,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#level_growth",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -423,7 +439,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#map_completion",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -490,7 +506,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#intro_scene_delivery",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -570,7 +586,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#pixel_gothic_courtyard",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "capture_frame",
@@ -583,7 +599,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#hblank_scroll",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -616,7 +632,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#circular_window",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -639,7 +655,7 @@
         {
           "kind": "canonical_component",
           "ref": "ontology/games/castlevania-aria-of-sorrow.yaml#sample_audio",
-          "canonical_file_sha256": "3ad575cf376c17fdf1bf2215575a9ba9c49bfcf3c50ab8f2af2cb3fad824bebc",
+          "canonical_file_sha256": "2740f0c1f7659279a19fbd51becf8ba7724e7e734d5751961abeaf329dc4a52b",
           "source_evidence": [
             {
               "kind": "decomp_source",
@@ -973,7 +989,827 @@
       "Full ROM decompiled",
       "Complete plot recovered",
       "Every proposed bundle assembled or playtested"
-    ]
+    ],
+    "research_progress": {
+      "campaign_id": "20261016-binary-corpus-round2",
+      "recorded_at": "2026-10-16T06:52:45.787945+00:00",
+      "rom_sha1": "abd71fe01ebb201bcc133074db1dd8c5253776c7",
+      "status": "ok",
+      "function_records": 2791,
+      "pseudo_c_generated": 2790,
+      "process_wall_s": 29.2,
+      "queue_s": null,
+      "scope": "ROM binary; push-LR pointer seeds plus direct-call expansion; no community source input",
+      "whole_game_decompiled": false,
+      "mechanic_validation": "Own-ROM casting transaction and emitted native code locally qualified; effect lifecycle/host integration remains open.",
+      "gaps": [
+        "Indirect calls and undiscovered code",
+        "Function boundaries and ABI recovery",
+        "Player/actor identity and gameplay reachability",
+        "World/plot dependency graphs",
+        "Assets/data-to-code mapping and complete behavioral qualification"
+      ],
+      "export_ref": "local/re/experiments/20261016-binary-corpus-round2/castlevania-aria-of-sorrow/castlevania-aria-of-sorrow/functions.jsonl",
+      "export_sha256": "22c94cf6b261c9b76dca7e1e7b9467b4eb8affb3a3ee316a3b1b9ebee40b9e7f",
+      "summary_ref": "local/re/experiments/20261016-binary-corpus-round2/castlevania-aria-of-sorrow/castlevania-aria-of-sorrow/summary.json",
+      "summary_sha256": "354ea2cbc154cde0457060d3b9c026ec2c97b69d21b56903a364857a9c642a70",
+      "warning_function_count": 2606,
+      "unknown_register_function_count": 70,
+      "candidate_mmio_functions": [
+        {
+          "entry": "0x080001f4",
+          "io_ref": [
+            "BG0CNT",
+            "DISPCNT",
+            "DISPSTAT",
+            "DMA0CNT_H",
+            "DMA0SAD",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08000384",
+          "io_ref": [
+            "DISPSTAT",
+            "DMA0CNT_H",
+            "DMA0CNT_L",
+            "DMA0DAD",
+            "DMA0SAD"
+          ]
+        },
+        {
+          "entry": "0x080004c0",
+          "io_ref": [
+            "DMA0CNT_H",
+            "DMA0SAD"
+          ]
+        },
+        {
+          "entry": "0x08000658",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080006cc",
+          "io_ref": [
+            "DISPSTAT",
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "IE",
+            "IME"
+          ]
+        },
+        {
+          "entry": "0x08000804",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD",
+            "WAITCNT"
+          ]
+        },
+        {
+          "entry": "0x080008b0",
+          "io_ref": [
+            "KEYINPUT"
+          ]
+        },
+        {
+          "entry": "0x08000b00",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08000b64",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08000c94",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08000d44",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08000da0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08000e14",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08000ea8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08001004",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800125c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08001580",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080015e4",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08001668",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08001718",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08002278",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08002c88",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08002f44",
+          "io_ref": [
+            "BG1HOFS"
+          ]
+        },
+        {
+          "entry": "0x08003080",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800480c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080049c4",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08007204",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800737c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800744c",
+          "io_ref": [
+            "BG1VOFS"
+          ]
+        },
+        {
+          "entry": "0x08007820",
+          "io_ref": [
+            "BG1VOFS"
+          ]
+        },
+        {
+          "entry": "0x08008290",
+          "io_ref": [
+            "BG1VOFS"
+          ]
+        },
+        {
+          "entry": "0x08008324",
+          "io_ref": [
+            "BG1VOFS"
+          ]
+        },
+        {
+          "entry": "0x080089d8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800c7a4",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800cdac",
+          "io_ref": [
+            "BG0HOFS"
+          ]
+        },
+        {
+          "entry": "0x0800d154",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800d1f0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800da50",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800eb04",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800ebe0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800ef6c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800f038",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800f0ac",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800f678",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0800fe98",
+          "io_ref": [
+            "BG0HOFS"
+          ]
+        },
+        {
+          "entry": "0x08010144",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08010350",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08012294",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0801232c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080124a8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080127f0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08012a08",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08012e30",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08013404",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08013698",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08013700",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x080190e0",
+          "io_ref": [
+            "DISPSTAT"
+          ]
+        },
+        {
+          "entry": "0x08035d00",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08036b40",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08037d44",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08037dd8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08037e5c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08037e9c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08038114",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08038820",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803889c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08039340",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803943c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08039748",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08039dc0",
+          "io_ref": [
+            "IO_180",
+            "TM0CNT_L"
+          ]
+        },
+        {
+          "entry": "0x08039e90",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803a1e8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803a544",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803a8c8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803b66c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803ba88",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803be04",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803beec",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803bf60",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803c150",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803c294",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803c74c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803c7b4",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803c8b0",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803c918",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803cc3c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803db6c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803e438",
+          "io_ref": [
+            "SOUNDCNT_L"
+          ]
+        },
+        {
+          "entry": "0x0803e480",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803e594",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803e618",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803f8a8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803f970",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803fd9c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0803fe0c",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08042754",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08047154",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x08048d84",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        },
+        {
+          "entry": "0x0804b494",
+          "io_ref": [
+            "VCOUNT"
+          ]
+        },
+        {
+          "entry": "0x0804ccc8",
+          "io_ref": [
+            "DMA3CNT_L",
+            "DMA3DAD",
+            "DMA3SAD"
+          ]
+        }
+      ],
+      "input_dependency_frontier_ref": "research/corpus-mining/20261016-binary-corpus-round2/frontiers/castlevania-aria-of-sorrow/evidence.json",
+      "input_root_count": 1,
+      "input_consumer_candidate_count": 68,
+      "input_lead_status": "unverified_binary_lifts_awaiting_semantic_review",
+      "semantic_review_ref": "research/deep-extraction/castlevania/cast.package.json"
+    }
   },
   "provenance": {
     "recorded_at": "2026-10-16T06:22:36.193456+00:00",

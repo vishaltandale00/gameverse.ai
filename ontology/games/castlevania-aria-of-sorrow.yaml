@@ -699,11 +699,12 @@ components:
 - id: red_soul_cast
   facet: mechanics
   label: Red-soul cast converts MP to bounded active entities
-  summary: 'sub_08034624 requires held Up and a newly pressed configured attack button, rejects state flags 0x540,
-    missing effect function, cost >= current MP, and a full active-soul budget. A different equipped type cannot
-    be cast while the last type still has active entities. MP is deducted only after a free soul slot and entity
-    allocation succeed. Inference: retaining more than the listed cost and timing type changes after projectiles
-    end are decision constraints; player proficiency and optimal tactics were not measured.'
+  summary: An independently ROM-recovered casting transaction requires Up plus newly pressed configured attack,
+    a legal actor state, compatible active effect ownership, strictly more MP than the selected cost, capacity
+    and a free entity. Allocation failure consumes no MP. Successful casts publish an entity slot and metadata;
+    some ability modes zero movement and enter a cast pose with timer32. The versioned IR package emits a294-byte
+    native component with explicit allocator, animation and effect-lifecycle dependencies; it is not yet an
+    integrated projectile system.
   instantiates:
   - concept: mechanics.ability.resource_costed_entity_cast
   evidence:
@@ -716,59 +717,68 @@ components:
   - kind: decomp_source
     ref: cvaos:include/structs/ewram.h:EwramData_unk1325C
     confidence: 0.9
+  - &id001
+    kind: capture_telemetry
+    ref: research/deep-extraction/castlevania/cast-native-receipt.json
+    confidence: 0.98
+    note: Own ROM cast policy plus original descriptor/count/slot helpers versus normalized C and emitted ARM7TDMI:5376
+      finite cases,550 successful casts. Allocator and two animation service boundaries are explicitly stubbed;
+      no projectile or player-session qualification.
+  - kind: static_signature
+    ref: research/deep-extraction/castlevania/cast-recovery.json; USA cast transaction0x08034624 and original
+      descriptor/slot helpers; IR research/deep-extraction/castlevania/cast.package.json
+    confidence: 0.98
+    note: Actual ROM instructions and ability table decoded independently; old community-source evidence remains
+      separately attributed.
   reads:
-  - input.player_held:u16
-  - input.player_new:u16
-  - loadout.red_soul:u8
-  - player.mp:s16
-  - soul.cost:u16
-  - soul.active_count:int
-  - soul.last_type:u8
+  - input.held_up
+  - input.new_configured_attack
+  - actor.action_exclusion_flags
+  - ability.equipped_type
+  - effects.active_type
+  - effects.active_count
+  - effects.cast_slots[8]
+  - ability.effect_token
+  - ability.signed_mp_cost
+  - ability.maximum_active
+  - ability.cast_mode
+  - character.MP
   writes:
-  - player.mp:s16
-  - entities.soul_projectiles
-  - player.animation_state
+  - effects.active_type when count0 even if a later check rejects cast
+  - effects.cast_slots[chosen_slot] only after allocation
+  - character.MP only after allocation
+  - actor.cast_state, velocity and acceleration for locked cast modes
+  - result.entity_identity, parent_slot_metadata and animation_event
   params:
-    input_direction_mask:
-      value: 64
-      unit: button bitmask
+    tracking_slots:
+      value: 8
+      unit: entity handles
+      native_value: 8
+      native_unit: entity handles
       evidence:
-      - kind: decomp_source
-        ref: cvaos:src/code_08033CAC.c:sub_08034624
-        confidence: 0.9
-      native_value: 64
-      native_unit: button bitmask
-    state_reject_mask:
-      value: 1344
-      unit: state bitmask
+      - *id001
+    locked_cast_timer:
+      value: 32
+      unit: native counter units; decrement cadence requires host integration
+      native_value: 32
+      native_unit: native counter units
       evidence:
-      - kind: decomp_source
-        ref: cvaos:src/code_08033CAC.c:sub_08034624
-        confidence: 0.9
-      native_value: 1344
-      native_unit: state bitmask
-    allocation_min_slot:
-      value: 2
-      unit: entity slot
-      evidence:
-      - kind: decomp_source
-        ref: cvaos:src/code_08033CAC.c:sub_08034624
-        confidence: 0.9
-      native_value: 2
-      native_unit: entity slot
-    allocation_max_slot:
-      value: 16
-      unit: entity slot inclusive
-      evidence:
-      - kind: decomp_source
-        ref: cvaos:src/code_08033CAC.c:sub_08034624
-        confidence: 0.9
-      native_value: 16
-      native_unit: entity slot inclusive
+      - *id001
   invariants:
-  - currentMP must be strictly greater than cost.
-  - Failed allocation causes no MP deduction in the inspected path.
-  - Active projectiles lock casting to lastUsedRedSoul until active count reaches zero.
+  - MP must strictly exceed cost; exactly enough MP rejects the cast.
+  - An active effect of a different type blocks changing to the newly equipped type; at zero active count the
+    active type changes before later rejection checks.
+  - Eight tracking slots and a separate selected-type active limit both constrain casting; failure at either
+    leaves MP untouched.
+  - Successful allocation is the transaction boundary for MP debit and slot publication.
+  - Casting does not increment active_count; effect initialization/destruction must own that count and exact
+    slot cleanup.
+  - Nonzero cast modes enter state10, timer32, zero velocity/acceleration; zero mode enters state2 through
+    another animation event.
+  - The emitted policy has no hidden engine globals; allocation and animation/lifecycle services must be bound
+    explicitly before composition can run it in a game.
+  - Finite isolated comparison includes boundary stubs; effect AI, attack collisions, acquisition rules, rendering
+    and full gameplay remain outside the qualification.
   relations:
   - type: requires
     target: mp_pool

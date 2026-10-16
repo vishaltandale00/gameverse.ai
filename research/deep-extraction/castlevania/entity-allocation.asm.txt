@@ -1,0 +1,65 @@
+
+local/roms/Castlevania - Aria of Sorrow (USA).gba:     file format binary
+
+
+Disassembly of section .data:
+
+08000da0 <.data+0xda0>:
+ 8000da0:	b5f0      	push	{r4, r5, r6, r7, lr}
+ 8000da2:	b081      	sub	sp, #4
+ 8000da4:	1c0c      	adds	r4, r1, #0
+ 8000da6:	4694      	mov	ip, r2
+ 8000da8:	2600      	movs	r6, #0
+ 8000daa:	1c02      	adds	r2, r0, #0
+ 8000dac:	4910      	ldr	r1, [pc, #64]	@ (0x8000df0)
+ 8000dae:	0150      	lsls	r0, r2, #5
+ 8000db0:	1880      	adds	r0, r0, r2
+ 8000db2:	0080      	lsls	r0, r0, #2
+ 8000db4:	4b0f      	ldr	r3, [pc, #60]	@ (0x8000df4)
+ 8000db6:	18c0      	adds	r0, r0, r3
+ 8000db8:	6809      	ldr	r1, [r1, #0]
+ 8000dba:	180b      	adds	r3, r1, r0
+ 8000dbc:	42a2      	cmp	r2, r4
+ 8000dbe:	dc23      	bgt.n	0x8000e08
+ 8000dc0:	490d      	ldr	r1, [pc, #52]	@ (0x8000df8)
+ 8000dc2:	25fe      	movs	r5, #254	@ 0xfe
+ 8000dc4:	4f0d      	ldr	r7, [pc, #52]	@ (0x8000dfc)
+ 8000dc6:	6818      	ldr	r0, [r3, #0]
+ 8000dc8:	2800      	cmp	r0, #0
+ 8000dca:	d119      	bne.n	0x8000e00
+ 8000dcc:	9000      	str	r0, [sp, #0]
+ 8000dce:	4668      	mov	r0, sp
+ 8000dd0:	6008      	str	r0, [r1, #0]
+ 8000dd2:	604b      	str	r3, [r1, #4]
+ 8000dd4:	608f      	str	r7, [r1, #8]
+ 8000dd6:	6888      	ldr	r0, [r1, #8]
+ 8000dd8:	1c19      	adds	r1, r3, #0
+ 8000dda:	3164      	adds	r1, #100	@ 0x64
+ 8000ddc:	20ff      	movs	r0, #255	@ 0xff
+ 8000dde:	7008      	strb	r0, [r1, #0]
+ 8000de0:	721d      	strb	r5, [r3, #8]
+ 8000de2:	725d      	strb	r5, [r3, #9]
+ 8000de4:	4660      	mov	r0, ip
+ 8000de6:	6018      	str	r0, [r3, #0]
+ 8000de8:	741a      	strb	r2, [r3, #16]
+ 8000dea:	1c1e      	adds	r6, r3, #0
+ 8000dec:	e00c      	b.n	0x8000e08
+ 8000dee:	0000      	movs	r0, r0
+ 8000df0:	0b14      	lsrs	r4, r2, #12
+ 8000df2:	084f      	lsrs	r7, r1, #1
+ 8000df4:	04e4      	lsls	r4, r4, #19
+ 8000df6:	0000      	movs	r0, r0
+ 8000df8:	00d4      	lsls	r4, r2, #3
+ 8000dfa:	0400      	lsls	r0, r0, #16
+ 8000dfc:	0021      	movs	r1, r4
+ 8000dfe:	8500      	strh	r0, [r0, #40]	@ 0x28
+ 8000e00:	3201      	adds	r2, #1
+ 8000e02:	3384      	adds	r3, #132	@ 0x84
+ 8000e04:	42a2      	cmp	r2, r4
+ 8000e06:	ddde      	ble.n	0x8000dc6
+ 8000e08:	1c30      	adds	r0, r6, #0
+ 8000e0a:	b001      	add	sp, #4
+ 8000e0c:	bcf0      	pop	{r4, r5, r6, r7}
+ 8000e0e:	bc02      	pop	{r1}
+ 8000e10:	4708      	bx	r1
+	...

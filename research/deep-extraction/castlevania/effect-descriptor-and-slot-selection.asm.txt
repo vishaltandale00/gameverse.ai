@@ -1,0 +1,131 @@
+
+local/roms/Castlevania - Aria of Sorrow (USA).gba:     file format binary
+
+
+Disassembly of section .data:
+
+0802d208 <.data+0x2d208>:
+ 802d208:	b500      	push	{lr}
+ 802d20a:	2100      	movs	r1, #0
+ 802d20c:	4806      	ldr	r0, [pc, #24]	@ (0x802d228)
+ 802d20e:	6800      	ldr	r0, [r0, #0]
+ 802d210:	4b06      	ldr	r3, [pc, #24]	@ (0x802d22c)
+ 802d212:	18c2      	adds	r2, r0, r3
+ 802d214:	0608      	lsls	r0, r1, #24
+ 802d216:	1601      	asrs	r1, r0, #24
+ 802d218:	0088      	lsls	r0, r1, #2
+ 802d21a:	1810      	adds	r0, r2, r0
+ 802d21c:	6800      	ldr	r0, [r0, #0]
+ 802d21e:	2800      	cmp	r0, #0
+ 802d220:	d106      	bne.n	0x802d230
+ 802d222:	1c08      	adds	r0, r1, #0
+ 802d224:	e00c      	b.n	0x802d240
+ 802d226:	0000      	movs	r0, r0
+ 802d228:	0b14      	lsrs	r4, r2, #12
+ 802d22a:	084f      	lsrs	r7, r1, #1
+ 802d22c:	3124      	adds	r1, #36	@ 0x24
+ 802d22e:	0001      	movs	r1, r0
+ 802d230:	1c48      	adds	r0, r1, #1
+ 802d232:	0600      	lsls	r0, r0, #24
+ 802d234:	0e01      	lsrs	r1, r0, #24
+ 802d236:	1600      	asrs	r0, r0, #24
+ 802d238:	2807      	cmp	r0, #7
+ 802d23a:	ddeb      	ble.n	0x802d214
+ 802d23c:	2001      	movs	r0, #1
+ 802d23e:	4240      	negs	r0, r0
+ 802d240:	bc02      	pop	{r1}
+ 802d242:	4708      	bx	r1
+ 802d244:	b500      	push	{lr}
+ 802d246:	4806      	ldr	r0, [pc, #24]	@ (0x802d260)
+ 802d248:	6801      	ldr	r1, [r0, #0]
+ 802d24a:	4a06      	ldr	r2, [pc, #24]	@ (0x802d264)
+ 802d24c:	1888      	adds	r0, r1, r2
+ 802d24e:	7800      	ldrb	r0, [r0, #0]
+ 802d250:	2800      	cmp	r0, #0
+ 802d252:	d00b      	beq.n	0x802d26c
+ 802d254:	3aa7      	subs	r2, #167	@ 0xa7
+ 802d256:	1888      	adds	r0, r1, r2
+ 802d258:	7800      	ldrb	r0, [r0, #0]
+ 802d25a:	0100      	lsls	r0, r0, #4
+ 802d25c:	4902      	ldr	r1, [pc, #8]	@ (0x802d268)
+ 802d25e:	e00a      	b.n	0x802d276
+ 802d260:	0b14      	lsrs	r4, r2, #12
+ 802d262:	084f      	lsrs	r7, r1, #1
+ 802d264:	3266      	adds	r2, #102	@ 0x66
+ 802d266:	0001      	movs	r1, r0
+ 802d268:	1ed8      	subs	r0, r3, #3
+ 802d26a:	080e      	lsrs	r6, r1, #32
+ 802d26c:	4a03      	ldr	r2, [pc, #12]	@ (0x802d27c)
+ 802d26e:	1888      	adds	r0, r1, r2
+ 802d270:	7800      	ldrb	r0, [r0, #0]
+ 802d272:	0100      	lsls	r0, r0, #4
+ 802d274:	4902      	ldr	r1, [pc, #8]	@ (0x802d280)
+ 802d276:	1840      	adds	r0, r0, r1
+ 802d278:	bc02      	pop	{r1}
+ 802d27a:	4708      	bx	r1
+ 802d27c:	31bf      	adds	r1, #191	@ 0xbf
+ 802d27e:	0001      	movs	r1, r0
+ 802d280:	1598      	asrs	r0, r3, #22
+ 802d282:	080e      	lsrs	r6, r1, #32
+ 802d284:	b500      	push	{lr}
+ 802d286:	0600      	lsls	r0, r0, #24
+ 802d288:	0e01      	lsrs	r1, r0, #24
+ 802d28a:	4805      	ldr	r0, [pc, #20]	@ (0x802d2a0)
+ 802d28c:	6800      	ldr	r0, [r0, #0]
+ 802d28e:	4a05      	ldr	r2, [pc, #20]	@ (0x802d2a4)
+ 802d290:	1880      	adds	r0, r0, r2
+ 802d292:	7800      	ldrb	r0, [r0, #0]
+ 802d294:	2800      	cmp	r0, #0
+ 802d296:	d009      	beq.n	0x802d2ac
+ 802d298:	0108      	lsls	r0, r1, #4
+ 802d29a:	4903      	ldr	r1, [pc, #12]	@ (0x802d2a8)
+ 802d29c:	e008      	b.n	0x802d2b0
+ 802d29e:	0000      	movs	r0, r0
+ 802d2a0:	0b14      	lsrs	r4, r2, #12
+ 802d2a2:	084f      	lsrs	r7, r1, #1
+ 802d2a4:	3266      	adds	r2, #102	@ 0x66
+ 802d2a6:	0001      	movs	r1, r0
+ 802d2a8:	1ed8      	subs	r0, r3, #3
+ 802d2aa:	080e      	lsrs	r6, r1, #32
+ 802d2ac:	0108      	lsls	r0, r1, #4
+ 802d2ae:	4902      	ldr	r1, [pc, #8]	@ (0x802d2b8)
+ 802d2b0:	1840      	adds	r0, r0, r1
+ 802d2b2:	bc02      	pop	{r1}
+ 802d2b4:	4708      	bx	r1
+ 802d2b6:	0000      	movs	r0, r0
+ 802d2b8:	1598      	asrs	r0, r3, #22
+ 802d2ba:	080e      	lsrs	r6, r1, #32
+ 802d2bc:	b500      	push	{lr}
+ 802d2be:	4806      	ldr	r0, [pc, #24]	@ (0x802d2d8)
+ 802d2c0:	6801      	ldr	r1, [r0, #0]
+ 802d2c2:	4a06      	ldr	r2, [pc, #24]	@ (0x802d2dc)
+ 802d2c4:	1888      	adds	r0, r1, r2
+ 802d2c6:	7800      	ldrb	r0, [r0, #0]
+ 802d2c8:	2800      	cmp	r0, #0
+ 802d2ca:	d10b      	bne.n	0x802d2e4
+ 802d2cc:	3aa7      	subs	r2, #167	@ 0xa7
+ 802d2ce:	1888      	adds	r0, r1, r2
+ 802d2d0:	7800      	ldrb	r0, [r0, #0]
+ 802d2d2:	0100      	lsls	r0, r0, #4
+ 802d2d4:	4902      	ldr	r1, [pc, #8]	@ (0x802d2e0)
+ 802d2d6:	e00a      	b.n	0x802d2ee
+ 802d2d8:	0b14      	lsrs	r4, r2, #12
+ 802d2da:	084f      	lsrs	r7, r1, #1
+ 802d2dc:	3266      	adds	r2, #102	@ 0x66
+ 802d2de:	0001      	movs	r1, r0
+ 802d2e0:	1598      	asrs	r0, r3, #22
+ 802d2e2:	080e      	lsrs	r6, r1, #32
+ 802d2e4:	4a04      	ldr	r2, [pc, #16]	@ (0x802d2f8)
+ 802d2e6:	1888      	adds	r0, r1, r2
+ 802d2e8:	7800      	ldrb	r0, [r0, #0]
+ 802d2ea:	0100      	lsls	r0, r0, #4
+ 802d2ec:	4903      	ldr	r1, [pc, #12]	@ (0x802d2fc)
+ 802d2ee:	1840      	adds	r0, r0, r1
+ 802d2f0:	7a00      	ldrb	r0, [r0, #8]
+ 802d2f2:	bc02      	pop	{r1}
+ 802d2f4:	4708      	bx	r1
+ 802d2f6:	0000      	movs	r0, r0
+ 802d2f8:	31bf      	adds	r1, #191	@ 0xbf
+ 802d2fa:	0001      	movs	r1, r0
+ 802d2fc:	1ed8      	subs	r0, r3, #3
+ 802d2fe:	080e      	lsrs	r6, r1, #32

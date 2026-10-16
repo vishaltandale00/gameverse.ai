@@ -1,0 +1,70 @@
+{
+  "run_id": "20261016-castlevania-cast-repro-01",
+  "queue_s": null,
+  "environment": "macOS-27.0.1-arm64-arm-64bit",
+  "source_commit": "fd13f6c1178bf07edbcb188da293f5938223944d",
+  "rom_sha1": "abd71fe01ebb201bcc133074db1dd8c5253776c7",
+  "rom_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+  "inputs": {
+    "research/deep-extraction/castlevania/cast-policy.c": "2ce8a26f3b255c461ff81140d7bcc6b1364a37c27d0a4c393186d592e41f6c25",
+    "research/deep-extraction/castlevania/cast-policy.h": "17ea46fb18d09a4ae764f4f6957858f7a3a5488188aaa273ba6f87f32222c25c",
+    "research/deep-extraction/castlevania/cast-differential.c": "024f189b8e1e64df2f3bd45ecd9e06275a80caded96c7fafaa4715415230e4f8"
+  },
+  "limits": {
+    "per_stage_timeout_s": 30,
+    "vectors": 5376
+  },
+  "scope": "Casting policy; declared allocator/animation service stubs; not projectile, gameplay or cartridge integration qualification",
+  "stages": [
+    {
+      "stage": "arm_compile",
+      "wall_s": 0.022631,
+      "exit_code": 0,
+      "outcome": "passed"
+    },
+    {
+      "stage": "arm_link",
+      "wall_s": 0.004138,
+      "exit_code": 0,
+      "outcome": "passed"
+    },
+    {
+      "stage": "arm_emit",
+      "wall_s": 0.003679,
+      "exit_code": 0,
+      "outcome": "passed"
+    },
+    {
+      "stage": "native_symbols",
+      "wall_s": 0.004831,
+      "exit_code": 0,
+      "outcome": "passed"
+    },
+    {
+      "stage": "host_compile",
+      "wall_s": 0.103055,
+      "exit_code": 0,
+      "outcome": "passed"
+    },
+    {
+      "stage": "original_and_emitted_compare",
+      "wall_s": 0.12232,
+      "exit_code": 0,
+      "outcome": "passed"
+    }
+  ],
+  "outcome": "passed",
+  "native_result": {
+    "outcome": "passed",
+    "vectors": 5376,
+    "emitted_thumb_vectors": 5376,
+    "successful_casts": 550,
+    "original_thumb_instructions": 305162,
+    "allocation_boundary_calls": 660,
+    "animation_boundary_calls": 550,
+    "scope": "complete local cast transaction with original descriptor/slot helpers; declared allocator/animation boundary stubs; no projectile or gameplay qualification"
+  },
+  "emitted_bytes": 294,
+  "emitted_sha256": "af38550a0ee1988dd04016e58ba1cb3ce6be75dc8b9ee8abdd07e8f4f893c9d3",
+  "total_wall_s": 0.261055
+}

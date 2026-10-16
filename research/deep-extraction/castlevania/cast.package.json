@@ -1,0 +1,337 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "castlevania.aria.red_soul_cast_transaction",
+  "version": "1.0.0",
+  "concept": {
+    "role": "ability.resource_costed_entity_cast",
+    "pattern": "ownership-gated ability casting with bounded effects and allocation-before-resource-debit",
+    "facets": [
+      "mechanics",
+      "abilities",
+      "resources",
+      "movement_physics"
+    ],
+    "editorial_bundle_ids": [
+      "castlevania-aria-of-sorrow:combat",
+      "castlevania-aria-of-sorrow:resources"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "castlevania-aria-of-sorrow",
+    "origin": "self_decompilation",
+    "sources": [],
+    "baseline_ref": "Exact USA cartridge identified by recovery hashes; community source is not the recovered implementation",
+    "compiler_ref": "research/deep-extraction/castlevania/cast-native-receipt.json",
+    "abi": "void gv_aos_cast_step(GvAosCastContext.v1*); 92-byte32-bit context with explicit allocation callback; cast-policy.h asserts layout",
+    "recovery": {
+      "rom_sha1": "abd71fe01ebb201bcc133074db1dd8c5253776c7",
+      "rom_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+      "ranges": [
+        {
+          "address": "0x8034624",
+          "size": 392,
+          "isa": "thumb",
+          "instruction_sha256": "40fc84253c2e36f727735762700264ad8218a38eebc40887e86d9a6876c59b22",
+          "name": "ability_cast_transaction",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        },
+        {
+          "address": "0x802d208",
+          "size": 248,
+          "isa": "thumb",
+          "instruction_sha256": "e3d25ca5c434152c6bd32acb2b4b50a8882c91d34dab0dde7d935a8cd2402686",
+          "name": "descriptor_and_slot_helpers",
+          "name_status": "dynamically_confirmed",
+          "boundary_status": "statically_reviewed"
+        }
+      ],
+      "lift_ref": "research/deep-extraction/castlevania/cast-policy.c",
+      "lift_sha256": "2ce8a26f3b255c461ff81140d7bcc6b1364a37c27d0a4c393186d592e41f6c25",
+      "semantic_status": "dynamically_confirmed",
+      "dependency_closure": {
+        "status": "partial",
+        "calls": [
+          "Explicit allocate service: effect_token plus inclusive pool-range2..16 -> entity handle or0",
+          "Animation results1/2 are returned for a selected host animation adapter to apply",
+          "Projectile initialization/update/destruction and active_count ownership belong to effect prefab, not this policy"
+        ],
+        "data": [
+          "Versioned56-entry ordinary-character ability table; entry0 sentinel and55 nonzero records retained in cast-recovery.json"
+        ],
+        "ram": [
+          "Explicit92-byte32-bit GvAosCastContext.v1; no fixed native address or hidden global needed by generated policy"
+        ],
+        "hardware": [],
+        "relocations": [
+          "Only typed context/table/service pointers; effect tokens are mapped by the selected entity package"
+        ]
+      },
+      "dynamic_witness_refs": [
+        "research/deep-extraction/castlevania/cast-native-receipt.json"
+      ],
+      "unknowns": [
+        "No claim of original allocation/animation implementation equivalence: declared boundary stubs were used",
+        "Projectile behaviors, acquisition, complete player tick and native host adapter remain separately owned",
+        "Alternate playable-character ability table is excluded"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "cast_context",
+      "direction": "in",
+      "type": {
+        "scalar": "ptr<GvAosCastContext.v1>",
+        "quantity": "ability_cast_context",
+        "unit": "92_bytes",
+        "frame": "explicit_context"
+      },
+      "semantic": "State + selected immutable ability definitions + versioned allocator service + action result"
+    },
+    {
+      "id": "cast_result",
+      "direction": "out",
+      "type": {
+        "scalar": "GvAosCastResult.v1",
+        "quantity": "entity_spawn_and_cast_animation",
+        "unit": "entity_handle_slot_ability_and_event",
+        "frame": "character_local"
+      },
+      "semantic": "Spawn identity, parent/slot metadata and animation request are explicit outputs"
+    }
+  ],
+  "states": [
+    {
+      "id": "casting",
+      "type": {
+        "scalar": "GvAosCastState.v1",
+        "quantity": "resource_ability_state",
+        "unit": "MP_points_entity_handles_and_input_bits",
+        "frame": "character_local"
+      },
+      "lifetime": "session",
+      "invariants": [
+        "MP debit occurs only after successful allocation",
+        "active_slots has exactly8 slots",
+        "active_count is updated by effect initialization/destruction, not by cast allocation"
+      ]
+    },
+    {
+      "id": "caster",
+      "type": {
+        "scalar": "GvAosCaster.v1",
+        "quantity": "action_state_and_motion",
+        "unit": "native_flags_and_fixed_point_velocities",
+        "frame": "actor_local"
+      },
+      "lifetime": "entity"
+    },
+    {
+      "id": "ability_table",
+      "type": {
+        "scalar": "GvAosAbility[56].v1",
+        "quantity": "ability_definitions",
+        "unit": "MP_points_and_entity_component_tokens",
+        "frame": "immutable_table"
+      },
+      "lifetime": "campaign"
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "cast",
+      "clock": "one sampled gameplay action invocation",
+      "phases": [
+        "input_guard",
+        "effect_ownership",
+        "resource_and_capacity_guard",
+        "allocate",
+        "commit",
+        "host_effects"
+      ],
+      "guards": [
+        "No actor flags0x540; Up held; configured attack newly pressed",
+        "Active effects of a different equipped type block the new type",
+        "MP strictly exceeds signed cost; effect exists; active count below selected cap; free cast slot; entity allocation succeeds"
+      ],
+      "reads": [
+        "casting",
+        "caster",
+        "ability_table"
+      ],
+      "writes": [
+        "casting",
+        "caster"
+      ],
+      "invariants": [
+        "At active_count0, active_type switches before later cast rejection; this state change is intentional",
+        "No MP debit and no slot publication on allocation failure",
+        "Successful cast publishes one entity and metadata but does not increment active_count",
+        "Nonzero actor_cast_mode requests state10 with32-update cast timer and zeroes velocity/acceleration; zero mode requests state2",
+        "Caller must apply returned animation event and effect-parent/slot/ability metadata exactly once"
+      ],
+      "authority": "Casting owns MP debit and slot publication in this phase; effect lifecycle owns active_count and slot cleanup; movement owner must honor casting pose"
+    }
+  ],
+  "dependencies": {
+    "status": "partial",
+    "code": [
+      "research/deep-extraction/castlevania/cast-policy.c",
+      "research/deep-extraction/castlevania/cast-policy.h"
+    ],
+    "data": [
+      "research/deep-extraction/castlevania/cast-recovery.json"
+    ],
+    "globals": [],
+    "macros": [],
+    "hardware": [],
+    "host_services": [
+      "entity.allocate.range/v1",
+      "actor.cast_animation/v1",
+      "effect.lifecycle.cast_slot/v1"
+    ],
+    "unsupported": [
+      "Host adapter absent; not a standalone projectile system or ready cartridge replacement",
+      "Effect callback addresses are provenance tokens until mapped to recovered effect components"
+    ]
+  },
+  "extraction": {
+    "recipe_ref": "research/deep-extraction/castlevania/qualify_cast.py",
+    "preconditions": [
+      "Exact USA ROM identity",
+      "Ordinary playable-character branch",
+      "Equipped and active type indexes0..55",
+      "Versioned allocator returns initialized entity or0; callbacks have declared side effects"
+    ],
+    "outputs": [
+      "research/deep-extraction/castlevania/cast-policy.c",
+      "research/deep-extraction/castlevania/cast-policy.h",
+      "research/deep-extraction/castlevania/cast-recovery.json",
+      "research/deep-extraction/castlevania/cast-native-receipt.json"
+    ],
+    "semantic_changes": [
+      "Fixed RAM/global accesses normalized into explicit state",
+      "Native animation calls become explicit output events",
+      "Native entity fields become typed spawn identity/metadata output",
+      "Selected effect pointer becomes a bound component token; original pointer cannot silently become portable behavior"
+    ]
+  },
+  "prefabs": [
+    {
+      "id": "resource_costed_caster",
+      "components": [
+        "cast_transaction",
+        "ability_definitions",
+        "entity_allocator",
+        "effect_lifecycle",
+        "cast_animation_adapter"
+      ],
+      "requires": [
+        "effect initialization owns increment of active_count",
+        "effect destruction decrements count and releases exact published slot",
+        "entity world identity and streaming must not confuse despawn with defeat",
+        "pose authority prevents ordinary movement overwrite during locked cast"
+      ],
+      "status": "cast policy qualified; complete effect prefab unresolved"
+    }
+  ],
+  "policies": [
+    {
+      "id": "reserve_cost_and_effect_ownership",
+      "objective": "Perform a legal ability cast",
+      "preconditions": [
+        "current_MP > selected_cost",
+        "matching active effect type or no active effects",
+        "free slot and allocatable entity"
+      ],
+      "failure_cases": [
+        "Exactly cost MP is insufficient",
+        "A different effect still active blocks switching type",
+        "Allocation failure consumes no MP"
+      ],
+      "status": "mechanical constraints established; optimal player strategy unmeasured"
+    }
+  ],
+  "world": {},
+  "assets": [],
+  "narrative": {},
+  "editorial": {
+    "interpretation": "An equipped ability brings its resource rule, active-entity lifetime and casting pose; it is not just a projectile image or keyword."
+  },
+  "lowering": {
+    "status": "implemented",
+    "backend": "freestanding-c-thumb/1 component; native_v1 host binding still required",
+    "recipe_ref": "research/deep-extraction/castlevania/qualify_cast.py",
+    "hooks": [],
+    "generated_outputs": [
+      "local/re/experiments/20261016-castlevania-cast-repro-01/cast.elf",
+      "local/re/experiments/20261016-castlevania-cast-repro-01/cast.bin"
+    ],
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "research/deep-extraction/castlevania/cast-policy.c",
+          "sha256": "2ce8a26f3b255c461ff81140d7bcc6b1364a37c27d0a4c393186d592e41f6c25"
+        },
+        {
+          "ref": "research/deep-extraction/castlevania/cast-policy.h",
+          "sha256": "17ea46fb18d09a4ae764f4f6957858f7a3a5488188aaa273ba6f87f32222c25c"
+        }
+      ],
+      "translation_units": [
+        "research/deep-extraction/castlevania/cast-policy.c"
+      ],
+      "requires": [
+        {
+          "id": "entity.allocate.range",
+          "version": "1.0.0"
+        },
+        {
+          "id": "effect.lifecycle.cast_slot",
+          "version": "1.0.0"
+        },
+        {
+          "id": "actor.cast_animation",
+          "version": "1.0.0"
+        }
+      ],
+      "exports": [
+        {
+          "symbol": "gv_aos_cast_step",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        }
+      ],
+      "state_bindings": [
+        {
+          "id": "cast_context",
+          "storage": "selected-host-adapter",
+          "bytes": 92,
+          "lifetime": "character-session",
+          "allocation": "must be declared by host adapter; no implicit global allocation"
+        }
+      ]
+    }
+  },
+  "qualification": {
+    "scenarios": [
+      "5376 finite configurations across56 descriptors and96 input/resource/capacity/flag cases",
+      "Original Thumb plus real native descriptor/count/slot helpers versus normalized C",
+      "Emitted294-byte ARM7TDMI component executed on the same inputs"
+    ],
+    "required_witnesses": [
+      "Concrete host adapters for allocation, animation and effect lifecycle",
+      "Actual controlled gameplay casts, projectile collisions/destruction and MP/slot restoration",
+      "An assembled composition variant exercising this policy through native builder"
+    ],
+    "known_limits": [
+      "Allocator and animation boundary stubs are explicit; their implementation is not qualified",
+      "Only casting transaction is locally qualified; native cartridge integration and projectile ecology remain incomplete"
+    ]
+  }
+}
