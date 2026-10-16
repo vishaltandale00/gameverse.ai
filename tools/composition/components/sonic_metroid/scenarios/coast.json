@@ -1,0 +1,82 @@
+{
+  "actions": [
+    {
+      "name": "collect-coastal-caches",
+      "keys": [
+        "RIGHT",
+        "B"
+      ],
+      "frames": 150,
+      "save": 2
+    },
+    {
+      "name": "missile-lock-blocks-route",
+      "keys": [
+        "RIGHT"
+      ],
+      "frames": 60,
+      "save": 3
+    },
+    {
+      "name": "missile-opens-lock",
+      "keys": [
+        "R",
+        "B"
+      ],
+      "frames": 20,
+      "save": 4
+    },
+    {
+      "name": "approach-bomb-cache",
+      "keys": [
+        "RIGHT",
+        "B"
+      ],
+      "frames": 90,
+      "save": 5
+    },
+    {
+      "name": "bomb-lock-blocks-route",
+      "keys": [
+        "RIGHT"
+      ],
+      "frames": 40
+    },
+    {
+      "name": "morph-for-bomb",
+      "keys": [
+        "DOWN"
+      ],
+      "frames": 1
+    },
+    {
+      "name": "place-bomb",
+      "keys": [
+        "B"
+      ],
+      "frames": 1
+    },
+    {
+      "name": "bomb-explodes",
+      "keys": [],
+      "frames": 46,
+      "save": 6
+    },
+    {
+      "name": "unmorph",
+      "keys": [
+        "UP"
+      ],
+      "frames": 1
+    },
+    {
+      "name": "continue-through-open-route",
+      "keys": [
+        "RIGHT",
+        "B"
+      ],
+      "frames": 120,
+      "save": 7
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "composition.sonic_metroid_boss",
+  "version": "0.1.0-draft",
+  "concept": {
+    "role": "combat.projectile_to_native_staged_boss_hit_contract",
+    "facets": [
+      "mechanics",
+      "world",
+      "story"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "sonic-advance",
+    "origin": "new_bridge",
+    "recovery": {
+      "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+      "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "ranges": [
+        {
+          "address": "0x800bcbc",
+          "size": 596,
+          "isa": "thumb",
+          "instruction_sha256": "cf6008a8c7378ca1caabdb3f0e471219695c3a0610df83e0245d1223cfc9720f",
+          "name": "boss_dual",
+          "boundary_status": "statically_reviewed",
+          "name_status": "structural_role_reviewed"
+        },
+        {
+          "address": "0x800ba5c",
+          "size": 608,
+          "isa": "thumb",
+          "instruction_sha256": "13d9e0088e13bab2bd6a6df5c0058293b6a8823a6cae4484d7f19f468f86bec9",
+          "name": "boss_shielded",
+          "boundary_status": "statically_reviewed",
+          "name_status": "structural_role_reviewed"
+        },
+        {
+          "address": "0x800b8b4",
+          "size": 424,
+          "isa": "thumb",
+          "instruction_sha256": "2f3875e8a4cf5386e01cfdaa9cb2c091737eedf66af4b97c2548b40d8d71452a",
+          "name": "boss",
+          "boundary_status": "statically_reviewed",
+          "name_status": "structural_role_reviewed"
+        },
+        {
+          "address": "0x800c0e0",
+          "size": 256,
+          "isa": "thumb",
+          "instruction_sha256": "36f9f7e4e7eeb4720622f9a70c58ce6e712a23c8c81f3c832a2975e787f68010",
+          "name": "boss_attack",
+          "boundary_status": "statically_reviewed",
+          "name_status": "structural_role_reviewed"
+        }
+      ],
+      "lift_ref": "tools/composition/components/sonic_metroid/boss.c",
+      "lift_sha256": "8d06b39b658c7c3e431bfa0892b6e031f2219ea83c3439c592133236099a1340",
+      "semantic_status": "new_authored_bridge_using_recovered_mechanics",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [
+          "combat",
+          "resources"
+        ],
+        "data": [],
+        "ram": [
+          "GvPlayer pinned native prefix",
+          "GvState native TaskCreate1536 bytes,flag2,priorityFF00"
+        ],
+        "hardware": [],
+        "relocations": [
+          "all component function/data addresses resolved by native ARM linker; engine services pinned exact USA ROM"
+        ]
+      },
+      "dynamic_witness_refs": [],
+      "unknowns": [
+        "Whole campaign route/loop/boss acceptance is separate from compilation; no unsupported claim of full dynamic proof"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "world_position",
+      "direction": "in",
+      "required": false,
+      "type": {
+        "scalar": "i32x2",
+        "quantity": "position",
+        "unit": "1/256px",
+        "frame": "sonic-world-y-down"
+      }
+    }
+  ],
+  "behaviors": [
+    {
+      "state": "native task GvState fields in game.h",
+      "events": [],
+      "phase_authority": [
+        "boss_dual_contact",
+        "boss_shielded_contact",
+        "boss_contact",
+        "boss_attack"
+      ]
+    }
+  ],
+  "authorship": {
+    "new": "native host adaptation, ecology/placements/art/story explicitly authored",
+    "recovered_references": [
+      "research/requests/metroid-recovered-motion.package.json",
+      "research/deep-extraction/metroid/first-draft-combat-evidence.json",
+      "research/requests/sonic-self-decomp-evidence.json"
+    ]
+  },
+  "lowering": {
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "tools/composition/components/sonic_metroid/boss.c",
+          "sha256": "8d06b39b658c7c3e431bfa0892b6e031f2219ea83c3439c592133236099a1340"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/game.h",
+          "sha256": "00c97bc3aff771709b2600d420f324326bfa9d11c8bb5fa42baa0da339176cb9"
+        }
+      ],
+      "translation_units": [
+        "tools/composition/components/sonic_metroid/boss.c"
+      ],
+      "exports": [
+        {
+          "symbol": "gv_native_boss_dual",
+          "return": "i32",
+          "args": [
+            "ptr",
+            "i16",
+            "i16",
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "gv_native_boss_shielded",
+          "return": "i32",
+          "args": [
+            "ptr",
+            "i16",
+            "i16",
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "gv_native_boss",
+          "return": "i32",
+          "args": [
+            "ptr",
+            "i16",
+            "i16",
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "gv_native_boss_attack",
+          "return": "i32",
+          "args": [
+            "ptr",
+            "i16",
+            "i16",
+            "ptr"
+          ]
+        }
+      ],
+      "requires": [
+        {
+          "id": "composition.sonic_metroid_combat",
+          "version": "0.1.0-draft"
+        },
+        {
+          "id": "composition.sonic_metroid_resources",
+          "version": "0.1.0-draft"
+        }
+      ],
+      "state_bindings": [],
+      "host_calls": []
+    }
+  }
+}

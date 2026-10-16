@@ -1,0 +1,455 @@
+{
+  "version": "gba-thumb-host/1",
+  "game_id": "sonic-advance",
+  "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+  "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+  "rom_bytes": 8388608,
+  "append_address": "0x8800000",
+  "output_bytes": 16777216,
+  "abi": "aapcs-arm7tdmi-thumb-leaf-replacement",
+  "campaign": {
+    "preserve": "Entire original campaign/geometry/parallax/bosses/task scheduler retained with declared controller/combat/render service bridges; no source checkout",
+    "argument_constants": [
+      "0x0809b3f0"
+    ],
+    "argument_reads": [
+      {
+        "address": "0x03005004",
+        "width": 16
+      },
+      {
+        "address": "0x0300502c",
+        "width": 16
+      },
+      {
+        "address": "0x030060e0",
+        "width": 16
+      }
+    ]
+  },
+  "hooks": [
+    {
+      "id": "player",
+      "address": "0x80454d8",
+      "preimage": "f0b5274f3e698020",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [],
+      "phase": "player_control",
+      "writes": [
+        "campaign"
+      ],
+      "return": "void"
+    },
+    {
+      "id": "enemy",
+      "address": "0x800b4f8",
+      "preimage": "f0b557464e464546",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [
+        "ptr",
+        "i16",
+        "i16"
+      ],
+      "phase": "enemy_contact",
+      "writes": [
+        "campaign"
+      ],
+      "return": "i32"
+    },
+    {
+      "id": "boss_dual",
+      "address": "0x800bcbc",
+      "preimage": "f0b54f464646c0b4041c0904090c8846",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [
+        "ptr",
+        "i16",
+        "i16",
+        "ptr"
+      ],
+      "phase": "boss_dual_contact",
+      "writes": [
+        "campaign"
+      ],
+      "return": "i32"
+    },
+    {
+      "id": "boss_shielded",
+      "address": "0x800ba5c",
+      "preimage": "f0b557464e464546e0b483b0061c1d1c",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [
+        "ptr",
+        "i16",
+        "i16",
+        "ptr"
+      ],
+      "phase": "boss_shielded_contact",
+      "writes": [
+        "campaign"
+      ],
+      "return": "i32"
+    },
+    {
+      "id": "boss",
+      "address": "0x800b8b4",
+      "preimage": "f0b54f464646c0b4041c0904090c8846",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [
+        "ptr",
+        "i16",
+        "i16",
+        "ptr"
+      ],
+      "phase": "boss_contact",
+      "writes": [
+        "campaign"
+      ],
+      "return": "i32"
+    },
+    {
+      "id": "boss_attack",
+      "address": "0x800c0e0",
+      "preimage": "f0b5474680b4061c09040c0c1204120c",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [
+        "ptr",
+        "i16",
+        "i16",
+        "ptr"
+      ],
+      "phase": "boss_attack",
+      "writes": [
+        "campaign"
+      ],
+      "return": "i32"
+    },
+    {
+      "id": "hurt",
+      "address": "0x800c558",
+      "preimage": "f0b5041c1e21605e",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [
+        "ptr"
+      ],
+      "phase": "contact_damage",
+      "writes": [
+        "campaign"
+      ],
+      "return": "i32"
+    },
+    {
+      "id": "vram_reset",
+      "address": "0x8006c0c",
+      "preimage": "81b0694600200880",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [],
+      "phase": "scene_reset",
+      "writes": [
+        "campaign"
+      ],
+      "return": "void"
+    },
+    {
+      "id": "air_control",
+      "address": "0x804456c",
+      "preimage": "f0b5041c206b4600",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [
+        "ptr"
+      ],
+      "phase": "air_control",
+      "writes": [
+        "actor_motion"
+      ],
+      "return": "void"
+    },
+    {
+      "id": "release",
+      "address": "0x804463c",
+      "preimage": "10b5031c1a694020",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [
+        "ptr"
+      ],
+      "phase": "release",
+      "writes": [
+        "actor_motion"
+      ],
+      "return": "void"
+    },
+    {
+      "id": "jump",
+      "address": "0x804421c",
+      "preimage": "f0b5041c227d0025",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [
+        "ptr"
+      ],
+      "phase": "jump",
+      "writes": [
+        "actor_motion"
+      ],
+      "return": "i32"
+    },
+    {
+      "id": "integrate",
+      "address": "0x80470b4",
+      "preimage": "021c0820115e1068",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [
+        "ptr"
+      ],
+      "phase": "integrate",
+      "writes": [
+        "actor_motion"
+      ],
+      "return": "void"
+    },
+    {
+      "id": "gravity",
+      "address": "0x8047100",
+      "preimage": "021c106940210840",
+      "cardinality": 1,
+      "abi": "aapcs-thumb",
+      "args": [
+        "ptr"
+      ],
+      "phase": "gravity",
+      "writes": [
+        "actor_motion"
+      ],
+      "return": "void"
+    }
+  ],
+  "services": [
+    {
+      "id": "head_clearance",
+      "address": "0x8043aa4",
+      "isa": "thumb",
+      "abi": "i32(u8,actor_ptr)",
+      "preimage": "70b585b00b1c0006",
+      "range_size": 202,
+      "range_sha256": "41a20e318fa652a5e86ee56b804b71da5ae996d1174ede5eafd0eddf76f29163"
+    },
+    {
+      "id": "pose_hitbox",
+      "address": "0x8045138",
+      "isa": "thumb",
+      "abi": "void(actor_ptr,i32)",
+      "preimage": "10b5031c0c1c0f20",
+      "range_size": 176,
+      "range_sha256": "6574154401ae5dc963669ff81792a9c956e6debbb494d90e00ac64e0e5d4c84b"
+    },
+    {
+      "id": "play_sound",
+      "address": "0x80977e4",
+      "isa": "thumb",
+      "abi": "void(u16)",
+      "preimage": "00b50004074a0849",
+      "range_size": 36,
+      "range_sha256": "75a6816b0ce3e69685120da70f5a65fa4e552932b6769973f67429e55754c038"
+    },
+    {
+      "id": "task_create",
+      "address": "0x8001588",
+      "isa": "thumb",
+      "abi": "ptr(callback,u16,u16,u16,destructor)",
+      "preimage": "f0b5844609040f0c",
+      "range_size": 132,
+      "range_sha256": "89f7f3b6a6bdf3425f2cfde7ed52f90a8e7fb26ffd699ebe6872aa714bfcf850"
+    },
+    {
+      "id": "oam_allocate",
+      "address": "0x80047fc",
+      "isa": "thumb",
+      "abi": "ptr(u32)",
+      "preimage": "30b50006050e1f2d",
+      "range_size": 116,
+      "range_sha256": "6da657d2a683ec2b8c9a41673f58c182c1bef55e58a77ec0e7471d4753b13301"
+    },
+    {
+      "id": "vram_allocate",
+      "address": "0x8006b54",
+      "isa": "thumb",
+      "abi": "ptr(u32)",
+      "preimage": "f0b557464e464546",
+      "range_size": 160,
+      "range_sha256": "d2fffe6bcdc740b4e6695a0c86d27aa38eea424056cb77562f7d62c08587b7b5"
+    },
+    {
+      "id": "sprite_draw",
+      "address": "0x8004158",
+      "isa": "thumb",
+      "abi": "void(sprite_ptr)",
+      "preimage": "f0b557464e464546",
+      "range_size": 714,
+      "range_sha256": "3b22c84a7dfba9f4b5c45a800d8b3d8df962a153598de263a1ff7099454ae411"
+    },
+    {
+      "id": "enemy_fx",
+      "address": "0x801fea0",
+      "isa": "thumb",
+      "abi": "void(i32,i32)",
+      "preimage": "70b54e46454660b4",
+      "range_size": 130,
+      "range_sha256": "34c1b2322ad4dfd8477c1bab9a17c53073163b253667bf2f23ba63fbc420541c"
+    },
+    {
+      "id": "enemy_drop_fx",
+      "address": "0x8054920",
+      "isa": "thumb",
+      "abi": "void(i32,i32)",
+      "preimage": "f0b585b01f4a1278",
+      "range_size": 152,
+      "range_sha256": "ded8bec1d8b40f7fb6c5a5aa97a29a247b25239577b66f1e04663695589d0da4"
+    },
+    {
+      "id": "enemy_score",
+      "address": "0x80095cc",
+      "isa": "thumb",
+      "abi": "void(i32,i32)",
+      "preimage": "f0b5474680b40004",
+      "range_size": 136,
+      "range_sha256": "773a6b3959ace7554ba70d7658016565f6adb37a2bde854c702126924de73f68"
+    },
+    {
+      "id": "replay_input",
+      "address": "0x804d108",
+      "isa": "thumb",
+      "abi": "void(u16)",
+      "preimage": "70b50004060c0b4d",
+      "range_size": 50,
+      "range_sha256": "3a4a010213ca7a59e410eb3c593fa7e5e398889e95471a6e51093b5e938a26b2"
+    },
+    {
+      "id": "water_parameters",
+      "address": "0x8044a38",
+      "isa": "thumb",
+      "abi": "void(actor_ptr)",
+      "preimage": "f0b5041c22692948",
+      "range_size": 606,
+      "range_sha256": "5fedb3fd8fd5122138fe28ba0a4f02a82346ccfccaa1468d77bd326840dcd7cd"
+    },
+    {
+      "id": "sonic_controller",
+      "address": "0x8047378",
+      "isa": "thumb",
+      "abi": "void(actor_ptr)",
+      "preimage": "10b5041c21690620",
+      "range_size": 332,
+      "range_sha256": "3453b1e4c6eba2f7ae328db1b48bb954301c8f93dd8b744afb7076a4e11be8b1"
+    },
+    {
+      "id": "tails_controller",
+      "address": "0x8047b6c",
+      "isa": "thumb",
+      "abi": "void(actor_ptr)",
+      "preimage": "10b5041c21690620",
+      "range_size": 346,
+      "range_sha256": "2c5b0fb9f3ff10a354d4a3b91d638006a30a4d501f1064ba45099b633ca1ef31"
+    },
+    {
+      "id": "knuckles_controller",
+      "address": "0x8048fcc",
+      "isa": "thumb",
+      "abi": "void(actor_ptr)",
+      "preimage": "10b5041c21690620",
+      "range_size": 230,
+      "range_sha256": "83fe4aa85f270f7851578fb1e25ad13199e2d79411d654cf1234e7f2bcc8edd3"
+    },
+    {
+      "id": "amy_controller",
+      "address": "0x8049778",
+      "isa": "thumb",
+      "abi": "void(actor_ptr)",
+      "preimage": "10b5041c21690220",
+      "range_size": 168,
+      "range_sha256": "e28818a5f9ad8d14dcb5fcdf9f52f3c7583ef65a682362977748acc3ab027a5d"
+    },
+    {
+      "id": "player_animation",
+      "address": "0x8045fd4",
+      "isa": "thumb",
+      "abi": "void(actor_ptr,sprite_ptr)",
+      "preimage": "f0b54f464646c0b4",
+      "range_size": 686,
+      "range_sha256": "6febd2ab25da703a6f067e2d7b03b800d67729944bfb5763e077be1d75f19f65"
+    },
+    {
+      "id": "player_render",
+      "address": "0x80462c8",
+      "isa": "thumb",
+      "abi": "void(actor_ptr,sprite_ptr)",
+      "preimage": "f0b557464e464546",
+      "range_size": 1862,
+      "range_sha256": "141b47dd9e4b163917187c4d5c88549aad88987256845bedd190cf1c65b11070"
+    },
+    {
+      "id": "player_secondary_render",
+      "address": "0x8046ac0",
+      "isa": "thumb",
+      "abi": "void(actor_ptr,sprite_ptr)",
+      "preimage": "f0b5051c0e1c0c36",
+      "range_size": 412,
+      "range_sha256": "49dbb525841cedb30fbbe093d0fb2fdd16f042ba9ff591b5d2e1519930c76adc"
+    },
+    {
+      "id": "stop_sound",
+      "address": "0x80978b0",
+      "isa": "thumb",
+      "abi": "void(u16)",
+      "preimage": "00b50004094a0a49",
+      "range_size": 42,
+      "range_sha256": "4c94ebbfa3bdc78480d914944889688632eb8a8b85edff31e8573bc48d960664"
+    },
+    {
+      "id": "restore_music",
+      "address": "0x8098764",
+      "isa": "thumb",
+      "abi": "void(ptr,u16)",
+      "preimage": "10b5021c0904090c",
+      "range_size": 34,
+      "range_sha256": "63e56d063a204264b69960ce6437112e7db10d5a14d0389e75dd9b5350545917"
+    },
+    {
+      "id": "sonic_air_ability",
+      "address": "0x80478ac",
+      "isa": "thumb",
+      "abi": "void(actor_ptr)",
+      "preimage": "10b5041c211c4031",
+      "range_size": 64,
+      "range_sha256": "d3644d1a8e6eb6978d77769e2edb57dd230717c98c5fc16ecbc0fa79e24560c4"
+    },
+    {
+      "id": "tails_air_ability",
+      "address": "0x8047ff0",
+      "isa": "thumb",
+      "abi": "void(actor_ptr)",
+      "preimage": "10b5041c21690420",
+      "range_size": 58,
+      "range_sha256": "57e7f97e6f2bbc4fda715357143a69cc039f282ff0364e6a800a8fc1cb63a0e0"
+    },
+    {
+      "id": "knuckles_air_ability",
+      "address": "0x8048114",
+      "isa": "thumb",
+      "abi": "void(actor_ptr)",
+      "preimage": "021c106905214942",
+      "range_size": 110,
+      "range_sha256": "2c5cdb6f7b316cdfc596be5379b510fd7ede9b2375195c88f2116c742d96d41a"
+    }
+  ]
+}

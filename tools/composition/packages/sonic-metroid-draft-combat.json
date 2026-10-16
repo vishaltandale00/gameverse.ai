@@ -1,0 +1,165 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "composition.sonic_metroid_combat",
+  "version": "0.1.0-draft",
+  "concept": {
+    "role": "combat.realtime_projectiles_native_entity_lifecycle",
+    "facets": [
+      "mechanics",
+      "world",
+      "story"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "sonic-advance",
+    "origin": "new_bridge",
+    "recovery": {
+      "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+      "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "ranges": [
+        {
+          "address": "0x800b4f8",
+          "size": 648,
+          "isa": "thumb",
+          "instruction_sha256": "b0f03395aae0d1a5cc4d6f6acabfc47d8b37fca60591c1005366440f6345d9f6",
+          "name": "enemy",
+          "boundary_status": "statically_reviewed",
+          "name_status": "structural_role_reviewed"
+        }
+      ],
+      "lift_ref": "tools/composition/components/sonic_metroid/combat.c",
+      "lift_sha256": "45e7b63f20a1340889b8efa119c6db62164f7b8d0bdf3de98984a7be2e31b400",
+      "semantic_status": "new_authored_bridge_using_recovered_mechanics",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [
+          "state",
+          "resources",
+          "geometry"
+        ],
+        "data": [],
+        "ram": [
+          "GvPlayer pinned native prefix",
+          "GvState native TaskCreate1536 bytes,flag2,priorityFF00"
+        ],
+        "hardware": [],
+        "relocations": [
+          "all component function/data addresses resolved by native ARM linker; engine services pinned exact USA ROM"
+        ]
+      },
+      "dynamic_witness_refs": [],
+      "unknowns": [
+        "Whole campaign route/loop/boss acceptance is separate from compilation; no unsupported claim of full dynamic proof"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "world_position",
+      "direction": "in",
+      "required": false,
+      "type": {
+        "scalar": "i32x2",
+        "quantity": "position",
+        "unit": "1/256px",
+        "frame": "sonic-world-y-down"
+      }
+    }
+  ],
+  "behaviors": [
+    {
+      "state": "native task GvState fields in game.h",
+      "events": [
+        "fire",
+        "charge_release",
+        "projectile_hit",
+        "freeze",
+        "native_enemy_death"
+      ],
+      "phase_authority": [
+        "enemy_contact",
+        "weapons_tick"
+      ]
+    }
+  ],
+  "authorship": {
+    "new": "native host adaptation, ecology/placements/art/story explicitly authored",
+    "recovered_references": [
+      "research/requests/metroid-recovered-motion.package.json",
+      "research/deep-extraction/metroid/first-draft-combat-evidence.json",
+      "research/requests/sonic-self-decomp-evidence.json"
+    ]
+  },
+  "lowering": {
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "tools/composition/components/sonic_metroid/combat.c",
+          "sha256": "45e7b63f20a1340889b8efa119c6db62164f7b8d0bdf3de98984a7be2e31b400"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/game.h",
+          "sha256": "00c97bc3aff771709b2600d420f324326bfa9d11c8bb5fa42baa0da339176cb9"
+        }
+      ],
+      "translation_units": [
+        "tools/composition/components/sonic_metroid/combat.c"
+      ],
+      "exports": [
+        {
+          "symbol": "gv_native_enemy",
+          "return": "i32",
+          "args": [
+            "ptr",
+            "i16",
+            "i16"
+          ]
+        }
+      ],
+      "requires": [
+        {
+          "id": "composition.sonic_metroid_state",
+          "version": "0.1.0-draft"
+        },
+        {
+          "id": "composition.sonic_metroid_resources",
+          "version": "0.1.0-draft"
+        },
+        {
+          "id": "composition.sonic_metroid_geometry",
+          "version": "0.1.0-draft"
+        }
+      ],
+      "state_bindings": [],
+      "host_calls": [
+        {
+          "service": "play_sound",
+          "address": "0x80977e4",
+          "abi": "void(u16)"
+        },
+        {
+          "service": "sprite_draw",
+          "address": "0x8004158",
+          "abi": "void(sprite_ptr)"
+        },
+        {
+          "service": "enemy_fx",
+          "address": "0x801fea0",
+          "abi": "void(i32,i32)"
+        },
+        {
+          "service": "enemy_drop_fx",
+          "address": "0x8054920",
+          "abi": "void(i32,i32)"
+        },
+        {
+          "service": "enemy_score",
+          "address": "0x80095cc",
+          "abi": "void(i32,i32)"
+        }
+      ]
+    }
+  }
+}

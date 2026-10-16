@@ -1,0 +1,1163 @@
+{
+  "version": "sonic-metroid-campaign/1",
+  "id": "sonic-metroid-signal-descent",
+  "foundation": {
+    "game": "sonic-advance",
+    "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+    "stage_table": "0x084a6da4",
+    "preserve": "native whole campaign progression, geometry, bosses, parallax and loops"
+  },
+  "authorship": {
+    "new": "route-relative prefabs, alien AI, progression placements, story, tiny OBJ art and integration glue",
+    "recovered": "MZM damage/cooldown/caps/freeze/drops, motion; Sonic controller/contact/entity/task/render services"
+  },
+  "coordinate_contract": {
+    "x": "absolute native world pixels",
+    "floor_offset": "pixels relative to recovered nearby floor at activation; lookup nearest player-height route",
+    "activation_radius_px": 180,
+    "bounded_geometry_search_px": "symmetric112px about current route floor",
+    "terrain_layer": "native player+0x27; never silently use the empty plane0",
+    "scripted_contact_rule": "Freeze tutorial belongs to open-air coast; Factory low ceiling and external-motion rail admit beam seals only.",
+    "freeze_gateway_clearance": "Coast1130..1190 has no upper platform; do not place the support under the native elevated platforms beginning near1224."
+  },
+  "progression": {
+    "persistence": "native flag2 task data; reset on cartridge coldboot, fullRAM checkpoints retain it; no new SRAM save format",
+    "graph": [
+      "morph->bomb->bomb_gate",
+      "missile->missile_gate",
+      "high_jump->high_gate",
+      "ice->frozen_creature->ice_platform_gate",
+      "varia->heat_resistance",
+      "speed->momentum_gate",
+      "screw->organic_seal"
+    ],
+    "failure": "Unlimited native beacon retries: on a native death, replenish the independently recovered Sonic life counter to3 before native restart decrements it; retain cached abilities/gates in persistent task, reset scene enemies, refill energy/ammo on spawn."
+  },
+  "messages": [
+    [
+      "",
+      ""
+    ],
+    [
+      "DISTRESS FROM BELOW",
+      "B FIRE  R+B MISSILE  L AIM"
+    ],
+    [
+      "MORPH MATRIX ACQUIRED",
+      "DOWN BALL  UP STAND"
+    ],
+    [
+      "MISSILE TANK ACQUIRED",
+      "HOLD R AND PRESS B"
+    ],
+    [
+      "BOMB MODULE ACQUIRED",
+      "BALL + B  EXPLOSIONS LIFT"
+    ],
+    [
+      "HIGH JUMP AND POWER GRIP",
+      "HOLD A HIGHER  WALL A KICK"
+    ],
+    [
+      "ICE BEAM ACQUIRED",
+      "FREEZE CREATURES TO CLIMB"
+    ],
+    [
+      "VARIA FIELD ACQUIRED",
+      "ENERGY UP  HEAT RESISTANCE"
+    ],
+    [
+      "SPEED BOOSTER ACQUIRED",
+      "RUN TO BUILD MOMENTUM"
+    ],
+    [
+      "SCREW MATRIX ACQUIRED",
+      "SPIN THROUGH ORGANIC SEALS"
+    ],
+    [
+      "AT THE SIGNAL SOURCE",
+      "BREAK THE ARMORED WARDEN"
+    ],
+    [
+      "WARDEN SIGNAL SILENCED",
+      "ENERGY AND AMMO RELEASED"
+    ],
+    [
+      "RECONSTITUTED AT BEACON",
+      "UPGRADES RETAINED"
+    ],
+    [
+      "FOLLOW THE ALIEN RELAY",
+      "CACHES RECHARGE WITH DOWN"
+    ],
+    [
+      "THE ISLAND REMEMBERS",
+      "RETURN THROUGH CHANGED PATHS"
+    ],
+    [
+      "HOLD B TO CHARGE",
+      "RELEASE B FOR A POWER SHOT"
+    ]
+  ],
+  "stages": [
+    {
+      "native_stage": 0,
+      "region": "COASTAL SIGNAL",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        13056,
+        1344
+      ],
+      "heat": false,
+      "guardian": false,
+      "prefabs": [
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 200,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "relic",
+          "component": "morph",
+          "x": 280,
+          "id": 1,
+          "floor_offset": 0
+        },
+        {
+          "kind": "relic",
+          "component": "missile",
+          "x": 440,
+          "id": 2,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "missile",
+          "x": 560,
+          "id": 3,
+          "floor_offset": 0
+        },
+        {
+          "kind": "relic",
+          "component": "bomb",
+          "x": 760,
+          "id": 4,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "bomb",
+          "x": 900,
+          "id": 5,
+          "floor_offset": 0
+        },
+        {
+          "kind": "relic",
+          "component": "ice",
+          "x": 1050,
+          "id": 6,
+          "floor_offset": 0
+        },
+        {
+          "kind": "freeze_gateway",
+          "component": "ice_platform",
+          "x": 1190,
+          "id": 7,
+          "floor_offset": 0,
+          "requires": {
+            "abilities": [
+              "ice"
+            ],
+            "support_must_respawn": true,
+            "support_offset_x": -60,
+            "support_height_px": 32,
+            "normal_jump_height_requirement_px": 50,
+            "barrier_height_px": 86
+          }
+        }
+      ]
+    },
+    {
+      "native_stage": 1,
+      "region": "COASTAL SIGNAL",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        11520,
+        1440
+      ],
+      "heat": false,
+      "guardian": false,
+      "prefabs": [
+        {
+          "kind": "relic",
+          "component": "high_jump",
+          "x": 280,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "high_jump",
+          "x": 560,
+          "id": 1,
+          "floor_offset": 0
+        },
+        {
+          "kind": "relic",
+          "component": "speed",
+          "x": 850,
+          "id": 2,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "speed",
+          "x": 1200,
+          "id": 3,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "pirate",
+          "x": 1450,
+          "id": 4,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 1700,
+          "id": 5,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "guardian",
+          "x": 2100,
+          "id": 7,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 2,
+      "region": "RELAY FACTORY",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        10368,
+        1536
+      ],
+      "heat": true,
+      "guardian": false,
+      "prefabs": [
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 116,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 150,
+          "id": 1,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "beam",
+          "x": 210,
+          "id": 2,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 900,
+          "id": 3,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 1150,
+          "id": 4,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "pirate",
+          "x": 1400,
+          "id": 5,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "missile",
+          "x": 1700,
+          "id": 6,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 1550,
+          "id": 7,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 3,
+      "region": "RELAY FACTORY",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        9024,
+        1920
+      ],
+      "heat": true,
+      "guardian": false,
+      "prefabs": [
+        {
+          "kind": "relic",
+          "component": "varia",
+          "x": 116,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "pirate",
+          "x": 600,
+          "id": 1,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "bomb",
+          "x": 900,
+          "id": 2,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "guardian",
+          "x": 1250,
+          "id": 7,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 1100,
+          "id": 3,
+          "floor_offset": 0
+        },
+        {
+          "kind": "heat",
+          "component": "",
+          "x": 360,
+          "id": 6,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 4,
+      "region": "CRYSTAL CIRCUIT",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        7104,
+        2592
+      ],
+      "heat": false,
+      "guardian": false,
+      "prefabs": [
+        {
+          "kind": "relic",
+          "component": "screw",
+          "x": 320,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "screw",
+          "x": 640,
+          "id": 1,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "flyer",
+          "x": 850,
+          "id": 2,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "pirate",
+          "x": 1100,
+          "id": 3,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "speed",
+          "x": 1500,
+          "id": 4,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 1300,
+          "id": 5,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 5,
+      "region": "CRYSTAL CIRCUIT",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        7680,
+        2784
+      ],
+      "heat": false,
+      "guardian": true,
+      "prefabs": [
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 240,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "flyer",
+          "x": 440,
+          "id": 1,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 650,
+          "id": 2,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "pirate",
+          "x": 850,
+          "id": 3,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "bomb",
+          "x": 1100,
+          "id": 4,
+          "floor_offset": 0
+        },
+        {
+          "kind": "heat",
+          "component": "",
+          "x": 1400,
+          "id": 5,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "guardian",
+          "x": 1800,
+          "id": 7,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 6,
+      "region": "FROZEN NEST",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        10464,
+        2880
+      ],
+      "heat": false,
+      "guardian": true,
+      "prefabs": [
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 240,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "flyer",
+          "x": 440,
+          "id": 1,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 650,
+          "id": 2,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "pirate",
+          "x": 850,
+          "id": 3,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "missile",
+          "x": 1100,
+          "id": 4,
+          "floor_offset": 0
+        },
+        {
+          "kind": "heat",
+          "component": "",
+          "x": 1400,
+          "id": 5,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "guardian",
+          "x": 1800,
+          "id": 7,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 7,
+      "region": "FROZEN NEST",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        8832,
+        2496
+      ],
+      "heat": false,
+      "guardian": true,
+      "prefabs": [
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 240,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "flyer",
+          "x": 440,
+          "id": 1,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 650,
+          "id": 2,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "pirate",
+          "x": 850,
+          "id": 3,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "screw",
+          "x": 1100,
+          "id": 4,
+          "floor_offset": 0
+        },
+        {
+          "kind": "heat",
+          "component": "",
+          "x": 1400,
+          "id": 5,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "guardian",
+          "x": 1800,
+          "id": 7,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 8,
+      "region": "SKY RUINS",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        8928,
+        2688
+      ],
+      "heat": false,
+      "guardian": true,
+      "prefabs": [
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 240,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "flyer",
+          "x": 440,
+          "id": 1,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 650,
+          "id": 2,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "pirate",
+          "x": 850,
+          "id": 3,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "bomb",
+          "x": 1100,
+          "id": 4,
+          "floor_offset": 0
+        },
+        {
+          "kind": "heat",
+          "component": "",
+          "x": 1400,
+          "id": 5,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "guardian",
+          "x": 1800,
+          "id": 7,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 9,
+      "region": "SKY RUINS",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        9600,
+        1728
+      ],
+      "heat": false,
+      "guardian": true,
+      "prefabs": [
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 240,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "flyer",
+          "x": 440,
+          "id": 1,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 650,
+          "id": 2,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "pirate",
+          "x": 850,
+          "id": 3,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "missile",
+          "x": 1100,
+          "id": 4,
+          "floor_offset": 0
+        },
+        {
+          "kind": "heat",
+          "component": "",
+          "x": 1400,
+          "id": 5,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "guardian",
+          "x": 1800,
+          "id": 7,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 10,
+      "region": "ORBITAL ASCENT",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        4224,
+        7968
+      ],
+      "heat": true,
+      "guardian": true,
+      "prefabs": [
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 240,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "flyer",
+          "x": 440,
+          "id": 1,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 650,
+          "id": 2,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "pirate",
+          "x": 850,
+          "id": 3,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "screw",
+          "x": 1100,
+          "id": 4,
+          "floor_offset": 0
+        },
+        {
+          "kind": "heat",
+          "component": "",
+          "x": 1400,
+          "id": 5,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "guardian",
+          "x": 1800,
+          "id": 7,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 11,
+      "region": "ORBITAL CORE",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        10560,
+        2496
+      ],
+      "heat": true,
+      "guardian": true,
+      "prefabs": [
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 240,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "flyer",
+          "x": 440,
+          "id": 1,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 650,
+          "id": 2,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "pirate",
+          "x": 850,
+          "id": 3,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "bomb",
+          "x": 1100,
+          "id": 4,
+          "floor_offset": 0
+        },
+        {
+          "kind": "heat",
+          "component": "",
+          "x": 1400,
+          "id": 5,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "guardian",
+          "x": 1800,
+          "id": 7,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 12,
+      "region": "SIGNAL SOURCE",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        3840,
+        960
+      ],
+      "heat": true,
+      "guardian": true,
+      "prefabs": [
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 240,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "flyer",
+          "x": 440,
+          "id": 1,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 650,
+          "id": 2,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "pirate",
+          "x": 850,
+          "id": 3,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "missile",
+          "x": 1100,
+          "id": 4,
+          "floor_offset": 0
+        },
+        {
+          "kind": "heat",
+          "component": "",
+          "x": 1400,
+          "id": 5,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "guardian",
+          "x": 1800,
+          "id": 7,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 13,
+      "region": "RETURN AND ECHO",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        3072,
+        288
+      ],
+      "heat": false,
+      "guardian": true,
+      "prefabs": [
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 240,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "flyer",
+          "x": 440,
+          "id": 1,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 650,
+          "id": 2,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "pirate",
+          "x": 850,
+          "id": 3,
+          "floor_offset": 0
+        },
+        {
+          "kind": "gate",
+          "component": "screw",
+          "x": 1100,
+          "id": 4,
+          "floor_offset": 0
+        },
+        {
+          "kind": "heat",
+          "component": "",
+          "x": 1400,
+          "id": 5,
+          "floor_offset": 0
+        },
+        {
+          "kind": "alien",
+          "component": "guardian",
+          "x": 1800,
+          "id": 7,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 14,
+      "region": "ARENA",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        1920,
+        1152
+      ],
+      "heat": false,
+      "guardian": false,
+      "prefabs": [
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 200,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 500,
+          "id": 1,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 15,
+      "region": "ARENA",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        1920,
+        1152
+      ],
+      "heat": false,
+      "guardian": false,
+      "prefabs": [
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 200,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 500,
+          "id": 1,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 16,
+      "region": "ARENA",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        1344,
+        1920
+      ],
+      "heat": false,
+      "guardian": false,
+      "prefabs": [
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 200,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 500,
+          "id": 1,
+          "floor_offset": 0
+        }
+      ]
+    },
+    {
+      "native_stage": 17,
+      "region": "ARENA",
+      "entry": "FOLLOW THE SIGNAL",
+      "native_extent_px": [
+        1920,
+        1344
+      ],
+      "heat": false,
+      "guardian": false,
+      "prefabs": [
+        {
+          "kind": "alien",
+          "component": "crawler",
+          "x": 200,
+          "id": 0,
+          "floor_offset": 0
+        },
+        {
+          "kind": "recharge",
+          "component": "",
+          "x": 500,
+          "id": 1,
+          "floor_offset": 0
+        }
+      ]
+    }
+  ],
+  "runtime_graph": {
+    "version": "typed-native-frame-graph/1",
+    "context": {
+      "state": "GvState* native-owned campaign task",
+      "player": "GvPlayer* pinned host actor",
+      "keys": "u16 raw held mask",
+      "edges": "u16 held & ~prior mask"
+    },
+    "systems": [
+      {
+        "id": "resource_events",
+        "symbol": "gv_resources_step",
+        "args": [
+          "state",
+          "player"
+        ],
+        "when": "always",
+        "after": []
+      },
+      {
+        "id": "weapon_events",
+        "symbol": "gv_weapons_step",
+        "args": [
+          "state",
+          "player",
+          "keys",
+          "edges"
+        ],
+        "when": "alive",
+        "after": [
+          "resource_events"
+        ]
+      },
+      {
+        "id": "progression_events",
+        "symbol": "gv_progression_step",
+        "args": [
+          "state",
+          "player",
+          "keys",
+          "edges"
+        ],
+        "when": "alive",
+        "after": [
+          "weapon_events"
+        ]
+      },
+      {
+        "id": "ecology_events",
+        "symbol": "gv_ecology_step",
+        "args": [
+          "state",
+          "player"
+        ],
+        "when": "alive",
+        "after": [
+          "progression_events"
+        ]
+      },
+      {
+        "id": "presentation",
+        "symbol": "gv_draw_game",
+        "args": [
+          "state",
+          "player"
+        ],
+        "when": "always",
+        "after": [
+          "ecology_events"
+        ]
+      }
+    ]
+  }
+}

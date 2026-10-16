@@ -1,0 +1,217 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "composition.sonic_metroid_movement",
+  "version": "0.1.0-draft",
+  "concept": {
+    "role": "movement.ordinary_mzm_surface_sonic_authority",
+    "facets": [
+      "mechanics",
+      "world",
+      "story"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "sonic-advance",
+    "origin": "new_bridge",
+    "recovery": {
+      "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+      "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "ranges": [
+        {
+          "address": "0x804456c",
+          "size": 204,
+          "isa": "thumb",
+          "instruction_sha256": "2eb5c89f3223a70e703c3710d05fe1a2f0387ad54ec0c401b7ebb71b7a49f58e",
+          "name": "air_control",
+          "boundary_status": "statically_reviewed",
+          "name_status": "structural_role_reviewed"
+        },
+        {
+          "address": "0x804463c",
+          "size": 198,
+          "isa": "thumb",
+          "instruction_sha256": "23cd6f81245571dd2b44f2eeacb62f5ab0be3bb8a8bbf370056668845173a871",
+          "name": "release",
+          "boundary_status": "statically_reviewed",
+          "name_status": "structural_role_reviewed"
+        },
+        {
+          "address": "0x804421c",
+          "size": 444,
+          "isa": "thumb",
+          "instruction_sha256": "5c3dbd684b13c67def0fae87ab6a21192462a4014dc318e5434999ac7fba8445",
+          "name": "jump",
+          "boundary_status": "statically_reviewed",
+          "name_status": "structural_role_reviewed"
+        },
+        {
+          "address": "0x80470b4",
+          "size": 68,
+          "isa": "thumb",
+          "instruction_sha256": "a45560c1cefe4f86c0e5d606c7125254aab25384089441c0b1b258d2f19d0464",
+          "name": "integrate",
+          "boundary_status": "statically_reviewed",
+          "name_status": "structural_role_reviewed"
+        },
+        {
+          "address": "0x8047100",
+          "size": 26,
+          "isa": "thumb",
+          "instruction_sha256": "4944213d6134fb5603cda89cd7937b99adf0380aa1f282f48d0fc12a94f761e6",
+          "name": "gravity",
+          "boundary_status": "statically_reviewed",
+          "name_status": "structural_role_reviewed"
+        }
+      ],
+      "lift_ref": "tools/composition/components/sonic_metroid/movement.c",
+      "lift_sha256": "9be8f5aaedb0ec40be128e11a0b1180cfbd0edaaec25b853ae9c3ca0c0811d09",
+      "semantic_status": "new_authored_bridge_using_recovered_mechanics",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [
+          "state",
+          "geometry",
+          "recovered",
+          "air"
+        ],
+        "data": [],
+        "ram": [
+          "GvPlayer pinned native prefix",
+          "GvState native TaskCreate1536 bytes,flag2,priorityFF00"
+        ],
+        "hardware": [],
+        "relocations": [
+          "all component function/data addresses resolved by native ARM linker; engine services pinned exact USA ROM"
+        ]
+      },
+      "dynamic_witness_refs": [],
+      "unknowns": [
+        "Whole campaign route/loop/boss acceptance is separate from compilation; no unsupported claim of full dynamic proof"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "world_position",
+      "direction": "in",
+      "required": false,
+      "type": {
+        "scalar": "i32x2",
+        "quantity": "position",
+        "unit": "1/256px",
+        "frame": "sonic-world-y-down"
+      }
+    }
+  ],
+  "behaviors": [
+    {
+      "state": "native task GvState fields in game.h",
+      "events": [],
+      "phase_authority": [
+        "air_control",
+        "release",
+        "jump",
+        "integrate",
+        "gravity"
+      ]
+    }
+  ],
+  "authorship": {
+    "new": "native host adaptation, ecology/placements/art/story explicitly authored",
+    "recovered_references": [
+      "research/requests/metroid-recovered-motion.package.json",
+      "research/deep-extraction/metroid/first-draft-combat-evidence.json",
+      "research/requests/sonic-self-decomp-evidence.json"
+    ]
+  },
+  "lowering": {
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "tools/composition/components/sonic_metroid/movement.c",
+          "sha256": "9be8f5aaedb0ec40be128e11a0b1180cfbd0edaaec25b853ae9c3ca0c0811d09"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/game.h",
+          "sha256": "00c97bc3aff771709b2600d420f324326bfa9d11c8bb5fa42baa0da339176cb9"
+        }
+      ],
+      "translation_units": [
+        "tools/composition/components/sonic_metroid/movement.c"
+      ],
+      "exports": [
+        {
+          "symbol": "gv_native_air_control",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "gv_native_release",
+          "return": "void",
+          "args": [
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "gv_native_jump",
+          "return": "i32",
+          "args": [
+            "ptr"
+          ]
+        },
+        {
+          "symbol": "gv_native_integrate",
+          "return": "void",
+          "args": [
+            "ptr",
+            "u32",
+            "u32"
+          ]
+        },
+        {
+          "symbol": "gv_native_gravity",
+          "return": "void",
+          "args": [
+            "ptr",
+            "u32"
+          ]
+        }
+      ],
+      "requires": [
+        {
+          "id": "composition.sonic_metroid_state",
+          "version": "0.1.0-draft"
+        },
+        {
+          "id": "composition.sonic_metroid_geometry",
+          "version": "0.1.0-draft"
+        },
+        {
+          "id": "composition.sonic_metroid_motion_bundle",
+          "version": "1.1.0-jump"
+        },
+        {
+          "id": "composition.sonic_air_recovered",
+          "version": "1.0.0"
+        }
+      ],
+      "state_bindings": [],
+      "host_calls": [
+        {
+          "service": "pose_hitbox",
+          "address": "0x8045138",
+          "abi": "void(actor_ptr,i32)"
+        },
+        {
+          "service": "play_sound",
+          "address": "0x80977e4",
+          "abi": "void(u16)"
+        }
+      ]
+    }
+  }
+}

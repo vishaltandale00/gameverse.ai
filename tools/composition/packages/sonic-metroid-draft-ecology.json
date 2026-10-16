@@ -1,0 +1,118 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "composition.sonic_metroid_ecology",
+  "version": "0.1.0-draft",
+  "concept": {
+    "role": "ecology.patrol_dive_aim_guardian",
+    "facets": [
+      "mechanics",
+      "world",
+      "story"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "sonic-advance",
+    "origin": "new_bridge",
+    "recovery": {
+      "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+      "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "ranges": [],
+      "lift_ref": "tools/composition/components/sonic_metroid/ecology.c",
+      "lift_sha256": "9a3bd471fd977a8a86516a42593338caa032479cbbc610e27239704dc28d61ce",
+      "semantic_status": "new_authored_bridge_using_recovered_mechanics",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [
+          "combat",
+          "geometry",
+          "resources"
+        ],
+        "data": [],
+        "ram": [
+          "GvPlayer pinned native prefix",
+          "GvState native TaskCreate1536 bytes,flag2,priorityFF00"
+        ],
+        "hardware": [],
+        "relocations": [
+          "all component function/data addresses resolved by native ARM linker; engine services pinned exact USA ROM"
+        ]
+      },
+      "dynamic_witness_refs": [],
+      "unknowns": [
+        "Whole campaign route/loop/boss acceptance is separate from compilation; no unsupported claim of full dynamic proof"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "world_position",
+      "direction": "in",
+      "required": false,
+      "type": {
+        "scalar": "i32x2",
+        "quantity": "position",
+        "unit": "1/256px",
+        "frame": "sonic-world-y-down"
+      }
+    }
+  ],
+  "behaviors": [
+    {
+      "state": "native task GvState fields in game.h",
+      "events": [],
+      "phase_authority": [
+        "ecology_tick"
+      ]
+    }
+  ],
+  "authorship": {
+    "new": "native host adaptation, ecology/placements/art/story explicitly authored",
+    "recovered_references": [
+      "research/requests/metroid-recovered-motion.package.json",
+      "research/deep-extraction/metroid/first-draft-combat-evidence.json",
+      "research/requests/sonic-self-decomp-evidence.json"
+    ]
+  },
+  "lowering": {
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "tools/composition/components/sonic_metroid/ecology.c",
+          "sha256": "9a3bd471fd977a8a86516a42593338caa032479cbbc610e27239704dc28d61ce"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/game.h",
+          "sha256": "00c97bc3aff771709b2600d420f324326bfa9d11c8bb5fa42baa0da339176cb9"
+        }
+      ],
+      "translation_units": [
+        "tools/composition/components/sonic_metroid/ecology.c"
+      ],
+      "exports": [],
+      "requires": [
+        {
+          "id": "composition.sonic_metroid_combat",
+          "version": "0.1.0-draft"
+        },
+        {
+          "id": "composition.sonic_metroid_geometry",
+          "version": "0.1.0-draft"
+        },
+        {
+          "id": "composition.sonic_metroid_resources",
+          "version": "0.1.0-draft"
+        }
+      ],
+      "state_bindings": [],
+      "host_calls": [
+        {
+          "service": "play_sound",
+          "address": "0x80977e4",
+          "abi": "void(u16)"
+        }
+      ]
+    }
+  }
+}

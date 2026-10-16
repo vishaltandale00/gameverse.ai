@@ -1,0 +1,103 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "composition.sonic_metroid_world",
+  "version": "0.1.0-draft",
+  "concept": {
+    "role": "world.campaign_prefab_story_asset_data",
+    "facets": [
+      "mechanics",
+      "world",
+      "story"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "sonic-advance",
+    "origin": "new_bridge",
+    "recovery": {
+      "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+      "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "ranges": [],
+      "lift_ref": "tools/composition/components/sonic_metroid/world_data.c",
+      "lift_sha256": "910f4d600ae1bdb5912a912311e069b3ffdc24376195483ae0486da733266ed3",
+      "semantic_status": "new_authored_bridge_using_recovered_mechanics",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [],
+        "data": [
+          "tools/composition/worlds/sonic-metroid-signal-descent.json"
+        ],
+        "ram": [
+          "GvPlayer pinned native prefix",
+          "GvState native TaskCreate1536 bytes,flag2,priorityFF00"
+        ],
+        "hardware": [],
+        "relocations": [
+          "all component function/data addresses resolved by native ARM linker; engine services pinned exact USA ROM"
+        ]
+      },
+      "dynamic_witness_refs": [],
+      "unknowns": [
+        "Whole campaign route/loop/boss acceptance is separate from compilation; no unsupported claim of full dynamic proof"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "world_position",
+      "direction": "in",
+      "required": false,
+      "type": {
+        "scalar": "i32x2",
+        "quantity": "position",
+        "unit": "1/256px",
+        "frame": "sonic-world-y-down"
+      }
+    }
+  ],
+  "behaviors": [
+    {
+      "state": "native task GvState fields in game.h",
+      "events": [],
+      "phase_authority": []
+    }
+  ],
+  "authorship": {
+    "new": "native host adaptation, ecology/placements/art/story explicitly authored",
+    "recovered_references": [
+      "research/requests/metroid-recovered-motion.package.json",
+      "research/deep-extraction/metroid/first-draft-combat-evidence.json",
+      "research/requests/sonic-self-decomp-evidence.json"
+    ]
+  },
+  "lowering": {
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "tools/composition/components/sonic_metroid/world_data.c",
+          "sha256": "910f4d600ae1bdb5912a912311e069b3ffdc24376195483ae0486da733266ed3"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/game.h",
+          "sha256": "00c97bc3aff771709b2600d420f324326bfa9d11c8bb5fa42baa0da339176cb9"
+        },
+        {
+          "ref": "tools/composition/worlds/sonic-metroid-signal-descent.json",
+          "sha256": "a8e0c2b42f03af9e74490cbcf8952a535797ccae2070a525163e48b87e4d52ef"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/compile_world.py",
+          "sha256": "46c0fc1b5e50482a2ecf04b5ed65aedce992170fef19bc1462cfb1d353ba6b67"
+        }
+      ],
+      "translation_units": [
+        "tools/composition/components/sonic_metroid/world_data.c"
+      ],
+      "exports": [],
+      "requires": [],
+      "state_bindings": [],
+      "host_calls": []
+    }
+  }
+}

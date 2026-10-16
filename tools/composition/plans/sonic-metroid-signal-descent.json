@@ -1,0 +1,789 @@
+{
+  "ir_version": "0.1",
+  "kind": "composition_plan",
+  "id": "sonic-metroid-signal-descent-first-draft",
+  "target": {
+    "platform": "gba",
+    "foundation_game": "sonic-advance",
+    "preserve_campaign": true,
+    "authoritative_origin": "self_decompilation"
+  },
+  "intent": {
+    "request_ref": "/Users/shishirtandale/Downloads/gameverse-mashup-request.json",
+    "clarification": "Preserve Sonic momentum on loops and ramps",
+    "campaign_ir": "tools/composition/worlds/sonic-metroid-signal-descent.json"
+  },
+  "execution": {
+    "clock": "native-simulation-frame",
+    "modes": [
+      "play"
+    ],
+    "phases": [
+      "player_control",
+      "enemy_contact",
+      "boss_dual_contact",
+      "boss_shielded_contact",
+      "boss_contact",
+      "boss_attack",
+      "contact_damage",
+      "scene_reset",
+      "air_control",
+      "release",
+      "jump",
+      "integrate",
+      "gravity",
+      "resources_tick",
+      "weapons_tick",
+      "progression_tick",
+      "ecology_tick",
+      "render_tick"
+    ],
+    "transitions": []
+  },
+  "states": [
+    {
+      "id": "actor_motion",
+      "lifetime": "entity"
+    },
+    {
+      "id": "campaign",
+      "lifetime": "campaign"
+    }
+  ],
+  "components": [
+    {
+      "id": "recovered",
+      "provides": [
+        "movement.recovered_sonic_mzm_bundle@1"
+      ],
+      "requires": [],
+      "requires_components": [],
+      "ports": [],
+      "accesses": [],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "air",
+      "provides": [
+        "movement.recovered_sonic_air_control_release@1"
+      ],
+      "requires": [],
+      "requires_components": [],
+      "ports": [],
+      "accesses": [],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "state",
+      "provides": [
+        "campaign.task_owned_state@1"
+      ],
+      "requires": [],
+      "requires_components": [],
+      "ports": [],
+      "accesses": [],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "geometry",
+      "provides": [
+        "world.terrain_queries@1"
+      ],
+      "requires": [],
+      "requires_components": [],
+      "ports": [],
+      "accesses": [],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "resources",
+      "provides": [
+        "resource.energy_ammo_drops@1"
+      ],
+      "requires": [],
+      "requires_components": [
+        "state"
+      ],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "campaign",
+          "phase": "contact_damage",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "campaign",
+          "phase": "resources_tick",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "combat",
+      "provides": [
+        "combat.realtime_projectiles_native_entity_lifecycle@1"
+      ],
+      "requires": [],
+      "requires_components": [
+        "state",
+        "resources",
+        "geometry"
+      ],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "campaign",
+          "phase": "enemy_contact",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "campaign",
+          "phase": "weapons_tick",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "boss",
+      "provides": [
+        "combat.projectile_to_native_staged_boss_hit_contract@1"
+      ],
+      "requires": [],
+      "requires_components": [
+        "combat",
+        "resources"
+      ],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "campaign",
+          "phase": "boss_dual_contact",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "campaign",
+          "phase": "boss_shielded_contact",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "campaign",
+          "phase": "boss_contact",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "campaign",
+          "phase": "boss_attack",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "ecology",
+      "provides": [
+        "ecology.patrol_dive_aim_guardian@1"
+      ],
+      "requires": [],
+      "requires_components": [
+        "combat",
+        "geometry",
+        "resources"
+      ],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "campaign",
+          "phase": "ecology_tick",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "progression",
+      "provides": [
+        "progression.ability_caches_typed_locks@1"
+      ],
+      "requires": [],
+      "requires_components": [
+        "combat",
+        "geometry",
+        "resources",
+        "world"
+      ],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "campaign",
+          "phase": "progression_tick",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "movement",
+      "provides": [
+        "movement.ordinary_mzm_surface_sonic_authority@1"
+      ],
+      "requires": [],
+      "requires_components": [
+        "state",
+        "geometry",
+        "recovered",
+        "air"
+      ],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "actor_motion",
+          "phase": "air_control",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "actor_motion",
+          "phase": "release",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "actor_motion",
+          "phase": "jump",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "actor_motion",
+          "phase": "integrate",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "actor_motion",
+          "phase": "gravity",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "world",
+      "provides": [
+        "world.campaign_prefab_story_asset_data@1"
+      ],
+      "requires": [],
+      "requires_components": [],
+      "ports": [],
+      "accesses": [],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "render",
+      "provides": [
+        "presentation.native_obj_hud_prefabs_projectiles@1"
+      ],
+      "requires": [],
+      "requires_components": [
+        "state",
+        "world"
+      ],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "campaign",
+          "phase": "render_tick",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "schedule",
+      "provides": [
+        "composition.typed_event_frame_graph@1"
+      ],
+      "requires": [],
+      "requires_components": [
+        "resources",
+        "combat",
+        "progression",
+        "ecology",
+        "render"
+      ],
+      "ports": [],
+      "accesses": [],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    },
+    {
+      "id": "kernel",
+      "provides": [
+        "host.native_control_scene_event_schedule@1"
+      ],
+      "requires": [],
+      "requires_components": [
+        "state",
+        "movement",
+        "schedule"
+      ],
+      "ports": [],
+      "accesses": [
+        {
+          "state": "campaign",
+          "phase": "player_control",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        },
+        {
+          "state": "campaign",
+          "phase": "scene_reset",
+          "modes": [
+            "play"
+          ],
+          "op": "write"
+        }
+      ],
+      "implementation": {
+        "status": "lowered",
+        "recovery_evidence_ref": "research/requests/sonic-self-decomp-evidence.json",
+        "evidence_refs": [
+          "research/deep-extraction/metroid/first-draft-combat-evidence.json"
+        ]
+      }
+    }
+  ],
+  "bindings": [],
+  "transforms": [],
+  "route_obligations": [
+    {
+      "id": "whole-campaign",
+      "detail": "106 prefabs across18 native world definitions;14 campaign/special definitions plus4 multiplayer definitions; native campaign/boss/loop geometry retained. Actual route witnesses required."
+    }
+  ],
+  "obligations": [
+    {
+      "id": "first-draft-acceptance",
+      "detail": "Compilation is not player-facing acceptance; require native visible combat/upgrades/gates/resources and scene persistence witnesses on exact artifact."
+    }
+  ],
+  "native_build": {
+    "version": "gba-component-native/1",
+    "host": {
+      "ref": "tools/composition/native/sonic-usa-whole-game.host.json",
+      "sha256": "24db9110a093f077b96f60e04f3cec37ca0f2ea2d9b3f18be2b851e8739954f5"
+    },
+    "packages": [
+      {
+        "instance": "recovered",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-motion-jump.json",
+          "sha256": "d00c360548cc2d105a073ad7499ed679c957fb64a1050460a0d1c8c69b850515"
+        }
+      },
+      {
+        "instance": "air",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-draft-air.json",
+          "sha256": "6c13885320a49d1c1f6b1d91633a98e18c846ee0b64e1bdfbb93387f474e9a7d"
+        }
+      },
+      {
+        "instance": "state",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-draft-state.json",
+          "sha256": "10faa52644322156b644d7748aa2db655d2c78d609d0197927471c479d969a67"
+        }
+      },
+      {
+        "instance": "geometry",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-draft-geometry.json",
+          "sha256": "e930d105ed92739230593d1d75d06bd09064562a82a0e1ef8b563b3e8b05a2cf"
+        }
+      },
+      {
+        "instance": "resources",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-draft-resources.json",
+          "sha256": "230cf4b92af6d1643871b069b042d36d07675f2d277cf1798b3e8e6c71c6540e"
+        }
+      },
+      {
+        "instance": "combat",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-draft-combat.json",
+          "sha256": "7a61cb62a482c161d9d0c35dd3ad1f3246696125dc7b827a990a5fb1bdfab77c"
+        }
+      },
+      {
+        "instance": "boss",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-draft-boss.json",
+          "sha256": "df7a691810d32342a534864dc7bfbfc305af120ede8305408524333e116451d7"
+        }
+      },
+      {
+        "instance": "ecology",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-draft-ecology.json",
+          "sha256": "ce9a89b15dc615de422e07850e6f9925f6e2e0d9f27e0e08df75adf26b7c81e9"
+        }
+      },
+      {
+        "instance": "progression",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-draft-progression.json",
+          "sha256": "602c28416bc03c6da349bb110ea6fe534867e1549f883af451d50c211f824164"
+        }
+      },
+      {
+        "instance": "movement",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-draft-movement.json",
+          "sha256": "aae4b1f8c9c563047fd45a2ed9fff3ea85c894fd49636ffc1da108cb1edd8a36"
+        }
+      },
+      {
+        "instance": "world",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-draft-world.json",
+          "sha256": "908683f604f4af3357db4aa1ea6602792ab9d0a5231b326592bf6ff60020dfe1"
+        }
+      },
+      {
+        "instance": "render",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-draft-render.json",
+          "sha256": "90a899a94f18453571317c1c14bb543ea0fc15805056075abbb80a8ac82f1962"
+        }
+      },
+      {
+        "instance": "schedule",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-draft-schedule.json",
+          "sha256": "82eafdf29068f44cd8a5cc9ce78bdc93921c94bb62088a150c60aaa037f9b1e0"
+        }
+      },
+      {
+        "instance": "kernel",
+        "package": {
+          "ref": "tools/composition/packages/sonic-metroid-draft-kernel.json",
+          "sha256": "d50ea7542fea6dbdd367e86d989ef92957fa06d5dd0deec4783d906312ee4800"
+        }
+      }
+    ],
+    "hooks": [
+      {
+        "host_hook": "player",
+        "instance": "kernel",
+        "symbol": "gv_native_player",
+        "args": []
+      },
+      {
+        "host_hook": "enemy",
+        "instance": "combat",
+        "symbol": "gv_native_enemy",
+        "args": [
+          {
+            "arg": 0
+          },
+          {
+            "arg": 1
+          },
+          {
+            "arg": 2
+          }
+        ]
+      },
+      {
+        "host_hook": "boss_dual",
+        "instance": "boss",
+        "symbol": "gv_native_boss_dual",
+        "args": [
+          {
+            "arg": 0
+          },
+          {
+            "arg": 1
+          },
+          {
+            "arg": 2
+          },
+          {
+            "arg": 3
+          }
+        ]
+      },
+      {
+        "host_hook": "boss_shielded",
+        "instance": "boss",
+        "symbol": "gv_native_boss_shielded",
+        "args": [
+          {
+            "arg": 0
+          },
+          {
+            "arg": 1
+          },
+          {
+            "arg": 2
+          },
+          {
+            "arg": 3
+          }
+        ]
+      },
+      {
+        "host_hook": "boss",
+        "instance": "boss",
+        "symbol": "gv_native_boss",
+        "args": [
+          {
+            "arg": 0
+          },
+          {
+            "arg": 1
+          },
+          {
+            "arg": 2
+          },
+          {
+            "arg": 3
+          }
+        ]
+      },
+      {
+        "host_hook": "boss_attack",
+        "instance": "boss",
+        "symbol": "gv_native_boss_attack",
+        "args": [
+          {
+            "arg": 0
+          },
+          {
+            "arg": 1
+          },
+          {
+            "arg": 2
+          },
+          {
+            "arg": 3
+          }
+        ]
+      },
+      {
+        "host_hook": "hurt",
+        "instance": "resources",
+        "symbol": "gv_native_hurt",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      },
+      {
+        "host_hook": "vram_reset",
+        "instance": "kernel",
+        "symbol": "gv_native_vram_reset",
+        "args": []
+      },
+      {
+        "host_hook": "air_control",
+        "instance": "movement",
+        "symbol": "gv_native_air_control",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      },
+      {
+        "host_hook": "release",
+        "instance": "movement",
+        "symbol": "gv_native_release",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      },
+      {
+        "host_hook": "jump",
+        "instance": "movement",
+        "symbol": "gv_native_jump",
+        "args": [
+          {
+            "arg": 0
+          }
+        ]
+      },
+      {
+        "host_hook": "integrate",
+        "instance": "movement",
+        "symbol": "gv_native_integrate",
+        "args": [
+          {
+            "arg": 0
+          },
+          {
+            "read": {
+              "address": "0x03005004",
+              "width": 16
+            }
+          },
+          {
+            "read": {
+              "address": "0x0300502c",
+              "width": 16
+            }
+          }
+        ]
+      },
+      {
+        "host_hook": "gravity",
+        "instance": "movement",
+        "symbol": "gv_native_gravity",
+        "args": [
+          {
+            "arg": 0
+          },
+          {
+            "read": {
+              "address": "0x03005004",
+              "width": 16
+            }
+          }
+        ]
+      }
+    ],
+    "max_payload_bytes": 131072,
+    "timeout_s": 15,
+    "max_build_s": 60
+  }
+}

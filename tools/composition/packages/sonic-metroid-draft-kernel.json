@@ -1,0 +1,204 @@
+{
+  "ir_version": "0.1",
+  "kind": "component_package",
+  "id": "composition.sonic_metroid_kernel",
+  "version": "0.1.0-draft",
+  "concept": {
+    "role": "host.native_control_scene_event_schedule",
+    "facets": [
+      "mechanics",
+      "world",
+      "story"
+    ]
+  },
+  "native_implementation": {
+    "game_id": "sonic-advance",
+    "origin": "new_bridge",
+    "recovery": {
+      "rom_sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551",
+      "rom_sha256": "afc29e3325baf68a1822e88b25fcb59c8bdc29b8cdc48fa21c56defbd60ca020",
+      "ranges": [
+        {
+          "address": "0x80454d8",
+          "size": 480,
+          "isa": "thumb",
+          "instruction_sha256": "aff66c25e79b09c7f37760fdf81fa021061824e8e0757b813ebe115106216f4a",
+          "name": "player",
+          "boundary_status": "statically_reviewed",
+          "name_status": "structural_role_reviewed"
+        },
+        {
+          "address": "0x8006c0c",
+          "size": 28,
+          "isa": "thumb",
+          "instruction_sha256": "5dd7068dcd2d5af594dba48ea5d2cf198582e36cf1cb9d9be5e4397b4c87b537",
+          "name": "vram_reset",
+          "boundary_status": "statically_reviewed",
+          "name_status": "structural_role_reviewed"
+        }
+      ],
+      "lift_ref": "tools/composition/components/sonic_metroid/kernel.c",
+      "lift_sha256": "67750fef2b5b075d52e72e6d501d24c3dd68c0d0416949f47ebd164245457f27",
+      "semantic_status": "new_authored_bridge_using_recovered_mechanics",
+      "dependency_closure": {
+        "status": "closed",
+        "calls": [
+          "state",
+          "movement",
+          "schedule"
+        ],
+        "data": [],
+        "ram": [
+          "GvPlayer pinned native prefix",
+          "GvState native TaskCreate1536 bytes,flag2,priorityFF00"
+        ],
+        "hardware": [],
+        "relocations": [
+          "all component function/data addresses resolved by native ARM linker; engine services pinned exact USA ROM"
+        ]
+      },
+      "dynamic_witness_refs": [],
+      "unknowns": [
+        "Whole campaign route/loop/boss acceptance is separate from compilation; no unsupported claim of full dynamic proof"
+      ]
+    }
+  },
+  "ports": [
+    {
+      "id": "world_position",
+      "direction": "in",
+      "required": false,
+      "type": {
+        "scalar": "i32x2",
+        "quantity": "position",
+        "unit": "1/256px",
+        "frame": "sonic-world-y-down"
+      }
+    }
+  ],
+  "behaviors": [
+    {
+      "state": "native task GvState fields in game.h",
+      "events": [],
+      "phase_authority": [
+        "player_control",
+        "scene_reset"
+      ]
+    }
+  ],
+  "authorship": {
+    "new": "native host adaptation, ecology/placements/art/story explicitly authored",
+    "recovered_references": [
+      "research/requests/metroid-recovered-motion.package.json",
+      "research/deep-extraction/metroid/first-draft-combat-evidence.json",
+      "research/requests/sonic-self-decomp-evidence.json"
+    ]
+  },
+  "lowering": {
+    "native_v1": {
+      "version": "freestanding-c-thumb/1",
+      "sources": [
+        {
+          "ref": "tools/composition/components/sonic_metroid/kernel.c",
+          "sha256": "67750fef2b5b075d52e72e6d501d24c3dd68c0d0416949f47ebd164245457f27"
+        },
+        {
+          "ref": "tools/composition/components/sonic_metroid/game.h",
+          "sha256": "00c97bc3aff771709b2600d420f324326bfa9d11c8bb5fa42baa0da339176cb9"
+        }
+      ],
+      "translation_units": [
+        "tools/composition/components/sonic_metroid/kernel.c"
+      ],
+      "exports": [
+        {
+          "symbol": "gv_native_player",
+          "return": "void",
+          "args": []
+        },
+        {
+          "symbol": "gv_native_vram_reset",
+          "return": "void",
+          "args": []
+        }
+      ],
+      "requires": [
+        {
+          "id": "composition.sonic_metroid_state",
+          "version": "0.1.0-draft"
+        },
+        {
+          "id": "composition.sonic_metroid_movement",
+          "version": "0.1.0-draft"
+        },
+        {
+          "id": "composition.sonic_metroid_schedule",
+          "version": "0.1.0-draft"
+        }
+      ],
+      "state_bindings": [],
+      "host_calls": [
+        {
+          "service": "play_sound",
+          "address": "0x80977e4",
+          "abi": "void(u16)"
+        },
+        {
+          "service": "replay_input",
+          "address": "0x804d108",
+          "abi": "void(u16)"
+        },
+        {
+          "service": "water_parameters",
+          "address": "0x8044a38",
+          "abi": "void(actor_ptr)"
+        },
+        {
+          "service": "sonic_controller",
+          "address": "0x8047378",
+          "abi": "void(actor_ptr)"
+        },
+        {
+          "service": "tails_controller",
+          "address": "0x8047b6c",
+          "abi": "void(actor_ptr)"
+        },
+        {
+          "service": "knuckles_controller",
+          "address": "0x8048fcc",
+          "abi": "void(actor_ptr)"
+        },
+        {
+          "service": "amy_controller",
+          "address": "0x8049778",
+          "abi": "void(actor_ptr)"
+        },
+        {
+          "service": "player_animation",
+          "address": "0x8045fd4",
+          "abi": "void(actor_ptr,sprite_ptr)"
+        },
+        {
+          "service": "player_render",
+          "address": "0x80462c8",
+          "abi": "void(actor_ptr,sprite_ptr)"
+        },
+        {
+          "service": "player_secondary_render",
+          "address": "0x8046ac0",
+          "abi": "void(actor_ptr,sprite_ptr)"
+        },
+        {
+          "service": "stop_sound",
+          "address": "0x80978b0",
+          "abi": "void(u16)"
+        },
+        {
+          "service": "restore_music",
+          "address": "0x8098764",
+          "abi": "void(ptr,u16)"
+        }
+      ]
+    }
+  }
+}
