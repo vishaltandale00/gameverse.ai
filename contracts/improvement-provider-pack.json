@@ -1532,7 +1532,7 @@
         "sid-rpg-weekend-original",
         "sonic-metroid-coast-campaign"
       ],
-      "sha256": "2e5f7345c5669dc17318e9ac55e6e5f5699f3d4537d2f4704bd510d47e03e74f",
+      "sha256": "dccf4cd00cea88622847f580c4b87a6b8ca9f07467c3460a8a06c0bac76b3f0f",
       "stages": [
         "build-and-loop"
       ]
@@ -6109,7 +6109,7 @@
     }
   ],
   "schema": "gameverse.improvement-provider-pack/1",
-  "source_commit": "2e7b00f0288cb50d64d8845276ba6c1ce12d37ea",
+  "source_commit": "d709577",
   "static_resolution": [
     {
       "errors": [],
@@ -6247,5 +6247,5 @@
       "stage": "model-decisions-and-optional-repair"
     }
   ],
-  "working_tree": "shared dirty working tree; exact file hashes are authoritative"
+  "working_tree": "Post-prefix client-default transport fix; other runtime pins retain the captured d709577 source. Exact file hashes are authoritative."
 }

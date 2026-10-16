@@ -8,6 +8,8 @@ Run the service with Node 22+ and Python 3; the source uses the standard librari
 node scripts/serve-improvement.mjs
 ```
 
+Open `http://127.0.0.1:4175/improvement` for the standalone improvement page. The clean-checkout `reference-key-door` button runs the authored grid reference fixture without a ROM, external source installation or model service. Its retained action-log replay completed in 18 actions with zero model calls and zero repairs (0.022489 s); this checks the reference engine path, not native GBA generation. The separately retained API/UI smoke fetched the page, CSS, three modules and capabilities successfully, with eight checks in 0.126 s and no model/native run.
+
 Inspect `http://127.0.0.1:4175/api/improvement/capabilities` and [the API contract](IMPROVEMENT_API.md). A clean checkout reports missing native inputs explicitly. Original cartridges, recovered source evidence, emulator checkpoints, compiled bridges and model credentials are external prerequisites, not distributed payloads.
 
 The original `aria-double-xp` and `aria-soulstride` recipes retain their registered native build behavior. The separate `aria-soulstride-controlled-lunge` improvement recipe is a declared repair fixture: it starts with a supported one-pixel lunge and permits the existing three-pixel mechanic as an exact supported repair. System 2 must ground its selection in retained native birth/velocity observations and choose a registered request identity. This demonstrates the real repair path within a reviewed mechanic; it does not promise arbitrary source edits or qualification of every game.
@@ -58,6 +60,19 @@ python3 -B -m tools.prefab_pipeline run-profile --request tools/prefab_pipeline/
 ```
 
 Registered mods can select an adapter/scenario through their pinned iteration profile and optionally supply `experiment.mod_quality_ref` plus pinned original-run evidence in `experiment.mod_quality_runs`. The existing stages dispatch that contract against the actual current candidate report/events; report hashes bind the exact event log. Objective, invariant, reachability and changed-mechanic predicates reuse the same source milestone evaluator. Missing original coverage is unknown, identical baseline/candidate artifacts cannot earn a mod-comparison pass, and missing support is reported explicitly. An original-only RPG run is labeled not evaluated for paired mod quality. A profile may explicitly require its declared quality contract to pass before reporting the candidate as qualified; no universal benchmark is invented.
+
+The [actual RPG prefix receipt](../verification/rpg-weekend-prefix-20261016.json) records a partial original-baseline run: 20 provider calls (one System 1 and 19 System 2), 36 actions, and 2,131 native frames comprising 1,692 setup frames and 439 gameplay frames. Experiment wall time was 51.098177 s; worker wall time was 51.563291 s. Only stage 0/start was observed, and the checkpoint was retained. Repeated stationary wait/text decisions escalated while a native script remained active; this exposes a source-readiness/observation gap, not substantive quest coverage. The 439 gameplay frames represent about 7.35 s at nominal speed, so this run does not demonstrate end-to-end acceleration. No quest completion, battle success or paired mod-quality pass is claimed. A later adapter correction must use a new runtime authority and preserve this receipt unchanged.
+
+## Private bundle export and rebuild
+
+The source-only helper closure includes `tools.roundtrip.private_bundle` and its contracts, reassembly and native-provider helpers. It can export an admitted packet into a private bundle and rebuild that bundle:
+
+```sh
+python3 -B -m tools.roundtrip.private_bundle export --input PACKET --output NEWBUNDLE
+python3 -B -m tools.roundtrip.private_bundle rebuild --input BUNDLE --output NEWROM
+```
+
+This capability is `rebuild_only`. Original-derived bytes and output bundles remain private; there is no API/upload route or fresh IR-compilation claim. Six synthetic checks ran in 0.022 s. The separate existing admitted IR-bundle replay uses `rebuild --bundle BUNDLE --output NEWDIR`; fresh admission still requires authoring helpers outside this public subset and is setup-required. These helpers do not establish a complete fresh game-recovery pipeline.
 
 ## Install exact local provider inputs
 
