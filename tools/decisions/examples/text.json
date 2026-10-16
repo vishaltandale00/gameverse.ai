@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "state": "The evidence packet contains a source function and address, but no runtime trace or screenshot demonstrating that function executing.",
+  "questions": [
+    {
+      "name": "runtime_observed",
+      "type": "predicate",
+      "instructions": "Does the packet contain a runtime observation showing the function executing?"
+    },
+    {
+      "name": "evidence_kind",
+      "type": "choice",
+      "instructions": "Classify the strongest evidence actually present, without promoting source references into runtime verification.",
+      "choices": [
+        {"value": "source", "description": "Source or disassembly references only"},
+        {"value": "runtime", "description": "Runtime trace or observed execution"},
+        {"value": "uncertain", "description": "Neither is supported"}
+      ]
+    },
+    {
+      "name": "execution_evidence",
+      "type": "score",
+      "instructions": "Rate how directly the evidence demonstrates execution, without inferring unseen evidence.",
+      "levels": [
+        {"label": "static_only", "description": "Static source evidence only"},
+        {"label": "visual", "description": "Visible gameplay evidence without a linked trace"},
+        {"label": "traced", "description": "Runtime trace linked to the source function"}
+      ]
+    }
+  ],
+  "context": {"loop_config_ref": "tools/decisions/examples/text.json:v1"}
+}

@@ -12,10 +12,8 @@ export async function prepareProvider({ manifest, source, target, install = fals
   for (const row of manifest.files) {
     if (typeof row.path !== 'string' || isAbsolute(row.path) || row.path.split('/').some(p => !p || p.startsWith('.')) || !/^[a-f0-9]{64}$/.test(row.sha256) || seen.has(row.path)) throw Error('Invalid or duplicate provider path/pin');
     seen.add(row.path);
-    const from = await realpath(resolve(source, row.path)), to = resolve(target, row.path);
-    if (!inside(source, from) || !inside(target, to)) throw Error('Provider path escapes root');
-    const bytes = await readFile(from);
-    if (hash(bytes) !== row.sha256 || (row.bytes !== undefined && bytes.length !== row.bytes)) throw Error('Provider input pin mismatch: ' + row.path);
+    const to = resolve(target, row.path);
+    if (!inside(target, to)) throw Error('Provider path escapes root');
     let parent = dirname(to);
     while (true) {
       try { if (!inside(target, await realpath(parent)) && await realpath(parent) !== target) throw Error('Provider target parent escapes root'); break; }
@@ -24,8 +22,14 @@ export async function prepareProvider({ manifest, source, target, install = fals
     try {
       const info = await lstat(to);
       if (!info.isFile() || info.isSymbolicLink() || hash(await readFile(to)) !== row.sha256) throw Error('Existing provider target differs: ' + row.path);
-      rows.push({ row, from, to, present: true });
-    } catch (error) { if (error.code !== 'ENOENT') throw error; rows.push({ row, from, to, present: false }); }
+      rows.push({ row, to, present: true });
+      continue; // Public runtime files already in the checkout need no provider duplicate.
+    } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    const from = await realpath(resolve(source, row.path));
+    if (!inside(source, from)) throw Error('Provider source path escapes root');
+    const bytes = await readFile(from);
+    if (hash(bytes) !== row.sha256 || (row.bytes !== undefined && bytes.length !== row.bytes)) throw Error('Provider input pin mismatch: ' + row.path);
+    rows.push({ row, from, to, present: false });
   }
   if (install) for (const item of rows.filter(item => !item.present)) {
     await mkdir(dirname(item.to), { recursive: true });

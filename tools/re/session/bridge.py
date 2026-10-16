@@ -45,6 +45,8 @@ class NativeSession:
             if profile.get('rom_sha256') != self.game_version:
                 raise ValueError('memory_profile_rom_mismatch')
             self.memory_profile = profile
+        if not Path(binary).is_file():
+            raise ValueError('native_session_binary_unavailable: run make -C tools/re/session with MGBA_PREFIX for installed mGBA')
         self.binary_sha256 = hashlib.sha256(Path(binary).read_bytes()).hexdigest()
         self.mailbox_profile = None
         native_args = [str(Path(binary).resolve()), str(self.rom), str(self.out)]
@@ -91,12 +93,14 @@ class NativeSession:
                 source = Path(initial_state).resolve()
                 shutil.copyfile(source, self.out / 'checkpoint-0.ss')
                 self._command('load 0')
+                loaded_counter = self.native_counter
                 # A raw state contains no framebuffer. Render one real frame;
                 # include it in relative frame accounting, rather than show blank pixels.
                 self.native_counter = int(self._command('step 0 1'))
                 self.frame = 1
                 self.initial_state = {'path': str(source), 'sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
-                                      'source_frame': None, 'provenance': 'explicit caller input; native format checked'}
+                                      'source_frame': None, 'loaded_session_native_counter': loaded_counter,
+                                      'render_integration_frames': 1, 'provenance': 'exact caller state loaded before one explicit native framebuffer integration frame'}
             else:
                 self.initial_state = None
         except BaseException:

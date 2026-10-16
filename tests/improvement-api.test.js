@@ -11,9 +11,11 @@ async function fixture(t) {
   const directory = await mkdtemp(resolve(tmpdir(), 'improvement-contract-')); t.after(() => rm(directory, { recursive: true, force: true }));
   const fixtureRoot = resolve(directory, 'workspace'); await mkdir(fixtureRoot);
   const realCaps = await createImprovementApi({ root }).capabilities();
-  for (const ref of realCaps.mechanisms.filter(row => row.path !== 'contracts/improvement-provider-pack.json')) { const path = resolve(fixtureRoot, ref.path); await mkdir(resolve(path, '..'), { recursive: true }); await writeFile(path, await readFile(resolve(root, ref.path))); }
+  for (const ref of [...new Map(realCaps.mechanisms.filter(row => /^(scripts|tools)\//.test(row.path) && /\.(mjs|py|c)$/.test(row.path)).map(row=>[row.path,row])).values()]) { const path = resolve(fixtureRoot, ref.path); await mkdir(resolve(path, '..'), { recursive: true }); await writeFile(path, await readFile(resolve(root, ref.path))); }
   const rom = { path: 'fixture.bin', sha256: createHash('sha256').update('fixture').digest('hex') }; await writeFile(resolve(fixtureRoot, rom.path), 'fixture');
   for (const recipe of realCaps.recipes) { const path = resolve(fixtureRoot, recipe.file); await mkdir(resolve(path, '..'), { recursive: true }); await writeFile(path, JSON.stringify({ schema: 'synthetic-contract-fixture/1', rom })); }
+  const profilePath = resolve(fixtureRoot,'tools/prefab_pipeline/profiles/aria-soulstride-iteration.json'); await mkdir(resolve(profilePath,'..'),{recursive:true});
+  await writeFile(profilePath,JSON.stringify({schema:'prefab-iteration/1',environment_version:'fixture-env/1',adapter_version:'fixture-adapter/1',limits:{attempts:2,model_calls:4,native_frames:120,wall_seconds:1,cost_usd:null},experiment:{policy_ref:{path:'tools/re/session/bridge.py',sha256:'0'.repeat(64)},confidence:0.65,margin:0.2}}));
   let child;
   const api = createImprovementApi({ root: fixtureRoot, directory, spawnImpl: (_command, args) => {
     child = new EventEmitter(); child.kill = () => {}; child.pid = undefined;
@@ -85,4 +87,33 @@ test('reviewed provider readset gates runtime inputs without requiring historica
   await writeFile(resolve(fixtureRoot,request.rom.path),'tampered');
   const stale=(await api.capabilities()).recipes.find(row=>row.id===recipe.id);
   assert.equal(stale.installed,false); assert.deepEqual(stale.missing_inputs,[request.rom.path]);
+  assert.notEqual((await api.capabilities()).loop_version,caps.loop_version);
+});
+test('native-improve dispatches registered profile and exposes checkpoint-bound continuation', async t => {
+  const {api,body,directory,child}=await fixture(t); const caps=await api.capabilities();
+  const profile=caps.iteration_profiles.find(row=>row.id==='aria-soulstride-iteration'),recipe=caps.recipes.find(row=>row.id===profile.recipe_id);
+  const input={...body,operation:'native-improve',loop_version:caps.loop_version,plan:{recipe_id:recipe.id,request_sha256:recipe.request_sha256,profile_id:profile.id,profile_sha256:profile.profile_sha256}};
+  await api.submit(input); assert.equal(child().args[3],'run-profile'); assert.ok(child().args.includes('--template'));
+  const runDir=resolve(directory,input.request_id); await mkdir(resolve(runDir,'output'));
+  const artifact={path:resolve(runDir,'output/candidate.gba'),sha256:createHash('sha256').update('candidate').digest('hex')}; await writeFile(artifact.path,'candidate');
+  const report={schema:'prefab-iteration/1',status:'artifact-built-with-diagnostics',experiment_outcome:'budget',artifact,attempts:[{attempt:1}],stages:[{name:'experiment',status:'completed',wall_seconds:0.2}],usage:{model_calls:2,native_frames:60,cost_usd:null},usage_complete:true,checkpoint:{state:{path:'private-state',sha256:'a'.repeat(64)}},qualification:{native_objective:'pending'}};
+  await writeFile(resolve(runDir,'output/iteration.json'),JSON.stringify(report)); await writeFile(resolve(runDir,'result.json'),JSON.stringify(report));
+  const stillRunning=await api.status(input.request_id); assert.equal(stillRunning.status,'running'); assert.ok(stillRunning.artifacts.rom);
+  child().emit('close',0); let prior;
+  for(let i=0;i<100;i++){prior=await api.status(input.request_id);if(prior.status!=='running')break;await new Promise(r=>setTimeout(r,5));}
+  assert.equal(prior.status,'completed');assert.equal(prior.experiment_outcome,'budget');assert.equal(prior.qualification.native_objective,'pending');assert.equal(prior.progress.usage.model_calls,2);
+  const next={...input,request_id:randomUUID(),prior_report_sha256:prior.report_sha256};
+  await assert.rejects(api.continueRun(input.request_id,{...next,prior_report_sha256:'b'.repeat(64)}),{status:409});
+  const codePath=resolve(directory,'workspace/scripts/improvement-api.mjs'), originalCode=await readFile(codePath);
+  await writeFile(codePath,Buffer.concat([originalCode,Buffer.from('\n// changed runtime revision\n')]));
+  const changedRuntime=await api.capabilities();
+  await assert.rejects(api.continueRun(input.request_id,{...next,loop_version:changedRuntime.loop_version}),{code:'continuation_context_conflict'});
+  await writeFile(codePath,originalCode);
+  const continued=await api.continueRun(input.request_id,next); assert.equal(continued.continuation_of,input.request_id);assert.equal(child().args[3],'continue-profile');
+  child().emit('close',2);await new Promise(r=>setTimeout(r,20));
+});
+test('native-improve rejects modified profile before spawning a model-capable worker', async t => {
+  const {api,body,child}=await fixture(t),caps=await api.capabilities(),profile=caps.iteration_profiles[0],recipe=caps.recipes.find(row=>row.id===profile.recipe_id);
+  await assert.rejects(api.submit({...body,operation:'native-improve',loop_version:caps.loop_version,plan:{recipe_id:recipe.id,request_sha256:recipe.request_sha256,profile_id:profile.id,profile_sha256:'c'.repeat(64)}}),{status:409});
+  assert.equal(child(),undefined);
 });

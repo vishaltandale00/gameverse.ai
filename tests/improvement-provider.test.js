@@ -34,3 +34,12 @@ test('rejects stale sources, traversal and symlink escapes before writes', async
   await mkdir(resolve(f.source, 'link')); await writeFile(resolve(f.source, 'link/evidence.json'), '{}');
   await assert.rejects(prepareProvider(f), /escapes root/);
 });
+
+test('checkout-owned matching runtime files need no duplicate in the private source pack', async t => {
+  const f = await fixture(t);
+  await writeFile(resolve(f.target, 'runtime.py'), 'project runtime');
+  f.manifest.files.push({ path: 'runtime.py', sha256: sha('project runtime') });
+  const result = await prepareProvider({ ...f, install: true });
+  assert.equal(result.files, 2); assert.equal(result.copied, 1);
+  assert.equal(await readFile(resolve(f.target, 'runtime.py'), 'utf8'), 'project runtime');
+});

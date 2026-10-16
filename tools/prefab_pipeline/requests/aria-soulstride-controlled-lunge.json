@@ -1,0 +1,29 @@
+{
+  "schema": "native-prefab-mod-request/1",
+  "request_id": "aria-soulstride-controlled-weak-v1",
+  "intent": "Controlled integration baseline: intentionally configure legal 1px/frame successful Skeleton birth lunge against explicit required minimum3px/frame. Preserve every other native combat/progression setting.",
+  "limits": {
+    "max_build_s": 60,
+    "max_payload_bytes": 16384,
+    "subprocess_s": 20
+  },
+  "strategy_lowering": {
+    "backend": "connected-strategy/1",
+    "strategy": {
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-controlled-weak.strategy.json",
+      "sha256": "a39b14d118e9e42d9b33427df1e2c93eb98ad4b1851df41093dfc9717509e048"
+    },
+    "lowerer": {
+      "path": "tools/prefab_pipeline/momentum_strategy.py",
+      "sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a"
+    }
+  },
+  "plan": {
+    "path": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+    "sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef"
+  },
+  "rom": {
+    "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+    "sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5"
+  }
+}

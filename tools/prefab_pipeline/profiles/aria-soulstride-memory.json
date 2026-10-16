@@ -1,0 +1,234 @@
+{
+  "rom_sha256": "6f42b0b50c42df23518feb897a12beba5319736bece29c8f79fa3f0c9f5366ac",
+  "fields": [
+    {
+      "name": "XP",
+      "address": "0x0201328c",
+      "bytes": 4
+    },
+    {
+      "name": "HP",
+      "address": "0x0201327a",
+      "bytes": 2
+    },
+    {
+      "name": "level",
+      "address": "0x02013279",
+      "bytes": 1
+    },
+    {
+      "name": "MP",
+      "address": "0x0201327c",
+      "bytes": 2
+    },
+    {
+      "name": "equipped_souls",
+      "address": "0x02013124",
+      "bytes": 4
+    },
+    {
+      "name": "soul_slot_count",
+      "address": "0x020131be",
+      "bytes": 1
+    },
+    {
+      "name": "soul_inventory_0_0_0",
+      "address": "0x201331c",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_0_0_4",
+      "address": "0x2013320",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_0_0_8",
+      "address": "0x2013324",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_0_0_12",
+      "address": "0x2013328",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_0_0_16",
+      "address": "0x201332c",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_0_0_20",
+      "address": "0x2013330",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_0_0_24",
+      "address": "0x2013334",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_0_1_0",
+      "address": "0x2013338",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_0_1_4",
+      "address": "0x201333c",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_0_1_8",
+      "address": "0x2013340",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_0_1_12",
+      "address": "0x2013344",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_0_1_16",
+      "address": "0x2013348",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_0_1_20",
+      "address": "0x201334c",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_0_1_24",
+      "address": "0x2013350",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_1_0_0",
+      "address": "0x2013354",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_1_0_4",
+      "address": "0x2013358",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_1_0_8",
+      "address": "0x201335c",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_1_0_12",
+      "address": "0x2013360",
+      "bytes": 1
+    },
+    {
+      "name": "soul_inventory_1_1_0",
+      "address": "0x2013361",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_1_1_4",
+      "address": "0x2013365",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_1_1_8",
+      "address": "0x2013369",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_1_1_12",
+      "address": "0x201336d",
+      "bytes": 1
+    },
+    {
+      "name": "soul_inventory_2_0_0",
+      "address": "0x201336e",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_2_0_4",
+      "address": "0x2013372",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_2_0_8",
+      "address": "0x2013376",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_2_0_12",
+      "address": "0x201337a",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_2_0_16",
+      "address": "0x201337e",
+      "bytes": 2
+    },
+    {
+      "name": "soul_inventory_2_1_0",
+      "address": "0x2013380",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_2_1_4",
+      "address": "0x2013384",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_2_1_8",
+      "address": "0x2013388",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_2_1_12",
+      "address": "0x201338c",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_2_1_16",
+      "address": "0x2013390",
+      "bytes": 2
+    },
+    {
+      "name": "soul_inventory_3_0_0",
+      "address": "0x2013392",
+      "bytes": 4
+    },
+    {
+      "name": "soul_inventory_3_1_0",
+      "address": "0x2013392",
+      "bytes": 4
+    },
+    {
+      "name": "player_actor_pointer",
+      "address": "0x02013110",
+      "bytes": 4
+    },
+    {
+      "name": "attack_button_mask",
+      "address": "0x02013398",
+      "bytes": 2
+    },
+    {
+      "name": "equipped_red_soul",
+      "address": "0x02013269",
+      "bytes": 1
+    },
+    {
+      "name": "maximum_MP",
+      "address": "0x02013280",
+      "bytes": 2
+    }
+  ],
+  "source_refs": [
+    "research/deep-extraction/castlevania/defeat-policy.c",
+    "tools/prefab_pipeline/mod_rom.py:_gameplay",
+    "research/deep-extraction/castlevania/soul-inventory.c",
+    "research/deep-extraction/castlevania/pickup-policy.c",
+    "research/deep-extraction/castlevania/cast-host.c",
+    "tools/prefab_pipeline/momentum_strategy.py"
+  ],
+  "scope": "Exact retained Aria source API readonly stats and packed soul inventory banks. Bank-pair counts must be summed; per-bank movement is not new ownership. Player actor pointer +0x40/+0x44 positions follow retained native gameplay harness; +0x48/+0x4c velocity source cast-host.c. Q16 raw values, no grounded-state inference."
+}

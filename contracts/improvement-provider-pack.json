@@ -19,12 +19,17 @@
         "origin": "research/deep-extraction/castlevania/defeat-qualification.json:runtime-source-pins",
         "path": "research/deep-extraction/castlevania/defeat-double-xp.plan.json",
         "recipe": "aria-double-xp"
+      },
+      {
+        "code": "deferred-template-policy-pin",
+        "detail": "prepare_iteration_config freezes the current policy hash in each prepared run; this template placeholder is not executable admission evidence.",
+        "path": "tools/playtester/models.py",
+        "recipe": "aria-soulstride-controlled-lunge"
       }
     ],
     "unverified": [
       "No compiler/native/model run was performed",
       "Dynamic Python file accesses are not generally statically provable",
-      "Soulstride bounded QC needs an explicit portable experiment recipe",
       "Recovered C/header redistribution provenance requires review",
       "External assembly and ROM are metadata-only user-supplied inputs; never provider payload",
       "Generated state-layout.h and lowered packages/IR outputs are build outputs, not provider inputs"
@@ -40,11 +45,13 @@
       "path": "local/decomps/cvaos/include/structs/ewram.h",
       "payload_policy": "metadata-only-user-provided",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "0b2da160c82e168e78acf275f281666c586b87d3183e2011321e56ce652b5549",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
@@ -56,11 +63,13 @@
       "path": "local/decomps/cvaos/src/code_08033CAC.c",
       "payload_policy": "metadata-only-user-provided",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "70974dba4bb5bc2e723ca8eff4e07a1f52e2b80cd53cc0782168e06f8479108e",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
@@ -72,29 +81,35 @@
       "path": "local/prefab-mods/soma-cast-pc-witness-003/report.json",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "7d3d2a1dde713effd072c0048c1872290b4b27c4d7c20f3bda874306ae04523d",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
       "bytes": 8388608,
       "kind": "local-rom",
       "origins": [
+        "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
         "tools/prefab_pipeline/requests/aria-double-xp.json",
+        "tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json",
         "tools/prefab_pipeline/requests/aria-soulstride.json"
       ],
       "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
       "payload_policy": "metadata-only-user-provided",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
@@ -107,12 +122,14 @@
       "path": "research/deep-extraction/castlevania/ability.package.json",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "414eb681fbe1065e8cb0ef008bb127647e8b20aebc5ba311b099db33701d314c",
       "stages": [
         "build",
-        "build-and-evidence"
+        "build-and-evidence",
+        "build-and-loop"
       ]
     },
     {
@@ -124,7 +141,8 @@
       "path": "research/deep-extraction/castlevania/acquisition-qualification.json",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "f32b73e39a8f98990bf708a417036233399b65bd72b2d94eb30e658b862aa877",
       "stages": [
@@ -141,12 +159,14 @@
       "path": "research/deep-extraction/castlevania/acquisition.package.json",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "d23346be9f3e998e6b3039e3b576de5c2e4a144dde64d4b977cd7eaf5cafa860",
       "stages": [
         "build",
-        "build-and-evidence"
+        "build-and-evidence",
+        "build-and-loop"
       ]
     },
     {
@@ -158,11 +178,13 @@
       "path": "research/deep-extraction/castlevania/aria-usa-acquisition.host.json",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "edf4bed15b7a9969d0608bd67a68f0c445e23302fd2ed68a8400991eacaf3db1",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
@@ -190,11 +212,13 @@
       "path": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "4ac11905f4f3fb5bfcf5e1702f7b110bc83ba18ba30c291ef87d66d11d21ea64",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
@@ -208,12 +232,14 @@
       "path": "research/deep-extraction/castlevania/bone-policy.c",
       "payload_policy": "provider-only-pending-provenance-review",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "81fb1a139357cbc40b1cf9912d10c25551fb826ebe39bdd4f9edbd82dbcebcef",
       "stages": [
         "build",
-        "build-and-evidence"
+        "build-and-evidence",
+        "build-and-loop"
       ]
     },
     {
@@ -227,12 +253,14 @@
       "path": "research/deep-extraction/castlevania/cast-host.c",
       "payload_policy": "provider-only-pending-provenance-review",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "a9402440f90667d2316eb531da630db6b200847a90cca8808b6f3616f0804639",
       "stages": [
         "build",
-        "build-and-evidence"
+        "build-and-evidence",
+        "build-and-loop"
       ]
     },
     {
@@ -245,12 +273,14 @@
       "path": "research/deep-extraction/castlevania/cast-policy.c",
       "payload_policy": "provider-only-pending-provenance-review",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "2ce8a26f3b255c461ff81140d7bcc6b1364a37c27d0a4c393186d592e41f6c25",
       "stages": [
         "build",
-        "build-and-evidence"
+        "build-and-evidence",
+        "build-and-loop"
       ]
     },
     {
@@ -265,12 +295,14 @@
       "path": "research/deep-extraction/castlevania/cast-policy.h",
       "payload_policy": "provider-only-pending-provenance-review",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "17ea46fb18d09a4ae764f4f6957858f7a3a5488188aaa273ba6f87f32222c25c",
       "stages": [
         "build",
-        "build-and-evidence"
+        "build-and-evidence",
+        "build-and-loop"
       ]
     },
     {
@@ -321,12 +353,14 @@
       "payload_policy": "provider-only-pending-provenance-review",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "a27d2fa878e38e97d7a7f886f5293d1cc4762c89f40fffe113e11ffccb1fad51",
       "stages": [
         "build",
-        "build-and-evidence"
+        "build-and-evidence",
+        "build-and-loop"
       ]
     },
     {
@@ -357,12 +391,14 @@
       "payload_policy": "provider-only-pending-provenance-review",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "7737885f3946a07f4faf46b98a77e4959fb628220d9f8b16d2741e1a6eb38ea8",
       "stages": [
         "build",
-        "build-and-evidence"
+        "build-and-evidence",
+        "build-and-loop"
       ]
     },
     {
@@ -379,12 +415,14 @@
       "payload_policy": "provider-only-pending-provenance-review",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "c7d5b98e770e407919fc9757384567bb2e390e22e8ca76b46e4e7805debbf80e",
       "stages": [
         "build",
-        "build-and-evidence"
+        "build-and-evidence",
+        "build-and-loop"
       ]
     },
     {
@@ -416,12 +454,14 @@
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "40aa98bf837ef2845fba93dfc69dcffbe4d2238ddd6efc298fcba6676a450777",
       "stages": [
         "build",
-        "build-and-evidence"
+        "build-and-evidence",
+        "build-and-loop"
       ]
     },
     {
@@ -433,7 +473,8 @@
       "path": "research/deep-extraction/castlevania/enemy-reward-descriptors.json",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "c7e5a6917943824056e4e1ebd15bdc98e4f8e3e2bd57a6c73fc468b5fd3eaae4",
       "stages": [
@@ -449,7 +490,8 @@
       "path": "research/deep-extraction/castlevania/movement-contact/backdash.asm.txt",
       "payload_policy": "metadata-only-user-provided",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "bb254db53f4055e302cc516a4c110c12b8d31b50c502a5b55e14a1d375a406af",
       "stages": [
@@ -465,7 +507,8 @@
       "path": "research/deep-extraction/castlevania/movement-contact/bone_lifecycle.asm.txt",
       "payload_policy": "metadata-only-user-provided",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "03a3947fa0f57c8dce23eb536e362fb9e76748b125f966f6b593657a7430405c",
       "stages": [
@@ -481,7 +524,8 @@
       "path": "research/deep-extraction/castlevania/movement-contact/cast_followers.asm.txt",
       "payload_policy": "metadata-only-user-provided",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "bd372b4e9a8d9620602d3b6c1d4cad964585dffcc6db5d94b6bacbeaeccc39ef",
       "stages": [
@@ -497,7 +541,8 @@
       "path": "research/deep-extraction/castlevania/movement-contact/cast_transaction.asm.txt",
       "payload_policy": "metadata-only-user-provided",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "156706e515ef1b8fd570b07ec6d841810d878f7fd1ed1080265ce06c65a5960f",
       "stages": [
@@ -513,7 +558,8 @@
       "path": "research/deep-extraction/castlevania/movement-contact/jump_guard.asm.txt",
       "payload_policy": "metadata-only-user-provided",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "c956212f01906f93872fb3f2835c99d3034c90cfbfeeaba370fc0f7079c50dbf",
       "stages": [
@@ -529,7 +575,8 @@
       "path": "research/deep-extraction/castlevania/movement-contact/native_player_dispatch.asm.txt",
       "payload_policy": "metadata-only-user-provided",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "8ce1c423c7c0d515de5823d90f283036121abad089ceb80b559c4a79796dc2d0",
       "stages": [
@@ -545,7 +592,8 @@
       "path": "research/deep-extraction/castlevania/movement-contact/player_integrate.asm.txt",
       "payload_policy": "metadata-only-user-provided",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "10d242b20147e640110348d52bc2300cf3a5db1ea99e5142399e7b2db88a15c3",
       "stages": [
@@ -561,7 +609,8 @@
       "path": "research/deep-extraction/castlevania/movement-contact/soma_cast_caller.asm.txt",
       "payload_policy": "metadata-only-user-provided",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "953c90e760021e3955ddc2b226534289f593cba6ffb7047e51666f282a5fd487",
       "stages": [
@@ -577,7 +626,8 @@
       "path": "research/deep-extraction/castlevania/movement-contact/soma_cast_transaction.asm.txt",
       "payload_policy": "metadata-only-user-provided",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "3efea90d25fb9eaf5f3804283697f7d026e4cf60b4e622e5ace2a951020284ed",
       "stages": [
@@ -593,7 +643,8 @@
       "path": "research/deep-extraction/castlevania/movement-contact/soma_player_integrate.asm.txt",
       "payload_policy": "metadata-only-user-provided",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "feff7fc6512176ac641bb5d86b41f22d8dd6a668105de2756c372b468c3336d0",
       "stages": [
@@ -609,7 +660,8 @@
       "path": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "9204aadead4d957aef3c15ddda9ecf67f6db1122509f5ced8cdac0961aa81390",
       "stages": [
@@ -625,12 +677,14 @@
       "path": "research/deep-extraction/castlevania/pickup-policy.c",
       "payload_policy": "provider-only-pending-provenance-review",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "5eaad6a15ecb445be915d6646182ae59468dac4c63580ff7fce3aae924305093",
       "stages": [
         "build",
-        "build-and-evidence"
+        "build-and-evidence",
+        "build-and-loop"
       ]
     },
     {
@@ -653,16 +707,20 @@
       "bytes": 5956,
       "kind": "source-evidence",
       "origins": [
-        "research/deep-extraction/castlevania/soulstride-strategy.json"
+        "research/deep-extraction/castlevania/soulstride-strategy.json",
+        "tools/prefab_pipeline/profiles/aria-soulstride-controlled-repaired.strategy.json",
+        "tools/prefab_pipeline/profiles/aria-soulstride-controlled-weak.strategy.json"
       ],
       "path": "research/deep-extraction/castlevania/soma-cast/evidence.json",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "de7950d209f58e7a8963de0b5a8b901a557fcd6221f436e1d04e73b7fb3dffd6",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
@@ -674,7 +732,8 @@
       "path": "research/deep-extraction/castlevania/soul-eligibility/source-evidence.json",
       "payload_policy": "metadata-only-user-provided",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "75378e40c0fbc50f84ff997ccf17a9d54a98a1d4885ea7ea155f367c06269d37",
       "stages": [
@@ -692,12 +751,14 @@
       "path": "research/deep-extraction/castlevania/soul-inventory.c",
       "payload_policy": "provider-only-pending-provenance-review",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "9a7d0ee0cf4ed6d051b8688fac7b7092370eb8703a257f11a395a6cb6b6a08ef",
       "stages": [
         "build",
-        "build-and-evidence"
+        "build-and-evidence",
+        "build-and-loop"
       ]
     },
     {
@@ -711,12 +772,14 @@
       "path": "research/deep-extraction/castlevania/soul-inventory.h",
       "payload_policy": "provider-only-pending-provenance-review",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "7f02ecedfd4cebb5512fd673996d430c9320c97c79cba276c9ab4b5f898246dd",
       "stages": [
         "build",
-        "build-and-evidence"
+        "build-and-evidence",
+        "build-and-loop"
       ]
     },
     {
@@ -736,6 +799,54 @@
       ]
     },
     {
+      "bytes": 27598,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "scripts/improvement-api.mjs",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "f85f17fa6368f92481f78689a931adab72fd792b39d895484753151228e96496",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 2430,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "scripts/improvement-client.mjs",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "0b9991e7ea692f15cdcc4f9b3a916454ddcc7b0cc1983121bd9132b464f8eb7e",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 938,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "scripts/serve-improvement.mjs",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "b23bfcf31aa91aaab8204eb0d403f17cf1e374a46f295c51466225a11106a05b",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
       "bytes": 42534,
       "kind": "authored-code",
       "origins": [
@@ -747,11 +858,13 @@
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "50148ff195ac6ce3f683ad824b6ff79bf5ef59bb80569fdadef68e2558425a81",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
@@ -765,11 +878,234 @@
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "4b3959e5b77a4c453858c11e8859adee059c3d3832a9c1aff525d64f11041be0",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 245,
+      "kind": "authored-code",
+      "origins": [
+        "tools/playtester/__main__.py:python-import",
+        "tools/playtester/experiment.py:python-import",
+        "tools/playtester/models.py:python-import"
+      ],
+      "path": "tools/decisions/__init__.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "3a480bb825961fefa655593eb29090825859b756993c24a63b804c4122cf2ad8",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4100,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "tools/decisions/__main__.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "c7775eec9819d5733f19965922feb83d85cc7ef2c23a3eab2ed34afc4185b4b8",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 22031,
+      "kind": "authored-code",
+      "origins": [
+        "tools/decisions/__init__.py:python-import",
+        "tools/decisions/__main__.py:python-import",
+        "tools/playtester/models.py:python-import"
+      ],
+      "path": "tools/decisions/client.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "6945709ea3093af112d2c98886071838720565a0e41835e261cfcb8783b2c020",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 89,
+      "kind": "authored-code",
+      "origins": [
+        "tools/playtester/core.py:python-import"
+      ],
+      "path": "tools/playtester/__init__.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "f4aa8810d366cd63facfe03a4ce37587aa38530732bb3dbd8f015e010c121ed9",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4555,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "tools/playtester/__main__.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "5ed56de6fdf9681edaccb58eab28f42fb7ee2315a4a80d8af77f97e46b2e621e",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 12208,
+      "kind": "authored-code",
+      "origins": [
+        "tools/playtester/__main__.py:python-import",
+        "tools/playtester/aria_adapter.py:python-import"
+      ],
+      "path": "tools/playtester/adapters.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "fffa9d2263d6d6503d6aae73865f2dc06c5393879d436d2ead56140e274cf952",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 11431,
+      "kind": "authored-code",
+      "origins": [
+        "tools/playtester/experiment.py:python-import"
+      ],
+      "path": "tools/playtester/aria_adapter.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "51c628a9f5ad46dc6e72b62e8e15a8ed77cda35433dcbe61b98b3cf60daa2a07",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 8315,
+      "kind": "authored-code",
+      "origins": [
+        "tools/playtester/models.py:python-import"
+      ],
+      "path": "tools/playtester/calibration.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "d1025a214d8afd30042099da55bb6546945658c7b47b3e9259a3e056b687ced5",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 24715,
+      "kind": "authored-code",
+      "origins": [
+        "tools/playtester/__main__.py:python-import",
+        "tools/playtester/adapters.py:python-import",
+        "tools/playtester/experiment.py:python-import",
+        "tools/playtester/learning.py:python-import",
+        "tools/playtester/models.py:python-import"
+      ],
+      "path": "tools/playtester/core.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "bda266261665c79450a53ce3716e6851179f92a1eccb322c97e89f51cac371cc",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 16946,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry",
+        "tools/prefab_pipeline/iteration.py:python-import"
+      ],
+      "path": "tools/playtester/experiment.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "cf2506ddce5074533d987268781be7f98df450e32f02d031b6929161fe9c0653",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1654,
+      "kind": "authored-code",
+      "origins": [
+        "tools/playtester/experiment.py:python-import"
+      ],
+      "path": "tools/playtester/learning.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "74293f1904791278f157ddc53bf960e76c6638a5d1cbcdcb000b7db85e628418",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 17870,
+      "kind": "authored-code",
+      "origins": [
+        "tools/playtester/__main__.py:python-import",
+        "tools/playtester/experiment.py:python-import",
+        "tools/prefab_pipeline/iteration.py:python-import",
+        "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json"
+      ],
+      "path": "tools/playtester/models.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "c85a079d4c4deff7e391fc1648f209b3c3de7ceb9cf3874133f2e7fa7563f63f",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 7815,
+      "kind": "authored-code",
+      "origins": [
+        "tools/playtester/experiment.py:python-import"
+      ],
+      "path": "tools/playtester/sonic_adapter.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "806bd5737c083ca8ffb223540816557b1fca2f673043779383c5e2df1664a8bc",
+      "stages": [
+        "build-and-loop"
       ]
     },
     {
@@ -782,28 +1118,65 @@
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "cb60d6fba744f8c5f21e1efbe4343a10bd43bd4f055dc813309e7cf7cef6dcd6",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4684,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "tools/prefab_pipeline/__main__.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "cb49cfd7a114e7fe867dcebe4a0aa7befb622f767032bfe18a7ebb6838c75ea0",
+      "stages": [
+        "build-and-loop"
       ]
     },
     {
       "bytes": 11765,
       "kind": "authored-code",
       "origins": [
+        "tools/prefab_pipeline/iteration.py:python-import",
         "tools/prefab_pipeline/native_mod.py:python-import"
       ],
       "path": "tools/prefab_pipeline/contract.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "40be3620dda136351ab0f0c2b28e4c077f36624b3b42b2752cab40f602a61482",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 32503,
+      "kind": "authored-code",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "tools/prefab_pipeline/iteration.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "ed20c13a622b7eb5d876b96e9bf4b222931356d1c7467ac843167944d1e674d6",
+      "stages": [
+        "build-and-loop"
       ]
     },
     {
@@ -817,11 +1190,13 @@
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "2d53bdfc3c828fc5dfa1eb6445846e148f96d7084accee7094be0f25d08aaada",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
@@ -829,16 +1204,20 @@
       "kind": "authored-code",
       "origins": [
         "registered-recipe-entry",
+        "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+        "tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json",
         "tools/prefab_pipeline/requests/aria-soulstride.json"
       ],
       "path": "tools/prefab_pipeline/momentum_strategy.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
@@ -851,11 +1230,13 @@
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "6727dde63ecb8e09d73c76ed73e38fd3c3b8cf6e390b9b1e0a407cd8ae450fc4",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
@@ -863,17 +1244,117 @@
       "kind": "authored-code",
       "origins": [
         "registered-recipe-entry",
+        "tools/prefab_pipeline/iteration.py:python-import",
         "tools/prefab_pipeline/native_cli.py:python-import"
       ],
       "path": "tools/prefab_pipeline/native_mod.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "ad8306b6fac94959e0573062d40ab9bab8aab1020cf51104ac861e01ee2e9fbf",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 3487,
+      "kind": "source-evidence",
+      "origins": [
+        "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json"
+      ],
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-actions.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "c47d05a018a2fe8a301bd80ee51285ea5a894a4f1d1295c0adc159ddaaa64119",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4129,
+      "kind": "source-evidence",
+      "origins": [
+        "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json"
+      ],
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-controlled-repaired.strategy.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "c241e43180b8a33202ab8f168a0219f5c08cc44a2f59cec509c2a5d7b80c15b2",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 4123,
+      "kind": "source-evidence",
+      "origins": [
+        "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+        "tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json"
+      ],
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-controlled-weak.strategy.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "a39b14d118e9e42d9b33427df1e2c93eb98ad4b1851df41093dfc9717509e048",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 2591,
+      "kind": "source-evidence",
+      "origins": [
+        "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json"
+      ],
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-fixture.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "650ec98e5798765375ea043f6468831aa32fa04754ca9f83cd507fcdaaf0b10b",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 5289,
+      "kind": "source-evidence",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "2e2e7791d712aa7c679bd7cb115407a8debd2b0cc8b740dca05a8e698cb96e6d",
+      "stages": [
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 5042,
+      "kind": "source-evidence",
+      "origins": [
+        "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json"
+      ],
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-memory.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "85abaf06d35c44cfd11b5c2970be1910778ff9c4294301b3bab23dbfc7c9d484",
+      "stages": [
+        "build-and-loop"
       ]
     },
     {
@@ -896,16 +1377,36 @@
       "bytes": 7703,
       "kind": "recipe",
       "origins": [
+        "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+        "tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json",
         "tools/prefab_pipeline/requests/aria-soulstride.json"
       ],
       "path": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1191,
+      "kind": "recipe",
+      "origins": [
+        "registered-recipe-entry"
+      ],
+      "path": "tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "06761833199df4f86982c3b7053b7d658566315ba195c28c7614983b3da3b146",
+      "stages": [
+        "build-and-loop"
       ]
     },
     {
@@ -933,11 +1434,13 @@
       "path": "tools/prefab_pipeline/reward_strategy.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "453fe6554c9d3f7848eaae64e7501f3eb6ffdcfef6a479c69c9c2ce925fba81d",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
@@ -950,11 +1453,13 @@
       "path": "tools/prefab_pipeline/soul_eligibility.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "159e3644542bbde44571e3406e23e3baa41b26e737a318733703f8de6ea1c323",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
@@ -962,16 +1467,20 @@
       "kind": "authored-code",
       "origins": [
         "research/deep-extraction/castlevania/soulstride-strategy.json",
-        "tools/prefab_pipeline/momentum_strategy.py:python-import"
+        "tools/prefab_pipeline/momentum_strategy.py:python-import",
+        "tools/prefab_pipeline/profiles/aria-soulstride-controlled-repaired.strategy.json",
+        "tools/prefab_pipeline/profiles/aria-soulstride-controlled-weak.strategy.json"
       ],
       "path": "tools/prefab_pipeline/soulstride_movement.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "7150bc7c951a429a165288cbb6dfdf7e59742ecf9dcf0748579f5165e05fbc90",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
@@ -979,16 +1488,20 @@
       "kind": "authored-code",
       "origins": [
         "research/deep-extraction/castlevania/soulstride-strategy.json",
-        "tools/prefab_pipeline/momentum_strategy.py:python-import"
+        "tools/prefab_pipeline/momentum_strategy.py:python-import",
+        "tools/prefab_pipeline/profiles/aria-soulstride-controlled-repaired.strategy.json",
+        "tools/prefab_pipeline/profiles/aria-soulstride-controlled-weak.strategy.json"
       ],
       "path": "tools/prefab_pipeline/soulstride_progression.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "3dd810e99ca4527cd26fddf5fcbcb1c896e27f33e980ccb64c9fc238344942ac",
       "stages": [
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
@@ -1001,7 +1514,8 @@
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "9185c64c05205b80af39644d88226c8d60c57ceb2a083f0e7f55d7992d91cb22",
       "stages": [
@@ -1009,22 +1523,26 @@
       ]
     },
     {
-      "bytes": 18883,
+      "bytes": 19264,
       "kind": "authored-code",
       "origins": [
         "native-session-build-prerequisite",
+        "tools/playtester/experiment.py:python-import",
+        "tools/playtester/sonic_adapter.py:python-import",
         "tools/prefab_pipeline/mod_rom.py:python-import"
       ],
       "path": "tools/re/session/bridge.py",
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
-      "sha256": "1b60b5368e0319c9254e7caa7fbb3a803e9e603593b054962a912a0a5aba692e",
+      "sha256": "f509802a490309c70aa5dc15f6f1b2f165d128e8439d6efcb6b9957ebe820ea3",
       "stages": [
         "bounded-qc",
-        "build"
+        "build",
+        "build-and-loop"
       ]
     },
     {
@@ -1037,7 +1555,8 @@
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "50d66561815810959f61a060c4fead440e14e3828ba81216b19973edc87f7231",
       "stages": [
@@ -1054,12 +1573,31 @@
       "payload_policy": "authored-or-metadata-review-required",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "sha256": "b6fa1737ec1cd481de4b9ed512d9c606a4d2730c808b680bae96e9f2a9145e92",
       "stages": [
         "bounded-qc",
-        "build"
+        "build",
+        "build-and-loop"
+      ]
+    },
+    {
+      "bytes": 1954,
+      "kind": "authored-code",
+      "origins": [
+        "tools/playtester/__main__.py:python-import",
+        "tools/playtester/experiment.py:python-import"
+      ],
+      "path": "tools/whole_game/model_config.py",
+      "payload_policy": "authored-or-metadata-review-required",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "sha256": "757f1e0aafcc721f03aa02529cf90942faf0b8a4fbef00339697053216a8f06b",
+      "stages": [
+        "build-and-loop"
       ]
     }
   ],
@@ -1083,11 +1621,18 @@
       "request_sha256": "27bae62b0508b44c4c9bfd299e04aca085a0ce06dccdeebd72135f3c15f616af"
     },
     {
-      "bounded_qc": "No single portable bounded-QC command registered in this inventory; requires separately pinned experiment configuration and local emulator setup",
+      "bounded_qc": "Direct build-only recipe; use the explicitly separate controlled-lunge iteration profile for the bounded model repair exercise.",
       "build": "python3 -B -m tools.prefab_pipeline.native_cli build-mod --request tools/prefab_pipeline/requests/aria-soulstride.json --output-dir NEW --output RESULT",
       "id": "aria-soulstride",
       "request_path": "tools/prefab_pipeline/requests/aria-soulstride.json",
       "request_sha256": "c613a05ee8a7e48c876d2ea710b684610de3f5233ad617124796d92aab0c7738"
+    },
+    {
+      "bounded_qc": "python3 -B -m tools.prefab_pipeline run-profile --request tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json --template tools/prefab_pipeline/profiles/aria-soulstride-iteration.json --run-id NEW_ID --output-dir NEW --output RESULT",
+      "build": "python3 -B -m tools.prefab_pipeline.native_cli build-mod --request tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json --output-dir NEW --output RESULT",
+      "id": "aria-soulstride-controlled-lunge",
+      "request_path": "tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json",
+      "request_sha256": "06761833199df4f86982c3b7053b7d658566315ba195c28c7614983b3da3b146"
     }
   ],
   "reference_claim_checks": [
@@ -1594,10 +2139,514 @@
       "origin": "research/deep-extraction/castlevania/acquisition.package.json",
       "path": "research/deep-extraction/castlevania/soul-inventory.h",
       "recipe": "aria-soulstride"
+    },
+    {
+      "actual_sha256": "a39b14d118e9e42d9b33427df1e2c93eb98ad4b1851df41093dfc9717509e048",
+      "claimed_sha256": "a39b14d118e9e42d9b33427df1e2c93eb98ad4b1851df41093dfc9717509e048",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json",
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-controlled-weak.strategy.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a",
+      "claimed_sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json",
+      "path": "tools/prefab_pipeline/momentum_strategy.py",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef",
+      "claimed_sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json",
+      "path": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+      "claimed_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json",
+      "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "a39b14d118e9e42d9b33427df1e2c93eb98ad4b1851df41093dfc9717509e048",
+      "claimed_sha256": "a39b14d118e9e42d9b33427df1e2c93eb98ad4b1851df41093dfc9717509e048",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-controlled-weak.strategy.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a",
+      "claimed_sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+      "path": "tools/prefab_pipeline/momentum_strategy.py",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef",
+      "claimed_sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+      "path": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+      "claimed_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+      "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "c241e43180b8a33202ab8f168a0219f5c08cc44a2f59cec509c2a5d7b80c15b2",
+      "claimed_sha256": "c241e43180b8a33202ab8f168a0219f5c08cc44a2f59cec509c2a5d7b80c15b2",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-controlled-repaired.strategy.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a",
+      "claimed_sha256": "e18c452390c9445aedf710f6c05155258863d10fd8be16ebc2dfae66fa12975a",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+      "path": "tools/prefab_pipeline/momentum_strategy.py",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef",
+      "claimed_sha256": "fd6c5aa460a8e8e059401bb039d7753ebf2d35f9ac25b763a391db81e1eb0fef",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+      "path": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+      "claimed_sha256": "910f88d3701e6c9f99c0d63660c14c61d8b79b0c17bfd7b35a15185be36430a5",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+      "path": "local/roms/Castlevania - Aria of Sorrow (USA).gba",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "c47d05a018a2fe8a301bd80ee51285ea5a894a4f1d1295c0adc159ddaaa64119",
+      "claimed_sha256": "c47d05a018a2fe8a301bd80ee51285ea5a894a4f1d1295c0adc159ddaaa64119",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-actions.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "85abaf06d35c44cfd11b5c2970be1910778ff9c4294301b3bab23dbfc7c9d484",
+      "claimed_sha256": "85abaf06d35c44cfd11b5c2970be1910778ff9c4294301b3bab23dbfc7c9d484",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-memory.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "650ec98e5798765375ea043f6468831aa32fa04754ca9f83cd507fcdaaf0b10b",
+      "claimed_sha256": "650ec98e5798765375ea043f6468831aa32fa04754ca9f83cd507fcdaaf0b10b",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
+      "path": "tools/prefab_pipeline/profiles/aria-soulstride-fixture.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "2ce8a26f3b255c461ff81140d7bcc6b1364a37c27d0a4c393186d592e41f6c25",
+      "claimed_sha256": "2ce8a26f3b255c461ff81140d7bcc6b1364a37c27d0a4c393186d592e41f6c25",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/cast-policy.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "17ea46fb18d09a4ae764f4f6957858f7a3a5488188aaa273ba6f87f32222c25c",
+      "claimed_sha256": "17ea46fb18d09a4ae764f4f6957858f7a3a5488188aaa273ba6f87f32222c25c",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/cast-policy.h",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "a9402440f90667d2316eb531da630db6b200847a90cca8808b6f3616f0804639",
+      "claimed_sha256": "a9402440f90667d2316eb531da630db6b200847a90cca8808b6f3616f0804639",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/cast-host.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "81fb1a139357cbc40b1cf9912d10c25551fb826ebe39bdd4f9edbd82dbcebcef",
+      "claimed_sha256": "81fb1a139357cbc40b1cf9912d10c25551fb826ebe39bdd4f9edbd82dbcebcef",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/bone-policy.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "5eaad6a15ecb445be915d6646182ae59468dac4c63580ff7fce3aae924305093",
+      "claimed_sha256": "5eaad6a15ecb445be915d6646182ae59468dac4c63580ff7fce3aae924305093",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/acquisition.package.json",
+      "path": "research/deep-extraction/castlevania/pickup-policy.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "9a7d0ee0cf4ed6d051b8688fac7b7092370eb8703a257f11a395a6cb6b6a08ef",
+      "claimed_sha256": "9a7d0ee0cf4ed6d051b8688fac7b7092370eb8703a257f11a395a6cb6b6a08ef",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/acquisition.package.json",
+      "path": "research/deep-extraction/castlevania/soul-inventory.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "7f02ecedfd4cebb5512fd673996d430c9320c97c79cba276c9ab4b5f898246dd",
+      "claimed_sha256": "7f02ecedfd4cebb5512fd673996d430c9320c97c79cba276c9ab4b5f898246dd",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/acquisition.package.json",
+      "path": "research/deep-extraction/castlevania/soul-inventory.h",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "7737885f3946a07f4faf46b98a77e4959fb628220d9f8b16d2741e1a6eb38ea8",
+      "claimed_sha256": "7737885f3946a07f4faf46b98a77e4959fb628220d9f8b16d2741e1a6eb38ea8",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat.package.json",
+      "path": "research/deep-extraction/castlevania/defeat-policy.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "c7d5b98e770e407919fc9757384567bb2e390e22e8ca76b46e4e7805debbf80e",
+      "claimed_sha256": "c7d5b98e770e407919fc9757384567bb2e390e22e8ca76b46e4e7805debbf80e",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat.package.json",
+      "path": "research/deep-extraction/castlevania/defeat-policy.h",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "a27d2fa878e38e97d7a7f886f5293d1cc4762c89f40fffe113e11ffccb1fad51",
+      "claimed_sha256": "a27d2fa878e38e97d7a7f886f5293d1cc4762c89f40fffe113e11ffccb1fad51",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat.package.json",
+      "path": "research/deep-extraction/castlevania/defeat-host.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "9a7d0ee0cf4ed6d051b8688fac7b7092370eb8703a257f11a395a6cb6b6a08ef",
+      "claimed_sha256": "9a7d0ee0cf4ed6d051b8688fac7b7092370eb8703a257f11a395a6cb6b6a08ef",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/acquisition-qualification.json:runtime-source-pins",
+      "path": "research/deep-extraction/castlevania/soul-inventory.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "10d242b20147e640110348d52bc2300cf3a5db1ea99e5142399e7b2db88a15c3",
+      "claimed_sha256": "10d242b20147e640110348d52bc2300cf3a5db1ea99e5142399e7b2db88a15c3",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/player_integrate.asm.txt",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "bd372b4e9a8d9620602d3b6c1d4cad964585dffcc6db5d94b6bacbeaeccc39ef",
+      "claimed_sha256": "bd372b4e9a8d9620602d3b6c1d4cad964585dffcc6db5d94b6bacbeaeccc39ef",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/cast_followers.asm.txt",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "c956212f01906f93872fb3f2835c99d3034c90cfbfeeaba370fc0f7079c50dbf",
+      "claimed_sha256": "c956212f01906f93872fb3f2835c99d3034c90cfbfeeaba370fc0f7079c50dbf",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/jump_guard.asm.txt",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "bb254db53f4055e302cc516a4c110c12b8d31b50c502a5b55e14a1d375a406af",
+      "claimed_sha256": "bb254db53f4055e302cc516a4c110c12b8d31b50c502a5b55e14a1d375a406af",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/backdash.asm.txt",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "156706e515ef1b8fd570b07ec6d841810d878f7fd1ed1080265ce06c65a5960f",
+      "claimed_sha256": "156706e515ef1b8fd570b07ec6d841810d878f7fd1ed1080265ce06c65a5960f",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/cast_transaction.asm.txt",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "03a3947fa0f57c8dce23eb536e362fb9e76748b125f966f6b593657a7430405c",
+      "claimed_sha256": "03a3947fa0f57c8dce23eb536e362fb9e76748b125f966f6b593657a7430405c",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/bone_lifecycle.asm.txt",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "feff7fc6512176ac641bb5d86b41f22d8dd6a668105de2756c372b468c3336d0",
+      "claimed_sha256": "feff7fc6512176ac641bb5d86b41f22d8dd6a668105de2756c372b468c3336d0",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/soma_player_integrate.asm.txt",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "3efea90d25fb9eaf5f3804283697f7d026e4cf60b4e622e5ace2a951020284ed",
+      "claimed_sha256": "3efea90d25fb9eaf5f3804283697f7d026e4cf60b4e622e5ace2a951020284ed",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/soma_cast_transaction.asm.txt",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "953c90e760021e3955ddc2b226534289f593cba6ffb7047e51666f282a5fd487",
+      "claimed_sha256": "953c90e760021e3955ddc2b226534289f593cba6ffb7047e51666f282a5fd487",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/soma_cast_caller.asm.txt",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "8ce1c423c7c0d515de5823d90f283036121abad089ceb80b559c4a79796dc2d0",
+      "claimed_sha256": "8ce1c423c7c0d515de5823d90f283036121abad089ceb80b559c4a79796dc2d0",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/movement-contact/source-evidence.json",
+      "path": "research/deep-extraction/castlevania/movement-contact/native_player_dispatch.asm.txt",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "7150bc7c951a429a165288cbb6dfdf7e59742ecf9dcf0748579f5165e05fbc90",
+      "claimed_sha256": "7150bc7c951a429a165288cbb6dfdf7e59742ecf9dcf0748579f5165e05fbc90",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-controlled-weak.strategy.json",
+      "path": "tools/prefab_pipeline/soulstride_movement.py",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "3dd810e99ca4527cd26fddf5fcbcb1c896e27f33e980ccb64c9fc238344942ac",
+      "claimed_sha256": "3dd810e99ca4527cd26fddf5fcbcb1c896e27f33e980ccb64c9fc238344942ac",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-controlled-weak.strategy.json",
+      "path": "tools/prefab_pipeline/soulstride_progression.py",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "de7950d209f58e7a8963de0b5a8b901a557fcd6221f436e1d04e73b7fb3dffd6",
+      "claimed_sha256": "de7950d209f58e7a8963de0b5a8b901a557fcd6221f436e1d04e73b7fb3dffd6",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-controlled-weak.strategy.json",
+      "path": "research/deep-extraction/castlevania/soma-cast/evidence.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "4ac11905f4f3fb5bfcf5e1702f7b110bc83ba18ba30c291ef87d66d11d21ea64",
+      "claimed_sha256": "4ac11905f4f3fb5bfcf5e1702f7b110bc83ba18ba30c291ef87d66d11d21ea64",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "path": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "40aa98bf837ef2845fba93dfc69dcffbe4d2238ddd6efc298fcba6676a450777",
+      "claimed_sha256": "40aa98bf837ef2845fba93dfc69dcffbe4d2238ddd6efc298fcba6676a450777",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "path": "research/deep-extraction/castlevania/defeat.package.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "414eb681fbe1065e8cb0ef008bb127647e8b20aebc5ba311b099db33701d314c",
+      "claimed_sha256": "414eb681fbe1065e8cb0ef008bb127647e8b20aebc5ba311b099db33701d314c",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "path": "research/deep-extraction/castlevania/ability.package.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "d23346be9f3e998e6b3039e3b576de5c2e4a144dde64d4b977cd7eaf5cafa860",
+      "claimed_sha256": "d23346be9f3e998e6b3039e3b576de5c2e4a144dde64d4b977cd7eaf5cafa860",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "path": "research/deep-extraction/castlevania/acquisition.package.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "7150bc7c951a429a165288cbb6dfdf7e59742ecf9dcf0748579f5165e05fbc90",
+      "claimed_sha256": "7150bc7c951a429a165288cbb6dfdf7e59742ecf9dcf0748579f5165e05fbc90",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-controlled-repaired.strategy.json",
+      "path": "tools/prefab_pipeline/soulstride_movement.py",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "3dd810e99ca4527cd26fddf5fcbcb1c896e27f33e980ccb64c9fc238344942ac",
+      "claimed_sha256": "3dd810e99ca4527cd26fddf5fcbcb1c896e27f33e980ccb64c9fc238344942ac",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-controlled-repaired.strategy.json",
+      "path": "tools/prefab_pipeline/soulstride_progression.py",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "de7950d209f58e7a8963de0b5a8b901a557fcd6221f436e1d04e73b7fb3dffd6",
+      "claimed_sha256": "de7950d209f58e7a8963de0b5a8b901a557fcd6221f436e1d04e73b7fb3dffd6",
+      "matches": true,
+      "origin": "tools/prefab_pipeline/profiles/aria-soulstride-controlled-repaired.strategy.json",
+      "path": "research/deep-extraction/castlevania/soma-cast/evidence.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "0b2da160c82e168e78acf275f281666c586b87d3183e2011321e56ce652b5549",
+      "claimed_sha256": "0b2da160c82e168e78acf275f281666c586b87d3183e2011321e56ce652b5549",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "path": "local/decomps/cvaos/include/structs/ewram.h",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "70974dba4bb5bc2e723ca8eff4e07a1f52e2b80cd53cc0782168e06f8479108e",
+      "claimed_sha256": "70974dba4bb5bc2e723ca8eff4e07a1f52e2b80cd53cc0782168e06f8479108e",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "path": "local/decomps/cvaos/src/code_08033CAC.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "edf4bed15b7a9969d0608bd67a68f0c445e23302fd2ed68a8400991eacaf3db1",
+      "claimed_sha256": "edf4bed15b7a9969d0608bd67a68f0c445e23302fd2ed68a8400991eacaf3db1",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "path": "research/deep-extraction/castlevania/aria-usa-acquisition.host.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "0b2da160c82e168e78acf275f281666c586b87d3183e2011321e56ce652b5549",
+      "claimed_sha256": "0b2da160c82e168e78acf275f281666c586b87d3183e2011321e56ce652b5549",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "path": "local/decomps/cvaos/include/structs/ewram.h",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "a9402440f90667d2316eb531da630db6b200847a90cca8808b6f3616f0804639",
+      "claimed_sha256": "a9402440f90667d2316eb531da630db6b200847a90cca8808b6f3616f0804639",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "path": "research/deep-extraction/castlevania/cast-host.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "81fb1a139357cbc40b1cf9912d10c25551fb826ebe39bdd4f9edbd82dbcebcef",
+      "claimed_sha256": "81fb1a139357cbc40b1cf9912d10c25551fb826ebe39bdd4f9edbd82dbcebcef",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "path": "research/deep-extraction/castlevania/bone-policy.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "7d3d2a1dde713effd072c0048c1872290b4b27c4d7c20f3bda874306ae04523d",
+      "claimed_sha256": "7d3d2a1dde713effd072c0048c1872290b4b27c4d7c20f3bda874306ae04523d",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/aria-usa-soulstride.host.json",
+      "path": "local/prefab-mods/soma-cast-pc-witness-003/report.json",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "7737885f3946a07f4faf46b98a77e4959fb628220d9f8b16d2741e1a6eb38ea8",
+      "claimed_sha256": "7737885f3946a07f4faf46b98a77e4959fb628220d9f8b16d2741e1a6eb38ea8",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat.package.json",
+      "path": "research/deep-extraction/castlevania/defeat-policy.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "c7d5b98e770e407919fc9757384567bb2e390e22e8ca76b46e4e7805debbf80e",
+      "claimed_sha256": "c7d5b98e770e407919fc9757384567bb2e390e22e8ca76b46e4e7805debbf80e",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat.package.json",
+      "path": "research/deep-extraction/castlevania/defeat-policy.h",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "a27d2fa878e38e97d7a7f886f5293d1cc4762c89f40fffe113e11ffccb1fad51",
+      "claimed_sha256": "a27d2fa878e38e97d7a7f886f5293d1cc4762c89f40fffe113e11ffccb1fad51",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/defeat.package.json",
+      "path": "research/deep-extraction/castlevania/defeat-host.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "2ce8a26f3b255c461ff81140d7bcc6b1364a37c27d0a4c393186d592e41f6c25",
+      "claimed_sha256": "2ce8a26f3b255c461ff81140d7bcc6b1364a37c27d0a4c393186d592e41f6c25",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/cast-policy.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "17ea46fb18d09a4ae764f4f6957858f7a3a5488188aaa273ba6f87f32222c25c",
+      "claimed_sha256": "17ea46fb18d09a4ae764f4f6957858f7a3a5488188aaa273ba6f87f32222c25c",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/cast-policy.h",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "a9402440f90667d2316eb531da630db6b200847a90cca8808b6f3616f0804639",
+      "claimed_sha256": "a9402440f90667d2316eb531da630db6b200847a90cca8808b6f3616f0804639",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/cast-host.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "81fb1a139357cbc40b1cf9912d10c25551fb826ebe39bdd4f9edbd82dbcebcef",
+      "claimed_sha256": "81fb1a139357cbc40b1cf9912d10c25551fb826ebe39bdd4f9edbd82dbcebcef",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/ability.package.json",
+      "path": "research/deep-extraction/castlevania/bone-policy.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "5eaad6a15ecb445be915d6646182ae59468dac4c63580ff7fce3aae924305093",
+      "claimed_sha256": "5eaad6a15ecb445be915d6646182ae59468dac4c63580ff7fce3aae924305093",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/acquisition.package.json",
+      "path": "research/deep-extraction/castlevania/pickup-policy.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "9a7d0ee0cf4ed6d051b8688fac7b7092370eb8703a257f11a395a6cb6b6a08ef",
+      "claimed_sha256": "9a7d0ee0cf4ed6d051b8688fac7b7092370eb8703a257f11a395a6cb6b6a08ef",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/acquisition.package.json",
+      "path": "research/deep-extraction/castlevania/soul-inventory.c",
+      "recipe": "aria-soulstride-controlled-lunge"
+    },
+    {
+      "actual_sha256": "7f02ecedfd4cebb5512fd673996d430c9320c97c79cba276c9ab4b5f898246dd",
+      "claimed_sha256": "7f02ecedfd4cebb5512fd673996d430c9320c97c79cba276c9ab4b5f898246dd",
+      "matches": true,
+      "origin": "research/deep-extraction/castlevania/acquisition.package.json",
+      "path": "research/deep-extraction/castlevania/soul-inventory.h",
+      "recipe": "aria-soulstride-controlled-lunge"
     }
   ],
   "schema": "gameverse.improvement-provider-pack/1",
-  "source_commit": "85e2139614e26e198b87bb92dadbd22de49da871",
+  "source_commit": "8c95e007ce95a9db0f174a92d2a4912fc16b013e",
   "static_resolution": [
     {
       "errors": [],
@@ -1612,6 +2661,13 @@
       "qualification": "read-only static resolution only",
       "recipe": "aria-soulstride",
       "resolver": "composition-static/0.1"
+    },
+    {
+      "errors": [],
+      "path": "tools/prefab_pipeline/requests/aria-soulstride-base.plan.json",
+      "qualification": "read-only static resolution only",
+      "recipe": "aria-soulstride-controlled-lunge",
+      "resolver": "composition-static/0.1"
     }
   ],
   "status": "runtime-file-inventory-ready",
@@ -1620,7 +2676,8 @@
       "name": "python3",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "requirement": ">=3.10 (existing Path.is_relative_to usage)",
       "stage": "build"
@@ -1629,7 +2686,8 @@
       "name": "cc",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "requirement": "Clang with armv4t-none-eabi/arm7tdmi/Thumb support",
       "stage": "build"
@@ -1638,7 +2696,8 @@
       "name": "arm-none-eabi-ld",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "requirement": "GNU ARM linker compatible with generated native linker script",
       "stage": "build"
@@ -1647,7 +2706,8 @@
       "name": "arm-none-eabi-objcopy",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "requirement": "GNU ARM binary extraction",
       "stage": "build"
@@ -1656,7 +2716,8 @@
       "name": "arm-none-eabi-nm",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "requirement": "GNU ARM symbol inspection",
       "stage": "build"
@@ -1665,7 +2726,8 @@
       "name": "libmgba",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "requirement": "0.10.5-compatible headers/library and separately built tools/re/session/build/gba-session",
       "stage": "bounded-qc"
@@ -1674,10 +2736,27 @@
       "name": "ffmpeg",
       "recipes": [
         "aria-double-xp",
-        "aria-soulstride"
+        "aria-soulstride",
+        "aria-soulstride-controlled-lunge"
       ],
       "requirement": "video encoding when bounded QC records a clip",
       "stage": "bounded-qc"
+    },
+    {
+      "name": "DecisionAI System1",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "requirement": "Configured Decisions-compatible provider via LITELLM_BASE and LITELLM_API_KEY; defaults identify ramblerun/Decision-AI, credentials remain process-external",
+      "stage": "model-playtest"
+    },
+    {
+      "name": "System2 chat model",
+      "recipes": [
+        "aria-soulstride-controlled-lunge"
+      ],
+      "requirement": "Configured PLAYTEST_LLM_BASE_URL, PLAYTEST_LLM_MODEL and PLAYTEST_LLM_API_KEY or explicitly selected GAMEVERSE_SID_ENV_FILE; no credential values retained in manifest",
+      "stage": "model-diagnosis-and-repair"
     }
   ],
   "working_tree": "shared dirty working tree; exact file hashes are authoritative"

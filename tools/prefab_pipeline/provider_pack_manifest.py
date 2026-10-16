@@ -27,15 +27,32 @@ RECIPES = {
     },
     "aria-soulstride": {
         "request": "tools/prefab_pipeline/requests/aria-soulstride.json",
-        "modules": ["tools/prefab_pipeline/native_mod.py", "tools/prefab_pipeline/momentum_strategy.py"],
+        "modules": ["tools/prefab_pipeline/native_mod.py", "tools/prefab_pipeline/momentum_strategy.py",
+            "tools/prefab_pipeline/iteration.py", "tools/prefab_pipeline/__main__.py",
+            "tools/playtester/experiment.py", "tools/playtester/__main__.py", "tools/decisions/__main__.py",
+            "scripts/improvement-api.mjs", "scripts/improvement-client.mjs", "scripts/serve-improvement.mjs"],
         "hardcoded": [BASE + n for n in ("ability.package.json", "acquisition.package.json", "defeat.package.json",
             "cast-host.c", "cast-policy.c", "cast-policy.h", "bone-policy.c", "acquisition-qualification.json",
             "defeat-policy.c", "defeat-policy.h", "defeat-host.c", "enemy-reward-descriptors.json",
             "soul-inventory.c", "movement-contact/source-evidence.json", "soul-eligibility/source-evidence.json")],
         "build": "python3 -B -m tools.prefab_pipeline.native_cli build-mod --request tools/prefab_pipeline/requests/aria-soulstride.json --output-dir NEW --output RESULT",
-        "bounded_qc": "No single portable bounded-QC command registered in this inventory; requires separately pinned experiment configuration and local emulator setup",
+        "bounded_qc": "python3 -B -m tools.prefab_pipeline run-profile --request tools/prefab_pipeline/requests/aria-soulstride.json --template tools/prefab_pipeline/profiles/aria-soulstride-iteration.json --run-id NEW_ID --output-dir NEW --output RESULT",
+        "profile": "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json",
     },
 }
+# A visible bounded repair fixture has a separate identity from the ordinary build recipe.
+RECIPES["aria-soulstride-controlled-lunge"] = {
+    **RECIPES["aria-soulstride"],
+    "request": "tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json",
+    "build": "python3 -B -m tools.prefab_pipeline.native_cli build-mod --request tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json --output-dir NEW --output RESULT",
+    "bounded_qc": "python3 -B -m tools.prefab_pipeline run-profile --request tools/prefab_pipeline/requests/aria-soulstride-controlled-lunge.json --template tools/prefab_pipeline/profiles/aria-soulstride-iteration.json --run-id NEW_ID --output-dir NEW --output RESULT",
+}
+RECIPES["aria-soulstride"] = {
+    **RECIPES["aria-soulstride"],
+    "modules": ["tools/prefab_pipeline/native_mod.py", "tools/prefab_pipeline/momentum_strategy.py"],
+    "bounded_qc": "Direct build-only recipe; use the explicitly separate controlled-lunge iteration profile for the bounded model repair exercise.",
+}
+RECIPES["aria-soulstride"].pop("profile", None)
 SHA = re.compile(r"[0-9a-f]{64}\Z")
 PREFIXES = ("tools/", "research/", "ontology/", "contracts/", "src/", "scripts/", "local/")
 SUFFIXES = (".json", ".py", ".mjs", ".js", ".c", ".h", ".s", ".asm.txt", ".gba", ".md")
@@ -132,7 +149,12 @@ class Inventory:
                 return
             ref = value.get("path", value.get("ref"))
             if isinstance(ref, str) and isinstance(value.get("sha256"), str):
-                self.add(ref, recipe, stage, origin, value["sha256"])
+                if origin == "tools/prefab_pipeline/profiles/aria-soulstride-iteration.json" and value["sha256"] == "0" * 64 and ref == "tools/playtester/models.py":
+                    self.warnings.append({"code": "deferred-template-policy-pin", "recipe": recipe, "path": ref,
+                        "detail": "prepare_iteration_config freezes the current policy hash in each prepared run; this template placeholder is not executable admission evidence."})
+                    self.add(ref, recipe, stage, origin)
+                else:
+                    self.add(ref, recipe, stage, origin, value["sha256"])
             for key, child in value.items():
                 if key == "source_pins" and isinstance(child, dict):
                     for path, pin in child.items():
@@ -168,6 +190,8 @@ class Inventory:
                     names = [node.module.split(".")]
             for name in names:
                 path = "/".join(part for part in name if part) + ".py"
+                if not (self.root / path).is_file():
+                    path = "/".join(part for part in name if part) + "/__init__.py"
                 if (self.root / path).is_file():
                     self.add(path, recipe, stage, relative + ":python-import")
 
@@ -210,8 +234,10 @@ def generate_manifest(root=ROOT):
     for recipe, spec in RECIPES.items():
         seeds = [spec["request"], "tools/prefab_pipeline/__init__.py", "tools/prefab_pipeline/native_cli.py",
                  "tools/composition/native_build.py", "tools/composition/resolve.py", *spec["modules"]]
+        if spec.get("profile"):
+            seeds.append(spec["profile"])
         for path in seeds:
-            inventory.add(path, recipe, "build", "registered-recipe-entry")
+            inventory.add(path, recipe, "build-and-loop" if spec.get("profile") else "build", "registered-recipe-entry")
         for path in spec["hardcoded"]:
             inventory.add(path, recipe, "build-and-evidence", "reviewed-hardcoded-lowerer-or-validator-input")
         for path in ("tools/re/session/bridge.py", "tools/re/session/session.c", "tools/re/session/Makefile"):
@@ -222,6 +248,8 @@ def generate_manifest(root=ROOT):
                         "build": spec["build"], "bounded_qc": spec["bounded_qc"]})
     recipe_ids = sorted(RECIPES)
     files = sorted(inventory.rows.values(), key=lambda row: row["path"])
+    if any(row["path"] == "contracts/improvement-provider-pack.json" for row in files):
+        raise ValueError("provider manifest cannot contain its own file hash")
     for row in files:
         for field in ("recipes", "stages", "origins"):
             row[field].sort()
@@ -236,12 +264,14 @@ def generate_manifest(root=ROOT):
                     ("arm-none-eabi-objcopy", "GNU ARM binary extraction", "build"),
                     ("arm-none-eabi-nm", "GNU ARM symbol inspection", "build"),
                     ("libmgba", "0.10.5-compatible headers/library and separately built tools/re/session/build/gba-session", "bounded-qc"),
-                    ("ffmpeg", "video encoding when bounded QC records a clip", "bounded-qc"))],
+                    ("ffmpeg", "video encoding when bounded QC records a clip", "bounded-qc"))] + [
+            {"name": "DecisionAI System1", "requirement": "Configured Decisions-compatible provider via LITELLM_BASE and LITELLM_API_KEY; defaults identify ramblerun/Decision-AI, credentials remain process-external", "recipes": ["aria-soulstride-controlled-lunge"], "stage": "model-playtest"},
+            {"name": "System2 chat model", "requirement": "Configured PLAYTEST_LLM_BASE_URL, PLAYTEST_LLM_MODEL and PLAYTEST_LLM_API_KEY or explicitly selected GAMEVERSE_SID_ENV_FILE; no credential values retained in manifest", "recipes": ["aria-soulstride-controlled-lunge"], "stage": "model-diagnosis-and-repair"}],
         "closure": {"method": "recursive JSON pins/source_pins, selected Python imports, quoted C includes, explicit reviewed hardcoded lowerer inputs; shared composition.resolve reused",
                     "complete": not inventory.gaps, "gaps": inventory.gaps,
                     "provenance_warnings": inventory.warnings,
                     "unverified": ["No compiler/native/model run was performed", "Dynamic Python file accesses are not generally statically provable",
-                        "Soulstride bounded QC needs an explicit portable experiment recipe", "Recovered C/header redistribution provenance requires review",
+                        "Recovered C/header redistribution provenance requires review",
                         "External assembly and ROM are metadata-only user-supplied inputs; never provider payload",
                         "Generated state-layout.h and lowered packages/IR outputs are build outputs, not provider inputs"]},
         "reference_claim_checks": inventory.claims, "static_resolution": inventory.static_reports,

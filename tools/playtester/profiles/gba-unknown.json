@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "game_id": "metroid-zero-mission",
+  "objective": "Observe the current game scene, learn basic controls, and explore short safe actions. Identify uncertainty and possible barriers; never claim completion without adapter evidence.",
+  "awareness": {
+    "perspective": "unknown",
+    "locomotion": "unknown",
+    "basis": "Uncalibrated visual classification requested at the first decision; no game-specific RAM decoder configured."
+  },
+  "actions": [
+    {"id": "wait", "description": "Release buttons and observe a short interval", "keys": [], "frames": 24},
+    {"id": "right", "description": "Try holding RIGHT briefly; this is a button probe, not a verified movement command", "keys": ["RIGHT"], "frames": 12},
+    {"id": "left", "description": "Try holding LEFT briefly", "keys": ["LEFT"], "frames": 12},
+    {"id": "up", "description": "Try holding UP briefly", "keys": ["UP"], "frames": 12},
+    {"id": "down", "description": "Try holding DOWN briefly", "keys": ["DOWN"], "frames": 12},
+    {"id": "a", "description": "Try tapping A then reobserve; action meaning is unverified", "keys": ["A"], "frames": 4},
+    {"id": "b", "description": "Try tapping B then reobserve; action meaning is unverified", "keys": ["B"], "frames": 4},
+    {"id": "start", "description": "Try tapping START when the observed screen appears to need it", "keys": ["START"], "frames": 4},
+    {"id": "right_a", "description": "Try a short simultaneous RIGHT+A input; possible movement/action combination, unverified", "keys": ["RIGHT", "A"], "frames": 12}
+  ]
+}
