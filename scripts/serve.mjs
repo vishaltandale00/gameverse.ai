@@ -5,20 +5,29 @@ import { fileURLToPath } from 'node:url';
 import { loadEnvFile } from 'node:process';
 import { root, runtimeDirectory, runtimeIdentity } from './runtime.mjs';
 import { gameCatalog, customArtifacts } from './catalog.mjs';
+import { createCodexAgent } from './codex-agent.mjs';
+import { createChatgptAuthApi } from './chatgpt-auth-api.mjs';
+import { createMashupPipeline } from './mashup-pipeline.mjs';
+import { createMashupApi } from './mashup-api.mjs';
 import { createVoiceApi } from './voice-api.mjs';
 import { attachVoiceStream, realtimeTranscriptionProviders } from './voice-stream.mjs';
 
 const appRoot = fileURLToPath(root);
-try { loadEnvFile(fileURLToPath(new URL('.env', root))); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+for (const name of ['.env.local','.env']) { try { loadEnvFile(fileURLToPath(new URL(name, root))); } catch (error) { if (error.code !== 'ENOENT') throw error; } }
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.wasm': 'application/wasm', '.gba': 'application/octet-stream' };
 const runtime = await runtimeIdentity();
 const handleVoice = createVoiceApi({ liveProviders: realtimeTranscriptionProviders });
+const agent = createCodexAgent({cwd:appRoot});
+const chatgpt = createChatgptAuthApi({agent});
+const mashup = createMashupApi({root:appRoot,agent,pipeline:createMashupPipeline({root:appRoot,agent}),timeoutMs:Number(process.env.MASHUP_TIMEOUT_MS || 1800000)});
 const server = http.createServer(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");
   try {
     const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    if (await chatgpt.handle(req,res,path)) return;
+    if (await mashup.handle(req,res,path)) return;
     if (await handleVoice(req, res, path)) return;
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end(); return; }
     if (path === '/runtime/identity.json') {
@@ -37,7 +46,10 @@ const server = http.createServer(async (req, res) => {
       res.end(req.method === 'HEAD' ? undefined : bytes); return;
     }
     let file;
-    if (/^\/artifacts\/[a-f0-9]{64}\.gba$/.test(path)) file = new URL(`local-data/games/${path.split('/').pop()}`, root);
+    if (path === '/create' || path === '/conversation.html') file = new URL('conversation.html', root);
+    else if (path === '/result-player.css') file = new URL('result-player.css', root);
+    else if (path === '/conversation.css') file = new URL('conversation.css', root);
+    else if (/^\/artifacts\/[a-f0-9]{64}\.gba$/.test(path)) file = new URL(`local-data/games/${path.split('/').pop()}`, root);
     else if (/^\/runtime\/mgba\.(js|wasm)$/.test(path)) file = new URL(path.split('/').pop(), runtimeDirectory);
     else if (/^\/runtime\/three\/three\.(module|core)\.js$/.test(path)) file = new URL(`node_modules/three/build/${path.split('/').pop()}`, root);
     else if (path === '/runtime/three/LICENSE') file = new URL('node_modules/three/LICENSE', root);
@@ -55,3 +67,5 @@ const server = http.createServer(async (req, res) => {
 const port = Number(process.env.PORT || 4173);
 attachVoiceStream(server);
 server.listen(port, '127.0.0.1', () => console.log(`Gameverse: http://127.0.0.1:${port}`));
+
+for (const signal of ['SIGTERM','SIGINT']) process.once(signal,()=>{void mashup.shutdown(); agent.close(); server.close();});

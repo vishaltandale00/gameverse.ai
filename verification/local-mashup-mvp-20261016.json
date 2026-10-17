@@ -1,0 +1,205 @@
+{
+  "schema": "gameverse.local-mashup-mvp-verification/1",
+  "recorded_utc": "2026-10-17T00:36:23.936436+00:00",
+  "request_id": "55977bfe-9aa8-4341-990c-cf94944be293",
+  "source": {
+    "base_commit": "fb5335affbc9c8bdab2db7fd9b79ed0edbc5c8f2",
+    "worktree_files_sha256": {
+      "conversation.css": "d906e6e311eae24c471f4f617890c2e7a8f4c256d28b358a3d4a173ec98e2a99",
+      "conversation.html": "f25c7795f1129d2ef549eb5e73dc6225968c3e41a15e3bb5a6194b3aad48b974",
+      "docs/LOCAL_CREATION.md": "980417ed5e451fa8a6cc721d421550107fb4dda8ebe5f1f02ab6f76997b0db44",
+      "index.html": "1f1c408da6e004f11b366d4dffd0ad5b1752572aad02cb69ca4c30c0eff8322c",
+      "package.json": "4cc263c5105c49feafbd3843536c7cda5bc724b3479e32b6f391a60a6ab5dd7f",
+      "result-player.css": "5196b6c095845983b000c59deca8bfa0aad243fe6048739c25fdf58a73438c19",
+      "scripts/build.mjs": "8cdb1b16ae7f7b3b3ab1b98af6dc4f2511d01753ec8f9cbca2b6169ea43b7539",
+      "scripts/chatgpt-auth-api.mjs": "ec06865302336e2ac17b0aab02d10bff871b62147e1a06f70f6f6e3832c80992",
+      "scripts/codex-agent.mjs": "6f97a4babd1f4137567bb2114c7875d2634f17541bed94cee3ecba5438075b48",
+      "scripts/import-mashup-runtime.mjs": "9c7f6b508fe3ea85d12f38ca2a3b23f18ec2b3c7d0e23f197c4284acefdb55a3",
+      "scripts/local-testing-config.mjs": "6c3ca4af9b1d5249f6ea031e41a0938bfeda1d430aaf51712d3369c70543a4ce",
+      "scripts/mashup-api.mjs": "dde375ea4ea010a036fd4ee8d6bafeede5a5bca16a45bd36e5efe3cb3394c9a7",
+      "scripts/mashup-pipeline.mjs": "494e1055642ae80bc981b5278a250a2dc0a7a7303f0b1ba5b80a20ba1e499e7c",
+      "scripts/mashup-runtime.py": "bb1a537170c34635273551db10f0484bb7c5dc7f8e8e7811b3baef31187cf0e8",
+      "scripts/mashup_stagnation.py": "e108da4dfda1f7067ba092ae28432f458a1d23a12fdf0501af9441c866449b6b",
+      "scripts/serve.mjs": "13c581a7137c50e1ca64a57078b94caedd3a210d523c5b21bfbc4937f7deb0d1",
+      "scripts/start-local.mjs": "865080403046d1f234cc407ee4a87b821b6f293299332fa02b755a359cddc526",
+      "src/conversation-model.js": "6ff514ab6c9c95bf42c1ae4ddb9f6b48fe5e49fc2f7296e00c738e88c0e0338f",
+      "src/conversation.js": "454bed2964ca1caa692ed2e8547df6bc43adb7c988426a70e3365da714e7bb82",
+      "src/result-player.js": "a9004fb250224d53e7b57cf8d46e232de287ad91cf55595501ad26da4f075b5e",
+      "tests/chatgpt-auth-api.test.js": "beb07745de83dc0fd2d32063a2edf68a398f2f280062742074b7e49e591fb0db",
+      "tests/codex-agent.test.js": "dd050ff94646ecb6ca10f8c4e3f1eb6808a0ce157b5641ad9ff7ba6b5ac9a569",
+      "tests/conversation.test.js": "b6dc6b88a7dbbd4ecd76a3a97befb32294b9b31df4809e40e1043a6fb8debee5",
+      "tests/local-creation.test.js": "2ee994df93bae1595e2186b4a6610c851b266328a9bc8061a6013c273fb62b5c",
+      "tests/local-testing-config.test.js": "c7306f974ca59b619f2d8aac1beecf0f6537cd24af1e2264f97ff7ad55113be7",
+      "tests/mashup-api.test.js": "08dd451265494e6c7edcabe1c6fc7512d8ecebd7dfc75f04d96ab152b177feba",
+      "tests/mashup-pipeline.test.js": "a0aac92ed1ffe554d10bf284f25c646712c8a145face407821896ee2ae3a60af",
+      "tests/mashup-stagnation.test.py": "afcf4986ea599c2a3410d0ecede67d56d646d8b75a0b49163a7f134d8438d6e7",
+      "tests/result-player.test.js": "a3d62cb7d3e34c19fc15a5f42edcba3200f7276dd50dc6db7c1873a10ffa2d45"
+    },
+    "environment": "macOS-27.0.1-arm64-arm-64bit",
+    "node": "v24.14.0",
+    "native_adapter": "sonic-native-traversal/1",
+    "model_loop_version": "0.1.0",
+    "profile_sha256": "4f1cd0728d93199e6a6faf2475a9577183bb12d5e44ea928fff9cc541f45346b"
+  },
+  "scope": {
+    "local_first": true,
+    "supported_game_pair": [
+      "sonic-advance",
+      "metroid-zero-mission"
+    ],
+    "arbitrary_game_pairs": false,
+    "retained": "Original Sonic campaign and momentum",
+    "recovered": "MZM motion arithmetic, combat/projectile/impact, Ripper and assets",
+    "authored": "Acquisition/event progression, world placements, gates, ecology and integration bridges",
+    "full_campaign_qualified": false,
+    "browser_gameplay_tested": false,
+    "long_campaign": "Bounded explicit checkpoint chunks; no automatic long-campaign completion claim",
+    "construction_continuation": "Native checkpoint continuation only; construction retry is a new request"
+  },
+  "authentication": {
+    "actual_chatgpt_subscription_turn": true,
+    "plan": "pro",
+    "transport": "codex-app-server",
+    "api_key_billing_fallback": false,
+    "native_testing_provider": "Existing separately authorized SID/rrh service; subscription creation does not pay for these calls"
+  },
+  "construction": {
+    "semantic_prefab_changes": 12,
+    "prefab_kinds": [
+      "relic",
+      "alien",
+      "gate",
+      "recharge"
+    ],
+    "native_artifact_sha256": "6263dc57da3831a5c8764ddd7b9a802dfe25a2304f03c3836c289b57f16f58c6",
+    "native_artifact_bytes": 16777216,
+    "download_sha256_verified": true,
+    "native_boot": "pass",
+    "source_repair": "Evidence-led diagnosis declined world changes; source repair application path unexercised",
+    "objective_validated": true,
+    "objective_scope": "Declared two-acquisition/one-native-barrier first-act goal, after separately recorded source-policy upgrade. Full campaign unqualified."
+  },
+  "bot": {
+    "first_chunk": {
+      "s1_calls": 23,
+      "s2_calls": 1,
+      "native_frames": 552,
+      "reason": "model_call_limit",
+      "worker_wall_s": 6.165384
+    },
+    "resume": {
+      "restored_model_context": true,
+      "prior_usage": {
+        "model_calls": 24,
+        "frames": 552,
+        "steps": 23,
+        "wall_s": 6.165384
+      },
+      "chunk_usage": {
+        "model_calls": 24,
+        "native_frames": 576
+      },
+      "restore_render_frames": 1,
+      "same_run_id": true,
+      "same_cartridge": true,
+      "no_build_or_boot": true,
+      "pipeline_wall_s": 5.522,
+      "model_worker_wall_s": 5.333139
+    },
+    "cumulative_s1_calls": 47,
+    "cumulative_s2_calls": 1,
+    "cumulative_bot_frames": 1128,
+    "confidence_policy": {
+      "confidence": 0.65,
+      "margin": 0.2,
+      "basis": "uncalibrated_provider_score",
+      "calibration_artifact": null,
+      "lineage": "Existing sonic-traversal-template.json experiment confidence/margin; DecisionPolicy score/margin/top-probability gate and ChatPolicy escalation unchanged"
+    },
+    "native_checkpoint_sha256": "07604d5c6d2a656c344dc4c359b44cef48d4480b4e1d8f8678385c6fc106565b",
+    "learning_context_sha256": "c753d4ffff0bb9b6f9fd343f3e5ff0123de0f8c2c96915f6ee9f029374d27d3b",
+    "known_safe_continuation_available": false,
+    "failed_chunk": {
+      "reason": "Frozen Limits assignment rejected before inference",
+      "model_calls": 0,
+      "worker_wall_s": 0.12981112499255687,
+      "retained": true
+    },
+    "learning_migration": "Explicit zero-model reconstruction from complete retained trace; original report preserved; required unavailable learning fields empty; original wrapper hash unavailable/informational",
+    "original_v1_outcome": "model_call_limit",
+    "latest_policy_regression": {
+      "status": "success",
+      "reason": "objective_observed",
+      "source_policy_version": "sonic-source-closed-gate-stagnation/1",
+      "explicit_policy_upgrade": true,
+      "historical_v1_chunks_unchanged": true,
+      "additional_s1_calls": 3,
+      "additional_s2_calls": 2,
+      "additional_native_frames": 72,
+      "worker_wall_s": 4.066769,
+      "no_build_or_boot": true,
+      "native_facts": {
+        "relics_collected": 2,
+        "gates_opened": 1,
+        "shots": 3,
+        "shots_hit": 1,
+        "missiles": 7,
+        "x": 633.82,
+        "deaths": 0
+      },
+      "report_sha256": "369b9f6b37a2c9b28372f20e4e18227793cebbe1380d55d17801147b5b439b98",
+      "input_receipt_sha256": "4cf28958dcd8784ac879169ad3b12562564ceb1cc261539a8977650f31fd80bf",
+      "source_helper_sha256": "bb1a537170c34635273551db10f0484bb7c5dc7f8e8e7811b3baef31187cf0e8",
+      "source_policy_sha256": "e108da4dfda1f7067ba092ae28432f458a1d23a12fdf0501af9441c866449b6b",
+      "new_native_checkpoint_sha256": "3c38091d17c87f63a53b2a393db7e549bcb2d69dd332ab5e3bbd407f653e4f9f",
+      "new_learning_context_sha256": "74b3c020dda328a547e180e51cb156c8e37cebf62fdf829e75f134a629d27474",
+      "selection": "Source-closed-gate stagnation rejected repeating blocked movement into existing S2; S2 selected right_missile. Guard did not choose a firing action."
+    },
+    "all_runs_model_calls": 53,
+    "all_runs_bot_frames": 1200,
+    "all_runs_model_worker_s": 15.565292,
+    "historical_v1_full_learning_checkpoint_retained": true,
+    "historical_v1_frozen_helper_sha256": "8f2d4683baa5634dd3fe9f94601ff13989c88d0e4aca504b9c75ea6d2b83ec0b"
+  },
+  "timing": {
+    "accumulated_api_chunk_execution_s": 207.84422883400003,
+    "elapsed_run_wall_s": 500.322,
+    "queue_s": null,
+    "accounting": "Native/model stages nested in API chunk totals; elapsed includes manual development and restart intervals. Do not add nested stages.",
+    "shell_build_comparison": {
+      "baseline_ms": 25.3,
+      "updated_ms": 30.9,
+      "final_updated_ms": 30.4,
+      "mode": "Generated dist recreated; same installed dependency cache and machine; existing shell build only",
+      "speedup_claim": false
+    },
+    "ci_timing": null,
+    "full_game_latency_baseline": null,
+    "billing_usage": null,
+    "external_policy_regression_worker_s": 4.066769,
+    "external_policy_regression_accounting": "Separate from accumulated API chunk execution; not added to historical v1 API totals."
+  },
+  "validation": {
+    "static_build": "pass",
+    "browser_ui": "Desktop1280 and mobile390 no overflow or warn/error logs; no gameplay",
+    "new_dependencies": 0,
+    "new_ci_jobs": 0,
+    "affected_unique_node_checks": 34,
+    "offline_source_policy_checks": 4,
+    "latest_changed_pipeline_startup_node_checks": 10,
+    "latest_changed_pipeline_startup_wall_ms": 65.983958,
+    "diff_check": "pass",
+    "static_build_final_ms": 30.4,
+    "initial_affected_node_checks": 32,
+    "initial_affected_node_wall_ms": 91.918333
+  },
+  "runtime_prerequisite": {
+    "public_checkout_turnkey": false,
+    "imported_code_configuration_evidence_native_files": 431,
+    "imported_code_bytes": 4297014,
+    "private_asset_files": 5,
+    "private_asset_bytes": 16784989,
+    "code_closure_sha256": "e4fa1a913e6486b7594cafbbc4e5bf758f02f1f9e2767e903c5bc2917177bf6f",
+    "scope": "Explicit importer brings missing compiler/bot code plus private assets; machine toolchain/library remain external"
+  }
+}
