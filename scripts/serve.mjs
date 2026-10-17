@@ -48,6 +48,8 @@ const server = http.createServer(async (req, res) => {
     else if (/^\/games\/configs\/gameverse-v[01]\.json$/.test(path)) file = new URL(path.slice(1), root);
     else if (path === '/sports-replay') file = new URL('sports-replay.html', root);
     else if (path === '/sports-replay.css') file = new URL('sports-replay.css', root);
+    // Local Decisions match reports (git-ignored) for the replay viewer's ?report= parameter.
+    else if (/^\/sports-replay\/reports\/[a-z0-9-]+\.json$/.test(path)) file = new URL(`artifacts/sports-decisions/${path.split('/').pop()}`, root);
     else if (path === '/style.css' || /^\/src\/(neighborhood|sports)-certified\.generated\.js$/.test(path) || /^\/src\/[a-z-]+\.js$/.test(path)) file = new URL(path.slice(1), root);
     else { res.writeHead(404).end('Not found'); return; }
     const actual = await realpath(file);

@@ -2,7 +2,7 @@
 // recorded controller decisions through the shared harness core, renders with
 // each sport's own scene/camera, and checks every tick's state hash.
 import * as THREE from '/runtime/three/three.module.js';
-import { CONTROL_PROFILE, TICKS, createSession, prepareDecisions, stepDecisionFrame, recordDecisions } from './sports-decisions-core.js';
+import { REPLAY_PROFILES, TICKS, createSession, prepareDecisions, stepDecisionFrame, recordDecisions } from './sports-decisions-core.js';
 
 const $ = selector => document.querySelector(selector);
 const clock = seconds => { const total = Math.ceil(Math.max(0, seconds)); return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`; };
@@ -27,7 +27,7 @@ new ResizeObserver(resize).observe($('#stage'));
 
 async function load(file) {
   const report = JSON.parse(await file.text());
-  if (report.schema !== 3 || report.controlProfile !== CONTROL_PROFILE || !Array.isArray(report.ticks)) throw new Error(`Expected a ${CONTROL_PROFILE} schema-3 Decisions match report.`);
+  if (report.schema !== 3 || !REPLAY_PROFILES.includes(report.controlProfile) || !Array.isArray(report.ticks)) throw new Error(`Expected a schema-3 Decisions match report (${REPLAY_PROFILES.join(' or ')}).`);
   dispose(replay?.scene);
   const session = createSession(report.game, report.session), scene = new THREE.Scene();
   const view = session.game.buildScene({ THREE, scene, camera, renderer });
@@ -90,4 +90,8 @@ function animate(now) {
 requestAnimationFrame(animate);
 
 $('#file').addEventListener('change', event => { const file = event.target.files?.[0]; if (file) load(file).catch(error => { $('#status').textContent = error.message; }); });
+// ?report=<name> loads artifacts/sports-decisions/<name>.json from the dev server.
+const named = new URLSearchParams(location.search).get('report');
+if (named && /^[a-z0-9-]+$/.test(named)) fetch(`/sports-replay/reports/${named}.json`).then(response => { if (!response.ok) throw new Error(`No local report named ${named}`); return response.blob(); })
+  .then(load).catch(error => { $('#status').textContent = error.message; });
 $('#pause').addEventListener('click', () => { if (replay) { replay.paused = !replay.paused; $('#pause').textContent = replay.paused ? 'Play' : 'Pause'; } });

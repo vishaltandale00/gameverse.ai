@@ -9,6 +9,9 @@ import { soccerDefinition } from './soccer.js';
 import { footballDefinition } from './football.js';
 
 export const CONTROL_PROFILE = 'classic-sports-v3';
+// v3 changed only which buttons a request offers; recorded actions map to the
+// same controller frames, so v2 recordings still replay exactly.
+export const REPLAY_PROFILES = ['classic-sports-v2', CONTROL_PROFILE];
 export const TICKS = 15;
 export const DECISIONS_MODEL = 'gpt-6-luna';
 const round = n => Math.round(n * 1000) / 1000;
