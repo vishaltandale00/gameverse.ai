@@ -1,6 +1,8 @@
 # Sports league: ratings, real rules, CPU and CPU-vs-CPU verification
 
-Accepted requirements (Vishal, 2026-10-16/17) for **Alder Five** (5v5 soccer) and **Alder Gridiron** (7v7 American football). These are original games: fictional teams and athletes only, no real names, likenesses or branding. Ownership: Vishal's subgame and play infrastructure. Shishir's improvement loop is unchanged.
+Accepted requirements (Vishal, 2026-10-16/17) for **Alder Five** (5v5 soccer) and **Alder Gridiron** (7v7 American football).
+
+**Status, 2026-10-17:** implemented and qualified. See [the league qualification](../SPORTS_DEVELOPMENT.md#league-qualification--2026-10-17) and [retained metadata](../verification/SPORTS_LEAGUE_QUALIFICATION.json). The raw-button Decisions CPU works end to end but plays weakly; key-moment intents are the recommended follow-up. These are original games: fictional teams and athletes only, no real names, likenesses or branding. Ownership: Vishal's subgame and play infrastructure. Shishir's improvement loop is unchanged.
 
 ## Requirements
 
