@@ -36,7 +36,7 @@ Not included: real teams/licensing, online play, season modes, improvement-loop 
 | Keeper save % (on target) | 55–80 | Yards per carry | 3.5–6 |
 | Fouls | 1–8 | Run share of plays | 30–65% |
 
-Sensitivity: evenly matched teams win 40–60% (draws excluded). A +20 overall team wins ≥ 75% (soccer) or ≥ 85% (football). Every specialty moves its target statistic in the intended direction against a control roster.
+Sensitivity: in a mirror match (the same roster on both sides), the home side wins 40–60% of decided matches. A +20 overall team wins ≥ 75% (soccer) or ≥ 85% (football) of decided matches, alternating home and away. Every specialty moves its target statistic in the intended direction against a control roster.
 
 ## Engineering contract
 
@@ -82,13 +82,17 @@ Each controller keeps its own selected athlete and charge/ready/receiver state. 
 
 ### HUD additions
 
-`hud(s)` returns:
+`hud(s, team = 0)` renders from that controller's perspective:
+- That controller's `power`, `charging`, stamina, skill state, hints and athlete card.
+- Football also gets that team's `plays`/`selectedPlay`, `passType`/`selectedReceiver` and `receiverIcons`.
+
+`selected`, `teams` and the score always stay in home/away order. It returns:
 
 | Key | Contents |
 | --- | --- |
 | `teams` | `[{name, short, primary, secondary, ovr}, …]`. `teamNames` is derived from it. |
 | `selected` | `[id \| null, id \| null]` |
-| `athlete` | `athleteCard(sport, profile)` of team 0's selected athlete, or `null` |
+| `athlete` | `athleteCard(sport, profile)` of the requesting controller's selected athlete, or `null` |
 | `setup` | `setupHud(...)` in phase `'setup'`, else `null` |
 | `summary` | `{ rows: [[label, home, away], …], star: { name, team, line } }` when finished, else `null` |
 | `ticker` | Up to 4 `{ text, team }` major events, newest first |
@@ -110,7 +114,13 @@ Each controller keeps its own selected athlete and charge/ready/receiver state. 
 - `ints`, `sacks`, `fumbles`, `fumblesLost`, `drops`, `breakups`
 - `fgAtt`, `fgMade`, `punts`, `tds`, `firstDowns`
 
-Each athlete has `p.stats` for the player of the match.
+Each array entry counts what that team did:
+- Soccer `fouls`, `offsides`: committed by that team. `yellows`, `reds`: received. `penalties`, `freeKicks`, `corners`: awarded. `saves`: by that team's keeper. `onTarget` includes goals.
+- Football defense: `sacks`, `ints`, `breakups` are made by that team's defense.
+- Football offense: `drops`, `fumbles`, `fumblesLost` are by that team's ball carriers and receivers.
+- Sacks are neither rush attempts nor rushing yards.
+
+Each athlete has `p.stats` for the player of the match. Specialties are read live from `s.teams[t].players[i].specialties`. The simulator A/B-tests a specialty by editing it right after `createState({ setup: false })`.
 
 `s.events` is a ring of the last 40 major events: `{ frame, clock, kind, team, text }`.
 
