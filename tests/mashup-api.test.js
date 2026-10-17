@@ -50,3 +50,8 @@ test('receipt preserves requested selection separately from compiler source rout
  const result=await wait(async()=>{const r=await api.status(id);return r.status==='blocked'&&r;});
  assert.deepEqual(result.source_games,[]);assert.deepEqual(result.routing.source_games,['pokemon-leafgreen','pokemon-emerald']);assert.equal(result.routing.backend,'pokemon-overworld');
 });
+test('Pokemon intent validation requires scoped native graphics evidence, not boot alone',async t=>{
+ let full=false;const {root,api}=await fixture(t,async({directory})=>{const path=join(directory,'game.gba'),bytes=Buffer.from('candidate');await writeFile(path,bytes);return {status:'completed',routing:{backend:'pokemon-overworld'},artifact:{path,sha256:createHash('sha256').update(bytes).digest('hex')},qualification:{outcome:'pass',scope:full?'native-graphics-consumer':'native-boot',request_satisfied:true},design:{request_satisfied:true},user_intent_validated:true};});
+ const first=randomUUID();await api.submit({request_id:first,intent:'LeafGreen with Emerald overworld sprites'});const boot=await wait(async()=>{const r=await api.status(first);return r.finished_at&&r;});assert.equal(boot.playable,true);assert.equal(boot.objective_validated,false);
+ full=true;const second=randomUUID();await api.submit({request_id:second,intent:'LeafGreen with Emerald overworld sprites'});const graphics=await wait(async()=>{const r=await api.status(second);return r.finished_at&&r;});assert.equal(graphics.playable,true);assert.equal(graphics.objective_validated,true);
+});

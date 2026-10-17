@@ -12,6 +12,7 @@ import { createChatgptAuthApi } from './chatgpt-auth-api.mjs';
 import { createMashupPipeline } from './mashup-pipeline.mjs';
 import { createCreationRouter } from './creation-router.mjs';
 import { createPokemonPipeline } from './pokemon-pipeline.mjs';
+import { createPokemonNativeVerifier } from './pokemon-native-verify.mjs';
 import { createMashupApi } from './mashup-api.mjs';
 import { createVoiceApi } from './voice-api.mjs';
 import { attachVoiceStream, realtimeTranscriptionProviders } from './voice-stream.mjs';
@@ -26,7 +27,7 @@ const instance = { schema: 'gameverse.local-instance/1', checkout_id: createHash
 const handleVoice = createVoiceApi({ liveProviders: realtimeTranscriptionProviders });
 const agent = createCodexAgent({cwd:appRoot});
 const chatgpt = createChatgptAuthApi({agent});
-const mashup = createMashupApi({root:appRoot,agent,pipeline:createCreationRouter({sonic:createMashupPipeline({root:appRoot,agent}),pokemon:createPokemonPipeline({root:appRoot,agent})}),timeoutMs:Number(process.env.MASHUP_TIMEOUT_MS || 1800000)});
+const mashup = createMashupApi({root:appRoot,agent,pipeline:createCreationRouter({sonic:createMashupPipeline({root:appRoot,agent}),pokemon:createPokemonPipeline({root:appRoot,agent,nativeVerifier:createPokemonNativeVerifier({root:appRoot})})}),timeoutMs:Number(process.env.MASHUP_TIMEOUT_MS || 1800000)});
 const server = http.createServer(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
