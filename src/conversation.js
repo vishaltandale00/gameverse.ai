@@ -1,10 +1,14 @@
+import { mountBuildRequirements, mountCreationLibrary, sourceWorldChoices } from './creation-library.js';
 import { ACTIVE_STATES, STAGES, STAGE_LABELS, playableUrl, stageState, runMessage, refinementIntent, safeLocalUrl } from './conversation-model.js';
 export async function initializeConversation(root = document, { embedded = false } = {}) {
 const $ = id => root.querySelector(`[id="${id}"]`);
 const storageKey = 'gameverse.conversation.v1';
 let auth = null, capabilities = null, run = null, busy = false, loginId = null, pollTimer = null;
 const requestedPlayId = new URLSearchParams(location.search).get('play');
-let playerMounted = false, resultPlayer = null;
+let playerMounted = false, resultPlayer = null, disposeLibrary = null;
+const libraryReferences = new Set();
+let libraryReferencesTouched = false;
+function mountLibrary() { disposeLibrary?.(); disposeLibrary = mountCreationLibrary(root, capabilities?.library, api, libraryReferences, capabilities?.backends || [], () => { libraryReferencesTouched = true; }); }
 let history = [];
 try { history = JSON.parse(localStorage.getItem(storageKey) || '[]'); if (!Array.isArray(history)) history = []; } catch { /* Local storage is optional. */ }
 const save = () => { try { localStorage.setItem(storageKey, JSON.stringify(history.slice(-20))); } catch { /* Keep session usable without persistence. */ } };
@@ -36,6 +40,9 @@ function renderHistory() {
 }
 function renderRun() {
   if (!run) return;
+  if (!libraryReferencesTouched && Array.isArray(run.library_refs) && (libraryReferences.size !== run.library_refs.length || run.library_refs.some(id => !libraryReferences.has(id)))) {
+    libraryReferences.clear(); run.library_refs.forEach(id => libraryReferences.add(id)); mountLibrary();
+  }
   if (refinementContext()) { $('starter').hidden = true; $('new-idea').hidden = false; }
   const graphicsRun=run.routing?.backend==='pokemon-overworld'||run.qualification?.scope==='native-graphics-consumer';
   $('run-panel').hidden = false; $('run-state').textContent = run.status === 'completed' && run.playable ? (graphicsRun ? (run.objective_validated === true ? 'Graphics verified' : 'Sprite coverage incomplete') : (run.objective_validated === true ? 'Bot objective verified' : 'Bot objective incomplete')) : run.status;
@@ -46,7 +53,7 @@ function renderRun() {
   $('qualification-summary').textContent = qualification && graphicsRun ? `Native graphics: ${qualification.outcome || 'unreported'}. Requested coverage: ${run.objective_validated === true ? 'verified' : 'incomplete'}. Natural gameplay remains unqualified.` : qualification ? `Native check: ${qualification.outcome || 'unreported'}${qualification.scope ? ` (${qualification.scope})` : ''}. Gameplay bot: ${bot?.status || bot?.outcome || 'unreported'}. Campaign: ${qualification.campaign || 'qualification scope unavailable'}.` : '';
   $('stages').replaceChildren(...STAGES.map(stage => { const li = node('li', graphicsRun && stage === 'playtesting' ? 'Verify graphics' : STAGE_LABELS[stage], stageState(run, stage)); if (li.className === 'current') li.setAttribute('aria-current', 'step'); return li; }));
   $('cancel').hidden = !ACTIVE_STATES.has(run.status); $('cancel').disabled = busy;
-  $('resume').hidden = run.can_resume !== true && (ACTIVE_STATES.has(run.status) || run.playable === true); $('resume').disabled = busy; $('resume').textContent = run.can_resume === true ? (run.playable ? 'Continue bot test' : 'Resume run') : 'Retry this request';
+  $('resume').hidden = run.can_resume !== true && (ACTIVE_STATES.has(run.status) || run.playable === true); $('resume').disabled = busy; $('resume').textContent = run.can_resume === true ? (run.playable ? (graphicsRun ? 'Continue graphics checks' : 'Continue bot test') : 'Resume run') : 'Retry this request';
   const href = playableUrl(run); $('play').hidden = !href; if (href) $('play').href = embedded ? `/v1?create=1&play=${encodeURIComponent(run.request_id)}` : href; else $('play').removeAttribute('href');
   const download = run.status === 'completed' && run.playable === true ? safeLocalUrl(run.artifact?.rom_url) : null;
   $('download-rom').hidden = !download; if (download) $('download-rom').href = download;
@@ -74,7 +81,7 @@ async function checkAuth() {
   updateButtons();
 }
 $('recheck').addEventListener('click', () => { checkAuth(); if (!capabilities) api('/api/mashup/capabilities').then(renderCapabilities).catch(error => { $('capability-note').textContent = error.message; }); });
-$('new-idea').addEventListener('click', () => { if (ACTIVE_STATES.has(run?.status)) return; resultPlayer?.destroy(); resultPlayer = null; playerMounted = false; history = []; run = null; save(); renderHistory(); $('run-panel').hidden = true; $('intent').value = ''; $('intent').focus(); if (location.search) historyReplace(); });
+$('new-idea').addEventListener('click', () => { if (ACTIVE_STATES.has(run?.status)) return; resultPlayer?.destroy(); resultPlayer = null; playerMounted = false; history = []; run = null; libraryReferences.clear(); libraryReferencesTouched = false; if (capabilities) renderCapabilities(capabilities); save(); renderHistory(); $('run-panel').hidden = true; $('intent').value = ''; $('intent').focus(); if (location.search) historyReplace(); });
 function historyReplace() { const url = new URL(location.href); url.searchParams.delete('play'); window.history.replaceState(null, '', embedded ? `${url.pathname}?create=1` : '/create'); }
 $('connect').addEventListener('click', async () => {
   busy = true; updateButtons();
@@ -91,8 +98,9 @@ $('composer').addEventListener('submit', async event => {
   const request_id = crypto.randomUUID(); const previous = refinementContext();
   const source_games = [...root.querySelectorAll('#source-options input:checked')].map(input => input.value);
   const intent = refinementIntent(previous?.intent, message);
+  const library_refs = libraryReferences.size || libraryReferencesTouched ? [...libraryReferences] : undefined;
   if (intent.length > 12000) { busy = false; $('form-status').textContent = 'This conversation has reached the request limit. Shorten the next description or start a new idea.'; updateButtons(); return; }
-  try { const result = await api('/api/mashup/runs', { method: 'POST', body: JSON.stringify({ request_id, intent, source_games, ...(previous ? { [previous.playable === false ? 'retry_of' : 'parent_request_id']: previous.request_id } : {}) }) }); run = result.run || result; history.push({ request_id: run.request_id || request_id, message, intent, ...(previous ? { [previous.playable === false ? 'retry_of' : 'parent_request_id']: previous.request_id } : {}) }); save(); renderHistory(); $('intent').value = ''; $('form-status').textContent = ''; renderRun(); schedulePoll(); }
+  try { const result = await api('/api/mashup/runs', { method: 'POST', body: JSON.stringify({ request_id, intent, source_games, library_refs, ...(previous ? { [previous.playable === false ? 'retry_of' : 'parent_request_id']: previous.request_id } : {}) }) }); run = result.run || result; history.push({ request_id: run.request_id || request_id, message, intent, library_refs, ...(previous ? { [previous.playable === false ? 'retry_of' : 'parent_request_id']: previous.request_id } : {}) }); save(); renderHistory(); $('intent').value = ''; $('form-status').textContent = ''; renderRun(); schedulePoll(); }
   catch (error) { $('form-status').textContent = error.message; }
   finally { busy = false; updateButtons(); }
 });
@@ -119,7 +127,7 @@ $('resume').addEventListener('click', async () => {
   if(run?.can_resume === true)return actOnRun('POST','/resume');
   if(!run||busy||ACTIVE_STATES.has(run.status)||run.playable)return;
   const previous=run;busy=true;updateButtons();
-  try{const result=await api('/api/mashup/runs',{method:'POST',body:JSON.stringify({request_id:crypto.randomUUID(),intent:previous.intent,source_games:previous.source_games||[],retry_of:previous.request_id})});run=result.run||result;history.push({request_id:run.request_id,message:previous.intent,intent:previous.intent,retry_of:previous.request_id});save();renderHistory();renderRun();schedulePoll();}
+  try{const result=await api('/api/mashup/runs',{method:'POST',body:JSON.stringify({request_id:crypto.randomUUID(),intent:previous.intent,source_games:previous.source_games||[],library_refs:previous.library_refs||[],retry_of:previous.request_id})});run=result.run||result;history.push({request_id:run.request_id,message:previous.intent,intent:previous.intent,retry_of:previous.request_id});save();renderHistory();renderRun();schedulePoll();}
   catch(error){$('form-status').textContent=error.message;}
   finally{busy=false;updateButtons();}
 });
@@ -127,11 +135,15 @@ $('refresh-run').addEventListener('click', refreshRun);
 function renderCapabilities(data) {
   capabilities = data;
   $('capability-note').textContent = [data.available === false ? 'The local game sources or native testing tools are not ready.' : '', data.description || data.scope || 'Choose a supported starting point, or describe your own request. The pipeline will report unsupported combinations.'].filter(Boolean).join(' ');
-  const presets = Array.isArray(data.presets) ? data.presets : [{ title: 'Sonic’s momentum. Metroid’s hidden routes.', intent: 'Combine Sonic Advance momentum with Metroid Zero Mission combat and ability gates. Create a connected route where finding new abilities opens shortcuts and changes how I fight enemies.', description: 'Start with the supported Sonic × Metroid source systems; let the builder create a new route and progression.' }];
+  const presets = Array.isArray(data.presets) ? data.presets : [];
   $('presets').replaceChildren(...presets.map(preset => { const button = node('button', preset.title || preset.name || 'Try a supported mashup', 'preset'); button.type = 'button'; if (preset.description) button.append(node('span', preset.description)); button.addEventListener('click', () => { $('intent').value = preset.intent || preset.prompt || preset.description || preset.title || ''; const ids = (preset.source_games || []).map(source => typeof source === 'string' ? source : source.id); for (const input of root.querySelectorAll('#source-options input')) input.checked = ids.includes(input.value); $('intent').focus(); }); return button; }));
-  const sources = data.source_games || data.sources || [];
-  $('source-options').replaceChildren(...sources.map(source => { const label = node('label', ''); const input = document.createElement('input'); input.type = 'checkbox'; input.value = typeof source === 'string' ? source : source.id; label.append(input, document.createTextNode(typeof source === 'string' ? source.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : source.title || source.name || source.id)); return label; }));
+  const selectedSources = new Set([...root.querySelectorAll('#source-options input:checked')].map(input => input.value));
+  const supported = data.source_games || data.sources || [];
+  const sources = sourceWorldChoices(supported, data.library?.games);
+  $('source-options').replaceChildren(...sources.map(source => { const label = node('label', ''); const input = document.createElement('input'); input.type = 'checkbox'; input.value = typeof source === 'string' ? source : source.id; input.checked = selectedSources.has(input.value); label.append(input, document.createTextNode(typeof source === 'string' ? source.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : source.title || source.name || source.id)); if (!supported.some(item => (typeof item === 'string' ? item : item.id) === input.value)) label.append(node('span', 'Source reference · adapter needed', 'fine')); return label; }));
   if (!sources.length) $('source-options').append(node('p', 'Source selection will be inferred from your request.', 'fine'));
+  mountLibrary();
+  mountBuildRequirements(root, data);
   updateButtons();
 }
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -148,7 +160,7 @@ if (Recognition) {
     try { recognition.start(); } catch { $('voice-status').textContent = 'Browser dictation could not start. Type your request instead.'; }
   });
 } else $('voice-status').textContent = 'Dictation is unavailable in this browser. Type your idea.';
-window.addEventListener('pagehide', () => { recognition?.abort(); resultPlayer?.destroy(); clearInterval(authInterval); clearTimeout(pollTimer); });
+window.addEventListener('pagehide', () => { recognition?.abort(); resultPlayer?.destroy(); disposeLibrary?.(); clearInterval(authInterval); clearTimeout(pollTimer); });
 renderHistory();
 await Promise.allSettled([checkAuth(), api('/api/mashup/capabilities').then(renderCapabilities).catch(error => { $('capability-note').textContent = `The local build pipeline is unavailable: ${error.message}`; }), refreshRun()]);
 

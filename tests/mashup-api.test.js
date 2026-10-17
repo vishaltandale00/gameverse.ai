@@ -61,3 +61,12 @@ test('failed parent automatically becomes a fresh retry with immutable provenanc
  const original=await api.status(ids[0]);await api.submit({request_id:ids[1],intent:original.intent,parent_request_id:ids[0]});const retry=await wait(async()=>{const r=await api.status(ids[1]);return r.finished_at&&r;});
  assert.equal(received.parent,null);assert.equal(retry.retry_of,ids[0]);assert.equal(retry.parent_request_id,undefined);assert.equal(retry.intent,original.intent);assert.equal((await api.status(ids[0])).input_sha256,original.input_sha256);
 });
+test('library references are validated metadata and stay separate from source intent',async t=>{
+ const root=await mkdtemp(join(tmpdir(),'library-api-'));t.after(()=>rm(root,{recursive:true,force:true}));let received;
+ const catalog={summary:async()=>({available:true}),detail:async id=>id==='typed-ir:mario.jump'?{id,label:'Mario jump',executable:false}:null,search:async()=>({items:[]})};
+ const api=createMashupApi({root,agent,catalog,pipeline:{capabilities:async()=>({}),run:async args=>{received=args;return {status:'blocked'};}}});
+ await assert.rejects(api.submit({request_id:randomUUID(),intent:'Pokemon as Sonic',library_refs:['../../secret']}),{code:'invalid_library_refs'});
+ const input={request_id:randomUUID(),intent:'Pokemon as Sonic',source_games:['pokemon-leafgreen','sonic-advance'],library_refs:['typed-ir:mario.jump']};await api.submit(input);await wait(async()=>received);
+ assert.equal(received.intent,input.intent);assert.deepEqual(received.source_games,input.source_games);assert.deepEqual(received.library_refs,input.library_refs);
+ await assert.rejects(api.submit({...input,library_refs:[]}),{code:'idempotency_conflict'});
+});

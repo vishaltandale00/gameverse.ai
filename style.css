@@ -1009,3 +1009,24 @@ body.playing-subgame #player {
 .studio > .intro{display:block;min-width:0;min-height:0;padding:0}
 
 @media(max-width:600px){.world-create-launch{right:120px;top:22px;padding:10px;font-size:11px}.creation-dialog-heading{padding:12px}#creation-dialog .studio{grid-template-columns:1fr;gap:22px}#creation-dialog h1{font-size:40px}}
+
+/* Compact source library within the existing creation conversation. */
+#creation-dialog .creation-library{border-top:1px solid var(--line);padding:14px 0;font-size:12px}
+#creation-dialog .creation-library>summary{font-weight:600}
+#creation-dialog .library-filters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:9px;margin:16px 0}
+#creation-dialog .library-filters label{margin:0;font-size:10px;color:var(--muted)}
+#creation-dialog .library-filters input,#creation-dialog .library-filters select{display:block;width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--line);border-radius:5px;background:white;color:var(--ink);padding:9px 7px;font:inherit;margin-top:6px}
+#creation-dialog .library-results{display:grid;gap:10px;max-height:440px;overflow:auto;overscroll-behavior:contain}
+#creation-dialog .library-item{padding:13px;border:1px solid var(--line);border-radius:8px;background:#fafbf5;min-width:0}
+#creation-dialog .library-item-top{display:flex;gap:8px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+#creation-dialog .library-item h4{font-size:13px;margin:0;font-weight:600}
+#creation-dialog .library-readiness{font-size:10px;color:var(--green)}
+#creation-dialog .library-scope{font-size:12px;line-height:1.5;margin:8px 0}
+#creation-dialog .library-item details{font-size:11px;margin:10px 0}
+#creation-dialog .library-provenance{overflow-wrap:anywhere}
+#creation-dialog .library-item>button{padding:7px 10px;font-size:11px}
+#creation-dialog .library-pagination{display:flex;justify-content:space-between;gap:10px;margin-top:12px}
+#creation-dialog .library-pagination[hidden]{display:none}
+@media(max-width:600px){#creation-dialog .library-filters{grid-template-columns:1fr 1fr}#creation-dialog .library-filters label:first-child{grid-column:1/-1}}
+
+#creation-dialog .creation-build-inputs{font-size:11px;line-height:1.6;border-top:1px solid var(--line);padding:8px 0 14px}#creation-dialog .creation-build-inputs details{margin:8px 0}#creation-dialog .creation-build-inputs ul{padding-left:18px;overflow-wrap:anywhere}#creation-dialog .creation-build-inputs p{overflow-wrap:anywhere}

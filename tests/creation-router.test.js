@@ -22,3 +22,11 @@ test('Sonic request and exact parent continuation retain their own source backen
  assert.equal(resolveCreationRoute({intent:'Move the first trainer',parent:{pipeline_result:{routing:{source_games:['pokemon-leafgreen','pokemon-emerald']}}}}).backend,'pokemon-overworld');
  assert.equal(resolveCreationRoute({intent,source_games:['pokemon-leaf-green','pokemon-emerald']}).backend,'pokemon-overworld');
 });
+test('exact Pokemon-as-Sonic request selects reusable host character operation',()=>{
+ const route=resolveCreationRoute({intent:'I want to play Pokemon but as Sonic the main character',source_games:['sonic-advance','pokemon-leafgreen']});
+ assert.equal(route.backend,'pokemon-character');assert.equal(route.operation,'sonic-player');assert.deepEqual(route.roles,{host:'pokemon-leafgreen',donor:'sonic-advance',transfer:['player-overworld']});
+});
+test('generic Pokemon character request uses pinned host while library citations do not add games',()=>{
+ assert.equal(resolveCreationRoute({intent:'I want to play Pokemon but as Sonic the main character'}).operation,'sonic-player');
+ assert.equal(resolveCreationRoute({intent:'Combine Sonic and MZM\nLibrary reference: Mario Emerald [system:sample] — context only.'}).backend,'sonic-metroid');
+});

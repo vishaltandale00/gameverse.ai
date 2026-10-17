@@ -7,7 +7,7 @@ const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const uuid = value => typeof value === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value);
 const terminal = new Set(['completed','blocked','failed','cancelled','interrupted']);
 const fail = (status,code,message) => Object.assign(Error(message),{status,code});
-export function createMashupApi({root=workspace,directory=resolve(root,'local-data/mashup-runs'),pipeline,agent,timeoutMs=1800000}={}) {
+export function createMashupApi({root=workspace,directory=resolve(root,'local-data/mashup-runs'),pipeline,agent,catalog,timeoutMs=1800000}={}) {
   if(!pipeline || !agent || !Number.isSafeInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 1800000) throw Error('Invalid mashup runtime configuration');
   let active=null, admitting=false;
   const folder=id=>resolve(directory,id), path=id=>resolve(folder(id),'run.json');
@@ -21,17 +21,21 @@ export function createMashupApi({root=workspace,directory=resolve(root,'local-da
     if(publicRecord.artifact)publicRecord.artifact={...publicRecord.artifact,url:`/v1?create=1&play=${record.request_id}`};
     return publicRecord;
   }
-  async function capabilities(){const native=await pipeline.capabilities();return {...native,schema:'gameverse.mashup-capabilities/1',auth:await agent.status(),limits:{...native.limits,concurrent_runs:1,wall_ms:timeoutMs,queue:'reject-when-busy'},providers:{creation:'ChatGPT subscription through local Codex',testing:'Separately configured existing S1/S2 testing service'},continuation:typeof pipeline.resume==='function'};}
+  async function capabilities(){const native=await pipeline.capabilities();return {...native,...(catalog?{library:await catalog.summary()}:{}),schema:'gameverse.mashup-capabilities/1',auth:await agent.status(),limits:{...native.limits,concurrent_runs:1,wall_ms:timeoutMs,queue:'reject-when-busy'},providers:{creation:'ChatGPT subscription through local Codex',testing:'Separately configured existing S1/S2 testing service'},continuation:typeof pipeline.resume==='function'};}
   async function submit(body, resumePrior=null){
     if(!uuid(body?.request_id)||typeof body.intent!=='string'||!body.intent.trim()||body.intent.length>12000)throw fail(400,'invalid_request','A request UUID and 1–12,000 character game description are required.');
     if(body.source_games!==undefined&&(!Array.isArray(body.source_games)||body.source_games.length>8||body.source_games.some(id=>typeof id!=='string'||!/^[a-z0-9-]{1,100}$/.test(id))))throw fail(400,'invalid_sources','Source games must be known game identifiers.');
+    if(body.library_refs!==undefined&&(!Array.isArray(body.library_refs)||body.library_refs.length>16||body.library_refs.some(id=>typeof id!=='string'||id.length>240)))throw fail(400,'invalid_library_refs','Choose up to 16 catalog references.');
+    let library_refs=[...new Set(body.library_refs||[])];
+    if(library_refs.length&&(!catalog||!(await Promise.all(library_refs.map(id=>catalog.detail(id)))).every(Boolean)))throw fail(400,'invalid_library_refs','A selected library reference is unavailable.');
     if(body.parent_request_id!==undefined&&!uuid(body.parent_request_id))throw fail(400,'invalid_parent','Invalid parent request.');
     if(body.retry_of!==undefined&&(!uuid(body.retry_of)||body.retry_of===body.request_id))throw fail(400,'invalid_retry','Invalid retry request.');
     if(body.retry_of&&body.parent_request_id)throw fail(400,'invalid_retry','A retry cannot also be an artifact refinement.');
     let parentRecord=null,retryOf=body.retry_of;
     if(body.parent_request_id){const parentStatus=await status(body.parent_request_id);parentRecord=JSON.parse(await readFile(path(body.parent_request_id),'utf8'));if(!terminal.has(parentStatus.status))throw fail(409,'parent_active','Wait for the earlier request to finish.');if(!parentRecord.playable||!parentRecord.pipeline_result?.artifact){retryOf=body.parent_request_id;parentRecord=null;}}
     if(retryOf){const previous=await status(retryOf);if(!terminal.has(previous.status)||previous.playable)throw fail(409,'retry_unavailable','Retry applies to a finished request without a playable artifact.');}
-    const input={request_id:body.request_id,intent:body.intent.trim(),source_games:body.source_games||[],...(parentRecord?{parent_request_id:body.parent_request_id}:{}),...(retryOf?{retry_of:retryOf}:{})},fingerprint=hash(JSON.stringify(input));
+    if(body.library_refs===undefined){if(parentRecord)library_refs=parentRecord.library_refs||[];else if(retryOf)library_refs=(await status(retryOf)).library_refs||[];}
+    const input={request_id:body.request_id,intent:body.intent.trim(),source_games:body.source_games||[],...(library_refs.length?{library_refs}:{}),...(parentRecord?{parent_request_id:body.parent_request_id}:{}),...(retryOf?{retry_of:retryOf}:{})},fingerprint=hash(JSON.stringify(input));
     try{if(resumePrior)throw fail(404,'not_found','Resume admitted.');const previous=await status(input.request_id);if(previous.input_sha256!==fingerprint)throw fail(409,'idempotency_conflict','This request ID belongs to another game description.');return previous;}catch(error){if(error.code!=='not_found')throw error;}
     if(active||admitting)throw fail(409,'busy','A game creation is already running. Wait or cancel it before starting another.');
     admitting=true;
@@ -54,14 +58,14 @@ export function createMashupApi({root=workspace,directory=resolve(root,'local-da
       const timer=setTimeout(()=>controller.abort('timeout'),timeoutMs);
       void (async()=>{
         try{
-          const args={id:input.request_id,intent:input.intent,source_games:input.source_games,directory:folder(input.request_id),parent,prior:resumePrior?.pipeline_result,signal:controller.signal,onEvent};
+          const args={id:input.request_id,intent:input.intent,source_games:input.source_games,library_refs:input.library_refs||[],directory:folder(input.request_id),parent,prior:resumePrior?.pipeline_result,signal:controller.signal,onEvent};
           const result=await (resumePrior?pipeline.resume(args):pipeline.run(args));
           await writes;record.pipeline_result=result;record.routing=result?.routing||record.routing||null;
           record.status=controller.signal.aborted?'cancelled':result?.status==='playable'?'completed':terminal.has(result?.status)?result.status:'blocked';
           record.can_resume=result?.can_resume===true&&typeof pipeline.resume==='function';record.checkpoint=result?.checkpoint||null;
           record.qualification=result?.qualification||null;
-          const graphicsVerified=result?.routing?.backend==='pokemon-overworld'&&result?.qualification?.outcome==='pass'&&result?.qualification?.scope==='native-graphics-consumer'&&result?.qualification?.request_satisfied===true&&result?.user_intent_validated===true;
-          record.objective_validated=!controller.signal.aborted&&result?.design?.request_satisfied===true&&(result?.qualification?.bot?.status==='success'||graphicsVerified);record.outcome=record.objective_validated?'native-objective-verified':'native-ready-objective-incomplete';record.evidence=result?.evidence||{design:result?.design||null,provenance:result?.provenance||null,gaps:result?.gaps||[]};record.pipeline_timings=result?.timings||result?.timing||null;record.chunks=[...(resumePrior?.chunks||[]),{number:(resumePrior?.resume_count||0)+(resumePrior?2:1),qualification:record.qualification,evidence:record.evidence,pipeline_timings:record.pipeline_timings,checkpoint:record.checkpoint}];
+          const graphicsVerified=['pokemon-overworld','pokemon-character'].includes(result?.routing?.backend)&&result?.qualification?.outcome==='pass'&&result?.qualification?.scope==='native-graphics-consumer'&&result?.qualification?.request_satisfied===true&&result?.user_intent_validated===true;
+          record.objective_validated=!controller.signal.aborted&&result?.design?.request_satisfied===true&&(result?.qualification?.bot?.status==='success'||graphicsVerified);record.outcome=record.objective_validated?'native-objective-verified':'native-ready-objective-incomplete';record.evidence=result?.evidence||{design:result?.design||null,provenance:result?.provenance||null,gaps:result?.gaps||[],discovery:result?.discovery||null,implementation_gap:result?.implementation_gap||null};record.pipeline_timings=result?.timings||result?.timing||null;record.chunks=[...(resumePrior?.chunks||[]),{number:(resumePrior?.resume_count||0)+(resumePrior?2:1),qualification:record.qualification,evidence:record.evidence,pipeline_timings:record.pipeline_timings,checkpoint:record.checkpoint}];
           record.error=result?.error||(result?.reason?{code:result.reason,message:[result.reason,...(result.gaps||[])].join(': ').slice(0,1500)}:null);
           if(!controller.signal.aborted && record.status==='completed' && result?.qualification?.outcome==='pass' && result.artifact?.path && /^[a-f0-9]{64}$/.test(result.artifact.sha256)){
             const candidate=await realpath(result.artifact.path),own=await realpath(folder(input.request_id)),bytes=await readFile(candidate);
@@ -74,7 +78,7 @@ export function createMashupApi({root=workspace,directory=resolve(root,'local-da
       return status(input.request_id);
     }finally{admitting=false;}
   }
-  async function resume(id){await status(id);const prior=JSON.parse(await readFile(path(id),'utf8'));if(!prior.can_resume||typeof pipeline.resume!=='function')throw fail(409,'resume_unavailable','This run has no verified resumable bot checkpoint.');return submit({request_id:prior.request_id,intent:prior.intent,source_games:prior.source_games,...(prior.parent_request_id?{parent_request_id:prior.parent_request_id}:{})},prior);}
+  async function resume(id){await status(id);const prior=JSON.parse(await readFile(path(id),'utf8'));if(!prior.can_resume||typeof pipeline.resume!=='function')throw fail(409,'resume_unavailable','This run has no verified resumable bot checkpoint.');return submit({request_id:prior.request_id,intent:prior.intent,source_games:prior.source_games,library_refs:prior.library_refs||[],...(prior.parent_request_id?{parent_request_id:prior.parent_request_id}:{})},prior);}
   async function cancel(id){const record=await status(id);if(active?.id===id)active.controller.abort('cancelled');return {...record,cancel_requested:active?.id===id};}
   async function handle(req,res,pathname){
     if(!pathname.startsWith('/api/mashup/'))return false;
@@ -83,7 +87,8 @@ export function createMashupApi({root=workspace,directory=resolve(root,'local-da
       const host=req.headers.host||'',origin=req.headers.origin;
       if(!/^(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(host)||(origin&&origin!==`http://${host}`)||req.headers['sec-fetch-site']==='cross-site')throw fail(403,'local_only','Use the local application origin.');
       const match=/^\/api\/mashup\/runs\/([^/]+)(\/artifacts\/rom|\/resume)?$/.exec(pathname);
-      if(req.method==='GET'&&pathname==='/api/mashup/capabilities')json(200,await capabilities());
+      if(req.method==='GET'&&pathname==='/api/mashup/library'&&catalog){const query=Object.fromEntries(new URL(req.url,'http://localhost').searchParams);const data=query.id?await catalog.detail(query.id):await catalog.search(query);json(data?200:404,data||{error:{code:'not_found',message:'Library item not found.'}});}
+      else if(req.method==='GET'&&pathname==='/api/mashup/capabilities')json(200,await capabilities());
       else if(req.method==='POST'&&pathname==='/api/mashup/runs'){
         if(!(req.headers['content-type']||'').startsWith('application/json'))throw fail(415,'json_required','Send JSON.');
         let raw='',size=0;for await(const chunk of req){size+=chunk.length;if(size>32768)throw fail(413,'too_large','Request is too large.');raw+=chunk;}

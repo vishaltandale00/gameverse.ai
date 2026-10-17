@@ -33,7 +33,7 @@ test('embedded composer scopes source inputs and preserves failed intent during 
     if (path === '/api/chatgpt/status') return Response.json({ authenticated: true });
     if (path === '/api/mashup/capabilities') return Response.json({ available: true, presets: [], source_games: [] });
     if (options?.method === 'POST') { const body = JSON.parse(options.body); submissions.push(body); return Response.json({ ...body, status: 'blocked', playable: false }); }
-    return Response.json({ request_id: id, intent: 'Original connected route', status: 'blocked', playable: false });
+    return Response.json({ request_id: id, intent: 'Original connected route', library_refs: ['system:retained-movement'], status: 'blocked', playable: false });
   };
   const globals = { window: fakeWindow, document: fakeDocument, location: { search: '', href: 'http://127.0.0.1/v1?create=1' }, localStorage: { getItem: () => JSON.stringify([{ request_id: id, intent: 'Original connected route', message: 'Original connected route' }]), setItem() {} }, fetch: fetcher };
   for (const [key, value] of Object.entries(globals)) {
@@ -47,6 +47,7 @@ test('embedded composer scopes source inputs and preserves failed intent during 
   assert.equal(submissions.length, 1); assert.equal(submissions[0].retry_of, id); assert.equal(submissions[0].parent_request_id, undefined);
   assert.equal(submissions[0].intent, 'Original connected route\n\nRefinement: Make jumps forgiving');
   assert.deepEqual(submissions[0].source_games, ['metroid-zero-mission']); assert.equal(nodes.get('history').children.length, 2);
+  assert.deepEqual(submissions[0].library_refs, ['system:retained-movement']);
   // A result deep link must retain its parent even in a fresh browser history.
   localStorage.getItem = () => '[]'; location.search = `?create=1&play=${id}`;
   const linkedNodes = new Map(ids.map(key => [key, new Element()]));

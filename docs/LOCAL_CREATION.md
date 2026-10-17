@@ -85,3 +85,55 @@ The importer emits ignored `installation.json` with every installed file's SHA-2
 - Captured composition lock: `9ed30351d391c4c5d15a946a8ab2735c9fbbe0d146c27e945d3082e43c257403`.
 
 Actual import plus capture validation took **0.327 s** on this macOS ARM machine, with no compilation or inference. A separate clean native build from the imported closure took **1.067 s**, no cache, and produced the exact baseline cartridge hash. These are initial measurements, not a before/after improvement comparison; queue time, other-machine performance and CI timing remain unavailable. The build verifies import closure and cartridge identity, not gameplay quality.
+
+## Research library and character role transfer
+
+The creation panel exposes searchable recovered systems, typed IR, linked prefabs,
+capability groups, asset families, native templates, source inventories and tools.
+Mario is included in this research inventory. A catalog entry retains its evidence,
+dependencies and gaps; it does not promise an executable arbitrary game pairing.
+Selected library IDs travel separately from the user intent and source selection,
+are validated by the catalog, and become bounded construction context. Unsupported
+pairs return discovered evidence and explicit host-adapter implementation steps.
+
+`GAMEVERSE_LIBRARY_ROOT` selects the full research metadata tree independently of
+the smaller captured Sonic/Metroid runtime. The repository also includes a sanitized
+metadata snapshot for browsing without local cartridges or source trees. Snapshot
+entries cannot assert that a tool, source tree or cartridge is locally installed.
+No endpoint exposes arbitrary files or private asset bytes.
+
+“I want to play Pokemon but as Sonic the main character” selects native LeafGreen
+Rev1 as host and original Sonic Advance player artwork as donor. The render adapter
+transfers 13 original frames and their palette into both player roles (14 reachable
+native graphics IDs). Original animation timing/control flow remains native;
+Sonic's side-view poses use explicit north/south and special-action aliases.
+Frames taller than the host's 32-pixel canvas use recorded nearest-neighbor fitting.
+Pokemon movement, collision, battles and progression remain native; title and
+trainer/battle portraits are unchanged. This is character artwork transfer, not a
+Sonic physics port or complete top-down Sonic animation reconstruction.
+
+Building still needs authorized local inputs. LeafGreen operations require its
+matching Rev1 original for exact identity/baseline comparison, pinned editable
+source/assets and the ARM toolchain. Emerald graphics transfer needs Emerald
+source/assets, but no separate Emerald original cartridge. Sonic character
+transfer additionally needs Sonic Advance USA original (SHA-1
+`d842afa7dd1e84de08addb94a51506f1bcafd551`) to verify donor tile/palette ranges
+against original bytes, plus its pinned source/assets. Sonic/Metroid composition
+retains both original cartridges and its reviewed source/proof runtime. These
+requirements appear in operation metadata and backend capability/missing-input
+reports. The app does not distribute or download these inputs.
+
+The character adapter is qualified by bounded native graphics construction,
+frame/OAM/flip uploads, palettes, reflection consumers and cold boot. Those checks
+do not establish a natural gameplay route or whole-game completion. Pure artwork
+changes use this existing fixture without paid model gameplay calls.
+
+Actual saved-intent retry `9b462482-0ec8-4f38-9eaf-3491e09a6874` produced the
+corrected character cartridge in **48.127 s**: exact clean host build **40.162 s**,
+incremental character build **1.191 s**, native fixture **0.713 s**. Native checks
+covered 14 object IDs, 530 frame/OAM/flip commands, 240 palette checks, 112 reflection
+checks and 20 finite animation completions. Full request validation remains false
+for the documented artwork gaps. The successful local artifact is available through
+the retained retry in the app; cartridge/graphics bytes are excluded from Git.
+[Verification metadata](../verification/character-library-20261016.json) retains
+scope, hashes, contexts, failed/cancelled attempts and unsupported measurements.
