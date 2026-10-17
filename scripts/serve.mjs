@@ -1,4 +1,6 @@
 import http from 'node:http';
+import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { readFile, realpath } from 'node:fs/promises';
 import { resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,6 +18,9 @@ const appRoot = fileURLToPath(root);
 for (const name of ['.env.local','.env']) { try { loadEnvFile(fileURLToPath(new URL(name, root))); } catch (error) { if (error.code !== 'ENOENT') throw error; } }
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.wasm': 'application/wasm', '.gba': 'application/octet-stream' };
 const runtime = await runtimeIdentity();
+let sourceCommit = null;
+try { sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: appRoot, encoding: 'utf8', timeout: 1000 }).trim(); } catch {}
+const instance = { schema: 'gameverse.local-instance/1', checkout_id: createHash('sha256').update(appRoot).digest('hex'), source_commit: sourceCommit, entry_path: '/v1', capabilities: ['chatgpt-auth', 'mashup-creation', 'native-checkpoint-resume', 'immutable-artifact-player'] };
 const handleVoice = createVoiceApi({ liveProviders: realtimeTranscriptionProviders });
 const agent = createCodexAgent({cwd:appRoot});
 const chatgpt = createChatgptAuthApi({agent});
@@ -26,6 +31,13 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");
   try {
     const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    if (path === '/api/local/instance' && (req.method === 'GET' || req.method === 'HEAD')) {
+      res.writeHead(200, { 'Content-Type': mime['.json'] }); res.end(req.method === 'HEAD' ? undefined : JSON.stringify(instance)); return;
+    }
+    if (path === '/create') {
+      const target = new URL(req.url, 'http://localhost'); target.pathname = '/v1'; target.searchParams.set('create', '1');
+      res.writeHead(302, { Location: target.pathname + target.search }).end(); return;
+    }
     if (await chatgpt.handle(req,res,path)) return;
     if (await mashup.handle(req,res,path)) return;
     if (await handleVoice(req, res, path)) return;
@@ -53,12 +65,15 @@ const server = http.createServer(async (req, res) => {
     else if (/^\/runtime\/mgba\.(js|wasm)$/.test(path)) file = new URL(path.split('/').pop(), runtimeDirectory);
     else if (/^\/runtime\/three\/three\.(module|core)\.js$/.test(path)) file = new URL(`node_modules/three/build/${path.split('/').pop()}`, root);
     else if (path === '/runtime/three/LICENSE') file = new URL('node_modules/three/LICENSE', root);
-    else if (['/', '/v0', '/v0/', '/v1', '/v1/'].includes(path)) file = new URL('index.html', root);
+    else if (['/', '/index.html', '/v0', '/v0/', '/v0/index.html', '/v1', '/v1/', '/v1/index.html'].includes(path)) file = new URL('index.html', root);
     else if (/^\/games\/configs\/gameverse-v[01]\.json$/.test(path)) file = new URL(path.slice(1), root);
     else if (path === '/style.css' || path === '/src/neighborhood-certified.generated.js' || /^\/src\/[a-z-]+\.js$/.test(path)) file = new URL(path.slice(1), root);
     else { res.writeHead(404).end('Not found'); return; }
     const actual = await realpath(file);
-    if (!actual.startsWith(resolve(appRoot) + sep)) throw Error('Path outside workspace');
+    // Dependencies may be shared through a worktree's node_modules symlink. Only
+    // the exact runtime files selected above may resolve outside the checkout.
+    const dependencyAsset = /^\/runtime\/mgba\.(js|wasm)$/.test(path) || /^\/runtime\/three\/three\.(module|core)\.js$/.test(path) || path === '/runtime/three/LICENSE';
+    if (!actual.startsWith(resolve(appRoot) + sep) && !dependencyAsset) throw Error('Path outside workspace');
     const bytes = await readFile(actual);
     res.setHeader('Content-Type', mime[actual.slice(actual.lastIndexOf('.'))] || 'application/octet-stream');
     res.end(req.method === 'HEAD' ? undefined : bytes);

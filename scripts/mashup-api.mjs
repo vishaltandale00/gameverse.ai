@@ -17,7 +17,9 @@ export function createMashupApi({root=workspace,directory=resolve(root,'local-da
     let record;try{record=JSON.parse(await readFile(path(id),'utf8'));}catch(error){if(error.code==='ENOENT')throw fail(404,'not_found','Creation request not found.');throw error;}
     if(!terminal.has(record.status)&&active?.id!==id){record.status='interrupted';record.playable=false;record.error={code:'worker_interrupted',message:'The server stopped. Prior evidence is retained; start a new request to retry.'};}
     record.timings={...record.timings,execution_wall_s:record.timings?.total_s??null,elapsed_wall_s:record.received_at&&record.finished_at?(Date.parse(record.finished_at)-Date.parse(record.received_at))/1000:null};
-    const {artifact_path,pipeline_result,...publicRecord}=record;return publicRecord;
+    const {artifact_path,pipeline_result,...publicRecord}=record;
+    if(publicRecord.artifact)publicRecord.artifact={...publicRecord.artifact,url:`/v1?create=1&play=${record.request_id}`};
+    return publicRecord;
   }
   async function capabilities(){const native=await pipeline.capabilities();return {...native,schema:'gameverse.mashup-capabilities/1',auth:await agent.status(),limits:{...native.limits,concurrent_runs:1,wall_ms:timeoutMs,queue:'reject-when-busy'},providers:{creation:'ChatGPT subscription through local Codex',testing:'Separately configured existing S1/S2 testing service'},continuation:typeof pipeline.resume==='function'};}
   async function submit(body, resumePrior=null){
@@ -56,7 +58,7 @@ export function createMashupApi({root=workspace,directory=resolve(root,'local-da
           if(!controller.signal.aborted && record.status==='completed' && result?.qualification?.outcome==='pass' && result.artifact?.path && /^[a-f0-9]{64}$/.test(result.artifact.sha256)){
             const candidate=await realpath(result.artifact.path),own=await realpath(folder(input.request_id)),bytes=await readFile(candidate);
             if(!candidate.startsWith(own+sep)||hash(bytes)!==result.artifact.sha256)throw fail(409,'artifact_mismatch','Candidate artifact could not be verified.');
-            record.artifact_path=candidate;record.artifact={title:result.artifact.title||'Your mashup',sha256:hash(bytes),rom_url:`/api/mashup/runs/${input.request_id}/artifacts/rom`,url:`/create?play=${input.request_id}`};record.playable=true;record.outcome=record.objective_validated?'native-objective-verified':'native-ready-objective-incomplete';
+            record.artifact_path=candidate;record.artifact={title:result.artifact.title||'Your mashup',sha256:hash(bytes),rom_url:`/api/mashup/runs/${input.request_id}/artifacts/rom`,url:`/v1?create=1&play=${input.request_id}`};record.playable=true;record.outcome=record.objective_validated?'native-objective-verified':'native-ready-objective-incomplete';
           }else {record.outcome='no-playable-candidate';if(record.status==='completed'){record.status='blocked';record.error={code:'qualification_required',message:'A built candidate needs a passing native gameplay receipt before Play is available.'};}}
         }catch(error){record.status=controller.signal.aborted?'cancelled':error.code==='missing_inputs'?'blocked':'failed';record.error={code:controller.signal.aborted?String(controller.signal.reason||'cancelled'):error.code||'creation_failed',message:controller.signal.aborted?'Creation stopped; evidence is retained.':String(error.message||'Creation failed').slice(0,1000),...(error.threadId?{threadId:error.threadId,turnId:error.turnId||null}:{})};}
         finally{clearTimeout(timer);await writes.catch(()=>{});record.finished_at=new Date().toISOString();record.timings={...record.timings,last_chunk_s:(performance.now()-started)/1000,total_s:(resumePrior?.timings?.total_s||0)+(performance.now()-started)/1000};await save(record);if(active?.id===input.request_id)active=null;}

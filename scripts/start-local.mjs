@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { access } from 'node:fs/promises';
 import { constants, existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
@@ -10,6 +11,16 @@ import { resolveMashupRuntime, capturedBaseline } from './import-mashup-runtime.
 const root = fileURLToPath(new URL('../', import.meta.url));
 for (const name of ['.env.local', '.env']) { try { loadEnvFile(join(root, name)); } catch (error) { if (error.code !== 'ENOENT') throw error; } }
 const check = (binary, args = ['--version'], extra = {}) => { const result = spawnSync(binary, args, { encoding: 'utf8', timeout: 3000, ...extra }); return result.status === 0; };
+const port = process.env.PORT || '4173';
+const checkoutId = createHash('sha256').update(root).digest('hex');
+const expectedCommit = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8', timeout: 1000 }).stdout?.trim() || null;
+try {
+  const response = await fetch(`http://127.0.0.1:${port}/api/local/instance`, { signal: AbortSignal.timeout(800) });
+  let current; try { current = await response.json(); } catch {}
+  const same = current?.schema === 'gameverse.local-instance/1' && current.checkout_id === checkoutId && current.capabilities?.includes('mashup-creation') && (!expectedCommit || current.source_commit === expectedCommit);
+  console.error(same ? `This checkout is already serving http://127.0.0.1:${port}/v1. Open Create a game in the V1 shell.` : `Port ${port} is serving a different or older app without this checkout's verified creation capabilities. Stop that specific server or choose PORT; starting this checkout cannot update an existing process.`);
+  process.exit(same ? 0 : 1);
+} catch (error) { if (error.name === 'TimeoutError') { console.error(`Port ${port} did not answer the instance check; verify the listener or choose PORT.`); process.exit(1); } }
 const gaps = [];
 if (Number(process.versions.node.split('.')[0]) < 22) { console.error('Use Node.js 22 or newer.'); process.exit(1); }
 for (const name of ['ws', 'three', '@wasm-gaming/mgba-wasm']) { try { import.meta.resolve(name); } catch { gaps.push(`JavaScript dependency ${name}: run npm ci in this checkout.`); } }
@@ -38,11 +49,11 @@ if (!testing.configured) gaps.push(`Native bot configuration: ${testing.reason}`
 console.log(`Native bot service: ${testing.configured ? `configured (${testing.source})` : 'configuration missing or unreadable'}; separate from ChatGPT subscription creation.`);
 const agent = createCodexAgent({ cwd: root });
 const auth = await agent.status(); agent.close();
-console.log(`ChatGPT creation: ${auth.authenticated ? `connected (${auth.planType || 'plan unavailable'})` : auth.available ? 'connect local Codex from /create' : auth.reason}`);
+console.log(`ChatGPT creation: ${auth.authenticated ? `connected (${auth.planType || 'plan unavailable'})` : auth.available ? 'connect local Codex in the V1 creation panel' : auth.reason}`);
 console.log(`Native runtime: ${runtime.path || 'not installed'} (${runtime.source})`);
 if (gaps.length) console.log(`Creation prerequisites need attention:\n${gaps.map(gap => `- ${gap}`).join('\n')}\nThe app will show its available features and missing prerequisites.`);
 console.log('Readiness checks made no inference or bot requests. Native bot service reachability and accepted model access are verified only by an actual run.');
-const port = process.env.PORT || '4173', url = `http://127.0.0.1:${port}/create`;
+const url = `http://127.0.0.1:${port}/v1`;
 console.log(`Open ${url}`);
 const child = spawn(process.execPath, [join(root, 'scripts/serve.mjs')], { cwd: root, env: process.env, stdio: 'inherit' });
 let stopping = false;

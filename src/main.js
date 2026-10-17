@@ -371,12 +371,40 @@ function openWorldMenu(message = '') {
   if (!$('#world-menu').open) { $('#world-menu').returnValue = ''; $('#world-menu').showModal(); }
   ($('#world-resume').disabled ? $('#world-reload') : $('#world-resume')).focus();
 }
+let creationWorkbench, creationLoading;
+async function openCreation() {
+  if (session || busy || worldProfilePending || $('#profile-dialog').open) return;
+  clearInput(); neighborhood?.suspend();
+  if ($('#world-menu').open) $('#world-menu').close('creation');
+  if (!$('#creation-dialog').open) $('#creation-dialog').showModal();
+  const url = new URL(location.href); url.searchParams.set('create', '1');
+  window.history.replaceState(null, '', `${url.pathname}${url.search}`);
+  if (!creationLoading) {
+    $('#creation-host').textContent = 'Opening your creative studio…';
+    creationLoading = import('./creation-workbench.js').then(({ createCreationWorkbench }) => createCreationWorkbench($('#creation-host'))).then(workbench => { creationWorkbench = workbench; return workbench; }).catch(error => {
+      creationLoading = null; $('#creation-host').textContent = `Creation could not open: ${error.message}. Close and try again.`;
+    });
+  }
+  await creationLoading;
+  if (!$('#creation-dialog').open) await creationWorkbench?.pause();
+}
+$('#world-create').onclick = openCreation;
+$('#world-create-launch').onclick = openCreation;
+$('#creation-close').onclick = () => $('#creation-dialog').close();
+$('#creation-dialog').addEventListener('close', () => {
+  if ($('#creation-dialog').open) return;
+  void creationWorkbench?.pause();
+  void creationLoading?.then(() => { if (!$('#creation-dialog').open) return creationWorkbench?.pause(); });
+  const url = new URL(location.href); url.searchParams.delete('create'); url.searchParams.delete('play');
+  window.history.replaceState(null, '', `${url.pathname}${url.search}`);
+  if (application?.base.kind === 'neighborhood') openWorldMenu();
+});
 $('#world-resume').onclick = () => $('#world-menu').close('resume');
 $('#world-menu-close').onclick = () => $('#world-menu').close('resume');
 $('#world-menu').addEventListener('cancel', event => { if ($('#world-resume').disabled) event.preventDefault(); });
 $('#world-menu').addEventListener('close', () => {
   clearInput();
-  if (['character', 'reload', 'venue'].includes($('#world-menu').returnValue)) return;
+  if (['character', 'reload', 'venue', 'creation'].includes($('#world-menu').returnValue)) return;
   if (neighborhood && !session) neighborhood.resume();
 });
 for (const button of document.querySelectorAll('[data-venue]')) button.onclick = async () => {
@@ -452,6 +480,7 @@ $('#download-save').onclick = async () => {
   } catch (error) { handleError(error); }
 };
 window.addEventListener('keydown', event => {
+  if (event.defaultPrevented || ($('#creation-dialog').open && event.target?.closest?.('.result-player'))) return;
   if ($('#voice-dialog').open && event.code === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); void voice.cancel(); return; }
   const direction = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[event.code];
   const editing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target?.tagName) || event.target?.isContentEditable;
@@ -476,7 +505,7 @@ window.addEventListener('gamepaddisconnected', () => { cancelCapture(); clearInp
 window.addEventListener('beforeunload', event => { if (session) { event.preventDefault(); event.returnValue = ''; } });
 function focusDirection(direction) {
   const scope = $('dialog[open]:not(#voice-dialog)') || $('#home');
-  const candidates = [...scope.querySelectorAll('button:not(:disabled), input, a')].filter(el => el.getClientRects().length);
+  const candidates = [...scope.querySelectorAll('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), a[href], summary')].filter(el => el.getClientRects().length);
   const active = document.activeElement;
   if (!candidates.includes(active)) { candidates[0]?.focus(); return; }
   const a = active.getBoundingClientRect(), x = a.x + a.width / 2, y = a.y + a.height / 2;
@@ -501,6 +530,9 @@ function pollInput(now) {
   }
   // The world owns keyboard/mouse focus; do not navigate or activate hidden shell controls.
   if (neighborhoodOpen && !$('dialog[open]:not(#voice-dialog)')) { padArmed = false; padPrevious = []; requestAnimationFrame(pollInput); return; }
+  if ($('#creation-dialog').open && document.activeElement?.closest?.('.result-player')) {
+    padArmed = false; padPrevious = []; requestAnimationFrame(pollInput); return;
+  }
   const pads = [...(navigator.getGamepads?.() || [])];
   const sampled = sampleStandardGamepad(pads, shellPadIndex);
   const pad = pads.find(p => p?.connected && p.index === sampled.index && p.mapping === 'standard');
@@ -568,7 +600,11 @@ try {
   const response = await fetch('/runtime/identity.json'); if (!response.ok) throw Error('Runtime identity unavailable.'); runtime = await response.json();
   await refreshGames();
   $('#application-loading').hidden = true; document.body.classList.remove('application-loading');
-  if (application.base.kind === 'neighborhood') await exploreNeighborhood();
+  if (application.base.kind === 'neighborhood') {
+    $('#world-create-launch').hidden = false;
+    await exploreNeighborhood();
+    if (new URLSearchParams(location.search).has('create') || new URLSearchParams(location.search).has('play')) await openCreation();
+  }
   else $('#home').hidden = false;
 } catch (error) {
   $('#application-loading').hidden = true; document.body.classList.remove('application-loading'); document.body.classList.add('application-failed');

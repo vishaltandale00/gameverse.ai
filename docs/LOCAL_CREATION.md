@@ -1,6 +1,10 @@
 # Local conversational game creation
 
-Run `npm run local`, then open the printed `/create` URL. This command resolves the local runtime, checks prerequisites without inference requests, checks the supported local Codex account interface, and starts the server. Sign in through **Connect local Codex with ChatGPT** if needed. Existing supported ChatGPT Codex sessions work through the CLI; the application never reads credential files or receives tokens in the browser.
+Run `npm run local`, then open the printed `/v1` URL and choose **Create a game** in the neighborhood shell. This command resolves the local runtime, checks prerequisites without inference requests, checks the supported local Codex account interface, and starts the server. Sign in through **Connect local Codex with ChatGPT** if needed. Existing supported ChatGPT Codex sessions work through the CLI; the application never reads credential files or receives tokens in the browser.
+
+The V1 neighborhood shell owns creation: its visible **Create a game** control and world menu open the same local studio without leaving `/v1`. Opening creation suspends the neighborhood; returning closes the player and opens the world menu before exploration resumes. Existing request history and immutable native receipts are reused. Legacy `/create?play=…` links redirect into `/v1?create=1&play=…`.
+
+`npm run local` checks `/api/local/instance` before startup. An occupied port must identify this checkout and advertise creation capability; a different or older server is reported explicitly. An HTTP 200 from the old shell does not establish that the creation API is running. The instance response includes a hashed checkout identity and source commit, with no credential or private runtime path.
 
 This MVP is a local application with an installed research runtime. The public checkout alone cannot compile these native mashups on another machine. The importer brings both unpublished compiler/bot code and privately supplied ROM/assets into ignored `local-data/`; it does not download them or claim the public source contains them.
 

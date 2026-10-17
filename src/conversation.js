@@ -1,5 +1,6 @@
 import { ACTIVE_STATES, STAGES, STAGE_LABELS, playableUrl, stageState, runMessage, refinementIntent, safeLocalUrl } from './conversation-model.js';
-const $ = id => document.getElementById(id);
+export async function initializeConversation(root = document, { embedded = false } = {}) {
+const $ = id => root.querySelector(`[id="${id}"]`);
 const storageKey = 'gameverse.conversation.v1';
 let auth = null, capabilities = null, run = null, busy = false, loginId = null, pollTimer = null;
 const requestedPlayId = new URLSearchParams(location.search).get('play');
@@ -14,12 +15,16 @@ async function api(path, options = {}) {
   if (!response.ok) throw new Error(body.error?.message || body.error || body.message || `Local request failed (${response.status}).`);
   return body;
 }
+function refinementContext() {
+  if (run?.request_id && typeof run.intent === 'string') return run;
+  return history.at(-1);
+}
 function updateButtons() {
   const active = ACTIVE_STATES.has(run?.status);
   $('new-idea').disabled = busy || active; $('cancel').disabled = busy; $('resume').disabled = busy;
   $('submit').disabled = busy || active || auth?.authenticated !== true || (capabilities === null || capabilities.available === false);
-  $('submit').textContent = history.length ? 'Build this refinement ↗' : 'Make my game ↗';
-  $('intent-label').textContent = history.length ? 'What should change in the next version?' : 'Tell Gameverse your idea';
+  $('submit').textContent = refinementContext() ? 'Build this refinement ↗' : 'Make my game ↗';
+  $('intent-label').textContent = refinementContext() ? 'What should change in the next version?' : 'Tell Gameverse your idea';
   $('connect').disabled = busy || auth?.available === false || auth?.authenticated === true;
   $('connect').textContent = auth?.authenticated ? 'ChatGPT connected ✓' : 'Connect with ChatGPT ↗';
 }
@@ -31,6 +36,7 @@ function renderHistory() {
 }
 function renderRun() {
   if (!run) return;
+  if (refinementContext()) { $('starter').hidden = true; $('new-idea').hidden = false; }
   $('run-panel').hidden = false; $('run-state').textContent = run.status === 'completed' && run.playable ? (run.objective_validated === true ? 'Bot objective verified' : 'Bot objective incomplete') : run.status;
   $('run-title').textContent = run.playable && run.status === 'completed' ? (run.artifact?.title || 'Your game is ready') : 'Your game, in progress';
   $('run-message').textContent = runMessage(run);
@@ -40,12 +46,12 @@ function renderRun() {
   $('stages').replaceChildren(...STAGES.map(stage => { const li = node('li', STAGE_LABELS[stage], stageState(run, stage)); if (li.className === 'current') li.setAttribute('aria-current', 'step'); return li; }));
   $('cancel').hidden = !ACTIVE_STATES.has(run.status); $('cancel').disabled = busy;
   $('resume').hidden = run.can_resume !== true; $('resume').disabled = busy; $('resume').textContent = run.playable ? 'Continue bot test' : 'Resume run';
-  const href = playableUrl(run); $('play').hidden = !href; if (href) $('play').href = href; else $('play').removeAttribute('href');
+  const href = playableUrl(run); $('play').hidden = !href; if (href) $('play').href = embedded ? `/v1?create=1&play=${encodeURIComponent(run.request_id)}` : href; else $('play').removeAttribute('href');
   const download = run.status === 'completed' && run.playable === true ? safeLocalUrl(run.artifact?.rom_url) : null;
   $('download-rom').hidden = !download; if (download) $('download-rom').href = download;
   if (requestedPlayId === run.request_id && href && !playerMounted) {
     playerMounted = true; $('result-player-host').hidden = false;
-    import('./result-player.js').then(({ mountResultPlayer }) => { if (run?.request_id === requestedPlayId) resultPlayer = mountResultPlayer($('result-player-host'), { runId: requestedPlayId }); }).catch(error => { $('result-player-host').textContent = `The player could not open: ${error.message}. You can download the game below.`; });
+    import('./result-player.js').then(({ mountResultPlayer }) => { if (run?.request_id === requestedPlayId) { resultPlayer = mountResultPlayer($('result-player-host'), { runId: requestedPlayId }); } }).catch(error => { $('result-player-host').textContent = `The player could not open: ${error.message}. You can download the game below.`; });
   }
   $('events').replaceChildren(...(run.events || []).map(event => { const li = node('li', ''); if (event.at) { const date = new Date(event.at); if (!Number.isNaN(date.getTime())) li.append(node('time', date.toLocaleTimeString())); } li.append(document.createTextNode(event.message || event.stage || 'Run event')); return li; }));
   $('evidence').textContent = run.qualification ? JSON.stringify({ qualification: run.qualification, evidence: run.evidence, timings: run.pipeline_timings }, null, 2) : 'No qualification result has been reported yet.';
@@ -68,7 +74,7 @@ async function checkAuth() {
 }
 $('recheck').addEventListener('click', () => { checkAuth(); if (!capabilities) api('/api/mashup/capabilities').then(renderCapabilities).catch(error => { $('capability-note').textContent = error.message; }); });
 $('new-idea').addEventListener('click', () => { if (ACTIVE_STATES.has(run?.status)) return; resultPlayer?.destroy(); resultPlayer = null; playerMounted = false; history = []; run = null; save(); renderHistory(); $('run-panel').hidden = true; $('intent').value = ''; $('intent').focus(); if (location.search) historyReplace(); });
-function historyReplace() { window.history.replaceState(null, '', '/create'); }
+function historyReplace() { const url = new URL(location.href); url.searchParams.delete('play'); window.history.replaceState(null, '', embedded ? `${url.pathname}?create=1` : '/create'); }
 $('connect').addEventListener('click', async () => {
   busy = true; updateButtons();
   // Open during the user's click so browsers can permit the sign-in tab.
@@ -81,8 +87,8 @@ const authInterval = setInterval(() => { if (loginId) checkAuth(); }, 3000);
 $('composer').addEventListener('submit', async event => {
   event.preventDefault(); const message = $('intent').value.trim(); if (!message || busy || ACTIVE_STATES.has(run?.status)) return;
   busy = true; $('form-status').textContent = 'Sending your idea to the local build pipeline…'; updateButtons();
-  const request_id = crypto.randomUUID(); const previous = history.at(-1);
-  const source_games = [...document.querySelectorAll('#source-options input:checked')].map(input => input.value);
+  const request_id = crypto.randomUUID(); const previous = refinementContext();
+  const source_games = [...root.querySelectorAll('#source-options input:checked')].map(input => input.value);
   const intent = refinementIntent(previous?.intent, message);
   if (intent.length > 12000) { busy = false; $('form-status').textContent = 'This conversation has reached the request limit. Shorten the next description or start a new idea.'; updateButtons(); return; }
   try { const result = await api('/api/mashup/runs', { method: 'POST', body: JSON.stringify({ request_id, intent, source_games, ...(previous ? { parent_request_id: previous.request_id } : {}) }) }); run = result.run || result; history.push({ request_id: run.request_id || request_id, message, intent, parent_request_id: previous?.request_id }); save(); renderHistory(); $('intent').value = ''; $('form-status').textContent = ''; renderRun(); schedulePoll(); }
@@ -95,6 +101,18 @@ async function actOnRun(method, suffix = '') {
   catch (error) { busy = false; renderRun(); $('run-message').textContent = error.message; return; }
   finally { busy = false; updateButtons(); }
 }
+$('play').addEventListener('click', async event => {
+  if (!embedded || !playableUrl(run)) return;
+  event.preventDefault();
+  const id = run.request_id;
+  window.history.replaceState(null, '', `/v1?create=1&play=${encodeURIComponent(id)}`);
+  $('result-player-host').hidden = false;
+  try {
+    if (resultPlayer) await resultPlayer.load(id);
+    else { const { mountResultPlayer } = await import('./result-player.js'); resultPlayer = mountResultPlayer($('result-player-host'), { runId: id }); }
+    playerMounted = true;
+  } catch (error) { $('result-player-host').textContent = `The player could not open: ${error.message}`; }
+});
 $('cancel').addEventListener('click', () => actOnRun('DELETE'));
 $('resume').addEventListener('click', () => actOnRun('POST', '/resume'));
 $('refresh-run').addEventListener('click', refreshRun);
@@ -102,7 +120,7 @@ function renderCapabilities(data) {
   capabilities = data;
   $('capability-note').textContent = [data.available === false ? 'The local game sources or native testing tools are not ready.' : '', data.description || data.scope || 'Choose a supported starting point, or describe your own request. The pipeline will report unsupported combinations.'].filter(Boolean).join(' ');
   const presets = Array.isArray(data.presets) ? data.presets : [{ title: 'Sonic’s momentum. Metroid’s hidden routes.', intent: 'Combine Sonic Advance momentum with Metroid Zero Mission combat and ability gates. Create a connected route where finding new abilities opens shortcuts and changes how I fight enemies.', description: 'Start with the supported Sonic × Metroid source systems; let the builder create a new route and progression.' }];
-  $('presets').replaceChildren(...presets.map(preset => { const button = node('button', preset.title || preset.name || 'Try a supported mashup', 'preset'); button.type = 'button'; if (preset.description) button.append(node('span', preset.description)); button.addEventListener('click', () => { $('intent').value = preset.intent || preset.prompt || preset.description || preset.title || ''; const ids = (preset.source_games || []).map(source => typeof source === 'string' ? source : source.id); for (const input of document.querySelectorAll('#source-options input')) input.checked = ids.includes(input.value); $('intent').focus(); }); return button; }));
+  $('presets').replaceChildren(...presets.map(preset => { const button = node('button', preset.title || preset.name || 'Try a supported mashup', 'preset'); button.type = 'button'; if (preset.description) button.append(node('span', preset.description)); button.addEventListener('click', () => { $('intent').value = preset.intent || preset.prompt || preset.description || preset.title || ''; const ids = (preset.source_games || []).map(source => typeof source === 'string' ? source : source.id); for (const input of root.querySelectorAll('#source-options input')) input.checked = ids.includes(input.value); $('intent').focus(); }); return button; }));
   const sources = data.source_games || data.sources || [];
   $('source-options').replaceChildren(...sources.map(source => { const label = node('label', ''); const input = document.createElement('input'); input.type = 'checkbox'; input.value = typeof source === 'string' ? source : source.id; label.append(input, document.createTextNode(typeof source === 'string' ? source.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : source.title || source.name || source.id)); return label; }));
   if (!sources.length) $('source-options').append(node('p', 'Source selection will be inferred from your request.', 'fine'));
@@ -125,3 +143,7 @@ if (Recognition) {
 window.addEventListener('pagehide', () => { recognition?.abort(); resultPlayer?.destroy(); clearInterval(authInterval); clearTimeout(pollTimer); });
 renderHistory();
 await Promise.allSettled([checkAuth(), api('/api/mashup/capabilities').then(renderCapabilities).catch(error => { $('capability-note').textContent = `The local build pipeline is unavailable: ${error.message}`; }), refreshRun()]);
+
+return { pause() { recognition?.abort(); return resultPlayer?.pause(); } };
+}
+if (document.getElementById('composer')) await initializeConversation();
