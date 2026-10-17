@@ -1,6 +1,6 @@
 import { StandardGamepadInput, stickWithDeadzone } from './gamepad.js';
 
-export const SPORTS_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyJ', 'KeyK', 'KeyL', 'KeyU', 'KeyI', 'KeyQ', 'KeyE', 'KeyF', 'KeyC', 'KeyV', 'KeyR', 'ShiftLeft', 'ShiftRight', 'Enter', 'Space']);
+export const SPORTS_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyJ', 'KeyK', 'KeyL', 'KeyU', 'KeyI', 'KeyQ', 'KeyE', 'KeyF', 'KeyC', 'KeyV', 'KeyR', 'KeyT', 'Backspace', 'ShiftLeft', 'ShiftRight', 'Enter', 'Space']);
 const vector = (x, y) => { const n = Math.max(1, Math.hypot(x, y)); return { x: x / n, y: y / n }; };
 const length = value => Math.hypot(value.x, value.y);
 const trigger = (button, wasDown) => {
@@ -56,6 +56,10 @@ export class SportsInput {
       conservativeTackle: !soccer && receiverA,
       confirm: key('Enter') || key('Space') || b(0),
       left: key('ArrowLeft') || b(14), right: key('ArrowRight') || b(15), rematch: false,
+      // Menus only: D-pad/arrows up/down move the team-select cursor; B/Backspace backs out.
+      // Football View/T calls a timeout.
+      up: key('ArrowUp') || b(12), down: key('ArrowDown') || b(13), timeout: !soccer && (key('KeyT') || b(8)),
+      back: safeB || key('Backspace'),
     };
     const pressed = {}, released = {};
     const bAliases = soccer ? ['shoot', 'tackle'] : ['receiverB', 'spin', 'switch'];

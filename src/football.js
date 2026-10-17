@@ -1,5 +1,6 @@
 // Original seven-a-side arcade football. The model is independent of browser and renderer.
 import { certifySportsMove, stepSportsBall, certifySportsPairCollision, certifySportsSeparation } from './sports-physics.js';
+import { random } from './sports-league.js';
 const FIELD = 50;
 const RECEIVERS = ['receiverA', 'receiverB', 'receiverX'];
 const RECEIVER_LABELS = ['A', 'B', 'X'];

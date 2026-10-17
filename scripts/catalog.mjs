@@ -21,7 +21,7 @@ export async function gameCatalog() {
         : 'Build artifact verification failed. Rebuild before playing.' };
     }
   }));
-  const shared = new Map(await Promise.all(['sports-runtime', 'sports-input', 'sports-feedback', 'gamepad', 'sports-physics', 'sports-certified.generated', 'neighborhood-safety', 'neighborhood-certified.generated'].map(async name => [`${name}.js`, await readFile(new URL(`src/${name}.js`, root))])));
+  const shared = new Map(await Promise.all(['sports-runtime', 'sports-input', 'sports-feedback', 'gamepad', 'sports-physics', 'sports-league', 'sports-certified.generated', 'neighborhood-safety', 'neighborhood-certified.generated'].map(async name => [`${name}.js`, await readFile(new URL(`src/${name}.js`, root))])));
   for (const name of ['three.module.js', 'three.core.js']) shared.set(name, await readFile(new URL(`node_modules/three/build/${name}`, root)));
   const custom = await Promise.all([
     { id: 'soccer', name: 'Alder Five', subtitle: '5v5 soccer · Juniper Pitch', venue: 'Juniper Pitch' },
