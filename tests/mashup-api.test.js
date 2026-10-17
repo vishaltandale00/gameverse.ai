@@ -43,3 +43,10 @@ test('refinement receives exact private parent context without exposing it in pu
  await api.submit({request_id:ids[0],intent:'Original connected systems'});await wait(async()=>{const r=await api.status(ids[0]);return r.status==='blocked';});const publicParent=await api.status(ids[0]);assert.equal(publicParent.pipeline_result,undefined);
  await api.submit({request_id:ids[1],parent_request_id:ids[0],intent:'Original connected systems with a new route'});await wait(async()=>received);assert.equal(received.pipeline_result.workspace,'/private/job/workspace');assert.equal(received.pipeline_result.artifact.sha256,'a'.repeat(64));
 });
+test('receipt preserves requested selection separately from compiler source routing',async t=>{
+ const routing={backend:'pokemon-overworld',source_games:['pokemon-leafgreen','pokemon-emerald'],requested_source_games:[],inferred_from:'request'};
+ const {api}=await fixture(t,async({onEvent})=>{await onEvent({stage:'planning',type:'routing',routing,message:'Selected LeafGreen/Emerald'});return {status:'blocked',reason:'missing_runtime_inputs',routing};});
+ const id=randomUUID();await api.submit({request_id:id,intent:'Build Pokemon Leaf Green but with Pokemon Emerald overworld sprites',source_games:[]});
+ const result=await wait(async()=>{const r=await api.status(id);return r.status==='blocked'&&r;});
+ assert.deepEqual(result.source_games,[]);assert.deepEqual(result.routing.source_games,['pokemon-leafgreen','pokemon-emerald']);assert.equal(result.routing.backend,'pokemon-overworld');
+});

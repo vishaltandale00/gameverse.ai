@@ -37,6 +37,7 @@ export function createMashupApi({root=workspace,directory=resolve(root,'local-da
       await save(record);active={id:input.request_id,controller};
       let writes=Promise.resolve();
       const onEvent=event=>{
+        if(event?.routing)record.routing=event.routing;
         if(event?.type==='text')return writes; // Retain final agent response in pipeline evidence; avoid one disk write per token.
         if(event?.threadId)record.construction={threadId:event.threadId,turnId:event.turnId||record.construction?.turnId||null};
         const phase=event?.stage||event?.phase;const stage=({prepare:'planning',compose:'planning',build:'building',boot:'playtesting',model:'playtesting',repair:'repairing'})[phase]||phase||record.status||'planning';
@@ -50,7 +51,7 @@ export function createMashupApi({root=workspace,directory=resolve(root,'local-da
         try{
           const args={id:input.request_id,intent:input.intent,source_games:input.source_games,directory:folder(input.request_id),parent,prior:resumePrior?.pipeline_result,signal:controller.signal,onEvent};
           const result=await (resumePrior?pipeline.resume(args):pipeline.run(args));
-          await writes;record.pipeline_result=result;
+          await writes;record.pipeline_result=result;record.routing=result?.routing||record.routing||null;
           record.status=controller.signal.aborted?'cancelled':result?.status==='playable'?'completed':terminal.has(result?.status)?result.status:'blocked';
           record.can_resume=result?.can_resume===true&&typeof pipeline.resume==='function';record.checkpoint=result?.checkpoint||null;
           record.qualification=result?.qualification||null;record.objective_validated=!controller.signal.aborted&&result?.qualification?.bot?.status==='success'&&result?.design?.request_satisfied===true;record.outcome=record.objective_validated?'native-objective-verified':'native-ready-objective-incomplete';record.evidence=result?.evidence||{design:result?.design||null,provenance:result?.provenance||null,gaps:result?.gaps||[]};record.pipeline_timings=result?.timings||result?.timing||null;record.chunks=[...(resumePrior?.chunks||[]),{number:(resumePrior?.resume_count||0)+(resumePrior?2:1),qualification:record.qualification,evidence:record.evidence,pipeline_timings:record.pipeline_timings,checkpoint:record.checkpoint}];
