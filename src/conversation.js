@@ -1,6 +1,6 @@
 import { mountBuildRequirements, mountCreationLibrary, sourceWorldChoices } from './creation-library.js';
 import { mountRomPreparation } from './rom-preparation.js';
-import { ACTIVE_STATES, STAGES, STAGE_LABELS, playableUrl, stageState, runMessage, refinementIntent, safeLocalUrl } from './conversation-model.js';
+import { ACTIVE_STATES, STAGES, STAGE_LABELS, playableUrl, stageState, runMessage, refinementIntent, safeLocalUrl, isGraphicsRun, isSourceAttempt } from './conversation-model.js';
 export async function initializeConversation(root = document, { embedded = false } = {}) {
 const $ = id => root.querySelector(`[id="${id}"]`);
 const storageKey = 'gameverse.conversation.v1';
@@ -45,17 +45,18 @@ function renderRun() {
     libraryReferences.clear(); run.library_refs.forEach(id => libraryReferences.add(id)); mountLibrary();
   }
   if (refinementContext()) { $('starter').hidden = true; $('new-idea').hidden = false; }
-  const graphicsRun=run.routing?.backend==='pokemon-overworld'||run.qualification?.scope==='native-graphics-consumer';
-  $('run-panel').hidden = false; $('run-state').textContent = run.status === 'completed' && run.playable ? (graphicsRun ? (run.objective_validated === true ? 'Graphics verified' : 'Sprite coverage incomplete') : (run.objective_validated === true ? 'Bot objective verified' : 'Bot objective incomplete')) : run.status;
+  const graphicsRun = isGraphicsRun(run), sourceAttempt = isSourceAttempt(run);
+  $('run-panel').hidden = false; $('run-state').textContent = run.status === 'completed' && run.playable ? (graphicsRun ? (run.objective_validated === true ? 'Graphics verified' : 'Partial graphics result') : (sourceAttempt ? (run.objective_validated === true ? 'Request verified' : 'Requirements incomplete') : (run.objective_validated === true ? 'Bot objective verified' : 'Bot objective incomplete'))) : run.status;
   $('run-title').textContent = run.playable && run.status === 'completed' ? (run.artifact?.title || 'Your game is ready') : 'Your game, in progress';
   $('run-message').textContent = runMessage(run);
   const qualification = run.qualification; const bot = qualification?.bot;
   $('qualification-summary').hidden = !qualification;
-  $('qualification-summary').textContent = qualification && graphicsRun ? `Native graphics: ${qualification.outcome || 'unreported'}. Requested coverage: ${run.objective_validated === true ? 'verified' : 'incomplete'}. Natural gameplay remains unqualified.` : qualification ? `Native check: ${qualification.outcome || 'unreported'}${qualification.scope ? ` (${qualification.scope})` : ''}. Gameplay bot: ${bot?.status || bot?.outcome || 'unreported'}. Campaign: ${qualification.campaign || 'qualification scope unavailable'}.` : '';
-  $('stages').replaceChildren(...STAGES.map(stage => { const li = node('li', graphicsRun && stage === 'playtesting' ? 'Verify graphics' : STAGE_LABELS[stage], stageState(run, stage)); if (li.className === 'current') li.setAttribute('aria-current', 'step'); return li; }));
+  $('qualification-summary').textContent = qualification && graphicsRun ? `Native graphics: ${qualification.outcome || 'unreported'} (${qualification.scope || 'scope unreported'}). Requested coverage: ${run.objective_validated === true ? 'verified' : 'partial'}. Natural gameplay remains unqualified.` : qualification ? `Native check: ${qualification.outcome || 'unreported'}${qualification.scope ? ` (${qualification.scope})` : ''}.${bot ? ` Gameplay bot: ${bot.status || bot.outcome || 'unreported'}.` : ' No gameplay bot result reported.'} Campaign: ${qualification.campaign || 'qualification scope unavailable'}.` : '';
+  renderRequestCoverage();
+  $('stages').replaceChildren(...STAGES.map(stage => { const li = node('li', graphicsRun && stage === 'playtesting' ? 'Verify graphics' : sourceAttempt && stage === 'playtesting' && !bot ? 'Check candidate' : (graphicsRun || sourceAttempt) && stage === 'completed' && run.objective_validated !== true ? 'Partial result' : STAGE_LABELS[stage], stageState(run, stage)); if (li.className === 'current') li.setAttribute('aria-current', 'step'); return li; }));
   $('cancel').hidden = !ACTIVE_STATES.has(run.status); $('cancel').disabled = busy;
-  $('resume').hidden = run.can_resume !== true && (ACTIVE_STATES.has(run.status) || run.playable === true); $('resume').disabled = busy; $('resume').textContent = run.can_resume === true ? (run.playable ? (graphicsRun ? 'Continue graphics checks' : 'Continue bot test') : 'Resume run') : 'Retry this request';
-  const href = playableUrl(run); $('play').hidden = !href; if (href) $('play').href = embedded ? `/v1?create=1&play=${encodeURIComponent(run.request_id)}` : href; else $('play').removeAttribute('href');
+  $('resume').hidden = run.can_resume !== true && (ACTIVE_STATES.has(run.status) || run.playable === true); $('resume').disabled = busy; $('resume').textContent = run.can_resume === true ? (run.checkpoint?.kind === 'source-attempt' ? 'Continue source attempt' : run.playable ? (graphicsRun ? 'Continue graphics checks' : sourceAttempt && !bot ? 'Continue native checks' : 'Continue bot test') : 'Resume run') : 'Retry this request';
+  const href = playableUrl(run); $('play').hidden = !href; $('play').textContent = (graphicsRun || sourceAttempt) && run.objective_validated !== true ? 'Play partial result ↗' : 'Play your game ↗'; if (href) $('play').href = embedded ? `/v1?create=1&play=${encodeURIComponent(run.request_id)}` : href; else $('play').removeAttribute('href');
   const download = run.status === 'completed' && run.playable === true ? safeLocalUrl(run.artifact?.rom_url) : null;
   $('download-rom').hidden = !download; if (download) $('download-rom').href = download;
   if (requestedPlayId === run.request_id && href && !playerMounted) {
@@ -66,6 +67,38 @@ function renderRun() {
   $('evidence').textContent = run.qualification ? JSON.stringify({ qualification: run.qualification, evidence: run.evidence, timings: run.pipeline_timings }, null, 2) : 'No qualification result has been reported yet.';
   $('timing').textContent = `Run ${run.request_id || run.id || 'identity unavailable'} · elapsed ${Number.isFinite(run.timings?.total_s) ? `${run.timings.total_s.toFixed(1)} s` : 'unavailable'} · queue ${Number.isFinite(run.timings?.queue_s) ? `${run.timings.queue_s.toFixed(1)} s` : 'unavailable'}`;
   updateButtons();
+}
+function renderRequestCoverage() {
+  const host = $('request-coverage'); if (!host) return;
+  const evidence = run.evidence || {}, qualification = run.qualification || {};
+  const ledger = qualification.requirement_ledger || evidence.requirement_ledger || run.requirement_ledger;
+  const gaps = [...new Set([...(qualification.gaps || []), ...(evidence.gaps || []), ...(evidence.design?.gaps || [])])];
+  const nodes = [];
+  const roles = qualification.source_roles;
+  if (roles) nodes.push(node('p', `Host: ${roles.host}. Donor: ${roles.donor || roles.donors?.join(', ') || 'unreported'}. Native consumers: ${(roles.roles || []).join(', ') || 'unreported'}.`, 'fine'));
+  if (ledger?.requirements?.length) {
+    nodes.push(node('h4', 'Your request, requirement by requirement'));
+    const list = node('ul', '', 'requirement-ledger');
+    for (const row of ledger.requirements) {
+      const item = node('li', ''); item.append(node('strong', row.status || 'unverified'), node('p', row.text || row.id || 'Requirement'));
+      if (row.scope) item.append(node('p', row.scope, 'fine'));
+      if (row.evidence?.length) { const detail = node('details', ''); detail.append(node('summary', 'Requirement evidence'), node('pre', JSON.stringify(row.evidence, null, 2))); item.append(detail); }
+      else item.append(node('p', 'No verified implementation evidence for this requirement.', 'fine'));
+      list.append(item);
+    }
+    nodes.push(list);
+  }
+  if (gaps.length) { nodes.push(node('h4', 'Coverage & remaining gaps')); const list = node('ul', ''); for (const gap of gaps) list.append(node('li', gap)); nodes.push(list); }
+  if (evidence.tool_execution) nodes.push(node('p', `Actual construction trace: ${evidence.tool_execution.records ?? 'unreported'} retained tool records${evidence.tool_execution.sha256 ? ` · sha256 ${evidence.tool_execution.sha256}` : ''}. Private command and output contents remain in local evidence.`, 'fine'));
+  if (evidence.attempt?.steps?.length) {
+    const attempt = node('details', ''); attempt.append(node('summary', 'Agent-reported attempt · independent proof is listed above'));
+    const list = node('ol', ''); for (const step of evidence.attempt.steps) list.append(node('li', typeof step === 'string' ? step : step.summary || step.description || step.action || JSON.stringify(step))); attempt.append(list); nodes.push(attempt);
+  }
+  if (evidence.attempt?.changed_files?.length) {
+    const outputs = node('details', ''); outputs.append(node('summary', 'Recorded isolated output files'));
+    const list = node('ul', ''); for (const file of evidence.attempt.changed_files) list.append(node('li', typeof file === 'string' ? file : `${file.ref || 'Output'}${file.sha256 ? ` · sha256 ${file.sha256}` : ''}`)); outputs.append(list); nodes.push(outputs);
+  }
+  host.hidden = nodes.length === 0; host.replaceChildren(...nodes);
 }
 function schedulePoll() {
   clearTimeout(pollTimer);

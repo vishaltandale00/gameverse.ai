@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { relative, isAbsolute, sep } from 'node:path';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import readline from 'node:readline';
@@ -5,6 +7,17 @@ import { EventEmitter } from 'node:events';
 
 const bundled = '/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex';
 const problem = message => Object.assign(Error(message), { status: 503 });
+
+export function codexToolEvidence(item,cwd){
+ if(!['commandExecution','fileChange','mcpToolCall','dynamicToolCall'].includes(item?.type))return null;
+ const string=value=>typeof value==='string'?value:JSON.stringify(value??'');
+ const identity=value=>String(value??'').replace(/[^a-zA-Z0-9_.:-]/g,'').slice(0,160);
+ const digest=value=>createHash('sha256').update(value).digest('hex');
+ const command=string(item.command??item.arguments??''),output=string(item.aggregatedOutput??item.stdout??item.output??item.result??'');
+ const changes=(Array.isArray(item.changes)?item.changes:[]).slice(0,256).map(change=>{let path=String(change.path||'');if(isAbsolute(path))path=relative(cwd,path);if(path.split(sep).includes('..')||path.startsWith('.env')||/auth|credential|secret/i.test(path))path='[private-path]';const diff=string(change.diff??'');return {path:path.slice(0,300),kind:identity(change.kind?.type||change.kind),diff_sha256:digest(diff),diff_bytes:Buffer.byteLength(diff)};});
+ return {schema:'gameverse.codex-tool-evidence/1',item_id:identity(item.id),item_type:item.type,status:identity(item.status||'completed'),exit_code:Number.isInteger(item.exitCode)?item.exitCode:null,duration_ms:Number.isFinite(item.durationMs)?item.durationMs:null,command_sha256:digest(command),command_bytes:Buffer.byteLength(command),output_sha256:digest(output),output_bytes:Buffer.byteLength(output),changes};
+}
+
 
 // The CLI owns its credentials. Never read its auth files or forward tokens to the browser.
 export function createCodexAgent({ cwd = process.cwd(), binary = process.env.CODEX_BIN || (existsSync(bundled) ? bundled : 'codex'), timeoutMs = Number(process.env.MASHUP_AGENT_TIMEOUT_MS || 900000), spawnImpl = spawn } = {}) {
@@ -59,7 +72,7 @@ export function createCodexAgent({ cwd = process.cwd(), binary = process.env.COD
     if (url.protocol !== 'https:' || !['auth.openai.com', 'chatgpt.com'].includes(url.hostname)) throw problem('Codex returned an unsupported sign-in address. Update Codex CLI.');
     return { type: 'chatgpt', loginId: result.loginId, authUrl: result.authUrl };
   }
-  async function run({ prompt, cwd: runCwd = cwd, signal, onEvent = () => {}, model } = {}) {
+  async function run({ prompt, cwd: runCwd = cwd, signal, onEvent = () => {}, model, resumeThreadId } = {}) {
     if (active) throw Object.assign(Error('Another coding turn is running.'), { status: 409 });
     if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 64000) throw Object.assign(Error('A coding request under 64,000 characters is required.'), { status: 400 });
     active = true;
@@ -67,7 +80,9 @@ export function createCodexAgent({ cwd = process.cwd(), binary = process.env.COD
     try {
       if (!(await status()).authenticated) throw problem('Connect local Codex with a ChatGPT account before creating a mashup.');
       signal?.throwIfAborted();
-      const result = await request('thread/start', { cwd: runCwd, modelProvider: 'openai', approvalPolicy: 'never', sandbox: 'workspace-write', ...(model ? { model } : {}) });
+      if(resumeThreadId!==undefined&&(typeof resumeThreadId!=='string'||!resumeThreadId||resumeThreadId.length>160))throw problem('Invalid saved construction thread.');
+      const result = await request(resumeThreadId?'thread/resume':'thread/start', { ...(resumeThreadId?{threadId:resumeThreadId}:{}),cwd: runCwd, modelProvider: 'openai', approvalPolicy: 'never', sandbox: 'workspace-write', ...(model ? { model } : {}) });
+      if(resumeThreadId&&result.thread.id!==resumeThreadId)throw problem('Saved construction thread identity mismatch.');
       threadId = result.thread.id;
       onEvent({ type: 'agent-session', threadId, message: `Local Codex construction thread ${threadId}` });
       signal?.throwIfAborted();
@@ -91,11 +106,12 @@ export function createCodexAgent({ cwd = process.cwd(), binary = process.env.COD
           if (message.method === 'turn/started') { turnId = p.turn?.id; onEvent({ type: 'agent-session', threadId, turnId, message: `Local Codex construction turn ${turnId}` }); }
           if (message.method === 'item/agentMessage/delta') { text = (text + (p.delta || '')).slice(-128000); onEvent({ type: 'text', delta: p.delta || '' }); }
           if (message.method === 'item/started') onEvent({ type: 'activity', itemType: p.item?.type || 'working' });
+          if (message.method === 'item/completed') { const evidence=codexToolEvidence(p.item,runCwd); if(evidence)onEvent({type:'tool-evidence',evidence}); }
           if (message.method === 'turn/completed') {
             if (cancelling) return finish(cancelled());
             const status = p.turn?.status;
             if (status !== 'completed') return finish(problem(`Coding turn ${status || 'failed'}. Review local Codex and retry.`));
-            finish(null, { threadId, turnId: p.turn.id, status, text, wallMs: performance.now() - started });
+            finish(null, { threadId, turnId: p.turn.id, status, text, resumed:!!resumeThreadId,wallMs: performance.now() - started });
           }
         };
         events.on('notification', notify); events.on('transportError', transportError); signal?.addEventListener('abort', abort, { once: true });

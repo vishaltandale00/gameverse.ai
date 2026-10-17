@@ -16,6 +16,7 @@ export function createMashupApi({root=workspace,directory=resolve(root,'local-da
     if(!uuid(id))throw fail(404,'not_found','Creation request not found.');
     let record;try{record=JSON.parse(await readFile(path(id),'utf8'));}catch(error){if(error.code==='ENOENT')throw fail(404,'not_found','Creation request not found.');throw error;}
     if(!terminal.has(record.status)&&active?.id!==id){record.status='interrupted';record.playable=false;record.error={code:'worker_interrupted',message:'The server stopped. Prior evidence is retained; start a new request to retry.'};}
+    if(terminal.has(record.status)&&!record.can_resume&&pipeline.canResume&&record.pipeline_result&&await pipeline.canResume(record.pipeline_result)){record.can_resume=true;record.checkpoint={kind:'source-attempt',threadId:record.pipeline_result.error?.threadId||null};}
     record.timings={...record.timings,execution_wall_s:record.timings?.total_s??null,elapsed_wall_s:record.received_at&&record.finished_at?(Date.parse(record.finished_at)-Date.parse(record.received_at))/1000:null};
     const {artifact_path,pipeline_result,...publicRecord}=record;
     if(publicRecord.artifact)publicRecord.artifact={...publicRecord.artifact,url:`/v1?create=1&play=${record.request_id}`};
@@ -78,7 +79,7 @@ export function createMashupApi({root=workspace,directory=resolve(root,'local-da
       return status(input.request_id);
     }finally{admitting=false;}
   }
-  async function resume(id){await status(id);const prior=JSON.parse(await readFile(path(id),'utf8'));if(!prior.can_resume||typeof pipeline.resume!=='function')throw fail(409,'resume_unavailable','This run has no verified resumable bot checkpoint.');return submit({request_id:prior.request_id,intent:prior.intent,source_games:prior.source_games,library_refs:prior.library_refs||[],...(prior.parent_request_id?{parent_request_id:prior.parent_request_id}:{})},prior);}
+  async function resume(id){await status(id);const prior=JSON.parse(await readFile(path(id),'utf8'));if(!(prior.can_resume||pipeline.canResume&&await pipeline.canResume(prior.pipeline_result))||typeof pipeline.resume!=='function')throw fail(409,'resume_unavailable','This run has no resumable checkpoint.');return submit({request_id:prior.request_id,intent:prior.intent,source_games:prior.source_games,library_refs:prior.library_refs||[],...(prior.parent_request_id?{parent_request_id:prior.parent_request_id}:{})},prior);}
   async function cancel(id){const record=await status(id);if(active?.id===id)active.controller.abort('cancelled');return {...record,cancel_requested:active?.id===id};}
   async function handle(req,res,pathname){
     if(!pathname.startsWith('/api/mashup/'))return false;

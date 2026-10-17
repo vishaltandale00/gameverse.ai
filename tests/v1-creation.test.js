@@ -60,4 +60,29 @@ test('embedded composer scopes source inputs and preserves failed intent during 
   assert.equal(submissions[1].intent, 'Original connected route\n\nRefinement: Add a shortcut');
   linkedNodes.get('resume').dispatchEvent(new Event('click')); await settle();
   assert.equal(submissions[2].intent, submissions[1].intent); assert.equal(submissions[2].retry_of, submissions[1].request_id); assert.equal(submissions[2].parent_request_id, undefined);
+  // A generic source attempt can yield a partial graphics artifact without any bot run.
+  const resultNodes = new Map([...ids, 'request-coverage'].map(key => [key, new Element()]));
+  resultNodes.get('intent').value = 'Keep this draft refinement'; location.search = '';
+  const resultRoot = { querySelector: selector => resultNodes.get(selector.match(/id="([^"]+)"/)[1]), querySelectorAll: () => [] };
+  const requirement = 'Sonic but the enemies are Pokemon';
+  localStorage.getItem = () => JSON.stringify([{request_id:id,intent:requirement,message:requirement}]);
+  globalThis.fetch = async (path, options) => {
+    if (path === '/api/chatgpt/status' || path === '/api/mashup/capabilities') return fetcher(path, options);
+    return Response.json({ request_id:id,intent:requirement,status:'completed',playable:true,objective_validated:false,can_resume:true,artifact:{url:`/v1?create=1&play=${id}`},routing:{backend:'agent-source-transform'},qualification:{outcome:'pass',scope:'native-enemy-graphics-consumer',source_roles:{host:'sonic-advance',donor:'pokemon-leafgreen',roles:['enemy-render']},gaps:['Bosses and projectiles retain native art.','Exact donor colors and in-stage encounter legibility remain unverified.'],requirement_ledger:{requirements:[{id:'enemies',text:requirement,status:'partial',scope:'Ordinary enemy render families only',evidence:[{scope:'native-enemy-graphics-consumer',artifact_sha256:'a'.repeat(64)}]},{id:'extra',text:'Keep this exact additional clause',status:'unmet',evidence:[]}]}},evidence:{tool_execution:{records:3,sha256:'b'.repeat(64)},attempt:{steps:['Inspect original source consumers']}} });
+  };
+  await initializeConversation(resultRoot, {embedded:true});
+  assert.equal(resultNodes.get('play').textContent,'Play partial result ↗');
+  assert.equal(resultNodes.get('run-state').textContent,'Partial graphics result');
+  assert.equal(resultNodes.get('resume').textContent,'Continue graphics checks');
+  assert.match(resultNodes.get('qualification-summary').textContent,/native-enemy-graphics-consumer/);
+  assert.doesNotMatch(resultNodes.get('run-message').textContent,/bot/i);
+  assert.equal(resultNodes.get('intent').value,'Keep this draft refinement');
+  const coverage = resultNodes.get('request-coverage');
+  const ledger = coverage.children.find(child => child.className === 'requirement-ledger');
+  assert.equal(ledger.children[0].children[0].textContent,'partial'); assert.equal(ledger.children[0].children[1].textContent,requirement);
+  assert.equal(ledger.children[1].children[0].textContent,'unmet'); assert.equal(ledger.children[1].children[1].textContent,'Keep this exact additional clause');
+  assert.ok(coverage.children.some(child => /3 retained tool records/.test(child.textContent)));
+  globalThis.fetch = async () => Response.json({request_id:id,status:'interrupted',playable:false,can_resume:true,checkpoint:{kind:'source-attempt'}});
+  resultNodes.get('refresh-run').dispatchEvent(new Event('click')); await settle();
+  assert.equal(resultNodes.get('resume').textContent,'Continue source attempt');
 });

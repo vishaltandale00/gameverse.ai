@@ -79,3 +79,11 @@ test('private original upload/preparation routes share local-origin guard and ne
  res=response();await api.handle({method:'POST',headers:{host:'127.0.0.1:4173','content-type':'application/octet-stream'}},res,'/api/mashup/roms');assert.equal(res.code,201);assert.equal(uploads,1);assert.equal(res.data.path,undefined);
  res=response();await api.handle({method:'POST',headers:{host:'127.0.0.1:4173'}},res,`/api/mashup/roms/${sha}/prepare`);assert.equal(res.code,202);assert.equal(preparations,1);assert.equal(res.data.model_calls,false);
 });
+
+test('saved source interruption can resume through current pipeline checkpoint without replay',async t=>{
+ const root=await mkdtemp(join(tmpdir(),'source-resume-api-'));t.after(()=>rm(root,{recursive:true,force:true}));let builds=0,resumes=0,release;
+ const pipeline={capabilities:async()=>({}),canResume:prior=>prior?.error?.threadId==='existing-thread',run:async()=>{builds++;return {status:'blocked',can_resume:false,error:{threadId:'existing-thread'}};},resume:async({prior})=>{resumes++;assert.equal(prior.error.threadId,'existing-thread');return new Promise(resolve=>{release=resolve;});}};
+ const api=createMashupApi({root,agent,pipeline});t.after(()=>api.shutdown());const id=randomUUID();await api.submit({request_id:id,intent:'Sonic with Pokemon enemies'});
+ await wait(async()=>{const r=await api.status(id);return r.finished_at&&r.can_resume;});await api.resume(id);await wait(()=>release);assert.equal((await api.status(id)).can_resume,false);release({status:'blocked',can_resume:false});
+ await wait(async()=>{const r=await api.status(id);return r.finished_at&&r.resume_count===1;});assert.equal(builds,1);assert.equal(resumes,1);
+});

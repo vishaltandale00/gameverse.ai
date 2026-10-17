@@ -1,0 +1,11 @@
+# Native Sonic enemy artwork transfer
+
+This adapter keeps the original Sonic Advance cartridge and replaces ordinary enemy tile graphics with source-derived LeafGreen party-icon artwork. It preserves native animation commands, OAM geometry, palettes, hitboxes, code, maps and enemy behavior. The supplied sources identify consumers and donor icons; exact original-ROM identities and runtime pointer tables determine the native byte locations.
+
+The current recipe covers 20 ordinary enemy families, 21 animation IDs and 46 variants. Donor frames are proportionally fitted into native OAM unions and mapped to the existing enemy palettes. Bosses, projectiles, effects and other excluded/shared consumers retain original graphics. This is a partial artwork transformation, not Pokemon battle mechanics or whole-game qualification.
+
+The verifier checks that changed ROM bytes stay inside declared exclusive tile ranges, invokes the original sprite animation/display/OAM functions for both cartridges, compares animation/hitbox/OAM traces and retains rendered fixture images. The direct-entry fixture does not establish natural gameplay traversal or observed in-stage encounter legibility. The original AI/collision code remains byte-identical; no decision-model gameplay campaign is claimed.
+
+The application routes free-text requests through its isolated Codex source attempt first. A faithful installed recipe can be handed to this deterministic adapter; every original request clause remains in a requirement ledger. Unknown transformations may be investigated and edited, but need an independent matching native verification profile before Play. A generated ROM or agent assertion alone is insufficient. Private originals, extracted assets, tool traces and output cartridges remain under ignored local-data.
+
+Representative retained native proof (same machine, exact pinned local originals): 30,697 changed bytes within 47,648 declared tile bytes; 46 variants × 64 ticks per ROM; 8,832 native function calls per ROM; identical animation/hitbox/OAM trace; 184 changed rendered frames. Asset application took 0.989s and native verification 1.265s. These stages are separate and are not a whole application latency benchmark; there is no comparable earlier successful enemy-transfer baseline.

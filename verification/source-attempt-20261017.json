@@ -1,0 +1,135 @@
+{
+  "schema": "gameverse.source-attempt-verification/1",
+  "recorded_at": "2026-10-17T02:40:01.602590+00:00",
+  "source_base_commit": "9cc3025529c850d23205168d8d43c78be5c56a6d",
+  "request": {
+    "id": "2cae2d3f-099b-44e8-85f2-bb3e25fbf292",
+    "intent": "sonic but the enemies are pokemon",
+    "source_games": [
+      "sonic-advance",
+      "pokemon-leafgreen"
+    ],
+    "retry_of": "a3aa82f8-e3f0-4938-bb8e-31fd87e36953"
+  },
+  "outcome": {
+    "status": "completed",
+    "playable": true,
+    "objective_validated": false,
+    "artifact_sha256": "aa5db5aa3a651975f7eec2d457684ddf461cf03d0395c3965df54a1246830214",
+    "native_scope": "native-enemy-graphics-consumer",
+    "full_request_satisfied": false
+  },
+  "source_attempt": {
+    "thread_id": "01a147aa-7e75-7db2-a2ab-541b39c32c60",
+    "chunks": 2,
+    "same_thread_continuation": true,
+    "actual_tool_records": 18,
+    "tool_trace_sha256": "d5b06faf4a5d1e194194478a6dbfab3c7be32a92084b751a12b90b91c1b854e6",
+    "source_capture_files": 12000,
+    "source_capture_bytes": 61612674,
+    "source_capture_limited": true,
+    "original_prompt_lock_sha256": "f888b132991ecbe9792702a2bc694c9546b78b2447f64531df65a12d6830167b",
+    "continuation_prompt_lock_sha256": "25db02a8b84ab256534eb5f4fd33defbc61e340550f79d655d11f1fe4519d78d"
+  },
+  "timings": {
+    "api_accumulated_execution_s": 390.314527707,
+    "pipeline_accumulated_execution_s": 390.23068249999994,
+    "pipeline_continuation_s": 90.21768766699999,
+    "initial_failed_chunk_s": 300.012061125,
+    "native_adapter": {
+      "run_id": "2cae2d3f-099b-44e8-85f2-bb3e25fbf292",
+      "total_s": 2.011,
+      "queue_s": null,
+      "build_s": null,
+      "asset_transform_s": 0.533351,
+      "native_s": 1.245835,
+      "adapter_version": "sonic-native-enemy-render/1",
+      "loop_config": "deterministic-enemy-role-transfer/1",
+      "attempts": 1,
+      "accounting": "Original asset transform and native fixtures nested within total; no source compilation or model evaluation. No comparable prior successful backend baseline."
+    },
+    "total_budget_ms": 900000,
+    "remaining_before_continuation_ms": 599987,
+    "queue_s": null,
+    "accounting": "Chunks accumulate active execution; downtime excluded. Adapter stages nested inside continuation; no additive campaign timing.",
+    "elapsed_wall_s_including_downtime": 874.21,
+    "ledger_projection_ms": 44.931375
+  },
+  "native_coverage": {
+    "ordinary_enemy_families": 20,
+    "native_animation_ids": 21,
+    "native_variants": 46,
+    "unique_modified_ranges": 104,
+    "changed_bytes": 30697,
+    "all_native_tile_load_references_audited": 5179,
+    "all_native_animation_ids_audited": 906
+  },
+  "limits": [
+    "20 ordinary enemy families,21 animation IDs,46 variants; bosses and excluded consumers retain original art.",
+    "Palette adaptation and proportional fit are explicit.",
+    "Natural gameplay traversal and in-stage encounter legibility unverified.",
+    "No S1/S2 gameplay/model campaign; actual creation used existing ChatGPT subscription.",
+    "Unknown generated transformations require matching independent native profile before publication."
+  ],
+  "retained_failures": [
+    {
+      "request_id": "a3aa82f8-e3f0-4938-bb8e-31fd87e36953",
+      "reason": "wrong host selected from unordered pair then unsupported_pokemon_operation"
+    },
+    {
+      "request_id": "b74fea46-0ae2-4c40-bf4e-eac8d3ea7301",
+      "reason": "prompt size rejected before provider call; inventory now disk referenced"
+    },
+    {
+      "request_id": "2cae2d3f-099b-44e8-85f2-bb3e25fbf292",
+      "chunk": 1,
+      "reason": "mistaken300s timeout; preserved then same-thread remaining900s-budget continuation"
+    }
+  ],
+  "measurement_gaps": [
+    "No comparable prior successful enemy-transfer application baseline.",
+    "No CI queue/execution measurement.",
+    "Provider token/cost accounting unavailable."
+  ],
+  "ledger": "Six independently scoped partial contributions; full request satisfaction false. Original completed ledger retained before metadata-only proof projection.",
+  "focused_checks": {
+    "agent_source_module": {
+      "tests": 11,
+      "wall_ms": 88
+    },
+    "catalog_identity": {
+      "tests": 4,
+      "wall_ms": 33.26
+    },
+    "creation_router": {
+      "tests": 7,
+      "wall_ms": 34.03,
+      "note": "combined with two initial identity tests"
+    },
+    "proof_ledger": {
+      "tests": 5,
+      "wall_ms": 33.59
+    },
+    "source_scope_and_binding": {
+      "tests": 3,
+      "wall_ms": 33.89
+    },
+    "source_resume_api": {
+      "tests": 1,
+      "wall_ms": 49.5
+    },
+    "codex_bridge": {
+      "tests": 6,
+      "wall_ms": 61.4
+    },
+    "prompt_registry": {
+      "tests": 5,
+      "wall_ms": 103
+    },
+    "ui_followup": {
+      "tests": 10,
+      "wall_ms": 47.39
+    },
+    "note": "Scoped checks rerun only for changed concerns. Relocated test import and strengthened proof fixture corrected after first integration failure."
+  }
+}

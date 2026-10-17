@@ -30,12 +30,12 @@ export function createPokemonPipeline({root,runtimeRoot=process.env.GAMEVERSE_PO
   await child(python,[selectedHelper,name,'--workspace',work,...(name==='prepare'?['--runtime',resolve(runtimeRoot),'--operation',operation,...(hostOriginal?['--host-original',hostOriginal.path]:[]),...(donorOriginal?['--donor-original',donorOriginal.path]:[])]:[])],{cwd:root,signal,timeoutMs:['baseline','build'].includes(name)?185000:30000});
   return read(join(work,name+'-stage.json'));
  }
- async function run({id,intent='',source_games=sources,directory,signal,onEvent,budget,parent,operation}={}){
+ async function run({id,intent='',source_games=sources,directory,signal,onEvent,budget,parent,operation,plan}={}){
   const started=Date.now();await mkdir(directory,{recursive:true});
   await save(join(directory,'intent.json'),{id,intent,source_games,budget});
-  const selected=operationForSources(source_games);operation=operation||selected?.id;const character=operation==='sonic-player';
+  const selected=operationForSources(source_games,operation);operation=operation||selected?.id;const character=operation==='sonic-player';
   if(!selected||!['emerald-overworld','sonic-player'].includes(operation)||selected.id!==operation)return {status:'blocked',reason:'unsupported_source_games',qualification:{outcome:'unavailable'}};
-  if(!(character?supportsCharacterIntent(intent):supportsPokemonIntent(intent)))return {status:'blocked',reason:'unsupported_pokemon_operation',gaps:['This operation transfers source character graphics into native LeafGreen render roles. Additional mechanics, maps or battle art need a separately qualified source transformation.'],qualification:{outcome:'unavailable'}};
+  if(!plan&&!(character?supportsCharacterIntent(intent):supportsPokemonIntent(intent)))return {status:'blocked',reason:'unsupported_pokemon_operation',gaps:['This operation transfers source character graphics into native LeafGreen render roles. Additional mechanics, maps or battle art need a separately qualified source transformation.'],qualification:{outcome:'unavailable'}};
   if(parent)return {status:'blocked',reason:'pokemon_parent_refinement_unqualified',qualification:{outcome:'unavailable'}};
   const caps=await capabilities(operation);if(!caps.source_available)return {status:'blocked',reason:'missing_runtime_inputs',gaps:caps.missing_inputs,qualification:{outcome:'unavailable'}};
   if(!caps.available)return {status:'blocked',reason:'pokemon_sprite_mapping_unqualified',gaps:caps.gaps,qualification:{outcome:'unavailable'}};

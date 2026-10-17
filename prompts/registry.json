@@ -1,6 +1,6 @@
 {
   "schema": "gameverse.prompt-registry/1",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "prompts": [
     {
       "id": "evidence-precedence",
@@ -49,6 +49,18 @@
       "version": "1.0.0",
       "ref": "prompts/s2-response-repair/1.0.0.json",
       "sha256": "15a70c4acd508c3237bace9efcb47a3357ba200f01a4d31a3381f89af467f1de"
+    },
+    {
+      "id": "codex-source-transform",
+      "version": "1.1.0",
+      "ref": "prompts/codex-source-transform/1.1.0.json",
+      "sha256": "57ee14b520d7b399e64579f678120fb95f39fac735573ce43081145baa8d6923"
+    },
+    {
+      "id": "codex-source-transform-resume",
+      "version": "1.0.0",
+      "ref": "prompts/codex-source-transform-resume/1.0.0.json",
+      "sha256": "f96c1e3392ed8af4e64fddedcb8bb672307af0d3b1d9119a5edae89e123b8122"
     }
   ]
 }

@@ -30,7 +30,7 @@ export function mountRomPreparation(root, api, onPrepared = () => {}) {
   }
   function renderJob(job, receipt) {
     const identity = catalog?.originals?.find(item => item.id === (job.game_id || receipt?.game_id));
-    const recognized = make('p', `Recognized: ${job.title || identity?.title || job.game_id || receipt?.game_id || 'original'}${identity?.game_code ? ` · ${identity.game_code}` : ''}${identity?.revision !== undefined ? ` · revision ${identity.revision}` : ''}.`);
+    const recognized = make('p', `Recognized: ${job.title || identity?.title || job.game_id || receipt?.game_id || 'original'}${identity?.game_code ? ` · ${identity.game_code}` : ''}${identity?.revision !== undefined ? ` · revision ${identity.revision}` : ''}. Original accepted; supported builds can resolve this input. Their other prerequisites are listed separately below.`);
     const summary = make('p', job.message || job.error?.message || `Preparation: ${job.status || 'pending'}.`, 'fine');
     const nodes = [recognized, summary];
     if (job.stage) nodes.push(make('p', `Stage: ${job.stage}`, 'fine'));
@@ -42,7 +42,7 @@ export function mountRomPreparation(root, api, onPrepared = () => {}) {
       nodes.push(make('p', 'Prepared outputs', 'fine'), list);
     }
     const remaining = job.remaining_inputs || job.missing_inputs || job.preparation?.remaining_inputs || [];
-    if (remaining.length) nodes.push(make('p', `Still required: ${remaining.map(describe).join('; ')}`, 'fine'));
+    if (remaining.length) nodes.push(make('p', `Fixture preparation still needs: ${remaining.map(describe).join('; ')}. Build prerequisites are reported separately.`, 'fine'));
     const gaps = job.gaps || job.preparation?.gaps || [];
     if (gaps.length) nodes.push(make('p', `Preparation limits: ${gaps.map(describe).join('; ')}`, 'fine'));
     const evidence = make('details'); evidence.append(make('summary', 'Identity & preparation provenance'));
@@ -73,7 +73,7 @@ export function mountRomPreparation(root, api, onPrepared = () => {}) {
     try {
       const job = await api(`/api/mashup/rom-jobs/${encodeURIComponent(jobId)}`);
       if (disposed || token !== generation) return;
-      renderJob(job, receipt); status.textContent = `Local fixture preparation: ${job.status}.`;
+      renderJob(job, receipt); status.textContent = `Original accepted. Fixture preparation: ${job.status}.`;
       if (TERMINAL.has(job.status)) { activeJob = null; cancel.hidden = true; busy = false; buttons(); await refreshOriginals(true); if (!disposed) await onPrepared(); }
       else timer = setTimeout(() => poll(jobId, receipt, token), 1000);
     } catch (error) { if (!disposed && token === generation) { busy = false; buttons(); status.textContent = `Preparation status unavailable: ${error.message} Reload this panel to check supplied originals.`; } }
@@ -87,8 +87,8 @@ export function mountRomPreparation(root, api, onPrepared = () => {}) {
       if (disposed || token !== generation) return;
       renderJob(job, receipt);
       if (job.job_id) { activeJob = job.job_id; cancel.hidden = TERMINAL.has(job.status); await poll(job.job_id, receipt, token); }
-      else { busy = false; buttons(); status.textContent = `Local fixture preparation: ${job.status || 'receipt retained'}.`; await refreshOriginals(true); if (!disposed) await onPrepared(); }
-    } catch (error) { if (!disposed && token === generation) { busy = false; buttons(); status.textContent = `Preparation could not finish: ${error.message}`; await refreshOriginals(true); } }
+      else { busy = false; buttons(); status.textContent = `Original accepted. Fixture preparation: ${job.status || 'receipt retained'}.`; await refreshOriginals(true); if (!disposed) await onPrepared(); }
+    } catch (error) { if (!disposed && token === generation) { busy = false; buttons(); status.textContent = `Original accepted. Fixture preparation could not finish: ${error.message}`; await refreshOriginals(true); if (!disposed) await onPrepared(); } }
   }
   input.addEventListener('change', () => selectFile(input.files?.[0]));
   cancel.addEventListener('click', async () => {

@@ -26,7 +26,7 @@ test('Sonic character artwork operation rejects unsupported physics requests bef
  const directory=await mkdtemp(join(tmpdir(),'pokemon-character-'));let called=false;
  try {
   const pipeline=createPokemonPipeline({root:process.cwd(),child:()=>{called=true;throw Error('must_not_compile');}});
-  const result=await pipeline.run({id:'character',intent:'Pokemon as Sonic with spin dash physics',source_games:['sonic-advance','pokemon-leafgreen'],directory});
+  const result=await pipeline.run({id:'character',operation:'sonic-player',intent:'Pokemon as Sonic with spin dash physics',source_games:['sonic-advance','pokemon-leafgreen'],directory});
   assert.equal(result.reason,'unsupported_pokemon_operation');assert.equal(called,false);
  }finally{await rm(directory,{recursive:true,force:true});}
 });
@@ -37,7 +37,7 @@ test('uploaded immutable originals satisfy capabilities and are pinned into sour
   const original=join(runtime,'uploaded-original.gba');await writeFile(original,'private fixture');let args;
   const pipeline=createPokemonPipeline({root:process.cwd(),runtimeRoot:runtime,originalResolver:async id=>({path:original,game_id:id}),child:async(command,arguments_)=>{args=arguments_;throw Error('stop_after_source_pin');}});
   assert.equal((await pipeline.capabilities('sonic-player')).available,true);
-  await assert.rejects(pipeline.run({id:'upload',intent:'Pokemon as Sonic the main character',source_games:['pokemon-leafgreen','sonic-advance'],directory}),/stop_after_source_pin/);
+  await assert.rejects(pipeline.run({id:'upload',operation:'sonic-player',intent:'Pokemon as Sonic the main character',source_games:['pokemon-leafgreen','sonic-advance'],directory}),/stop_after_source_pin/);
   assert.equal(args[args.indexOf('--host-original')+1],original);assert.equal(args[args.indexOf('--donor-original')+1],original);
  }finally{await rm(runtime,{recursive:true,force:true});}
 });

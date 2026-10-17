@@ -53,3 +53,28 @@ test('versioned pipeline resume validates original lock before any work and igno
   await assert.rejects(pipeline.resume({id:'same-run',directory,prior}),/ENOENT/);assert.equal(calls,1);
  }finally{await rm(temp,{recursive:true,force:true});}
 });
+test('source transform prompt requires all context and old locks remain usable without new entries',async()=>{
+ const current=await loadPromptRegistry(root),variables={requestJson:JSON.stringify({host:'sonic-advance',donor:'pokemon-firered',intent:'literal {{contextJson}} $&'}),contextJson:'{"source_roots":["inputs/host","inputs/donor"]}',outputContractJson:'{"request-plan.json":{},"requirement-ledger.json":{},"attempt-receipt.json":{}}'};
+ const rendered=renderPrompt(current,'codex-source-transform',variables);
+ assert.equal(rendered.prompt.version,'1.1.0');assert.ok(rendered.text.includes(variables.requestJson));assert.ok(rendered.text.includes(variables.contextJson));assert.ok(rendered.text.includes(variables.outputContractJson));
+ assert.throws(()=>renderPrompt(current,'codex-source-transform',{requestJson:'{}',contextJson:'{}'}),/missing_prompt_variable:outputContractJson/);
+ const legacy={schema:current.schema,registry:{version:'1.0.0',sha256:'ea985290ddc8cb31cf2ca7c6045bec5331ab5ac85b1f63bc2977bea14f997aa0'},prompts:current.prompts.filter(pin=>!pin.id.startsWith('codex-source-transform'))};
+ const prior=renderPrompt(legacy,'s2-reasoning');assert.deepEqual(prior,renderPrompt(current,'s2-reasoning'));assert.ok(promptLockSha256(legacy));
+ assert.throws(()=>renderPrompt(legacy,'codex-source-transform',variables),/missing_prompt:codex-source-transform/);
+ const py=spawnSync('python3',['-B','-c','import json,sys; from tools.prompts import validate,render; lock=json.load(sys.stdin); validate(lock); print(json.dumps(render(lock,"s2-reasoning")))'],{cwd:root,input:JSON.stringify(legacy),encoding:'utf8'});
+ assert.equal(py.status,0,py.stderr);assert.deepEqual(JSON.parse(py.stdout),[prior.text,prior.prompt]);
+});
+
+test('recipe-first defaults and separate continuation prompt preserve original source attempt lock',async()=>{
+ const current=await loadPromptRegistry(root),oldContent=await readFile(join(root,'prompts/codex-source-transform/1.0.0.json'),'utf8');
+ assert.equal(sha(oldContent),'c8ea252f925f16eb27a8b668e0f73fdbcd2dec919cacfc3cf485e13c42dc4b06');
+ const oldPin={id:'codex-source-transform',version:'1.0.0',ref:'prompts/codex-source-transform/1.0.0.json',sha256:sha(oldContent),content:oldContent};
+ const original={schema:current.schema,registry:{version:'1.1.0',sha256:'b4458fb49ef4aba3144e5d8760a3d1eac8ac79d6d1f35291e095f3cb2cc45098'},prompts:[...current.prompts.filter(pin=>!pin.id.startsWith('codex-source-transform')),oldPin]};
+ const originalDigest=promptLockSha256(original),values={requestJson:'{"intent":"original exact host/donor"}',contextJson:'{"installed_adapters":[]}',outputContractJson:'{"status":["candidate","ready-for-adapter","blocked"]}'};
+ assert.equal(renderPrompt(original,'codex-source-transform',values).prompt.version,'1.0.0');
+ const next=renderPrompt(current,'codex-source-transform',values);assert.equal(next.prompt.version,'1.1.0');assert.ok(next.text.indexOf('If a faithful installed adapter')<next.text.indexOf('If no faithful adapter'));
+ const continuation=renderPrompt(current,'codex-source-transform-resume',{requestJson:values.requestJson,continuationJson:'{"thread_id":"retained","build_receipt":"build/receipt.json"}',outputContractJson:values.outputContractJson});
+ assert.ok(continuation.text.includes('build/receipt.json'));assert.ok(continuation.text.includes('Do not repeat a completed build'));
+ assert.throws(()=>renderPrompt(original,'codex-source-transform-resume',{}),/missing_prompt/);
+ assert.equal(promptLockSha256(original),originalDigest);
+});

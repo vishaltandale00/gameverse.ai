@@ -24,9 +24,26 @@ test('Sonic request and exact parent continuation retain their own source backen
 });
 test('exact Pokemon-as-Sonic request selects reusable host character operation',()=>{
  const route=resolveCreationRoute({intent:'I want to play Pokemon but as Sonic the main character',source_games:['sonic-advance','pokemon-leafgreen']});
- assert.equal(route.backend,'pokemon-character');assert.equal(route.operation,'sonic-player');assert.deepEqual(route.roles,{host:'pokemon-leafgreen',donor:'sonic-advance',transfer:['player-overworld']});
+ assert.equal(route.backend,null);assert.equal(route.reason,'source_roles_require_planning');assert.deepEqual(route.candidate_operations.map(o=>o.id),['sonic-player','pokemon-enemies']);
 });
 test('generic Pokemon character request uses pinned host while library citations do not add games',()=>{
- assert.equal(resolveCreationRoute({intent:'I want to play Pokemon but as Sonic the main character'}).operation,'sonic-player');
+ assert.equal(resolveCreationRoute({intent:'I want to play Pokemon but as Sonic the main character'}).reason,'source_roles_require_planning');
  assert.equal(resolveCreationRoute({intent:'Combine Sonic and MZM\nLibrary reference: Mario Emerald [system:sample] — context only.'}).backend,'sonic-metroid');
+});
+
+test('free text reaches actual source planning before selecting same-pair roles or ignoring refinements',async()=>{
+ let planned,legacy=0;const backend={capabilities:async()=>({available:true}),run:async()=>{legacy++;return {status:'completed'};}};
+ const agentSource={capabilities:async()=>({available:true}),run:async args=>{planned=args;return {status:'blocked',reason:'actual_source_attempt_retained'};}};
+ const router=createCreationRouter({sonic:backend,pokemon:backend,agentSource});
+ await router.run({intent:'sonic but the enemies are pokemon',source_games:[]});assert.deepEqual(planned.source_games,['sonic-advance','pokemon-leafgreen']);assert.equal(legacy,0);
+ await router.run({intent:'Build LeafGreen with Emerald overworld sprites\nRefinement: skip introduction and name me Jeff',source_games:['pokemon-leafgreen','pokemon-emerald']});assert.match(planned.intent,/skip introduction/);assert.equal(legacy,0);
+});
+
+test('catalog source discovery investigates ambiguous Mario without copying a selected family and rejects explicit conflicts',async()=>{
+ const games=[{id:'super-mario-advance',name:'Super Mario Advance'},{id:'super-mario-advance-2-super-mario-world',name:'Super Mario Advance 2: Super Mario World'},{id:'metroid-fusion',name:'Metroid Fusion'}],calls=[];
+ const backend={capabilities:async()=>({available:true}),run:async()=>({status:'blocked'})};
+ const router=createCreationRouter({sonic:backend,pokemon:backend,catalog:{summary:async()=>({games}),context:async()=>({items:[]})},agentSource:{run:async args=>{calls.push(args);return {status:'blocked'};}}});
+ await router.run({intent:'Mario with new enemies',source_games:[]});assert.deepEqual(calls[0].source_games,[]);assert.equal(calls[0].request_plan.source_candidates.length,2);
+ await router.run({intent:'SMA2 with new enemies',source_games:[]});assert.deepEqual(calls[1].source_games,['super-mario-advance-2-super-mario-world']);
+ const conflict=await router.run({intent:'Super Mario Advance 2 with Metroid Fusion',source_games:['super-mario-advance','metroid-fusion']});assert.equal(conflict.reason,'source_selection_conflict');assert.equal(calls.length,2);
 });
