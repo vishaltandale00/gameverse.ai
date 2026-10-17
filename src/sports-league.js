@@ -67,7 +67,7 @@ export const SPECIALTIES = {
     brick_wall: { name: 'Brick Wall', text: 'Holds blocks 40% longer.' },
     ballhawk: { name: 'Ballhawk', text: 'Turns contested catches into interceptions twice as often.' },
     enforcer: { name: 'Enforcer', text: 'Big hits force fumbles twice as often.' },
-    lockdown: { name: 'Lockdown', text: 'Trails receivers 40% tighter and breaks on the ball sooner.' },
+    lockdown: { name: 'Lockdown', text: 'Mirrors routes 40% tighter and breaks on the ball sooner.' },
     big_leg: { name: 'Big Leg', text: 'Adds 10 yards of field-goal range and 12% kick distance.' },
   },
 };

@@ -560,7 +560,7 @@ test('big hits can force fumbles that bounce live; Carrying resists them and Enf
   assert.ok(runUntil(s, x => x.phase === 'dead' || x.carrier >= 0, 4)); assert.equal(game.validateState(s), true);
 });
 
-test('broken tackles follow Break Tackle and Bulldozer; a Lockdown corner trails tighter than a Route Artist allows', () => {
+test('broken tackles follow Break Tackle and Bulldozer; Route Artist buys separation and a Lockdown corner contests beyond normal reach', () => {
   const broke = (btk, specialties) => {
     let count = 0;
     for (let seed = 1; seed <= 25; seed++) { const s = openDuel(); s.seed = seed; s.teams[0].players[0].ratings.btk = btk; s.teams[0].players[0].ratings.car = 99; s.teams[0].players[0].specialties = specialties; for (let n = 0; n < 20 && s.phase === 'live'; n++) game.step(s, 1 / 60, idle()); if (s.phase === 'live') count++; }
@@ -572,7 +572,22 @@ test('broken tackles follow Break Tackle and Bulldozer; a Lockdown corner trails
     const s = start(-30, 4); s.teams[1].players[2].specialties = corner; s.teams[0].players[2].specialties = receiver; s.teams[0].players[2].ratings.spd = 40; s.calls[1] = 2; press(s, 'right'); press(s, 'left'); press(s, 'confirm'); tick(s, 1.5);
     return Math.hypot(s.players[9].x - s.players[2].x, s.players[9].y - s.players[2].y);
   };
-  assert.ok(trail(['lockdown'], []) < trail([], [])); assert.ok(trail([], ['route_artist']) > trail([], []));
+  assert.ok(trail([], ['route_artist']) > trail([], []));
+  // A defender 1.4 yd from the catch point is out of normal reach; Lockdown still contests it.
+  const caught = specialties => {
+    let count = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const s = start(-30, 3, { seed }); press(s, 'confirm'); s.carrier = -1; s.thrown = true; s.playKind = 'pass'; s.passer = 0;
+      for (const p of s.players) { p.x = 20; p.y = -40; p.prevX = p.x; p.prevY = p.y; }
+      s.teams[1].players[2].specialties = specialties; s.teams[1].players[2].ratings.cov = 80;
+      Object.assign(s.players[2], { x: 0, y: 0, prevX: 0, prevY: 0 }); Object.assign(s.players[9], { x: 1.4, y: 0, prevX: 1.4, prevY: 0 });
+      s.ball = { x: 0, y: -.2, z: 1.7, carry: null, flight: { x: 0, y: -10, tx: 0, ty: 0, vx: 0, vy: 10, vz: -1, elapsed: .99, duration: 1, passer: 0, receiver: 2, type: 'BULLET' } };
+      game.step(s, 1 / 60, idle()); if (s.carrier === 2) count++;
+    }
+    return count;
+  };
+  const open = caught([]), locked = caught(['lockdown']);
+  assert.ok(locked < open - 5, `Lockdown contests (${locked} vs ${open} catches)`);
 });
 
 test('throw placement error shrinks with Throw Accuracy and Surgeon; Gunslinger adds velocity and range', () => {
