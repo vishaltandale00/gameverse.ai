@@ -1,0 +1,145 @@
+#include <mgba/core/core.h>
+#include <mgba/core/config.h>
+#include <mgba/gba/core.h>
+#include <mgba/internal/arm/arm.h>
+#include <mgba/internal/arm/isa-inlines.h>
+#include <mgba/internal/gba/gba.h>
+#include <mgba/internal/gba/video.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <string.h>
+#include "native-addresses.h"
+static uint32_t pixels[240*160];
+static unsigned long calls,instructions,framechecks,palettechecks,reflectionchecks,oamchecks,finitechecks,flipchecks,mixedchecks;
+static struct mCore *core;
+#define CHECK(x) do {if(!(x)){fprintf(stderr,"native check failed line %d: %s\n",__LINE__,#x);exit(5);}}while(0)
+static unsigned r8(unsigned a){return core->busRead8(core,a);}
+static unsigned r16(unsigned a){return core->busRead16(core,a);}
+static unsigned r32(unsigned a){return core->busRead32(core,a);}
+static void w8(unsigned a,unsigned v){core->busWrite8(core,a,v);}
+static void w16(unsigned a,unsigned v){core->busWrite16(core,a,v);}
+static void w32(unsigned a,unsigned v){core->busWrite32(core,a,v);}
+static uint32_t invoke(unsigned pc,unsigned a,unsigned b,unsigned c,unsigned d,unsigned e){
+ struct ARMCore*cpu=core->cpu;
+ for(unsigned i=0;i<16;i++)cpu->gprs[i]=0;
+ cpu->gprs[0]=a;cpu->gprs[1]=b;cpu->gprs[2]=c;cpu->gprs[3]=d;
+ for(unsigned i=4;i<12;i++)cpu->gprs[i]=0x9e3779b9u*i;
+ cpu->gprs[ARM_SP]=0x03007d00;cpu->gprs[ARM_LR]=0x08000001;w32(0x03007d00,e);cpu->cpsr.i=1;
+ cpu->cycles=0;cpu->nextEvent=INT_MAX;_ARMSetMode(cpu,MODE_THUMB);cpu->gprs[ARM_PC]=pc&~1u;ThumbWritePC(cpu);
+ unsigned n=0;while((uint32_t)cpu->gprs[ARM_PC]-2!=0x08000000&&n<2000000){ARMRun(cpu);n++;}
+ calls++;instructions+=n;
+ if(n>=2000000){fprintf(stderr,"native call timeout pc %08x end %08x\n",pc,cpu->gprs[ARM_PC]);exit(6);}
+ CHECK(cpu->gprs[ARM_SP]==0x03007d00);
+ for(unsigned i=4;i<12;i++)CHECK((uint32_t)cpu->gprs[i]==0x9e3779b9u*i);
+ return cpu->gprs[0];
+}
+#define CALL0(fn) invoke(SYM_##fn,0,0,0,0,0)
+#define CALL1(fn,a) invoke(SYM_##fn,a,0,0,0,0)
+#define CALL2(fn,a,b) invoke(SYM_##fn,a,b,0,0,0)
+static void load(const char*path){
+ core=GBACoreCreate();CHECK(core&&core->init(core));mCoreInitConfig(core,NULL);
+ mCoreConfigSetDefaultIntValue(&core->config,"skipBios",1);mCoreConfigSetDefaultIntValue(&core->config,"useBios",0);mCoreLoadConfig(core);
+ core->setVideoBuffer(core,pixels,240);CHECK(mCoreLoadFile(core,path));core->reset(core);
+}
+static void dump(const char*directory,const char*name){char path[4096];snprintf(path,sizeof(path),"%s/%s.rgba",directory,name);FILE*f=fopen(path,"wb");CHECK(f);CHECK(fwrite(pixels,4,240*160,f)==240*160);fclose(f);}
+static unsigned palette(unsigned tag){
+ for(unsigned i=0;i<256;i++){unsigned at=SYM_sObjectEventSpritePalettes+i*8,t=r16(at+4);if(t==tag)return r32(at);if(t==0x11ff||t==0xffff)break;}
+ fprintf(stderr,"palette tag missing %x\n",tag);exit(7);
+}
+static void assertpalette(unsigned tag,unsigned bank){
+ unsigned data=palette(tag);CHECK(bank<16);
+ for(unsigned i=0;i<32;i++){CHECK(r8(SYM_gPlttBufferUnfaded+0x200+bank*32+i)==r8(data+i));CHECK(r8(SYM_gPlttBufferFaded+0x200+bank*32+i)==r8(data+i));CHECK(r8(0x05000200+bank*32+i)==r8(data+i));}
+ palettechecks++;
+}
+static unsigned reflection(unsigned tag,unsigned slot,unsigned table,unsigned fn){
+ for(unsigned row=0;row<64;row++){
+  unsigned at=table+row*8,t=r16(at);
+  if(t==0x11ff||t==0xffff)return 0;
+  if(t!=tag)continue;
+  unsigned ptr=r32(at+4),bank=r8(SYM_gReflectionEffectPaletteMap+slot);
+  for(unsigned type=0;type<4;type++){
+   w8(SYM_sCurrentReflectionType,type);invoke(fn,tag,slot,0,0,0);CALL0(TransferPlttBuffer);
+   assertpalette(tag,slot);assertpalette(r16(ptr+2*type),bank);reflectionchecks++;
+  }
+  w8(SYM_sCurrentReflectionType,0);return 1;
+ }
+ CHECK(0);return 0;
+}
+static void render(void){
+ struct GBA*gba=core->board;
+ w16(0x04000000,0x1040);w16(0x04000050,0);w16(0x04000052,0);w16(0x04000054,0);
+ for(unsigned y=0;y<160;y++)gba->video.renderer->drawScanline(gba->video.renderer,y);
+ gba->video.renderer->finishFrame(gba->video.renderer);
+}
+int main(int argc,char**argv){
+ CHECK(argc==3);load(argv[1]);
+ for(unsigned frame=0;frame<900;frame++)core->runFrame(core);
+ unsigned nonzero=0;for(unsigned i=1;i<240*160;i++)nonzero+=pixels[i]!=pixels[0];CHECK(nonzero>100);
+ dump(argv[2],"cold-boot-900");core->deinit(core);
+ load(argv[1]);
+ for(unsigned ci=0;ci<sizeof(cases)/sizeof(cases[0]);ci++){
+  const struct Case*test=&cases[ci];fprintf(stderr,"checking %s id=%u commands=%u\n",test->name,test->id,test->count);
+  CALL0(ResetSpriteData);CALL0(FreeAllSpritePalettes);
+  unsigned sid=invoke(SYM_CreateObjectGraphicsSprite,test->id,SYM_SpriteCallbackDummy|1,120,80,0);CHECK(sid<64);
+  unsigned sprite=SYM_gSprites+sid*68,tag=r16(test->info+2),slot=r8(test->info+12)&15;
+  // Exercise the field consumer that changes graphic IDs and assigns fixed banks.
+  for(unsigned i=0;i<36;i++)w8(SYM_gObjectEvents+i,0);
+  w8(SYM_gObjectEvents+4,sid);CALL2(ObjectEventSetGraphicsId,SYM_gObjectEvents,test->id);
+  w16(sprite+0x20,120);w16(sprite+0x22,80);
+  CHECK((r16(sprite+4)>>12)==slot);
+  CALL2(PatchObjectPalette,tag,slot);CALL0(TransferPlttBuffer);assertpalette(tag,slot);
+  unsigned playerreflection=reflection(tag,slot,SYM_gPlayerReflectionPaletteSets,SYM_LoadPlayerObjectReflectionPalette);
+  unsigned specialreflection=reflection(tag,slot,SYM_gSpecialObjectReflectionPaletteSets,SYM_LoadSpecialObjectReflectionPalette);
+  if(slot==0)CHECK(playerreflection&&specialreflection);
+  CALL2(PatchObjectPalette,tag,slot);CALL0(TransferPlttBuffer);
+  for(unsigned fi=test->begin;fi<test->begin+test->count;fi++){
+   const struct Frame*f=&frames[fi];CALL2(StartSpriteAnim,sprite,f->anim);CALL2(SeekSpriteAnim,sprite,f->command);
+   CALL0(BuildOamBuffer);CALL0(ProcessSpriteCopyRequests);CALL0(LoadOam);
+   unsigned images=r32(sprite+12),image=r32(images+f->image*8),size=r16(images+f->image*8+4),tile=r16(sprite+4)&1023;
+   CHECK(size>0&&size<=0x2000);CHECK(tile*32+size<=0x8000);
+   for(unsigned i=0;i<size;i++)CHECK(r8(0x06010000+tile*32+i)==r8(image+i));
+   unsigned found=0;
+   for(unsigned oi=0;oi<128;oi++){
+    unsigned a0=r16(0x07000000+oi*8),a2=r16(0x07000004+oi*8);
+    if((a0&0x300)==0x200)continue;
+    if((a2&1023)==tile&&((a2>>12)&15)==slot)found++;
+   }
+   CHECK(found>0);oamchecks++;framechecks++;
+   if((r16(sprite)&0x100)==0){CHECK(((r16(sprite+2)>>12)&3)==((f->flags>>6)&3));flipchecks++;}
+   // Actual native renderer reads engine-generated OAM, VRAM and hardware palettes.
+   if(f->command==0&&f->anim<4){char name[256];snprintf(name,sizeof(name),"object-%03u-animation-%02u",test->id,f->anim);render();dump(argv[2],name);}
+   // Advance naturally for one animation tick as well as seeking each frame command.
+   CALL1(AnimateSprite,sprite);
+  }
+  for(unsigned ai=test->abegin;ai<test->abegin+test->acount;ai++){
+   const struct Animation*a=&finite_animations[ai];CALL0(ClearSpriteCopyRequests);CALL2(StartSpriteAnim,sprite,a->anim);
+   unsigned tick=0;while(!(r8(sprite+0x3f)&0x10)&&tick<a->ticks){CALL1(AnimateSprite,sprite);tick++;}
+   if(!(r8(sprite+0x3f)&0x10)){fprintf(stderr,"finite animation did not end %s anim%u ticks%u\n",test->name,a->anim,tick);exit(8);}
+   finitechecks++;
+  }
+ }
+ // One actual player form together with NPCs and an unchanged LeafGreen-only actor.
+ CALL0(ResetSpriteData);CALL0(FreeAllSpritePalettes);
+ unsigned mixedsprites[64],mixedinfos[64],mixedcount=0;
+ for(unsigned ci=0;ci<sizeof(cases)/sizeof(cases[0])+1;ci++){
+  unsigned id=ci<sizeof(cases)/sizeof(cases[0])?cases[ci].id:21;
+  unsigned info=ci<sizeof(cases)/sizeof(cases[0])?cases[ci].info:r32(SYM_gObjectEventGraphicsInfoPointers+21*4);
+  unsigned slot=r8(info+12)&15;if(slot==0&&id!=0)continue;
+  unsigned sid=invoke(SYM_CreateObjectGraphicsSprite,id,SYM_SpriteCallbackDummy|1,24+(mixedcount%8)*28,32+(mixedcount/8)*32,0);CHECK(sid<64);
+  unsigned sprite=SYM_gSprites+sid*68,tag=r16(info+2);
+  w8(SYM_gObjectEvents+4,sid);CALL2(ObjectEventSetGraphicsId,SYM_gObjectEvents,id);
+  w16(sprite+0x20,24+(mixedcount%8)*28);w16(sprite+0x22,32+(mixedcount/8)*32);
+  CALL2(PatchObjectPalette,tag,slot);CALL2(StartSpriteAnim,sprite,0);CALL2(SeekSpriteAnim,sprite,0);
+  mixedsprites[mixedcount]=sprite;mixedinfos[mixedcount]=info;mixedcount++;
+ }
+ CALL0(TransferPlttBuffer);CALL0(BuildOamBuffer);CALL0(ProcessSpriteCopyRequests);CALL0(LoadOam);
+ for(unsigned i=0;i<mixedcount;i++){
+  unsigned info=mixedinfos[i],sprite=mixedsprites[i],slot=r8(info+12)&15;
+  CHECK((r16(sprite+4)>>12)==slot);assertpalette(r16(info+2),slot);mixedchecks++;
+ }
+ render();dump(argv[2],"mixed-player-npcs-native");
+ printf("{\"outcome\":\"pass\",\"cold_boot_frames\":900,\"natural_gameplay_route\":false,\"fixture_objects\":%lu,\"animation_frame_commands\":%lu,\"oam_checks\":%lu,\"palette_checks\":%lu,\"reflection_palette_checks\":%lu,\"finite_animations_ended\":%lu,\"flip_checks\":%lu,\"mixed_field_palette_checks\":%lu,\"native_calls\":%lu,\"native_instructions\":%lu}\n",sizeof(cases)/sizeof(cases[0]),framechecks,oamchecks,palettechecks,reflectionchecks,finitechecks,flipchecks,mixedchecks,calls,instructions);
+ core->deinit(core);return 0;
+}

@@ -92,7 +92,7 @@ $('composer').addEventListener('submit', async event => {
   const source_games = [...root.querySelectorAll('#source-options input:checked')].map(input => input.value);
   const intent = refinementIntent(previous?.intent, message);
   if (intent.length > 12000) { busy = false; $('form-status').textContent = 'This conversation has reached the request limit. Shorten the next description or start a new idea.'; updateButtons(); return; }
-  try { const result = await api('/api/mashup/runs', { method: 'POST', body: JSON.stringify({ request_id, intent, source_games, ...(previous ? { [previous.playable === true ? 'parent_request_id' : 'retry_of']: previous.request_id } : {}) }) }); run = result.run || result; history.push({ request_id: run.request_id || request_id, message, intent, ...(previous ? { [previous.playable === true ? 'parent_request_id' : 'retry_of']: previous.request_id } : {}) }); save(); renderHistory(); $('intent').value = ''; $('form-status').textContent = ''; renderRun(); schedulePoll(); }
+  try { const result = await api('/api/mashup/runs', { method: 'POST', body: JSON.stringify({ request_id, intent, source_games, ...(previous ? { [previous.playable === false ? 'retry_of' : 'parent_request_id']: previous.request_id } : {}) }) }); run = result.run || result; history.push({ request_id: run.request_id || request_id, message, intent, ...(previous ? { [previous.playable === false ? 'retry_of' : 'parent_request_id']: previous.request_id } : {}) }); save(); renderHistory(); $('intent').value = ''; $('form-status').textContent = ''; renderRun(); schedulePoll(); }
   catch (error) { $('form-status').textContent = error.message; }
   finally { busy = false; updateButtons(); }
 });
