@@ -52,34 +52,41 @@ test('football observation keeps the offense-up broadcast frame for both teams a
   assert.deepEqual(state, before);
 });
 
-test('requests ask move, skill and action, and menu screens only offer menu choices', () => {
+// Minimal observations for each controller situation the harness distinguishes.
+const situation = (game, phase, extra = {}, context = {}) => ({ ...observeSports(game, createSession(game).state), phase, controlled: 3, owner: -1, possession: null, ...extra,
+  context: { ...observeSports(game, createSession(game).state).context, receiverIcons: [], special: null, kicked: false, ...context } });
+const onBall = situation('soccer', 'play', { owner: 3, possession: 'us' });
+const qb = situation('football', 'live', { controlled: 0, owner: 0, possession: 'us' }, { offense: 'us', receiverIcons: [{ button: 'A', player: 1 }] });
+
+test('requests ask move, skill and action, and offer only the buttons that fit the situation', () => {
   for (const game of ['soccer', 'football']) {
-    const session = createSession(game), observation = observeSports(game, session.state);
-    const request = decisionsRequest(observation);
+    const request = decisionsRequest(observeSports(game, createSession(game).state));
     assert.equal(request.model, 'gpt-6-luna'); assert.equal(typeof request.input, 'string');
     assert.deepEqual(request.questions.map(q => [q.type, q.name]), [['choice', 'move'], ['choice', 'skill'], ['choice', 'action']]);
     assert.equal(request.questions[0].choices.length, 9); assert.equal(request.questions[1].choices.length, 9);
-    const menu = actionsOf(decisionsRequest({ ...observation, phase: 'finished' }));
-    assert.deepEqual(menu.sort(), ['confirm', 'neutral']);
-    const live = actionsOf(decisionsRequest({ ...observation, phase: game === 'soccer' ? 'play' : 'live', context: { ...observation.context, plays: [] } }));
-    assert.ok(live.includes(game === 'soccer' ? 'finesse_shot' : 'receiverX_tap'));
-    assert.ok(!live.includes(game === 'soccer' ? 'receiverX' : 'shot'));
-    if (game === 'football') assert.ok(live.includes('timeout') && live.includes('kick'));
+    assert.deepEqual(actionsOf(decisionsRequest(situation(game, 'finished'))).sort(), ['confirm', 'neutral']);
   }
-  const football = observeSports('football', createSession('football').state);
-  const selecting = actionsOf(decisionsRequest({ ...football, phase: 'select', context: { ...football.context, plays: ['INSIDE RUN', 'SLANTS'] } }));
-  assert.deepEqual(selecting.sort(), ['confirm', 'neutral', 'play_left', 'play_right', 'timeout']);
+  const soccerBall = actionsOf(decisionsRequest(onBall)), soccerDefense = actionsOf(decisionsRequest(situation('soccer', 'play', { owner: 7, possession: 'them' })));
+  assert.ok(soccerBall.includes('finesse_shot') && soccerBall.includes('through')); assert.ok(!soccerBall.includes('tackle') && !soccerBall.includes('confirm'));
+  assert.ok(soccerDefense.includes('tackle') && soccerDefense.includes('switch')); assert.ok(!soccerDefense.includes('shot') && !soccerDefense.includes('pass'));
+  assert.deepEqual(actionsOf(decisionsRequest(situation('soccer', 'restart', {}, { restart: { type: 'Throw-in', side: 'them' } }))), ['neutral']);
+  const thrower = actionsOf(decisionsRequest(qb)), kicker = actionsOf(decisionsRequest(situation('football', 'live', { controlled: 5, owner: 5, possession: 'us' }, { offense: 'us', special: 'kickoff' })));
+  assert.ok(thrower.includes('receiverX_tap') && !thrower.includes('tackle') && !thrower.includes('confirm'));
+  assert.deepEqual(kicker.sort(), ['kick', 'neutral']);
+  const defending = actionsOf(decisionsRequest(situation('football', 'live', { controlled: 9, owner: 2, possession: 'them' }, { offense: 'them' })));
+  assert.ok(defending.includes('tackle') && defending.includes('switch') && !defending.includes('receiverA'));
+  assert.deepEqual(actionsOf(decisionsRequest(situation('football', 'select', {}, { plays: ['INSIDE RUN', 'SLANTS'] }))).sort(), ['confirm', 'neutral', 'play_left', 'play_right', 'timeout']);
+  assert.deepEqual(actionsOf(decisionsRequest(situation('football', 'dead'))).sort(), ['confirm', 'neutral', 'timeout']);
 });
 
 test('decoding accepts exact typed choices and rejects refusals or missing answers', () => {
-  const request = decisionsRequest(observeSports('soccer', createSession('soccer').state));
-  const live = decisionsRequest({ ...observeSports('soccer', createSession('soccer').state), phase: 'play' });
+  const live = decisionsRequest(onBall), menu = decisionsRequest(situation('soccer', 'finished'));
   const action = decision('shot', 'up_right', 'left');
   assert.deepEqual(decodeDecision(answer(action), live), action);
   const refused = answer(action); refused.answers[1] = { type: 'refusal', name: 'skill' };
   assert.throws(() => decodeDecision(refused, live), /Invalid/);
   assert.throws(() => decodeDecision({ answers: [] }, live), /missing/);
-  if (actionsOf(request).length <= 5) assert.throws(() => decodeDecision(answer(action), request), /Invalid/);
+  assert.throws(() => decodeDecision(answer(action), menu), /Invalid/);
 });
 
 test('controller mappings use classic face buttons, pulse taps, and mirror only the away soccer stick', () => {
@@ -146,7 +153,7 @@ test('dry-run matches record both seats and replay to the exact same state', asy
 });
 
 test('the explicit retry policy re-asks refusals and server errors but never invents a choice', async () => {
-  const request = decisionsRequest({ ...observeSports('soccer', createSession('soccer').state), phase: 'play' });
+  const request = decisionsRequest(onBall);
   const chosen = decision('pass', 'right');
   const reply = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'x-request-id': `req-${status}` } });
   const original = globalThis.fetch;
@@ -179,7 +186,7 @@ test('sent-off soccer athletes are absent from Decisions observations', () => {
 });
 
 test('every HTTP attempt, including retries, is charged against the call budget', async () => {
-  const request = decisionsRequest({ ...observeSports('soccer', createSession('soccer').state), phase: 'play' });
+  const request = decisionsRequest(onBall);
   const original = globalThis.fetch; let fetched = 0, allowed = 2;
   globalThis.fetch = async () => { fetched++; return new Response('{}', { status: 503 }); };
   try {
