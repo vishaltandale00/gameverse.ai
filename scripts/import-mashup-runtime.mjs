@@ -80,9 +80,21 @@ export async function importMashupRuntime({ source, destination = join(root, 'lo
     const sourceCode = inventory.filter(row => row.kind === 'code' && !row.path.includes('/build/'));
     const code_sha256 = createHash('sha256').update(JSON.stringify(sourceCode.map(({path,sha256}) => ({path,sha256})))).digest('hex');
     if (code_sha256 !== runtimeCodeSha256) throw Error(`Runtime code version mismatch: expected ${runtimeCodeSha256}, received ${code_sha256}. Import the reviewed runtime closure; a matching Git commit alone is insufficient when source files are uncommitted.`);
+    // Validate the research closure above, then capture reviewed application policy separately.
+    const reviewed_overlay=[];
+    async function overlay(ref){
+      const from=join(root,ref),info=await readFile(from);await mkdir(dirname(join(staging,ref)),{recursive:true});await writeFile(join(staging,ref),info);
+      reviewed_overlay.push({path:ref,kind:'code',bytes:info.length,sha256:createHash('sha256').update(info).digest('hex')});
+    }
+    async function overlayTree(ref){for(const item of await readdir(join(root,ref),{withFileTypes:true})){if(item.name==='__pycache__'||item.name.endsWith('.pyc'))continue;const next=ref+'/'+item.name;if(item.isDirectory())await overlayTree(next);else if(item.isFile())await overlay(next);else throw Error('Reviewed policy symlink rejected.');}}
+    await overlayTree('prompts');await overlayTree('tools/prompts');
+    for(const ref of ['tools/playtester/models.py','tools/playtester/core.py','tools/playtester/experiment.py','tools/playtester/rpg_experiment.py'])await overlay(ref);
+    const finalInventory=new Map(inventory.map(row=>[row.path,row]));for(const row of reviewed_overlay)finalInventory.set(row.path,row);
+    const installedFiles=[...finalInventory.values()].sort((a,b)=>a.path.localeCompare(b.path));
+    const installedCounts={code_file_count:0,code_bytes:0,private_asset_file_count:0,private_asset_bytes:0};for(const row of installedFiles){installedCounts[row.kind+'_file_count']++;installedCounts[row.kind+'_bytes']+=row.bytes;}
     let source_commit = null;
     try { source_commit = execFileSync('git', ['rev-parse','HEAD'], { cwd: source, encoding:'utf8', stdio:['ignore','pipe','ignore'], timeout:3000 }).trim(); } catch {}
-    await writeFile(join(staging, 'installation.json'), JSON.stringify({ schema: 'gameverse-local-runtime/1', installed_at: new Date().toISOString(), source_commit, baseline_sha256: 'f1faa36558ae5d7ccacfc94292201b63c7a870803464a2f4d2699c6654bf6bf1', baseline_lock_sha256: createHash('sha256').update(lock).digest('hex'), code_sha256, ...counts, files: inventory, source, copied_roots: [...files.keys()], note: 'Code includes compiler, configuration, evidence and native executable; private_asset covers ROMs and local composition assets. Code digest excludes machine build outputs. Private local inputs; never commit this directory. Native toolchain, libmgba and ffmpeg remain machine prerequisites.' }, null, 2), { mode: 0o600 });
+    await writeFile(join(staging, 'installation.json'), JSON.stringify({ schema: 'gameverse-local-runtime/1', installed_at: new Date().toISOString(), source_commit, baseline_sha256: 'f1faa36558ae5d7ccacfc94292201b63c7a870803464a2f4d2699c6654bf6bf1', baseline_lock_sha256: createHash('sha256').update(lock).digest('hex'), code_sha256, reviewed_overlay, reviewed_overlay_sha256:createHash('sha256').update(JSON.stringify(reviewed_overlay)).digest('hex'), ...installedCounts, files: installedFiles, research_source_files:inventory, source, copied_roots: [...files.keys()], note: 'Code includes compiler, configuration, evidence and native executable; private_asset covers ROMs and local composition assets. code_sha256 pins the research closure before the separately hashed reviewed prompt/model overlay. Installation files reflect both; machine build outputs are excluded from code digest. Private local inputs; never commit this directory. Native toolchain, libmgba and ffmpeg remain machine prerequisites.' }, null, 2), { mode: 0o600 });
     await rename(staging, destination);
     return destination;
   } catch (error) { await rm(staging, { recursive: true, force: true }); throw error; }

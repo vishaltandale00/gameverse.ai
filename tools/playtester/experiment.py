@@ -15,6 +15,7 @@ from tools.re.session.bridge import NativeSession
 from tools.whole_game.model_config import load_sid_reference
 from .aria_adapter import AriaRewardAdapter
 from .core import Limits, Playtester
+from tools.prompts import load as load_prompts, provenance as prompt_provenance
 from .models import DecisionPolicy, ChatPolicy
 from .core import digest
 from .learning import capture, restore
@@ -89,6 +90,7 @@ def experiment_native_candidate(artifact, context):
     load_sid_reference(credential_ref)
     s1_config=ProviderConfig.from_env('d1',timeout_s=min(config.get('model_timeout',10),300))
     slow=ChatPolicy.from_env()
+    prompt_lock=getattr(slow,"prompt_lock",None) or load_prompts();slow.prompt_lock=prompt_lock
     model_binding={'system1':{'provider':s1_config.provider,'model':s1_config.model,'endpoint':s1_config.base_url},
         'system2':{'provider':'explicit_chat','model':slow.model,'endpoint':slow.endpoint}}
     declared=config.get('models')
@@ -96,7 +98,7 @@ def experiment_native_candidate(artifact, context):
         for name in ('system1','system2'):
             for key in ('provider','model'):
                 if declared[name][key]!=model_binding[name][key]:raise ValueError('experiment_model_identity_mismatch')
-    runtime={'model_binding':model_binding,'native_option':config.get('native_option',{}),'native_sha256':sha(binary),'bridge_sha256':sha(ROOT/'tools/re/session/bridge.py'),
+    runtime={'prompts':prompt_provenance(prompt_lock),'prompt_loader_sha256':sha(ROOT/'tools/prompts/__init__.py'),'model_binding':model_binding,'native_option':config.get('native_option',{}),'native_sha256':sha(binary),'bridge_sha256':sha(ROOT/'tools/re/session/bridge.py'),
         'adapter_sha256':sha(ROOT/('tools/playtester/sonic_adapter.py' if adapter_id=='sonic-native-traversal/1' else 'tools/playtester/aria_adapter.py')),
         'core_sha256':sha(ROOT/'tools/playtester/core.py'),'policy_sha256':sha(ROOT/'tools/playtester/models.py'),
         'experiment_sha256':sha(Path(__file__))}
@@ -156,6 +158,7 @@ def experiment_native_candidate(artifact, context):
                   stationary_min_frames=60,confidence_threshold=config.get('confidence',.65),margin_threshold=config.get('margin',.20))
     confidence,margin=limits.confidence_threshold,limits.margin_threshold
     policy=DecisionPolicy(s1_config,confidence=confidence,margin=margin)
+    policy.prompt_lock=prompt_lock
     if adapter_id=='sonic-native-traversal/1':
         from .sonic_adapter import SonicTraversalAdapter
         adapter=SonicTraversalAdapter(rom,out/'native-session',state,

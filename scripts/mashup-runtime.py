@@ -6,7 +6,7 @@ from mashup_stagnation import VERSION as POLICY_VERSION, closed_gate, blocked_mo
 
 def digest(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def write(p,d): Path(p).write_text(json.dumps(d,indent=2)+'\n')
-def prepare(runtime,out):
+def prepare(runtime,out,sonic_original=None,metroid_original=None):
     runtime=runtime.resolve(); out.mkdir(parents=True,exist_ok=False)
     captured=runtime/'local/composition-builds/sonic-metroid-signal-descent-25'
     lock=json.loads((captured/'composition.lock.json').read_text())
@@ -48,7 +48,13 @@ def prepare(runtime,out):
     closure(json.loads(plan.read_text()))
     for ref in ['local/roms/Sonic Advance (USA) (En,Ja).gba','local/roms/Metroid - Zero Mission (USA).gba']:
         target=out/ref;target.parent.mkdir(parents=True,exist_ok=True)
-        if not target.exists():shutil.copy2(runtime/ref,target)
+        provided=sonic_original if 'Sonic Advance' in ref else metroid_original
+        if provided or not target.exists():shutil.copy2(provided or runtime/ref,target)
+    # Model prompts/policy are reviewed application inputs, independent of the research compiler closure.
+    reviewed=Path(__file__).resolve().parents[1]
+    for folder in ['prompts','tools/prompts']:
+        shutil.copytree(reviewed/folder,out/folder,ignore=shutil.ignore_patterns('__pycache__','*.pyc'),dirs_exist_ok=True)
+    for name in ['models.py','core.py','experiment.py','rpg_experiment.py']:shutil.copy2(reviewed/'tools/playtester'/name,out/'tools/playtester'/name)
     profile=runtime/'research/ir-workshop/prefab-model-verification-20261016/sonic-profile.json'
     shutil.copy2(profile,out/'model-profile.json')
     subprocess.run(['git','init','-q'],cwd=out,check=True)
@@ -69,6 +75,7 @@ def model(work,seconds,calls,frames):
     from tools.playtester.models import DecisionPolicy, ChatPolicy
     from tools.decisions import ProviderConfig
     from tools.whole_game.model_config import load_sid_reference
+    from tools.prompts import provenance as prompt_provenance
     if os.environ.get('GAMEVERSE_SID_ENV_FILE'):load_sid_reference(os.environ['GAMEVERSE_SID_ENV_FILE'])
     else:
         key=os.environ.get('SID_LLM_KEY');base=os.environ.get('SID_LLM_URL','http://rrh-llm-1:4000')
@@ -116,6 +123,7 @@ def model(work,seconds,calls,frames):
     if resume_context:
         from collections import Counter
         learned=json.loads(Path(resume_context).read_text())
+        if learned.get('prompts')!=prompt_provenance(policy.prompt_lock):raise ValueError('resume_prompt_identity_mismatch')
         if learned['artifact_sha256']!=digest(work/'build/game.gba') or learned['profile_sha256']!=hashlib.sha256(json.dumps(profile,sort_keys=True).encode()).hexdigest():raise ValueError('resume_model_context_identity_mismatch')
         if learned['harness_sha256']!=digest(__file__) or learned['native_binary_sha256']!=adapter.inner.binary_sha256 or learned['emulator']!=adapter.inner.emulator:raise ValueError('resume_harness_identity_mismatch')
         if learned.get('source_policy_sha256')!=digest(Path(__file__).with_name('mashup_stagnation.py')):raise ValueError('resume_source_policy_identity_mismatch')
@@ -134,10 +142,10 @@ def model(work,seconds,calls,frames):
         learning={key:getattr(tester,key) for key in ['events','barriers','transitions','active_target','system2_plan','safe_wait_callback','continue_action_id','awareness','run_id','decisions','escalations','frames','steps']}
         for key in ['states','attempts','stationary','stationary_frames']:learning[key]=[[k,v] for k,v in getattr(tester,key).items()]
         learning['policy_state']={key:getattr(policy,key) for key in ['classified','classified_phase','last_classification_key']}
-        learning.update(source_policy_version=POLICY_VERSION,source_policy_sha256=digest(Path(__file__).with_name('mashup_stagnation.py')),schema='mashup-native-model-learning/1',artifact_sha256=digest(work/'build/game.gba'),profile_sha256=hashlib.sha256(json.dumps(profile,sort_keys=True).encode()).hexdigest(),adapter_version='sonic-native-traversal/1',harness_sha256=digest(__file__),native_binary_sha256=adapter.inner.binary_sha256,emulator=adapter.inner.emulator,native_checkpoint_frame=report['checkpoint']['frame'],total_wall_s=previous_usage['wall_s']+report['timing']['total_wall_s'])
+        learning.update(prompts=prompt_provenance(policy.prompt_lock),source_policy_version=POLICY_VERSION,source_policy_sha256=digest(Path(__file__).with_name('mashup_stagnation.py')),schema='mashup-native-model-learning/1',artifact_sha256=digest(work/'build/game.gba'),profile_sha256=hashlib.sha256(json.dumps(profile,sort_keys=True).encode()).hexdigest(),adapter_version='sonic-native-traversal/1',harness_sha256=digest(__file__),native_binary_sha256=adapter.inner.binary_sha256,emulator=adapter.inner.emulator,native_checkpoint_frame=report['checkpoint']['frame'],total_wall_s=previous_usage['wall_s']+report['timing']['total_wall_s'])
         write(model_out/'model-learning.json',learning);report['checkpoint']['learning_context']={'path':str(model_out/'model-learning.json'),'sha256':digest(model_out/'model-learning.json')}
         report['continuation']={'restored_model_context':bool(resume_context),'prior_usage':previous_usage,'chunk_usage':{'model_calls':report['decision_calls']+report['system2_calls']-previous_usage['model_calls'],'native_frames':report['frames']-previous_usage['frames']},'source_policy_version':POLICY_VERSION,'restore_render_frames':1 if resume_context else 0}
-        report['source_defects']=getattr(adapter,'source_defects',[]);report['evidence_root']=str(model_out);report['confidence_policy']={'confidence':.65,'margin':.2,'basis':'uncalibrated_provider_score','calibration_artifact':None,'lineage':'Existing sonic-traversal-template.json experiment confidence/margin; DecisionPolicy score/margin/top-probability gate and ChatPolicy escalation unchanged'};report['acceptance']=objective;report['artifact_sha256']=digest(work/'build/game.gba');write(model_out/'model-report.json',report);return report
+        report['prompts']=prompt_provenance(policy.prompt_lock);report['source_defects']=getattr(adapter,'source_defects',[]);report['evidence_root']=str(model_out);report['confidence_policy']={'confidence':.65,'margin':.2,'basis':'uncalibrated_provider_score','calibration_artifact':None,'lineage':'Existing sonic-traversal-template.json experiment confidence/margin; DecisionPolicy score/margin/top-probability gate and ChatPolicy escalation unchanged'};report['acceptance']=objective;report['artifact_sha256']=digest(work/'build/game.gba');write(model_out/'model-report.json',report);return report
     finally: adapter.inner.close()
 
 def migrate_learning(work):
@@ -182,9 +190,9 @@ def migrate_learning(work):
     write(folder/'receipt.json',receipt);return receipt
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('stage',choices=['prepare','build','model','prefix','boot','migrate']);p.add_argument('--runtime',type=Path);p.add_argument('--workspace',required=True,type=Path);p.add_argument('--seconds',type=int,default=60);p.add_argument('--calls',type=int,default=24);p.add_argument('--frames',type=int,default=960);a=p.parse_args();started=time.monotonic();report_dir=Path(os.environ.get('GAMEVERSE_STAGE_REPORT_ROOT',str(a.workspace)))
+    p=argparse.ArgumentParser();p.add_argument('stage',choices=['prepare','build','model','prefix','boot','migrate']);p.add_argument('--runtime',type=Path);p.add_argument('--sonic-original',type=Path);p.add_argument('--metroid-original',type=Path);p.add_argument('--workspace',required=True,type=Path);p.add_argument('--seconds',type=int,default=60);p.add_argument('--calls',type=int,default=24);p.add_argument('--frames',type=int,default=960);a=p.parse_args();started=time.monotonic();report_dir=Path(os.environ.get('GAMEVERSE_STAGE_REPORT_ROOT',str(a.workspace)))
     try:
-        if a.stage=='prepare':result=prepare(a.runtime,a.workspace)
+        if a.stage=='prepare':result=prepare(a.runtime,a.workspace,a.sonic_original,a.metroid_original)
         elif a.stage=='migrate':result=migrate_learning(a.workspace.resolve())
         elif a.stage=='build':result=build(a.workspace.resolve())
         elif a.stage=='boot':

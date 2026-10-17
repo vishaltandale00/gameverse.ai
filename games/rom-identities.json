@@ -1,0 +1,303 @@
+{
+  "schema": "gameverse.rom-identities/1",
+  "provenance": "Frozen identity metadata from the authorized 33-game local original registry; no cartridge bytes.",
+  "originals": [
+    {
+      "id": "castlevania-aria-of-sorrow",
+      "title": "CASTLEVANIA2",
+      "game_code": "A2CE",
+      "maker_code": "A4",
+      "version": 0,
+      "size_bytes": 8388608,
+      "sha1": "abd71fe01ebb201bcc133074db1dd8c5253776c7"
+    },
+    {
+      "id": "crash-bandicoot-the-huge-adventure",
+      "title": "CRASH",
+      "game_code": "ACQE",
+      "maker_code": "7D",
+      "version": 0,
+      "size_bytes": 8388608,
+      "sha1": "5a2651c78bb8a1d707e3c3af1f46fb64e2104198"
+    },
+    {
+      "id": "dragon-ball-advanced-adventure",
+      "title": "DRAGONBALLAA",
+      "game_code": "BDVE",
+      "maker_code": "70",
+      "version": 0,
+      "size_bytes": 16777216,
+      "sha1": "1338584d8cfa57402603197e65d2e2ff0184d24f"
+    },
+    {
+      "id": "driv3r",
+      "title": "DRIVER3",
+      "game_code": "B3RE",
+      "maker_code": "70",
+      "version": 0,
+      "size_bytes": 8388608,
+      "sha1": "df2238fc239bdd0226a1b39deef06fa521eae48e"
+    },
+    {
+      "id": "final-fantasy-i-and-ii-dawn-of-souls",
+      "title": "FF1&2DAWNOFS",
+      "game_code": "BFFE",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 16777216,
+      "sha1": "6472695d69661490f78245e2982e1e676c080be7"
+    },
+    {
+      "id": "final-fantasy-tactics-advance",
+      "title": "FFTA_USVER.",
+      "game_code": "AFXE",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 16777216,
+      "sha1": "4ac05441f4de70a4ec3dd932116346c61b8783d9"
+    },
+    {
+      "id": "final-fantasy-vi-advance",
+      "title": "FF6ADVANCE",
+      "game_code": "BZ6E",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 8388608,
+      "sha1": "e9a2a58bc56ace26cb56d0cf5cdad1a10aa5dedf"
+    },
+    {
+      "id": "grand-theft-auto",
+      "title": "GTA",
+      "game_code": "BGTE",
+      "maker_code": "7S",
+      "version": 0,
+      "size_bytes": 16777216,
+      "sha1": "742fc0062ad930253ffea449953061381577649e"
+    },
+    {
+      "id": "kingdom-hearts-chain-of-memories",
+      "title": "KINGDOMHEART",
+      "game_code": "B8CE",
+      "maker_code": "GD",
+      "version": 0,
+      "size_bytes": 33554432,
+      "sha1": "10729bd884f8fdca7a310b6d606c52e46657aa48"
+    },
+    {
+      "id": "kirby-and-the-amazing-mirror",
+      "title": "AGB KIRBY AM",
+      "game_code": "B8KE",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 16777216,
+      "sha1": "274b102b6d940f46861a92b4e65f89a51815c12c"
+    },
+    {
+      "id": "kirby-nightmare-in-dream-land",
+      "title": "AGB KIRBY DX",
+      "game_code": "A7KE",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 8388608,
+      "sha1": "37a476567d133c146fee6b5e2eb0b07a215da6b0"
+    },
+    {
+      "id": "legend-of-zelda-the-a-link-to-the-past-and-four-swords",
+      "title": "GBAZELDA",
+      "game_code": "AZLE",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 8388608,
+      "sha1": "a272055abbbf6c26b0cd54c87395d01699589161"
+    },
+    {
+      "id": "legend-of-zelda-the-the-minish-cap",
+      "title": "GBAZELDA MC",
+      "game_code": "BZME",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 16777216,
+      "sha1": "b4bd50e4131b027c334547b4524e2dbbd4227130"
+    },
+    {
+      "id": "mario-and-luigi-superstar-saga",
+      "title": "MARIO&LUIGIU",
+      "game_code": "A88E",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 16777216,
+      "sha1": "7c303cdde5061ee329296948060b875cb50ba410"
+    },
+    {
+      "id": "mario-kart-super-circuit",
+      "title": "MARIO KART",
+      "game_code": "AMKE",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 4194304,
+      "sha1": "9d327c030c3e2d9007990518594f70c3340ac56f"
+    },
+    {
+      "id": "megaman-zero",
+      "title": "MEGAMAN ZERO",
+      "game_code": "AZCE",
+      "maker_code": "08",
+      "version": 0,
+      "size_bytes": 8388608,
+      "sha1": "193b14120119162518a73c70876f0b8bffdbd96e"
+    },
+    {
+      "id": "metal-slug-advance",
+      "title": "METAL SLUG",
+      "game_code": "BSME",
+      "maker_code": "B7",
+      "version": 0,
+      "size_bytes": 8388608,
+      "sha1": "067e1511ab6becf797f1bbd321a858e96a0349af"
+    },
+    {
+      "id": "metroid-zero-mission",
+      "title": "ZEROMISSIONE",
+      "game_code": "BMXE",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 8388608,
+      "sha1": "5de8536afe1f0078ee6fe1089f890e8c7aa0a6e8"
+    },
+    {
+      "id": "metroid-fusion",
+      "title": "METROID4USA",
+      "game_code": "AMTE",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 8388608,
+      "sha1": "ca33f4348c2c05dd330d37b97e2c5a69531dfe87"
+    },
+    {
+      "id": "need-for-speed-underground",
+      "title": "NFSUG",
+      "game_code": "BNSE",
+      "maker_code": "69",
+      "version": 0,
+      "size_bytes": 8388608,
+      "sha1": "ddd304481617a748aa9f37535908a37452dd2f03"
+    },
+    {
+      "id": "pokemon-emerald-version",
+      "title": "POKEMON EMER",
+      "game_code": "BPEE",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 16777216,
+      "sha1": "f3ae088181bf583e55daf962a92bb46f4f1d07b7"
+    },
+    {
+      "id": "pokemon-firered-version",
+      "title": "POKEMON FIRE",
+      "game_code": "BPRE",
+      "maker_code": "01",
+      "version": 1,
+      "size_bytes": 16777216,
+      "sha1": "dd5945db9b930750cb39d00c84da8571feebf417"
+    },
+    {
+      "id": "pokemon-leafgreen-version",
+      "title": "POKEMON LEAF",
+      "game_code": "BPGE",
+      "maker_code": "01",
+      "version": 1,
+      "size_bytes": 16777216,
+      "sha1": "7862c67bdecbe21d1d69ce082ce34327e1c6ed5e"
+    },
+    {
+      "id": "pokemon-ruby-version",
+      "title": "POKEMON RUBY",
+      "game_code": "AXVE",
+      "maker_code": "01",
+      "version": 2,
+      "size_bytes": 16777216,
+      "sha1": "5b64eacf892920518db4ec664e62a086dd5f5bc8"
+    },
+    {
+      "id": "pokemon-mystery-dungeon-red-rescue-team",
+      "title": "POKE DUNGEON",
+      "game_code": "B24E",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 33554432,
+      "sha1": "9f4cfc5b5f4859d17169a485462e977c7aac2b89"
+    },
+    {
+      "id": "prince-of-persia-the-sands-of-time",
+      "title": "PRINCEPERSIA",
+      "game_code": "BPYE",
+      "maker_code": "41",
+      "version": 1,
+      "size_bytes": 8388608,
+      "sha1": "3f379cd2e598ca69ba68649c81cf425ed284ae27"
+    },
+    {
+      "id": "shaman-king-master-of-spirits",
+      "title": "SHAMAN KING",
+      "game_code": "BSOE",
+      "maker_code": "A4",
+      "version": 0,
+      "size_bytes": 16777216,
+      "sha1": "4a0fecdf90055fe1934b54d10e47b46ac399aecd"
+    },
+    {
+      "id": "sonic-advance",
+      "title": "SONICADVANCE",
+      "game_code": "ASOE",
+      "maker_code": "78",
+      "version": 0,
+      "size_bytes": 8388608,
+      "sha1": "d842afa7dd1e84de08addb94a51506f1bcafd551"
+    },
+    {
+      "id": "super-mario-advance",
+      "title": "SUPER MARIOA",
+      "game_code": "AMAE",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 4194304,
+      "sha1": "f071d45d8f5cb05b48d7d2b804c6cb6a79ad96fb"
+    },
+    {
+      "id": "super-mario-advance-2-super-mario-world",
+      "title": "SUPER MARIOB",
+      "game_code": "AA2E",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 4194304,
+      "sha1": "5101ddf223d1d918928fe1f306b63a42ada14a5e"
+    },
+    {
+      "id": "super-mario-advance-4-super-mario-bros-3",
+      "title": "SUPER MARIOD",
+      "game_code": "AX4E",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 4194304,
+      "sha1": "69e81f41394f02d64cad206adb26b3cd43690770"
+    },
+    {
+      "id": "tekken-advance",
+      "title": "TEKKEN",
+      "game_code": "ATKE",
+      "maker_code": "AF",
+      "version": 0,
+      "size_bytes": 8388608,
+      "sha1": "8b21cd57cacf172f963dfc7ead4fa127a8a63870"
+    },
+    {
+      "id": "wario-land-4",
+      "title": "WARIOLANDE",
+      "game_code": "AWAE",
+      "maker_code": "01",
+      "version": 0,
+      "size_bytes": 8388608,
+      "sha1": "b9fe05a8080e124b67bce6a623234ee3b518a2c1"
+    }
+  ]
+}

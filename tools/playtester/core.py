@@ -1,6 +1,8 @@
 """Short-horizon control; observations are evidence, model interpretations hypotheses."""
 from __future__ import annotations
 
+from tools.prompts import load as load_prompts, render as render_prompt
+
 from collections import Counter
 from dataclasses import asdict, dataclass
 import datetime as dt
@@ -184,7 +186,7 @@ class Playtester:
                 break
             repair = {"error": error, "proposed_action_id": result.get("record", {}).get("proposed_action_id"),
                       "allowed_action_ids": [a["id"] for a in options] + ["STOP"],
-                      "instruction": "Return exactly action_id and reason; choose an exact currently allowed action ID. Do not repeat the rejected response."}
+                      "instruction": render_prompt(getattr(self.system2, "prompt_lock", None) or load_prompts(), "s2-response-repair")[0]}
         if not result.get("accepted") and time.monotonic() >= self.deadline:
             return None, "wall_time_limit"
         if result.get("action_id") == "STOP":

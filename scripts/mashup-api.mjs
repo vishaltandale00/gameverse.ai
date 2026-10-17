@@ -7,7 +7,7 @@ const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const uuid = value => typeof value === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value);
 const terminal = new Set(['completed','blocked','failed','cancelled','interrupted']);
 const fail = (status,code,message) => Object.assign(Error(message),{status,code});
-export function createMashupApi({root=workspace,directory=resolve(root,'local-data/mashup-runs'),pipeline,agent,catalog,timeoutMs=1800000}={}) {
+export function createMashupApi({root=workspace,directory=resolve(root,'local-data/mashup-runs'),pipeline,agent,catalog,romLibrary,timeoutMs=1800000}={}) {
   if(!pipeline || !agent || !Number.isSafeInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 1800000) throw Error('Invalid mashup runtime configuration');
   let active=null, admitting=false;
   const folder=id=>resolve(directory,id), path=id=>resolve(folder(id),'run.json');
@@ -21,7 +21,7 @@ export function createMashupApi({root=workspace,directory=resolve(root,'local-da
     if(publicRecord.artifact)publicRecord.artifact={...publicRecord.artifact,url:`/v1?create=1&play=${record.request_id}`};
     return publicRecord;
   }
-  async function capabilities(){const native=await pipeline.capabilities();return {...native,...(catalog?{library:await catalog.summary()}:{}),schema:'gameverse.mashup-capabilities/1',auth:await agent.status(),limits:{...native.limits,concurrent_runs:1,wall_ms:timeoutMs,queue:'reject-when-busy'},providers:{creation:'ChatGPT subscription through local Codex',testing:'Separately configured existing S1/S2 testing service'},continuation:typeof pipeline.resume==='function'};}
+  async function capabilities(){const native=await pipeline.capabilities();return {...native,...(catalog?{library:await catalog.summary()}:{}),rom_library:{available:!!romLibrary,endpoint:'/api/mashup/roms',preparation:'deterministic extraction/source binding only; no model calls'},schema:'gameverse.mashup-capabilities/1',auth:await agent.status(),limits:{...native.limits,concurrent_runs:1,wall_ms:timeoutMs,queue:'reject-when-busy'},providers:{creation:'ChatGPT subscription through local Codex',testing:'Separately configured existing S1/S2 testing service'},continuation:typeof pipeline.resume==='function'};}
   async function submit(body, resumePrior=null){
     if(!uuid(body?.request_id)||typeof body.intent!=='string'||!body.intent.trim()||body.intent.length>12000)throw fail(400,'invalid_request','A request UUID and 1–12,000 character game description are required.');
     if(body.source_games!==undefined&&(!Array.isArray(body.source_games)||body.source_games.length>8||body.source_games.some(id=>typeof id!=='string'||!/^[a-z0-9-]{1,100}$/.test(id))))throw fail(400,'invalid_sources','Source games must be known game identifiers.');
@@ -86,6 +86,12 @@ export function createMashupApi({root=workspace,directory=resolve(root,'local-da
     try{
       const host=req.headers.host||'',origin=req.headers.origin;
       if(!/^(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(host)||(origin&&origin!==`http://${host}`)||req.headers['sec-fetch-site']==='cross-site')throw fail(403,'local_only','Use the local application origin.');
+      const originalMatch=/^\/api\/mashup\/roms\/([a-f0-9]{64})\/prepare$/.exec(pathname),jobMatch=/^\/api\/mashup\/rom-jobs\/([a-f0-9-]{36})$/.exec(pathname);
+      if(romLibrary&&pathname==='/api/mashup/roms'&&req.method==='GET'){json(200,await romLibrary.list());return true;}
+      if(romLibrary&&pathname==='/api/mashup/roms'&&req.method==='POST'){json(201,await romLibrary.upload(req));return true;}
+      if(romLibrary&&originalMatch&&req.method==='POST'){json(202,await romLibrary.prepare(originalMatch[1]));return true;}
+      if(romLibrary&&jobMatch&&req.method==='GET'){json(200,await romLibrary.job(jobMatch[1]));return true;}
+      if(romLibrary&&jobMatch&&req.method==='DELETE'){json(202,await romLibrary.cancel(jobMatch[1]));return true;}
       const match=/^\/api\/mashup\/runs\/([^/]+)(\/artifacts\/rom|\/resume)?$/.exec(pathname);
       if(req.method==='GET'&&pathname==='/api/mashup/library'&&catalog){const query=Object.fromEntries(new URL(req.url,'http://localhost').searchParams);const data=query.id?await catalog.detail(query.id):await catalog.search(query);json(data?200:404,data||{error:{code:'not_found',message:'Library item not found.'}});}
       else if(req.method==='GET'&&pathname==='/api/mashup/capabilities')json(200,await capabilities());
@@ -103,5 +109,5 @@ export function createMashupApi({root=workspace,directory=resolve(root,'local-da
       else json(404,{error:{code:'not_found',message:'Unknown creation route.'}});
     }catch(error){json(error.status||500,{error:{code:error.code||'internal_error',message:error.status?error.message:'Creation service unavailable.'}});}return true;
   }
-  return {handle,capabilities,submit,status,cancel,resume,shutdown:async()=>{active?.controller.abort('shutdown');}};
+  return {handle,capabilities,submit,status,cancel,resume,shutdown:async()=>{active?.controller.abort('shutdown');romLibrary?.shutdown();}};
 }

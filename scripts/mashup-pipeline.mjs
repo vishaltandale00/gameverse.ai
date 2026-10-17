@@ -1,3 +1,4 @@
+import { loadPromptRegistry, renderPrompt, savePromptCall, promptLockSha256 } from './prompt-registry.mjs';
 import { testingServiceConfiguration } from './local-testing-config.mjs';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -47,8 +48,9 @@ async function protectedFiles(work) {
  async function walk(dir){for(const entry of await readdir(dir,{withFileTypes:true})){if(entry.name==='.git'||entry.name==='__pycache__'||entry.name==='design.json'||entry.name==='acceptance.json')continue;const p=join(dir,entry.name);if(entry.isSymbolicLink())throw Error('runtime_symlink_rejected');if(entry.isDirectory())await walk(p);else if(entry.isFile()&&p!==join(work,worldRef))files[p]=hash(await readFile(p));}}
  await walk(work);return files;
 }
-export function createMashupPipeline({root,agent,catalog,runtimeRoot=process.env.GAMEVERSE_MASHUP_RUNTIME_ROOT,python=process.env.GAMEVERSE_PYTHON||'/opt/homebrew/bin/python3',child=runChild}={}) {
+export function createMashupPipeline({root,agent,catalog,runtimeRoot=process.env.GAMEVERSE_MASHUP_RUNTIME_ROOT,python=process.env.GAMEVERSE_PYTHON||'/opt/homebrew/bin/python3',child=runChild,originalResolver}={}) {
  if(!root)throw Error('pipeline_root_required');
+ const original=async id=>typeof originalResolver==='function'?await originalResolver(id):null;
  const operator={};for(const [name,key]of Object.entries({MASHUP_MODEL_CALLS:'model_calls',MASHUP_NATIVE_FRAMES:'native_frames',MASHUP_BOT_SECONDS:'wall_seconds',MASHUP_REPAIRS:'repairs'}))if(process.env[name]!==undefined){if(!/^\d+$/.test(process.env[name]))throw Error('invalid_operator_limit_'+name);operator[key]=Number(process.env[name]);}
  const campaignDefaults=validateBudget(operator);
  const helper=join(root,'scripts/mashup-runtime.py');
@@ -56,13 +58,14 @@ export function createMashupPipeline({root,agent,catalog,runtimeRoot=process.env
   const missing=[];const testing=await testingServiceConfiguration();
   if(!testing.configured)missing.push(testing.reason||'Native S1/S2 model credential reference unavailable');
   if(!runtimeRoot)missing.push('GAMEVERSE_MASHUP_RUNTIME_ROOT: installed research source/compiler runtime');
-  else for(const ref of [baseline+'/composition.lock.json',baseline+'/sources/'+worldRef,'tools/composition/native_build.py','tools/re/session/build/gba-session','tools/playtester/sonic_adapter.py','local/roms/Sonic Advance (USA) (En,Ja).gba','local/roms/Metroid - Zero Mission (USA).gba'])try{await access(join(runtimeRoot,ref));}catch{missing.push(ref);}
+  else for(const ref of [baseline+'/composition.lock.json',baseline+'/sources/'+worldRef,'tools/composition/native_build.py','tools/re/session/build/gba-session','tools/playtester/sonic_adapter.py','local/roms/Sonic Advance (USA) (En,Ja).gba','local/roms/Metroid - Zero Mission (USA).gba'])try{const id=ref.endsWith('Sonic Advance (USA) (En,Ja).gba')?'sonic-advance':ref.endsWith('Metroid - Zero Mission (USA).gba')?'metroid-zero-mission':null;const uploaded=id?await original(id):null;await access(uploaded?.path||join(runtimeRoot,ref));}catch{missing.push(ref);}
   return {schema:'gameverse.mashup-pipeline-capabilities/1',available:missing.length===0,model_credentials_available:testing.configured,source_games:games,missing_inputs:missing,creation:'ChatGPT subscription agent authors connected campaign prefabs, compiles source-backed native graph, boots natively and runs S1/S2 bot',limits:campaignDefaults,scope:'Sonic Advance world/momentum plus source-backed MZM combat/motion/impact/Ripper with authored acquisition, gates and ecology. Authored bridges remain declared. Late campaign not qualified.',provenance:{baseline_sha256:'f1faa36558ae5d7ccacfc94292201b63c7a870803464a2f4d2699c6654bf6bf1',source_games:games},supports:{arbitrary_game_pairs:false,checkpoint_resume:true,model_playtest:true,automatic_repair:true}};
  }
  async function stage(name,work,signal,onEvent,budget,extraEnv={}){
   onEvent?.({type:'pipeline-stage',stage:name,phase:name,message:{prepare:'Capturing reviewed source systems into an isolated job workspace',build:'Compiling the composed native cartridge',boot:'Checking the cartridge in the native emulator',model:'Native bot is testing with S1 confidence gating and S2 escalation'}[name]});
   let selectedHelper=helper;if(name!=='prepare')try{await access(join(work,'.runner/mashup-runtime.py'));selectedHelper=join(work,'.runner/mashup-runtime.py');}catch{}
-  await child(python,[selectedHelper,name,'--workspace',work,...(name==='prepare'?['--runtime',runtimeRoot]:[]),...(name==='model'?['--seconds',String(budget.wall_seconds),'--calls',String(budget.model_calls),'--frames',String(budget.native_frames)]:[])],{cwd:root,signal,timeoutMs:name==='model'?(budget.wall_seconds+20)*1000:name==='prepare'?30000:name==='build'?62000:30000,env:{...process.env,...extraEnv},onEvent});
+  const sonicOriginal=name==='prepare'?await original('sonic-advance'):null,metroidOriginal=name==='prepare'?await original('metroid-zero-mission'):null;
+  await child(python,[selectedHelper,name,'--workspace',work,...(name==='prepare'?['--runtime',runtimeRoot,...(sonicOriginal?['--sonic-original',sonicOriginal.path]:[]),...(metroidOriginal?['--metroid-original',metroidOriginal.path]:[])]:[]),...(name==='model'?['--seconds',String(budget.wall_seconds),'--calls',String(budget.model_calls),'--frames',String(budget.native_frames)]:[])],{cwd:root,signal,timeoutMs:name==='model'?(budget.wall_seconds+20)*1000:name==='prepare'?30000:name==='build'?62000:30000,env:{...process.env,...extraEnv},onEvent});
   return json(join(work,name+'-stage.json'));
  }
  async function bot(work,signal,onEvent,budget,resumeState,resumeContext,outputRoot){
@@ -88,12 +91,17 @@ export function createMashupPipeline({root,agent,catalog,runtimeRoot=process.env
     await writeFile(join(work,worldRef),parentWorld);
     parentLineage={artifact_sha256:parentResult.artifact.sha256,world_sha256:hash(parentWorld),operation:'isolated editable composition fork',save_compatibility:'unverified; no player-save migration'};
   }
+  const promptLock=await loadPromptRegistry(root);await save(join(work,'prompt-lock.json'),promptLock);
   const before=await json(join(work,worldRef)),protectedBefore=await protectedFiles(work);
   const libraryContext=catalog?{search:await catalog.context({q:intent,limit:16}),selected:await Promise.all(library_refs.map(id=>catalog.detail(id)))}:null;
   await save(join(directory,'library-context.json'),libraryContext);
-  const prompt=`Available local metadata relevant to this request (evidence and adapter boundaries retained): ${JSON.stringify(libraryContext)}\nCreate the requested substantive native mashup by configuring the existing source-backed Sonic Advance + Metroid Zero Mission composition. User request: ${intent}\n${parentLineage?'This is a refinement of the exact parent authored world already installed here, not a reset to the original baseline. Preserve prior linked systems unless the request changes them.':''}\nYou are in a private captured source workspace. Read baseline.json, ${worldRef}, tools/composition/components/sonic_metroid/compile_world.py and the relevant native component contracts. The entire original Sonic game world/momentum is retained. MZM motion/combat/impact and Ripper/assets are genuinely recovered. Acquisition/events, gate progression, other enemies and inter-system glue are authored bridges. Edit ONLY ${worldRef} and create acceptance.json plus design.json. Do not edit recovered C, compiler, bot, recipes, ROMs, proofs or any other file. No shell commands that build or playtest: the host will do that. Keep native first-act route practical. Implement a coherent recognizable request through at least two linked gameplay systems: change/add actual relic or alien/heat/recharge prefabs AND gates/freeze_gateway, across multiple decisions, not titles or constants alone. Use supported component schemas; preserve the original campaign. Unsupported requested mechanics must be named in design.json gaps. Prefer meaningfully relocating/ordering capabilities and matching barriers, resources and enemies to change route/combat decisions. Do not claim original Metroid art/AI beyond recovered Ripper. acceptance.json must have {objective:string,minimum:{relics_collected:integer>=2,gates_opened:integer>=1}}; objective is a short bot instruction to demonstrate actual acquired capability opening a native barrier. design.json must contain {title:string,changes:array,gaps:array,request_satisfied:boolean}. Set request_satisfied=false if core request exceeds supported systems. Preserve sensible exact prefab IDs and existing version schema. Reply concisely with the changed gameplay and honest limits.`;
+  const promptPin={status:'versioned',sha256:promptLockSha256(promptLock),path:join(work,'prompt-lock.json')};
+  await save(join(directory,'prompt-provenance.json'),promptPin);
+  const resolvedCreate=renderPrompt(promptLock,'codex-create',{libraryContext:JSON.stringify(libraryContext),intent,worldRef,parentInstruction:parentLineage?'This is a refinement of the exact parent authored world already installed here, not a reset to the original baseline. Preserve prior linked systems unless the request changes them.':''});
+  const createPrompt=await savePromptCall(join(directory,'composition-prompt.json'),resolvedCreate);
+  const prompt=resolvedCreate.text;
   onEvent?.({type:'pipeline-stage',stage:'compose',phase:'compose',message:'The ChatGPT agent is composing linked game systems from your request'});
-  const composed=await agent.run({prompt,cwd:work,signal,onEvent});await save(join(directory,'composition-agent.json'),composed);
+  const composed=await agent.run({prompt,cwd:work,signal,onEvent});await save(join(directory,'composition-agent.json'),{...composed,prompt:createPrompt});
   const protectedAfter=await protectedFiles(work);if(JSON.stringify(protectedBefore)!==JSON.stringify(protectedAfter))throw Error('protected_runtime_modified');
   const design=await json(join(work,'design.json'));
   if(design.request_satisfied!==true)return {status:'blocked',reason:'request_exceeds_supported_systems',gaps:design.gaps||[],design,qualification:{outcome:'unavailable'}};
@@ -105,8 +113,10 @@ export function createMashupPipeline({root,agent,catalog,runtimeRoot=process.env
   for(let attempt=0;attempt<budget.repairs&&tested.status!=='success'&&tested.source_defects?.length;attempt++){
    const locked=await protectedFiles(work),previousWorldBytes=await readFile(join(work,worldRef)),previousWorld=hash(previousWorldBytes),previousDesign=await readFile(join(work,'design.json')),previousAcceptance=await readFile(join(work,'acceptance.json'));
    onEvent?.({type:'pipeline-stage',stage:'repair',phase:'repair',message:'The agent is inspecting native observations for a supported repair'});
-   const diagnosis=await agent.run({cwd:work,signal,onEvent,prompt:`Inspect model-report.json, model-playtest/events.jsonl, acceptance.json and ${worldRef}. User intent: ${intent}. The bounded bot did not meet the native objective: ${tested.reason}. Confidence thresholds and resource limits must stay unchanged. Diagnose actual observed state/screenshots, not guesses. ONLY edit ${worldRef}, design.json, acceptance.json. If an actual authored placement/dependency error is supported by evidence, repair the linked route and set design.json repair_applied:true plus repair_reason. If no justified source-backed repair exists, set repair_applied:false and repair_reason; preserve the partial native checkpoint and do not invent success. Do not change recovered C/compiler/proofs/ROM/bot or run build/testing. Acceptance still requires >=2 relics and >=1 gate; no weakened threshold.`});
-   await save(join(directory,`repair-agent-${attempt+1}.json`),diagnosis);
+   const resolvedRepair=renderPrompt(promptLock,'codex-repair',{worldRef,intent,reason:String(tested.reason)});
+   const repairPrompt=await savePromptCall(join(directory,`repair-prompt-${attempt+1}.json`),resolvedRepair);
+   const diagnosis=await agent.run({cwd:work,signal,onEvent,prompt:resolvedRepair.text});
+   await save(join(directory,`repair-agent-${attempt+1}.json`),{...diagnosis,prompt:repairPrompt});
    if(JSON.stringify(locked)!==JSON.stringify(await protectedFiles(work)))throw Error('protected_runtime_modified');
    const nextDesign=await json(join(work,'design.json'));repairAttempts.push({attempt:attempt+1,applied:nextDesign.repair_applied===true,reason:nextDesign.repair_reason});
    if(nextDesign.repair_applied!==true||nextDesign.request_satisfied!==true||hash(await readFile(join(work,worldRef)))===previousWorld){await writeFile(join(work,worldRef),previousWorldBytes);await writeFile(join(work,'design.json'),previousDesign);await writeFile(join(work,'acceptance.json'),previousAcceptance);break;}
@@ -116,7 +126,7 @@ export function createMashupPipeline({root,agent,catalog,runtimeRoot=process.env
    built=await stage('build',work,signal,onEvent,budget);boot=await stage('boot',work,signal,onEvent,budget);tested=await bot(work,signal,onEvent,budget);
   }
   const artifact=join(directory,'game.gba');await copyFile(join(work,'build/game.gba'),artifact);
-  const result={status:'completed',artifact:{path:artifact,sha256:hash(await readFile(artifact)),title:design.title||'Sonic × Metroid'},user_intent_validated:tested.status==='success'&&design.request_satisfied===true,qualification:{outcome:'pass',scope:'native-boot',bot:tested,campaign:'unqualified'},design:await json(join(work,'design.json')),repair_attempts:repairAttempts,provenance:{source_games:games,parent:parentLineage,baseline:await json(join(work,'baseline.json')),world_sha256:hash(await readFile(join(work,worldRef))),composition_lock:join(work,'build/composition.lock.json'),semantic_delta:semanticDelta(before,await json(join(work,worldRef)))},can_resume:tested.can_resume,checkpoint:tested.checkpoint,workspace:work,budget,timings:{total_s:(Date.now()-start)/1000,queue_s:null,last_attempt_build_s:built.result.wall_s,last_attempt_boot_s:boot.wall_s,attempt_reports:join(work,'attempts'),stage_accounting:'Stages nested within total; bot/native setup retained separately'}};
+  const result={status:'completed',artifact:{path:artifact,sha256:hash(await readFile(artifact)),title:design.title||'Sonic × Metroid'},user_intent_validated:tested.status==='success'&&design.request_satisfied===true,qualification:{outcome:'pass',scope:'native-boot',bot:tested,campaign:'unqualified'},design:await json(join(work,'design.json')),repair_attempts:repairAttempts,provenance:{prompts:promptPin,source_games:games,parent:parentLineage,baseline:await json(join(work,'baseline.json')),world_sha256:hash(await readFile(join(work,worldRef))),composition_lock:join(work,'build/composition.lock.json'),semantic_delta:semanticDelta(before,await json(join(work,worldRef)))},can_resume:tested.can_resume,checkpoint:tested.checkpoint,workspace:work,budget,timings:{total_s:(Date.now()-start)/1000,queue_s:null,last_attempt_build_s:built.result.wall_s,last_attempt_boot_s:boot.wall_s,attempt_reports:join(work,'attempts'),stage_accounting:'Stages nested within total; bot/native setup retained separately'}};
   await save(join(directory,'pipeline-result.json'),result);return result;
  }
  async function resume({id,directory,prior,signal,onEvent,budget:requestedBudget}={}){
@@ -126,10 +136,15 @@ export function createMashupPipeline({root,agent,catalog,runtimeRoot=process.env
   if(hash(await readFile(prior.artifact.path))!==prior.artifact.sha256||hash(await readFile(join(work,'build/game.gba')))!==prior.artifact.sha256)throw Error('resume_artifact_mismatch');
   if(hash(await readFile(prior.checkpoint.path))!==prior.checkpoint.sha256)throw Error('resume_checkpoint_mismatch');
   const learning=prior.checkpoint.learning_context;if(!learning||hash(await readFile(learning.path))!==learning.sha256)throw Error('resume_model_context_mismatch');
+  const promptPin=prior.provenance?.prompts;
+  if(promptPin?.status==='versioned'){
+   const frozen=await json(join(work,'prompt-lock.json'));
+   if(promptLockSha256(frozen)!==promptPin.sha256)throw Error('resume_prompt_identity_mismatch');
+  }
   const continuation=join(work,'continuations',String(Date.now()));await mkdir(continuation,{recursive:true});
   // Keep prior images/events/state paths immutable; continuation writes a new evidence tree.
   const tested=await bot(work,signal,onEvent,budget,prior.checkpoint.path,learning.path,continuation);
-  const result={...prior,status:'completed',user_intent_validated:tested.status==='success'&&prior.design?.request_satisfied===true,qualification:{...prior.qualification,bot:tested},can_resume:tested.can_resume,checkpoint:tested.checkpoint,budget,continuation_of:id,timings:{total_s:(Date.now()-started)/1000,build_s:null,boot_s:null,reused_artifact:true,accounting:'No build/boot in continuation; prior stages retained in earlier chunk'}};
+  const result={...prior,status:'completed',user_intent_validated:tested.status==='success'&&prior.design?.request_satisfied===true,qualification:{...prior.qualification,bot:tested},can_resume:tested.can_resume,checkpoint:tested.checkpoint,budget,continuation_of:id,prompt_status:promptPin?.status||'legacy_unversioned',timings:{total_s:(Date.now()-started)/1000,build_s:null,boot_s:null,reused_artifact:true,accounting:'No build/boot in continuation; prior stages retained in earlier chunk'}};
   await save(join(directory,'pipeline-result.json'),result);return result;
  }
  return {capabilities,run,resume};

@@ -1,4 +1,5 @@
 import { mountBuildRequirements, mountCreationLibrary, sourceWorldChoices } from './creation-library.js';
+import { mountRomPreparation } from './rom-preparation.js';
 import { ACTIVE_STATES, STAGES, STAGE_LABELS, playableUrl, stageState, runMessage, refinementIntent, safeLocalUrl } from './conversation-model.js';
 export async function initializeConversation(root = document, { embedded = false } = {}) {
 const $ = id => root.querySelector(`[id="${id}"]`);
@@ -160,7 +161,10 @@ if (Recognition) {
     try { recognition.start(); } catch { $('voice-status').textContent = 'Browser dictation could not start. Type your request instead.'; }
   });
 } else $('voice-status').textContent = 'Dictation is unavailable in this browser. Type your idea.';
-window.addEventListener('pagehide', () => { recognition?.abort(); resultPlayer?.destroy(); disposeLibrary?.(); clearInterval(authInterval); clearTimeout(pollTimer); });
+const disposeRomPreparation = mountRomPreparation(root, api, async () => {
+  try { renderCapabilities(await api('/api/mashup/capabilities')); } catch (error) { $('form-status').textContent = `Files were processed, but build availability could not refresh: ${error.message}`; }
+});
+window.addEventListener('pagehide', () => { recognition?.abort(); resultPlayer?.destroy(); disposeLibrary?.(); disposeRomPreparation(); clearInterval(authInterval); clearTimeout(pollTimer); });
 renderHistory();
 await Promise.allSettled([checkAuth(), api('/api/mashup/capabilities').then(renderCapabilities).catch(error => { $('capability-note').textContent = `The local build pipeline is unavailable: ${error.message}`; }), refreshRun()]);
 

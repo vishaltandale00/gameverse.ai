@@ -10,6 +10,8 @@ import { gameCatalog, customArtifacts } from './catalog.mjs';
 import { createCodexAgent } from './codex-agent.mjs';
 import { createChatgptAuthApi } from './chatgpt-auth-api.mjs';
 import { createMashupPipeline } from './mashup-pipeline.mjs';
+import { createRomLibrary } from './rom-library.mjs';
+import { prepareRomFixture } from './rom-fixture-recipe.mjs';
 import { createCreationCatalog } from './creation-catalog.mjs';
 import { createCreationRouter } from './creation-router.mjs';
 import { createPokemonPipeline } from './pokemon-pipeline.mjs';
@@ -28,8 +30,11 @@ const instance = { schema: 'gameverse.local-instance/1', checkout_id: createHash
 const handleVoice = createVoiceApi({ liveProviders: realtimeTranscriptionProviders });
 const agent = createCodexAgent({cwd:appRoot});
 const chatgpt = createChatgptAuthApi({agent});
-const catalog = createCreationCatalog({root:appRoot,runtimeRoot:process.env.GAMEVERSE_LIBRARY_ROOT||process.env.GAMEVERSE_POKEMON_RUNTIME_ROOT||'/Users/shishirtandale/Projects/gameverse.ai'});
-const mashup = createMashupApi({root:appRoot,agent,catalog,pipeline:createCreationRouter({catalog,sonic:createMashupPipeline({root:appRoot,agent,catalog}),pokemon:createPokemonPipeline({root:appRoot,agent,nativeVerifier:createPokemonNativeVerifier({root:appRoot})})}),timeoutMs:Number(process.env.MASHUP_TIMEOUT_MS || 1800000)});
+const researchRoot=process.env.GAMEVERSE_POKEMON_RUNTIME_ROOT||'/Users/shishirtandale/Projects/gameverse.ai';
+const romLibrary=createRomLibrary({root:appRoot,runtimeRoot:researchRoot,prepareRecipe:prepareRomFixture});
+const originalResolver=id=>romLibrary.resolveOriginal(id);
+const catalog = createCreationCatalog({root:appRoot,runtimeRoot:process.env.GAMEVERSE_LIBRARY_ROOT||researchRoot});
+const mashup = createMashupApi({root:appRoot,agent,catalog,romLibrary,pipeline:createCreationRouter({catalog,sonic:createMashupPipeline({root:appRoot,agent,catalog,originalResolver}),pokemon:createPokemonPipeline({root:appRoot,agent,originalResolver,nativeVerifier:createPokemonNativeVerifier({root:appRoot})})}),timeoutMs:Number(process.env.MASHUP_TIMEOUT_MS || 1800000)});
 const server = http.createServer(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');

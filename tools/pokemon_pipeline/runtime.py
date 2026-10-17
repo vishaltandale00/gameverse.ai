@@ -14,12 +14,12 @@ def command(args,cwd,log,timeout=180):
  with open(log,'a') as stream:subprocess.run(args,cwd=cwd,env={**os.environ,'CPATH':'/opt/homebrew/include','LIBRARY_PATH':'/opt/homebrew/lib'},stdout=stream,stderr=subprocess.STDOUT,check=True,timeout=timeout)
  return round(time.monotonic()-start,6)
 def git(p,*args):return subprocess.check_output(['git','-C',str(p),*args],text=True).strip()
-def prepare(runtime,work,operation='emerald-overworld'):
- work.mkdir(parents=True,exist_ok=False);base=runtime/'local/decomps/pokefirered';donor=runtime/('local/decomps/sa2' if operation=='sonic-player' else 'local/decomps/pokeemerald');donor_pin='393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d' if operation=='sonic-player' else DONOR_PIN;donor_id='sonic-advance' if operation=='sonic-player' else 'pokemon-emerald';tool=runtime/'local/game-builds/toolchains/agbcc-sonic';rom=runtime/'local/roms'/ROM_NAME
+def prepare(runtime,work,operation='emerald-overworld',host_original=None,donor_original=None):
+ work.mkdir(parents=True,exist_ok=False);base=runtime/'local/decomps/pokefirered';donor=runtime/('local/decomps/sa2' if operation=='sonic-player' else 'local/decomps/pokeemerald');donor_pin='393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d' if operation=='sonic-player' else DONOR_PIN;donor_id='sonic-advance' if operation=='sonic-player' else 'pokemon-emerald';tool=runtime/'local/game-builds/toolchains/agbcc-sonic';rom=host_original or runtime/'local/roms'/ROM_NAME
  for path,pin in [(base,SOURCE_PIN),(donor,donor_pin)]:
   if git(path,'rev-parse','HEAD')!=pin or git(path,'status','--porcelain'):raise ValueError('source_pin_or_cleanliness_mismatch:'+str(path))
  if operation=='sonic-player':
-  sonic=runtime/'local/roms/Sonic Advance (USA) (En,Ja).gba'
+  sonic=donor_original or runtime/'local/roms/Sonic Advance (USA) (En,Ja).gba'
   if hashlib.sha1(sonic.read_bytes()).hexdigest()!='d842afa7dd1e84de08addb94a51506f1bcafd551':raise ValueError('sonic_original_identity_mismatch')
   shutil.copy2(sonic,work/'donor-original.gba')
  data=rom.read_bytes()
@@ -122,9 +122,9 @@ def build(work):
   receipt['wall_s']=round(time.monotonic()-started,6);save(work/'sprite-build.json',receipt)
 
 def main():
- parser=argparse.ArgumentParser();parser.add_argument('stage',choices=['prepare','inventory','baseline','apply','build']);parser.add_argument('--workspace',type=Path,required=True);parser.add_argument('--runtime',type=Path);parser.add_argument('--operation',choices=['emerald-overworld','sonic-player'],default='emerald-overworld');a=parser.parse_args();started=time.monotonic();result=None
+ parser=argparse.ArgumentParser();parser.add_argument('stage',choices=['prepare','inventory','baseline','apply','build']);parser.add_argument('--workspace',type=Path,required=True);parser.add_argument('--runtime',type=Path);parser.add_argument('--host-original',type=Path);parser.add_argument('--donor-original',type=Path);parser.add_argument('--operation',choices=['emerald-overworld','sonic-player'],default='emerald-overworld');a=parser.parse_args();started=time.monotonic();result=None
  try:
-  result=prepare(a.runtime.resolve(),a.workspace.resolve(),a.operation) if a.stage=='prepare' else {'inventory':import_assets,'baseline':baseline,'apply':apply,'build':build}[a.stage](a.workspace.resolve())
+  result=prepare(a.runtime.resolve(),a.workspace.resolve(),a.operation,a.host_original,a.donor_original) if a.stage=='prepare' else {'inventory':import_assets,'baseline':baseline,'apply':apply,'build':build}[a.stage](a.workspace.resolve())
  finally:
   if a.workspace.exists():save(a.workspace/(a.stage+'-stage.json'),{'stage':a.stage,'result':result,'wall_s':round(time.monotonic()-started,6),'outcome':'pass' if result is not None else 'failed'})
 if __name__=='__main__':main()

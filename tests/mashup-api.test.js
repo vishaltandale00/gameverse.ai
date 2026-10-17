@@ -70,3 +70,12 @@ test('library references are validated metadata and stay separate from source in
  assert.equal(received.intent,input.intent);assert.deepEqual(received.source_games,input.source_games);assert.deepEqual(received.library_refs,input.library_refs);
  await assert.rejects(api.submit({...input,library_refs:[]}),{code:'idempotency_conflict'});
 });
+test('private original upload/preparation routes share local-origin guard and never expose file paths',async t=>{
+ const root=await mkdtemp(join(tmpdir(),'original-http-'));t.after(()=>rm(root,{recursive:true,force:true}));let uploads=0,preparations=0;const sha='a'.repeat(64);
+ const romLibrary={upload:async req=>{uploads++;return {sha256:sha,game_id:'sonic-advance'};},prepare:async value=>{preparations++;assert.equal(value,sha);return {job_id:'job',status:'running',model_calls:false};},list:async()=>({originals:[]}),shutdown(){}};
+ const api=createMashupApi({root,agent,romLibrary,pipeline:{capabilities:async()=>({}),run:async()=>({status:'blocked'})}});
+ const response=()=>({writeHead(code){this.code=code;},end(body){this.data=JSON.parse(body);}});
+ let res=response();await api.handle({method:'POST',headers:{host:'127.0.0.1:4173',origin:'https://bad.example'}},res,'/api/mashup/roms');assert.equal(res.code,403);assert.equal(uploads,0);
+ res=response();await api.handle({method:'POST',headers:{host:'127.0.0.1:4173','content-type':'application/octet-stream'}},res,'/api/mashup/roms');assert.equal(res.code,201);assert.equal(uploads,1);assert.equal(res.data.path,undefined);
+ res=response();await api.handle({method:'POST',headers:{host:'127.0.0.1:4173'}},res,`/api/mashup/roms/${sha}/prepare`);assert.equal(res.code,202);assert.equal(preparations,1);assert.equal(res.data.model_calls,false);
+});

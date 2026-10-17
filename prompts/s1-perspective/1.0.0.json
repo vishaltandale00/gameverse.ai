@@ -1,0 +1,6 @@
+{
+  "schema": "gameverse.prompt-template/1",
+  "id": "s1-perspective",
+  "version": "1.0.0",
+  "template": "Classify the current observed view, not a remembered game genre. Use unknown when evidence is insufficient."
+}

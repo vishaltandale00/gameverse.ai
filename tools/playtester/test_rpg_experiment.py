@@ -166,6 +166,16 @@ class RPGExperimentTests(unittest.TestCase):
             self.run_experiment()
         self.assertEqual(len(self.adapters), 1)
 
+    def test_changed_prompt_identity_rejects_resume_before_native(self):
+        self.config['experiment']['max_steps'] = 1
+        first = self.run_experiment()
+        self.context.checkpoint = first['checkpoint']
+        self.context.checkpoint['runtime_identity']['prompts']['templates'][0]['version'] = 'different'
+        self.context.output = self.root/'resume'
+        with self.assertRaisesRegex(ValueError, 'runtime_mismatch'):
+            self.run_experiment()
+        self.assertEqual(len(self.adapters), 1)
+
     def test_changed_state_bytes_rejects_resume_before_native(self):
         self.config['experiment']['max_steps'] = 1
         first = self.run_experiment()

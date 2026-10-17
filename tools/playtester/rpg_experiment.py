@@ -16,6 +16,7 @@ from tools.whole_game.model_config import load_sid_reference
 from .core import Limits, Playtester, digest
 from .experiment import ROOT, RetainedAdapter, checked, pin, sha
 from .learning import capture, restore
+from tools.prompts import load as load_prompts, provenance as prompt_provenance
 from .models import ChatPolicy, DecisionPolicy
 from .rpg_adapter import RPGNavigationAdapter
 from .scenario import ScenarioAdapter, validate as validate_scenario
@@ -90,6 +91,8 @@ def experiment_rpg_candidate(artifact, context):
     load_sid_reference(credential_ref)
     s1 = ProviderConfig.from_env('d1', timeout_s=min(config.get('model_timeout', 10), 300))
     slow = ChatPolicy.from_env()
+    prompt_lock = getattr(slow, "prompt_lock", None) or load_prompts()
+    slow.prompt_lock = prompt_lock
     model_binding = {'system1': {'provider': s1.provider, 'model': s1.model, 'endpoint': s1.base_url},
                      'system2': {'provider': 'explicit_chat', 'model': slow.model, 'endpoint': slow.endpoint}}
     if config.get('models'):
@@ -97,7 +100,8 @@ def experiment_rpg_candidate(artifact, context):
             for key in ('provider', 'model', 'endpoint'):
                 if key in config['models'][name] and config['models'][name][key] != model_binding[name][key]:
                     raise ValueError('experiment_model_identity_mismatch')
-    runtime = {'model_binding': model_binding, 'native_option': native_option,
+    runtime = {'prompts': prompt_provenance(prompt_lock), 'prompt_loader_sha256': sha(ROOT/'tools/prompts/__init__.py'),
+               'model_binding': model_binding, 'native_option': native_option,
                'native_sha256': sha(checked(binary_ref)), 'provider_manifest_ref': pin(manifest_path),
                'profile_ref': pin(checked(config['profile'])), 'fixture_recipe_ref': pin(checked(config['fixture_recipe'])),
                'scenario_ref': pin(scenario_path), 'effective_profile_sha256': digest(profile),
@@ -174,6 +178,7 @@ def experiment_rpg_candidate(artifact, context):
                         max_action_frames=option_frames, stationary_min_frames=60,
                         confidence_threshold=.65, margin_threshold=.20)
         policy = DecisionPolicy(s1, confidence=.65, margin=.20)
+        policy.prompt_lock = prompt_lock
         tester = Playtester(RetainedAdapter(adapter), profile, policy, system2=slow, limits=limits, output=out/'playtest')
         if prior:
             restore(tester, _json(prior['learning_context']), runtime)

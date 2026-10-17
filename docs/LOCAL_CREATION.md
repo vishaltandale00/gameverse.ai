@@ -137,3 +137,50 @@ for the documented artwork gaps. The successful local artifact is available thro
 the retained retry in the app; cartridge/graphics bytes are excluded from Git.
 [Verification metadata](../verification/character-library-20261016.json) retains
 scope, hashes, contexts, failed/cancelled attempts and unsupported measurements.
+
+## Local original uploads and deterministic preparation
+
+The creation panel accepts `.gba` originals through the local app. Uploads stream
+into an ignored private content store with a 32 MiB limit. Exact SHA-1/size/header
+identity must match the 33-game registry; modified or unknown revisions are rejected.
+Filenames do not select identities. Duplicate uploads reuse the same content hash,
+and no API downloads uploaded originals. Upload/preparation requests share the
+local-origin guard used by creation.
+
+Accepted originals immediately satisfy the corresponding original input through
+an immutable resolver; no manual move into a research checkout is required.
+Existing source builds pin those resolved paths during isolated capture and still
+verify their exact original hashes. Acceptance, source availability and extraction
+readiness are reported separately. An extraction recipe gap does not invalidate an
+accepted original or prevent a supported source backend from using it.
+
+“Upload & prepare” makes no AI call and starts no game build or gameplay test.
+For the exact Metroid Zero Mission original, the current deterministic recipe emits
+one species' 64 original tiles, 16-color palette, five OAM frames, three animation
+scripts, C/header assets, a contact sheet and hashed provenance. Other recognized
+originals retain a validated identity/source-binding receipt and explicit missing
+extraction/native prerequisites. A binding is not reconstructed behavior IR or a
+runnable game. Jobs retain their outcome and measurements, can be cancelled and can
+be inspected after reload. [Recipe scope](rom-fixture-recipes.md).
+
+The actual HTTP Metroid upload validated in **21 ms**; its eight-artifact preparation
+completed in **109 ms**, including **100 ms** recipe work. No build, simulation,
+evaluation or model call ran. Those unavailable durations remain null. A separate
+source capture using uploaded Sonic/Metroid paths and the reviewed prompt/policy
+closure completed in **0.184 s**, without compiling or playing.
+
+## Engine prompts
+
+Engine prompt text is stored in separate versioned JSON files under
+[`prompts/`](../prompts/README.md), rather than embedded in implementation code.
+The registry pins eight templates covering construction, repair, S1 action/context,
+S2 reasoning/response repair and evidence precedence. Each new generated run freezes
+a lock containing the exact template bytes, registry/template hashes and versions;
+resolved construction calls and S1/S2 request snapshots retain their prompt hashes.
+No prompt evaluation campaign was run for this refactor.
+
+Captured native workspaces receive reviewed prompt modules and model policy code
+separately from the research compiler closure. The importer preserves both closure
+identities. Versioned checkpoint continuations require the unchanged frozen prompt
+lock; retained older jobs remain explicitly legacy/unversioned and keep their old
+runner. Updating source prompt files does not silently rewrite a prior run's inputs.
