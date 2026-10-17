@@ -1,0 +1,84 @@
+{
+  "schema": "gameverse.pokemon-routing-verification/1",
+  "source_commit": "c477f1c1",
+  "environment": {
+    "node": "v24.14.0",
+    "machine": "macOS-27.0.1-arm64-arm-64bit-Mach-O"
+  },
+  "request": {
+    "request_id": "3c12c2ab-8185-47e9-8098-b32dcbbc0b84",
+    "intent": "Build Pokemon Leaf Green but with Pokemon Emerald overworld sprites",
+    "retry_of": "f8440ceb-e1b1-4c30-b8d9-819af7ad9059",
+    "submitted_source_games": [],
+    "routing": {
+      "source_games": [
+        "pokemon-leafgreen",
+        "pokemon-emerald"
+      ],
+      "requested_source_games": [],
+      "inferred_from": "request",
+      "backend": "pokemon-overworld"
+    }
+  },
+  "outcome": {
+    "status": "completed",
+    "playable": true,
+    "full_request_satisfied": false,
+    "objective_validated": false,
+    "model_playtest": false,
+    "natural_gameplay": "unqualified"
+  },
+  "artifact": {
+    "sha256": "c249a61f36ea91fd3518258aa7437ba4d5614e99c2176c93d0b5b154f742255d",
+    "size_bytes": 16777216,
+    "game_code": "BPGE",
+    "revision": 1
+  },
+  "coverage": {
+    "mapped_definitions": 39,
+    "mapped_native_ids": 38,
+    "retained_host_identities": 115,
+    "limitations": [
+      "NPC colors adapted to existing LeafGreen shared palette; not exact Emerald colors.",
+      "LeafGreen-only identities and VS Seeker poses retain native sprites/palettes.",
+      "Spin/shake actions use safe Emerald facing/walking approximations; NPC raised-hand pose retains native art when available, otherwise faces south."
+    ]
+  },
+  "native": {
+    "outcome": "pass",
+    "scope": "native-graphics-consumer",
+    "coverage_sha256": "f77abb17571da26fe66cefda47aa7c6dad0169f2bbf577c2975dd88759795555",
+    "harness_sha256": "46370406b43b0d4e9df0061c9a96fb9a150054963f1b5fa365c74cd080041e8a",
+    "detail": "Cold boot, then separate direct-entry fixture: native field sprite construction, animation frame commands, OAM, VRAM uploads, actual palette banks and reflection palette consumers. No natural field-navigation claim."
+  },
+  "timings": {
+    "run_id": "3c12c2ab-8185-47e9-8098-b32dcbbc0b84",
+    "source_commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+    "adapter_version": "pokemon-source-overworld/1",
+    "loop_config": "deterministic-overworld-recipe/1",
+    "total_s": 48.423,
+    "queue_s": null,
+    "baseline_build_s": 40.770163,
+    "sprite_build_s": 1.295477,
+    "native_s": 0.832074,
+    "attempts": 1,
+    "stage_accounting": "Setup, clean baseline, incremental sprite build and native verification are nested within total; no speedup claim between different build modes",
+    "api_execution_wall_s": 48.438769957999995,
+    "build_comparison": "Clean baseline and incremental sprite build differ in inputs/cache mode; no speedup claim or comparable before/after exists.",
+    "ci_queue_s": null
+  },
+  "checks": {
+    "focused_js_tests": 35,
+    "js_wall_ms": 131.91825,
+    "asset_tests": 6,
+    "asset_wall_s": 0.001,
+    "shell_copy_build_ms": 27.2,
+    "ui": "V1 result loaded paused; Sprite coverage incomplete, native graphics pass and natural gameplay unqualified visible; no browser gameplay",
+    "independent_qc": "Source-only audit, native receipt, immutable HTTP download and prior receipt/artifact hashes passed"
+  },
+  "prior_artifacts_unchanged": {
+    "f8440ceb-e1b1-4c30-b8d9-819af7ad9059/run.json": true,
+    "55977bfe-9aa8-4341-990c-cf94944be293/run.json": true,
+    "55977bfe-9aa8-4341-990c-cf94944be293/game.gba": true
+  }
+}

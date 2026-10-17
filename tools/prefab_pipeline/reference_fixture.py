@@ -13,6 +13,7 @@ from tools.playtester.core import FrontierPolicy, Limits, Playtester
 ROOT = Path(__file__).resolve().parents[2]
 LIMITS = {"max_actions": 32, "max_wall_s": 5, "max_repairs": 0}
 DEPENDENCIES = (
+    "tools/prompts/__init__.py",
     "tools/prefab_pipeline/reference_fixture.py", "tools/prefab_pipeline/__init__.py",
     "tools/playtester/__init__.py", "tools/playtester/adapters.py", "tools/playtester/core.py",
     "tools/playtester/examples/key-door.json",

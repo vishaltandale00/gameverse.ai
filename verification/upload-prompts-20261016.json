@@ -1,0 +1,174 @@
+{
+  "schema": "gameverse.upload-prompt-verification/1",
+  "base_app_commit": "62e7b6739c35b11945aabd77367d824f2fa44f62",
+  "machine": "macOS-27.0.1-arm64-arm-64bit",
+  "original": {
+    "schema": "gameverse.rom-original/1",
+    "sha256": "fc94f65380b65b870a30b9b04b39cca1dc63d6e46a4a373d3904adc0912ebc37",
+    "sha1": "5de8536afe1f0078ee6fe1089f890e8c7aa0a6e8",
+    "game_id": "metroid-zero-mission",
+    "title": "ZEROMISSIONE",
+    "game_code": "BMXE",
+    "revision": 0,
+    "size_bytes": 8388608,
+    "status": "available",
+    "received_at": "2026-10-17T01:47:41.176Z",
+    "model_calls": false,
+    "preparation": {
+      "status": "not-prepared"
+    },
+    "timings": {
+      "upload_validation_ms": 21,
+      "queue_ms": null
+    },
+    "duplicate": false
+  },
+  "preparation": {
+    "schema": "gameverse.rom-preparation/1",
+    "job_id": "cc13f309-c503-4785-9195-391f3191f7f3",
+    "sha256": "fc94f65380b65b870a30b9b04b39cca1dc63d6e46a4a373d3904adc0912ebc37",
+    "game_id": "metroid-zero-mission",
+    "status": "completed",
+    "model_calls": false,
+    "started_at": "2026-10-17T01:47:41.209Z",
+    "artifacts": [
+      {
+        "ref": "mzm-flyer/tiles.4bpp",
+        "type": "gba-4bpp-tiles",
+        "count": 64,
+        "bytes": 2048,
+        "sha256": "e55dfaa2dd883a069a9f17f9734cf21a232f498fbdf2849d4eb793fe161ab12b"
+      },
+      {
+        "ref": "mzm-flyer/palette.bgr555",
+        "type": "gba-bgr555-palette",
+        "count": 16,
+        "bytes": 32,
+        "sha256": "d4bd112c991a2e95287feee8781b9cc4f2130e0fd2d607607ee0fa8381ec7919"
+      },
+      {
+        "ref": "mzm-flyer/animation.json",
+        "type": "gba-oam-animation",
+        "count": 5,
+        "bytes": 953,
+        "sha256": "0679d55bc6595fd766a7f5b850fc5f1b145ec9086481a9a3011fc8e9143f5f47"
+      },
+      {
+        "ref": "mzm-flyer/assets.c",
+        "type": "c-source",
+        "count": 1,
+        "bytes": 5142,
+        "sha256": "386f67bb7f086f69e5cecab9bac8533965848d6103b317673b80db897f89f1a8"
+      },
+      {
+        "ref": "mzm-flyer/assets.h",
+        "type": "c-header",
+        "count": 1,
+        "bytes": 449,
+        "sha256": "b4d28f50061590c0a2b957ecdcb170abff4b6c2ee5c74f4f331ea31aafc0222a"
+      },
+      {
+        "ref": "mzm-flyer/frames.png",
+        "type": "image/png",
+        "count": 5,
+        "bytes": 903,
+        "sha256": "e377959868b5adac12ac0aa0e8389af1d4c3d4045c45748a394ada88c4938dc4"
+      },
+      {
+        "ref": "mzm-flyer/receipt.json",
+        "type": "extraction-provenance",
+        "count": 1,
+        "bytes": 2182,
+        "sha256": "3da6393581d2540270857e8e2ce40e9f9f3ae1af584f70ee28caf3a6efcb10dd"
+      },
+      {
+        "ref": "source-binding.json",
+        "type": "original-fixture-binding",
+        "count": 1,
+        "bytes": 2376,
+        "sha256": "89b14c039af42fb01a3f0afcf8393790f68105bbccfa8a9694326fb19ba9dfc7"
+      }
+    ],
+    "remaining_inputs": [],
+    "recipe": {
+      "id": "mzm-species-22-visual-assets",
+      "version": 1,
+      "extractor_sha256": "c7b280eb304db28ad929cc4d8f953af463e47fb5f048067b875e5f17108645ed"
+    },
+    "timings": {
+      "recipe_ms": 100,
+      "queue_ms": null,
+      "build_ms": null,
+      "simulation_ms": null,
+      "evaluation_ms": null,
+      "attempts": 1,
+      "accounting": "recipe_ms is nested within preparation total_ms; no native build, simulation or evaluation ran.",
+      "total_ms": 109
+    },
+    "source_binding": {
+      "runtime_root_configured": true,
+      "source_revision": null,
+      "toolchain_version": null,
+      "native_build_status": "not-run",
+      "status": "no-source-recipe"
+    },
+    "scope": "One species visual asset closure: 64 original 4bpp tiles, 16-color palette, five OAM frames and three animation scripts. No behavior IR, native build or gameplay qualification.",
+    "fixture_capabilities": [
+      "visual-assets",
+      "native-c-assets"
+    ],
+    "finished_at": "2026-10-17T01:47:41.318Z"
+  },
+  "no_inference": {
+    "agent_calls": 0,
+    "model_calls": 0,
+    "native_builds": 0,
+    "browser_gameplay": false
+  },
+  "original_resolver": {
+    "accepted": [
+      "pokemon-leafgreen",
+      "pokemon-emerald",
+      "sonic-advance",
+      "metroid-zero-mission"
+    ],
+    "immutable_private_store": true,
+    "manual_runtime_moves": false,
+    "source_build_override_test": "Uploaded originals satisfy capabilities and are passed as exact CLI original paths; pinned Python hash checks unchanged."
+  },
+  "source_capture": {
+    "wall_s": 0.18370354099897668,
+    "outcome": "pass",
+    "build_ran": false,
+    "model_ran": false,
+    "uploaded_originals": [
+      "sonic-advance",
+      "metroid-zero-mission"
+    ],
+    "reviewed_overlay_matching": [
+      "tools/playtester/models.py",
+      "tools/playtester/core.py",
+      "tools/prompts/__init__.py",
+      "tools/playtester/experiment.py",
+      "tools/playtester/rpg_experiment.py"
+    ],
+    "prompt_templates": 8,
+    "registry_sha256": "ea985290ddc8cb31cf2ca7c6045bec5331ab5ac85b1f63bc2977bea14f997aa0"
+  },
+  "scope": [
+    "MZM extraction is a bounded visual asset closure, not behavior IR or whole-game reconstruction.",
+    "Accepted identity/source binding for other supported originals can satisfy native source build inputs while extraction-specific gaps remain visible.",
+    "Prompt text moved to external pinned files; no prompt-quality evaluation or paid bot campaign ran."
+  ],
+  "timing_limits": "Recipe time nested within preparation total; upload validation separate. Queue/build/simulation/evaluation unsupported durations unavailable; no comparable previous upload endpoint baseline or speedup claim.",
+  "checks": {
+    "new_integrated_js": 17,
+    "new_js_runner_ms": 142.967459,
+    "standalone_prompt_checkpoint_tests": 10,
+    "standalone_python_runner_s": 0.195,
+    "source_resolver_tests": 5,
+    "source_resolver_runner_ms": 49.443625,
+    "local_origin_api_tests": 11,
+    "api_runner_ms": 136.496375
+  }
+}

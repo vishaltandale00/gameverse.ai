@@ -1,0 +1,134 @@
+{
+  "schema": "gameverse.character-library-verification/1",
+  "request": {
+    "id": "9b462482-0ec8-4f38-9eaf-3491e09a6874",
+    "retry_of": "4832ac4c-1af5-4ab8-9a65-89c1705e9523",
+    "intent": "I want to play Pokemon but as Sonic the main character",
+    "source_games": [
+      "sonic-advance",
+      "pokemon-leafgreen"
+    ],
+    "routing": {
+      "source_games": [
+        "sonic-advance",
+        "pokemon-leafgreen"
+      ],
+      "requested_source_games": [
+        "sonic-advance",
+        "pokemon-leafgreen"
+      ],
+      "inferred_from": "selection",
+      "backend": "pokemon-character",
+      "operation": "sonic-player",
+      "roles": {
+        "host": "pokemon-leafgreen",
+        "donor": "sonic-advance",
+        "transfer": [
+          "player-overworld"
+        ]
+      }
+    }
+  },
+  "source_context": {
+    "app_base_commit": "56239981aaa09ccb20ab141cd29764da2ca1685c",
+    "host_source_commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+    "donor_source_commit": "393357f7c9d46b5c10b6c41a57b80fe3b58f3c8d",
+    "adapter_version": "cross-engine-player-render/1",
+    "machine": "macOS-27.0.1-arm64-arm-64bit",
+    "queue_s": null
+  },
+  "result": {
+    "status": "completed",
+    "playable": true,
+    "objective_validated": false,
+    "artifact_sha256": "691ca5bbbf856a1dfe9e5be5eb2c49da141d5e0c3acc2ca3a3b93904819c2acc",
+    "scope": "native-graphics-consumer",
+    "native": {
+      "outcome": "pass",
+      "cold_boot_frames": 900,
+      "natural_gameplay_route": false,
+      "fixture_objects": 14,
+      "animation_frame_commands": 530,
+      "oam_checks": 530,
+      "palette_checks": 240,
+      "reflection_palette_checks": 112,
+      "finite_animations_ended": 20,
+      "flip_checks": 530,
+      "mixed_field_palette_checks": 2,
+      "native_calls": 3922,
+      "native_instructions": 7297394
+    },
+    "gaps": [
+      "Original side-view Sonic frames alias north/south; no original top-down Sonic art is claimed. Donor slope/rotation affine transforms are not imported.",
+      "Bike, surf, fishing, field-move and VS Seeker actions use Sonic idle/run pose aliases with native timing and gameplay; no Sonic vehicle/tool art is claimed.",
+      "Trainer battle portraits, intro/name-selection artwork and title screen retain original Pokemon art.",
+      "Natural field navigation/playability qualification remains required."
+    ]
+  },
+  "timings": {
+    "run_id": "9b462482-0ec8-4f38-9eaf-3491e09a6874",
+    "source_commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+    "adapter_version": "cross-engine-player-render/1",
+    "loop_config": "deterministic-overworld-recipe/1",
+    "total_s": 48.127,
+    "queue_s": null,
+    "baseline_build_s": 40.161993,
+    "sprite_build_s": 1.190626,
+    "native_s": 0.713346,
+    "attempts": 1,
+    "stage_accounting": "Setup, clean baseline, incremental sprite build and native verification are nested within total; no speedup claim between different build modes"
+  },
+  "checks": {
+    "node_tests": 33,
+    "node_runner_ms": 133.815917,
+    "python_tests": 3,
+    "python_runner_s": 0.001,
+    "paid_model_calls": 0,
+    "browser_gameplay": false
+  },
+  "discovery": {
+    "local_counts": {
+      "system": 57,
+      "typed-ir": 183,
+      "prefab": 29,
+      "capability": 22,
+      "asset": 5,
+      "template": 52,
+      "tool": 19,
+      "source": 56,
+      "original_games": 33,
+      "groups": 34
+    },
+    "snapshot_entries": 366,
+    "snapshot_original_games": 33,
+    "snapshot_payload": "sanitized metadata only, no original cartridge or donor image bytes",
+    "local_initial_load_ms": 48.69,
+    "warm_mario_search_ms": [
+      0.26,
+      0.19,
+      0.11,
+      0.09,
+      0.1
+    ],
+    "comparable_before_ms": null,
+    "snapshot_runtime_inputs_checked": false
+  },
+  "qualification_limits": [
+    "Native direct-entry graphics fixtures do not establish natural gameplay, campaign completion or transferred Sonic mechanics.",
+    "Side-view directional/action aliases, resampling and unchanged title/trainer artwork keep full-request validation false."
+  ],
+  "prior_attempts": [
+    {
+      "id": "20ac3183-d1cf-4b62-8474-3360e113ee7b",
+      "outcome": "cancelled",
+      "reason": "Original source art faces left; visual contact-sheet review required corrected east/west alias before final retry."
+    },
+    {
+      "kind": "development-build",
+      "outcome": "failed",
+      "duration_s": null,
+      "reason": "Host subsprite symbol binding corrected; original failed duration unavailable."
+    }
+  ],
+  "accounting": "Build clean/cache-miss baseline and incremental/cache-hit sprite build are different modes; no speedup comparison. All stage durations nested in total. No new CI job, dependency or timing infrastructure; CI timing unavailable."
+}

@@ -1,0 +1,100 @@
+{
+  "schema": "gameverse.v1-integration-review/1",
+  "reviewed_at": "2026-10-17T01:04:21.292Z",
+  "source_commit": "83ee3a992fa288698c93ef89f0cb54b02436ab99",
+  "source_state": "PR18 worktree with scoped integration changes; final commit recorded by release owner",
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "node": "v24.14.0",
+    "port": 4188
+  },
+  "baseline": {
+    "port": 4173,
+    "capabilities_status": 404,
+    "observation": "Primary checkout server lacked mashup API; emulator-only identity did not prove correct app"
+  },
+  "findings_resolved": [
+    "V1 lacked creation entry and standalone links routed away from V1",
+    "Shared node_modules symlink was rejected by runtime asset realpath guard, returning500 for emulator and Three assets",
+    "Opening retained result with empty local history lost refinement parent context"
+  ],
+  "http": {
+    "v1": 200,
+    "mashup_capabilities_schema": "gameverse.mashup-capabilities/1",
+    "local_instance_schema": "gameverse.local-instance/1",
+    "checkout_id": "186182391c930d40cd39c849f06706376742aafa4f8ebfa84f677a4e08aa26ed",
+    "runtime_assets": {
+      "mgba_js": 200,
+      "mgba_wasm": 200,
+      "three_module": 200,
+      "creation_workbench": 200
+    },
+    "legacy_create_redirect": 302,
+    "private_paths": {
+      "environment_file": 404,
+      "node_modules_package": 404,
+      "retained_run_file": 404
+    }
+  },
+  "ui": {
+    "observed": [
+      "V1 Alder District rendered",
+      "Header Create opens embedded creation dialog",
+      "ChatGPT connected through local Codex Pro",
+      "Retained native-pass result displayed with campaign unqualified clearly reported",
+      "Result viewer Ready; Play not pressed",
+      "Return closes studio to V1 world menu; Return to Gameverse displays neighborhood; Create reopens retained studio",
+      "Fresh deep-linked result shows Build this refinement and refinement prompt",
+      "Browser dictation control exposed; microphone not activated"
+    ],
+    "limitations": [
+      "No paid creation requests, native/model campaigns or gameplay executed",
+      "World suspension/input ownership reviewed in source and existing targeted tests; no movement performed during UI audit",
+      "Microphone transcription not exercised"
+    ]
+  },
+  "preservation": {
+    "request_id": "55977bfe-9aa8-4341-990c-cf94944be293",
+    "run_json_sha256_before_and_after": "9e0162b6c53215f0bc7a122a0bc4b42dae3a9f7d39da0c8d9bb7c07c7c09a4d9",
+    "artifact_sha256": "6263dc57da3831a5c8764ddd7b9a802dfe25a2304f03c3836c289b57f16f58c6",
+    "checkpoint_sha256": "07604d5c6d2a656c344dc4c359b44cef48d4480b4e1d8f8678385c6fc106565b",
+    "history_chunks": 3
+  },
+  "verification": {
+    "command": "node --test tests/application.test.js tests/conversation.test.js tests/result-player.test.js tests/mashup-api.test.js tests/v1-creation.test.js",
+    "tests": 20,
+    "passed": 20,
+    "failed": 0,
+    "duration_ms": 96.225709,
+    "new_test_coverage": [
+      "Retained public V1 result URL without changing persisted checkpoint/history",
+      "Scoped source selection and original intent/parent lineage for history and fresh deep links"
+    ],
+    "timing_comparison": {
+      "baseline_tests": 18,
+      "baseline_duration_ms": 82.8,
+      "after_same_18_duration_ms": 97.6,
+      "measurement_source": "Lead recorded comparable exact18 tests on same machine; expanded20 result is separate",
+      "build_duration": {
+        "before_ms": 30.4,
+        "after_ms": 25.3,
+        "mode": "clean dist copy, warm installed dependency cache",
+        "before_source": "retained PR18 final shell build measurement",
+        "environment": "same machine and installed dependencies; single samples, no speedup claim",
+        "earlier_repair_sample_ms": 37.2
+      },
+      "ci_queue": null,
+      "ci_execution": null
+    }
+  },
+  "freshness_check": {
+    "remote_main": "fb5335af",
+    "pr18_parent": "83ee3a99",
+    "primary": "85e21396",
+    "vishal_demo": "6f98e88b",
+    "claude_consult": "fb5335af",
+    "claude_pipeline": "b58ae3ee",
+    "result": "No newer V1 source worktree or upstream changes; no other worktree imported or modified"
+  }
+}

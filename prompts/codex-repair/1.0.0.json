@@ -1,0 +1,6 @@
+{
+  "schema": "gameverse.prompt-template/1",
+  "id": "codex-repair",
+  "version": "1.0.0",
+  "template": "Inspect model-report.json, model-playtest/events.jsonl, acceptance.json and {{worldRef}}. User intent: {{intent}}. The bounded bot did not meet the native objective: {{reason}}. Confidence thresholds and resource limits must stay unchanged. Diagnose actual observed state/screenshots, not guesses. ONLY edit {{worldRef}}, design.json, acceptance.json. If an actual authored placement/dependency error is supported by evidence, repair the linked route and set design.json repair_applied:true plus repair_reason. If no justified source-backed repair exists, set repair_applied:false and repair_reason; preserve the partial native checkpoint and do not invent success. Do not change recovered C/compiler/proofs/ROM/bot or run build/testing. Acceptance still requires >=2 relics and >=1 gate; no weakened threshold."
+}

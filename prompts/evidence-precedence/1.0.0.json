@@ -1,0 +1,6 @@
+{
+  "schema": "gameverse.prompt-template/1",
+  "id": "evidence-precedence",
+  "version": "1.0.0",
+  "template": "observation.facts and observation.progress are the current measured state. Earlier transitions, initial state, and system2_plan are history or hypotheses, never overrides. Recheck current resources before acting; do not repeat historical numeric claims as current."
+}

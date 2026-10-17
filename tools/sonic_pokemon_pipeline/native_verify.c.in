@@ -1,0 +1,66 @@
+/* Pinned Sonic USA original animation + OAM consumer. Fixture uploads the
+ * consumer's queued graphics/palette/OAM to hardware; no gameplay route claim. */
+#include <mgba/core/core.h>
+#include <mgba/core/config.h>
+#include <mgba/core/log.h>
+#include <stdarg.h>
+#include <mgba/gba/core.h>
+#include <mgba/internal/arm/arm.h>
+#include <mgba/internal/arm/isa-inlines.h>
+#include <mgba/internal/gba/gba.h>
+#include <mgba/internal/gba/video.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
+#include "native-cases.h"
+static void quiet(struct mLogger*l,int c,enum mLogLevel v,const char*f,va_list a){}
+static struct mLogger logger={.log=quiet};
+static struct mCore *core;
+static uint32_t pixels[240*160];
+static unsigned long instructions,calls,visible,uploads;
+#define CHECK(x) do{if(!(x)){fprintf(stderr,"check line %d: %s\n",__LINE__,#x);exit(5);}}while(0)
+static unsigned r8(unsigned a){return core->busRead8(core,a);}
+static unsigned r16(unsigned a){return core->busRead16(core,a);}
+static unsigned r32(unsigned a){return core->busRead32(core,a);}
+static void w8(unsigned a,unsigned v){core->busWrite8(core,a,v);}
+static void w16(unsigned a,unsigned v){core->busWrite16(core,a,v);}
+static void w32(unsigned a,unsigned v){core->busWrite32(core,a,v);}
+static void copy(unsigned from,unsigned to,unsigned count){for(unsigned i=0;i<count;i+=2)w16(to+i,r16(from+i));}
+static void invoke(unsigned pc,unsigned a){
+ struct ARMCore *cpu=core->cpu;
+ for(unsigned i=0;i<16;i++)cpu->gprs[i]=0;
+ cpu->gprs[0]=a;cpu->gprs[ARM_SP]=0x03007d00;cpu->gprs[ARM_LR]=0x08000001;cpu->cpsr.i=1;
+ cpu->cycles=0;cpu->nextEvent=INT_MAX;_ARMSetMode(cpu,MODE_THUMB);cpu->gprs[ARM_PC]=pc;ThumbWritePC(cpu);
+ unsigned n=0;while((uint32_t)cpu->gprs[ARM_PC]-2!=0x08000000&&n<2000000){ARMRun(cpu);n++;}
+ CHECK(n<2000000);CHECK(cpu->gprs[ARM_SP]==0x03007d00);calls++;instructions+=n;
+}
+static void dump(const char *dir,const char*name){char path[4096];snprintf(path,sizeof(path),"%s/%s.rgba",dir,name);FILE*f=fopen(path,"wb");CHECK(f);CHECK(fwrite(pixels,4,240*160,f)==240*160);fclose(f);}
+static void render(void){struct GBA*gba=core->board;w16(0x04000000,0x1040);w16(0x04000050,0);for(unsigned y=0;y<160;y++)gba->video.renderer->drawScanline(gba->video.renderer,y);gba->video.renderer->finishFrame(gba->video.renderer);}
+int main(int argc,char **argv){
+ CHECK(argc==3);mLogSetDefaultLogger(&logger);core=GBACoreCreate();CHECK(core&&core->init(core));mCoreInitConfig(core,NULL);
+ mCoreConfigSetDefaultIntValue(&core->config,"skipBios",1);mCoreConfigSetDefaultIntValue(&core->config,"useBios",0);mCoreLoadConfig(core);core->setVideoBuffer(core,pixels,240);CHECK(mCoreLoadFile(core,argv[1]));core->reset(core);
+ for(unsigned i=0;i<600;i++)core->runFrame(core);dump(argv[2],"cold-boot-600");
+ CHECK(r32(0x03002034)>=0x08000000&&r32(0x03002034)<0x0a000000);
+ char tracepath[4096];snprintf(tracepath,sizeof(tracepath),"%s/consumer-trace.bin",argv[2]);FILE*trace=fopen(tracepath,"wb");CHECK(trace);
+ unsigned sprite=0x0203f000;
+ for(unsigned ci=0;ci<sizeof(cases)/sizeof(cases[0]);ci++){
+  for(unsigned i=0;i<0x80;i++)w8(sprite+i,0);
+  w32(sprite+4,0x06010000);w16(sprite+10,cases[ci].anim);w16(sprite+22,120);w16(sprite+24,80);w8(sprite+32,cases[ci].variant);w8(sprite+33,255);w8(sprite+34,16);w32(sprite+40,0xffffffff);
+  for(unsigned tick=0;tick<64;tick++){
+   w8(0x03002324,0);invoke(0x080034cc,sprite);
+   unsigned src=r32(sprite),size=r16(sprite+8);CHECK(size<=0x8000);
+   if(size){CHECK(src>=0x08000000&&src+size<=0x08800000);copy(src,0x06010000,size);w16(sprite+8,0);uploads++;}
+   w8(0x030011b0,0);for(unsigned j=0;j<32;j++){w8(0x03001110+j,255);w8(0x03004600+j,255);}
+   for(unsigned j=0;j<128;j++)w16(0x07000000+j*8,0x200);
+   invoke(0x08004158,sprite);unsigned count=r8(0x030011b0);CHECK(count<128);
+   invoke(0x08004894,0);copy(0x03004630,0x07000000,count*8);copy(0x03001920,0x05000200,512);
+   // Native animation state, hitboxes and OAM must match the untouched baseline.
+   for(unsigned j=10;j<48;j++)fputc(r8(sprite+j),trace);
+   for(unsigned j=0;j<count*8;j++)fputc(r8(0x07000000+j),trace);
+   fputc(count,trace);
+   if(count){visible++;if(tick==0||tick==16||tick==32||tick==48){char name[128];render();snprintf(name,sizeof(name),"enemy-%03u-variant-%02u-tick-%02u",cases[ci].anim,cases[ci].variant,tick);dump(argv[2],name);}}
+  }
+ }
+ fclose(trace);printf("{\"outcome\":\"pass\",\"cases\":%lu,\"ticks_per_variant\":64,\"visible_ticks\":%lu,\"graphics_uploads\":%lu,\"native_calls\":%lu,\"native_instructions\":%lu,\"cold_boot_frames\":600}\n",sizeof(cases)/sizeof(cases[0]),visible,uploads,calls,instructions);core->deinit(core);return 0;
+}

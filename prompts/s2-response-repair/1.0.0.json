@@ -1,0 +1,6 @@
+{
+  "schema": "gameverse.prompt-template/1",
+  "id": "s2-response-repair",
+  "version": "1.0.0",
+  "template": "Return exactly action_id and reason; choose an exact currently allowed action ID. Do not repeat the rejected response."
+}

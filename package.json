@@ -14,7 +14,8 @@
     "source:setup": "node scripts/sources.mjs setup",
     "game:build": "node scripts/sources.mjs build",
     "game:status": "node scripts/sources.mjs status",
-    "verify:sports": "node scripts/verify-sports.mjs"
+    "verify:sports": "node scripts/verify-sports.mjs",
+    "local": "node scripts/start-local.mjs"
   },
   "dependencies": {
     "@wasm-gaming/mgba-wasm": "0.1.1",

@@ -1,0 +1,214 @@
+{
+  "schema": "gameverse.mashup-pipeline-smoke/1",
+  "request_id": "55977bfe-9aa8-4341-990c-cf94944be293",
+  "scope": "Single substantial subscription-agent creation plus bounded native model continuation; not campaign qualification",
+  "intent": "Make a substantial Sonic Advance \u00d7 Metroid Zero Mission exploration mashup: retain Sonic momentum and original campaign, but reshape the first-act route around collecting two distinct Metroid capabilities, opening a matching native ability barrier, and managing nearby alien/recharge encounters. Put the early two relics and one matching gate on a practical visible route so the native testing bot can demonstrate acquisition and barrier opening. Change connected progression and resource/ecology decisions, not the title or a single constant. Keep the source-backed MZM mechanics recognizable and clearly say which bridges/enemies are authored. Do not claim a full Metroid remake or late-campaign completion.",
+  "outcome": "native-objective-verified-with-explicit-policy-upgrade",
+  "playable": true,
+  "user_intent_validated": true,
+  "source_games": [
+    "sonic-advance",
+    "metroid-zero-mission"
+  ],
+  "source_authorship": {
+    "sonic": "Original full campaign, geometry, slopes/loops, controller and boss lifecycle retained.",
+    "metroid": "Recovered motion arithmetic, projectile/combat/impact and original Ripper behavior/assets.",
+    "authored": "Acquisitions/events, gate progression, resource/ecology prefabs and inter-system adapters. Candidate25 does not use automatically emitted MZM acquisition/event IR."
+  },
+  "artifact": {
+    "ref": "local-data/mashup-runs/55977bfe-9aa8-4341-990c-cf94944be293/game.gba",
+    "sha256": "6263dc57da3831a5c8764ddd7b9a802dfe25a2304f03c3836c289b57f16f58c6"
+  },
+  "baseline_sha256": "f1faa36558ae5d7ccacfc94292201b63c7a870803464a2f4d2699c6654bf6bf1",
+  "transformation": {
+    "semantic_prefab_changes": 12,
+    "kinds": [
+      "relic",
+      "alien",
+      "gate",
+      "recharge"
+    ],
+    "summary": "Missile then Morph early acquisition; moved matching missile seal/crawler, added recharge and recovered Ripper encounter; moved bomb relic/barrier to next act.",
+    "world": {
+      "ref": "local-data/mashup-runs/55977bfe-9aa8-4341-990c-cf94944be293/workspace/tools/composition/worlds/sonic-metroid-signal-descent.json",
+      "sha256": "4d5bc38c6db060cd0d982d4555a4093c3afb2fc64677d6c559f40bff0e5439e0"
+    },
+    "build_lock": {
+      "ref": "local-data/mashup-runs/55977bfe-9aa8-4341-990c-cf94944be293/workspace/build/composition.lock.json",
+      "sha256": "aa958c36c3c9209afcc13f293603773c7892779fb114b2e2f569c1e518c0e0b0"
+    }
+  },
+  "observed_native_facts": {
+    "x": 633.8203125,
+    "y": 439.92578125,
+    "upgrades": 3,
+    "relics_collected": 2,
+    "gates_opened": 1,
+    "shots_fired": 3,
+    "shots_hit": 1,
+    "missiles": 7,
+    "energy": 54,
+    "damage_taken": 45,
+    "deaths": 0
+  },
+  "qualification": {
+    "native_boot": "pass",
+    "bot": "success: objective_observed under explicitly versioned source-closed-gate stagnation policy",
+    "campaign": "unqualified",
+    "confidence_policy": {
+      "confidence": 0.65,
+      "margin": 0.2,
+      "basis": "uncalibrated_provider_score",
+      "calibration_artifact": null,
+      "lineage": "Existing sonic-traversal-template.json experiment confidence/margin; DecisionPolicy score/margin/top-probability gate and ChatPolicy escalation unchanged"
+    }
+  },
+  "model_usage": {
+    "first_chunk": {
+      "S1": 23,
+      "S2": 1,
+      "frames": 552,
+      "wall_s": 6.165384
+    },
+    "continuation_chunk": {
+      "S1": 24,
+      "S2": 0,
+      "frames": 576,
+      "wall_s": 5.333139
+    },
+    "billing_usd": null,
+    "billing_note": "Provider billing unavailable; finite call/frame/wall budgets retained.",
+    "historical_48_call_cumulative": {
+      "S1": 47,
+      "S2": 1,
+      "frames": 1128,
+      "wall_s": 11.498523
+    },
+    "source_policy_regression_chunk": {
+      "S1": 3,
+      "S2": 2,
+      "frames": 72,
+      "wall_s": 4.066769
+    },
+    "cumulative": {
+      "S1": 50,
+      "S2": 3,
+      "frames": 1200,
+      "wall_s": 15.565292
+    }
+  },
+  "continuation": {
+    "restored_model_context": true,
+    "prior_events_preserved_exactly": true,
+    "same_run_id": true,
+    "same_profile": true,
+    "same_S2_plan": true,
+    "native_checkpoint_frame": 1130,
+    "state_sha256": "07604d5c6d2a656c344dc4c359b44cef48d4480b4e1d8f8678385c6fc106565b",
+    "learning_sha256": "c753d4ffff0bb9b6f9fd343f3e5ff0123de0f8c2c96915f6ee9f029374d27d3b",
+    "can_resume": true,
+    "legacy_migration": {
+      "ref": "local-data/mashup-runs/55977bfe-9aa8-4341-990c-cf94944be293/workspace/migrate-stage.json",
+      "sha256": "e532d406eac30d98a4a45f70e79a0ba049f094ac4ae2d7dc71e2b68909921746"
+    },
+    "transient_failure": "First resume stopped before inference because frozen Limits was mutated; dataclasses.replace fixed; replacement budget verified without model calls. Original native state and all prior evidence preserved."
+  },
+  "repair": {
+    "attempts": [
+      {
+        "attempt": 1,
+        "applied": false,
+        "reason": "No authored placement or dependency error is supported by the supplied run. Missile and Morph were collected by observation frame 73 (upgrades=3, picked[0]=6). Sonic reached the visible missile seal at x600 and stopped near x586, consistent with the authored 14px collision boundary. All 23 action receipts contain only RIGHT; no B or R+B input was attempted, shots_fired remained 0, and 10 missiles remained available. The source requires a missile hit to open this seal. model_call_limit ended the run with 2 relics and 0 gates; it does not establish a broken gate or justify relocating the linked route. Preserve the world configuration, acceptance minimum, limits, confidence policy and partial native checkpoint; gate opening remains unproven."
+      }
+    ],
+    "current_policy": "Only actual decoded source-behavior contradictions trigger repair. Budget exhaustion never causes source rewrite."
+  },
+  "timing": {
+    "clean_build_s": 0.877231,
+    "native_boot_stage_s": 0.6765343329752795,
+    "API_elapsed_s": 207.84422883400003,
+    "queue_s": null,
+    "accounting": "Build, boot, model and agent stages are nested in API elapsed. Continuation did not rebuild or boot. No CI timing or speedup claim. Direct policy regression is separately measured and not included in original API elapsed.",
+    "baseline_clean_rebuild_same_machine_s": 0.899212,
+    "baseline_note": "Unchanged captured baseline rebuilt to identical bytes; variant timing uses same installed tools and original ROMs with changed world inputs.",
+    "additional_policy_regression_bot_s": 4.066769
+  },
+  "evidence": {
+    "initial_model": {
+      "ref": "local-data/mashup-runs/55977bfe-9aa8-4341-990c-cf94944be293/workspace/model-report.json",
+      "sha256": "6ad47800bb443b999e9e72bd2f816e7bff0825a3829c098f42376a9dc1fbeea5"
+    },
+    "continuation_model": {
+      "ref": "local-data/mashup-runs/55977bfe-9aa8-4341-990c-cf94944be293/workspace/continuations/1792197284210/model-report.json",
+      "sha256": "40438ed0f949f3fe99c3401b0c861971f380f692045c4fc1bdf39de5baf0b276"
+    },
+    "build": {
+      "ref": "local-data/mashup-runs/55977bfe-9aa8-4341-990c-cf94944be293/workspace/build/receipt.json",
+      "sha256": "38e1d1fa2aca18b1257b6bb262584ab228bcd39ee82fd94e04557a551cb397f3"
+    },
+    "native_boot": {
+      "ref": "local-data/mashup-runs/55977bfe-9aa8-4341-990c-cf94944be293/workspace/boot/report.json",
+      "sha256": "1759e5c9e52f0a5f8d26039ed37290e4da2eb7db6fd3f384bf81a8d83aae26fd"
+    },
+    "semantic_delta": {
+      "ref": "local-data/mashup-runs/55977bfe-9aa8-4341-990c-cf94944be293/semantic-delta.json",
+      "sha256": "8bd740b526758abda92dfff9fc051ac9b95ac4d859be8b3b23c52e26ea031788"
+    }
+  },
+  "checks": {
+    "focused_node_tests": 8,
+    "node_wall_s": 0.06339225,
+    "offline_source_policy_cases": 4,
+    "format_diff_check": "pass",
+    "scope": "Frozen helper selection; identity/resource/cancellation tests; animation jitter, genuine progress, open gate and no automatic firing."
+  },
+  "limitations": [
+    "Supported source pair only; no arbitrary game-pair generation.",
+    "Only the stated native first-act objective is verified; other encounters, later routes and full campaign remain unqualified.",
+    "S1 confidence scores are uncalibrated; no calibration artifact.",
+    "No player-save migration, physical-device or late-campaign qualification.",
+    "Private original ROM inputs and reviewed installed runtime must be supplied locally; cartridges/assets are not bundled into Git."
+  ],
+  "validated_scope": "Native acquisition of two distinct capabilities, actual missile firing/ammo use, matching barrier opening and crossing. Full campaign remains unqualified.",
+  "additional_verification": {
+    "kind": "explicit source-policy upgrade regression, not same-policy continuation",
+    "prior_proof_unchanged": true,
+    "original_helper": {
+      "ref": "local-data/mashup-runs/55977bfe-9aa8-4341-990c-cf94944be293/workspace/.runner/mashup-runtime.py",
+      "sha256": "8f2d4683baa5634dd3fe9f94601ff13989c88d0e4aca504b9c75ea6d2b83ec0b"
+    },
+    "new_helper": {
+      "ref": "scripts/mashup-runtime.py",
+      "sha256": "bb1a537170c34635273551db10f0484bb7c5dc7f8e8e7811b3baef31187cf0e8"
+    },
+    "new_policy": {
+      "ref": "scripts/mashup_stagnation.py",
+      "sha256": "e108da4dfda1f7067ba092ae28432f458a1d23a12fdf0501af9441c866449b6b"
+    },
+    "policy_version": "sonic-source-closed-gate-stagnation/1",
+    "input_receipt": {
+      "ref": "local-data/mashup-runs/55977bfe-9aa8-4341-990c-cf94944be293/workspace/policy-regression/input-receipt.json",
+      "sha256": "4cf28958dcd8784ac879169ad3b12562564ceb1cc261539a8977650f31fd80bf"
+    },
+    "model_report": {
+      "ref": "local-data/mashup-runs/55977bfe-9aa8-4341-990c-cf94944be293/workspace/policy-regression/model-report.json",
+      "sha256": "369b9f6b37a2c9b28372f20e4e18227793cebbe1380d55d17801147b5b439b98"
+    },
+    "events": {
+      "ref": "local-data/mashup-runs/55977bfe-9aa8-4341-990c-cf94944be293/workspace/policy-regression/model-playtest/events.jsonl",
+      "sha256": "32c9f279c960959258b71c3c715997585649e0c70580728ef175d01ce9e291a8"
+    },
+    "final_state_sha256": "3c38091d17c87f63a53b2a393db7e549bcb2d69dd332ab5e3bbd407f653e4f9f",
+    "final_learning_sha256": "74b3c020dda328a547e180e51cb156c8e37cebf62fdf829e75f134a629d27474",
+    "model_calls": 5,
+    "model_call_cap": 8,
+    "cumulative_model_calls": 53,
+    "cumulative_call_cap": 56,
+    "builds": 0,
+    "boots": 0,
+    "game_source_edits": 0,
+    "native_goal_observed": true,
+    "guard_triggered_existing_S2": true,
+    "fire_action_selected_by": "System2 chose right_missile; guard injected no firing action."
+  }
+}

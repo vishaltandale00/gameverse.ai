@@ -1,0 +1,50 @@
+{
+  "schema": "gameverse.source-input-closure/1",
+  "operation": "pokemon-enemies",
+  "sources": [
+    {
+      "game_id": "sonic-advance",
+      "source_ref": "local/decomps/sa2",
+      "refs": [
+        "src/data/sa1/animations/animations.c",
+        "src/data/sa1/sprite_dimensions.c",
+        "src/data/sa1/oam_data.c",
+        "include/constants/sa1/animations.h",
+        "src/sprite.c",
+        "graphics/sa1/obj_tiles_4bpp.inc",
+        "src/data/sa1/animations/animation_table.c",
+        "graphics/sa1/obj_tiles/4bpp/a0000_f000.png"
+      ]
+    },
+    {
+      "game_id": "pokemon-leafgreen",
+      "source_ref": "local/decomps/pokefirered",
+      "refs": [
+        "src/pokemon_icon.c",
+        "graphics/pokemon/mankey/icon.png",
+        "graphics/pokemon/beedrill/icon.png",
+        "graphics/pokemon/pidgey/icon.png",
+        "graphics/pokemon/rhyhorn/icon.png",
+        "graphics/pokemon/poliwag/icon.png",
+        "graphics/pokemon/shellder/icon.png",
+        "graphics/pokemon/ledyba/icon.png",
+        "graphics/pokemon/voltorb/icon.png",
+        "graphics/pokemon/oddish/icon.png",
+        "graphics/pokemon/magnemite/icon.png",
+        "graphics/pokemon/mr_mime/icon.png",
+        "graphics/pokemon/seel/icon.png",
+        "graphics/pokemon/horsea/icon.png",
+        "graphics/pokemon/krabby/icon.png",
+        "graphics/pokemon/psyduck/icon.png",
+        "graphics/pokemon/kecleon/icon.png",
+        "graphics/pokemon/caterpie/icon.png",
+        "graphics/pokemon/abra/icon.png",
+        "graphics/pokemon/octillery/icon.png",
+        "graphics/pokemon/diglett/icon.png",
+        "graphics/pokemon/icon_palettes/icon_palette_0.pal",
+        "graphics/pokemon/icon_palettes/icon_palette_1.pal",
+        "graphics/pokemon/icon_palettes/icon_palette_2.pal"
+      ]
+    }
+  ]
+}

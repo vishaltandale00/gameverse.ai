@@ -1,0 +1,66 @@
+{
+  "schema": "gameverse.prompt-registry/1",
+  "version": "1.2.0",
+  "prompts": [
+    {
+      "id": "evidence-precedence",
+      "version": "1.0.0",
+      "ref": "prompts/evidence-precedence/1.0.0.json",
+      "sha256": "183e502120d7f946a82010bdb3ba7c5c0e79d1cf51cb66c507281bb3b6f37fbf"
+    },
+    {
+      "id": "s1-action",
+      "version": "1.0.0",
+      "ref": "prompts/s1-action/1.0.0.json",
+      "sha256": "3b2e5206eb7d043573f7044179cc7fed0b9bdd2d490a7603e1ff4f4cb03c0172"
+    },
+    {
+      "id": "s1-perspective",
+      "version": "1.0.0",
+      "ref": "prompts/s1-perspective/1.0.0.json",
+      "sha256": "6b2678a8afbfa61278106efbcec2e592b113c8ce4cbac98482300b8b89e5daf2"
+    },
+    {
+      "id": "s1-locomotion",
+      "version": "1.0.0",
+      "ref": "prompts/s1-locomotion/1.0.0.json",
+      "sha256": "6f2d0c84e5f6198911f38193793d770177b5a9d38efc7171b1fc87888c53b97d"
+    },
+    {
+      "id": "s2-reasoning",
+      "version": "1.0.0",
+      "ref": "prompts/s2-reasoning/1.0.0.json",
+      "sha256": "634932e605095dadcd64796946858bbb760e37040b7118ef0b4e302c89825b25"
+    },
+    {
+      "id": "codex-create",
+      "version": "1.0.0",
+      "ref": "prompts/codex-create/1.0.0.json",
+      "sha256": "c5334c5dcc716b5eb2d742552c05aa5982edaf94c9b332e012991e66632fdf6d"
+    },
+    {
+      "id": "codex-repair",
+      "version": "1.0.0",
+      "ref": "prompts/codex-repair/1.0.0.json",
+      "sha256": "7c1e07e9e2daf5c5dc6c13aecaedf34941e75a47cd1f40372afccbc248caf4f6"
+    },
+    {
+      "id": "s2-response-repair",
+      "version": "1.0.0",
+      "ref": "prompts/s2-response-repair/1.0.0.json",
+      "sha256": "15a70c4acd508c3237bace9efcb47a3357ba200f01a4d31a3381f89af467f1de"
+    },
+    {
+      "id": "codex-source-transform",
+      "version": "1.1.0",
+      "ref": "prompts/codex-source-transform/1.1.0.json",
+      "sha256": "57ee14b520d7b399e64579f678120fb95f39fac735573ce43081145baa8d6923"
+    },
+    {
+      "id": "codex-source-transform-resume",
+      "version": "1.0.0",
+      "ref": "prompts/codex-source-transform-resume/1.0.0.json",
+      "sha256": "f96c1e3392ed8af4e64fddedcb8bb672307af0d3b1d9119a5edae89e123b8122"
+    }
+  ]
+}

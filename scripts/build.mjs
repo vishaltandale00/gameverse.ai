@@ -6,7 +6,9 @@ await rm(new URL('dist/', root), { recursive: true, force: true });
 await mkdir(new URL('dist/runtime/', root), { recursive: true });
 await mkdir(new URL('dist/games/', root), { recursive: true });
 await mkdir(new URL('dist/runtime/three/', root), { recursive: true });
-for (const path of ['index.html', 'style.css', 'src']) await cp(new URL(path, root), new URL(`dist/${path}`, root), { recursive: true });
+for (const path of ['index.html', 'style.css', 'conversation.html', 'conversation.css', 'result-player.css', 'src']) await cp(new URL(path, root), new URL(`dist/${path}`, root), { recursive: true });
+await mkdir(new URL('dist/create/', root), {recursive:true});
+await cp(new URL('conversation.html', root), new URL('dist/create/index.html', root));
 await mkdir(new URL('dist/games/configs/', root), { recursive: true });
 for (const version of ['v0', 'v1']) {
   await cp(new URL(`games/configs/gameverse-${version}.json`, root), new URL(`dist/games/configs/gameverse-${version}.json`, root));

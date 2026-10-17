@@ -1,0 +1,6 @@
+{
+  "schema": "gameverse.prompt-template/1",
+  "id": "s1-locomotion",
+  "version": "1.0.0",
+  "template": "Classify the evidenced control/mechanic family. A screenshot alone may not establish physics or movement; use unknown then."
+}

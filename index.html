@@ -5,12 +5,13 @@
   <meta name="theme-color" content="#f7f5ef">
   <title>Gameverse · Your games, your world</title>
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/result-player.css">
   <script type="module" src="/src/main.js"></script>
 </head>
 <body class="application-loading">
   <div id="application-loading" role="status"><span class="brand-mark">✳</span><h1>Gameverse</h1><p>Opening your world…</p></div>
   <main id="application-error" hidden><p class="eyebrow">GAMEVERSE</p><h1>Let’s try that again.</h1><p id="application-error-message" role="status"></p><button id="reload-application" class="primary">Reload</button><a href="/v0">Original FireRed page ↗</a></main>
-  <header class="topbar"><a href="/" class="brand" aria-label="Gameverse home"><span class="brand-mark">✳</span>gameverse<span class="brand-dot">.</span></a><span class="edition">LOCAL PLAYGROUND <span class="tiny-dot"></span> 001</span><button id="profile-button" class="profile-button">Create character <span>↗</span></button></header>
+  <header class="topbar"><a href="/" class="brand" aria-label="Gameverse home"><span class="brand-mark">✳</span>gameverse<span class="brand-dot">.</span></a><a href="/create" class="profile-button">Make a game ↗</a><span class="edition">LOCAL PLAYGROUND <span class="tiny-dot"></span> 001</span><button id="profile-button" class="profile-button">Create character <span>↗</span></button></header>
   <main id="home" hidden>
     <section class="intro"><div><p class="eyebrow"><span class="tiny-dot green"></span> A LITTLE WORLD OF YOUR OWN</p><h1>Good games.<br><span>New possibilities.</span></h1><p class="intro-copy">Pick an adventure. Make it your own.<br>Your character, your progress, right where you left them.</p></div><div class="intro-note"><span class="orbit">✳</span><p>Familiar worlds.<br>A different kind of playground.</p><span class="mono">GAME BOY ADVANCE COLLECTION / 01</span></div></section>
     <section aria-labelledby="collection-heading"><div class="section-heading"><h2 id="collection-heading">Your collection <span id="collection-count">01</span></h2><p id="controller-status">Keyboard ready <span class="tiny-dot"></span> Connect a controller to play</p></div><div id="games" class="games"></div></section>
@@ -27,7 +28,7 @@
     <p id="voice-message" role="status" aria-live="polite"></p><blockquote id="voice-transcript" aria-live="polite" hidden></blockquote>
     <div class="dialog-actions"><button id="voice-cancel">Cancel · B</button><button id="voice-stop" class="primary" hidden>Send request · R3</button><button id="voice-done" class="primary" hidden>Return to game</button></div>
   </dialog>
-  <dialog id="world-menu" aria-labelledby="world-menu-title"><button id="world-menu-close" class="close" aria-label="Return to Gameverse">×</button><p class="eyebrow">ALDER DISTRICT</p><h2 id="world-menu-title">Gameverse</h2><p id="world-menu-message">Your world is paused. FireRed is waiting at Alder Arcade.</p><div class="dialog-actions"><button id="world-resume" class="primary">Return to Gameverse →</button><button data-venue="soccer">Juniper Pitch · 5v5 Soccer</button><button data-venue="football">Foundry Field · 7v7 Football</button><button id="world-character">Choose character</button><button id="world-reload" hidden>Reopen Gameverse</button></div><p class="controller-menu-hint">D-pad / left stick to choose · A to select · B / Start to resume</p><p id="world-controller-status" class="small">Keyboard + mouse · press a controller button to connect</p><a class="world-original-link" href="/v0">Original FireRed page ↗</a></dialog>
+  <dialog id="world-menu" aria-labelledby="world-menu-title"><button id="world-menu-close" class="close" aria-label="Return to Gameverse">×</button><p class="eyebrow">ALDER DISTRICT</p><h2 id="world-menu-title">Gameverse</h2><p id="world-menu-message">Your world is paused. FireRed is waiting at Alder Arcade.</p><div class="dialog-actions"><button id="world-resume" class="primary">Return to Gameverse →</button><button data-venue="soccer">Juniper Pitch · 5v5 Soccer</button><button data-venue="football">Foundry Field · 7v7 Football</button><button id="world-create" type="button">Create a game ↗</button><button id="world-character">Choose character</button><button id="world-reload" hidden>Reopen Gameverse</button></div><p class="controller-menu-hint">D-pad / left stick to choose · A to select · B / Start to resume</p><p id="world-controller-status" class="small">Keyboard + mouse · press a controller button to connect</p><a class="world-original-link" href="/v0">Original FireRed page ↗</a></dialog>
   <dialog id="profile-dialog" aria-labelledby="profile-title">
     <button class="close" data-close="profile-dialog" aria-label="Close character creator">×</button>
     <p class="eyebrow">YOUR PLACE IN GAMEVERSE</p><h2 id="profile-title">Choose your character.</h2>
@@ -55,6 +56,8 @@
     <p class="small">Your Gameverse profile owns your progress. FireRed has its own trainer creation.</p>
   </dialog>
   <dialog id="session-dialog" aria-labelledby="session-title"><p class="eyebrow">TAKE YOUR TIME</p><h2 id="session-title">Game paused.</h2><p id="session-message">Return to the collection to save this exact moment.</p><p class="controller-menu-hint">GAMEVERSE MENU · D-pad / left stick to choose · A to select · B to resume<br><span id="session-control-note">Start and View / Back belong to FireRed.</span></p><div class="dialog-actions"><button id="resume-button" class="primary">Keep playing →</button><button id="save-return">Save & return to collection</button><button id="battery-fallback" hidden>Use last confirmed in-game save</button><button id="download-save">Download last confirmed in-game save</button><button id="feedback-button" class="text-button">Voice feedback · R3</button><button id="force-return" class="danger text-button">Leave without saving…</button></div></dialog>
+  <button id="world-create-launch" class="world-create-launch" type="button" hidden>Create a game ↗</button>
+  <dialog id="creation-dialog" aria-labelledby="creation-dialog-title"><header class="creation-dialog-heading"><h2 id="creation-dialog-title">Gameverse · Create</h2><button id="creation-close" type="button">Return to Gameverse ×</button></header><div id="creation-host"></div></dialog>
   <noscript>Gameverse needs JavaScript to run the local game environment.</noscript>
 </body>
 </html>
