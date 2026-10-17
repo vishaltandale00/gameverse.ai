@@ -30,22 +30,23 @@ function updateButtons() {
 }
 function renderHistory() {
   $('history').replaceChildren(...history.map(item => {
-    const article = node('article', '', 'message'); article.append(node('small', item.parent_request_id ? 'Your refinement' : 'Your idea'), node('p', item.message)); const inspect = node('button', 'View this run', 'text-button'); inspect.type = 'button'; inspect.addEventListener('click', async () => { try { const result = await api(`/api/mashup/runs/${encodeURIComponent(item.request_id)}`); run = result.run || result; renderRun(); schedulePoll(); } catch (error) { $('form-status').textContent = error.message; } }); article.append(inspect); return article;
+    const article = node('article', '', 'message'); article.append(node('small', item.parent_request_id ? 'Your refinement' : item.retry_of ? 'Your retry' : 'Your idea'), node('p', item.message)); const inspect = node('button', 'View this run', 'text-button'); inspect.type = 'button'; inspect.addEventListener('click', async () => { try { const result = await api(`/api/mashup/runs/${encodeURIComponent(item.request_id)}`); run = result.run || result; renderRun(); schedulePoll(); } catch (error) { $('form-status').textContent = error.message; } }); article.append(inspect); return article;
   }));
   $('starter').hidden = history.length > 0; $('new-idea').hidden = history.length === 0; $('new-idea').disabled = ACTIVE_STATES.has(run?.status); updateButtons();
 }
 function renderRun() {
   if (!run) return;
   if (refinementContext()) { $('starter').hidden = true; $('new-idea').hidden = false; }
-  $('run-panel').hidden = false; $('run-state').textContent = run.status === 'completed' && run.playable ? (run.objective_validated === true ? 'Bot objective verified' : 'Bot objective incomplete') : run.status;
+  const graphicsRun=run.routing?.backend==='pokemon-overworld'||run.qualification?.scope==='native-graphics-consumer';
+  $('run-panel').hidden = false; $('run-state').textContent = run.status === 'completed' && run.playable ? (graphicsRun ? (run.objective_validated === true ? 'Graphics verified' : 'Sprite coverage incomplete') : (run.objective_validated === true ? 'Bot objective verified' : 'Bot objective incomplete')) : run.status;
   $('run-title').textContent = run.playable && run.status === 'completed' ? (run.artifact?.title || 'Your game is ready') : 'Your game, in progress';
   $('run-message').textContent = runMessage(run);
   const qualification = run.qualification; const bot = qualification?.bot;
   $('qualification-summary').hidden = !qualification;
-  $('qualification-summary').textContent = qualification ? `Native check: ${qualification.outcome || 'unreported'}${qualification.scope ? ` (${qualification.scope})` : ''}. Gameplay bot: ${bot?.status || bot?.outcome || 'unreported'}. Campaign: ${qualification.campaign || 'qualification scope unavailable'}.` : '';
-  $('stages').replaceChildren(...STAGES.map(stage => { const li = node('li', STAGE_LABELS[stage], stageState(run, stage)); if (li.className === 'current') li.setAttribute('aria-current', 'step'); return li; }));
+  $('qualification-summary').textContent = qualification && graphicsRun ? `Native graphics: ${qualification.outcome || 'unreported'}. Requested coverage: ${run.objective_validated === true ? 'verified' : 'incomplete'}. Natural gameplay remains unqualified.` : qualification ? `Native check: ${qualification.outcome || 'unreported'}${qualification.scope ? ` (${qualification.scope})` : ''}. Gameplay bot: ${bot?.status || bot?.outcome || 'unreported'}. Campaign: ${qualification.campaign || 'qualification scope unavailable'}.` : '';
+  $('stages').replaceChildren(...STAGES.map(stage => { const li = node('li', graphicsRun && stage === 'playtesting' ? 'Verify graphics' : STAGE_LABELS[stage], stageState(run, stage)); if (li.className === 'current') li.setAttribute('aria-current', 'step'); return li; }));
   $('cancel').hidden = !ACTIVE_STATES.has(run.status); $('cancel').disabled = busy;
-  $('resume').hidden = run.can_resume !== true; $('resume').disabled = busy; $('resume').textContent = run.playable ? 'Continue bot test' : 'Resume run';
+  $('resume').hidden = run.can_resume !== true && (ACTIVE_STATES.has(run.status) || run.playable === true); $('resume').disabled = busy; $('resume').textContent = run.can_resume === true ? (run.playable ? 'Continue bot test' : 'Resume run') : 'Retry this request';
   const href = playableUrl(run); $('play').hidden = !href; if (href) $('play').href = embedded ? `/v1?create=1&play=${encodeURIComponent(run.request_id)}` : href; else $('play').removeAttribute('href');
   const download = run.status === 'completed' && run.playable === true ? safeLocalUrl(run.artifact?.rom_url) : null;
   $('download-rom').hidden = !download; if (download) $('download-rom').href = download;
@@ -91,7 +92,7 @@ $('composer').addEventListener('submit', async event => {
   const source_games = [...root.querySelectorAll('#source-options input:checked')].map(input => input.value);
   const intent = refinementIntent(previous?.intent, message);
   if (intent.length > 12000) { busy = false; $('form-status').textContent = 'This conversation has reached the request limit. Shorten the next description or start a new idea.'; updateButtons(); return; }
-  try { const result = await api('/api/mashup/runs', { method: 'POST', body: JSON.stringify({ request_id, intent, source_games, ...(previous ? { parent_request_id: previous.request_id } : {}) }) }); run = result.run || result; history.push({ request_id: run.request_id || request_id, message, intent, parent_request_id: previous?.request_id }); save(); renderHistory(); $('intent').value = ''; $('form-status').textContent = ''; renderRun(); schedulePoll(); }
+  try { const result = await api('/api/mashup/runs', { method: 'POST', body: JSON.stringify({ request_id, intent, source_games, ...(previous ? { [previous.playable === true ? 'parent_request_id' : 'retry_of']: previous.request_id } : {}) }) }); run = result.run || result; history.push({ request_id: run.request_id || request_id, message, intent, ...(previous ? { [previous.playable === true ? 'parent_request_id' : 'retry_of']: previous.request_id } : {}) }); save(); renderHistory(); $('intent').value = ''; $('form-status').textContent = ''; renderRun(); schedulePoll(); }
   catch (error) { $('form-status').textContent = error.message; }
   finally { busy = false; updateButtons(); }
 });
@@ -114,7 +115,14 @@ $('play').addEventListener('click', async event => {
   } catch (error) { $('result-player-host').textContent = `The player could not open: ${error.message}`; }
 });
 $('cancel').addEventListener('click', () => actOnRun('DELETE'));
-$('resume').addEventListener('click', () => actOnRun('POST', '/resume'));
+$('resume').addEventListener('click', async () => {
+  if(run?.can_resume === true)return actOnRun('POST','/resume');
+  if(!run||busy||ACTIVE_STATES.has(run.status)||run.playable)return;
+  const previous=run;busy=true;updateButtons();
+  try{const result=await api('/api/mashup/runs',{method:'POST',body:JSON.stringify({request_id:crypto.randomUUID(),intent:previous.intent,source_games:previous.source_games||[],retry_of:previous.request_id})});run=result.run||result;history.push({request_id:run.request_id,message:previous.intent,intent:previous.intent,retry_of:previous.request_id});save();renderHistory();renderRun();schedulePoll();}
+  catch(error){$('form-status').textContent=error.message;}
+  finally{busy=false;updateButtons();}
+});
 $('refresh-run').addEventListener('click', refreshRun);
 function renderCapabilities(data) {
   capabilities = data;

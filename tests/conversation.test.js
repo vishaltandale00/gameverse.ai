@@ -27,3 +27,8 @@ test('native readiness does not imply that the bot objective or campaign was ver
   assert.match(runMessage({ status: 'completed', playable: true, objective_validated: true }), /bot objective was verified/);
   assert.equal(runMessage({ status: 'repairing' }), 'Inspecting native observations for a supported repair.');
 });
+test('graphics consumer qualification never claims bot or complete conversion from partial coverage',()=>{
+ const run={status:'completed',playable:true,routing:{backend:'pokemon-overworld'},qualification:{outcome:'pass',scope:'native-graphics-consumer'},objective_validated:false};
+ assert.match(runMessage(run),/mapped sprites/);assert.match(runMessage(run),/remains incomplete/);assert.doesNotMatch(runMessage(run),/bot objective/);
+ assert.match(runMessage({...run,objective_validated:true}),/graphics change passed native checks/);
+});

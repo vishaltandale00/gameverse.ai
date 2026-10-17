@@ -68,6 +68,8 @@ Operators can set finite per-chunk resource policies in the environment or ignor
 
 Use positive integers for calls, frames and seconds, and a nonnegative integer for repairs. These defaults provide partial development checks; they are not campaign-completion budgets. Larger explicit limits remain bounded by the overall request timeout and do not imply success. The current product uses manual **Continue bot test** from the exact retained native checkpoint. It does not automatically schedule or run a long campaign.
 
+A finished request without a playable artifact offers **Retry this request**, which submits the exact saved intent under a fresh UUID and records `retry_of`. Updating a failed request also starts fresh with retry provenance; it does not feed a failed source workspace into another compiler. Qualified playable parents retain strict artifact refinement lineage. The original failed receipt remains unchanged.
+
 A failed construction request retains its isolated workspace and any recorded Codex thread/turn identifiers for diagnosis. Retrying construction starts a new creation request. **Continue bot test** resumes an existing verified native playtesting checkpoint after a built candidate; it does not resume an interrupted Codex construction session. Partial native results remain partial, and no full-campaign qualification is implied.
 
 ## Reviewed runtime inventory

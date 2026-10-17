@@ -17,6 +17,11 @@ export function stageState(run, stage) {
   return (run?.events ?? []).some(event => event.stage === stage) ? 'done' : '';
 }
 export function runMessage(run) {
+  if(run?.qualification?.scope==='native-graphics-consumer'||run?.routing?.backend==='pokemon-overworld'){
+    if(run?.error?.message)return run.error.message;
+    if(run?.status==='playtesting')return 'Checking sprite frames, animations, palettes and reflections in the native game.';
+    if(run?.status==='completed'&&run?.playable===true)return run?.objective_validated===true?'The requested graphics change passed native checks. Review the coverage and qualification scope below.':'The native graphics checks passed for the mapped sprites. The full requested overworld conversion remains incomplete; review the retained sprites and animation gaps below.';
+  }
   const messages = { queued: 'Your request is queued locally.', planning: 'Working out how your source worlds fit together.', building: 'Creating your game from the selected source systems.', playtesting: 'The gameplay bot is checking the built game in an isolated session.', repairing: 'Inspecting native observations for a supported repair.', completed: run?.playable === true ? (run?.objective_validated === true ? 'The native build is available and the bot objective was verified. Review the qualification scope below.' : 'Bot objective incomplete — native build available. You can play this candidate; the requested gameplay has not been fully verified.') : 'The run finished, but a verified playable result is not available.', cancelled: 'This run was stopped. Its recorded evidence is retained.', interrupted: 'The local runner stopped before finishing. Its evidence is retained; submit a new request to retry.', blocked: 'This request needs a supported source combination or a working local connection.', failed: 'This run could not produce a verified playable game.' };
   return run?.error?.message || messages[run?.status] || 'Checking the local run…';
 }

@@ -26,12 +26,17 @@ export function createMashupApi({root=workspace,directory=resolve(root,'local-da
     if(!uuid(body?.request_id)||typeof body.intent!=='string'||!body.intent.trim()||body.intent.length>12000)throw fail(400,'invalid_request','A request UUID and 1–12,000 character game description are required.');
     if(body.source_games!==undefined&&(!Array.isArray(body.source_games)||body.source_games.length>8||body.source_games.some(id=>typeof id!=='string'||!/^[a-z0-9-]{1,100}$/.test(id))))throw fail(400,'invalid_sources','Source games must be known game identifiers.');
     if(body.parent_request_id!==undefined&&!uuid(body.parent_request_id))throw fail(400,'invalid_parent','Invalid parent request.');
-    const input={request_id:body.request_id,intent:body.intent.trim(),source_games:body.source_games||[],...(body.parent_request_id?{parent_request_id:body.parent_request_id}:{})},fingerprint=hash(JSON.stringify(input));
+    if(body.retry_of!==undefined&&(!uuid(body.retry_of)||body.retry_of===body.request_id))throw fail(400,'invalid_retry','Invalid retry request.');
+    if(body.retry_of&&body.parent_request_id)throw fail(400,'invalid_retry','A retry cannot also be an artifact refinement.');
+    let parentRecord=null,retryOf=body.retry_of;
+    if(body.parent_request_id){const parentStatus=await status(body.parent_request_id);parentRecord=JSON.parse(await readFile(path(body.parent_request_id),'utf8'));if(!terminal.has(parentStatus.status))throw fail(409,'parent_active','Wait for the earlier request to finish.');if(!parentRecord.playable||!parentRecord.pipeline_result?.artifact){retryOf=body.parent_request_id;parentRecord=null;}}
+    if(retryOf){const previous=await status(retryOf);if(!terminal.has(previous.status)||previous.playable)throw fail(409,'retry_unavailable','Retry applies to a finished request without a playable artifact.');}
+    const input={request_id:body.request_id,intent:body.intent.trim(),source_games:body.source_games||[],...(parentRecord?{parent_request_id:body.parent_request_id}:{}),...(retryOf?{retry_of:retryOf}:{})},fingerprint=hash(JSON.stringify(input));
     try{if(resumePrior)throw fail(404,'not_found','Resume admitted.');const previous=await status(input.request_id);if(previous.input_sha256!==fingerprint)throw fail(409,'idempotency_conflict','This request ID belongs to another game description.');return previous;}catch(error){if(error.code!=='not_found')throw error;}
     if(active||admitting)throw fail(409,'busy','A game creation is already running. Wait or cancel it before starting another.');
     admitting=true;
     try{
-      let parent=null;if(input.parent_request_id){await status(input.parent_request_id);parent=JSON.parse(await readFile(path(input.parent_request_id),'utf8'));}
+      const parent=parentRecord;
       await mkdir(folder(input.request_id),{recursive:true});
       const started=performance.now(),controller=new AbortController(),record=resumePrior?{...resumePrior,error:null,finished_at:null,status:'playtesting',playable:false,can_resume:false,resume_count:(resumePrior.resume_count||0)+1}:{schema:'gameverse.mashup-run/1',...input,input_sha256:fingerprint,status:'planning',playable:false,can_resume:false,received_at:new Date().toISOString(),events:[],timings:{total_s:null,queue_s:null,accounting:'Stages are nested in accumulated chunk execution (total_s); elapsed_wall_s includes downtime between chunks. Queue unavailable because requests dispatch directly.'}};
       await save(record);active={id:input.request_id,controller};
@@ -40,7 +45,7 @@ export function createMashupApi({root=workspace,directory=resolve(root,'local-da
         if(event?.routing)record.routing=event.routing;
         if(event?.type==='text')return writes; // Retain final agent response in pipeline evidence; avoid one disk write per token.
         if(event?.threadId)record.construction={threadId:event.threadId,turnId:event.turnId||record.construction?.turnId||null};
-        const phase=event?.stage||event?.phase;const stage=({prepare:'planning',compose:'planning',build:'building',boot:'playtesting',model:'playtesting',repair:'repairing'})[phase]||phase||record.status||'planning';
+        const phase=event?.stage||event?.phase;const stage=({prepare:'planning',compose:'planning',baseline:'building',apply:'building',build:'building',native:'playtesting',boot:'playtesting',model:'playtesting',repair:'repairing'})[phase]||phase||record.status||'planning';
         if(['planning','building','playtesting','repairing'].includes(stage))record.status=stage;
         record.events.push({at:new Date().toISOString(),stage,message:String(event?.message||event?.delta||(event?.itemType?`Construction agent: ${event.itemType}`:'Working')).slice(0,2000)});
         if(record.events.length>200)record.events.splice(0,record.events.length-200);

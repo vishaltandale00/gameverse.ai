@@ -39,9 +39,9 @@ test('explicit resume preserves lineage and never repeats construction',async t=
 });
 test('refinement receives exact private parent context without exposing it in public status',async t=>{
  const ids=[randomUUID(),randomUUID()];let received;
- const {api}=await fixture(t,async({id,parent})=>{if(id===ids[0])return {status:'blocked',workspace:'/private/job/workspace',artifact:{path:'/private/job/game.gba',sha256:'a'.repeat(64)},provenance:{world_sha256:'b'.repeat(64)}};received=parent;return {status:'blocked'};});
- await api.submit({request_id:ids[0],intent:'Original connected systems'});await wait(async()=>{const r=await api.status(ids[0]);return r.status==='blocked';});const publicParent=await api.status(ids[0]);assert.equal(publicParent.pipeline_result,undefined);
- await api.submit({request_id:ids[1],parent_request_id:ids[0],intent:'Original connected systems with a new route'});await wait(async()=>received);assert.equal(received.pipeline_result.workspace,'/private/job/workspace');assert.equal(received.pipeline_result.artifact.sha256,'a'.repeat(64));
+ const {api}=await fixture(t,async({id,parent,directory})=>{if(id===ids[0]){const bytes=Buffer.from('parent'),path=join(directory,'parent.gba');await writeFile(path,bytes);return {status:'completed',qualification:{outcome:'pass'},workspace:'/private/job/workspace',artifact:{path,sha256:createHash('sha256').update(bytes).digest('hex')},provenance:{world_sha256:'b'.repeat(64)}};}received=parent;return {status:'blocked'};});
+ await api.submit({request_id:ids[0],intent:'Original connected systems'});await wait(async()=>{const r=await api.status(ids[0]);return r.status==='completed';});const publicParent=await api.status(ids[0]);assert.equal(publicParent.pipeline_result,undefined);
+ await api.submit({request_id:ids[1],parent_request_id:ids[0],intent:'Original connected systems with a new route'});await wait(async()=>received);assert.equal(received.pipeline_result.workspace,'/private/job/workspace');assert.equal(received.pipeline_result.artifact.sha256,createHash('sha256').update('parent').digest('hex'));
 });
 test('receipt preserves requested selection separately from compiler source routing',async t=>{
  const routing={backend:'pokemon-overworld',source_games:['pokemon-leafgreen','pokemon-emerald'],requested_source_games:[],inferred_from:'request'};
@@ -54,4 +54,10 @@ test('Pokemon intent validation requires scoped native graphics evidence, not bo
  let full=false;const {root,api}=await fixture(t,async({directory})=>{const path=join(directory,'game.gba'),bytes=Buffer.from('candidate');await writeFile(path,bytes);return {status:'completed',routing:{backend:'pokemon-overworld'},artifact:{path,sha256:createHash('sha256').update(bytes).digest('hex')},qualification:{outcome:'pass',scope:full?'native-graphics-consumer':'native-boot',request_satisfied:true},design:{request_satisfied:true},user_intent_validated:true};});
  const first=randomUUID();await api.submit({request_id:first,intent:'LeafGreen with Emerald overworld sprites'});const boot=await wait(async()=>{const r=await api.status(first);return r.finished_at&&r;});assert.equal(boot.playable,true);assert.equal(boot.objective_validated,false);
  full=true;const second=randomUUID();await api.submit({request_id:second,intent:'LeafGreen with Emerald overworld sprites'});const graphics=await wait(async()=>{const r=await api.status(second);return r.finished_at&&r;});assert.equal(graphics.playable,true);assert.equal(graphics.objective_validated,true);
+});
+test('failed parent automatically becomes a fresh retry with immutable provenance',async t=>{
+ const ids=[randomUUID(),randomUUID()];let received;const {api}=await fixture(t,async args=>{received=args;return {status:'blocked',reason:'pending'};});
+ await api.submit({request_id:ids[0],intent:'Build Pokemon Leaf Green but with Pokemon Emerald overworld sprites'});await wait(async()=>{const r=await api.status(ids[0]);return r.finished_at&&r;});
+ const original=await api.status(ids[0]);await api.submit({request_id:ids[1],intent:original.intent,parent_request_id:ids[0]});const retry=await wait(async()=>{const r=await api.status(ids[1]);return r.finished_at&&r;});
+ assert.equal(received.parent,null);assert.equal(retry.retry_of,ids[0]);assert.equal(retry.parent_request_id,undefined);assert.equal(retry.intent,original.intent);assert.equal((await api.status(ids[0])).input_sha256,original.input_sha256);
 });

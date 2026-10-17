@@ -23,7 +23,7 @@ class Element extends EventTarget {
   setAttribute() {} removeAttribute() {} focus() {}
 }
 const settle = () => new Promise(resolve => setImmediate(resolve));
-test('embedded composer scopes source inputs and preserves parent intent during refinement', async t => {
+test('embedded composer scopes source inputs and preserves failed intent during fresh retries', async t => {
   const ids = ['new-idea','cancel','resume','submit','intent-label','connect','history','starter','run-panel','run-state','run-title','run-message','qualification-summary','stages','play','download-rom','result-player-host','events','evidence','timing','recheck','capability-note','intent','login-link','connection-message','composer','form-status','refresh-run','presets','source-options','dictate','voice-status'];
   const nodes = new Map(ids.map(key => [key, new Element()]));
   const root = { querySelector: selector => nodes.get(selector.match(/id="([^"]+)"/)[1]), querySelectorAll: () => [{ value: 'metroid-zero-mission', checked: true }] };
@@ -44,7 +44,7 @@ test('embedded composer scopes source inputs and preserves parent intent during 
   t.after(() => fakeWindow.dispatchEvent(new Event('pagehide')));
   assert.equal(nodes.get('submit').disabled, false); nodes.get('intent').value = 'Make jumps forgiving';
   nodes.get('composer').dispatchEvent(new Event('submit', { cancelable: true })); await settle();
-  assert.equal(submissions.length, 1); assert.equal(submissions[0].parent_request_id, id);
+  assert.equal(submissions.length, 1); assert.equal(submissions[0].retry_of, id); assert.equal(submissions[0].parent_request_id, undefined);
   assert.equal(submissions[0].intent, 'Original connected route\n\nRefinement: Make jumps forgiving');
   assert.deepEqual(submissions[0].source_games, ['metroid-zero-mission']); assert.equal(nodes.get('history').children.length, 2);
   // A result deep link must retain its parent even in a fresh browser history.
@@ -55,6 +55,8 @@ test('embedded composer scopes source inputs and preserves parent intent during 
   assert.equal(linkedNodes.get('submit').textContent, 'Build this refinement ↗');
   linkedNodes.get('intent').value = 'Add a shortcut';
   linkedNodes.get('composer').dispatchEvent(new Event('submit', { cancelable: true })); await settle();
-  assert.equal(submissions[1].parent_request_id, id);
+  assert.equal(submissions[1].retry_of, id); assert.equal(submissions[1].parent_request_id, undefined);
   assert.equal(submissions[1].intent, 'Original connected route\n\nRefinement: Add a shortcut');
+  linkedNodes.get('resume').dispatchEvent(new Event('click')); await settle();
+  assert.equal(submissions[2].intent, submissions[1].intent); assert.equal(submissions[2].retry_of, submissions[1].request_id); assert.equal(submissions[2].parent_request_id, undefined);
 });
