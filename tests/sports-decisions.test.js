@@ -69,7 +69,7 @@ test('requests ask move, skill and action, and offer only the buttons that fit t
   const soccerBall = actionsOf(decisionsRequest(onBall)), soccerDefense = actionsOf(decisionsRequest(situation('soccer', 'play', { owner: 7, possession: 'them' })));
   assert.ok(soccerBall.includes('finesse_shot') && soccerBall.includes('through')); assert.ok(!soccerBall.includes('tackle') && !soccerBall.includes('confirm'));
   assert.ok(soccerDefense.includes('tackle') && soccerDefense.includes('switch')); assert.ok(!soccerDefense.includes('shot') && !soccerDefense.includes('pass'));
-  assert.deepEqual(actionsOf(decisionsRequest(situation('soccer', 'restart', {}, { restart: { type: 'Throw-in', side: 'them' } }))), ['neutral']);
+  assert.deepEqual(actionsOf(decisionsRequest(situation('soccer', 'restart', {}, { restart: { type: 'Throw-in', side: 'them' } }))), ['neutral', 'sprint']);
   const thrower = actionsOf(decisionsRequest(qb)), kicker = actionsOf(decisionsRequest(situation('football', 'live', { controlled: 5, owner: 5, possession: 'us' }, { offense: 'us', special: 'kickoff' })));
   assert.ok(thrower.includes('receiverX_tap') && !thrower.includes('tackle') && !thrower.includes('confirm'));
   assert.deepEqual(kicker.sort(), ['kick', 'neutral']);
