@@ -35,11 +35,19 @@ The importer refuses an existing destination and validates candidate25 source/pa
 
 `npm run dev` starts the server directly; set `GAMEVERSE_MASHUP_RUNTIME_ROOT` yourself when using that command. Runtime resolution does not silently fetch missing code or assets.
 
+## Source routing and Pokémon source prerequisites
+
+Creation resolves the requested game identities before capturing a workspace or starting an agent turn. `Build Pokemon Leaf Green but with Pokemon Emerald overworld sprites` selects the LeafGreen/Emerald backend. It never enters the Sonic/Metroid prefab compiler. Conflicting selected games, unresolved source identities and source pairs without an installed backend return a retained blocked receipt.
+
+The receipt keeps the submitted `source_games` unchanged and records the resolved compiler and source identities in `routing`. Decomposition availability does not establish support for every transformation. `/api/mashup/capabilities` reports each backend's prerequisites, supported operations and remaining qualification gaps separately.
+
+`GAMEVERSE_POKEMON_RUNTIME_ROOT` selects an existing authorized research checkout containing `local/decomps/pokefirered`, `local/decomps/pokeemerald`, the local ARM toolchain and the pinned LeafGreen Rev1 cartridge. The local development fallback is `/Users/shishirtandale/Projects/gameverse.ai`; set the variable explicitly on another machine. This backend retains LeafGreen USA/Europe Rev1 (`BPGE`, SHA-1 `7862c67bdecbe21d1d69ce082ce34327e1c6ed5e`) as the base. Emerald overworld object graphics, animation frames and palette dependencies require their own coverage and native verification; battle sprites and tilesets are separate transformations. Missing inputs or unqualified transfers remain blocked. No ROMs or donor graphics are distributed with the application.
+
 ## Subscription creation and native bot service
 
 ChatGPT subscription usage powers the local Codex construction agent. The bridge checks `account/read` and refuses API-key and other provider authentication. It strips API-key environment overrides and uses the supported Codex stdio transport. `CODEX_BIN` selects an executable explicitly; on macOS it can use the CLI bundled with the installed ChatGPT application. Otherwise, install a working Codex CLI on `PATH`.
 
-The supported native graph combines retained Sonic campaign/momentum with recovered MZM motion arithmetic, combat/projectile/impact logic and Ripper/assets. Acquisition and event progression in candidate25 are authored bridges; they are not automatically emitted MZM IR. New authored campaign placements and other glue remain separate from recovered behavior.
+The Sonic/Metroid backend combines retained Sonic campaign/momentum with recovered MZM motion arithmetic, combat/projectile/impact logic and Ripper/assets. Acquisition and event progression in candidate25 are authored bridges; they are not automatically emitted MZM IR. New authored campaign placements and other glue remain separate from recovered behavior.
 
 The S1/S2 native playtesting bot uses the existing separately authorized SID/rrh service. Its calls are not included in the application's ChatGPT subscription connection. Missing bot credentials block model gameplay verification. A native-boot-only candidate can still remain playable with model verification explicitly unqualified; there is no automatic paid OpenAI API fallback. Readiness sends neither construction inference nor bot inference requests.
 

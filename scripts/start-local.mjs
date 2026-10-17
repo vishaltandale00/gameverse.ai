@@ -27,7 +27,7 @@ for (const name of ['ws', 'three', '@wasm-gaming/mgba-wasm']) { try { import.met
 if (gaps.length) { console.error(gaps.join('\n')); process.exit(1); }
 const runtime = await resolveMashupRuntime();
 if (runtime.path) process.env.GAMEVERSE_MASHUP_RUNTIME_ROOT = runtime.path;
-else gaps.push('Native runtime: run node scripts/import-mashup-runtime.mjs --source /absolute/authorized-checkout (see docs/LOCAL_CREATION.md).');
+else gaps.push('Sonic/Metroid runtime: run node scripts/import-mashup-runtime.mjs --source /absolute/authorized-checkout (see docs/LOCAL_CREATION.md).');
 const python = process.env.GAMEVERSE_PYTHON || (existsSync('/opt/homebrew/bin/python3') ? '/opt/homebrew/bin/python3' : 'python3');
 process.env.GAMEVERSE_PYTHON = python;
 if (!check(python, ['-c', 'import sys;sys.exit(sys.version_info < (3,10))'])) gaps.push('Python 3.10+: install Python or set GAMEVERSE_PYTHON to its executable.');
@@ -50,8 +50,9 @@ console.log(`Native bot service: ${testing.configured ? `configured (${testing.s
 const agent = createCodexAgent({ cwd: root });
 const auth = await agent.status(); agent.close();
 console.log(`ChatGPT creation: ${auth.authenticated ? `connected (${auth.planType || 'plan unavailable'})` : auth.available ? 'connect local Codex in the V1 creation panel' : auth.reason}`);
-console.log(`Native runtime: ${runtime.path || 'not installed'} (${runtime.source})`);
-if (gaps.length) console.log(`Creation prerequisites need attention:\n${gaps.map(gap => `- ${gap}`).join('\n')}\nThe app will show its available features and missing prerequisites.`);
+console.log(`Sonic/Metroid runtime: ${runtime.path || 'not installed'} (${runtime.source})`);
+if (gaps.length) console.log(`Some local tools or Sonic/Metroid prerequisites need attention:\n${gaps.map(gap => `- ${gap}`).join('\n')}\nThe app will show its available features and missing prerequisites.`);
+console.log('Creation requests select their own source backend; Pokémon runtime readiness is reported separately by /api/mashup/capabilities.');
 console.log('Readiness checks made no inference or bot requests. Native bot service reachability and accepted model access are verified only by an actual run.');
 const url = `http://127.0.0.1:${port}/v1`;
 console.log(`Open ${url}`);
