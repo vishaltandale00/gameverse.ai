@@ -731,12 +731,13 @@ function offenseAI(s, p, play, carrier, speed, dt) {
   if (carrier && (s.thrown || s.newPossession || (carrier.y - s.line) * d > 1)) { blockNearest(s, p, speed * .95, dt); return; }
   runRoute(s, p, play, speed, dt);
 }
-// Man coverage trails by Coverage (Lockdown tighter) and lags cuts; Route Running
-// and Route Artist buy the receiver separation at every break.
+// Man coverage keeps a Coverage-based cushion and lags cuts; Lockdown mirrors
+// cuts 40% tighter without giving up the cushion (a tighter cushion only gets
+// beaten deep). Route Running and Route Artist buy separation at every break.
 function manCover(s, p, r, speed, dt) {
   const d = direction(s.offense), lock = spec(s, p, 'lockdown') ? .6 : 1, artist = spec(s, r, 'route_artist');
   const lag = scale(rating(s, p, 'cov'), .3, .1) * lock + (artist ? .08 : 0);
-  const trail = scale(rating(s, p, 'cov'), 1.6, .7) * lock + (artist ? 1 : 0) + scale(rating(s, r, 'rte'), 0, .5);
+  const trail = scale(rating(s, p, 'cov'), 1.6, .7) + (artist ? 1 : 0) + scale(rating(s, r, 'rte'), 0, .5);
   moveToward(p, { x: r.x - r.vx * lag + (r.x > 0 ? -.7 : .7), y: r.y + d * trail }, speed, dt);
 }
 function zoneCover(s, p, spot, speed, dt) {
