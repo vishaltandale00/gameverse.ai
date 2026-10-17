@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sports Replay Viewer</title>
+<link rel="stylesheet" href="/sports-replay.css">
+</head>
+<body>
+<header>
+  <h1>DECISIONS REPLAY</h1>
+  <label>Report <input id="file" type="file" accept="application/json,.json"></label>
+  <label>Speed <select id="speed"><option value="1">1×</option><option value="2">2×</option><option value="4" selected>4×</option><option value="8">8×</option><option value="16">16×</option></select></label>
+  <button id="pause" type="button">Pause</button>
+  <span id="status">Load a schema-3 report from artifacts/sports-decisions/, or open /sports-replay?report=&lt;name&gt;.</span>
+</header>
+<main id="stage">
+  <div class="overlay"><div class="board"><span id="home">HOME</span><strong id="score">0 : 0</strong><span id="away">AWAY</span><time id="clock">10:00</time></div><div id="message"></div><ol id="ticker"></ol></div>
+  <div id="progress">No replay loaded</div>
+</main>
+<script type="module" src="/src/sports-replay.js"></script>
+</body>
+</html>

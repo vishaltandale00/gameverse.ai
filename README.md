@@ -2,7 +2,7 @@
 
 A single-player browser environment for playing games and developing them through conversation, using a controller.
 
-**Status:** the local v1 Gameverse overworld has three explorable city blocks, Alder Arcade for FireRed, Juniper Pitch for 5v5 soccer, and Foundry Field for 7v7 American football. The sports games are original custom quick matches against AI; see [sports controls, scope and evidence](SPORTS_DEVELOPMENT.md). The original FireRed collection remains available as v0. Both world versions share existing profiles and compatible FireRed checkpoints; FireRed uses a matching editable-source build. Xbox USB connection and world movement were confirmed by the user; physical-controller qualification of the new sports games and full FireRed campaign/mid-battle qualification remain open. The improvement harness is not integrated.
+**Status:** the local v1 Gameverse overworld has three explorable city blocks, Alder Arcade for FireRed, Juniper Pitch for 5v5 soccer, and Foundry Field for 7v7 American football. The sports games are original full-rules matches with fictional rated teams, specialties and a rated CPU (or CPU vs CPU to watch); see [sports controls, scope and evidence](SPORTS_DEVELOPMENT.md). The original FireRed collection remains available as v0. Both world versions share existing profiles and compatible FireRed checkpoints; FireRed uses a matching editable-source build. Xbox USB connection and world movement were confirmed by the user; physical-controller qualification of the new sports games and full FireRed campaign/mid-battle qualification remain open. The improvement harness is not integrated.
 
 Run `npm ci --ignore-scripts`, `npm run source:setup -- firered`, `npm run game:build -- firered`, then `npm run dev`. Open [local Gameverse](http://127.0.0.1:4173). See [development setup and evidence](DEVELOPMENT.md) for toolchain prerequisites, controls, timings and remaining issue #3 gates.
 
@@ -19,7 +19,7 @@ FireRed fills the browser view while preserving its 3:2 aspect ratio. Controller
 | --- | --- |
 | [Development](DEVELOPMENT.md) | Runnable slice 1, editable-source setup, evidence and qualification gaps |
 | [Gameverse world development](CITY_DEVELOPMENT.md) | v0/v1 configs, walking prototype, FireRed entrance, controller controls and verification |
-| [Sports development](SPORTS_DEVELOPMENT.md) | Soccer/football controls, playable scope, save/resume evidence and physics verification boundaries |
+| [Sports development](SPORTS_DEVELOPMENT.md) | Soccer/football controls, league ratings and rules, CPU-vs-CPU qualification, save/resume evidence and physics verification boundaries |
 | [PRD](PRD.md) | Product scope, acceptance requirements and open decisions |
 | [Parallel development contract](contracts/PARALLEL_DEVELOPMENT.md) | Configs, independent harness versions, simulations, candidate submissions and timing handoff |
 | [Base game contract](contracts/BASE_GAME.md) | Persistent playable home, profiles, subgame hosting and recovery |

@@ -1,0 +1,1470 @@
+{
+ "schema": 1,
+ "kind": "sports-league-qualification",
+ "recordedAt": "2026-10-17",
+ "branch": "claude/football-soccer-game-mechanics-b1a9fd",
+ "requirements": "plans/SPORTS_LEAGUE.md",
+ "baseCommit": "fb5335affbc9c8bdab2db7fd9b79ed0edbc5c8f2",
+ "machine": {
+  "node": "v22.23.2",
+  "platform": "darwin",
+  "arch": "arm64",
+  "cpu": "Apple M4 Max",
+  "cpus": 14
+ },
+ "builtInEvaluation": {
+  "command": "node scripts/simulate-sports.mjs --specialties --ab 300",
+  "report": "artifacts/sports-sim/qualification-3279845.json",
+  "runId": "b305a493-5516-40f4-957d-f94604ef5904",
+  "sourceCommit": "3279845f92342bb84ffdf13c065b4d3cf99bf38b",
+  "workingTreeChanges": [],
+  "sourceHashes": {
+   "src/soccer.js": "9ab5b94082896f6351a4a17bedc344bca49253605ab836de274943ea9a7a5c7e",
+   "src/football.js": "389a9be7dfc6ba8f324b73fd9853ea4706fa3501843b0a7d7ac9a3dcb59de19c",
+   "src/sports-league.js": "c9ad310d0376147bf46a16ceb522d30ede15227c0e90a566970206bcd84a5b2d",
+   "src/sports-physics.js": "9f1404b7ed5c47ab168d3b32084bfbc2ffcd80426eb6781f406dfbaecfce6601",
+   "src/sports-certified.generated.js": "ed8b977787b14a3361cda1b4feb0229efe0d7ab9c058a0d9b05fd026c0ba2698",
+   "scripts/simulate-sports.mjs": "9677d5fac295e87de3fa318150415909e1050b9f43e80c5838c56320d840e5c3"
+  },
+  "options": {
+   "game": "all",
+   "matches": 6,
+   "balance": 100,
+   "ab": 300,
+   "seed": 20261017,
+   "specialties": true,
+   "difficulty": 1,
+   "workers": 12,
+   "report": "artifacts/sports-sim/qualification-3279845.json",
+   "only": null
+  },
+  "passed": true,
+  "totalMs": 815162,
+  "note": "Elapsed wall time per sport is critical-path time; aggregateMatchMs is summed runner work across 12 workers and must not be added to it.",
+  "sports": {
+   "soccer": {
+    "evaluation": {
+     "bands": {
+      "goals": {
+       "value": 5.444,
+       "band": [
+        2,
+        7
+       ],
+       "passed": true
+      },
+      "shots": {
+       "value": 16.653,
+       "band": [
+        8,
+        24
+       ],
+       "passed": true
+      },
+      "passCompletion": {
+       "value": 0.759,
+       "band": [
+        0.7,
+        0.9
+       ],
+       "passed": true
+      },
+      "savePct": {
+       "value": 0.617,
+       "band": [
+        0.55,
+        0.8
+       ],
+       "passed": true
+      },
+      "fouls": {
+       "value": 1.569,
+       "band": [
+        1,
+        8
+       ],
+       "passed": true
+      }
+     },
+     "balance": {
+      "equal": {
+       "subject": "home seat in a 0 mirror match",
+       "wins": 46,
+       "losses": 44,
+       "draws": 10,
+       "winShareOfDecided": 0.511,
+       "criterion": [
+        0.4,
+        0.6
+       ],
+       "passed": true
+      },
+      "gap": {
+       "subject": "team 2",
+       "wins": 99,
+       "losses": 1,
+       "draws": 0,
+       "winShareOfDecided": 0.99,
+       "criterion": [
+        0.75,
+        1
+       ],
+       "passed": true
+      }
+     },
+     "specialties": {
+      "finisher": {
+       "with": 2.897,
+       "without": 2.213,
+       "expected": "increase",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "cannon": {
+       "with": 0.583,
+       "without": 0.656,
+       "expected": "decrease",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "playmaker": {
+       "with": 0.778,
+       "without": 0.758,
+       "expected": "increase",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "interceptor": {
+       "with": 0.735,
+       "without": 0.763,
+       "expected": "decrease",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "ball_winner": {
+       "with": 7.48,
+       "without": 5.367,
+       "expected": "increase",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "wall": {
+       "with": 6.99,
+       "without": 9,
+       "expected": "decrease",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "cat_reflexes": {
+       "with": 0.636,
+       "without": 0.594,
+       "expected": "increase",
+       "matchesPerArm": 300,
+       "passed": true
+      }
+     },
+     "passed": true,
+     "unfinished": 0
+    },
+    "timing": {
+     "elapsedMs": 370928.709,
+     "aggregateMatchMs": 4445387.346,
+     "matches": 4472,
+     "perMatchMs": {
+      "mean": 994.049,
+      "p95": 1206.508,
+      "max": 2306.936
+     }
+    }
+   },
+   "football": {
+    "evaluation": {
+     "bands": {
+      "points": {
+       "value": 30.361,
+       "band": [
+        14,
+        49
+       ],
+       "passed": true
+      },
+      "completion": {
+       "value": 0.691,
+       "band": [
+        0.55,
+        0.75
+       ],
+       "passed": true
+      },
+      "intPct": {
+       "value": 0.031,
+       "band": [
+        0,
+        0.05
+       ],
+       "passed": true
+      },
+      "ypc": {
+       "value": 4.289,
+       "band": [
+        3.5,
+        6
+       ],
+       "passed": true
+      },
+      "runShare": {
+       "value": 0.33,
+       "band": [
+        0.3,
+        0.65
+       ],
+       "passed": true
+      }
+     },
+     "balance": {
+      "equal": {
+       "subject": "home seat in a 0 mirror match",
+       "wins": 41,
+       "losses": 48,
+       "draws": 11,
+       "winShareOfDecided": 0.461,
+       "criterion": [
+        0.4,
+        0.6
+       ],
+       "passed": true
+      },
+      "gap": {
+       "subject": "team 2",
+       "wins": 100,
+       "losses": 0,
+       "draws": 0,
+       "winShareOfDecided": 1,
+       "criterion": [
+        0.85,
+        1
+       ],
+       "passed": true
+      }
+     },
+     "specialties": {
+      "gunslinger": {
+       "with": 0.72,
+       "without": 0.694,
+       "expected": "increase",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "surgeon": {
+       "with": 0.692,
+       "without": 0.639,
+       "expected": "increase",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "sure_hands": {
+       "with": 0,
+       "without": 0.033,
+       "expected": "decrease",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "route_artist": {
+       "with": 0.825,
+       "without": 0.69,
+       "expected": "increase",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "burner": {
+       "with": 9.38,
+       "without": 8.671,
+       "expected": "increase",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "bulldozer": {
+       "with": 4.059,
+       "without": 4.017,
+       "expected": "increase",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "ankle_breaker": {
+       "with": 4.015,
+       "without": 3.588,
+       "expected": "increase",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "edge_rusher": {
+       "with": 0.062,
+       "without": 0.041,
+       "expected": "increase",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "brick_wall": {
+       "with": 0.019,
+       "without": 0.054,
+       "expected": "decrease",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "escape_artist": {
+       "with": 0.031,
+       "without": 0.033,
+       "expected": "decrease",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "ballhawk": {
+       "with": 0.052,
+       "without": 0.029,
+       "expected": "increase",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "enforcer": {
+       "with": 0.047,
+       "without": 0.023,
+       "expected": "increase",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "lockdown": {
+       "with": 0.612,
+       "without": 0.628,
+       "expected": "decrease",
+       "matchesPerArm": 300,
+       "passed": true
+      },
+      "big_leg": {
+       "with": 0.313,
+       "without": 0.273,
+       "expected": "increase",
+       "matchesPerArm": 300,
+       "passed": true
+      }
+     },
+     "passed": true,
+     "unfinished": 0
+    },
+    "timing": {
+     "elapsedMs": 444187.979,
+     "aggregateMatchMs": 5322844.81,
+     "matches": 8672,
+     "perMatchMs": {
+      "mean": 613.797,
+      "p95": 814.497,
+      "max": 1667.879
+     }
+    }
+   }
+  }
+ },
+ "liveDecisions": {
+  "harness": "node scripts/playtest-sports-decisions.mjs --live",
+  "model": "gpt-6-luna",
+  "endpoint": "https://api.openai.com/v1/decisions",
+  "controllers": "both teams; one decision per seat every 0.25 s; simulation paused while thinking",
+  "concurrency": "6 matches per round in parallel, 2 seats per match",
+  "roundWallSeconds": {
+   "1": 493,
+   "2": 653
+  },
+  "totals": {
+   "httpAttempts": 43141,
+   "inputTokens": 118017372,
+   "retries": 15,
+   "refusals": 3,
+   "transientErrors": 13
+  },
+  "unavailable": {
+   "queueMs": null,
+   "providerExecutionMs": null,
+   "costUsd": null
+  },
+  "runs": [
+   {
+    "round": 1,
+    "report": "artifacts/sports-decisions/league-soccer-101.json",
+    "runId": "da364bdf-348b-4bf2-a8bc-e58b596bc6c4",
+    "sourceCommit": "2b62c24",
+    "sourceHashesMatchCommit": true,
+    "controlProfile": "classic-sports-v2",
+    "game": "soccer",
+    "teams": [
+     0,
+     1
+    ],
+    "seed": 101,
+    "status": "match-finished",
+    "finalScore": [
+     3,
+     3
+    ],
+    "ticks": 2401,
+    "simulatedSeconds": 600.017,
+    "decisions": 4802,
+    "httpAttempts": 4803,
+    "retries": 1,
+    "refusals": 0,
+    "errors": 1,
+    "inputTokens": 12726182,
+    "requestMs": {
+     "median": 140.094,
+     "p95": 254.689,
+     "max": 10116.141
+    },
+    "wallMs": 476071,
+    "error": null,
+    "stats": {
+     "shots": [
+      36,
+      41
+     ],
+     "onTarget": [
+      12,
+      9
+     ],
+     "passes": [
+      326,
+      332
+     ],
+     "completed": [
+      36,
+      26
+     ],
+     "tackles": [
+      10,
+      10
+     ],
+     "saves": [
+      8,
+      12
+     ],
+     "fouls": [
+      0,
+      5
+     ],
+     "yellows": [
+      0,
+      4
+     ],
+     "reds": [
+      0,
+      2
+     ],
+     "offsides": [
+      0,
+      2
+     ]
+    },
+    "finalStateHash": "0a1eb5d0240235356d4eeb10079c6c3e5c2f248cad14b17638ea80023bd5a992",
+    "replay": {
+     "status": "replayed",
+     "matches": true,
+     "ms": 1793
+    }
+   },
+   {
+    "round": 1,
+    "report": "artifacts/sports-decisions/league-soccer-102.json",
+    "runId": "02fd9c54-0540-4b96-803d-cff4c01c9f26",
+    "sourceCommit": "2b62c24",
+    "sourceHashesMatchCommit": true,
+    "controlProfile": "classic-sports-v2",
+    "game": "soccer",
+    "teams": [
+     2,
+     3
+    ],
+    "seed": 102,
+    "status": "match-finished",
+    "finalScore": [
+     5,
+     1
+    ],
+    "ticks": 2401,
+    "simulatedSeconds": 600.017,
+    "decisions": 4802,
+    "httpAttempts": 4805,
+    "retries": 3,
+    "refusals": 0,
+    "errors": 3,
+    "inputTokens": 13222864,
+    "requestMs": {
+     "median": 139.777,
+     "p95": 239.274,
+     "max": 11095.92
+    },
+    "wallMs": 493086,
+    "error": null,
+    "stats": {
+     "shots": [
+      34,
+      44
+     ],
+     "onTarget": [
+      7,
+      14
+     ],
+     "passes": [
+      276,
+      270
+     ],
+     "completed": [
+      38,
+      23
+     ],
+     "tackles": [
+      5,
+      7
+     ],
+     "saves": [
+      14,
+      6
+     ],
+     "fouls": [
+      1,
+      1
+     ],
+     "yellows": [
+      1,
+      0
+     ],
+     "reds": [
+      0,
+      0
+     ],
+     "offsides": [
+      0,
+      1
+     ]
+    },
+    "finalStateHash": "d1b57a5f4d5c663cad0fa82b55ef7b050b05a99fe2acdbffdb228c7df263db20",
+    "replay": {
+     "status": "replayed",
+     "matches": true,
+     "ms": 1802
+    }
+   },
+   {
+    "round": 1,
+    "report": "artifacts/sports-decisions/league-soccer-103.json",
+    "runId": "3c52d3f0-cc13-42fe-b42b-6c86e4e80f0e",
+    "sourceCommit": "2b62c24",
+    "sourceHashesMatchCommit": true,
+    "controlProfile": "classic-sports-v2",
+    "game": "soccer",
+    "teams": [
+     1,
+     2
+    ],
+    "seed": 103,
+    "status": "match-finished",
+    "finalScore": [
+     7,
+     4
+    ],
+    "ticks": 2401,
+    "simulatedSeconds": 600.017,
+    "decisions": 4802,
+    "httpAttempts": 4804,
+    "retries": 2,
+    "refusals": 0,
+    "errors": 2,
+    "inputTokens": 13260688,
+    "requestMs": {
+     "median": 139.296,
+     "p95": 247.445,
+     "max": 10109.715
+    },
+    "wallMs": 473596,
+    "error": null,
+    "stats": {
+     "shots": [
+      45,
+      47
+     ],
+     "onTarget": [
+      14,
+      13
+     ],
+     "passes": [
+      214,
+      207
+     ],
+     "completed": [
+      39,
+      45
+     ],
+     "tackles": [
+      7,
+      13
+     ],
+     "saves": [
+      12,
+      13
+     ],
+     "fouls": [
+      3,
+      3
+     ],
+     "yellows": [
+      0,
+      0
+     ],
+     "reds": [
+      0,
+      0
+     ],
+     "offsides": [
+      1,
+      1
+     ]
+    },
+    "finalStateHash": "c431c8d6f7ca6ca1d836cfbfd035377f50e66b0b3a1ca99f1741eb5e79b41aac",
+    "replay": {
+     "status": "replayed",
+     "matches": true,
+     "ms": 2142
+    }
+   },
+   {
+    "round": 1,
+    "report": "artifacts/sports-decisions/league-football-201.json",
+    "runId": "b765aea8-c1fd-4cd9-8cfb-1e4e1941276a",
+    "sourceCommit": "2b62c24",
+    "sourceHashesMatchCommit": true,
+    "controlProfile": "classic-sports-v2",
+    "game": "football",
+    "teams": [
+     0,
+     1
+    ],
+    "seed": 201,
+    "status": "match-finished",
+    "finalScore": [
+     25,
+     13
+    ],
+    "ticks": 1215,
+    "simulatedSeconds": 303.517,
+    "decisions": 2430,
+    "httpAttempts": 2430,
+    "retries": 0,
+    "refusals": 0,
+    "errors": 0,
+    "inputTokens": 7077001,
+    "requestMs": {
+     "median": 150.348,
+     "p95": 265.154,
+     "max": 1725.623
+    },
+    "wallMs": 239632,
+    "error": null,
+    "stats": {
+     "passAtt": [
+      56,
+      60
+     ],
+     "passComp": [
+      19,
+      22
+     ],
+     "passYds": [
+      321,
+      326
+     ],
+     "rushAtt": [
+      0,
+      0
+     ],
+     "rushYds": [
+      0,
+      0
+     ],
+     "ints": [
+      3,
+      3
+     ],
+     "sacks": [
+      0,
+      0
+     ],
+     "fumbles": [
+      0,
+      1
+     ],
+     "tds": [
+      4,
+      2
+     ],
+     "fgMade": [
+      0,
+      0
+     ]
+    },
+    "finalStateHash": "28e33e3101e919c8769b207e83e7d844c3e5ed75f52b4ba5cdbd8b2bbbcc4b21",
+    "replay": {
+     "status": "replayed",
+     "matches": true,
+     "ms": 1641
+    }
+   },
+   {
+    "round": 1,
+    "report": "artifacts/sports-decisions/league-football-202.json",
+    "runId": "df59fb94-4268-472b-b5b9-b10328523c0b",
+    "sourceCommit": "2b62c24",
+    "sourceHashesMatchCommit": true,
+    "controlProfile": "classic-sports-v2",
+    "game": "football",
+    "teams": [
+     2,
+     3
+    ],
+    "seed": 202,
+    "status": "match-finished",
+    "finalScore": [
+     20,
+     0
+    ],
+    "ticks": 1147,
+    "simulatedSeconds": 286.517,
+    "decisions": 2294,
+    "httpAttempts": 2294,
+    "retries": 0,
+    "refusals": 0,
+    "errors": 0,
+    "inputTokens": 6668867,
+    "requestMs": {
+     "median": 146.726,
+     "p95": 269.385,
+     "max": 1262.415
+    },
+    "wallMs": 223967,
+    "error": null,
+    "stats": {
+     "passAtt": [
+      74,
+      63
+     ],
+     "passComp": [
+      22,
+      20
+     ],
+     "passYds": [
+      237,
+      152
+     ],
+     "rushAtt": [
+      0,
+      0
+     ],
+     "rushYds": [
+      0,
+      0
+     ],
+     "ints": [
+      4,
+      5
+     ],
+     "sacks": [
+      0,
+      0
+     ],
+     "fumbles": [
+      1,
+      3
+     ],
+     "tds": [
+      3,
+      0
+     ],
+     "fgMade": [
+      0,
+      0
+     ]
+    },
+    "finalStateHash": "58f242c9d1e1ff9f124663c9d22451a629290099d74d728eb7b013e215f6cb08",
+    "replay": {
+     "status": "replayed",
+     "matches": true,
+     "ms": 1497
+    }
+   },
+   {
+    "round": 1,
+    "report": "artifacts/sports-decisions/league-football-203.json",
+    "runId": "7d00b140-1df4-4244-8e5b-0372555fdb0b",
+    "sourceCommit": "2b62c24",
+    "sourceHashesMatchCommit": true,
+    "controlProfile": "classic-sports-v2",
+    "game": "football",
+    "teams": [
+     1,
+     2
+    ],
+    "seed": 203,
+    "status": "match-finished",
+    "finalScore": [
+     18,
+     14
+    ],
+    "ticks": 1268,
+    "simulatedSeconds": 316.767,
+    "decisions": 2536,
+    "httpAttempts": 2536,
+    "retries": 0,
+    "refusals": 0,
+    "errors": 0,
+    "inputTokens": 7403071,
+    "requestMs": {
+     "median": 149.256,
+     "p95": 261.393,
+     "max": 1411.408
+    },
+    "wallMs": 250343,
+    "error": null,
+    "stats": {
+     "passAtt": [
+      68,
+      65
+     ],
+     "passComp": [
+      23,
+      20
+     ],
+     "passYds": [
+      299,
+      246
+     ],
+     "rushAtt": [
+      0,
+      0
+     ],
+     "rushYds": [
+      0,
+      0
+     ],
+     "ints": [
+      2,
+      5
+     ],
+     "sacks": [
+      0,
+      0
+     ],
+     "fumbles": [
+      1,
+      2
+     ],
+     "tds": [
+      3,
+      2
+     ],
+     "fgMade": [
+      0,
+      0
+     ]
+    },
+    "finalStateHash": "0cee42a9375b50f230bb7b26c22c3cd6ec12415e3f20bb7fcf035e587ccb23ba",
+    "replay": {
+     "status": "replayed",
+     "matches": true,
+     "ms": 1476
+    }
+   },
+   {
+    "round": 2,
+    "report": "artifacts/sports-decisions/league2-soccer-101.json",
+    "runId": "6566f57d-92c4-4163-96af-f393c3fc2871",
+    "sourceCommit": "f7c32bc",
+    "sourceHashesMatchCommit": true,
+    "controlProfile": "classic-sports-v3",
+    "game": "soccer",
+    "teams": [
+     0,
+     1
+    ],
+    "seed": 101,
+    "status": "match-finished",
+    "finalScore": [
+     0,
+     0
+    ],
+    "ticks": 2401,
+    "simulatedSeconds": 600.017,
+    "decisions": 4802,
+    "httpAttempts": 4804,
+    "retries": 2,
+    "refusals": 0,
+    "errors": 2,
+    "inputTokens": 12594093,
+    "requestMs": {
+     "median": 158.346,
+     "p95": 493.326,
+     "max": 10114.975
+    },
+    "wallMs": 650038,
+    "error": null,
+    "stats": {
+     "shots": [
+      2,
+      1
+     ],
+     "onTarget": [
+      0,
+      1
+     ],
+     "passes": [
+      290,
+      284
+     ],
+     "completed": [
+      26,
+      20
+     ],
+     "tackles": [
+      0,
+      1
+     ],
+     "saves": [
+      1,
+      0
+     ],
+     "fouls": [
+      1,
+      0
+     ],
+     "yellows": [
+      1,
+      0
+     ],
+     "reds": [
+      0,
+      0
+     ],
+     "offsides": [
+      0,
+      0
+     ]
+    },
+    "finalStateHash": "337cd35c0e42c2f2ebc4ab1f4147d9f6a70d414fcfdb1821fd45e5de39b571f7",
+    "replay": {
+     "status": "replayed",
+     "matches": true,
+     "ms": 775
+    }
+   },
+   {
+    "round": 2,
+    "report": "artifacts/sports-decisions/league2-soccer-102.json",
+    "runId": "e3f3eb02-553d-4b7e-a83a-51758265264f",
+    "sourceCommit": "f7c32bc",
+    "sourceHashesMatchCommit": true,
+    "controlProfile": "classic-sports-v3",
+    "game": "soccer",
+    "teams": [
+     2,
+     3
+    ],
+    "seed": 102,
+    "status": "match-finished",
+    "finalScore": [
+     3,
+     0
+    ],
+    "ticks": 2401,
+    "simulatedSeconds": 600.017,
+    "decisions": 4802,
+    "httpAttempts": 4805,
+    "retries": 3,
+    "refusals": 0,
+    "errors": 3,
+    "inputTokens": 12644961,
+    "requestMs": {
+     "median": 158.789,
+     "p95": 505.789,
+     "max": 10122.283
+    },
+    "wallMs": 652723,
+    "error": null,
+    "stats": {
+     "shots": [
+      14,
+      13
+     ],
+     "onTarget": [
+      6,
+      3
+     ],
+     "passes": [
+      257,
+      258
+     ],
+     "completed": [
+      45,
+      28
+     ],
+     "tackles": [
+      6,
+      4
+     ],
+     "saves": [
+      3,
+      4
+     ],
+     "fouls": [
+      2,
+      0
+     ],
+     "yellows": [
+      0,
+      0
+     ],
+     "reds": [
+      0,
+      0
+     ],
+     "offsides": [
+      0,
+      1
+     ]
+    },
+    "finalStateHash": "f6d3437e00ffc31b7983a44220feb88be3ddd7f9fe108068be000321dc4b9735",
+    "replay": {
+     "status": "replayed",
+     "matches": true,
+     "ms": 886
+    }
+   },
+   {
+    "round": 2,
+    "report": "artifacts/sports-decisions/league2-soccer-103.json",
+    "runId": "97461222-6680-4c07-b637-2a43dc361189",
+    "sourceCommit": "f7c32bc",
+    "sourceHashesMatchCommit": true,
+    "controlProfile": "classic-sports-v3",
+    "game": "soccer",
+    "teams": [
+     1,
+     2
+    ],
+    "seed": 103,
+    "status": "match-finished",
+    "finalScore": [
+     0,
+     1
+    ],
+    "ticks": 2401,
+    "simulatedSeconds": 600.017,
+    "decisions": 4802,
+    "httpAttempts": 4804,
+    "retries": 2,
+    "refusals": 0,
+    "errors": 2,
+    "inputTokens": 12689669,
+    "requestMs": {
+     "median": 159.373,
+     "p95": 496.455,
+     "max": 10122.359
+    },
+    "wallMs": 640443,
+    "error": null,
+    "stats": {
+     "shots": [
+      6,
+      7
+     ],
+     "onTarget": [
+      2,
+      5
+     ],
+     "passes": [
+      294,
+      286
+     ],
+     "completed": [
+      32,
+      31
+     ],
+     "tackles": [
+      1,
+      6
+     ],
+     "saves": [
+      5,
+      2
+     ],
+     "fouls": [
+      1,
+      0
+     ],
+     "yellows": [
+      0,
+      0
+     ],
+     "reds": [
+      0,
+      0
+     ],
+     "offsides": [
+      1,
+      1
+     ]
+    },
+    "finalStateHash": "4b0ca2bbb456fb2a92f3c534a1aae12c478b9357510a5cbff7a7c9d699091fe7",
+    "replay": {
+     "status": "replayed",
+     "matches": true,
+     "ms": 868
+    }
+   },
+   {
+    "round": 2,
+    "report": "artifacts/sports-decisions/league2-football-201.json",
+    "runId": "7e1f637c-bd91-4632-879f-58afd7255c77",
+    "sourceCommit": "f7c32bc",
+    "sourceHashesMatchCommit": true,
+    "controlProfile": "classic-sports-v3",
+    "game": "football",
+    "teams": [
+     0,
+     1
+    ],
+    "seed": 201,
+    "status": "match-finished",
+    "finalScore": [
+     0,
+     14
+    ],
+    "ticks": 1301,
+    "simulatedSeconds": 325.017,
+    "decisions": 2602,
+    "httpAttempts": 2602,
+    "retries": 0,
+    "refusals": 0,
+    "errors": 0,
+    "inputTokens": 7268225,
+    "requestMs": {
+     "median": 152.124,
+     "p95": 525.259,
+     "max": 2504.09
+    },
+    "wallMs": 337271,
+    "error": null,
+    "stats": {
+     "passAtt": [
+      66,
+      59
+     ],
+     "passComp": [
+      12,
+      23
+     ],
+     "passYds": [
+      152,
+      236
+     ],
+     "rushAtt": [
+      2,
+      6
+     ],
+     "rushYds": [
+      6,
+      8
+     ],
+     "ints": [
+      5,
+      2
+     ],
+     "sacks": [
+      0,
+      0
+     ],
+     "fumbles": [
+      0,
+      2
+     ],
+     "tds": [
+      0,
+      2
+     ],
+     "fgMade": [
+      0,
+      0
+     ]
+    },
+    "finalStateHash": "6ed4cc4b0c894123fea7736d973c9742fa15ea199cae126b181ec8a95885b53f",
+    "replay": {
+     "status": "replayed",
+     "matches": true,
+     "ms": 1000
+    }
+   },
+   {
+    "round": 2,
+    "report": "artifacts/sports-decisions/league2-football-202.json",
+    "runId": "cc1de8a0-7c1f-4b65-8073-7be6a7340be6",
+    "sourceCommit": "f7c32bc",
+    "sourceHashesMatchCommit": true,
+    "controlProfile": "classic-sports-v3",
+    "game": "football",
+    "teams": [
+     2,
+     3
+    ],
+    "seed": 202,
+    "status": "match-finished",
+    "finalScore": [
+     6,
+     27
+    ],
+    "ticks": 1586,
+    "simulatedSeconds": 396.267,
+    "decisions": 3172,
+    "httpAttempts": 3172,
+    "retries": 0,
+    "refusals": 0,
+    "errors": 0,
+    "inputTokens": 8857590,
+    "requestMs": {
+     "median": 156.478,
+     "p95": 513.518,
+     "max": 2502.065
+    },
+    "wallMs": 419453,
+    "error": null,
+    "stats": {
+     "passAtt": [
+      66,
+      72
+     ],
+     "passComp": [
+      5,
+      24
+     ],
+     "passYds": [
+      113,
+      180
+     ],
+     "rushAtt": [
+      11,
+      3
+     ],
+     "rushYds": [
+      24,
+      3
+     ],
+     "ints": [
+      9,
+      1
+     ],
+     "sacks": [
+      0,
+      0
+     ],
+     "fumbles": [
+      0,
+      1
+     ],
+     "tds": [
+      1,
+      4
+     ],
+     "fgMade": [
+      0,
+      0
+     ]
+    },
+    "finalStateHash": "294c6a44e6a2d280060ab1816c416280478308fea65e13a27b935a398fe2957e",
+    "replay": {
+     "status": "replayed",
+     "matches": true,
+     "ms": 1114
+    }
+   },
+   {
+    "round": 2,
+    "report": "artifacts/sports-decisions/league2-football-203.json",
+    "runId": "98e4f5ce-1039-4831-a2e4-aa831416e80c",
+    "sourceCommit": "f7c32bc",
+    "sourceHashesMatchCommit": true,
+    "controlProfile": "classic-sports-v3",
+    "game": "football",
+    "teams": [
+     1,
+     2
+    ],
+    "seed": 203,
+    "status": "failed",
+    "finalScore": [
+     0,
+     0
+    ],
+    "ticks": 640,
+    "simulatedSeconds": 159.75,
+    "decisions": 1279,
+    "httpAttempts": 1282,
+    "retries": 2,
+    "refusals": 3,
+    "errors": 0,
+    "inputTokens": 3604161,
+    "requestMs": {
+     "median": 135.381,
+     "p95": 341.739,
+     "max": 1835.285
+    },
+    "wallMs": 134759,
+    "error": "Decisions call failed at tick 639 after 2 allowed retries",
+    "stats": {
+     "passAtt": [
+      22,
+      32
+     ],
+     "passComp": [
+      4,
+      5
+     ],
+     "passYds": [
+      71,
+      56
+     ],
+     "rushAtt": [
+      5,
+      9
+     ],
+     "rushYds": [
+      41,
+      28
+     ],
+     "ints": [
+      1,
+      3
+     ],
+     "sacks": [
+      0,
+      1
+     ],
+     "fumbles": [
+      0,
+      1
+     ],
+     "tds": [
+      0,
+      0
+     ],
+     "fgMade": [
+      0,
+      0
+     ]
+    },
+    "finalStateHash": "2f69d3e0579d628d2326009f792a45efe6bdd6fdbc60244c43f41be3118849f6",
+    "replay": {
+     "status": "replayed-to-failure",
+     "matches": true,
+     "ms": 508
+    }
+   }
+  ],
+  "finding": "Mechanics, rules and controller paths work end to end and replay exactly; the raw-button Decisions policy itself is weak (see SPORTS_DEVELOPMENT.md). Sacks require holding the ball: a holding controller QB is sacked on 408 of 412 plays."
+ },
+ "lean": {
+  "command": "node scripts/verify-sports.mjs --lean <pinned 4.35.0>",
+  "runId": "sports-lean-2026-10-17T19-13-34.750Z",
+  "outcome": "passed",
+  "sourceCommit": "3279845f92342bb84ffdf13c065b4d3cf99bf38b",
+  "leanVersion": "Lean (version 4.35.0, arm64-apple-darwin24.6.0, commit eb6cafb7290e8bd5f2937522d8d804f58f02bafc, Release)",
+  "theorems": 15,
+  "generatedRuntimeByteMatch": true,
+  "geometryRuntimeByteMatch": true,
+  "totalMs": 4508.8,
+  "stageMs": [
+   {
+    "stage": "toolchain",
+    "ms": 255
+   },
+   {
+    "stage": "proof:Geometry",
+    "ms": 2800
+   },
+   {
+    "stage": "proof:Kernel",
+    "ms": 457
+   },
+   {
+    "stage": "proof:Sports",
+    "ms": 402
+   },
+   {
+    "stage": "generate",
+    "ms": 295
+   },
+   {
+    "stage": "generate:geometry-dependency",
+    "ms": 270
+   }
+  ]
+ },
+ "turnaround": {
+  "node": "v22.23.2",
+  "tests": {
+   "command": "node --test tests/*.test.js",
+   "runs": 3,
+   "before": {
+    "commit": "fb5335a",
+    "tests": 261,
+    "medianMs": 1851,
+    "rangeMs": [
+     1825,
+     1899
+    ]
+   },
+   "after": {
+    "commit": "3279845",
+    "tests": 325,
+    "medianMs": 1995,
+    "rangeMs": [
+     1971,
+     2031
+    ]
+   }
+  },
+  "build": {
+   "command": "node scripts/build.mjs (clean dist, no compiler cache)",
+   "runs": 5,
+   "before": {
+    "commit": "fb5335a",
+    "medianMs": 30.2,
+    "rangeMs": [
+     28.8,
+     34.5
+    ]
+   },
+   "after": {
+    "commit": "3279845",
+    "medianMs": 31.3,
+    "rangeMs": [
+     29.4,
+     42.4
+    ]
+   }
+  },
+  "ciChanges": "none"
+ },
+ "reviews": [
+  "shared harness/HUD/viewer (Fable): CSP-blocked viewer + resize loop, sent-off observation leak, retries outside call cap, stale setup cursor, worker exit hang — fixed with tests",
+  "soccer model (Fable): idle-carrier press, shield exploit, binary keeper and penalty timing, hovering ball, yellow=3 crash, restart offside, non-shot saves, finesse, specialty wording — fixed with tests",
+  "football model (Fable): clock denial, last-play conversion loss, late two-minute warning, conversion-turnover kickoff, crash-prone saves, juke speed, retreat touchback, stats — fixed with tests"
+ ],
+ "limitations": [
+  "No physical-controller or extended real-time human playtest; the in-app browser pane was hidden (about 1 animation frame/s). Rendered screens were checked statically.",
+  "Escape Artist and Bulldozer have small match-level effects.",
+  "Football omits penalty flags, onside kicks, fair catches and muffs; soccer has no halves or substitutions.",
+  "The raw-button Decisions CPU is a weak opponent; key-moment intents are the recommended next step."
+ ]
+}
