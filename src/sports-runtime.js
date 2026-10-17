@@ -113,7 +113,9 @@ export class CustomSportsAdapter {
     q('.sports-banner p').textContent = ready ? 'Read the play. Create your chance.' : finished ? 'Play it back, or save & return to your neighborhood.' : '';
     q('.sports-start').hidden = !ready && !finished;
     q('.sports-start').textContent = finished ? 'Rematch · A / Enter' : 'Start match · A / Enter';
-    text('.sports-context', setup || summary ? '' : hud.detail || '');
+    // Watching CPU vs CPU: no controller prompts or play picker to act on.
+    text('.sports-context', setup || summary || watch ? '' : hud.detail || '');
+    q('.sports-playbook').hidden = watch;
     q('progress').value = hud.power || 0;
     q('.sports-meter').hidden = !(hud.power > 0 || this.state.charging);
     text('.sports-power-value', `${Math.round((hud.power || 0) * 100)}%`);
@@ -129,6 +131,7 @@ export class CustomSportsAdapter {
       text('.sports-athlete-ratings', card.ratings.map(r => `${r.code} ${r.value}`).join('  '));
     }
     text('.sports-skill-state', hud.skillReady === false || (athlete?.skillCooldown || athlete?.jukeCooldown) > 0 ? 'RECOVERING' : 'SKILL READY');
+    q('.sports-skill-hint').hidden = watch;
     text('.sports-skill-hint', hud.skillHint || (this.game.id === 'soccer' ? 'Create space, then release your pass or shot.' : 'Read the blockers. Cut across a defender’s momentum.'));
     this.feedbackFade = Math.max(0, this.feedbackFade - dt);
     q('.sports-action').style.opacity = String(Math.min(1, this.feedbackFade * 4));

@@ -8,7 +8,7 @@ import { SportsInput } from './sports-input.js';
 import { soccerDefinition } from './soccer.js';
 import { footballDefinition } from './football.js';
 
-export const CONTROL_PROFILE = 'classic-sports-v2';
+export const CONTROL_PROFILE = 'classic-sports-v3';
 export const TICKS = 15;
 export const DECISIONS_MODEL = 'gpt-6-luna';
 const round = n => Math.round(n * 1000) / 1000;
@@ -101,6 +101,7 @@ export function observeSports(gameId, state, { team = 0, lastAction = null, hist
     lastFeedback: state.feedback ? { kind: state.feedback.kind, strength: state.feedback.strength } : null,
     context: soccer ? { restart: state.restart?.type ? { type: state.restart.type, side: sideOf(team, state.restart.team) } : null, stats: statsFor(state.stats) }
       : { offense: sideOf(team, state.offense), down: state.down, firstDownLineY: round(-state.target * m), scrimmageY: round(-state.line * m), conversion: state.conversion,
+          yardsToFirstDown: round(Math.abs(state.target - state.line)), yardsToEndZone: round(50 - state.line * (state.offense === 0 ? 1 : -1)), special: state.special ?? null, kicked: !!state.kicked,
           receiverIcons: hud.receiverIcons ?? [], passType: hud.passType ?? null, selectedReceiver: hud.selectedReceiver ?? null,
           plays: hud.plays ?? [], selectedPlay: hud.plays?.[hud.selectedPlay] ?? null, thrown: state.thrown, timeouts: ours(hud.timeouts, team) ?? null },
     players: state.players.filter(p => !p.off).map(p => ({ id: p.id, side: sideOf(team, p.team), role: profile(p)?.role ?? null, ovr: profile(p)?.ovr ?? null,
@@ -114,15 +115,36 @@ export function observeSports(gameId, state, { team = 0, lastAction = null, hist
   };
 }
 
-export function availableActions(observation) {
-  const menu = MENU_PHASES[observation.game].includes(observation.phase), selecting = observation.game === 'football' && observation.context.plays.length > 0 && observation.phase === 'select';
-  const names = menu ? ['confirm', 'neutral', ...(observation.game === 'football' && observation.phase === 'dead' ? ['timeout'] : [])] : selecting ? ['confirm', 'play_left', 'play_right', 'neutral', 'timeout'] : Object.keys(ACTIONS[observation.game]);
-  return names.map(name => [name, ACTIONS[observation.game][name]]);
+const isMenu = ({ game, phase }) => MENU_PHASES[game].includes(phase) || (game === 'football' && phase === 'select');
+// Offer only the buttons that mean something for this controller right now, as
+// a player reads the screen: menus, on the ball, supporting, defending, kicking.
+// A button outside its context is not a different action, only a mistake (for
+// example a defensive B tap in possession is a minimum-power shot).
+function contextActions(o) {
+  const { game, phase, context: c } = o, onBall = o.controlled !== null && o.controlled === o.owner;
+  if (MENU_PHASES[game].includes(phase)) return ['confirm', 'neutral', ...(game === 'football' && phase === 'dead' ? ['timeout'] : [])];
+  if (game === 'football' && phase === 'select') return ['confirm', 'play_left', 'play_right', 'neutral', 'timeout'];
+  if (game === 'soccer') {
+    if (phase === 'restart') return c.restart?.side === 'us' ? ['confirm', 'neutral', 'pass', 'shot', 'lob', 'through', 'finesse_shot', 'driven_pass'] : ['neutral'];
+    if (onBall) return ['neutral', 'sprint', 'pass', 'shot', 'lob', 'through', 'finesse_shot', 'driven_pass', 'lofted_through', 'shield', 'run_request'];
+    if (o.possession === 'them') return ['neutral', 'sprint', 'tackle', 'slide_tackle', 'switch', 'shield'];
+    return ['neutral', 'sprint', 'pass', 'shot', 'lob', 'through', 'tackle', 'switch'];
+  }
+  const offense = c.offense === 'us';
+  if (offense && c.special && !c.kicked && onBall) return ['kick', 'neutral'];
+  if (offense && c.receiverIcons.length) return ['neutral', 'sprint', 'receiverA', 'receiverB', 'receiverX', 'receiverA_tap', 'receiverB_tap', 'receiverX_tap'];
+  if (onBall) return ['neutral', 'sprint', 'stiff_arm', 'spin', 'protect'];
+  if (o.possession === 'them' || (!offense && o.possession !== 'us')) return ['neutral', 'sprint', 'tackle', 'conservative_tackle', 'switch', 'strafe'];
+  return ['neutral', 'sprint', 'switch', 'conservative_tackle'];
 }
+export function availableActions(observation) { return contextActions(observation).map(name => [name, ACTIONS[observation.game][name]]); }
 
 export function decisionsRequest(observation) {
-  const available = availableActions(observation), menu = available.length <= 5;
-  const instructions = `You are a CPU controller in an original arcade ${observation.game} game, playing for the team labelled "us" against "them". Play to win like a skilled player: create chances, score, and defend. Athletes have 0–99 ratings and specialties; use your athletes' strengths. You receive visible-world telemetry, not screenshots. Each decision holds the controller for 0.25 seconds; game time stops while you think. Left stick moves the selected athlete AND supplies assisted pass/shot/throw direction or lead. A skill choice flicks the right stick once; choose none for normal play. Soccer RS follows facing: forward knock-on, backward dragback, sideways ball roll; on defense RS selects a teammate. Football RS sideways jukes; B spins when carrying. Holding the same pass/shot/throw/kick action across decisions keeps charging; neutral releases. The charge meter is 0..1; do not hold forever. Soccer A ground pass, B shot, X lob, Y through; RB+B finesse. Soccer fouls give free kicks or penalties and can earn cards; offside applies in the attacking third. Football: select a play at the play-call screen with play_left/play_right and confirm to snap (offense) or set (defense). Throw by holding receiver A/B/X (tap = lob, one hold = touch, two holds = bullet) while the quarterback is behind the line. Kick with the kick action. Timeouts stop the clock (2 per half). Choose move, skill and action independently from this same observation.`;
+  const available = availableActions(observation), menu = isMenu(observation);
+  const tactics = observation.game === 'soccer'
+    ? 'Soccer tactics: hold a pass or shot for one or two decisions to build power, then neutral releases it; a single tap is a weak, short ball. Shoot when within about 20 m of goal with an angle; otherwise pass to an open teammate (left stick toward them), play a through ball into a run, or dribble into space. On defense stay goal-side, jockey with shield, switch to the defender nearest the ball, and tackle only when the carrier is within reach and in front of you: late or from-behind tackles concede fouls, free kicks, penalties and cards. Offside applies only in the attacking third.'
+    : 'Football tactics: at the play call, pick a play with play_left/play_right before confirm. Mix runs (INSIDE RUN, SWEEP) and passes using down and yards to go; on 4th down choose PUNT, or FIELD GOAL when within about 35 yards of the end zone, unless only a yard or two is needed. After the snap, let routes develop for about one or two decisions, then throw to the most open receiver icon: hold for a bullet into a tight window, tap for a lob over a defender, and throw it away rather than into coverage. Carrying the ball, run to open space and use stiff arms, spins and jukes. On defense switch to the defender nearest the ball and tackle. Kick with the kick action (hold for power). Timeouts (2 per half) stop the clock when you are trailing late.';
+  const instructions = `You are a CPU controller in an original arcade ${observation.game} game, playing for the team labelled "us" against "them". Play to win like a skilled player: create chances, score, and defend. Athletes have 0–99 ratings and specialties; use your athletes' strengths. You receive visible-world telemetry, not screenshots. Each decision holds the controller for 0.25 seconds; game time stops while you think. Left stick moves the selected athlete AND supplies assisted pass/shot/throw direction or lead. A skill choice flicks the right stick once; choose none for normal play. Soccer RS follows facing: forward knock-on, backward dragback, sideways ball roll; on defense RS selects a teammate. Football RS sideways jukes; B spins when carrying. Holding the same pass/shot/throw/kick action across decisions keeps charging; neutral releases. The charge meter is 0..1; do not hold forever. Only the buttons that apply to your situation are offered. ${tactics} Choose move, skill and action independently from this same observation.`;
   return { model: DECISIONS_MODEL, input: `${instructions}\nVisible observation:\n${JSON.stringify(observation)}`, questions: [
     { type: 'choice', name: 'move', instructions: 'Choose left-stick movement and assisted direction for the next 0.25 seconds. stop brakes and keeps current facing for targeting.', choices: Object.keys(MOVE).map(value => ({ value, description: value.replaceAll('_', ' ') })) },
     { type: 'choice', name: 'skill', instructions: 'Choose none for ordinary play, or a single right-stick flick for a contextual skill. This never aims a pass or shot.', choices: [{ value: 'none', description: 'Keep the right stick centered.' }, ...Object.entries(SKILL_DIRECTIONS).map(([value, v]) => ({ value, description: `${value.replaceAll('_', ' ')} flick: x ${round(v.x)}, y ${round(v.y)}` }))] },
