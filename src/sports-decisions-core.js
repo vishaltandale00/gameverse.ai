@@ -125,7 +125,7 @@ function contextActions(o) {
   if (MENU_PHASES[game].includes(phase)) return ['confirm', 'neutral', ...(game === 'football' && phase === 'dead' ? ['timeout'] : [])];
   if (game === 'football' && phase === 'select') return ['confirm', 'play_left', 'play_right', 'neutral', 'timeout'];
   if (game === 'soccer') {
-    if (phase === 'restart') return c.restart?.side === 'us' ? ['confirm', 'neutral', 'pass', 'shot', 'lob', 'through', 'finesse_shot', 'driven_pass'] : ['neutral'];
+    if (phase === 'restart') return c.restart?.side === 'us' ? ['confirm', 'neutral', 'pass', 'shot', 'lob', 'through', 'finesse_shot', 'driven_pass'] : ['neutral', 'sprint'];
     if (onBall) return ['neutral', 'sprint', 'pass', 'shot', 'lob', 'through', 'finesse_shot', 'driven_pass', 'lofted_through', 'shield', 'run_request'];
     if (o.possession === 'them') return ['neutral', 'sprint', 'tackle', 'slide_tackle', 'switch', 'shield'];
     return ['neutral', 'sprint', 'pass', 'shot', 'lob', 'through', 'tackle', 'switch'];
@@ -137,7 +137,12 @@ function contextActions(o) {
   if (o.possession === 'them' || (!offense && o.possession !== 'us')) return ['neutral', 'sprint', 'tackle', 'conservative_tackle', 'switch', 'strafe'];
   return ['neutral', 'sprint', 'switch', 'conservative_tackle'];
 }
-export function availableActions(observation) { return contextActions(observation).map(name => [name, ACTIONS[observation.game][name]]); }
+// The Decisions API requires at least two choices per question.
+export function availableActions(observation) {
+  const names = contextActions(observation);
+  if (names.length < 2) throw new Error(`Decisions choice questions need two options: ${observation.phase}`);
+  return names.map(name => [name, ACTIONS[observation.game][name]]);
+}
 
 export function decisionsRequest(observation) {
   const available = availableActions(observation), menu = isMenu(observation);
