@@ -1,0 +1,24 @@
+/* Sports replay viewer. A served stylesheet: the dev server's CSP forbids inline styles. */
+:root { color-scheme:dark; --panel:#0b1c29e6; --text:#eef4ea; --muted:#a9c3c9; --accent:#b9f06b; }
+* { box-sizing:border-box; }
+body { margin:0; background:#071a2b; color:var(--text); font:13px Arial,sans-serif; height:100vh; display:flex; flex-direction:column; }
+header { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:10px 16px; background:#081723; border-bottom:1px solid #ffffff1a; }
+header h1 { font-size:14px; letter-spacing:2px; margin:0; color:#82e9d3; }
+header label, header button, header select { font-size:12px; }
+button, select { background:#243c49; color:var(--text); border:1px solid #6c899966; border-radius:4px; padding:5px 10px; }
+#status { color:var(--muted); }
+#stage { position:relative; flex:1; min-height:0; }
+#stage canvas { width:100%; height:100%; display:block; }
+.overlay { position:absolute; top:14px; left:16px; pointer-events:none; display:flex; flex-direction:column; gap:6px; max-width:calc(100% - 32px); }
+.board { display:flex; background:var(--panel); border-radius:6px; overflow:hidden; width:fit-content; }
+.board span, .board strong, .board time { padding:9px 14px; }
+.board span { font-weight:800; letter-spacing:1px; border-bottom:3px solid #72e6cf; }
+.board strong { font-size:20px; letter-spacing:3px; }
+.board time { background:#e9efdd; color:#152b2a; font:700 15px monospace; }
+#message { background:var(--panel); padding:6px 12px; border-radius:4px; width:fit-content; }
+#message:empty { display:none; }
+#ticker { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:3px; font-size:11px; }
+#ticker li { background:var(--panel); padding:4px 10px; border-left:3px solid var(--accent); width:fit-content; }
+#progress { position:absolute; bottom:12px; left:16px; background:var(--panel); padding:6px 12px; border-radius:4px; color:var(--accent); }
+#progress.bad { color:#ff9d7a; }
+@media (max-width:600px) { header { padding:8px 16px; } .board span, .board strong, .board time { padding:6px 8px; } }

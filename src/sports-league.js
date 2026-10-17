@@ -42,7 +42,7 @@ export function overall(player) {
 export const SPECIALTIES = {
   soccer: {
     finisher: { name: 'Finisher', text: 'Shots inside the box are 40% more accurate.' },
-    cannon: { name: 'Cannon', text: 'Power shots leave the boot 12% faster.' },
+    cannon: { name: 'Cannon', text: 'Power shots leave the boot 20% faster.' },
     playmaker: { name: 'Playmaker', text: 'Through balls and driven passes are 40% more accurate.' },
     trickster: { name: 'Trickster', text: 'Skill moves cost half the stamina and recover 30% faster.' },
     speedster: { name: 'Speedster', text: 'Sprint bursts accelerate 20% harder.' },
@@ -55,9 +55,9 @@ export const SPECIALTIES = {
     sweeper_keeper: { name: 'Sweeper Keeper', text: 'Rushes out to claim through balls and crosses.' },
   },
   football: {
-    gunslinger: { name: 'Gunslinger', text: 'Bullet passes fly 12% faster and 8 yards farther.' },
+    gunslinger: { name: 'Gunslinger', text: 'Bullets fly 12% faster; every throw reaches 8 yards farther.' },
     surgeon: { name: 'Surgeon', text: 'Short and medium throws are 40% more accurate.' },
-    escape_artist: { name: 'Escape Artist', text: 'Shrugs off 30% more pass rushers in the pocket.' },
+    escape_artist: { name: 'Escape Artist', text: 'Escapes 60% more pocket sacks and buys a beat to throw.' },
     burner: { name: 'Burner', text: 'Finds an extra gear after 10 yards in the open.' },
     sure_hands: { name: 'Sure Hands', text: 'Never drops an open catch; wins 25% more contested ones.' },
     route_artist: { name: 'Route Artist', text: 'Creates an extra yard of separation on cuts.' },
@@ -67,7 +67,7 @@ export const SPECIALTIES = {
     brick_wall: { name: 'Brick Wall', text: 'Holds blocks 40% longer.' },
     ballhawk: { name: 'Ballhawk', text: 'Turns contested catches into interceptions twice as often.' },
     enforcer: { name: 'Enforcer', text: 'Big hits force fumbles twice as often.' },
-    lockdown: { name: 'Lockdown', text: 'Trails receivers 30% tighter in coverage.' },
+    lockdown: { name: 'Lockdown', text: 'Trails receivers 40% tighter and breaks on the ball sooner.' },
     big_leg: { name: 'Big Leg', text: 'Adds 10 yards of field-goal range and 12% kick distance.' },
   },
 };
@@ -182,11 +182,12 @@ export function validateProfile(sport, team) {
     && Array.isArray(p.specialties) && p.specialties.every(id => SPECIALTIES[sport][id]));
 }
 export function specialtyNames(sport, ids) { return ids.map(id => SPECIALTIES[sport][id]?.name).filter(Boolean); }
-// HUD card for the selected athlete: identity plus the role's four key ratings.
+// HUD card for the selected athlete: identity plus the role's four key ratings
+// (codes follow familiar sports-game abbreviations such as PAC or THA).
 export function athleteCard(sport, profile) {
   if (!profile) return null;
   return { name: profile.short, number: profile.number, role: profile.role, ovr: profile.ovr, specialties: specialtyNames(sport, profile.specialties),
-    ratings: ROLE_KEYS[profile.role].map(key => [RATING_LABELS[key], profile.ratings[key]]) };
+    ratings: ROLE_KEYS[profile.role].map(key => ({ code: key.toUpperCase(), label: RATING_LABELS[key], value: profile.ratings[key] })) };
 }
 
 // ---------------------------------------------------------------- match RNG
