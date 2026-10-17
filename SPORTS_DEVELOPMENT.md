@@ -1,14 +1,79 @@
 # Soccer and American football development
 
-The current local `/v1` world adds two original custom subgames: **Juniper Pitch**, a 5v5 soccer match including goalkeepers, and **Foundry Field**, a 7v7 American football match. Both are quick matches against AI with team control, separate procedural 3D venues, and approximately ten-minute match clocks. Enter from the world or its venue menu. FireRed remains at Alder Arcade; `/v0` retains the original FireRed collection.
+The current local `/v1` world adds two original custom subgames:
+- **Juniper Pitch** (*Alder Five*), a 5v5 soccer match including goalkeepers.
+- **Foundry Field** (*Alder Gridiron*), a 7v7 American football match with two-way athletes.
 
-Run `npm ci --ignore-scripts` and `npm run dev`, then open [local Gameverse](http://127.0.0.1:4173). The sports games do not require a FireRed cartridge or its source-build setup.
+Each opens on a team select and plays a full rules match against a rated CPU, or lets you watch CPU vs CPU. Each has its own procedural 3D venue and a ten-minute game clock. Enter from the world or its venue menu. FireRed remains at Alder Arcade; `/v0` retains the original FireRed collection.
+
+Run `npm ci --ignore-scripts` and `npm run dev`, then open [local Gameverse](http://127.0.0.1:4173). The sports games do not require a FireRed cartridge or its source-build setup. Accepted requirements and the engineering contract are in [plans/SPORTS_LEAGUE.md](plans/SPORTS_LEAGUE.md).
+
+## League, ratings and specialties
+
+[`src/sports-league.js`](src/sports-league.js) holds four fictional teams per sport. No real teams, athletes, likenesses or branding appear.
+
+| Soccer | Overall | Style | Football | Overall | Style |
+| --- | --- | --- | --- | --- | --- |
+| Alder FC | 77 | Balanced | Alder Arrows | 79 | Balanced |
+| Ember United | 76 | High press | Canyon Coyotes | 78 | Ground & pound |
+| Northgate Rovers | 86 | Possession | Ironwood Titans | 86 | Air raid |
+| Salt Flats FC | 64 | Direct | Marsh Hollow Mudcats | 66 | Grit |
+
+**Ratings (0–99) drive the simulation:**
+- **Soccer:** Pace, Shooting, Passing, Dribbling, Defending, Physical. Keepers also have Diving, Reflexes, Handling, Positioning and Kicking.
+- **Football:** Speed, Strength, Agility, Awareness, Throw Power/Accuracy, Catching, Route Running, Carrying, Break Tackle, Blocking, Pass Rush, Coverage, Tackle, Kick Power/Accuracy.
+
+Speeds stay inside the Lean-certified displacement guards.
+
+**Specialties:** each athlete has one or two, each with one stated, tested effect:
+- Soccer (12): Finisher, Cannon, Playmaker, Trickster, Speedster, Wall, Interceptor, Ball Winner, Aerial Threat, Engine, Cat Reflexes, Sweeper Keeper.
+- Football (14): Gunslinger, Surgeon, Escape Artist, Burner, Sure Hands, Route Artist, Bulldozer, Ankle Breaker, Edge Rusher, Brick Wall, Ballhawk, Enforcer, Lockdown, Big Leg.
+
+**Team select** chooses the mode (play or watch), both teams and the difficulty (Amateur, Pro, World Class). Difficulty changes the CPU's reaction time and its decision and execution noise. The HUD shows team colors and overall ratings, plus the selected athlete's number, name, overall, specialties and key ratings. It also has an event ticker, the football quarter and timeouts, and a full-time summary with a player of the match.
 
 ## Playable scope
 
-Soccer includes analog acceleration/braking, stamina, directional ball rolls, double-touch exits, dragbacks, risky knock-ons, shot fakes, charged assisted shots with optional curl, driven and lofted passes, requested teammate runs, shielding and defensive jockeying. Tackles now require a committed lunge to make actual forward contact with the ball; possession is not transferred at the instant the button is pressed. Goalkeepers, swept ball contacts, posts/crossbar rebounds, goals, throw-ins, corners and goal kicks remain. Offside, fouls and cards are outside this arcade ruleset. The live sideline camera follows the ball and selected athlete more closely, while ready/restart views remain wider.
+### Soccer
 
-Football includes offensive and defensive play selection, snaps, receiver-button passes with left-stick lead, receiver control, QB keeper runs, physical sweep handoffs, protective carrying, stamina-limited jukes and spins, stiff arms, committed tackles with recovery, interceptions, downs, first downs, touchdowns and two-point attempts. Possession restarts after scores use a fixed starting position. Special teams are omitted. The camera looks downfield behind the offense.
+Carried over from the previous version:
+- Analog movement, stamina, ball rolls, double touches, dragbacks, knock-ons and shot fakes.
+- Charged assisted shots with optional curl; driven, lofted and through passes.
+- Requested runs, shielding and jockeying.
+- Committed tackles that must make contact; post and crossbar rebounds.
+- Throw-ins, corners and goal kicks.
+
+New in this version:
+- **Keepers** dive toward the predicted crossing point, limited by reach and reaction. They catch or parry; parries create rebounds. Sweeper keepers rush out to claim.
+- **Headers and volleys** strike balls at head height first time.
+- **Ball contests:** hard passes can spill off a poor first touch. Shoulder challenges and 50/50s are decided by Physical. Fatigue builds over the match.
+- **Fouls:** late or from-behind tackles give a direct free kick. A free kick has a 1–2 athlete wall, and the taker cannot dribble before kicking. Fouls in the box give a penalty.
+- **Cards:** two yellows or a straight red sends the athlete off for the rest of the match. Keepers are never carded, and no team drops below two outfielders.
+- **Offside** applies only in the attacking third, only on passes, and is whistled when the flagged athlete next touches the ball.
+
+The built-in CPU scores shot, pass, through-ball, cross, dribble, skill and shield options. It uses ratings, lanes, pressure, the offside line and team tactics (press, width, directness, tempo).
+
+### Football
+
+Carried over from the previous version:
+- Receiver-button passing with left-stick lead; QB keepers and physical handoffs.
+- Jukes, spins, stiff arms and ball protection; wrap and dive tackles.
+- Interceptions, downs, touchdowns and two-point tries.
+
+New in this version:
+- **Playbook:** offense has INSIDE RUN, SWEEP, SLANTS, CURLS, VERTICALS, PA CROSSERS and SCREEN, plus PUNT and FIELD GOAL. Defense has COVER 2, COVER 3, MAN, BLITZ and PREVENT.
+- **Line play:** offensive-line vs defensive-line engagements and sacks.
+- **Catches:** contested catches, drops, pass breakups and interceptions.
+- **Contact:** fumbles with live loose balls, and broken tackles.
+- **Special teams:**
+  - Kickoffs from the 35, with returns and touchbacks to the 25.
+  - Punts, and field goals through uprights on the end lines.
+  - An extra-point kick or a two-point try after touchdowns.
+  - Safeties, followed by a free kick.
+- **Game clock:** four 2:30 quarters, with a 2:00 warning in Q2 and Q4 and two timeouts per half.
+  - The clock stops on incompletions, out of bounds, scores, turnovers and timeouts.
+  - It runs through the huddle after in-bounds plays; a 20 s play clock auto-snaps.
+
+The built-in CPU calls plays from down, distance, field position, score, clock and team tactics, including fourth-down and two-minute decisions. It reads its quarterback progression by Awareness.
 
 These are original soccer and American football games. [Gameplay references](SPORTS_REFERENCES.md) record the FIFA/EA FC, NBA 2K and NBA Jam material inspected, the specific transferable ideas, and whether the evidence was text, selected video frames or stills. Basketball was not added, and reference branding/assets were not copied.
 
@@ -18,32 +83,233 @@ The current layout follows classic FIFA and Madden controls, adapted to these sm
 
 | Action | Soccer | Football |
 | --- | --- | --- |
-| A | Ground pass; confirm kickoff | Snap; receiver A; stiff arm with the ball; conservative tackle on defense |
-| B | Shoot; tackle on defense | Receiver B; spin with the ball; switch on defense |
+| A | Ground pass; confirm kickoff | Snap; receiver A; hold to kick (meter); stiff arm with the ball; conservative tackle on defense |
+| B | Shoot (also headers, volleys, free kicks, penalties); tackle on defense | Receiver B; spin with the ball; switch on defense |
 | X | Lob; tackle on defense | Receiver X; dive tackle on defense |
 | Y | Through ball | Unassigned |
 | LB | Request run on offense; switch on defense | Unassigned |
 | RB | Finesse shot / driven pass modifier | Protect ball |
 | LT | Shield / jockey | Defensive strafe |
 | RT | Sprint | Sprint |
+| View / Back | Unassigned | Timeout |
+| D-pad | Team select | Team select; play selection |
 | Right-stick flick | Directional skill; defensive switch | Directional juke |
 | Start / Options | Pause | Pause |
 
-Soccer uses left-stick direction to choose a teammate in a passing cone and assist shots toward the goal. Hold the relevant button for power, then release. Y leads a teammate into space; X gives the ball height; RB+A drives a pass and RB+B curls a shot. Power, pressure, position and physical interception still affect outcomes. A during a B charge produces a fake shot. Right-stick forward/back/lateral flicks perform knock-ons, dragbacks and rolls; an opposite lateral flick can chain a double touch. Center the stick between flicks. Skills consume stamina and expose the ball when mistimed.
+**Soccer passing and shooting:**
+- Left-stick direction chooses a teammate in a passing cone and assists shots toward the goal.
+- Hold the relevant button for power, then release. Passing, Shooting and pressure scale the error.
+- Y leads a teammate into space, X gives the ball height, RB+A drives a pass and RB+B curls a shot.
+- Pressing A during a B charge fakes the shot.
 
-Football shows **A/B/X receiver icons**. Hold and release the receiver's button to throw: a brief tap lobs, a medium hold gives touch, and a longer hold drives a bullet. Left stick adds bounded lead; the receiver target is latched when charging starts. This timing is an original simplified arcade interpretation. The ball travels physically and can miss or be intercepted. Release A after snapping before throwing. Sweep performs a physical handoff after the snap. Carrying actions and defensive actions are contextual; they cannot also launch a pass.
+**Soccer skills:**
+- Right-stick forward, back and lateral flicks perform knock-ons, dragbacks and rolls. An opposite lateral flick chains a double touch.
+- Center the stick between flicks.
+- Skills consume stamina and expose the ball when mistimed.
 
-Keyboard: **WASD** moves/directs. Soccer **J** pass, **K** shoot, **I** lob, **U** through, **F** modifier, **Q** run/switch, **R** run, **C** shield, **L** tackle. Football **J/U/K** select receivers A/B/X, **Q** switches, **L** tackles, **C** protects, **V** strafes. Both use **Shift** to sprint, **E + arrows** for skills, **Enter/Space** to confirm, and **Escape** to pause. Football left/right arrows select the pre-snap play.
+**Soccer set pieces:** free-kick and penalty takers use the same buttons.
 
-R3 remains voice feedback. Voice-owned B cancels any associated charge without firing. Controls must return to neutral on entry/resume; pausing cancels an unfinished charge. Menus use D-pad/left stick and A, with B to resume where offered. Sports use Start/Options for pause so Y can perform through balls. FireRed retains its own Start menu and host Y pause.
+**Football passing:**
+- Football shows **A/B/X receiver icons**. Hold and release the receiver's button to throw: a brief tap lobs, a medium hold gives touch, and a longer hold drives a bullet.
+- Left stick adds bounded lead. The ball travels physically and can be dropped, broken up or intercepted.
+
+**Football kicking:** hold A to fill the kick meter, release to kick, and aim with left-stick x. If you stay idle, the CPU kicks after 6 s.
+
+**Football clock:** View/T calls a timeout.
+
+**Keyboard:**
+- Both sports: **WASD** moves and directs, **Shift** sprints, **E + arrows** perform skills, **Enter/Space** confirms and **Escape** pauses. Arrows and **Backspace** operate team select and the full-time screen.
+- Soccer: **J** pass, **K** shoot, **I** lob, **U** through, **F** modifier, **Q** run/switch, **R** run, **C** shield, **L** tackle.
+- Football: **J/U/K** select receivers A/B/X, **Q** switches, **L** tackles, **C** protects, **V** strafes, **T** calls a timeout. Left/right arrows select the pre-snap play.
+
+R3 remains voice feedback. Voice-owned B cancels any associated charge without firing. Controls must return to neutral on entry/resume; pausing cancels an unfinished charge. Menus use D-pad/left stick and A. B resumes where offered, and on the full-time screen B returns to team select. Sports use Start/Options for pause so Y can perform through balls. FireRed retains its own Start menu and host Y pause.
 
 ## Progress and runtime scope
 
-Use **Save & return** in the pause menu to create a confirmed checkpoint and return to the world. Re-entering the same game version resumes that checkpoint. Abrupt closure only retains the last confirmed checkpoint. Saves are scoped by profile, game/version, source artifact, adapter and save schema. The soccer model can migrate its version-2 state to version 3 without changing score, clock, ball position or athlete poses, and football includes its corresponding model-state migration. This does not bypass the catalog's source-artifact save identity or qualify arbitrary cross-artifact saves.
+Use **Save & return** in the pause menu to create a confirmed checkpoint and return to the world. Re-entering the same game version resumes that checkpoint. Abrupt closure only retains the last confirmed checkpoint. Saves are scoped by profile, game/version, source artifact, adapter and save schema. League models use soccer state version 4 and football schema 6. Earlier model states are rejected rather than migrated. The catalog's source-artifact save identity already keeps checkpoints from earlier sources out of the new game version, so they never resume into it.
 
 The catalog captures immutable, content-hashed module snapshots including the selected sport, shared runtime/input, physics helpers and pinned Three.js dependencies. The served artifact and save identity use those exact bytes. The current custom adapter runs **trusted built-in modules synchronously on the main thread**. It is not a qualified sandbox for arbitrary untrusted generated games, and a blocking module cannot be safely interrupted by this adapter. The broader isolation requirement in the [subgame contract](contracts/SUBGAME.md) remains open.
 
 This work extends Vishal's base-world and playable-subgame infrastructure. Shishir's independently owned improvement loop, algorithms and resource policies are unchanged; no automated generation or improvement pipeline is claimed integrated.
+
+## League qualification — 2026-10-17
+
+The [accepted requirements](plans/SPORTS_LEAGUE.md) are verified at three levels:
+- Focused model tests.
+- A free built-in CPU-vs-CPU batch.
+- Live Decisions-API CPU-vs-CPU matches.
+
+Raw reports stay under the ignored `artifacts/` directory. [Retained metadata](verification/SPORTS_LEAGUE_QUALIFICATION.json) binds every number below to its commit and source hashes.
+
+### Built-in CPU vs CPU (commit `3279845`, clean tree)
+
+`npm run sim:sports -- --specialties --ab 300` ran **13,144 deterministic matches** (Pro difficulty, seed 20261017, 12 worker threads).
+- Wall time: **13.6 min** on an Apple M4 Max (14 cores), Node 22.23.2.
+- Aggregate match work: 2.7 CPU-hours. This is runner work, not elapsed time; do not add the two.
+- Per-match simulation time: soccer 0.99 s and football 0.61 s mean, with 12 parallel workers.
+- No match failed to finish.
+
+| Soccer (one 10-min match) | Result | Band | Football (one game) | Result | Band |
+| --- | --- | --- | --- | --- | --- |
+| Goals | 5.44 | 2–7 | Points | 30.4 | 14–49 |
+| Shots | 16.7 | 8–24 | Completion | 69.1% | 55–75% |
+| Pass completion | 75.9% | 70–90% | Interceptions per attempt | 3.1% | ≤ 5% |
+| Keeper save rate | 61.7% | 55–80% | Yards per carry | 4.29 | 3.5–6 |
+| Fouls | 1.57 | 1–8 | Run share | 33.0% | 30–65% |
+| Mirror match, home share | 51.1% (46–44–10) | 40–60% | Mirror match, home share | 46.1% (41–48–11) | 40–60% |
+| Northgate 86 vs Salt Flats 64 | 99% (99–1–0) | ≥ 75% | Ironwood 86 vs Marsh Hollow 66 | 100% (100–0) | ≥ 85% |
+
+**How specialties are tested:** each one is A/B-tested by giving it to every athlete of one team (or removing it), with paired seeds and 300 matches per arm. All 21 specialties with a match-level statistic move it in the intended direction.
+
+| Soccer specialty | With vs without | Football specialty | With vs without |
+| --- | --- | --- | --- |
+| Finisher, goals per match | 2.90 vs 2.21 | Gunslinger, completion | 72.0% vs 69.4% |
+| Cannon, opposing keeper save rate | 58.3% vs 65.6% | Surgeon, completion | 69.2% vs 63.9% |
+| Playmaker, pass completion | 77.8% vs 75.8% | Sure Hands, drops per attempt | 0 vs 3.3% |
+| Interceptor, opponent pass completion | 73.5% vs 76.3% | Route Artist, completion | 82.5% vs 69.0% |
+| Ball Winner, tackles won | 7.48 vs 5.37 | Burner, yards per play | 9.38 vs 8.67 |
+| Wall, tackles conceded | 6.99 vs 9.00 | Ankle Breaker, yards per carry | 4.02 vs 3.59 |
+| Cat Reflexes, save rate | 63.6% vs 59.4% | Edge Rusher, sack rate made | 6.2% vs 4.1% |
+| | | Brick Wall, sack rate allowed | 1.9% vs 5.4% |
+| | | Ballhawk, interceptions per attempt | 5.2% vs 2.9% |
+| | | Enforcer, forced fumbles per play | 4.7% vs 2.3% |
+| | | Lockdown, completion allowed | 61.2% vs 62.8% |
+| | | Big Leg, field goals per game | 0.31 vs 0.27 |
+| | | Escape Artist, sack rate allowed | 3.1% vs 3.3% (weak) |
+| | | Bulldozer, yards per carry | 4.06 vs 4.02 (weak) |
+
+The other five soccer specialties (Trickster, Speedster, Aerial Threat, Engine, Sweeper Keeper) have no clean match statistic; focused tests cover their stated effects.
+
+**Iterations along the way.** The A/B gate drove real fixes, not just metric choices:
+- **Big Leg** promised 10 yards but gave 8.
+- **Gunslinger**'s CPU QB double-counted its faster ball by forcing tighter windows, which *raised* breakups.
+- **Lockdown**'s shrunken cushion let receivers beat it deep, raising completions allowed.
+- **Cannon** shots were capped below normal power.
+- **Escape Artist** and **Ankle Breaker** were too weak to notice.
+
+Two metrics changed:
+- **Finisher and Cannon** moved from goals per shot because these specialties also change how often the CPU shoots. Finisher is now measured by goals per match. Cannon is measured by the opposing keeper's save rate, since its effect is shots that are harder to stop.
+- **Gunslinger** moved from yards per completion to completion rate. Faster bullets beat closing defenders, while the extra range rarely binds on this field.
+
+**Sample size.** At 30 matches per arm, noise flipped real effects in both directions. Treat runs smaller than about 100 per arm as smoke tests.
+
+### Independent reviews
+
+Fable reviewers audited the shared harness code and each game model. Their findings were fixed with regression tests.
+
+**Soccer:**
+- The CPU never pressed a stationary carrier.
+- Shielding was undispossessable.
+- Keepers were a binary wall, with unequal penalty timing for humans and the CPU.
+- The ball could hover in mid-air.
+- A third yellow card crashed saves.
+- Offside was flagged on restarts.
+- Saves were credited for non-shots.
+- Finesse shots were strictly worse than plain shots.
+
+**Football:**
+- A defense could snap the CPU offense, defeating its clock management.
+- A touchdown on the last play of a half lost its conversion.
+- The two-minute warning could fire late.
+- The wrong team kicked off after a conversion turnover.
+- Some corrupt saves passed validation.
+- Jukes exceeded the speed bound.
+- A returner could back into his end zone for a free touchback.
+
+**Shared code:**
+- The replay viewer was blocked by the server CSP and its resize looped.
+- Sent-off athletes leaked into Decisions observations.
+- Retries escaped the call cap.
+- Clicks in team select could act on a stale cursor.
+- The worker pool could hang if a worker died.
+
+### Live Decisions CPU vs CPU
+
+`npm run decisions:sports -- --live` runs both teams on Decisions (`gpt-6-luna`):
+- Each team's selected athlete presses raw controller buttons every 0.25 s through `SportsInput`; the other athletes are the built-in CPU at Pro.
+- The two seats' calls run in parallel.
+- Simulation time stops while the model thinks.
+
+Six matches ran concurrently per round. In total, 12 live matches made **43,141 HTTP calls and used 118.0M input tokens**, with 15 retries, 13 transient errors (all recovered) and 3 refusals. Queue time, provider execution time and cost are unavailable from the API and recorded as `null`.
+
+| Round, commit, profile | Matchup (overalls) | Final | Calls | Wall |
+| --- | --- | --- | --- | --- |
+| 1 · `2b62c24` · v2 | Soccer: Alder 77 – Ember 76 | 3–3 | 4,803 | 7.9 min |
+| | Soccer: Northgate 86 – Salt Flats 64 | 5–1 | 4,805 | 8.2 min |
+| | Soccer: Ember 76 – Northgate 86 | 7–4 | 4,804 | 7.9 min |
+| | Football: Alder 79 – Canyon 78 | 25–13 | 2,430 | 4.0 min |
+| | Football: Ironwood 86 – Marsh Hollow 66 | 20–0 | 2,294 | 3.7 min |
+| | Football: Canyon 78 – Ironwood 86 | 18–14 | 2,536 | 4.2 min |
+| 2 · `f7c32bc` · v3 | Soccer: Alder – Ember | 0–0 | 4,804 | 10.8 min |
+| | Soccer: Northgate – Salt Flats | 3–0 | 4,805 | 10.9 min |
+| | Soccer: Ember – Northgate | 0–1 | 4,804 | 10.7 min |
+| | Football: Alder – Canyon | 0–14 | 2,602 | 5.6 min |
+| | Football: Ironwood – Marsh Hollow | 6–27 | 3,172 | 7.0 min |
+| | Football: Canyon – Ironwood | stopped at 3rd quarter, 0–0 | 1,282 | 2.2 min |
+
+**What these runs establish.** Two Decisions controllers can play complete matches through the real input path and the full rule set:
+- Fouls, yellow and red cards, offside, kickoffs, extra points, turnovers and quarter ends all occurred.
+- The median request time was 135–159 ms.
+- Every report's source hashes match its commit, and every run replays offline to the exact final state, or to its last recorded tick for the stopped run, in 0.5–2.2 s.
+- `/sports-replay?report=<name>` re-simulates a report in 3D and checks each tick's state hash.
+
+**What they do not establish is a strong Decisions opponent.** The raw-button policy plays poorly.
+
+Round 1 offered every button:
+- Soccer: it tapped B about 1,700 times per match, which in possession is a minimum-power shot, giving 36–47 weak shots per side. Taps of A made about 11% of passes complete.
+- Football: it almost never changed plays (always the default pass), never rushed or punted, and completed about 33% of passes.
+
+Round 2 offered only context-appropriate buttons and short tactical guidance:
+- Soccer: it switched players about 1,800 times per match and created little (2–14 shots per side).
+- Football: it began calling plays and running, but completed 8–39% of passes with up to 9 interceptions. Ironwood lost 6–27 to Marsh Hollow.
+- One football run stopped at tick 639. The model refused the action question three times on a live fourth-and-10 pass, and the harness never substitutes a choice.
+
+Zero sacks across both rounds is policy, not mechanics: a Decisions QB that holds the ball is sacked on 408 of 412 plays. The ratings and CPU balance evidence therefore comes from the built-in batch.
+
+**Recommended follow-up:** a stronger Decisions CPU should choose key-moment intents (on-ball option, play call, QB read) executed by the built-in engine, rather than raw buttons every 0.25 s.
+
+### Tests, build and formal audit
+
+| Check | Before (`fb5335a`) | After (`3279845`) |
+| --- | --- | --- |
+| `npm test`, three runs, median | 261 tests, 1.85 s | 325 tests, 2.00 s |
+| Clean `node scripts/build.mjs`, five runs, median (range) | 30.2 ms (28.8–34.5) | 31.3 ms (29.4–42.4) |
+
+Both columns use the same machine, Node and `node_modules`, with no compiler cache. No CI job, CI matrix or dependency was added. The evaluator and live harness are separately triggered npm scripts.
+
+The Lean audit (`node scripts/verify-sports.mjs --lean <pinned 4.35.0>`, run `sports-lean-2026-10-17T19-13-34.750Z`) passed:
+- All 15 theorems.
+- The generated sports kernel and the reused geometry runtime byte-match their proofs.
+- 4.51 s.
+
+The proofs, generated kernel and physics bridge are unchanged. Every athlete displacement, free ball flight, contact rebound and pair impulse in both rewritten models still goes through the certified acceptance checks. Rule logic, ratings, CPU decisions and rendering remain outside the proof.
+
+### Running the evaluations
+
+```sh
+npm run sim:sports -- --game soccer                      # bands and balance only (~1–2 min)
+npm run sim:sports -- --specialties --ab 300             # full qualification (~14 min on 12 workers)
+npm run sim:sports -- --game football --only lockdown --ab 300
+npm run decisions:sports -- --game soccer                # offline dry run, no API calls
+npm run decisions:sports -- --live --env-file ../../../.env --game football --seed 201 --teams 0,1 --report artifacts/sports-decisions/run.json
+npm run decisions:sports -- --replay artifacts/sports-decisions/run.json --report artifacts/sports-decisions/run-replay.json
+```
+
+**Live run limits:** `--max-calls` (≤ 20,000 HTTP attempts, retries included), `--max-wall-seconds` (≤ 7,200), `--timeout-ms` and `--retries` (default 2). Retries apply only to transport errors, HTTP 408/429/5xx and refusals, with bounded backoff.
+
+**Report contents:** compact per-tick decisions and state hashes. Observations go to a sibling `.observations.jsonl` file.
+
+**Replay rules:** replay requires the exact recorded source hashes. The browser viewer also accepts `classic-sports-v2` recordings, because v3 changed only which buttons a request offers.
+
+### Known gaps
+
+- **No human acceptance test yet.** No physical controller, and no extended real-time human playtest: the in-app browser pane was hidden, which throttles animation to about one frame per second. Team select, scoreboards, player cards, watch mode and the replay viewer were checked as rendered screens. The reviewers' scripted human-input probes (penalties, shielding, sideline runs, passing windows) are not a fun test.
+- **Football rules:** no penalty flags, onside kicks, fair catches or muffs.
+- **Soccer:** no separate volley animation, and no halves or substitutions.
+- **Weak specialties:** Escape Artist and Bulldozer show small match-level effects.
+- **Decisions CPU:** the raw-button policy is weak, as described above.
+
+The sections below record the pre-league models and the earlier one-controller harness (`classic-sports-v1`, report schema 2). They are kept as history.
 
 ## Main qualification — 2026-10-16
 
