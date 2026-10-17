@@ -1,6 +1,7 @@
 // Alder Five: an original, deterministic arcade soccer simulation. World x is
 // the goal-to-goal axis; world z (input y) is the touchline axis.
 import { certifySportsMove, stepSportsBall, certifySportsCollision, certifySportsPairCollision } from './sports-physics.js';
+import { random } from './sports-league.js';
 
 const HALF_X = 28, HALF_Z = 17, GOAL = 4.3, MATCH_SECONDS = 600;
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
