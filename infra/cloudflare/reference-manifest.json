@@ -1,0 +1,41 @@
+{
+  "schema": "gameverse.hosted-reference-manifest/1",
+  "fixture_id": "reference-key-door",
+  "request": {
+    "schema": "gameverse.reference-fixture-request/1",
+    "fixture_id": "reference-key-door",
+    "operation": "engine-demonstration",
+    "limits": {
+      "max_actions": 32,
+      "max_wall_s": 5,
+      "max_repairs": 0
+    }
+  },
+  "files": [
+    {
+      "path": "tools/prefab_pipeline/reference_fixture.py",
+      "sha256": "76c2a47dd70ebc1a5ae1a62eb8487f2b943759ad51a5de231879ce52c8d449cb"
+    },
+    {
+      "path": "tools/prefab_pipeline/__init__.py",
+      "sha256": "cb60d6fba744f8c5f21e1efbe4343a10bd43bd4f055dc813309e7cf7cef6dcd6"
+    },
+    {
+      "path": "tools/playtester/__init__.py",
+      "sha256": "f4aa8810d366cd63facfe03a4ce37587aa38530732bb3dbd8f015e010c121ed9"
+    },
+    {
+      "path": "tools/playtester/adapters.py",
+      "sha256": "fffa9d2263d6d6503d6aae73865f2dc06c5393879d436d2ead56140e274cf952"
+    },
+    {
+      "path": "tools/playtester/core.py",
+      "sha256": "79970845c607d98877c2629a2ff7ec55e07383efedb9bcdb89ceca4372ae268c"
+    },
+    {
+      "path": "tools/playtester/examples/key-door.json",
+      "sha256": "f8f21151b29c8a257c6613e98c9a9e55038b2d82f674174caeec7513f96996a0"
+    }
+  ],
+  "manifest_sha256": "b723b585675e0e012776db19d20a92f54c0e5b0f6610f6b3f5fd4b2ed406908b"
+}

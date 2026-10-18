@@ -1,0 +1,106 @@
+{
+  "schema": "gameverse.hosted-connected-agent-qualification/1",
+  "recorded_at": "2026-10-18T18:07:55.028Z",
+  "origin": "https://gameverse.build",
+  "execution_deployment": "580ef758-2424-49ad-bcd3-e74e0866b40a",
+  "source_commit": "38eaa4cb584018cb47eeab9c7998f8401ed95410",
+  "source_dirty": true,
+  "execution_source_receipt": "hosted-phone-agent-pilot-20261018.json",
+  "provider": "claude",
+  "auth_method": "browser",
+  "credential_source": "Human-authorized personal connection; no local provider cache copied",
+  "runs": [
+    {
+      "run_id": "534457e6-d26d-460c-afab-5036a3439776",
+      "scenario": "pending request resumes after human authorization",
+      "success": true,
+      "checks": {
+        "source_changed": true,
+        "addition_cases_passed": true
+      },
+      "target": "public-addition-fixture",
+      "baseline": "addition-todo/1",
+      "cli_version": "2.1.252",
+      "runtime_sha256": "8a0148e3bb79688e3f8aef25914ec423885420bbab1bd1c2837112aa42671a85",
+      "source_sha256": "ba1a531f581d2e6094e978ed6f7aca7a8d92eeb62c6e7ad73ee692f7f18bc772",
+      "num_turns": 4,
+      "reported_cost_usd": 0.23837049999999999,
+      "cost_scope": "Provider-reported usage value, not an observed subscription charge or invoice",
+      "timing": {
+        "request_created_at": "2026-10-18T17:52:52.891Z",
+        "sandbox_started_at": "2026-10-18T17:55:28.258Z",
+        "finished_at": "2026-10-18T17:55:57.937Z",
+        "total_ms": 185046,
+        "queue_ms": 88,
+        "agent_runtime_ms": 12894,
+        "post_admission_ms": 29679,
+        "request_to_admission_ms": 155367,
+        "build_ms": null,
+        "simulation_ms": null,
+        "evaluation_ms": null,
+        "repair_attempts": null
+      },
+      "cleanup_confirmed": true
+    },
+    {
+      "run_id": "adfc6973-d0b5-4c17-878c-9443f9786813",
+      "scenario": "fresh sandbox reuses saved connection",
+      "success": true,
+      "checks": {
+        "source_changed": true,
+        "addition_cases_passed": true
+      },
+      "target": "public-addition-fixture",
+      "baseline": "addition-todo/1",
+      "cli_version": "2.1.252",
+      "runtime_sha256": "8a0148e3bb79688e3f8aef25914ec423885420bbab1bd1c2837112aa42671a85",
+      "source_sha256": "ba1a531f581d2e6094e978ed6f7aca7a8d92eeb62c6e7ad73ee692f7f18bc772",
+      "num_turns": 4,
+      "reported_cost_usd": 0.09181399999999999,
+      "cost_scope": "Provider-reported usage value, not an observed subscription charge or invoice",
+      "timing": {
+        "request_created_at": "2026-10-18T17:55:34.073Z",
+        "sandbox_started_at": "2026-10-18T17:55:58.053Z",
+        "finished_at": "2026-10-18T17:56:28.220Z",
+        "total_ms": 54147,
+        "queue_ms": 23980,
+        "agent_runtime_ms": 11920,
+        "post_admission_ms": 30167,
+        "request_to_admission_ms": 23980,
+        "build_ms": null,
+        "simulation_ms": null,
+        "evaluation_ms": null,
+        "repair_attempts": null
+      },
+      "cleanup_confirmed": true
+    }
+  ],
+  "independent_cleanup_checks": {
+    "checked_at": "2026-10-18T18:06:20.349Z",
+    "results": [
+      {
+        "run_id": "50d8e446-d53b-4c74-b703-ed21f6d96b48",
+        "deleted": true,
+        "state": "not_found"
+      },
+      {
+        "run_id": "534457e6-d26d-460c-afab-5036a3439776",
+        "deleted": true,
+        "state": "not_found"
+      },
+      {
+        "run_id": "adfc6973-d0b5-4c17-878c-9443f9786813",
+        "deleted": true,
+        "state": "not_found"
+      }
+    ]
+  },
+  "limits": [
+    "Two fixed public Python coding tasks, not a game improvement",
+    "New compact-UX authorization progress tested with synthetic local browser/API fixtures, without replacing the working live connection",
+    "Provider login/expiry recovery is not fully qualified",
+    "Game-specific build/simulation/activation and Shishir harness revisions remain outside this proof",
+    "Total request latency can include human authorization and queue; runtime and post-admission durations are nested, not additive",
+    "Provider CLI installation remains per disposable sandbox; no warm production image is qualified"
+  ]
+}

@@ -19,6 +19,9 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");
   try {
     const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    if(path==='/account') {
+      res.writeHead(303,{Location:'https://gameverse.build/account'}).end();return;
+    }
     if (await handleVoice(req, res, path)) return;
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end(); return; }
     if (path === '/runtime/identity.json') {

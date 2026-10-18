@@ -1,0 +1,105 @@
+{
+  "schema": "gameverse.hosted-phone-agent-pilot/1",
+  "run_id": "d71ddd7e-84bc-487c-92da-32a29aebf723",
+  "recorded_at": "2026-10-18T17:53:18.870Z",
+  "source_commit": "38eaa4cb584018cb47eeab9c7998f8401ed95410",
+  "source_dirty": true,
+  "source_files_sha256": {
+    "package.json": "1118a55735be5e8918fb5002567bd10e5874af08bd4c7c11020209c581f93874",
+    "package-lock.json": "205024699f5ece875fcd2c2509617c4ac5f190da75e0816d30660f0dbf93b7e8",
+    "wrangler.staging.jsonc": "2e1ab1e8a22cadd1b31832fad82677b7cf33be27332dc03a2657019d3e9a8e34",
+    "scripts/build.mjs": "ecc1362ae822bf93065e4795ec11cf74fd8115bc0b9630a00176dba8a51edc31",
+    "scripts/hosting-smoke.mjs": "de30f5c48999d767e3a15e8b03511804427cdb9e1371ca768b76b75b40521447",
+    "account.html": "30e6e8dc9b9b9d91c83e6afd9cb8f4a28c9c1be3e9d5711d8e24ab5359c4c594",
+    "account.css": "3d9ee49a4478b2240d3fb4ce71fd6706189d00a476b616e4e0a19d8c8846499f",
+    "src/account-page.js": "7054d869e8b36e89317bbd5576f6754ea5943ff088c076d9039d687ddc5294a9",
+    "src/phone-input.js": "9e6770c31fa0d2dc817c7ed8f8f7fe187c3f88891e91d3829b97a1449316088c",
+    "infra/cloudflare/account-jobs.js": "0cda359d6384675eb6d9849ca7a812d567a580dd8be7f5db5ed0d2efea77c42a",
+    "infra/cloudflare/agent-connections.js": "4fe57a6e6c018726c53f34608c48417131429aa86cdb2184c126156294d4d9b5",
+    "infra/cloudflare/claude-runtime.js": "f249811000b5ce069814c068416613b583411c7e57cb1e47ee42b7f49bfa180c",
+    "infra/cloudflare/credential-vault.js": "e0d97b69381ab605e5fe2652e6ba7e72e5ee688e72dd56045aea6cfae0eb1471",
+    "infra/cloudflare/daytona.js": "dc28adb3cb443838fe9c6b6f940f0618177e062a7c0bd8f3187fce4f264c7bb8",
+    "infra/cloudflare/identity-state.js": "38b26fbb7b2454cf85b1f82d647780985395fa994706544bbee06b6a7b454ceb",
+    "infra/cloudflare/phone-sign-in.js": "c1ad019ddbc1d63a47fae151a36951d025bcf124209a01f9219b27743b1c0168",
+    "infra/cloudflare/platform-api.js": "836c353ddf4b98a2c2d3a65bb4ea4595849b67c30965bfd12b53b24b8ea264b2",
+    "infra/cloudflare/project-state.js": "860031de34b82d6ef25558fc2b717dc111880156eaaab637c57c28207baaac14",
+    "infra/cloudflare/reference.js": "e081b2667b7b3036fcc37194502b8ce1964d49403cf5f2f8f2e00ad3e8d36e25",
+    "infra/cloudflare/sandbox-admission.js": "57bbc6810048ee6e7662b261bcb54b1c28408120c68c67098a611e907df52648",
+    "infra/cloudflare/worker.js": "5e6881d1c42fe3fff7fc15c07fb4df0cd30f7952c9a01a96dbf2c4584e3d3881",
+    "tests/hosting/cloudflare.test.js": "7e4a4c5d2abb2d83ddb197a85ab74a960f70d34b59e18a146fc790addb03f8a8",
+    "tests/hosting/connections.test.js": "4033c5aa8e835f7e5cae5423b24b6d137acc187b0dcb3e25fb4e134dd4cc508c",
+    "tests/hosting/jobs.test.js": "b156df933fb3206deec718be41723656055ca41daa141a1bf0ccb8ddfc861a86",
+    "tests/hosting/phone-input.test.js": "b3ebcc87840b7cc567259626548abe2b7aaa6fd08fb9a135b822844d39c93ad0",
+    "tests/hosting/phone.test.js": "1a211c7d03c2174c271ef5327db16567749b5e5f4de7dd63c5f7bcd12859ee97"
+  },
+  "origin": "https://gameverse.build",
+  "worker": "gameverse-host-staging",
+  "deployment_version": "580ef758-2424-49ad-bcd3-e74e0866b40a",
+  "previous_deployment_version": "5d8b7d1a-fe85-48f8-89cd-0daf5c5719ed",
+  "shared_staging_data": true,
+  "local_checks": {
+    "passed": 28,
+    "failed": 0,
+    "runner_wall_ms": 1530.500792,
+    "providers": "synthetic",
+    "queue_ms": null
+  },
+  "frontend_copy": {
+    "mode": "clean",
+    "cache": "warm filesystem and installed dependencies",
+    "before_ms": 35,
+    "after_country_ms": 36.8,
+    "after_connection_layout_ms": 35.7,
+    "phone_bundle_bytes": 178716,
+    "phone_bundle_gzip_bytes": 42996
+  },
+  "worker_bundle": {
+    "raw_kib": 62.91,
+    "gzip_kib": 15.95
+  },
+  "deployment": {
+    "asset_upload_seconds": 0.87,
+    "worker_upload_seconds": 4.37,
+    "trigger_seconds": 1.09,
+    "reported_startup_ms": 2,
+    "wall_ms": null
+  },
+  "custom_domain_smoke": {
+    "run_id": "45fd9111-0d2e-431c-9c1e-ac9bf8103857",
+    "passed": 4,
+    "requests": 15,
+    "wall_ms": 1870.005208,
+    "daytona_jobs": 0,
+    "model_calls": 0
+  },
+  "real_runtime_probes": [
+    {
+      "purpose": "file-transfer/runtime",
+      "total_ms": 721,
+      "cleanup_confirmed": true,
+      "model_calls": 0
+    },
+    {
+      "purpose": "Claude authorization URL launch",
+      "total_ms": 7015,
+      "install_ms": 4841,
+      "cleanup_confirmed": true,
+      "model_calls": 0
+    }
+  ],
+  "phone_sign_in": "observed authenticated browser session",
+  "claude_connection": "awaiting human provider authorization",
+  "connected_agent_job": "not yet qualified",
+  "game_improvement": "not tested",
+  "prior_failures": [
+    "Two create configurations rejected before allocation: snapshot resources; queue timeout entitlement",
+    "First Claude launcher failed: expected obsolete JavaScript entrypoint; sandbox deleted",
+    "Custom-domain smoke first invocation rejected by local destination guard before network request"
+  ],
+  "timing_limits": [
+    "No CI queue/execution timing",
+    "No native game build/simulation/evaluation timing",
+    "Runtime probes exclude human authorization and are not authenticated model execution",
+    "Synthetic test groups overlap; do not sum durations"
+  ]
+}
