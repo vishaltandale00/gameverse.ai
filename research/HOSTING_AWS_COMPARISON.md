@@ -1,5 +1,7 @@
 # Managed AWS hosting cost reference
 
+Status as of 2026-10-17: historical comparison alternative. The selected [hosting plan](../plans/HOSTING.md) now uses Cloudflare Workers, Durable Objects and R2 plus Daytona Cloud. AWS rates below retain their original verification date; they are not required infrastructure for that plan.
+
 Verified 2026-10-16. This is a pricing model, not a deployed or load-tested configuration. USD, `us-east-1`, on-demand pricing, a 30-day/720-hour month, no credits, free trials, commitments, taxes, or paid support. Prices and service capabilities are primary-source verified except the explicitly qualified NAT regional estimate below.
 
 ## Consistent configuration

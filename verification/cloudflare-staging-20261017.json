@@ -1,0 +1,133 @@
+{
+  "schema": "gameverse.hosting-setup/1",
+  "recorded_at": "2026-10-17T15:51:38.352Z",
+  "source_commit": "41b7e125e532c9fa4e1782657364452f01d62805",
+  "source_files_sha256": {
+    "infra/cloudflare/worker.js": "8e99e0e4866ff2340a9e86035ccfde8e3dbfb1773e3aa0bda9929610d3f76d03",
+    "infra/cloudflare/project-state.js": "860031de34b82d6ef25558fc2b717dc111880156eaaab637c57c28207baaac14",
+    "wrangler.staging.jsonc": "8bd95c01dc3e15cc4dcfe6ec92d921b62400eb4f016c205de6429cbb3f1f8017",
+    "package-lock.json": "a55118749c4d2fa20636419e1e70e364107ec74395bf62f11eff2f6a60d8be4d"
+  },
+  "environment": {
+    "node": "v22.23.2",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "wrangler": "4.151.1"
+  },
+  "checks": {
+    "local_workerd": {
+      "passed": 5,
+      "runner_wall_ms": 1122.5885,
+      "includes": "SQLite/R2 restart persistence",
+      "credentials": "fixtures only"
+    },
+    "worker_dry_run": {
+      "outcome": "passed",
+      "upload_kib": 6.62,
+      "gzip_kib": 2.56
+    },
+    "bundle_secret_scan": "passed"
+  },
+  "measurements": {
+    "before_baseline": null,
+    "ci_queue_ms": null,
+    "ci_job_ms": null,
+    "native_build_ms": null,
+    "improvement_run_ms": null
+  },
+  "cloud": {
+    "r2_bucket": "gameverse-artifacts-staging",
+    "r2_created": true,
+    "worker_deployment": "deployed",
+    "version_id": "a58ac505-1140-48a0-b1a2-87664cc1843a",
+    "origin": "https://gameverse-host-staging.gameverse-environment.workers.dev",
+    "r2_public_access": "disabled"
+  },
+  "daytona_jobs": 0,
+  "model_calls": 0,
+  "deployment_attempts": [
+    {
+      "outcome": "rejected",
+      "provider_error": 100328,
+      "reason": "Workers Free rejects configured CPU limit",
+      "observed_at": "2026-10-17T15:51:38.352Z"
+    },
+    {
+      "outcome": "deployed",
+      "version_id": "a58ac505-1140-48a0-b1a2-87664cc1843a",
+      "origin": "https://gameverse-host-staging.gameverse-environment.workers.dev",
+      "observed_at": "2026-10-17T15:53:20.010Z",
+      "provider_reported_upload_s": 1.81,
+      "provider_reported_triggers_deploy_s": 0.49,
+      "provider_reported_worker_startup_ms": 2,
+      "total_wall_ms": null
+    }
+  ],
+  "live_smoke": {
+    "schema": "gameverse.hosting-smoke/1",
+    "run_id": "d632b22e-4e1b-45d2-88eb-892d93a1fd56",
+    "recorded_at": "2026-10-17T15:52:46.036Z",
+    "origin": "https://gameverse-host-staging.gameverse-environment.workers.dev",
+    "source_commit": "41b7e125e532c9fa4e1782657364452f01d62805",
+    "source_files_sha256": {
+      "infra/cloudflare/worker.js": "8e99e0e4866ff2340a9e86035ccfde8e3dbfb1773e3aa0bda9929610d3f76d03",
+      "infra/cloudflare/project-state.js": "860031de34b82d6ef25558fc2b717dc111880156eaaab637c57c28207baaac14",
+      "wrangler.staging.jsonc": "8bd95c01dc3e15cc4dcfe6ec92d921b62400eb4f016c205de6429cbb3f1f8017",
+      "package-lock.json": "a55118749c4d2fa20636419e1e70e364107ec74395bf62f11eff2f6a60d8be4d"
+    },
+    "checks": [
+      {
+        "name": "public liveness and denied anonymous administration",
+        "outcome": "passed"
+      },
+      {
+        "name": "secret binding presence and disabled job dispatch",
+        "outcome": "passed"
+      },
+      {
+        "name": "project creation and idempotent retry",
+        "outcome": "passed"
+      },
+      {
+        "name": "R2 round trip, immutable retry, digest and project boundaries",
+        "outcome": "passed"
+      }
+    ],
+    "requests": 15,
+    "wall_ms": 1506.757709,
+    "wall_scope": "HTTP smoke only; excludes dependency setup, bundle, deployment and queue time",
+    "machine": {
+      "node": "v22.23.2",
+      "platform": "darwin",
+      "architecture": "arm64"
+    },
+    "queue_ms": null,
+    "native_gameplay": "not-tested",
+    "runtime_restart": "local-only",
+    "daytona_jobs": 0,
+    "model_calls": 0,
+    "retained_fixture_project_ids": [
+      "d632b22e-4e1b-45d2-88eb-892d93a1fd56",
+      "c25e7f6d-f159-499b-98a9-a358c9172b28"
+    ],
+    "retained_fixture_bytes": 64
+  },
+  "updated_at": "2026-10-17T15:53:20.010Z",
+  "support_files_sha256": {
+    "scripts/hosting-smoke.mjs": "1e23c6fea6b1832e8b739234b76b194dbfe0f7a55088daf7be822cb7e90d7a5a",
+    "scripts/hosting-secrets.mjs": "bb0574d1b0d02ba7ad17ad9267524298872b13371ed2bf3f3d52b205e85a51db",
+    "tests/hosting/cloudflare.test.js": "ddb816b146f5a4661478c4fd6407f7a9841c599a126f20d3f752da801a8b34c1"
+  },
+  "evidence_limits": [
+    "Staging operator authorization only; player login and memberships are not implemented.",
+    "Persistence across restart was verified locally; live smoke uses separate HTTP requests, not a forced remote object eviction.",
+    "Daytona key presence is verified, not authentication or job execution.",
+    "Native game hosting, candidate activation and improvement integration are not exercised.",
+    "No earlier comparable hosting baseline or remote CI timing exists."
+  ],
+  "source_dirty": true,
+  "deployed_secret_types": {
+    "DAYTONA_API_KEY": "secret_text",
+    "STAGING_API_TOKEN": "secret_text"
+  }
+}

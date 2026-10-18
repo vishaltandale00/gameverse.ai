@@ -1,27 +1,30 @@
 # Hosting provider comparison
 
-Date: 2026-10-16 · Scope: shared browser-game hosting and disposable improvement execution. Prices are USD list-price calculations, not measured bills or performance benchmarks.
+Updated: 2026-10-17 (Cloudflare selection/rates); AWS/Railway reference rates retain their 2026-10-16 verification date. Scope: shared browser-game hosting and disposable improvement execution. Prices are USD list-price calculations, not measured bills or performance benchmarks.
 
 ## Conclusion
 
-AWS can host the complete product with managed services: ECS Fargate for the web service and improvement jobs, RDS PostgreSQL for the database, and S3 for durable files. Railway is an alternative application platform, not a required component of AWS. Daytona is an optional workspace service that can simplify agent integration. The architecture does not require two providers.
+The selected stack is **Cloudflare Workers + SQLite-backed Durable Objects + R2, with Daytona Cloud for disposable coding and verification jobs**. D1 can hold shared account/project listings where needed. One project object owns version/run metadata and coordinates external jobs through short handlers, callbacks and recovery alarms; files remain in R2 and native tools run in Daytona. See the [hosting plan](../plans/HOSTING.md) for the current architecture and setup.
 
-The earlier conversation mixed a self-managed Lightsail server/database with managed Fargate/RDS, and used an arbitrary $50 shared-hosting budget. The comparisons below identify the actual components and keep the modeled customer workload fixed. Operational effort is described by responsibility; there is no measured basis for the earlier maintenance-hours estimates.
+Cloudflare replaces the earlier selected Fargate/ALB/RDS/S3 product hosting. It removes server/database-instance management but requires adapting the existing local Node server to Workers and partitioning metadata by project. AWS remains a conventional container/PostgreSQL alternative; Railway remains an application-platform alternative. These are choices, not layers required underneath Cloudflare or Daytona Cloud.
+
+The earlier conversation also mixed self-managed Lightsail with managed Fargate/RDS and used an arbitrary $50 hosting budget. The historical alternatives below retain explicit components. No measured maintenance-hours or equal-performance claim follows from these cost tables.
 
 ## Fixed workload and limits of comparison
 
 - 100 modeled customers, each retaining 5 GB of source, configs, artifacts, saves and evidence: 500 GB total.
 - Each customer uses 30 billable improvement hours/month. Each job requests 2 vCPUs, 4 GiB RAM and 20 GiB temporary disk. Jobs upload results and terminate; there is no persistent per-user workspace disk.
-- The shared application runs throughout a 720-hour month. The game itself runs in the browser. A single app instance and a single database instance are used for this pilot model; no app or database high availability is priced.
+- Browser gameplay runs on the client. Cloudflare hosting is event-driven; the $5 Workers account subscription, included usage and 500 GB-month R2 storage are modeled below. AWS/Railway examples retain their 720-hour app/database pilot assumptions, with no app/database high availability priced.
 - For Railway, assume 1 GB app RAM plus 1 GB database RAM, 0.25 combined average vCPU use, and a 20 GB database volume. CPU use is an assumption, not a measurement. Railway bills usage, while AWS Fargate/RDS have different reserved/burstable capacity models.
 - For managed AWS, use an app Fargate task with 0.5 vCPU/1 GiB, RDS PostgreSQL db.t4g.micro with 1 GiB and 20 GiB gp3, and an HTTPS Application Load Balancer. Linux/x86 Fargate and US East prices are used. The ARM-based RDS instance is a separate managed database, not an assumption that the game toolchain supports ARM.
 
-These are alternative small configurations for the same proposed workload, not proven equal performance or a claim that either configuration supports 100 active players. Measure actual RAM, CPU, concurrency and startup/build/evaluation time before sizing production. Equal billable job hours are assumed; different runtime performance would change the comparison.
+These are alternative small configurations for the same proposed workload, not proven equal performance or a claim that any configuration supports 100 active players. Measure actual RAM, CPU, concurrency and startup/build/evaluation time before sizing production. Equal billable job hours are assumed; different runtime performance would change the comparison.
 
 ## What each setup contains
 
 | Setup | Shared app and database | Improvement execution | What it buys |
 | --- | --- | --- | --- |
+| **Cloudflare plus Daytona Cloud (selected)** | Workers/Static Assets, project Durable Objects, optional D1 account index and R2 | Daytona-hosted disposable sandbox | Event-driven hosting and a workspace SDK; two providers |
 | Railway plus Daytona Cloud | Railway Node service, PostgreSQL template and bucket | Daytona-hosted disposable sandbox | Application deployment defaults plus a workspace SDK; two providers |
 | Managed AWS plus Daytona Cloud | ECS Fargate web service, ALB, RDS and S3 | Daytona-hosted disposable sandbox | AWS hosts the product; Daytona supplies workspace features; two providers |
 | Managed AWS only | Same ECS Fargate web service, ALB, RDS and S3 | Standalone ECS Fargate task per improvement | All application data/compute on AWS; our worker implements the run protocol |
@@ -32,13 +35,31 @@ ECS explicitly supports standalone tasks that do work and stop, and Fargate mana
 
 ## Cost calculation
 
-### Shared product hosting
+### Selected Cloudflare hosting baseline
+
+At 100 customers retaining 5 GB each:
+
+```text
+Workers Paid subscription = $5/month
+R2 Standard = (500 GB-month − 10 included) × $0.015 = $7.35/month
+Cloudflare baseline = $12.35/month = $0.1235/customer
+Daytona = 30 × $0.16776 = $5.0328/customer
+Combined baseline = $5.1563/customer = $515.63/month for 100 customers
+```
+
+Assume the account's included allowances remain available: Workers 10 million requests/30 million CPU-ms; Durable Objects 1 million requests/400,000 GB-s; object SQLite 5 GB-month/25 billion rows read/50 million rows written; optional D1 its own 5 GB/25 billion reads/50 million writes; R2 1 million Class A/10 million Class B operations monthly. These are account-wide allowances, not per-customer entitlements. Usage overages, billing-unit rounding and the hosting plan's exclusions must be added. This is not a measured bill or all-in cap.
+
+Durable Object duration is wall time while active or unable to hibernate. Do not keep an object waiting on a full coding job: persist intent/provider identity, return, and use callbacks plus sparse recovery alarms. Alarms may repeat and have finite built-in retries. Request deduplication, launch reconciliation and bounded cleanup remain application responsibilities. Large files stay in R2 rather than the object's SQLite storage. R2 Standard internet egress is free; operations remain metered. [Workers/D1 rates](https://developers.cloudflare.com/workers/platform/pricing/), [object billing](https://developers.cloudflare.com/durable-objects/platform/pricing/), [R2 rates](https://developers.cloudflare.com/r2/pricing/), [alarms](https://developers.cloudflare.com/durable-objects/api/alarms/)
+
+Cloudflare also offers Linux sandbox containers, making an all-Cloudflare executor possible. It is outside the selected initial stack: qualify an equivalent full harness job, resource footprint, runtime constraints and lifecycle billing before comparing it with Daytona. A Durable Object by itself is not the native compiler/verification runtime. [Cloudflare Sandboxes](https://developers.cloudflare.com/sandbox/)
+
+### Historical AWS and Railway shared hosting alternatives
 
 | Monthly component | Railway | Managed AWS |
 | --- | ---: | ---: |
 | Web app and database compute | $25.00: 2 GB RAM at $10/GB-month plus 0.25 average vCPU at $20/vCPU-month | $17.77 app task plus $11.52 RDS db.t4g.micro |
 | Database disk | $3.00: 20 GB at $0.15/GB-month | $2.30: 20 GB gp3 at $0.115/GB-month |
-| 500 GB durable objects | $7.50 at $0.015/GB-month | $11.50 at $0.023/GB-month in S3 Standard |
+| 500 GB retained files | $7.50 at $0.015/GB-month | $11.50 at $0.023/GB-month in S3 Standard |
 | Application task public IPv4 | Included within the application platform pricing | $3.60 for 720 hours |
 | HTTPS/load balancing | Included within the application platform pricing | $16.20 ALB hourly charge plus $7.20 for two public IPv4 addresses |
 | ALB capacity units | No separate ALB component | $5.76 assuming one average LCU; actual usage can differ |
@@ -65,20 +86,24 @@ Both job estimates include time waiting for model responses while allocated reso
 
 ### Combined monthly cost per customer
 
-All rows use the shared hosting model above and 100 customers. Amounts are rounded after calculation.
+All rows use 100 customers and the corresponding shared hosting models above. Cloudflare assumes usage within its included account allowances; add overages. Amounts are rounded after calculation.
 
-| Improvement hours per customer | Railway plus Daytona | Managed AWS plus Daytona | Managed AWS plus Fargate jobs |
-| --- | ---: | ---: | ---: |
-| 0 | $0.36 | $0.76 | $0.76 |
-| 10 | $2.03 | $2.44 | $1.80 |
-| 30 | **$5.39** | **$5.79** | **$3.87** |
-| 100 | $17.13 | $17.53 | $11.13 |
+| Improvement hours per customer | Cloudflare plus Daytona (selected baseline) | Railway plus Daytona | Managed AWS plus Daytona | Managed AWS plus Fargate jobs |
+| --- | ---: | ---: | ---: | ---: |
+| 0 | $0.12 | $0.36 | $0.76 | $0.76 |
+| 10 | $1.80 | $2.03 | $2.44 | $1.80 |
+| 30 | **$5.16** | **$5.39** | **$5.79** | **$3.87** |
+| 100 | $16.90 | $17.13 | $17.53 | $11.13 |
 
 Example: managed AWS at 30 job hours is ($75.8532 / 100) + (30 × $0.10374) = $3.870732/customer, or $387.07 total for 100 customers. With the same AWS backend, Daytona instead of Fargate adds about $1.92/customer for 30 job hours. That premium purchases platform features and is not a measured estimate of engineering time saved.
 
-These are component subtotals, not all-in operating costs. Excluded: model usage paid through customer credentials, transcription, request/data-transfer/CDN charges, registry/image storage, logs/monitoring, secrets/KMS, extra backup storage, domain/DNS, taxes, payments and engineering/support labor. No trial credits, startup grants, Spot or commitments are assumed. ALB capacity units are explicitly modeled; other usage remains unpriced. Railway's bucket egress is currently free, whereas S3 and cross-provider traffic require their own calculation.
+These are component subtotals, not all-in operating costs. Excluded: model usage paid through customer credentials, transcription, request/data-transfer/CDN charges, registry/image storage, logs/monitoring, secrets/KMS, extra backup storage, domain/DNS, taxes, payments and engineering/support labor. No trial credits, startup grants, Spot or commitments are assumed. ALB capacity units are explicitly modeled in AWS. Cloudflare usage within allowances and R2 free internet egress are explicit baseline inputs, with overages added separately. Railway bucket egress is free under the cited pricing, whereas S3 transfer needs its own calculation.
 
 ## Operational responsibilities
+
+For the selected Cloudflare stack, Cloudflare operates runtime/object/storage infrastructure. We own authorization, bindings, SQLite/D1 migrations and queries, R2 retention, data export/restore validation, rollout, observability and correct run/activation state. Account indexes and project state are not one cross-object transaction. Persist accepted state in the owning object and reconcile secondary indexes or orphaned file uploads. This is less infrastructure to configure than the AWS reference, with more dependence on Cloudflare's runtime and storage APIs.
+
+The remaining table compares historical alternatives:
 
 | Responsibility | Railway platform and supported PostgreSQL template | AWS Fargate and RDS | Self-managed Lightsail VM and PostgreSQL |
 | --- | --- | --- | --- |
@@ -108,8 +133,8 @@ Railway lists Bring Your Own Cloud under its custom Enterprise offering, but the
 
 ## Selected direction after review
 
-Vishal selected **managed AWS hosting plus Daytona Cloud coding and verification jobs** on 2026-10-16. The [hosting plan](../plans/HOSTING.md) is the current implementation direction. The choice favors ready-made sandbox/workspace APIs for quickly preparing an environment, coding, building, verifying and submitting work; interactive sessions are optional. Durable source/artifacts remain in S3, with no persistent sandbox per user. The modeled cost is $5.79/customer at 100 customers and 30 job hours each, before excluded items.
+Vishal selected **Cloudflare Workers, Durable Objects and R2 plus Daytona Cloud coding and verification jobs** on 2026-10-17, superseding the AWS hosting choice made the previous day. The [hosting plan](../plans/HOSTING.md) and [issue #16](https://github.com/vishaltandale00/gameverse.ai/issues/16) carry that direction. Durable source/artifacts remain in R2; no persistent sandbox per user is needed. The baseline at 100 customers and 30 job-hours each is **$5.16/customer**, before Cloudflare overages and excluded items, compared with the previous AWS + Daytona model's $5.79.
 
-Direct Fargate coding jobs remain a lower resource-cost alternative, approximately $1.92/customer less at 30 job hours under the same AWS hosting assumptions. That difference is not a measured estimate of engineering time saved. Railway is outside the selected stack. Daytona BYOC remains a separate commercial/operations option, not a presumed shortcut to public Fargate rates with Daytona features.
+Direct Fargate coding jobs, Railway, Daytona BYOC and Cloudflare sandbox containers remain alternatives. Compare complete equivalent workloads, not nominal startup or isolated hourly prices. These research tables do not authorize deployment or certify runtime capacity.
 
-The first qualification should use one pinned Linux toolchain and the real harness: source hydration, requested source change, build, supported play/simulation checks, candidate upload, cancellation/failure cleanup, sandbox deletion and a later run reconstructed from durable state. Compare identical inputs and record billable resources, queue/total/stage timings and failures before setting customer allowances. This comparison is research evidence, not a deployed configuration; the hosting plan and issue #16 carry the selected direction.
+The first integration should use the public reference fixture: durable request → disposable Daytona job → R2 outputs → validated candidate receipt → deletion, including object restart and reconstruction from retained state. Then qualify native compilation, a real source/mechanics change, supported play/simulation verification, cancellation/failure cleanup and safe host activation. Record billable resources, queue/total/stage timings and failures before setting commercial allowances.
