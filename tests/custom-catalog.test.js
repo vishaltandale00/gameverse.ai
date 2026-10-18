@@ -10,7 +10,7 @@ const artifactHash = files => {
   for (const [name, bytes] of files) hash.update(name).update('\0').update(String(bytes.length)).update('\0').update(bytes);
   return hash.digest('hex');
 };
-const expectedShared = ['sports-runtime.js','sports-input.js','sports-feedback.js','gamepad.js','sports-physics.js','sports-certified.generated.js',
+const expectedShared = ['sports-runtime.js','sports-input.js','sports-feedback.js','gamepad.js','sports-physics.js','sports-league.js','sports-certified.generated.js',
   'neighborhood-safety.js','neighborhood-certified.generated.js','three.module.js','three.core.js'];
 
 test('custom identity hashes exact captured source bytes, filenames and complete selected module set', async () => {

@@ -984,6 +984,37 @@ body.playing-subgame #player {
 .sports-playbook:empty { display:none; }
 .sports-playbook button { background:#243c49; color:#e8f0ed; border:1px solid #6c899966; border-radius:5px; padding:12px 22px; font-size:13px; white-space:nowrap; }
 .sports-playbook button[aria-pressed=true] { background:#b9f06b; color:#15302a; border-color:#dcffa6; }
+.sports-period { display:flex; align-items:center; padding:0 12px; background:#1d3342; font:700 12px monospace; letter-spacing:1px; color:#e4ff9c; }
+.sports-ticker { list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:4px; max-width:360px; }
+.sports-ticker li { font-size:11px; letter-spacing:.4px; padding:5px 10px; background:#0b1c29d6; border-left:3px solid #72e6cf; border-radius:0 4px 4px 0; color:#eef4ea; }
+.sports-ticker li:nth-child(n+2) { opacity:.72; }
+/* Team select and full-time summary share the intro card treatment. */
+.sports-setup, .sports-summary { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:min(560px,calc(100% - 32px)); padding:26px 30px; text-align:center;
+  background:#0b1c29ee; border:1px solid #ffffff26; border-radius:10px; box-shadow:0 16px 80px #0008; backdrop-filter:blur(10px); }
+.sports-setup .sports-label, .sports-summary .sports-label { display:block; color:#82e9d3; font-size:11px; letter-spacing:3px; margin-bottom:8px; }
+.sports-setup h2, .sports-summary h2 { margin:0 0 16px; font-size:clamp(20px,2.6vw,30px); font-weight:800; color:#f6f3e9; }
+.sports-setup-rows { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+.sports-setup-row { --team:#4a6170; display:grid; grid-template-columns:110px 34px 1fr 34px; align-items:center; gap:6px; padding:6px 8px; border-radius:6px; border:1px solid transparent; background:#13293a; }
+.sports-setup-row[aria-selected=true] { border-color:#b9f06b; background:#1b3647; box-shadow:0 0 0 1px #b9f06b44; }
+.sports-setup-row span { font-size:10px; letter-spacing:2px; color:#a9c3c9; text-align:left; }
+.sports-setup-row strong { font-size:13px; color:#f2f5ed; border-left:4px solid var(--team); padding:4px 8px; text-align:left; }
+.sports-setup-row button { background:#243c49; color:#e8f0ed; border:1px solid #6c899966; border-radius:4px; padding:4px 0; font-size:11px; }
+.sports-setup-start, .sports-summary-actions button { border:0; border-radius:5px; background:#b9f06b; color:#152a24; font-size:13px; font-weight:700; padding:12px 22px; }
+.sports-summary-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+.sports-summary-actions button + button { background:#243c49; color:#e8f0ed; }
+.sports-setup-hint { margin:12px 0 0; font-size:11px; color:#a9c3c9; }
+.sports-summary table { width:100%; border-collapse:collapse; margin-bottom:12px; font-variant-numeric:tabular-nums; }
+.sports-summary th { font-size:12px; letter-spacing:1px; padding:4px 6px; color:#82e9d3; }
+.sports-summary td { font-size:12px; padding:4px 6px; border-top:1px solid #ffffff14; }
+.sports-summary td:nth-child(2) { color:#a9c3c9; font-size:10px; letter-spacing:1.5px; }
+.sports-star { color:#ffe28a; font-size:12px; margin:0 0 16px; }
+.sports-athlete-card { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+.sports-athlete-number { color:#82e9d3; }
+.sports-athlete-name { color:#f6f3e9; font:700 12px Arial,sans-serif; letter-spacing:.5px; }
+.sports-athlete-ovr { font-style:normal; color:#b9f06b; }
+.sports-athlete-tags { color:#ffe28a; }
+.sports-athlete-tags:empty { display:none; }
+.sports-athlete-ratings { color:#a9c3c9; white-space:pre; }
 .sport-card-art { background:linear-gradient(125deg,#102d3b,#22655f); padding:32px; min-height:210px; color:#e8f3e2; }
 .football .sport-card-art { background:linear-gradient(125deg,#2b2440,#995d41); }
 .sport-card-art span { font-size:10px; letter-spacing:2px; }
@@ -998,6 +1029,11 @@ body.playing-subgame #player {
   .sports-bottom { bottom:10px; left:8px; right:8px; }
   .sports-playbook { bottom:220px; gap:4px; }
   .sports-playbook button { padding:10px 8px; font-size:11px; }
+  .sports-ticker { display:none; }
+  .sports-setup, .sports-summary { padding:18px 16px; }
+  .sports-setup-row { grid-template-columns:76px 30px 1fr 30px; }
+  .sports-setup-row strong { font-size:11px; }
+  .sports-athlete-ratings { display:none; }
 }
 @media (prefers-reduced-motion:reduce) {
   .playing-subgame .play-controls { animation:none; }

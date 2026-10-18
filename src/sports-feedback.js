@@ -8,6 +8,8 @@ const profiles = {
   catch: [140, 72, .09, .06, .12, .26],
   denied: [160, 120, .07, 0, .03, .07],
   goal: [440, 660, .55, .03, .30, .55],
+  whistle: [2600, 2350, .32, 0, 0, .12],
+  card: [330, 220, .22, .02, .18, .2],
 };
 
 export function feedbackProfile(event) {

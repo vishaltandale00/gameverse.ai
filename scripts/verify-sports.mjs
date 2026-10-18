@@ -73,7 +73,7 @@ try {
   const geometryRuntime = await readFile(join(root, 'src/neighborhood-certified.generated.js'));
   report.geometryRuntime = { sha256: hash(geometryRuntime), generatedSha256: hash(geometryGenerated), byteMatch: geometryRuntime.equals(Buffer.from(geometryGenerated)) };
   if (!report.geometryRuntime.byteMatch) throw Error('The reused sphere-separation runtime differs from its checked Lean source.');
-  for (const file of ['src/sports-physics.js', 'src/sports-input.js', 'src/sports-runtime.js', 'src/sports-feedback.js', 'src/soccer.js', 'src/football.js', 'src/neighborhood-safety.js', 'src/neighborhood-certified.generated.js', 'scripts/verify-sports.mjs']) {
+  for (const file of ['src/sports-physics.js', 'src/sports-input.js', 'src/sports-runtime.js', 'src/sports-feedback.js', 'src/sports-league.js', 'src/soccer.js', 'src/football.js', 'src/neighborhood-safety.js', 'src/neighborhood-certified.generated.js', 'scripts/verify-sports.mjs']) {
     try { report.sources[file] = hash(await readFile(join(root, file))); } catch (error) { if (error.code !== 'ENOENT') throw error; }
   }
   report.outcome = 'passed';
