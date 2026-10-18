@@ -1,78 +1,99 @@
-# Cloudflare staging foundation
+# Cloudflare hosted pilot
 
-This increment provides a staging administration API backed by a SQLite Durable Object per project and a private R2 bucket. It does not expose the game frontend, implement player login, dispatch Daytona jobs, accept candidates or activate game versions. It leaves the existing local development server intact. Architecture and pricing: [hosting plan](../../plans/HOSTING.md).
+Gameverse uses Cloudflare Workers + Static Assets, SQLite Durable Objects and private R2 for persistent hosting; Daytona supplies disposable coding sandboxes. See the [hosting plan](../../plans/HOSTING.md) for the two slices and cost model.
 
-## Setup status (2026-10-17)
+## Current status — 2026-10-18
 
-The staging R2 bucket has been created and its public r2.dev URL is confirmed disabled. Five local workerd checks passed (1,122.59 ms total runner time), including persistence after a runtime restart. The Worker dry run passed with a 6.62 KiB upload / 2.56 KiB gzip bundle. There is no earlier comparable baseline, native build/improvement timing or CI timing for this increment.
+[gameverse.build](https://gameverse.build) and its [account page](https://gameverse.build/account) serve the invite-only pilot. The custom domain and the existing [workers.dev endpoint](https://gameverse-host-staging.gameverse-environment.workers.dev/account) point to **the same staging Worker and data**, not isolated environments. Host-only session cookies are separate on each hostname, so use gameverse.build consistently. A separate production deployment will require independent namespaces, bucket and secrets.
 
-Staging is deployed at [the Worker health endpoint](https://gameverse-host-staging.gameverse-environment.workers.dev/health), version `a58ac505-1140-48a0-b1a2-87664cc1843a`. Four live checks passed across 15 HTTP requests in 1,506.76 ms: authentication, secret-binding presence/disabled dispatch, durable idempotent project creation, and private digest-addressed R2 round trips with project isolation. Both credential bindings were independently listed as `secret_text`. The first rejected Free-plan upload is retained as history; deployment succeeded after the user enabled Workers Paid.
+Version `8c26510b-f8f1-44f0-b460-4927e8643dfa` deploys:
 
-[Sanitized deployment evidence](../../verification/cloudflare-staging-20261017.json) records source digests, version, checks, timing and evidence limits. Remote object eviction was not forced; restart persistence was tested locally. No Daytona job, model call, player login, game frontend, candidate activation or native gameplay is claimed.
+- The authored browser frontend, phone verification through Twilio Verify, and opaque HttpOnly/Secure session cookies. Numbers default to the network country, then browser region, with a visible editable country selector. Local formats are converted to international format before submission; the server independently enforces the pilot allowlist.
+- Account-scoped connections, AES-GCM encrypted credential retention, default selection, API-key validation and invited-developer Claude browser authorization. Codex browser connection is disabled pending a registered Sign in with ChatGPT client.
+- Durable pending requests, a fixed Python addition coding check, disposable Daytona execution, private retained source/results, cancellation and confirmed cleanup. The coordinator persists launch intent before external calls and reconciles uncertain responses by deterministic sandbox name.
+- A global single-sandbox admission cap, ten operations/account/day, bounded runtime deadlines and ephemeral sandbox safeguards. These are pilot limits, not measured capacity guarantees.
 
-## Resources and access
+**Real Claude qualification:** phone verification and personal Claude browser authorization completed. The pending request resumed once, edited the public Python fixture and passed all four cases. A second run reused the encrypted saved connection in a fresh sandbox. Both results remain readable; independent Daytona lookups confirmed that the authorization sandbox and both coding sandboxes are absent. [Exact sanitized results/timing](../../verification/hosted-connected-agent-runs-20261018.json). These two runs used deployment `580ef758-2424-49ad-bcd3-e74e0866b40a`; the subsequent UI changes did not run another model task.
 
-- Worker: `gameverse-host-staging`, configured in [wrangler.staging.jsonc](../../wrangler.staging.jsonc).
-- Object class/binding: `ProjectState` / `PROJECTS`, with the `v1` SQLite migration.
-- R2: `gameverse-artifacts-staging`, Standard storage with an Eastern North America location hint. Public bucket access stays disabled; no custom domain is attached.
-- Secrets: `STAGING_API_TOKEN` and `DAYTONA_API_KEY`. No model credential, AWS credential or local provider data is uploaded.
-- Staging administration uses one operator token. It is not multi-user authorization: possession of this token grants access to every staging project. Do not give it to players or sandbox code. End-user membership/login checks must be implemented before opening project APIs to players.
+**Remaining scope:** this pilot does not yet implement game improvement/activation, private player-project membership, unreleased harness selection or the complete expiry/reconnect adapter. Codex browser registration and Shishir's own-account journey are still open. A passed Python fixture is not either slice's full acceptance.
 
-The Worker receives requests over its staging workers.dev hostname. Only `/health` is public. It reports liveness, not storage/provider readiness. All `/api/admin/*` routes require `Authorization: Bearer <STAGING_API_TOKEN>`; supplied browser origins must match. Unrecognized routes do not serve files from the checkout.
+### Connection experience
 
-## Commands
+The account page uses a compact heading, provider rows and a short activity list. Developer controls, technical run details and raw result JSON are collapsed. Connection operations stay in their provider card rather than appearing as coding tasks.
+
+A real **Connect** click opens a same-origin preparation tab immediately, before network work. That tab starts/reuses the same idempotent authorization request and continues to Claude as soon as its URL is ready. This replaces agent-created background tabs; exact tab ordering remains browser-controlled. If a popup is blocked, the original card exposes **Open Claude** as a normal user-click link. The helper has a 90-second preparation deadline and polls every 2.5 seconds (at most about 36 additional GETs), while the account page retains its existing five-second visible-page polling. Returning to the page triggers immediate refresh.
+
+The provider card shows **Opening Claude → Finish in Claude → Verifying connection → Connected**. Code submission removes the secret from the form and immediately replaces the form with progress. The host persists verification before external transfer, deduplicates concurrent submissions and suppresses stale authorization URLs while verification is pending. Refreshing the page preserves that state. Cancellation and failure/retry have separate visible states. The new progress states were exercised in a synthetic browser fixture; the working real connection was preserved, not disconnected for another demonstration.
+
+## Resources and secrets
+
+`wrangler.staging.jsonc` binds `PROJECTS`, `AGENT_CONNECTIONS`, `IDENTITY`, `ACCOUNT_JOBS` and `SANDBOX_ADMISSION`. Migrations v1–v3 create their SQLite classes. `ARTIFACTS` uses `gameverse-artifacts-staging`; public R2 access remains disabled. The custom app domain does not expose the bucket.
+
+Required Worker secret bindings:
+
+| Secret | Purpose |
+| --- | --- |
+| `STAGING_API_TOKEN` | Operator-only bootstrap API; never give it to players or sandboxes |
+| `DAYTONA_API_KEY` | Hosting control-plane access; never put it in a coding sandbox |
+| `ACCOUNT_ID_KEY` | Stable HMAC key deriving account identity from verified phone numbers |
+| `AGENT_CREDENTIAL_KEY` | Independent AES-GCM key for personal provider auth state |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID` | Server-side Verify service access |
+| `GAMEVERSE_PILOT_PHONES`, `GAMEVERSE_DEVELOPER_PHONES` | Comma-separated E.164 pilot/developer allowlists |
+
+Keep the Daytona/Twilio settings and phone allowlists in ignored `.env`. `npm run infra:secrets` prepares only these settings, generates the operator/account/encryption keys once, and retains them in ignored `local-data/hosting/staging-secrets.json` with mode 0600. It prints names/path only. Back up the keys through your secret manager: changing `ACCOUNT_ID_KEY` changes account identities; replacing `AGENT_CREDENTIAL_KEY` without migration makes existing credentials unreadable. Key rotation/re-encryption and restore qualification are still rollout work.
+
+No actual phone numbers or provider credentials belong in source, frontend assets, logs or R2. No user-facing credential-read endpoint exists. The trusted coordinator injects only the selected account's agent state into a disposable sandbox via file transfer; the fixed probe is not yet a general untrusted-code credential boundary.
+
+## Setup and deployment
+
+Workers Paid and R2 must be enabled; OAuth login alone is insufficient. This account already has both enabled. `gameverse.build` is an active Cloudflare zone and its custom-domain route is managed by Wrangler. Existing domain records must be inspected before connecting another hostname.
 
 ```sh
 npm ci --ignore-scripts
 npx wrangler login
-npx wrangler whoami
+npm run infra:secrets
 npm run test:hosting
+npm run build
 npm run infra:check
 ```
 
-`test:hosting` uses the pinned Wrangler/workerd runtime and local SQLite/R2 with fixture credentials and temporary storage; it does not call Daytona or model APIs. It also stops/restarts the local runtime to check persistence. It is separate from the routine test glob, and no CI job was added. `infra:check` bundles only the Worker and performs a deployment dry run. It does not build the browser app or native games.
-
-For local manual development, keep `DAYTONA_API_KEY` in the ignored root `.env` and add a random, at least 32-character `STAGING_API_TOKEN` there, then run `npm run infra:dev`. Local emulation uses `.wrangler/` storage and never the remote bucket (`remote:false`). The test command suppresses dotenv loading so actual credentials are not part of its fixtures.
-
-## Account provisioning and deployment
-
-The modeled deployment requires Workers Paid and R2 enabled. Cloudflare OAuth login alone does not enable either service. Workers Free rejects the custom CPU limit with code `100328`; R2 returns `10042` until enabled. Account billing choices belong in the Cloudflare dashboard. Local tests and dry-run bundling work before the account is ready.
-
-Inspect existing resources before creating the bucket:
+After deployment authorization:
 
 ```sh
-npx wrangler r2 bucket list
-npx wrangler r2 bucket create gameverse-artifacts-staging --location enam
-npx wrangler r2 bucket dev-url get gameverse-artifacts-staging
+CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV=false npx wrangler deploy --config wrangler.staging.jsonc --secrets-file local-data/hosting/staging-secrets.json
+npm run infra:smoke -- https://gameverse.build
 ```
 
-Prepare only the two required deployment secrets, then deploy after authorization:
+The secrets file prevents bulk-uploading unrelated dotenv values. Do not enable unsanitized debug logging. `infra:check` is a Worker dry run, separate from the frontend build; build assets first. The build copies authored games and excludes GBA cartridges. Local `/account` navigation redirects to the hosted account page.
 
-```sh
-npm run infra:secrets
-npx wrangler deploy --config wrangler.staging.jsonc --secrets-file local-data/hosting/staging-secrets.json
-npm run infra:smoke -- https://gameverse-host-staging.YOUR-SUBDOMAIN.workers.dev
-```
+For local emulation, `npm run infra:dev` uses local SQLite/R2 (`remote:false`). Tests disable dotenv loading, use temporary state and synthetic provider responses, and make no SMS/Daytona/model call. No new CI job or broad game matrix was added.
 
-`infra:secrets` reads only the needed Daytona key from `.env`, generates an operator token once, and retains it in the ignored `local-data/hosting/staging-secrets.json` with mode 0600. Re-running preserves the operator token and refreshes the Daytona key from `.env`. It prints names/path, never values. The explicit secrets file prevents bulk-uploading unrelated `.env` credentials. Wrangler logs and generated bundles are ignored; do not enable unsanitized debug logging around deployment secrets.
+## Browser qualification
 
-`infra:smoke` reads that operator token without displaying it and performs real authenticated HTTP/SQLite/R2 checks using a small public text fixture. It retains two fixture projects and one 64-byte object, plus an ignored receipt at `local-data/hosting/staging-smoke.json`. It makes no Daytona/model call. The receipt records exact source-file digests, the checkout commit, request count, observed wall time and evidence limits; a dirty checkout's commit alone is not an exact implementation identity.
+1. Open [the account page](https://gameverse.build/account), select/change the suggested country if needed, enter a normal phone number and complete SMS verification.
+2. Expand **Developer tools** and click **Run coding check** before connecting. Confirm the request is retained while waiting for a connection.
+3. Click **Connect** in the Claude row. Complete authorization in the newly opened tab, then return and paste the code into Gameverse. A settings-only connection allocates an authorization sandbox but starts no coding task.
+4. Confirm the pending coding check continues once, implements the Python addition fixture, retains its result and confirms sandbox deletion.
+5. Run another check in a fresh sandbox using the retained personal connection. Inspect cancellation and selected-provider reconnect behavior before claiming Slice 1 complete.
 
-Secrets are account/environment-specific. Restore the ignored operator token from your secret manager when deploying from another machine, or deliberately rotate it; never use `DAYTONA_API_KEY` as the operator token. Later production configuration must have separate names, buckets, object namespace and secrets. This repository currently defines staging only.
+Claude uses pinned CLI `2.1.252` in a Daytona snapshot with inherited 1 CPU / 1 GiB / 3 GiB disk. The official npm installer links its native binary; the runtime uses an isolated auth directory. Provider state is retained encrypted after authorization and refreshed state uses revision checks. Connection use is serialized; disconnect invalidates credentials and late writebacks, requests cancellation and retains the lock until external runtime termination is confirmed. Lease expiry is not proof that a process stopped.
 
-## Bootstrap API
+OpenAI's hosted/commercial flow requires a registered [Sign in with ChatGPT client](https://developers.openai.com/siwc); the [app-server managed-auth restriction](https://learn.chatgpt.com/docs/app-server#auth-endpoints) means the local Codex CLI login is not a hosted shortcut. Codex API keys can be validated/stored, but its job runtime is not enabled. Claude's documented [browser/code authentication](https://code.claude.com/docs/en/authentication) and [third-party subscription usage](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan) are being qualified with the actual browser journey, not inferred from a local login cache.
 
-| Method and path | Behavior |
-| --- | --- |
-| GET `/health` | Public Worker liveness |
-| GET `/api/admin/status` | Binding types, presence of Daytona key, and honest disabled dispatch/player-auth state; no credential values |
-| PUT `/api/admin/projects/{uuid}` | Empty-body, idempotent create; accepted version starts null |
-| GET `/api/admin/projects/{uuid}` | Persisted project record or 404 |
-| PUT `/api/admin/projects/{uuid}/objects/{sha256}` | Digest-checked immutable upload, at most 1 MiB, for an existing project |
-| GET or HEAD `/api/admin/projects/{uuid}/objects/{sha256}` | Private attachment download/head within that project |
+## Evidence and turnaround
 
-The UUID and digest syntax is strict. Retries return the existing project/object; no arbitrary metadata, source execution, accepted-version mutation or public object listing is supported. The 1 MiB object cap and 100 ms configured Worker CPU cap bound this staging bootstrap, not a measured production throughput or game-upload allowance. Native source/artifact transfer, per-user quotas, job deadlines and global admission still need their own implementation.
+- Focused local suite: **29/29**, **4,201.88 ms** total runner wall time on Node 22.23.2/macOS arm64 with Wrangler 4.151.1. Fixtures cover identity, encrypted state, request isolation/idempotency, uncertain launch/deletion recovery, cancellation, fresh-run credential reuse and phone formats. Group timings overlap and are not additive. The expected conflicting-request test logs a bounded error while asserting rejection. After adding stale-provider-URL coverage, the two affected test files passed another 5 checks in 1,670.59 ms; the unchanged broad suite was not repeated. The earlier 28-check run took 1,530.50 ms with different coverage/load, so that is not a comparable latency regression measurement.
+- Clean frontend copy: **35.7 ms before / 45.0 ms after** this compact-UX change on this checkout/toolchain with warm dependencies/filesystem; one representative pair, not a latency guarantee. The country-only increment previously took 36.8 ms. The pinned phone parser remains **178,716 bytes raw / 42,996 gzip**, loaded by the account page. No new dependency, framework, bundler or CI job was added for the UX change.
+- Worker dry run: **63.77 KiB / 16.10 KiB gzip**. Latest layout deployment asset upload **0.92 s**, Worker upload **4.61 s**, trigger update **1.15 s**, provider-reported startup **3 ms**; these are distinct stages, not coding-run latency.
+- Custom-domain HTTP/SQLite/R2 smoke: **4 groups / 15 requests / 1,870.01 ms**, with no SMS, Daytona or model call. Its first invocation was rejected locally by the old workers.dev-only destination guard before any request; the guard now allows only the two approved pilot origins.
+- The earlier 14-check storage-only increment is preserved in [its local receipt](../../verification/hosted-connections-local-20261018.json). Initial Cloudflare setup is preserved in [the 2026-10-17 receipt](../../verification/cloudflare-staging-20261017.json). The phone-pilot source is recorded in [its historical receipt](../../verification/hosted-phone-agent-pilot-20261018.json); final UX source and evidence are in [the UX receipt](../../verification/hosted-agent-ux-20261018.json).
 
-## Next integration
+No CI queue/native build/full improvement measurement exists for this increment. Real runtime-only probes took 721 ms total (file roundtrip) and 7,015 ms total (Claude login URL, including 4,841 ms installation), excluding human authorization; all sandboxes were confirmed deleted. Earlier rejected create configurations and the failed launcher attempt remain in ignored probe receipts. Those runtime-only probes remain distinct from the two subsequent authenticated coding successes recorded above.
 
-Connect a durable request and prepared Daytona job to the existing public reference fixture, authenticated callbacks, immutable result uploads and candidate receipts. Reuse the existing [improvement API](../../contracts/IMPROVEMENT_API.md) and Shishir's harness. Keep external attempt/provider identities and recovery deadlines in durable state before side effects. Qualify cancellation, uncertain launch recovery, cleanup and two reconstructed runs before enabling job admission. Accepted-game activation remains a separate host-owned gate.
+## API boundaries and next integration
+
+Public `/health` reports liveness only; `/api/auth/config` exposes capabilities/country suggestion, not credentials. Phone start/check/logout enforce same-origin mutation and bounded attempts/rate limits. `/api/me`, `/api/agent-connections/*` and `/api/jobs/*` derive ownership from a verified server-side session; developer operations recheck the invitation.
+
+All `/api/admin/*` endpoints remain operator-token protected. The bootstrap API supports idempotent empty project creation, metadata reads and private digest-checked immutable R2 upload/download; accepted version starts null. The 1 MiB object and 100 ms Worker CPU caps are bootstrap bounds, not native game upload allowances. Do not expose this all-project operator API to players.
+
+Complete actual connected-agent qualification before integrating Shishir's pinned harness through the existing [improvement API](../../contracts/IMPROVEMENT_API.md) and [parallel development contract](../../contracts/PARALLEL_DEVELOPMENT.md). Accepted-game activation and save integrity remain separate host-owned gates in Slice 2.

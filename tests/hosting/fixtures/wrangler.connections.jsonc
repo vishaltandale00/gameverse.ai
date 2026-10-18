@@ -1,0 +1,11 @@
+{
+  "name": "gameverse-connection-fixture",
+  "main": "connections-worker.js",
+  "compatibility_date": "2026-10-17",
+  "workers_dev": false,
+  "send_metrics": false,
+  "durable_objects": {
+    "bindings": [{ "name": "CONNECTIONS", "class_name": "TestAgentConnections" }]
+  },
+  "migrations": [{ "tag": "fixture-v1", "new_sqlite_classes": ["TestAgentConnections"] }]
+}
