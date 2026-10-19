@@ -13,7 +13,9 @@ export class BrowserVoice {
   async post(path,value,signal){const r=await this.fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value),signal:signal||AbortSignal.timeout(5000)});const data=await r.json();if(!r.ok)throw Error(data.error?.code||'remote_voice_unavailable');return data;}
   valid(binding){return this.binding===binding&&!binding.revoked&&this.isVisible()&&this.now()-this.lastSuccess<=VOICE_LEASE_MS;}
   async prepare({context,config}){if(config.execution!=='daytona')return;this.enabled=true;if(!config.available)throw Error(config.reason||'Remote voice is unavailable.');
-    const session=this.shell.host.describeSession(context.sessionId||this.shell.host.listSessions().find(s=>s.gameId===context.gameId&&s.displayed)?.sessionId);
+    if(context?.gameId!=='soccer')throw Error('Open a soccer match before requesting a takeover.');
+    const sessionId=context.sessionId||this.shell.host.listSessions().find(s=>s.gameId===context.gameId&&s.displayed)?.sessionId;if(!sessionId)throw Error('Open a soccer match before requesting a takeover.');
+    const session=this.shell.host.describeSession(sessionId);
     const game=this.shell.host.listGames().find(g=>g.gameId===session.gameId),target={sessionId:session.sessionId,gameId:session.gameId,version:session.version,profileId:session.identity.profileId,artifactSha256:game?.artifactSha256,sourceCommit:config.source_commit};
     if(this.binding&&JSON.stringify(this.binding.target)!==JSON.stringify(target))this.revoke('session changed');
     if(!this.binding){this.binding={id:crypto.randomUUID(),epoch:crypto.randomUUID(),manager_id:config.manager_id,target};this.acks.clear();this.sequence=0;}

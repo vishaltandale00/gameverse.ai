@@ -29,3 +29,15 @@ Only the current soccer session is supported by this bridge. New games/sessions,
 No dependency or CI job was added. Reuse Node tests, existing workerd/R2 fixtures, build tooling and Chromium in Daytona. The new focused checks cover bounded recording upload/cancellation, exact browser grant/replay/late-start/Stop behavior, signed manager admission, scoped worker authentication, actual stored-audio validation, provider reservation and account/epoch/terminal fences. Paid speech recognition quality and production macOS/browser deployment remain separate evidence gates.
 
 A private browser qualification uses an explicitly scripted provider (zero external model calls) and a separately manager-created voice sandbox. Retain the actual result before calling it passed; see the task's qualification report. Test-browser graphics cost does not size the product voice-only worker. No build, CI or voice latency SLA is inferred from this run.
+
+### Network prerequisite and repeatable browser proof
+
+The direct worker must reach the configured backend over HTTPS. `networkBlockAll:false` does not override an organization restriction. This task observed GitHub/npm succeeding while `gameverse.build` and its private test broker reset connections; Daytona explicitly rejected a sandbox allow-list override. An organization administrator must permit the backend destination using Daytona's supported network policy before separate-sandbox E2E can pass. This task does not change billing, tier or organization policy. See [Daytona network limits](https://www.daytona.io/docs/en/network-limits/).
+
+For a provider-free functional proof, run inside Daytona, from the repo:
+
+```sh
+GAMEVERSE_VOICE_EVIDENCE_DIR=/home/daytona/voice-process-evidence node --expose-gc tests/dev-manager/manual/browser-voice.mjs
+```
+
+This separately triggered test uses installed Chromium/OpenSSL, synthetic sign-in/provider answers, actual recorded bytes and SQLite/R2, a signed synthetic manager and the actual VoiceAgent in a sibling Node process. It uses the real soccer engine and ordinary voice/Stop controls, then real keyboard movement after handback. It deliberately avoids another cloud allocation and the unrelated neighborhood renderer. It cannot qualify cross-sandbox networking or recognition of real human speech. It takes tens of seconds, writes evidence to the chosen directory, and is excluded from routine CI. Keep the directory private; share only reports/screenshots and fixed source/result artifacts, excluding device keys, launch capabilities, cookie state and TLS private keys.

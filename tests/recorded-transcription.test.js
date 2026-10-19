@@ -19,3 +19,4 @@ test('aborted capture cannot upload late recorder data',async()=>{
 test('oversized and failed recordings never reach the backend',async()=>{
  let uploads=0;const r=new RecordedTranscription({stream:{},requestId:crypto.randomUUID(),config:{...config,maxBytes:1},Recorder,fetchImpl:async()=>{uploads++;}});await r.start();await assert.rejects(r.stop(),/too large/);assert.equal(uploads,0);
 });
+test('a terminal worker failure ends transcript polling promptly',async()=>{let calls=0;const r=new RecordedTranscription({stream:{},requestId:crypto.randomUUID(),config,Recorder,fetchImpl:async()=>Response.json(++calls===1?{status:'queued'}:{status:'failed',reason:'voice_broker_network_failed'})});await r.start();await assert.rejects(r.stop(),/could not finish/);assert.equal(calls,2);});
