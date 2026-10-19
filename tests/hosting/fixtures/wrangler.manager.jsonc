@@ -1,0 +1,67 @@
+{
+  "name": "gameverse-manager-fixture",
+  "main": "dev-manager-worker.js",
+  "compatibility_date": "2026-10-17",
+  "workers_dev": false,
+  "send_metrics": false,
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "PROJECTS",
+        "class_name": "ProjectState"
+      },
+      {
+        "name": "AGENT_CONNECTIONS",
+        "class_name": "AgentConnections"
+      },
+      {
+        "name": "IDENTITY",
+        "class_name": "IdentityState"
+      },
+      {
+        "name": "ACCOUNT_JOBS",
+        "class_name": "AccountJobs"
+      },
+      {
+        "name": "SANDBOX_ADMISSION",
+        "class_name": "SandboxAdmission"
+      },
+      {
+        "name": "DEV_MANAGERS",
+        "class_name": "DevManagerState"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "fixture-v1",
+      "new_sqlite_classes": [
+        "ProjectState",
+        "AgentConnections",
+        "IdentityState",
+        "AccountJobs",
+        "SandboxAdmission",
+        "DevManagerState"
+      ]
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ARTIFACTS",
+      "bucket_name": "gameverse-manager-fixture",
+      "remote": false
+    }
+  ],
+  "assets": {
+    "directory": "../../../dist",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "vars": {
+    "APP_ENV": "test",
+    "ACCOUNT_ID_KEY": "1111111111111111111111111111111111111111111111111111111111111111",
+    "GAMEVERSE_PILOT_PHONES": "+12025550101,+12025550102,+12025550103",
+    "GAMEVERSE_DEVELOPER_PHONES": "+12025550101,+12025550102",
+    "AGENT_CREDENTIAL_KEY": "2222222222222222222222222222222222222222222222222222222222222222"
+  }
+}

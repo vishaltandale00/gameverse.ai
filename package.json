@@ -19,7 +19,10 @@
     "infra:check": "wrangler deploy --config wrangler.staging.jsonc --dry-run --outdir .wrangler/staging-build",
     "infra:secrets": "node scripts/hosting-secrets.mjs",
     "test:hosting": "node --test tests/hosting/*.test.js",
-    "infra:smoke": "node scripts/hosting-smoke.mjs"
+    "infra:smoke": "node scripts/hosting-smoke.mjs",
+    "manager": "node scripts/dev-manager.mjs",
+    "manager:client": "node scripts/dev-manager-client.mjs",
+    "test:manager": "node --test --test-concurrency=1 tests/dev-manager/*.test.js"
   },
   "dependencies": {
     "@wasm-gaming/mgba-wasm": "0.1.1",

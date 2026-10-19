@@ -1,3 +1,5 @@
+export { DevManagerState } from './dev-manager-state.js';
+import {devManagerRoute} from './dev-manager-api.js';
 export { ProjectState } from './project-state.js';
 export { AgentConnections } from './agent-connections.js';
 export { IdentityState } from './identity-state.js';
@@ -69,13 +71,15 @@ async function route(request, env) {
   if (url.pathname === '/health' && request.method === 'GET') {
     return json({ service: 'gameverse-host', environment: env.APP_ENV, status: 'ok' });
   }
+  const developer=await devManagerRoute(request,env);if(developer)return developer;
   const platform=await platformRoute(request,env);if(platform)return platform;
   if(env.ASSETS&&!url.pathname.startsWith('/api/')) {
     const response=await env.ASSETS.fetch(request);
     const headers=new Headers(response.headers);
     headers.set('X-Content-Type-Options','nosniff');
     headers.set('Referrer-Policy','no-referrer');
-    headers.set('Content-Security-Policy',"default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");
+    const discoveryOrigin=url.pathname.startsWith('/account')?' http://127.0.0.1:4177':'';
+    headers.set('Content-Security-Policy',`default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; connect-src 'self'${discoveryOrigin}; img-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'`);
     if(url.pathname.startsWith('/account'))headers.set('Cache-Control','no-store');
     return new Response(response.body,{status:response.status,headers});
   }

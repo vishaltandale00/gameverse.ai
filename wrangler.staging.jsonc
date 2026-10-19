@@ -21,13 +21,15 @@
       { "name": "AGENT_CONNECTIONS", "class_name": "AgentConnections" },
       { "name": "IDENTITY", "class_name": "IdentityState" },
       { "name": "ACCOUNT_JOBS", "class_name": "AccountJobs" },
-      { "name": "SANDBOX_ADMISSION", "class_name": "SandboxAdmission" }
+      { "name": "SANDBOX_ADMISSION", "class_name": "SandboxAdmission" },
+      { "name": "DEV_MANAGERS", "class_name": "DevManagerState" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["ProjectState"] },
     { "tag": "v2", "new_sqlite_classes": ["AgentConnections"] },
-    { "tag": "v3", "new_sqlite_classes": ["IdentityState", "AccountJobs", "SandboxAdmission"] }
+    { "tag": "v3", "new_sqlite_classes": ["IdentityState", "AccountJobs", "SandboxAdmission"] },
+    { "tag": "v4", "new_sqlite_classes": ["DevManagerState"] }
   ],
   "r2_buckets": [
     { "binding": "ARTIFACTS", "bucket_name": "gameverse-artifacts-staging", "remote": false }

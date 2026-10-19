@@ -27,6 +27,7 @@
     <section id="signed-in-panel" hidden>
       <section class="account-card agents-section"><div class="section-heading"><h2>Your agents</h2><span class="subtle">Connect when you need one</span></div><div id="agent-connections"></div></section>
       <section class="account-card activity-section"><div class="section-heading"><h2>Recent activity</h2></div><p id="empty-jobs" class="empty-state">Your creations and improvements will appear here.</p><div id="job-list"></div></section>
+      <section id="dev-manager-panel" class="account-card" hidden></section>
       <details id="developer-panel" class="developer-panel" hidden><summary>Developer tools <span>Invited access</span></summary><div class="developer-content"><h2>Test your connection</h2><p>Run a small coding check with Claude. It edits a Python function and verifies four cases.</p>
         <form id="job-form"><label for="test-note">Run note</label><textarea id="test-note" maxlength="4000" rows="2" required>Verify that my connected agent can edit source and run tests.</textarea><button class="primary" id="run-check" type="submit">Run coding check</button></form><p class="small">Public addition fixture · no game changes</p></div></details>
     </section>
