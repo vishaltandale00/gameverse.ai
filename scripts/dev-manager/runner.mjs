@@ -21,7 +21,7 @@ export class Runner {
     if(j.task.kind==='voice-agent'){
       const pkg=await voicePackage(j.task.source_commit),source=await this.daytona.download(sandbox,`${root}/source.json`,8192),bytes=await this.daytona.download(sandbox,`${root}/result.json`,24576);const retained=[];
       if(source){assert(new TextDecoder().decode(source)===pkg.manifest,'voice_source_mismatch');retained.push({kind:'source',data:Buffer.from(source).toString('base64url'),sha256:hash(source)});}
-      if(bytes){let result;try{result=JSON.parse(new TextDecoder().decode(bytes));}catch{throw Error('voice_result_mismatch');}assert(result.schema==='gameverse.voice-worker-result/1'&&result.task_id===j.task.id&&result.source_commit===j.task.source_commit&&result.session_id===j.task.voice.session_id&&Number.isInteger(result.provider_attempts)&&result.provider_attempts<=100,'voice_result_mismatch');retained.push({kind:'result',data:Buffer.from(bytes).toString('base64url'),sha256:hash(bytes)});}
+      if(bytes){let result;try{result=JSON.parse(new TextDecoder().decode(bytes));}catch{throw Error('voice_result_mismatch');}assert(result.schema==='gameverse.voice-worker-result/1'&&result.task_id===j.task.id&&result.source_commit===j.task.source_commit&&result.session_id===j.task.voice.session_id&&Number.isInteger(result.provider_attempts)&&result.provider_attempts<=100,'voice_result_mismatch');j.voice_outcome=result.outcome;if(result.outcome==='failed')j.reason=result.events?.findLast(e=>e.event==='worker-failed')?.reason||'voice_worker_failed';retained.push({kind:'result',data:Buffer.from(bytes).toString('base64url'),sha256:hash(bytes)});}
       j.retained=retained;j.collection_confirmed=true;await this.save();return partial?retained.length>0:retained.length===2;
     }
     const source=await this.daytona.download(sandbox,`${root}/addition.mjs`,4096);
@@ -94,7 +94,7 @@ export class Runner {
       const data=sandbox&&await this.daytona.download(sandbox,`${root}/verification.json`,1024);if(!data)return;assert(JSON.parse(new TextDecoder().decode(data)).passed===true,'verification_outcome_unknown');j.phase='retaining';await this.save();return;}
     if(j.phase==='retaining'){
       for(const a of j.retained)await this.transport.device({op:'artifact',task_id:t.id,...a});
-      j.retention_confirmed=true;await this.save();await this.report(j,'retained',{timings:j.timings});j.success=true;j.phase='cleaning';await this.save();return;}
+      j.retention_confirmed=true;await this.save();await this.report(j,'retained',{timings:j.timings});j.success=t.kind!=='voice-agent'||j.voice_outcome!=='failed';j.phase='cleaning';await this.save();return;}
     if(j.phase==='cleaning'){
       // Give the fixed voice worker a bounded chance to write its cancellation receipt.
       if(t.kind==='voice-agent'&&sandbox&&!j.collection_confirmed){j.cleanup_wait_at??=this.now();await this.save();const receipt=await this.daytona.download(sandbox,`${root}/result.json`,24576);if(!receipt&&this.now()-j.cleanup_wait_at<3000)return;}
