@@ -1,10 +1,15 @@
+import { renderPlayerPanel, playerLabel } from './takeover-panel.js';
 import * as storage from './storage.js';
 import { digest, progressKey, validateCheckpoint, validateCartridge, KEY_BITS, padMask } from './identity.js';
 import { GbaAdapter } from './adapter.js';
 import { loadApplicationConfig, configuredGames, validateGameBinding } from './application.js';
 import { sampleStandardGamepad } from './gamepad.js';
+import { HARNESS_VERSION } from './simulated-user.js';
 import { VoiceInput } from './voice-input.js';
 import { createProfileNameEntry } from './profile-name.js';
+import { createTakeoverShell } from './agent-shell.js';
+import { createPlanner, createDecisionsPolicy, createReflector, createSpeechAdapter } from './agent-client.js';
+import { installQualification, buildEvidenceBundle, QUALIFICATION_HARNESS_CONFIG } from './qualification.js';
 
 const $ = selector => document.querySelector(selector);
 const avatars = ['🦊', '🐸', '🤖', '👾'];
@@ -13,6 +18,137 @@ let keyboard = new Set(), inputMask = -1, padArmed = false, padPrevious = [], la
 let neighborhoodOpen = false, neighborhoodPose, neighborhood, neighborhoodLaunch = 0, neighborhoodEntryPending = false;
 let worldProfilePending = false, shellPadDevice = null, shellPadIndex = null;
 let voiceClock, voiceNoticeTimer, voiceOwnsSportsB = false;
+// Execution sessions a simulated user still owns while the human looks elsewhere.
+const backgroundSessions = new Map();
+// Explicit qualification flag. Ordinary play never swaps the microphone.
+const qualifying = new URLSearchParams(location.search).get('qualify') === '1';
+let lastVoiceRecord = null, lastVoiceReceipt = null, qualification = null;
+// One entry per spoken command: transcript, receipt, agent record, tool calls
+// and the runs it started. Bounded, and never overwritten by a later command.
+const voiceCommands = [];
+const lifecycleEvidence = { events: [] };
+const stopSnapshots = new Map();
+const takeover = createTakeoverShell({
+  plan: createPlanner(), decisions: createDecisionsPolicy(), reflector: createReflector(), speech: createSpeechAdapter(),
+  // Qualification declares its own versioned cadence so one bounded run fits the
+  // global provider caps; ordinary play keeps the harness defaults.
+  harnessConfig: qualifying ? QUALIFICATION_HARNESS_CONFIG : {},
+  describeDisplayed: () => ({ sessionId: session?.agentSessionId || null, view: session ? 'subgame' : neighborhoodOpen ? 'overworld' : 'home' }),
+  render: view => renderAgentPanel(view),
+  log: entry => { if (entry.event) console.debug('[takeover]', entry.event, entry.runId || entry.sessionId || ''); },
+  openOverworld: async ({ register }) => {
+    if (!neighborhood) await exploreNeighborhood();
+    if (!neighborhood?.controller) throw Error('The overworld could not be opened for a simulated user.');
+    if (neighborhood.agentSessionId) return takeover.host.describeSession(neighborhood.agentSessionId);
+    const registered = register({ controller: neighborhood.controller, world: neighborhood.world,
+      identity: { profileId: profile?.id || 'local' }, progressKey: `overworld:${profile?.id || 'local'}`, displayed: neighborhoodOpen,
+      simulation: () => neighborhood?.observe() || null, hold: value => neighborhood?.holdExecution?.(value) });
+    neighborhood.agentSessionId = registered.sessionId;
+    return registered;
+  },
+  openSubgame: async ({ gameId, identity, register }) => {
+    const game = games.find(entry => entry.id === gameId && entry.kind === 'custom-sports');
+    if (!game) throw Error(`'${gameId}' is not a supported takeover target in this build.`);
+    if (session?.game.id === gameId && session.agentSessionId) return takeover.host.describeSession(session.agentSessionId);
+    const existing = backgroundSessions.get(gameId);
+    if (existing) return takeover.host.describeSession(existing.agentSessionId);
+    // Use the ordinary UI lifecycle: from the overworld that is venue entry
+    // (which suspends and hides the world first), otherwise the collection path.
+    if (neighborhoodOpen) await enterGameFromNeighborhood(gameId);
+    else await startGame(game, 'snapshot', 'collection');
+    if (!session || session.game.id !== gameId || !session.agentSessionId) {
+      throw Error(`The ${gameId} match could not be opened for a simulated user`
+        + `${profile ? '' : ': no player profile is selected yet, so the app asked for one first'}.`);
+    }
+    return takeover.host.describeSession(session.agentSessionId);
+  },
+});
+window.__gameverseTakeover = takeover;
+let watchPending = false, qualificationNavigationRun = null;
+// Keep transient notices above the controls on narrow screens, including when
+// Details changes the panel height. This only runs when its layout changes.
+new ResizeObserver(() => {
+  const panel = $('#agent-panel');
+  document.documentElement.style.setProperty('--agent-panel-height', `${panel.getBoundingClientRect().height}px`);
+}).observe($('#agent-panel'));
+function displayedTakeoverSession() { return session?.agentSessionId || (neighborhoodOpen ? neighborhood?.agentSessionId : null) || null; }
+function renderAgentPanel(view = takeover.observe()) {
+  const panel = $('#agent-panel'); if (!panel) return;
+  renderPlayerPanel({ panel, view, displayedSessionId: displayedTakeoverSession(), watchingPending: watchPending,
+    onWatch: watchTakeoverRun, onError: handleError,
+    onStop: run => { takeover.stop(run.runId); handbackAfterStop(run); },
+    diagnostics: () => takeover.statusText() });
+}
+async function watchTakeoverRun(run) {
+  if (watchPending || busy) throw Error('Finish the current action before switching views.');
+  const target = takeover.host.runStatus(run.runId);
+  if (target.role !== 'gameplay' || target.state !== 'running') throw Error('This simulated player has stopped.');
+  if (displayedTakeoverSession() === target.sessionId) return;
+  if (qualifying && qualificationNavigationRun !== target.runId) $('#qualification-step').hidden = true;
+  qualificationNavigationRun = null;
+  const assertAvailable = () => {
+    const id = target.gameId === 'overworld' ? neighborhood?.agentSessionId : backgroundSessions.get(target.gameId)?.agentSessionId;
+    if (id !== target.sessionId) throw Error('The original play session is no longer available.');
+  };
+  assertAvailable(); watchPending = true; renderAgentPanel();
+  try {
+    if (session) {
+      if (session.agentSessionId && !takeover.disposable(session.agentSessionId)) await leaveSession({ restoreOrigin: false });
+      else { await saveAndReturn(); if (session) throw Error('Your current game could not be saved.'); }
+    }
+    assertAvailable();
+    if (target.gameId === 'overworld') restoreSessionOrigin('neighborhood');
+    else {
+      const game = games.find(g => g.id === target.gameId);
+      if (!game) throw Error('This game is unavailable.');
+      await startGame(game, 'snapshot', 'neighborhood');
+    }
+    if (displayedTakeoverSession() !== target.sessionId) throw Error('The original play session could not be shown.');
+    voiceNotice(`Watching ${playerLabel(target.gameId)}. The simulated player is still in control.`);
+  } finally { watchPending = false; renderAgentPanel(); }
+}
+function playerAcknowledgment(record) {
+  if (record.outcome !== 'completed') return 'That voice command could not be completed. Try again.';
+  const starts = (record.runs || []).map(run => playerLabel(run.gameId));
+  if (starts.length) return `Started a simulated player in ${starts.join(' and ')}.`;
+  const stopped = (record.toolCalls || []).filter(call => call.name === 'stop_run' && call.ok).map(call => takeover.host.runStatus(call.args.runId));
+  if (stopped.length) return `${stopped.map(run => playerLabel(run.gameId)).join(' and ')} stopped.${stopped.some(run => run.sessionId === displayedTakeoverSession()) ? ' The controls are yours.' : ''}`;
+  return 'Voice command completed.';
+}
+// After an explicit Stop the human may take the controls again. Nothing is
+// resumed automatically: a neutral transition comes first.
+function handbackAfterStop(run) {
+  if (session?.agentSessionId === run.sessionId && session.state === 'playing') { clearInput(); void session.adapter?.resume(); }
+  voiceNotice(displayedTakeoverSession() === run.sessionId ? `${playerLabel(run.gameId)} stopped. The controls are yours.` : `${playerLabel(run.gameId)} stopped.`);
+}
+async function dispatchVoiceCommand(requestId, text) {
+  const record = await takeover.handleTranscript({ requestId, text, context: voice.run?.context || null });
+  voiceNotice(playerAcknowledgment(record));
+  // Retain the agent outcome on the existing voice receipt (local, server-side).
+  // The attach response IS the stored receipt; there is no GET read route, and a
+  // planner failure must still retain its receipt and correlation.
+  const toolCalls = (record.toolCalls || []).map(call => ({ callId: call.callId, name: call.name,
+    ok: Boolean(call.ok), wallMs: call.wallMs, error: call.error?.message || null,
+    ...(call.name === 'stop_run' ? { targetRunId: call.args?.runId, startedAt: call.startedAt,
+      releasedAt: call.result?.releaseReceipt?.at ?? null, resultOutcome: call.result?.outcome || null } : {}) }));
+  let attachError = null;
+  try {
+    const attached = await fetch(`/api/voice/requests/${requestId}/agent`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agent: record.agent, outcome: record.outcome, acknowledgment: record.acknowledgment, wallMs: record.wallMs,
+        planner: record.planner || null, runs: record.runs.map(run => run.runId), toolCalls }) });
+    lastVoiceReceipt = attached.ok ? await attached.json() : null;
+    if (!attached.ok) attachError = `the voice backend rejected the agent result (HTTP ${attached.status})`;
+  } catch (error) { attachError = error.message; }
+  try {
+    voiceCommands.push({ requestId, transcript: text, at: Date.now(), outcome: record.outcome, attachError,
+      acknowledgment: record.acknowledgment, planner: record.planner || null, receipt: lastVoiceReceipt,
+      toolCalls,
+      runs: (record.runs || []).map(run => ({ runId: run.runId, sessionId: run.sessionId, gameId: run.gameId, surface: run.surface })) });
+    if (voiceCommands.length > 8) voiceCommands.shift();
+  } catch { voiceNotice('The agent result could not be retained locally.'); }
+  if (attachError) voiceNotice(`Voice receipt warning: ${attachError}`);
+  return record;
+}
 const timings = [];
 window.__gameverseTimings = timings;
 const escapeHtml = text => String(text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -38,7 +174,10 @@ const voice = new VoiceInput({
     if (view.background) {
       if (dialog.open) { dialog.close(); restoreFocus(); }
       $('#voice-button').classList.toggle('voice-pending', ['transcribing', 'processing'].includes(view.state));
-      if (view.state === 'received') voiceNotice('Voice request saved. Game changes aren’t connected yet.');
+      if (view.state === 'received') {
+        voiceNotice('Voice request received. Asking the agent…');
+        void dispatchVoiceCommand(view.requestId, view.text).catch(error => voiceNotice(error.message));
+      }
       if (view.state === 'error') voiceNotice(view.message);
       clearInterval(voiceClock); return;
     }
@@ -67,7 +206,7 @@ const voice = new VoiceInput({
       recording: `Speak your request. Words appear as you talk. Up to ${view.maxSeconds / 60} minutes.`,
       transcribing: 'Finishing your transcript…',
       processing: 'Saving your request…',
-      received: 'Saved on this computer. Game changes aren’t connected yet.',
+      received: 'Saved on this computer. The voice agent is handling it.',
       cancelling: 'Discarding this input…',
     }[view.state] || '');
     if (view.context) $('#voice-target').textContent = `${session?.game.name || application.title} / Voice feedback`;
@@ -82,6 +221,187 @@ const voice = new VoiceInput({
 
   },
 });
+$('#agent-stop-all').onclick = () => takeover.stopAll('player stopped every run');
+if (qualifying) {
+  // The requester's circuits choose speech and UI actions; its synthesized audio
+  // replaces only the capture device, so transcription and the agent are real.
+  qualification = installQualification({
+    takeover, voice, sourceCommit: document.documentElement.dataset.sourceCommit || null,
+    identity: { profileId: 'qualification' },
+    ui: {
+      observe: () => ({ view: session ? 'subgame' : neighborhoodOpen ? 'overworld' : 'home', canRecord: !voice.active && voice.canStart(),
+        recording: voice.state === 'recording', voiceState: voice.state, runs: takeover.observe().running.length }),
+      pressRecord: () => voice.toggle(),
+      send: () => voice.stop(),
+    },
+  });
+  // Qualification control surface for the external runner. It drives the same
+  // buttons and lifecycle a human would; it cannot inject a transcript or call a
+  // gameplay tool, and every provider call still happens server-side.
+  let qualificationStepTimer;
+  const showQualificationStep = text => {
+    const banner = $('#qualification-step'); banner.textContent = `Test navigation · ${text}`; banner.hidden = false;
+    clearTimeout(qualificationStepTimer); qualificationStepTimer = setTimeout(() => { banner.hidden = true; }, 6500);
+  };
+  window.__gameverseQualification = {
+    version: qualification.version, takeover, qualification,
+    speakCommand: (command, config) => qualification.startRequester(command, config),
+    status: () => ({ voice: voice.state, commands: voiceCommands.map(c => ({ requestId: c.requestId, receipt: c.receipt ? { requestId: c.receipt.requestId, processing: c.receipt.processing, transcription: c.receipt.transcription } : null, toolCalls: c.toolCalls })), runs: takeover.observe().running, ack: takeover.observe().acknowledgment,
+      requester: qualification.surface.report(), view: session ? session.game.id : neighborhoodOpen ? 'overworld' : 'home',
+      sportsFrame: window.__gameverseSports?.read?.().frame ?? null }),
+    engineTruth: () => { const read = window.__gameverseSports?.read?.(); return read ? { frame: read.frame, phase: read.phase, score: read.score,
+      clock: read.clock, stats: read.stats, charging: read.charging, charge: read.charge, ball: read.ball, possessionTeam: read.ball?.owner >= 0 ? read.players[read.ball.owner]?.team ?? null : null } : null; },
+    leaveSubgame: async () => {
+      showQualificationStep('Return to the overworld. The Soccer player keeps playing in the background.');
+      await new Promise(resolve => setTimeout(resolve, 700));
+      const read = window.__gameverseSports?.read?.();
+      Object.assign(lifecycleEvidence, { sessionId: session?.agentSessionId || null, leftSubgame: true,
+        frameAtLeave: read?.frame ?? null, matchClockAtLeave: read?.clock ?? null, leftAt: Date.now() });
+      lifecycleEvidence.events.push({ event: 'leave', at: Date.now(), frame: lifecycleEvidence.frameAtLeave, sessionId: lifecycleEvidence.sessionId });
+      await leaveSession({ message: 'Qualification: returning to the overworld.' });
+      return lifecycleEvidence; },
+    reopenSubgame: async gameId => {
+      const target = takeover.observe().running.find(run => run.role === 'gameplay' && run.gameId === gameId);
+      if (!target) throw Error('No running gameplay session to watch.');
+      showQualificationStep(`Watch ${playerLabel(gameId)} to verify the same session. Other players continue in the background.`);
+      await new Promise(resolve => setTimeout(resolve, 1100));
+      const row = [...$('#agent-runs').children].find(item => item.dataset.runId === target.runId);
+      const button = row?.querySelector('.agent-watch');
+      if (!button) throw Error('The visible Watch control is unavailable.');
+      qualificationNavigationRun = target.runId; button.click();
+      const deadline = Date.now() + 10000;
+      while ((watchPending || displayedTakeoverSession() !== target.sessionId) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 30));
+      if (displayedTakeoverSession() !== target.sessionId) throw Error('Watch did not reopen the original session.');
+      const read = window.__gameverseSports?.read?.();
+      Object.assign(lifecycleEvidence, { reopenedSessionId: session?.agentSessionId || null,
+        frameAtReopen: read?.frame ?? null, matchClockAtReopen: read?.clock ?? null, reopenedAt: Date.now() });
+      lifecycleEvidence.events.push({ event: 'reopen', at: Date.now(), frame: lifecycleEvidence.frameAtReopen, sessionId: lifecycleEvidence.reopenedSessionId });
+      return lifecycleEvidence; },
+    stopPreconditions: runId => { const runtime = takeover.host.runs.get(runId); const read = window.__gameverseSports?.read?.();
+      const snapshot = { runId, at: Date.now(), pendingDecision: Boolean(runtime?.harness?.pending), reflecting: Boolean(runtime?.harness?.reflecting),
+        heldAction: runtime?.harness?.current?.action?.type ?? null, charging: read?.charging ?? null, charge: read?.charge ?? null,
+        frame: read?.frame ?? null, shots: read?.stats?.shots ?? null,
+        staleBefore: runtime?.harness?.usage?.stale ?? null };
+      stopSnapshots.set(runId, snapshot); return snapshot; },
+    stopAftermath: runId => {
+      const runtime = takeover.host.runs.get(runId); const read = window.__gameverseSports?.read?.();
+      const report = runtime?.harness?.report?.() || null;
+      const before = stopSnapshots.get(runId) || null;
+      const status = takeover.host.runStatus(runId);
+      // The HOST clears held input during release, so its release receipt is the
+      // authority; harness safe-idle events are not produced by revocation.
+      const receipt = status.releaseReceipt || null;
+      const stoppedAt = receipt?.at ?? runtime?.endedAt ?? before?.at ?? null;
+      const clearedEvent = receipt?.heldInput === 'cleared' ? { at: receipt.at } : null;
+      const discardedAfter = (report?.evidence || []).filter(entry => entry.event === 'decision-discarded'
+        && (stoppedAt === null || entry.at >= stoppedAt) && entry.reason === 'run-released');
+      // Outstanding work is taken from the snapshot the host captured at the
+      // ACTUAL release, not from an earlier pre-command snapshot.
+      const outstandingAtStop = receipt?.harnessSnapshot
+        ? Boolean(receipt.harnessSnapshot.pendingDecision || receipt.harnessSnapshot.reflecting)
+        : before ? Boolean(before.pendingDecision || before.reflecting) : null;
+      return { runId, stoppedAt, state: status.state, outcome: status.outcome,
+        releaseReceipt: receipt, preconditions: before, harnessAtRelease: receipt?.harnessSnapshot || null,
+        surfaceHeldAfterStop: receipt?.surfaceHeld ?? null,
+        heldInput: clearedEvent ? 'cleared' : 'unknown', heldInputClearedAt: clearedEvent?.at ?? null,
+        outstandingAtStop,
+        lateResultsRejected: discardedAfter.length,
+        staleTotal: report?.usage?.stale ?? null,
+        chargedActionFired: before?.shots && read?.stats?.shots ? read.stats.shots[0] > before.shots[0] : false,
+        chargingAfterStop: read?.charging ?? null, shotsAfterStop: read?.stats?.shots ?? null, frameAfterStop: read?.frame ?? null }; },
+    // Real human control after the neutral handback: dispatch an actual key the
+    // match's own input adapter listens for, then read the engine's response.
+    humanControlProbe: async ({ code = 'KeyD', ms = 700 } = {}) => {
+      const read = () => window.__gameverseSports?.read?.() || null;
+      if (!read()) return { inputDispatched: false, engineResponded: false, detail: 'no match is displayed' };
+      const readyEnd = Date.now() + 5000; let confirms = 0;
+      while (read()?.phase !== 'play' && Date.now() < readyEnd) {
+        window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Enter', bubbles: true }));
+        await new Promise(r => setTimeout(r, 80));
+        window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Enter', bubbles: true })); confirms++;
+        await new Promise(r => setTimeout(r, 120));
+      }
+      // Entry/resume deliberately requires neutral input before arming keys.
+      window.dispatchEvent(new KeyboardEvent('keyup', { code, bubbles: true }));
+      await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame);
+      const before = read(), samples = [], seen = new Set(), endAt = performance.now() + ms;
+      document.querySelector('#screen canvas')?.focus?.({ preventScroll: true });
+      window.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true }));
+      try { while (performance.now() < endAt) { await new Promise(requestAnimationFrame); const sample = read()?.control;
+        if (sample && !seen.has(sample.frame)) { seen.add(sample.frame); samples.push(sample); } } }
+      finally { window.dispatchEvent(new KeyboardEvent('keyup', { code, bubbles: true })); }
+      const after = read();
+      const valid = samples.filter(s => s.source === 'human' && s.keys?.includes(code) && s.before?.playerIndex === s.after?.playerIndex && Number.isFinite(s.before?.x) && Number.isFinite(s.after?.x) && ((s.after.x-s.before.x)*(s.move?.x||0)+((s.after.z??s.after.y)-(s.before.z??s.before.y))*(s.move?.y||0)) > 0.0005);
+      const distance = valid.reduce((n,s) => n + Math.hypot(s.after.x-s.before.x,(s.after.z??s.after.y)-(s.before.z??s.before.y)),0);
+      return { inputDispatched: true, code, selected: before.active ?? before.controlled, endSelected: after.active ?? after.controlled,
+        engineResponded: valid.length >= 2, inputSamples: samples, verifiedInputFrames: valid.length, movedUnits: distance,
+        framesAdvanced: after.frame-before.frame, preparatoryConfirms: confirms, paused: after.paused,
+        detail: `human ${code} produced ${valid.length} engine-observed human input/movement frames (${distance.toFixed(3)} units)` };
+    },
+    pressVisibleStop: runId => {
+      const row = [...document.querySelectorAll('#agent-runs li')].find(li => li.dataset.runId === runId);
+      const target = row?.querySelector('button.agent-stop');
+      if (!target) throw Error('The target player has no visible Stop button.');
+      target.click(); return takeover.observe().running.filter(run => run.role === 'gameplay').map(run => run.runId); },
+    spectatorCamera: async (seconds = 1) => {
+      const controller = neighborhood?.controller;
+      if (!controller) throw Error('The overworld is not open.');
+      const readyEnd = Date.now() + 12000;
+      const moving = () => { const run = [...takeover.host.runs.values()].find(r => r.state === 'running' && r.role !== 'requester' && takeover.host.sessions.get(r.sessionId)?.gameId === 'overworld');
+        return Math.hypot(controller.agentDrive?.side || 0, controller.agentDrive?.forward || 0) > 0.1 && run?.harness?.current?.expiresAt - Date.now() > seconds * 1000 + 100; };
+      while (!moving() && Date.now() < readyEnd) await new Promise(requestAnimationFrame);
+      const before = controller.observe(), commanded = controller.agentDrive ? { ...controller.agentDrive } : null;
+      // Real human spectator input: hold a movement key for the sampled window.
+      controller.keys.add('KeyD');
+      await new Promise(resolve => setTimeout(resolve, seconds * 1000));
+      controller.keys.delete('KeyD');
+      const after = controller.observe();
+      const moved = { x: after.x - before.x, z: after.z - before.z };
+      const distance = Math.hypot(moved.x, moved.z);
+      // Commanded world direction, from the host-granted drive vector.
+      const want = commanded ? { x: commanded.side || 0, z: commanded.forward || 0 } : null;
+      const wantLength = want ? Math.hypot(want.x, want.z) : 0;
+      const delta = distance > 0.05 && wantLength > 0
+        ? Math.hypot(moved.x / distance - want.x / wantLength, moved.z / distance - want.z / wantLength)
+        : null;
+      Object.assign(lifecycleEvidence, {
+        spectatorCameraMovedIndependently: Number.isFinite(delta) && delta <= 0.05 && (Math.abs(after.yaw - before.yaw) > 0.01 || Math.abs(after.camera.distance - before.camera.distance) > 0.01),
+        agentTrajectoryDelta: delta, agentDrivenDuringSpectator: Boolean(after.agentDriven),
+        spectatorSample: { seconds, yawBefore: before.yaw, yawAfter: after.yaw, distanceMoved: distance,
+          cameraDistanceBefore: before.camera.distance, cameraDistanceAfter: after.camera.distance, commanded: want },
+      });
+      return { ...lifecycleEvidence.spectatorSample, agentTrajectoryDelta: delta,
+        spectatorCameraMovedIndependently: lifecycleEvidence.spectatorCameraMovedIndependently,
+        humanSpectatorInput: after.humanSpectatorInput, agentDriven: after.agentDriven }; },
+    // Privileged export for the external qualification runner: the real WAV
+    // bytes with their run ids and playback timestamps. Model-facing contexts
+    // never receive audio bytes.
+    exportAudio: () => qualification.rawUtterances().map(entry => ({ text: entry.text, runId: entry.runId,
+      bytes: entry.bytes, retainedBytes: entry.retainedBytes, truncated: entry.truncated, mime: entry.mime,
+      at: entry.at, audioBase64: entry.audioBase64 })),
+    captureLifecycle: () => qualification.capture.capture,
+    evidence: async extra => {
+      const ledger = await fetch('/api/agent/ledger').then(response => response.json()).catch(() => null);
+      return buildEvidenceBundle({
+        identity: { sourceCommit: document.documentElement.dataset.sourceCommit || null, gameId: 'soccer',
+          gameVersion: games.find(game => game.id === 'soccer')?.version || null, adapter: 'custom-sports',
+          harness: qualifying ? QUALIFICATION_HARNESS_CONFIG.version : HARNESS_VERSION, agent: 'voice-agent-v1', shell: takeover.version, qualification: qualification.version },
+        receipt: voiceCommands[0]?.receipt || lastVoiceReceipt,
+        capture: qualification.captureEvidence(voiceCommands),
+        commands: voiceCommands.map(command => ({ ...command, receipt: command.receipt ? { requestId: command.receipt.requestId, processing: command.receipt.processing, status: command.receipt.status, transcription: command.receipt.transcription, textLength: command.receipt.text?.length ?? null } : null })),
+        agent: voiceCommands[0] ? { planner: voiceCommands[0].planner, outcome: voiceCommands[0].outcome,
+          acknowledgment: voiceCommands[0].acknowledgment, transcript: voiceCommands[0].transcript, toolCalls: voiceCommands[0].toolCalls }
+          : lastVoiceRecord ? { planner: lastVoiceRecord.planner, outcome: lastVoiceRecord.outcome, acknowledgment: lastVoiceRecord.acknowledgment,
+          transcript: lastVoiceRecord.transcript, toolCalls: (lastVoiceRecord.toolCalls || []).map(call => ({ callId: call.callId, name: call.name, ok: Boolean(call.ok), wallMs: call.wallMs })) } : null,
+        takeover, providerLedger: ledger,
+        // Spread the caller's extras FIRST so the measured lifecycle evidence
+        // (session ids, frames at leave/reopen, spectator sample) always wins.
+        ...extra,
+        lifecycle: { ...lifecycleEvidence, ...(extra?.lifecycle || {}) },
+      });
+    },
+  };
+}
 $('#voice-button').onclick = () => voice.toggle();
 $('#voice-stop').onclick = () => voice.stop();
 $('#voice-cancel').onclick = () => void voice.cancel();
@@ -122,7 +442,25 @@ async function refreshGames() {
   games = configuredGames(application, await response.json());
   await renderGames();
 }
+// Host catalog registration: an opener alone does not make a target supported,
+// so every ready game (and the overworld) is registered with its real version
+// and artifact identity before any voice command can resolve a target.
+function registerTakeoverTargets() {
+  for (const game of games) {
+    if (game.kind !== 'custom-sports' || !game.ready) continue;
+    try {
+      takeover.host.registerGame({ gameId: game.id, version: game.version, name: game.name,
+        kind: game.kind, artifactSha256: game.artifactSha256 || null, adapter: game.adapter || null });
+    } catch (error) { console.debug('[takeover] target not registered', game.id, error.message); }
+  }
+  if (application?.base?.kind === 'neighborhood') {
+    try { takeover.host.registerGame({ gameId: 'overworld', version: String(application.version || '1'), name: application.title || 'Gameverse', kind: 'base' }); }
+    catch (error) { console.debug('[takeover] overworld not registered', error.message); }
+  }
+  return takeover.host.listGames();
+}
 async function renderGames() {
+  registerTakeoverTargets();
   $('#games').replaceChildren();
   $('#collection-count').textContent = String(games.length).padStart(2, '0');
   $('#games').classList.toggle('single-game', games.length === 1);
@@ -164,7 +502,21 @@ function showProfile() {
   clearInput(); $('#profile-dialog').returnValue = ''; $('#profile-dialog').showModal(); nameEntry.reset();
 }
 async function startGame(game, mode = 'snapshot', origin = 'collection') {
-  if (busy || session || neighborhoodOpen) return;
+  if (busy || session) return;
+  // Reopening a match a simulated user is still playing shows that exact
+  // runtime: no reload, restart or replay, and its progress lock is retained.
+  const background = backgroundSessions.get(game.id);
+  if (background && mode === 'snapshot') {
+    backgroundSessions.delete(game.id); session = background;
+    neighborhoodOpen = false; $('#neighborhood').hidden = true; document.body.classList.remove('exploring-neighborhood');
+    neighborhood?.suspend();
+    $('#home').hidden = true; $('#player').hidden = false; $('#profile-button').disabled = true;
+    document.body.classList.add('playing-subgame'); document.body.classList.toggle('playing-sports', game.kind === 'custom-sports');
+    takeover.setDisplayed(background.agentSessionId, true);
+    $('#session-status').textContent = 'The same match is still running. Stop the simulated user to take the controls.';
+    notice(''); return;
+  }
+  if (neighborhoodOpen) return;
   if (!profile) { showProfile(); notice('Create or select your character, then choose a game.'); return; }
   busy = true; notice('Loading your adventure…');
   let current, release;
@@ -230,6 +582,11 @@ async function startGame(game, mode = 'snapshot', origin = 'collection') {
     if (session !== current || current.state !== 'loading') throw Error('Session stopped during loading. Retry from the collection.');
     clearInput();
     await current.adapter.resume(); current.state = 'playing';
+    if (custom) {
+      const registered = takeover.registerSportsSession({ handle: current.adapter.controlHandle(), identity,
+        progressKey: key, displayed: true, origin });
+      current.agentSessionId = registered.sessionId;
+    }
     $('#session-status').textContent = mode === 'battery' ? 'Using the last confirmed in-game save. Previous snapshots are retained.' : state ? 'Exact confirmed snapshot restored.' : `New session. Save & return to ${origin === 'neighborhood' ? 'Gameverse' : 'the collection'} to confirm a checkpoint.`;
     notice('');
   } catch (error) {
@@ -280,8 +637,21 @@ async function leaveSession({ restoreOrigin = true, message = '' } = {}) {
   const current = session;
   if (!current) return;
   const wasBusy = busy; busy = true;
+  const keepRunning = current.agentSessionId && !takeover.disposable(current.agentSessionId);
   try {
-    session = undefined; current.adapter?.dispose(); await current.release();
+    session = undefined;
+    if (keepRunning) {
+      // The simulated user keeps playing this exact session in the background;
+      // its adapter, progress lock and checkpoint policy are untouched.
+      backgroundSessions.set(current.game.id, current);
+      takeover.setDisplayed(current.agentSessionId, false);
+      clearInput(); $('#session-dialog').close(); $('#player').hidden = true;
+      document.body.classList.remove('playing-subgame', 'playing-sports');
+      if (restoreOrigin) restoreSessionOrigin(current.origin, message || 'The simulated user is still playing. Return to its venue to watch.');
+      renderAgentPanel(); return;
+    }
+    if (current.agentSessionId) takeover.host.closeSession(current.agentSessionId, { reason: 'left the match' });
+    current.adapter?.dispose(); await current.release();
     clearInput(); $('#session-dialog').close(); $('#player').hidden = true; document.body.classList.remove('playing-subgame', 'playing-sports'); $('#screen').replaceChildren();
     if (restoreOrigin) restoreSessionOrigin(current.origin, message);
     renderGames().catch(handleError);
@@ -349,6 +719,13 @@ async function exploreNeighborhood() {
       { title: application.title, location: application.base.location, hasFireRed: application.subgames.some(game => game.id === 'firered'), gameIds: application.subgames.map(game => game.id) });
     if (launch === neighborhoodLaunch) {
       neighborhood = opened;
+      if (opened.controller) {
+        const registered = takeover.registerOverworldSession({ controller: opened.controller, world: opened.world || null,
+          identity: { profileId: profile?.id || 'local' }, progressKey: `overworld:${profile?.id || 'local'}`, displayed: true,
+          // Real engine clock: rendered frames and active simulation time.
+          simulation: () => opened.observe(), hold: value => opened.holdExecution?.(value) });
+        opened.agentSessionId = registered.sessionId;
+      }
       if ($('#world-menu').open) { opened.suspend(); updateWorldMenu(); }
     }
     else opened.dispose();
@@ -544,6 +921,10 @@ function pollInput(now) {
   requestAnimationFrame(pollInput);
 }
 requestAnimationFrame(pollInput);
+// Harness ticks run on their own frame callback: they only schedule the
+// harness's own asynchronous work, and a harness error cannot break shell input.
+function tickTakeover(now) { takeover.tick(now + performance.timeOrigin); requestAnimationFrame(tickTakeover); }
+requestAnimationFrame(tickTakeover);
 let healthPending = false;
 setInterval(async () => {
   const current = session;

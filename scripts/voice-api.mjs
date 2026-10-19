@@ -53,6 +53,30 @@ async function readBody(req, limit) {
   return Buffer.concat(chunks);
 }
 
+const AGENT_OUTCOMES = ['completed', 'partial', 'failed', 'no-action', 'rejected', 'planner-failed'];
+// Only the fields the app needs to retain are accepted, so a receipt cannot be
+// turned into a log of provider payloads or credentials.
+function validateAgentResult(body) {
+  if (!body || typeof body !== 'object' || !AGENT_OUTCOMES.includes(body.outcome)) throw failure(400, 'A valid agent outcome is required.');
+  if (typeof body.acknowledgment !== 'string' || body.acknowledgment.length > 4000) throw failure(400, 'An acknowledgment text is required.');
+  const calls = Array.isArray(body.toolCalls) ? body.toolCalls : [];
+  if (calls.length > 16) throw failure(400, 'Too many tool calls in one agent result.');
+  for (const call of calls) {
+    if (!call || typeof call.name !== 'string' || !call.name || typeof call.ok !== 'boolean') throw failure(400, 'Invalid tool call record.');
+    // Successful calls send error: null; only a non-string, non-null value is invalid.
+    if (call.error !== undefined && call.error !== null && typeof call.error !== 'string') throw failure(400, 'Invalid tool call error text.');
+    if (/\bsk-[A-Za-z0-9]/.test(JSON.stringify(call))) throw failure(400, 'Tool call records must not contain credentials.');
+  }
+  const runs = Array.isArray(body.runs) ? body.runs : [];
+  if (runs.some(run => typeof run !== 'string' || run.length > 64) || runs.length > 8) throw failure(400, 'Invalid run id list.');
+  return { agent: typeof body.agent === 'string' ? body.agent.slice(0, 64) : null, outcome: body.outcome,
+    acknowledgment: body.acknowledgment, toolCalls: calls.map(call => ({ callId: typeof call.callId === 'string' ? call.callId.slice(0, 96) : null,
+      name: call.name.slice(0, 48), ok: call.ok, wallMs: Number.isFinite(call.wallMs) ? call.wallMs : null, error: call.error ? String(call.error).slice(0, 300) : null })),
+    runs, planner: body.planner && typeof body.planner === 'object'
+      ? { model: typeof body.planner.model === 'string' ? body.planner.model.slice(0, 64) : null, provider: typeof body.planner.provider === 'string' ? body.planner.provider.slice(0, 32) : null } : null,
+    wallMs: Number.isFinite(body.wallMs) ? body.wallMs : null };
+}
+
 function validateContext(context) {
   if (!context || typeof context !== 'object' || Array.isArray(context)
     || !['base', 'subgame'].includes(context.role) || typeof context.gameId !== 'string' || !context.gameId
@@ -121,9 +145,23 @@ export function createVoiceApi({ env = process.env, liveProviders = {}, director
             return previous;
           }
           return { schemaVersion: 1, requestId, status: 'received', text: body.text, context,
-            receivedAt: new Date().toISOString(), processing: 'not-connected',
+            receivedAt: new Date().toISOString(), processing: 'agent-pending',
             transcription: { provider: config.provider, model: body.transcriptionMode === 'realtime' ? config.realtimeModel : config.model,
               mode: body.transcriptionMode === 'realtime' ? 'realtime' : 'file', wallMs: Number.isFinite(body.transcriptionMs) ? body.transcriptionMs : null } };
+        });
+        json(res, 200, receipt);
+      } else if (req.method === 'POST' && path.startsWith('/api/voice/requests/') && path.endsWith('/agent')) {
+        // The retained transcript's agent outcome: tool calls, acknowledgment
+        // text and run ids. Provider credentials never appear in a receipt.
+        requestId = path.slice('/api/voice/requests/'.length, -'/agent'.length);
+        if (!validId(requestId)) throw failure(400, 'Invalid voice request ID.');
+        let body;
+        try { body = JSON.parse(await readBody(req, 131072)); } catch (error) { if (error.status) throw error; throw failure(400, 'Invalid agent result.'); }
+        const result = validateAgentResult(body);
+        const receipt = await update(requestId, previous => {
+          if (!previous) throw failure(404, 'No retained voice request to attach an agent result to.');
+          if (previous.status === 'cancelled') return previous;
+          return { ...previous, status: 'processed', processing: 'agent', agent: result, processedAt: new Date().toISOString() };
         });
         json(res, 200, receipt);
       } else if (req.method === 'DELETE' && path.startsWith('/api/voice/requests/')) {

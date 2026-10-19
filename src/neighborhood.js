@@ -9,6 +9,7 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterGa
   const started = performance.now(), abort = new AbortController();
   let renderer, world, controller, frame, observer, disposed = false, paused = false, failed = false, suspended = false, entering = false;
   let renderedFrames = 0, lastTime = performance.now(), activeMs = 0, sampleMs = 0, sampleFrames = 0, fps = null;
+  let executionHold = false;
   container.innerHTML = `<div class="neighborhood-canvas"></div>
     <div class="neighborhood-heading"><span class="neighborhood-kicker">YOUR WORLD, YOUR ADVENTURE</span><h1>Gameverse<span>Alder District · take your time.</span></h1><p class="neighborhood-input-status">Keyboard + mouse · press a controller button to connect</p></div>
     <button class="neighborhood-return" type="button">Menu <span>☰</span></button>
@@ -90,7 +91,7 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterGa
   let firstRenderMs = null;
   const diagnostics = Object.freeze({
     read() { return { version: VERSION, state: disposed ? 'disposed' : failed ? 'failed' : suspended ? 'suspended' : paused ? 'paused' : controller ? 'playing' : 'loading',
-      ...controller?.observe(), renderer: 'Three.js WebGL2', rendererVersion: THREE.REVISION, renderedFrames, activeMs, recentFps: fps,
+      ...controller?.observe(), renderer: 'Three.js WebGL2', rendererVersion: THREE.REVISION, renderedFrames, activeMs, recentFps: fps, executionHold,
       loadToFirstRenderMs: firstRenderMs, drawCalls: renderer?.info.render.calls ?? null,
       triangles: renderer?.info.render.triangles ?? null, colliderCount: world?.colliders.length ?? 0,
       entrance: { ...entrance(), available: !suspended && !paused && entranceDistance() <= (entrance()?.radius || 0) } }; },
@@ -123,18 +124,23 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterGa
       } catch (error) { fail(error); }
     }
     observer = new ResizeObserver(resize); observer.observe(container); resize();
-    if (failed) return { dispose, suspend, resume, observe: diagnostics.read };
+    // The host registers the real controller/world as an overworld surface.
+    if (failed) return { dispose, suspend, resume, observe: diagnostics.read, holdExecution, get controller() { return controller; }, get world() { return world; } };
     renderer.render(world.scene, camera); renderedFrames++; firstRenderMs = performance.now() - started;
     overlay.hidden = true; canvas.focus({ preventScroll: true }); lastTime = performance.now();
     function animate(now) {
       if (disposed || failed) return;
       frame = requestAnimationFrame(animate);
       const elapsed = now - lastTime; lastTime = now;
-      if (paused || document.hidden) return;
+      const hidden = paused || suspended || document.hidden;
+      // A held execution keeps simulating while hidden; otherwise the ordinary
+      // suspension applies and no resources are spent in the background.
+      if (hidden && !executionHold) return;
       const dt = Math.min(elapsed / 1000, 0.05);
       try { controller.update(dt); } catch (error) { fail(error); return; }
-      if (paused || suspended) return;
-      renderer.render(world.scene, camera); renderedFrames++; activeMs += elapsed;
+      activeMs += elapsed;
+      if (hidden) return;
+      renderer.render(world.scene, camera); renderedFrames++;
       sampleMs += elapsed; sampleFrames++;
       if (sampleMs >= 1000) { fps = Math.round(sampleFrames * 1000 / sampleMs); sampleMs = 0; sampleFrames = 0; }
       const { x, z } = controller.position;
@@ -162,6 +168,13 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterGa
     }
     frame = requestAnimationFrame(animate);
   } catch (error) { fail(error); }
+  // Host-facing execution hold. Generic keepalive only: the engine never learns
+  // why the run wants to keep stepping.
+  function holdExecution(value) {
+    executionHold = Boolean(value);
+    if (controller) controller.executionHold = executionHold;
+    return { held: executionHold, paused, suspended };
+  }
   function fail(error) {
     if (disposed) return;
     failed = true; cancelAnimationFrame(frame); controller?.setPaused(true); overlay.hidden = false; resumeButton.hidden = true;
@@ -169,5 +182,5 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterGa
     message.textContent = `${error.message} Menu gives you recovery and character options.`;
     returnButton.focus();
   }
-  return { dispose, suspend, resume, observe: diagnostics.read };
+  return { dispose, suspend, resume, observe: diagnostics.read, holdExecution, get controller() { return controller; }, get world() { return world; } };
 }

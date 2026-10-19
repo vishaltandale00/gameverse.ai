@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{verifyEvidence}from'../scripts/verify-takeover-evidence.mjs';
+const check=(e,id)=>verifyEvidence(e).checks.find(c=>c.id===id);
+const input=()=>[0,1].map(i=>({frame:i+1,source:'human',keys:['KeyD'],move:{x:1,y:0},before:{playerIndex:1,x:i*.1,z:0},after:{playerIndex:1,x:(i+1)*.1,z:0}}));
+test('a missing spectator trajectory never passes through null coercion',()=>{assert.notEqual(check({lifecycle:{spectatorCameraMovedIndependently:true,agentTrajectoryDelta:null}},'spectator-camera').status,'pass');});
+test('changing selected players cannot prove handback without actual input samples',()=>{assert.notEqual(check({stop:{humanControl:{inputDispatched:true,engineResponded:true,selected:1,endSelected:3}}},'human-resumed').status,'pass');});
+test('handback requires same-player, human-origin movement samples',()=>{const e={stop:{humanControl:{code:'KeyD',inputDispatched:true,engineResponded:true,inputSamples:input()}}};assert.equal(check(e,'human-resumed').status,'pass');e.stop.humanControl.inputSamples.forEach(s=>s.after.playerIndex=3);assert.notEqual(check(e,'human-resumed').status,'pass');});
+test('an already released run without a correlated spoken Stop cannot pass',()=>{assert.equal(check({commands:[],journey:{spokenStop:{ok:true,target:'run_a'}}},'spoken-stop-correlation').status,'fail');});
+test('an incomplete audio/video recording cannot pass',()=>{assert.equal(check({recording:{path:'incomplete.mp4',complete:false}},'recording').status,'fail');});
+
+test('spoken Stop requires a fresh target release following the correlated call',()=>{const e={commands:[{requestId:'stop-1',receipt:{requestId:'stop-1',processing:'agent',transcription:{mode:'realtime'}},toolCalls:[{name:'stop_run',callId:'stop-1:1',ok:true,targetRunId:'run_a',startedAt:100,releasedAt:101,resultOutcome:'stopped'}]}],journey:{spokenStop:{ok:true,target:'run_a',requestId:'stop-1'}}};assert.equal(check(e,'spoken-stop-correlation').status,'pass');e.commands[0].toolCalls[0].releasedAt=90;assert.equal(check(e,'spoken-stop-correlation').status,'fail');});
