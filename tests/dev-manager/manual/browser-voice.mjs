@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import {Store} from '../../../scripts/dev-manager/store.mjs';import {identity,Transport} from '../../../scripts/dev-manager/transport.mjs';import {voicePackage} from '../../../scripts/dev-manager/voice-package.mjs';import {digest} from '../../../src/dev-manager-protocol.js';import {execFileSync} from 'node:child_process';import WebSocket from 'ws';
 process.env.CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV='false';process.env.WRANGLER_SEND_METRICS='false';
 const {unstable_dev}=await import('wrangler'),dir=process.env.GAMEVERSE_VOICE_EVIDENCE_DIR||await mkdtemp(join(tmpdir(),'gameverse-voice-evidence-')),origin='https://gameverse.build:7443',started=Date.now();
-await mkdir(dir,{recursive:true});
+await mkdir(dir,{recursive:true,mode:0o700});
 const backend=await unstable_dev('tests/hosting/fixtures/dev-manager-worker.js',{config:'tests/hosting/fixtures/wrangler.voice.jsonc',local:true,ip:'127.0.0.1',port:8788,persistTo:dir+'/state',vars:{VOICE_BROWSER_COLLECTION:'1'},logLevel:'error',inspect:false,experimental:{disableExperimentalWarning:true,disableDevRegistry:true,watch:false}}),stopGateway=await start({directory:dir});
 await writeFile(dir+'/gateway-ready.json',JSON.stringify({ready:true}));console.log(JSON.stringify({gateway_ready:true,evidence_directory:dir}));
 global.gc?.();

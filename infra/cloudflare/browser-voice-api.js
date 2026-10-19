@@ -67,7 +67,7 @@ export async function browserVoiceRoute(request,env){const url=new URL(request.u
     if(match){
       if(request.method==='DELETE'&&!match[2])return json(await registry.voice('cancelRequest',account.id,match[1]));
       const row=await registry.voice('request',account.id,match[1]);
-      if(request.method==='GET'){const task=await registry.task(row.task_id);return json({requestId:row.id,status:row.cancelled?'cancelled':!row.record&&['failed','cancelled','succeeded'].includes(task.phase)?'failed':row.phase,reason:task.reason||null,text:row.text||null,record:row.record||null});}
+      if(request.method==='GET'){const task=await registry.task(row.task_id);return json({requestId:row.id,status:row.cancelled||task.cancel_requested||task.phase==='cancelled'?'cancelled':!row.record&&['failed','succeeded'].includes(task.phase)?'failed':row.phase,reason:task.reason||null,text:row.text||null,record:row.record||null});}
       if(request.method==='POST'&&match[2]){assert(row.record,'voice_record_pending');return json({requestId:row.id,status:row.phase,agent:row.record});}
     }
     if(path==='/api/voice/requests'&&request.method==='POST'){const v=await read(request);return json(await registry.voice('approve',account.id,v.requestId,v.text,v.context));}

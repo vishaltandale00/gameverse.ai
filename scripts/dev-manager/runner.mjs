@@ -47,7 +47,7 @@ export class Runner {
     if(this.now()>=t.deadline||j.started_at&&this.now()-j.started_at>=t.limits.job_wall_ms){j.cancel=true;j.reason='deadline_exceeded';j.phase='cleaning';j.pending=null;}
     if(j.pending){await this.report(j,j.pending.phase);return;}
     if(j.phase==='queued'){
-      if(!mayLaunch())return;j.phase='creating';j.started_at=this.now();await this.save();await this.report(j,'creating');return;}
+      if(!mayLaunch())return;if(t.kind==='voice-agent')await voicePackage(t.source_commit);j.phase='creating';j.started_at=this.now();await this.save();await this.report(j,'creating');return;}
     if(j.phase==='creating'){
       let sandbox=await this.daytona.get(t.sandbox_name);
       if(!sandbox){if(j.create_sent){j.reason='provisioning_unconfirmed';await this.save();return;}
