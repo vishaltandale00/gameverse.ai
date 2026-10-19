@@ -1036,3 +1036,7 @@ body.playing-subgame #player {
 @media (max-width: 600px) {
   body:has(#agent-panel:not([hidden])) #notice { bottom: calc(var(--agent-panel-height, 240px) + 26px); }
 }
+
+/* Each retained runtime owns its view; another game never clears its canvas. */
+.session-view { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.playing-sports .session-view { display: block; }

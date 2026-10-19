@@ -305,3 +305,17 @@ test('the spectator camera surface is never grantable to a run', async () => {
   assert.equal(host.runStatus(run.runId).state, 'running');
   assert.throws(() => host.startRun({ sessionId: session.sessionId, surface: 'camera', goal: 'steal the camera' }), /human/i);
 });
+
+test('opening a new session forwards the selection intent to the app', async () => {
+  const host = new AgentHost();
+  host.registerGame({ gameId: 'soccer', version: '1.0.0' });
+  const first = host.registerSession({ gameId: 'soccer', version: '1.0.0' });
+  let selection;
+  host.registerOpener('soccer', context => {
+    selection = context.selection;
+    throw Error('This app cannot create another isolated soccer session.');
+  });
+  await assert.rejects(host.openSession({ gameId: 'soccer', selection: 'new' }), /cannot create another/);
+  assert.equal(selection, 'new');
+  assert.equal((await host.openSession({ gameId: 'soccer', selection: 'reuse' })).sessionId, first.sessionId);
+});

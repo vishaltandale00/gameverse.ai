@@ -88,10 +88,13 @@ export class CustomSportsAdapter {
       } catch (error) { this.fail(error); }
     };
     this.raf = requestAnimationFrame(animate);
-    window.__gameverseSports = Object.freeze({ read: () => ({ control: this.lastControlSample ? structuredClone(this.lastControlSample) : null, gameId: this.game.id, frame: this.frame, paused: this.paused, ...structuredClone(this.state), hud: this.definition.hud(this.state), drawCalls: this.renderer.info.render.calls, recentFps: this.renderStats.fps,
+    this.readFacade = Object.freeze({ read: () => ({ control: this.lastControlSample ? structuredClone(this.lastControlSample) : null, gameId: this.game.id, frame: this.frame, paused: this.paused, ...structuredClone(this.state), hud: this.definition.hud(this.state), drawCalls: this.renderer.info.render.calls, recentFps: this.renderStats.fps,
       presentation: { events: this.feedback.observed, hapticRequests: this.feedback.hapticRequests, sounds: this.feedback.sounds, last: this.lastFeedback || null } }) });
+    this.activateView();
     return { frame: this.frame };
   }
+  activateView() { if (this.readFacade) window.__gameverseSports = this.readFacade; }
+  deactivateView() { if (window.__gameverseSports === this.readFacade) delete window.__gameverseSports; }
   paint(dt, input) {
     if (!this.view || this.disposed) return;
     this.definition.render({ state: this.state, view: this.view, camera: this.camera, dt });
@@ -192,6 +195,6 @@ export class CustomSportsAdapter {
     const resources = new Set();
     this.scene?.traverse(object => { if (object.geometry) resources.add(object.geometry); for (const m of [object.material].flat().filter(Boolean)) { resources.add(m); for (const value of Object.values(m)) if (value?.isTexture) resources.add(value); } });
     for (const resource of resources) resource.dispose(); this.renderer?.dispose(); this.renderer?.forceContextLoss();
-    this.container.replaceChildren(); delete window.__gameverseSports;
+    this.container.replaceChildren(); this.deactivateView();
   }
 }

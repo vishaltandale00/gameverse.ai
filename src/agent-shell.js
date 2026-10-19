@@ -60,6 +60,7 @@ export function createTakeoverShell({
   // stays human-only, so the human keeps independent camera control.
   host.registerOpener('overworld', context => {
     const existing = host.listSessions({ gameId: 'overworld' }).find(session => session.state === 'running');
+    if (existing && context.selection === 'new') throw Error('An overworld session is already open. Reuse it or close it before creating a new one.');
     if (existing) return existing;
     if (!openOverworld) throw Error('The overworld is not open, so it cannot be taken over yet.');
     return openOverworld({ ...context, register: registerOverworldSession });

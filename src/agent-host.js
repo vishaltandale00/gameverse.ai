@@ -90,7 +90,7 @@ export class AgentHost {
     if (selection === 'auto' && existing.length) return existing[0];
     const open = this.openers.get(gameId);
     if (!open) throw failure('cannot-open', `Opening '${gameId}' is not supported in this build.`);
-    const opened = await open({ gameId, version: wanted, identity, host: this });
+    const opened = await open({ gameId, version: wanted, identity, selection, host: this });
     return this.describeSession(typeof opened === 'string' ? opened : opened.sessionId);
   }
   // Views change without touching execution. Leaving soccer for the overworld

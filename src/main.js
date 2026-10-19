@@ -46,9 +46,10 @@ const takeover = createTakeoverShell({
     neighborhood.agentSessionId = registered.sessionId;
     return registered;
   },
-  openSubgame: async ({ gameId, identity, register }) => {
+  openSubgame: async ({ gameId, identity, selection, register }) => {
     const game = games.find(entry => entry.id === gameId && entry.kind === 'custom-sports');
     if (!game) throw Error(`'${gameId}' is not a supported takeover target in this build.`);
+    if (selection === 'new' && (session?.game.id === gameId || backgroundSessions.has(gameId))) throw Error(`A ${gameId} session is already open. Reuse it or close it before creating a new one.`);
     if (session?.game.id === gameId && session.agentSessionId) return takeover.host.describeSession(session.agentSessionId);
     const existing = backgroundSessions.get(gameId);
     if (existing) return takeover.host.describeSession(existing.agentSessionId);
@@ -71,6 +72,19 @@ new ResizeObserver(() => {
   const panel = $('#agent-panel');
   document.documentElement.style.setProperty('--agent-panel-height', `${panel.getBoundingClientRect().height}px`);
 }).observe($('#agent-panel'));
+// Native modal dialogs make outside controls inert. Keep the single player
+// panel inside the most recently opened dialog so Stop remains actionable.
+const modalOrder = [];
+new MutationObserver(records => {
+  for (const { target } of records) {
+    if (target.tagName !== 'DIALOG') continue;
+    const index = modalOrder.indexOf(target);
+    if (index !== -1) modalOrder.splice(index, 1);
+    if (target.open) modalOrder.push(target);
+  }
+  const parent = modalOrder.at(-1) || document.body;
+  if ($('#agent-panel').parentElement !== parent) parent.append($('#agent-panel'));
+}).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['open'] });
 function displayedTakeoverSession() { return session?.agentSessionId || (neighborhoodOpen ? neighborhood?.agentSessionId : null) || null; }
 function renderAgentPanel(view = takeover.observe()) {
   const panel = $('#agent-panel'); if (!panel) return;
@@ -508,6 +522,10 @@ async function startGame(game, mode = 'snapshot', origin = 'collection') {
   const background = backgroundSessions.get(game.id);
   if (background && mode === 'snapshot') {
     backgroundSessions.delete(game.id); session = background;
+    $('#screen').replaceChildren(background.view);
+    background.adapter?.activateView?.();
+    await background.adapter.resume(); background.state = 'playing';
+    configureGameView(background);
     neighborhoodOpen = false; $('#neighborhood').hidden = true; document.body.classList.remove('exploring-neighborhood');
     neighborhood?.suspend();
     $('#home').hidden = true; $('#player').hidden = false; $('#profile-button').disabled = true;
@@ -556,22 +574,15 @@ async function startGame(game, mode = 'snapshot', origin = 'collection') {
       battery = record.bytes;
     }
     $('#home').hidden = true; $('#player').hidden = false; document.body.classList.add('playing-subgame');
-    $('#playing-title').textContent = game.subtitle ? `${game.name}: ${game.subtitle}` : game.name;
-    document.body.classList.toggle('playing-sports', custom);
-    $('#download-save').hidden = custom;
-    $('#menu-button').setAttribute('aria-label', custom ? 'Gameverse menu — Start or Escape' : 'Gameverse menu — Y or Escape');
-    $('#menu-button kbd').textContent = custom ? 'Start' : 'Y';
-    $('#session-control-note').textContent = custom
-      ? (game.id === 'soccer'
-        ? 'Soccer: LS move and pass/shot direction · A pass · B shoot/tackle · X lob/tackle · Y through ball · RS skills · LB run/switch · RB finesse/driven · LT shield/jockey · RT sprint. Hold then release the action for power. Start/Options pauses; R3 voice. Keyboard: WASD direction, J pass, K shoot, U through, I lob, L tackle, Q run/switch, F modifier, E + arrows skill, C shield, Shift sprint, Esc pause.'
-        : 'Football: A snap · A/B/X receiver buttons (tap lob, hold bullet) · LS move and pass lead · RS juke · A stiff arm · B spin · RB protect · RT sprint. Defense: B switch, X dive tackle, A conservative tackle, LT strafe. Start/Options pauses; R3 voice. Keyboard: WASD move/lead, J/U/K receivers, L tackle, Q switch, E + arrows skill, C protect, V strafe, Shift sprint, Esc pause. Pausing cancels an unfinished throw.')
-      : 'Start and View / Back belong to FireRed.';
+    configureGameView(current);
+    current.view = document.createElement('div'); current.view.className = 'session-view';
+    $('#screen').replaceChildren(current.view);
     if (custom) {
       const { CustomSportsAdapter } = await import(game.entryUrl);
-      current.adapter = new CustomSportsAdapter($('#screen'), game, error => failSession(current, error), { onPause: openMenu, ownsB: () => voiceOwnsSportsB, preferredPadIndex: shellPadIndex });
+      current.adapter = new CustomSportsAdapter(current.view, game, error => failSession(current, error), { onPause: openMenu, ownsB: () => voiceOwnsSportsB, preferredPadIndex: shellPadIndex });
     } else {
-      $('#screen').innerHTML = '<canvas width="240" height="160" aria-label="Game Boy Advance game screen"></canvas>';
-      current.adapter = new GbaAdapter($('#screen canvas'), error => failSession(current, error));
+      current.view.innerHTML = '<canvas width="240" height="160" aria-label="Game Boy Advance game screen"></canvas>';
+      current.adapter = new GbaAdapter(current.view.querySelector('canvas'), error => failSession(current, error));
     }
     const loadContext = { ...identity, buildRunId: game.receipt?.runId || null, mode, origin, baseConfig: { id: application.id, version: application.version, kind: application.base.kind }, expectedFrame: expectedFrame ?? null };
     await timed('load-and-restore', loadContext, async () => {
@@ -593,6 +604,20 @@ async function startGame(game, mode = 'snapshot', origin = 'collection') {
     if (current) { current.adapter?.dispose(); failSession(current, error); }
     else { await release?.(); restoreSessionOrigin(origin, error.message); handleError(error); }
   } finally { busy = false; }
+}
+function configureGameView(current) {
+  const { game, origin } = current, custom = game.kind === 'custom-sports';
+  $('#save-return').textContent = origin === 'neighborhood' ? 'Save & return to Gameverse' : 'Save & return to collection';
+    $('#playing-title').textContent = game.subtitle ? `${game.name}: ${game.subtitle}` : game.name;
+    document.body.classList.toggle('playing-sports', custom);
+    $('#download-save').hidden = custom;
+    $('#menu-button').setAttribute('aria-label', custom ? 'Gameverse menu — Start or Escape' : 'Gameverse menu — Y or Escape');
+    $('#menu-button kbd').textContent = custom ? 'Start' : 'Y';
+    $('#session-control-note').textContent = custom
+      ? (game.id === 'soccer'
+        ? 'Soccer: LS move and pass/shot direction · A pass · B shoot/tackle · X lob/tackle · Y through ball · RS skills · LB run/switch · RB finesse/driven · LT shield/jockey · RT sprint. Hold then release the action for power. Start/Options pauses; R3 voice. Keyboard: WASD direction, J pass, K shoot, U through, I lob, L tackle, Q run/switch, F modifier, E + arrows skill, C shield, Shift sprint, Esc pause.'
+        : 'Football: A snap · A/B/X receiver buttons (tap lob, hold bullet) · LS move and pass lead · RS juke · A stiff arm · B spin · RB protect · RT sprint. Defense: B switch, X dive tackle, A conservative tackle, LT strafe. Start/Options pauses; R3 voice. Keyboard: WASD move/lead, J/U/K receivers, L tackle, Q switch, E + arrows skill, C protect, V strafe, Shift sprint, Esc pause. Pausing cancels an unfinished throw.')
+      : 'Start and View / Back belong to FireRed.';
 }
 function failSession(current, error) {
   if (session !== current) return;
@@ -643,6 +668,8 @@ async function leaveSession({ restoreOrigin = true, message = '' } = {}) {
     if (keepRunning) {
       // The simulated user keeps playing this exact session in the background;
       // its adapter, progress lock and checkpoint policy are untouched.
+      await current.adapter.pause(); current.state = 'paused';
+      current.adapter?.deactivateView?.(); current.view?.remove();
       backgroundSessions.set(current.game.id, current);
       takeover.setDisplayed(current.agentSessionId, false);
       clearInput(); $('#session-dialog').close(); $('#player').hidden = true;
@@ -667,7 +694,7 @@ async function saveAndReturn() {
     const savedAt = new Date().toISOString();
     const battery = captured.battery ? { id: crypto.randomUUID(), identity: current.identity, bytes: captured.battery, sha256: await digest(captured.battery), savedAt } : null;
     const checkpoint = { id: crypto.randomUUID(), identity: current.identity, state: captured.state, sha256: await digest(captured.state), frame: captured.frame, savedAt, batteryId: battery?.id || null };
-    await timed('checkpoint-commit', current.identity, () => storage.commitCheckpoint(current.key, current.head.revision, checkpoint, battery));
+    current.head = await timed('checkpoint-commit', current.identity, () => storage.commitCheckpoint(current.key, current.head.revision, checkpoint, battery));
     await leaveSession({ message: 'Match or adventure saved. Visit its venue to continue.' }); notice('Moment saved. Your adventure will be here when you return.');
   } catch (error) { failSession(current, error); }
   finally { busy = false; $('#save-return').disabled = false; $('#force-return').disabled = false; }

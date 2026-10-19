@@ -688,3 +688,11 @@ test('the audio export hands every real utterance to the runner before the brows
   assert.match(runner, /audioFiles\.length/);
   assert.match(runner, /complete: /);
 });
+
+test('the single overworld runtime refuses new intent rather than silently reusing', async () => {
+  const shell = createTakeoverShell();
+  shell.host.registerGame({ gameId: 'overworld', version: '1' });
+  const first = shell.host.registerSession({ gameId: 'overworld', version: '1' });
+  await assert.rejects(shell.host.openSession({ gameId: 'overworld', selection: 'new' }), /already open/);
+  assert.equal((await shell.host.openSession({ gameId: 'overworld', selection: 'reuse' })).sessionId, first.sessionId);
+});
