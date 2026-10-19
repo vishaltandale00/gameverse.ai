@@ -65,7 +65,7 @@ const takeover = createTakeoverShell({
     return takeover.host.describeSession(session.agentSessionId);
   },
 });
-const remoteVoice=new BrowserVoice({shell:takeover,onHandback:handbackAfterStop});
+const remoteVoice=new BrowserVoice({shell:takeover,onHandback:handbackAfterStop,isPlayable:id=>{const current=session?.agentSessionId===id?session:[...backgroundSessions.values()].find(s=>s.agentSessionId===id);return !!current&&!['failed','loading'].includes(current.state)&&!current.adapter?.disposed;}});
 window.addEventListener('pagehide',()=>remoteVoice.revoke('browser page closed'));
 document.addEventListener('visibilitychange',()=>{if(document.hidden)remoteVoice.revoke('browser page hidden');});
 window.__gameverseTakeover = takeover;
@@ -627,7 +627,7 @@ function configureGameView(current) {
 function failSession(current, error) {
   if (session !== current) return;
   const canResume = current.state === 'saving' || current.state === 'paused';
-  clearInput(); current.state = 'failed'; current.adapter?.silence();
+  clearInput(); current.state = 'failed'; remoteVoice.revoke('game needs attention'); current.adapter?.silence();
   $('#resume-button').hidden = !canResume || !current.adapter || current.adapter.disposed;
   $('#save-return').hidden = !current.adapter || current.adapter.disposed;
   $('#battery-fallback').hidden = !current.head.batteryId;

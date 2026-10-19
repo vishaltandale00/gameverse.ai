@@ -3,18 +3,19 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const plain=value=>JSON.parse(JSON.stringify(value));
 // Browser authority stays local. Only the fixed tool catalog crosses this boundary.
 export class BrowserVoice {
-  constructor({shell,fetchImpl=(...args)=>fetch(...args),now=()=>Date.now(),onHandback=()=>{},isVisible=()=>!globalThis.document?.hidden}){Object.assign(this,{shell,fetch:fetchImpl,now,onHandback,isVisible});this.enabled=false;this.binding=null;this.runs=new Set();this.cancelled=new Set();this.pendingCalls=new Map();this.acks=new Map();this.sequence=0;
+  constructor({shell,fetchImpl=(...args)=>fetch(...args),now=()=>Date.now(),onHandback=()=>{},isPlayable=()=>true,isVisible=()=>!globalThis.document?.hidden}){Object.assign(this,{shell,fetch:fetchImpl,now,onHandback,isPlayable,isVisible});this.enabled=false;this.binding=null;this.runs=new Set();this.cancelled=new Set();this.pendingCalls=new Map();this.acks=new Map();this.sequence=0;
     this.localStop=shell.stop.bind(shell);this.localStopAll=shell.stopAll.bind(shell);
     shell.stop=(id,reason)=>{const ours=this.runs.has(id),result=this.localStop(id,reason);if(ours)this.revoke(reason||'player stopped the simulated user');return result;};
     shell.stopAll=reason=>{const result=this.localStopAll(reason);this.revoke(reason||'player stopped every run');return result;};
     const close=shell.host.closeSession.bind(shell.host);shell.host.closeSession=(id,...args)=>{if(this.binding?.target.sessionId===id)this.revoke('session closed');return close(id,...args);};
-    this.watchdog=setInterval(()=>{if(this.binding&&(!this.isVisible()||this.now()-this.lastSuccess>VOICE_LEASE_MS))this.revoke('remote voice connection expired');},250);this.watchdog.unref?.();
+    this.watchdog=setInterval(()=>{if(this.binding&&(!this.isVisible()||!this.isPlayable(this.binding.target.sessionId)||this.now()-this.lastSuccess>VOICE_LEASE_MS))this.revoke('remote voice connection expired');},250);this.watchdog.unref?.();
   }
   async post(path,value,signal){const r=await this.fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value),signal:signal||AbortSignal.timeout(5000)});const data=await r.json();if(!r.ok)throw Error(data.error?.code||'remote_voice_unavailable');return data;}
-  valid(binding){return this.binding===binding&&!binding.revoked&&this.isVisible()&&this.now()-this.lastSuccess<=VOICE_LEASE_MS;}
+  valid(binding){return this.binding===binding&&!binding.revoked&&this.isVisible()&&this.isPlayable(binding.target.sessionId)&&this.now()-this.lastSuccess<=VOICE_LEASE_MS;}
   async prepare({context,config}){if(config.execution!=='daytona')return;this.enabled=true;if(!config.available)throw Error(config.reason||'Remote voice is unavailable.');
     if(context?.gameId!=='soccer')throw Error('Open a soccer match before requesting a takeover.');
     const sessionId=context.sessionId||this.shell.host.listSessions().find(s=>s.gameId===context.gameId&&s.displayed)?.sessionId;if(!sessionId)throw Error('Open a soccer match before requesting a takeover.');
+    if(!this.isPlayable(sessionId))throw Error('Resume a healthy soccer match before requesting a takeover.');
     const session=this.shell.host.describeSession(sessionId);
     const game=this.shell.host.listGames().find(g=>g.gameId===session.gameId),target={sessionId:session.sessionId,gameId:session.gameId,version:session.version,profileId:session.identity.profileId,artifactSha256:game?.artifactSha256,sourceCommit:config.source_commit};
     if(this.binding&&JSON.stringify(this.binding.target)!==JSON.stringify(target))this.revoke('session changed');
