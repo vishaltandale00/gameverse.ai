@@ -51,7 +51,12 @@ export class Runner {
       assert(sandbox.public===false&&sandbox.networkBlockAll===true,'unsafe_fixture_network');
       const expiry=Date.parse(sandbox.autoDestroyAt),created=Date.parse(sandbox.createdAt),ceiling=(Math.ceil(t.limits.job_wall_ms/60000)+1)*60000;
       assert(Number.isFinite(created)&&Number.isFinite(expiry)&&expiry>this.now()&&expiry<=created+ceiling+5000,'remote_deadline_unconfirmed');j.phase='preparing';j.timings.provision_ms=this.now()-j.started_at;await this.save();await this.report(j,'preparing');return;}
-    const sandbox=await this.daytona.get(j.sandbox_id||t.sandbox_name);
+    const sandbox=await this.daytona.get(j.delete_target_id||j.sandbox_id||t.sandbox_id||t.sandbox_name);
+    if(j.phase==='cleaning'&&j.delete_target_id&&sandbox){
+      assert(sandbox.id===j.delete_target_id,'sandbox_identity_mismatch');
+      // Deletion can rename the resource and remove its runtime. Only observe its recorded ID until absent.
+      if(['destroying','destroyed'].includes(sandbox.state))return;
+    }
     if(sandbox)this.daytona.owned(sandbox,t);
     if(j.phase==='preparing'){
       assert(sandbox?.state==='started','sandbox_not_ready');j.phase='setup_sent';await this.save();
@@ -87,7 +92,8 @@ export class Runner {
         if(j.action==='stop'){
           await this.daytona.stop(sandbox.id);const stopped=await this.daytona.get(sandbox.id);if(stopped&&stopped.state!=='stopped')return;
           await this.report(j,'stopped',{reason:'explicit_stop',cleanup_confirmed:false});j.phase='stopped';await this.save();return;}
-        await this.daytona.delete(sandbox.id);const after=await this.daytona.get(sandbox.id);if(after&&after.state!=='destroyed')return;
+        j.delete_target_id=sandbox.id;await this.save();
+        await this.daytona.delete(j.delete_target_id);const after=await this.daytona.get(j.delete_target_id);if(after)return;
       }else if(j.create_sent&&!j.sandbox_id){
         // Creation may still be in flight. Request deletion by stable name; do not reuse the reservation.
         await this.daytona.delete(t.sandbox_name);const after=await this.daytona.get(t.sandbox_name);if(after)return;

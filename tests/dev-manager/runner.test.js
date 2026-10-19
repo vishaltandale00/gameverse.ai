@@ -45,3 +45,31 @@ test('cancel retains a valid partial source even before result metadata exists',
 test('lost independent-verifier response reconciles its marker without another execution',async t=>{const c=await setup(t);c.daytona.dropVerify=true;await c.pump();assert.equal(c.core.task(c.task.id).phase,'succeeded');assert.equal(c.daytona.executes,1);assert.equal(c.daytona.verifies,1);assert.equal(c.daytona.sandboxes.size,0);});
 test('restart before the running announcement reports before dispatching source',async t=>{const c=await setup(t);await c.pump(3);const job=c.runner.jobs[c.task.id];job.phase='announcing';delete job.running_announced;await c.runner.save();await c.restart();const execute=c.daytona.execute.bind(c.daytona);c.daytona.execute=async(sandbox,command)=>{if(command.includes('node worker.mjs'))assert.equal(c.core.task(c.task.id).phase,'running');return execute(sandbox,command);};await c.pump();assert.equal(c.core.task(c.task.id).phase,'succeeded');assert.equal(c.daytona.executes,1);});
 test('a known nonzero worker exit cannot be recovered as success even when outputs exist',async t=>{const c=await setup(t),execute=c.daytona.execute.bind(c.daytona);c.daytona.execute=async(sandbox,command)=>{const result=await execute(sandbox,command);return command.includes('node worker.mjs')?{...result,exitCode:1}:result;};await c.pump();assert.equal(c.core.task(c.task.id).phase,'failed');assert.equal(c.core.task(c.task.id).reason,'fixture_execution_failed');assert.equal(c.core.task(c.task.id).artifacts.length,2);assert.equal(c.daytona.executes,1);assert.equal(c.daytona.verifies,0);assert.equal(c.daytona.sandboxes.size,0);});
+
+// Daytona can rename a deleting resource before GET by its immutable ID becomes absent.
+function delayedDeletion(daytona,state='destroying'){
+  const get=daytona.get.bind(daytona);let reads=0;
+  daytona.get=async id=>{const sandbox=await get(id);if(sandbox?.state===state&&++reads>=5){daytona.sandboxes.delete(sandbox.id);return null;}return sandbox;};
+  daytona.delete=async id=>{const sandbox=await get(id);daytona.deletes++;assert(sandbox);sandbox.name=`DESTROYED_${sandbox.name}_1792419657064`;sandbox.state=state;};
+}
+for(const state of ['destroying','destroyed'])test(`asynchronous deletion renames (${state}) do not leave a false failure reason across restart`,async t=>{
+  const c=await setup(t);await c.pump(6);assert.equal(c.runner.jobs[c.task.id].phase,'cleaning');assert.equal(c.objects.size,2);delayedDeletion(c.daytona,state);
+  await c.pump(1);assert.equal(c.core.task(c.task.id).cleanup_confirmed,false);await c.restart();await c.pump(2);assert.equal(c.core.task(c.task.id).cleanup_confirmed,false);await c.pump();
+  const final=c.core.task(c.task.id);assert.equal(final.phase,'succeeded');assert.equal(final.cleanup_confirmed,true);assert.equal(final.reason,null);assert.equal(c.daytona.deletes,1);assert.equal(c.daytona.executes,1);assert.equal(c.daytona.verifies,1);assert.equal(c.daytona.sandboxes.size,0);
+});
+
+test('asynchronous deletion preserves the original worker failure rather than replacing it',async t=>{
+  const c=await setup(t),execute=c.daytona.execute.bind(c.daytona);c.daytona.execute=async(sandbox,command)=>{const result=await execute(sandbox,command);return command.includes('node worker.mjs')?{...result,exitCode:1}:result;};delayedDeletion(c.daytona);await c.pump();
+  const final=c.core.task(c.task.id);assert.equal(final.phase,'failed');assert.equal(final.reason,'fixture_execution_failed');assert.equal(final.cleanup_confirmed,true);assert.equal(final.artifacts.length,2);assert.equal(c.daytona.deletes,1);assert.equal(c.daytona.executes,1);assert.equal(c.daytona.verifies,0);
+});
+for(const mutation of ['name','owner','unsolicited-tombstone'])test(`cleanup still rejects a ${mutation} mismatch before any delete intent`,async t=>{
+  const c=await setup(t);await c.pump(6);const sandbox=[...c.daytona.sandboxes.values()][0];
+  if(mutation==='owner')sandbox.labels['gameverse.owner']='phone:'+'b'.repeat(64);else sandbox.name='DESTROYED_'+sandbox.name;if(mutation==='unsolicited-tombstone')sandbox.state='destroying';
+  await c.pump(2);assert.equal(c.runner.jobs[c.task.id].reason,'sandbox_identity_mismatch');assert.equal(c.runner.jobs[c.task.id].delete_target_id,undefined);assert.equal(c.daytona.deletes,0);assert.equal(c.core.task(c.task.id).cleanup_confirmed,false);assert.throws(()=>c.core.submit(owner,{...c.task.request,id:crypto.randomUUID()}),/parent_in_use/);
+});
+test('a pending deletion cannot accept a different resource ID even in destroying state',async t=>{
+  const c=await setup(t);await c.pump(6);const get=c.daytona.get.bind(c.daytona),sandbox=[...c.daytona.sandboxes.values()][0];
+  c.daytona.delete=async()=>{c.daytona.deletes++;sandbox.name='DESTROYED_'+sandbox.name;sandbox.state='destroying';};await c.pump(1);assert.equal(c.runner.jobs[c.task.id].delete_target_id,sandbox.id);
+  c.daytona.get=async id=>{const value=await get(id);return value?{...value,id:crypto.randomUUID()}:null;};await c.pump(2);
+  assert.equal(c.runner.jobs[c.task.id].reason,'sandbox_identity_mismatch');assert.equal(c.daytona.deletes,1);assert.equal(c.core.task(c.task.id).cleanup_confirmed,false);
+});
