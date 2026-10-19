@@ -16,7 +16,7 @@ export async function devManagerRoute(request,env){const url=new URL(request.url
     if(url.pathname==='/api/dev-manager/register'&&request.method==='POST'){
       const rate=env.IDENTITY?.getByName('manager-register-rate:'+await digest(request.headers.get('CF-Connecting-IP')||'unknown'));if(rate)assert(await rate.takeRateLimit(20,60000),'registration_rate_limit',429);
       const bytes=await body(request),input=JSON.parse(new TextDecoder().decode(bytes));const auth=await verify(request,bytes,input.key,input.id);
-      const value=await registry.register(input);await registry.nonce(input.id,auth.nonce,auth.time);return json(value);}
+      return json(await registry.register(input,auth));}
     if(url.pathname==='/api/dev-manager/device'&&request.method==='POST'){
       const bytes=await body(request),id=request.headers.get('X-Gameverse-Manager'),device=await registry.device(id);
       const auth=await verify(request,bytes,device.key,id);await registry.nonce(id,auth.nonce,auth.time);await registry.authorize(id);

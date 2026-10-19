@@ -34,5 +34,5 @@ export function inventoryEntry(item) {
   assert(UUID.test(item?.id),'invalid_inventory');
   return {id:item.id,name:String(item.name||'').slice(0,100),state:String(item.state||'unknown').slice(0,40),
     cpu:Number.isFinite(item.cpu)?item.cpu:null,memory:Number.isFinite(item.memory)?item.memory:null,disk:Number.isFinite(item.disk)?item.disk:null,
-    created_at:typeof item.createdAt==='string'?item.createdAt:null};
+    created_at:typeof (item.createdAt??item.created_at)==='string'&&(Number.isFinite(Date.parse(item.createdAt??item.created_at)))?(item.createdAt??item.created_at):null};
 }

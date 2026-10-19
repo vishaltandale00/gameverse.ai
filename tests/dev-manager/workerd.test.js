@@ -1,10 +1,10 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {mkdtemp,rm} from 'node:fs/promises';import {tmpdir} from 'node:os';import {join} from 'node:path';
+import test from 'node:test';import assert from 'node:assert/strict';import {mkdtemp,rm,mkdir,writeFile} from 'node:fs/promises';import {tmpdir} from 'node:os';import {join} from 'node:path';
 import {Store} from '../../scripts/dev-manager/store.mjs';import {Transport,identity} from '../../scripts/dev-manager/transport.mjs';import {digest} from '../../src/dev-manager-protocol.js';
 process.env.CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV='false';process.env.WRANGLER_SEND_METRICS='false';process.env.WRANGLER_LOG_PATH=join(tmpdir(),'gameverse-manager-test.log');
 const {unstable_dev}=await import('wrangler');
 test('actual SQLite/R2 Worker binds signed managers, isolates artifacts and retains state across restart',{timeout:60000},async t=>{
-  const persist=await mkdtemp(join(tmpdir(),'gvm-workerd-')),dir=await mkdtemp(join(tmpdir(),'gvm-device-'));let worker;
-  const start=async()=>{worker=await unstable_dev('tests/hosting/fixtures/dev-manager-worker.js',{config:'tests/hosting/fixtures/wrangler.manager.jsonc',local:true,ip:'127.0.0.1',port:0,persistTo:persist,logLevel:'error',inspect:false,experimental:{disableExperimentalWarning:true,disableDevRegistry:true,watch:false}});};
+  const persist=await mkdtemp(join(tmpdir(),'gvm-workerd-')),dir=await mkdtemp(join(tmpdir(),'gvm-device-'));let worker;const assets=join(persist,'assets');await mkdir(assets);await writeFile(join(assets,'index.html'),'Synthetic API test assets');
+  const start=async()=>{worker=await unstable_dev('tests/hosting/fixtures/dev-manager-worker.js',{config:'tests/hosting/fixtures/wrangler.manager.jsonc',assets,local:true,ip:'127.0.0.1',port:0,persistTo:persist,logLevel:'error',inspect:false,experimental:{disableExperimentalWarning:true,disableDevRegistry:true,watch:false}});};
   t.after(async()=>{await worker?.stop();await rm(persist,{recursive:true,force:true});await rm(dir,{recursive:true,force:true});});await start();
   const request=(path,{cookie,method='GET',body,origin='http://localhost'}={})=>worker.fetch('http://localhost'+path,{method,headers:{...(cookie?{Cookie:cookie}:{}),...(method==='GET'?{}:{Origin:origin,'Content-Type':'application/json'})},...(body?{body:JSON.stringify(body)}:{})});
   const login=async actor=>{const r=await request('/test/login/'+actor);return {cookie:r.headers.get('set-cookie').split(';')[0],account:(await r.json()).account};};
@@ -19,6 +19,18 @@ test('actual SQLite/R2 Worker binds signed managers, isolates artifacts and reta
     assert.equal((await request('/api/dev-manager/pair',{cookie:b.cookie,method:'POST',body:{id:ident.id,code:ident.code}})).status,403);
     await transport.device({op:'poll'});assert.equal((await worker.fetch(replay.url,replay.options)).status,401);
     assert.equal((await worker.fetch(replay.url,{...replay.options,body:JSON.stringify({op:'view'})})).status,401);
+  });
+  await t.test('a rejected registration replay cannot reset pairing attempts or expiry',async()=>{
+    const fresh={...ident,id:crypto.randomUUID()};let registration;
+    const client=new Transport({url:'http://127.0.0.1:1',identity:fresh,allowHttp:true,fetchImpl:async(url,options)=>{const target='http://localhost'+new URL(url).pathname;registration={target,options};return worker.fetch(target,options);}});
+    await client.call('/api/dev-manager/register',{id:fresh.id,key:fresh.key,code_hash:await digest('bounded-code')});
+    const envelope=registration;
+    for(let n=0;n<5;n++)assert.equal((await request('/api/dev-manager/pair',{cookie:a.cookie,method:'POST',body:{id:fresh.id,code:'wrong'}})).status,409);
+    const inspect=async()=>JSON.parse((await(await request('/test/inspect')).json())[0].value).devices[fresh.id];
+    const before=await inspect();assert.equal(before.attempts,5);
+    assert.equal((await worker.fetch(envelope.target,envelope.options)).status,401);
+    const after=await inspect();assert.equal(after.attempts,5);assert.equal(after.expires_at,before.expires_at);
+    assert.equal((await request('/api/dev-manager/pair',{cookie:a.cookie,method:'POST',body:{id:fresh.id,code:'bounded-code'}})).status,409);
   });
   let task;
   await t.test('typed fixture is idempotent, reports are source-correlated, and artifact storage is private',async()=>{

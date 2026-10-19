@@ -4,19 +4,21 @@ const fresh = () => ({devices:{},tasks:{},commands:{},inventory:{}});
 export class Registry {
   constructor({state=fresh(),save=()=>{},now=()=>Date.now(),id=()=>crypto.randomUUID()}={}) {Object.assign(this,{state,save,now,id});}
   commit(){this.save(this.state);}
-  register({id,key,code_hash}) {
+  register({id,key,code_hash},proof) {
     assert(UUID.test(id)&&HASH.test(code_hash),'invalid_registration');key=publicKey(key);
     const old=this.state.devices[id];assert(!old?.owner||old.revoked,'already_paired');
     assert(!old||canonical(old.key)===canonical(key),'device_identity_conflict');
+    const nonces=proof?this.nextNonces(old?.nonces||[],proof.nonce,proof.time):old?.nonces||[];
     for(const [other,d] of Object.entries(this.state.devices))if(other!==id&&!d.owner&&d.expires_at<=this.now())delete this.state.devices[other];
     assert(Object.keys(this.state.devices).length<100||old,'registry_limit');
-    this.state.devices[id]={id,key,code_hash,expires_at:this.now()+300000,attempts:0,owner:old?.owner||null,revoked:old?.revoked||false,repair_pending:!!old?.revoked,nonces:old?.nonces||[],last_seen:null};
+    this.state.devices[id]={id,key,code_hash,expires_at:this.now()+300000,attempts:0,owner:old?.owner||null,revoked:old?.revoked||false,repair_pending:!!old?.revoked,nonces,last_seen:null};
     this.commit();return {id,expires_at:this.state.devices[id].expires_at};
   }
   device(id){const row=this.state.devices[id];assert(row,'manager_not_found',404);return row;}
-  nonce(id,nonce,time){const row=this.device(id);assert(/^[a-f0-9]{32}$/.test(nonce)&&Math.abs(this.now()-Number(time))<=60000,'invalid_signature',401);
-    row.nonces=row.nonces.filter(n=>n.at>this.now()-120000);assert(!row.nonces.some(n=>n.nonce===nonce),'signature_replayed',401);
-    assert(row.nonces.length<2000,'device_rate_limit',429);row.nonces.push({nonce,at:this.now()});this.commit();}
+  nextNonces(previous,nonce,time){assert(/^[a-f0-9]{32}$/.test(nonce)&&Math.abs(this.now()-Number(time))<=60000,'invalid_signature',401);
+    const nonces=previous.filter(n=>n.at>this.now()-120000);assert(!nonces.some(n=>n.nonce===nonce),'signature_replayed',401);
+    assert(nonces.length<2000,'device_rate_limit',429);return [...nonces,{nonce,at:this.now()}];}
+  nonce(id,nonce,time){const row=this.device(id);row.nonces=this.nextNonces(row.nonces,nonce,time);this.commit();}
   pair(owner,id,code_hash){const row=this.device(id);assert(!row.revoked||row.repair_pending,'pairing_revoked',401);assert(!row.owner||row.owner===owner,'account_mismatch',403);
     if(row.owner&&!row.revoked)return this.summary(row);
     assert(row.expires_at>this.now()&&row.attempts<5,'pairing_expired');row.attempts++;this.commit();
@@ -46,7 +48,7 @@ export class Registry {
   cancel(actor,id,confirmation){const root=this.task(id);this.confirm(actor,root.owner,confirmation,id,root.updated_at);
     for(const taskId of this.tree(id)){const row=this.task(taskId);if(terminal(row.phase)&&row.cleanup_confirmed)continue;
       row.cancel_requested=true;row.phase='cancelling';row.updated_at=this.now();
-      if(!Object.values(this.state.commands).some(c=>c.op==='cancel'&&c.task_id===taskId&&!c.done))this.command(row.manager_id,'cancel',{task_id:taskId});}
+      if(!Object.values(this.state.commands).some(c=>c.op==='cancel'&&c.task_id===taskId&&!c.done))this.command(row.cleanup_manager_id||row.manager_id,'cancel',{task_id:taskId});}
     this.commit();return this.task(id);}
   sync(id,entries){const device=this.authorize(id);assert(Array.isArray(entries)&&entries.length<=100,'invalid_inventory');
     for(const raw of entries){const item=inventoryEntry(raw);const task=Object.values(this.state.tasks).find(t=>t.sandbox_id===item.id&&t.sandbox_name===item.name);
@@ -62,7 +64,7 @@ export class Registry {
     this.commit();return {accepted:true,task_id:task.id};}
   poll(id){const device=this.authorize(id);device.last_seen=this.now();this.commit();return {owner:device.owner,tasks:Object.values(this.state.tasks).filter(t=>t.owner===device.owner).slice(-80),commands:Object.values(this.state.commands).filter(c=>c.manager_id===id&&!c.done).slice(0,20).map(c=>({...c,task:this.task(c.task_id)}))};}
   report(id,input){const device=this.authorize(id),command=this.state.commands[input.command_id];assert(command&&command.manager_id===id,'command_not_found',404);
-    const task=this.task(command.task_id);assert(device.owner===task.owner||command.op==='manage','account_mismatch',403);assert(!task.cleanup_manager_id||task.cleanup_manager_id===id,'cleanup_delegated',409);
+    const task=this.task(command.task_id);assert(device.owner===task.owner||command.op==='manage'||task.cleanup_manager_id===id&&task.cancel_requested,'account_mismatch',403);assert(!task.cleanup_manager_id||task.cleanup_manager_id===id,'cleanup_delegated',409);
     assert(Number.isSafeInteger(input.sequence)&&input.sequence>=1,'invalid_sequence');
     assert(Object.keys(input).every(k=>['command_id','sequence','phase','cleanup_confirmed','reason','sandbox_id','timings'].includes(k)),'invalid_report');
     if(input.timings)assert(Object.entries(input.timings).every(([k,v])=>['provision_ms','execution_ms','verification_ms','total_ms'].includes(k)&&Number.isFinite(v)&&v>=0),'invalid_timings');

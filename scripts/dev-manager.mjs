@@ -29,22 +29,24 @@ try{
   discovery=discoveryServer({identity:ident,origin:new URL(url).origin,port});await discovery.start();
   const daytona=new ManagerDaytona(env),runner=new Runner({store,transport,daytona});await runner.init();
   let inventoryAt=0,previousError=null;
-  const stop=async()=>{stopping=true;await discovery.stop();await release();console.log(JSON.stringify({status:'stopped',remote_jobs:'bounded_existing_work_retained; new_launches_wait_for_reconnection'}));};
-  process.once('SIGINT',()=>{void stop();});process.once('SIGTERM',()=>{void stop();});
+  // A signal only requests shutdown. The current awaited operation owns the journal until the loop drains.
+  const requestStop=()=>{stopping=true;};
+  const stop=async()=>{stopping=true;await discovery.stop();await release();release=null;console.log(JSON.stringify({status:'stopped',remote_jobs:'bounded_existing_work_retained; new_launches_wait_for_reconnection'}));};
+  process.once('SIGINT',requestStop);process.once('SIGTERM',requestStop);
   console.log(JSON.stringify({status:'manager_running',port,protocol:1,source_operations:'model-free reference fixture only',model_calls:0}));
   while(!stopping){
     try{
       const response=await transport.device({op:'poll'});if(stopping)break;
       if(!ident.paired){ident.paired=true;ident.owner=response.owner;delete ident.code;await store.write('identity.json',ident);console.log(JSON.stringify({status:'paired'}));}
-      await runner.reconcile(response.tasks);await runner.commands(response.commands);await runner.advance({allowNew:true});
+      await runner.reconcile(response.tasks);if(stopping)break;await runner.commands(response.commands);if(stopping)break;await runner.advance({allowNew:()=>!stopping});if(stopping)break;
       if(Date.now()-inventoryAt>=5000){const items=await daytona.list();await transport.device({op:'inventory',entries:items.map(inventoryEntry)});inventoryAt=Date.now();}
       if(previousError)console.log(JSON.stringify({status:'reconnected'}));previousError=null;
     }catch(e){const code=/^[a-z0-9_]{1,80}$/.test(e.message)?e.message:'manager_disconnected';
       if((code!=='pairing_required'||ident.paired)&&code!==previousError)console.log(JSON.stringify({status:'waiting_for_reconnection',reason:code}));previousError=code;
       // No fresh dispatch without an authenticated poll. Existing remote jobs retain their own deadlines.
     }
-    if(args.includes('--once'))break;
+    if(stopping||args.includes('--once'))break;
     await new Promise(resolve=>setTimeout(resolve,1000));
   }
-  if(!stopping)await stop();
+  await stop();
 }catch(e){await discovery?.stop().catch(()=>{});await release?.();console.error(JSON.stringify({error:/^[a-z0-9_]+$/.test(e.message)?e.message:'manager_start_failed'}));process.exitCode=1;}

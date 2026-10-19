@@ -86,3 +86,4 @@
 #dev-manager-panel input { min-width:220px; flex:1; }
 #dev-manager-panel .run-card > button, #dev-manager-panel .run-card > a { margin-left:14px; }
 #dev-manager-panel > div > .text-button { margin:0 22px 16px; }
+#dev-manager-panel .small { overflow-wrap:anywhere; }
