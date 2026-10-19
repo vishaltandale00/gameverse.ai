@@ -6,13 +6,32 @@ import { loadEnvFile } from 'node:process';
 import { root, runtimeDirectory, runtimeIdentity } from './runtime.mjs';
 import { gameCatalog, customArtifacts } from './catalog.mjs';
 import { createVoiceApi } from './voice-api.mjs';
+import { createAgentApi, qualificationCaps } from './agent-api.mjs';
 import { attachVoiceStream, realtimeTranscriptionProviders } from './voice-stream.mjs';
 
 const appRoot = fileURLToPath(root);
 try { loadEnvFile(fileURLToPath(new URL('.env', root))); } catch (error) { if (error.code !== 'ENOENT') throw error; }
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.wasm': 'application/wasm', '.gba': 'application/octet-stream' };
 const runtime = await runtimeIdentity();
-const handleVoice = createVoiceApi({ liveProviders: realtimeTranscriptionProviders });
+// One shared ledger: realtime transcription sessions count toward the same
+// global qualification caps as decisions, reflections, planner and speech calls.
+const qualificationLedger = { decisions: 0, reflect: 0, plan: 0, speech: 0, transcription: 0, aborted: null, attempts: [] };
+const effectiveCaps = qualificationCaps();
+const countedLiveProviders = !effectiveCaps ? realtimeTranscriptionProviders
+  : Object.fromEntries(Object.entries(realtimeTranscriptionProviders).map(([name, provider]) => [name, {
+  ...provider,
+  connect: (...args) => {
+    if (qualificationLedger.transcription >= effectiveCaps.transcription) {
+      qualificationLedger.aborted = qualificationLedger.aborted || { kind: 'transcription', at: new Date().toISOString() };
+      throw Object.assign(Error(`Qualification cap reached for transcription (${effectiveCaps.transcription}).`), { status: 429 });
+    }
+    qualificationLedger.transcription += 1;
+    qualificationLedger.attempts.push({ kind: 'transcription', at: new Date().toISOString() });
+    return provider.connect(...args);
+  },
+}]));
+const handleVoice = createVoiceApi({ liveProviders: countedLiveProviders });
+const handleAgent = createAgentApi({ ledger: qualificationLedger, caps: effectiveCaps });
 const server = http.createServer(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -23,6 +42,11 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(303,{Location:'https://gameverse.build/account'}).end();return;
     }
     if (await handleVoice(req, res, path)) return;
+    if (await handleAgent(req, res, path)) return;
+    if (path.startsWith('/api/')) {
+      res.writeHead(404, { 'Content-Type': mime['.json'] }).end(JSON.stringify({ error: `No API route '${path}'. Start the dev server with node scripts/serve.mjs.` }));
+      return;
+    }
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end(); return; }
     if (path === '/runtime/identity.json') {
       res.setHeader('Content-Type', mime['.json']); res.end(JSON.stringify(runtime)); return;
@@ -56,5 +80,5 @@ const server = http.createServer(async (req, res) => {
   } catch (error) { res.writeHead(error.code === 'ENOENT' ? 404 : 500).end('Resource unavailable'); }
 });
 const port = Number(process.env.PORT || 4173);
-attachVoiceStream(server);
+attachVoiceStream(server, { providers: countedLiveProviders });
 server.listen(port, '127.0.0.1', () => console.log(`Gameverse: http://127.0.0.1:${port}`));

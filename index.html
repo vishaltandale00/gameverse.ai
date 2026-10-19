@@ -22,6 +22,15 @@
   <footer><span>MADE FOR THE WAY YOU PLAY.</span><span>Single player. Local first. <span class="footer-star">✳</span></span></footer>
   <div id="notice" role="status" aria-live="polite"></div>
   <button id="voice-button" type="button" aria-label="Give voice feedback — R3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11v1a6 6 0 0 0 12 0v-1M12 18v3M9 21h6"/></svg><span>Voice feedback</span><kbd>R3</kbd></button>
+  <section id="agent-panel" aria-label="Simulated players" hidden>
+    <h2>Simulated players</h2>
+    <ul id="agent-runs"></ul>
+    <button id="agent-stop-all" type="button" hidden>Stop all</button>
+    <details id="agent-details"><summary>Details</summary>
+      <p id="agent-ack"></p><pre id="agent-status"></pre>
+    </details>
+  </section>
+  <div id="qualification-step" role="status" hidden></div>
   <dialog id="voice-dialog" aria-labelledby="voice-title" aria-describedby="voice-message">
     <div class="voice-caption"><span class="voice-status-dot" aria-hidden="true"></span><span id="voice-target">Voice feedback</span><time id="voice-time" hidden>00:00</time></div><h2 id="voice-title">Opening microphone…</h2>
     <p id="voice-message" role="status" aria-live="polite"></p><blockquote id="voice-transcript" aria-live="polite" hidden></blockquote>

@@ -33,7 +33,7 @@ test('OpenAI upload, durable idempotent receipt, original context and server-onl
   assert.equal(await f.calls[0].init.body.get('file').text(), 'audio bytes');
   const body = request(id), first = await (await f.fetch('/api/voice/requests', submission(body))).json();
   const second = await (await f.fetch('/api/voice/requests', submission(body))).json();
-  assert.deepEqual(second, first); assert.equal(first.status, 'received'); assert.equal(first.processing, 'not-connected');
+  assert.deepEqual(second, first); assert.equal(first.status, 'received'); assert.equal(first.processing, 'agent-pending');
   const stored = JSON.parse(await readFile(new URL(`${id}.json`, f.directory), 'utf8'));
   assert.deepEqual(stored.context, body.context); assert.equal('audio' in stored, false);
   assert.ok(f.reports.every(report => report.wallMs >= 0 && report.queueMs === null));
@@ -82,4 +82,37 @@ test('provider/model selection and timeout are configurable without changing the
   assert.equal((await f.fetch('/api/voice/transcriptions', transcription(randomUUID()))).status, 504);
   assert.equal(selected, 'fixture-model'); assert.equal(f.reports.at(-1).outcome, 'cancelled-or-timed-out');
   assert.throws(() => voiceConfiguration({ VOICE_MAX_SECONDS: '0' }));
+});
+
+test('an agent result attaches to the retained receipt without provider credentials', async t => {
+  const f = await fixture(t), id = randomUUID();
+  const body = request(id);
+  await f.fetch('/api/voice/requests', submission(body));
+  const attach = {
+    agent: 'voice-agent-v1', outcome: 'completed', acknowledgment: 'Started run_abc on soccer (play): try to score.',
+    toolCalls: [{ callId: `${id}:1`, name: 'open_session', ok: true, wallMs: 4 }, { callId: `${id}:2`, name: 'start_simulated_user', ok: true, wallMs: 3 }],
+    runs: ['run_abc'], planner: { model: 'gpt-6-luna', provider: 'openai', apiKey: 'sk-should-be-dropped' }, wallMs: 42,
+  };
+  const receipt = await (await f.fetch(`/api/voice/requests/${id}/agent`, submission(attach))).json();
+  assert.equal(receipt.processing, 'agent');
+  assert.equal(receipt.status, 'processed');
+  assert.equal(receipt.agent.toolCalls.length, 2);
+  assert.deepEqual(receipt.agent.runs, ['run_abc']);
+  assert.equal(receipt.agent.planner.model, 'gpt-6-luna');
+  const stored = await readFile(new URL(`${id}.json`, f.directory), 'utf8');
+  assert.equal(stored.includes('sk-should-be-dropped'), false, 'receipts never retain credential-shaped fields');
+  assert.equal(stored.includes('test-secret'), false);
+  // A credential-shaped tool-call record is refused outright.
+  const leaky = await f.fetch(`/api/voice/requests/${id}/agent`, submission({ ...attach, toolCalls: [{ name: 'open_session', ok: true, error: 'sk-abc123 failed' }] }));
+  assert.equal(leaky.status, 400);
+  // A cancelled request stays cancelled even if a late agent result arrives.
+  const cancelledId = randomUUID();
+  await f.fetch('/api/voice/requests', submission(request(cancelledId)));
+  await f.fetch(`/api/voice/requests/${cancelledId}`, { method: 'DELETE' });
+  const late = await (await f.fetch(`/api/voice/requests/${cancelledId}/agent`, submission(attach))).json();
+  assert.equal(late.status, 'cancelled');
+  assert.equal(late.processing, 'agent-pending');
+  // An unknown request cannot create a receipt from an agent result.
+  assert.equal((await f.fetch(`/api/voice/requests/${randomUUID()}/agent`, submission(attach))).status, 404);
+  assert.equal((await f.fetch(`/api/voice/requests/${id}/agent`, submission({ ...attach, outcome: 'invented' }))).status, 400);
 });

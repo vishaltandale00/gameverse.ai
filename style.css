@@ -1002,3 +1002,41 @@ body.playing-subgame #player {
 @media (prefers-reduced-motion:reduce) {
   .playing-subgame .play-controls { animation:none; }
 }
+
+/* Always-available takeover status and Stop. Rendered outside every dialog so an
+   outstanding planner, decision or reflection request can never hide Stop. */
+#agent-panel { position: fixed; right: 18px; bottom: 18px; z-index: 40; max-width: 320px; display: grid; gap: 8px;
+  padding: 14px 16px; border: 1px solid #2f5f55; border-radius: 14px; background: #06181ced; color: #dff3ea;
+  font-size: 13px; backdrop-filter: blur(6px); }
+#agent-panel[hidden] { display: none; }
+#agent-panel h2 { margin: 0; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: #8ad6bf; }
+#agent-panel p, #agent-panel pre { margin: 0; white-space: pre-wrap; font: inherit; }
+#agent-runs { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+#agent-runs li { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+#agent-panel button { padding: 4px 12px; border-radius: 999px; border: 1px solid #6ce3ce; background: #0d2b28; color: #d8fff3; cursor: pointer; }
+#agent-panel button:hover { background: #164a43; }
+
+/* One compact gameplay row; diagnostics are opt-in and never hide Stop. */
+#agent-panel { width: min(360px, calc(100vw - 28px)); max-width: none; box-sizing: border-box; }
+#agent-runs { gap: 12px; }
+#agent-runs li { gap: 12px; }
+.agent-player-copy { display: grid; gap: 4px; min-width: 0; }
+.agent-player-copy strong { font-size: 14px; font-weight: 600; }
+.agent-player-state { color: #b6cfc7; font-size: 12px; line-height: 1.4; }
+.agent-player-controls { display: flex; gap: 6px; flex-shrink: 0; }
+#agent-panel button { min-height: 32px; }
+#agent-panel button:disabled { opacity: .55; cursor: wait; }
+#agent-details { border-top: 1px solid #2f5f55; padding-top: 8px; color: #b6cfc7; }
+#agent-details summary { cursor: pointer; font-size: 12px; }
+#agent-details p, #agent-details pre { margin-top: 8px; max-height: 110px; overflow: auto; overflow-wrap: anywhere; }
+#qualification-step { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 45; max-width: min(600px, calc(100vw - 32px)); padding: 10px 16px; border: 1px solid #8ad6bf; border-radius: 10px; background: #06181cf0; color: #e5fff4; font: 13px/1.5 sans-serif; pointer-events: none; }
+#qualification-step[hidden] { display: none; }
+@media (max-width: 600px) { #agent-panel { right: 10px; bottom: 10px; padding: 12px; } }
+
+@media (max-width: 600px) {
+  body:has(#agent-panel:not([hidden])) #notice { bottom: calc(var(--agent-panel-height, 240px) + 26px); }
+}
+
+/* Each retained runtime owns its view; another game never clears its canvas. */
+.session-view { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.playing-sports .session-view { display: block; }

@@ -3,6 +3,7 @@ import { SportsInput, SPORTS_KEYS } from './sports-input.js';
 import { SportsFeedback, mergePendingInput } from './sports-feedback.js';
 
 const DEFINITIONS = { soccer: () => import('./soccer.js').then(m => m.soccerDefinition), football: () => import('./football.js').then(m => m.footballDefinition) };
+const NEUTRAL_AGENT_FRAME = () => ({ move: { x: 0, y: 0 }, aim: { x: 0, y: 0 }, held: {}, pressed: {}, released: {}, cancelled: {}, connected: false, armed: true, agent: true });
 const clock = seconds => { const total = Math.ceil(Math.max(0, seconds)); return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`; };
 
 export class CustomSportsAdapter {
@@ -58,15 +59,25 @@ export class CustomSportsAdapter {
       if (this.disposed) return;
       this.raf = requestAnimationFrame(animate);
       const rawElapsed = Math.max(0, (now - this.last) / 1000), elapsed = Math.min(rawElapsed, .1); this.last = now;
-      if (this.paused || document.hidden || !document.hasFocus()) return;
+      // A host-granted simulated user keeps the match running while the human
+      // looks at another view; only its own pause/stop stops it.
+      const background = Boolean(this.agentControl);
+      if ((this.paused && !background) || ((document.hidden || !document.hasFocus()) && !background)) return;
       try {
-        const input = mergePendingInput(this.controls.sample(this.keys, navigator.getGamepads?.() || [], this.ownsB()), this.pendingInput);
-        if (input.disconnected) { this.onPause?.(); return; }
+        const human = this.controls.sample(this.keys, navigator.getGamepads?.() || [], this.ownsB());
+        // Ordinary human gameplay input never reclaims a granted control slot.
+        const input = background ? mergePendingInput(this.agentFrame || NEUTRAL_AGENT_FRAME(), this.pendingInput) : mergePendingInput(human, this.pendingInput);
+        if (background) input.connected = human.connected;
+        if (input.disconnected && !background) { this.onPause?.(); return; }
         this.accumulator += elapsed;
         this.pendingInput = input;
         if (this.accumulator >= 1 / 60 && this.queued.length) input.pressed[this.queued.shift()] = true;
         while (this.accumulator >= 1 / 60) {
+          const playerIndex = this.state.active ?? this.state.controlled ?? 0;
+          const position = () => { const p = this.state.players?.[playerIndex]; return { playerIndex, x: p?.x ?? null, y: p?.y ?? null, z: p?.z ?? null }; };
+          const control = { frame: this.frame + 1, source: background ? 'agent' : 'human', keys: background ? [] : [...this.keys], move: { ...(input.move || { x: 0, y: 0 }) }, before: position() };
           this.definition.step(this.state, 1 / 60, input); this.frame++; this.accumulator -= 1 / 60;
+          this.lastControlSample = { ...control, after: position() };
           const event = this.feedback.consume(this.state.feedback);
           if (event) { this.lastFeedback = event.kind; this.feedbackFade = event.kind === 'goal' ? 1.4 : .48; }
           input.pressed = {}; input.released = {}; input.cancelled = {}; input.gesture = null; input.skillDirection = null; this.pendingInput = null;
@@ -77,10 +88,13 @@ export class CustomSportsAdapter {
       } catch (error) { this.fail(error); }
     };
     this.raf = requestAnimationFrame(animate);
-    window.__gameverseSports = Object.freeze({ read: () => ({ gameId: this.game.id, frame: this.frame, paused: this.paused, ...structuredClone(this.state), hud: this.definition.hud(this.state), drawCalls: this.renderer.info.render.calls, recentFps: this.renderStats.fps,
+    this.readFacade = Object.freeze({ read: () => ({ control: this.lastControlSample ? structuredClone(this.lastControlSample) : null, gameId: this.game.id, frame: this.frame, paused: this.paused, ...structuredClone(this.state), hud: this.definition.hud(this.state), drawCalls: this.renderer.info.render.calls, recentFps: this.renderStats.fps,
       presentation: { events: this.feedback.observed, hapticRequests: this.feedback.hapticRequests, sounds: this.feedback.sounds, last: this.lastFeedback || null } }) });
+    this.activateView();
     return { frame: this.frame };
   }
+  activateView() { if (this.readFacade) window.__gameverseSports = this.readFacade; }
+  deactivateView() { if (window.__gameverseSports === this.readFacade) delete window.__gameverseSports; }
   paint(dt, input) {
     if (!this.view || this.disposed) return;
     this.definition.render({ state: this.state, view: this.view, camera: this.camera, dt });
@@ -149,6 +163,18 @@ export class CustomSportsAdapter {
     const [x, y] = position(s.ball); c.fillStyle = '#ffffff'; c.beginPath(); c.arc(x, y, 2.5, 0, Math.PI * 2); c.fill();
   }
   input() { /* Sports read analog controls directly; GBA masks never enter this runtime. */ }
+  // Engine-side handle for the host's control surface. It exposes state, frame,
+  // clocks and an input channel; it knows nothing about decisions or policies.
+  controlHandle() {
+    return {
+      gameId: this.game.id, version: this.game.version, definition: this.definition,
+      state: () => this.state, frame: () => this.frame, paused: () => this.paused,
+      setAgentInput: frame => { this.agentFrame = frame; },
+      // Called by the host when a run takes or releases this match.
+      hold: held => { this.agentControl = Boolean(held); if (!held) this.agentFrame = null; else this.last = performance.now(); },
+      renderStats: () => ({ ...this.renderStats }),
+    };
+  }
   async resume() {
     if (this.disposed) throw Error('This match is closed.');
     this.keys.clear(); this.controls.reset(); this.pendingInput = null; this.queued = []; this.accumulator = 0; this.last = performance.now(); this.paused = false;
@@ -169,6 +195,6 @@ export class CustomSportsAdapter {
     const resources = new Set();
     this.scene?.traverse(object => { if (object.geometry) resources.add(object.geometry); for (const m of [object.material].flat().filter(Boolean)) { resources.add(m); for (const value of Object.values(m)) if (value?.isTexture) resources.add(value); } });
     for (const resource of resources) resource.dispose(); this.renderer?.dispose(); this.renderer?.forceContextLoss();
-    this.container.replaceChildren(); delete window.__gameverseSports;
+    this.container.replaceChildren(); this.deactivateView();
   }
 }
