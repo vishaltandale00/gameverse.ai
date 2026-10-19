@@ -1,3 +1,4 @@
+import {BrowserVoice} from './browser-voice.js';
 import { renderPlayerPanel, playerLabel } from './takeover-panel.js';
 import * as storage from './storage.js';
 import { digest, progressKey, validateCheckpoint, validateCartridge, KEY_BITS, padMask } from './identity.js';
@@ -29,7 +30,7 @@ const voiceCommands = [];
 const lifecycleEvidence = { events: [] };
 const stopSnapshots = new Map();
 const takeover = createTakeoverShell({
-  plan: createPlanner(), decisions: createDecisionsPolicy(), reflector: createReflector(), speech: createSpeechAdapter(),
+  plan: createPlanner(), decisions: createDecisionsPolicy({fetchImpl:(...args)=>remoteVoice.enabled?remoteVoice.modelFetch(...args):fetch(...args)}), reflector: createReflector({fetchImpl:(...args)=>remoteVoice.enabled?remoteVoice.modelFetch(...args):fetch(...args)}), speech: createSpeechAdapter(),
   // Qualification declares its own versioned cadence so one bounded run fits the
   // global provider caps; ordinary play keeps the harness defaults.
   harnessConfig: qualifying ? QUALIFICATION_HARNESS_CONFIG : {},
@@ -64,6 +65,9 @@ const takeover = createTakeoverShell({
     return takeover.host.describeSession(session.agentSessionId);
   },
 });
+const remoteVoice=new BrowserVoice({shell:takeover,onHandback:handbackAfterStop});
+window.addEventListener('pagehide',()=>remoteVoice.revoke('browser page closed'));
+document.addEventListener('visibilitychange',()=>{if(document.hidden)remoteVoice.revoke('browser page hidden');});
 window.__gameverseTakeover = takeover;
 let watchPending = false, qualificationNavigationRun = null;
 // Keep transient notices above the controls on narrow screens, including when
@@ -136,7 +140,7 @@ function handbackAfterStop(run) {
   voiceNotice(displayedTakeoverSession() === run.sessionId ? `${playerLabel(run.gameId)} stopped. The controls are yours.` : `${playerLabel(run.gameId)} stopped.`);
 }
 async function dispatchVoiceCommand(requestId, text) {
-  const record = await takeover.handleTranscript({ requestId, text, context: voice.run?.context || null });
+  const record = await (remoteVoice.enabled?remoteVoice:takeover).handleTranscript({ requestId, text, context: voice.run?.context || null });
   voiceNotice(playerAcknowledgment(record));
   // Retain the agent outcome on the existing voice receipt (local, server-side).
   // The attach response IS the stored receipt; there is no GET read route, and a
@@ -167,10 +171,11 @@ const timings = [];
 window.__gameverseTimings = timings;
 const escapeHtml = text => String(text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const voice = new VoiceInput({
+  fetchImpl:remoteVoice.fetchVoice,prepare:options=>remoteVoice.prepare(options),onCancel:options=>remoteVoice.cancelRequest(options),
   canStart: () => !busy && !neighborhoodEntryPending && !document.hidden && document.hasFocus()
     && !$('dialog[open]') && (session?.state === 'playing' || (neighborhoodOpen && neighborhood?.observe().state === 'playing') || (!session && !neighborhoodOpen && !!application)),
   captureContext: () => session ? {
-    role: 'subgame', gameId: session.game.id, identity: { ...session.identity }, progressRevision: session.head.revision,
+    role: 'subgame', sessionId: session.agentSessionId, gameId: session.game.id, identity: { ...session.identity }, progressRevision: session.head.revision,
     environment: { id: application.id, version: application.version }, capturedAt: new Date().toISOString(),
   } : {
     role: 'base', gameId: application.id, version: application.version, profileId: profile?.id || null,
@@ -217,10 +222,10 @@ const voice = new VoiceInput({
     $('#voice-title').textContent = labels[view.state];
     $('#voice-message').textContent = view.message || ({
       opening: 'Allow microphone access when your browser asks.',
-      recording: `Speak your request. Words appear as you talk. Up to ${view.maxSeconds / 60} minutes.`,
+      recording: voice.config.mode==='recorded' ? `Speak your request, then send it. Up to ${view.maxSeconds} seconds.` : `Speak your request. Words appear as you talk. Up to ${view.maxSeconds / 60} minutes.`,
       transcribing: 'Finishing your transcript…',
       processing: 'Saving your request…',
-      received: 'Saved on this computer. The voice agent is handling it.',
+      received: voice.config.execution==='daytona'?'Request received. The voice agent is handling it.':'Saved on this computer. The voice agent is handling it.',
       cancelling: 'Discarding this input…',
     }[view.state] || '');
     if (view.context) $('#voice-target').textContent = `${session?.game.name || application.title} / Voice feedback`;

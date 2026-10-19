@@ -1,3 +1,4 @@
+import {voiceCapability} from './browser-voice-api.js';
 import {principal} from './phone-sign-in.js';
 import {assert,canonical,publicKey,digest,signatureInput,UUID} from '../../src/dev-manager-protocol.js';
 const headers={'Cache-Control':'no-store','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'};
@@ -21,6 +22,8 @@ export async function devManagerRoute(request,env){const url=new URL(request.url
       const bytes=await body(request),id=request.headers.get('X-Gameverse-Manager'),device=await registry.device(id);
       const auth=await verify(request,bytes,device.key,id);await registry.nonce(id,auth.nonce,auth.time);await registry.authorize(id);
       const input=JSON.parse(new TextDecoder().decode(bytes));
+      if(input.op==='voice-launch'){const task=await registry.task(input.id);assert(task.manager_id===id&&task.kind==='voice-agent'&&!task.cancel_requested&&task.deadline>Date.now(),'voice_launch_denied');await registry.voice('worker',task.id);return json({token:await voiceCapability(env,task),synthetic:env.APP_ENV==='test'&&typeof env.VOICE_TEST_PROVIDER==='function'});}
+      if(input.op==='capabilities')return json(await registry.capabilities(id,input.capabilities,input.source_commit));
       if(input.op==='poll')return json(await registry.poll(id));
       if(input.op==='view')return json(await registry.view(device.owner));
       if(input.op==='submit')return json(await registry.submit(device.owner,{...input.task,manager_id:id}),202);

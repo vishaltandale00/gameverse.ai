@@ -38,7 +38,7 @@ export class SimulatedUser {
     Object.assign(this, { grant, goal, role, decisions, reflector, speech, finish, now, log });
     this.version = this.config.version || HARNESS_VERSION;
     this.state = 'idle'; this.seq = 0; this.accepted = 0; this.pending = null; this.current = null;
-    this.memory = { goal, role, notes: [], reflections: [], recentActions: [] };
+    this.memory = { runId: grant.runId, goal, role, notes: [], reflections: [], recentActions: [] };
     this.usage = { decisions: 0, decisionFailures: 0, stale: 0, reflections: 0, reflectionFailures: 0,
       actions: 0, rejectedActions: 0, idleFallbacks: 0, speech: 0, decisionLatencyMs: [], tokens: 0 };
     this.startedAt = null; this.evidence = []; this.trimmed = 0;

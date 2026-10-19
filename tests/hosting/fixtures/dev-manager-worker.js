@@ -1,3 +1,4 @@
+import {scriptedVoiceProvider} from './voice-test-provider.js';
 // Synthetic local qualification entrypoint. Never deploy this login bypass.
 import worker from '../../../infra/cloudflare/worker.js';
 export {ProjectState,AgentConnections,AccountJobs,SandboxAdmission} from '../../../infra/cloudflare/worker.js';
@@ -17,5 +18,5 @@ export default {async fetch(request,env){const url=new URL(request.url);
   }
   if(env.APP_ENV==='test'&&url.pathname==='/test/context')return Response.json({origin:url.origin,header:request.headers.get('Origin')});
   if(env.APP_ENV==='test'&&url.pathname==='/test/inspect')return Response.json(await env.DEV_MANAGERS.getByName('shared-daytona-development').inspect());
-  return worker.fetch(request,env);
+  return worker.fetch(request,env.VOICE_AGENT_ENABLED==='1'?{...env,VOICE_TEST_PROVIDER:scriptedVoiceProvider}:env);
 }};

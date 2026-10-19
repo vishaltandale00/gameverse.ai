@@ -112,6 +112,7 @@ export function createTakeoverShell({
 
   return {
     version: SHELL_VERSION, host, agent, observe,
+    remoteStatus({pending,acknowledgment}={}) {if(pending!==undefined)state.pending=pending;if(acknowledgment!==undefined)state.lastAcknowledgment=acknowledgment;publish();},
     registerSportsSession, registerOverworldSession,
     // A displayed-view change must never dispose a session that a run owns.
     setDisplayed: (sessionId, displayed) => host.setDisplayed(sessionId, displayed),
