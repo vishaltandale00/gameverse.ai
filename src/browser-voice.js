@@ -21,7 +21,7 @@ export class BrowserVoice {
     this.lastSuccess=this.now();await this.post('/api/browser-voice/bind',{...b,snapshot});if(this.binding!==b)throw Error('voice_session_revoked');this.shell.remoteStatus({pending:true});if(this.polling!==b){this.polling=b;void this.poll(b);}
   }
   fetchVoice=(path,options={})=>{if(path==='/api/voice/transcriptions'){if(!this.binding)throw Error('Check your game session before speaking.');return this.fetch(path,{...options,headers:{...options.headers,'X-Gameverse-Voice-Session':this.binding.id}});}return this.fetch(path,options);};
-  cancelRequest({requestId}){this.cancelled.add(requestId);this.shell.remoteStatus({pending:false});void this.fetch('/api/voice/requests/'+requestId,{method:'DELETE',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(5000)}).catch(()=>{});}
+  cancelRequest({requestId}){this.cancelled.add(requestId);this.shell.remoteStatus({pending:false});if(!this.runs.size)this.revoke('voice request cancelled');void this.fetch('/api/voice/requests/'+requestId,{method:'DELETE',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(5000)}).catch(()=>{});}
   async poll(b){while(this.binding===b){try{const view=await this.post('/api/browser-voice/poll',{id:b.id,epoch:b.epoch});if(this.binding!==b)break;this.lastSuccess=this.now();if(view.epoch!==b.epoch||view.task_id&&!view.active){this.revoke('remote voice worker ended');break;}
       for(const c of view.commands)await this.command(b,c);
       for(const row of view.calls){const p=this.pendingCalls.get(row.id);if(p){this.pendingCalls.delete(row.id);row.result.error?p.reject(Error(row.result.error)):p.resolve(row.result);}}

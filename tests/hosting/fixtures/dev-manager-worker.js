@@ -7,6 +7,7 @@ import {DevManagerState as Base} from '../../../infra/cloudflare/dev-manager-sta
 import {sha256} from '../../../infra/cloudflare/phone-sign-in.js';
 export class DevManagerState extends Base { inspect(){return this.sql.exec('SELECT value FROM registry WHERE id=1').toArray();} }
 export default {async fetch(request,env){const url=new URL(request.url);
+  if(env.APP_ENV==='test'&&env.VOICE_BROWSER_COLLECTION==='1'&&url.pathname==='/games/configs/gameverse-v1.json')return Response.json({schemaVersion:1,id:'gameverse',version:'v1',title:'Gameverse voice qualification',base:{kind:'collection',entryPath:'/v1'},subgames:[{id:'soccer',catalogId:'soccer',adapter:'gameverse-custom-sports/1.0.0'}]});
   if(env.APP_ENV==='test'&&url.pathname.startsWith('/test/login/')){
     const actor=url.pathname.split('/').pop(),phone={a:'+12025550101',b:'+12025550102',n:'+12025550103'}[actor];if(!phone)return new Response('invalid fixture actor',{status:400});
     const key=await crypto.subtle.importKey('raw',Uint8Array.from(env.ACCOUNT_ID_KEY.match(/../g),x=>parseInt(x,16)),{name:'HMAC',hash:'SHA-256'},false,['sign']);

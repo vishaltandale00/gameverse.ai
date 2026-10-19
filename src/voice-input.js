@@ -113,6 +113,7 @@ export class VoiceInput {
   }
   fail(run, error) {
     if (this.run !== run) return;
+    if(this.config.execution==='daytona')this.onCancel({requestId:run.id});
     this.emit('error', { message: error.name === 'NotAllowedError' ? 'Microphone permission was denied. Allow the microphone in your browser, then try again.' : error.message });
     this.release(run);
     if (run.background || this.transcriptOnly) { this.run = null; this.state = 'idle'; }

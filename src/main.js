@@ -240,7 +240,7 @@ const voice = new VoiceInput({
 
   },
 });
-$('#agent-stop-all').onclick = () => takeover.stopAll('player stopped every run');
+$('#agent-stop-all').onclick = () => {takeover.stopAll('player stopped every run');if(remoteVoice.enabled)void voice.cancel();};
 if (qualifying) {
   // The requester's circuits choose speech and UI actions; its synthesized audio
   // replaces only the capture device, so transcription and the agent are real.
