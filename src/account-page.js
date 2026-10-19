@@ -1,3 +1,4 @@
+import {createDevManagerPanel} from './dev-manager-page.js';
 import '/runtime/phone/libphonenumber-min.js';
 import { defaultPhoneCountry, normalizePhoneInput } from './phone-input.js';
 import { connectionView, terminalPhases } from './agent-connection-view.js';
@@ -170,11 +171,13 @@ function renderJobs() {
     if (job.reason) details.append(text('p', job.reason.replaceAll('_', ' '))); card.append(details); $('job-list').append(card);
   }
 }
+const devManagers=createDevManagerPanel({root:document.getElementById('dev-manager-panel'),api});
 async function refresh() {
   if (polling) return; polling = true;
   try {
     account = (await api('/api/me')).account;
     $('sign-in-panel').hidden = !!account; $('signed-in-panel').hidden = !account; $('account-summary').hidden = !account;
+    await devManagers.refresh(account);
     if (!account) { $('send-code').disabled = !config.sign_in.configured; return; }
     $('account-name').textContent = account.name; $('developer-panel').hidden = !account.developer;
     const [connections, runs] = await Promise.all([api('/api/agent-connections'), api('/api/jobs')]); settings = connections; jobs = runs.jobs;
