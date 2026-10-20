@@ -36,3 +36,12 @@ export function inventoryEntry(item) {
     cpu:Number.isFinite(item.cpu)?item.cpu:null,memory:Number.isFinite(item.memory)?item.memory:null,disk:Number.isFinite(item.disk)?item.disk:null,
     created_at:typeof (item.createdAt??item.created_at)==='string'&&(Number.isFinite(Date.parse(item.createdAt??item.created_at)))?(item.createdAt??item.created_at):null};
 }
+
+// Voice tasks use the same finite admission ledger, but only a registered browser binding.
+export function taskRequest(value){
+  if(value?.kind!=='voice-agent')return fixtureRequest(value);
+  assert(Object.keys(value).every(k=>['id','manager_id','parent_id','role','source_commit','limits','kind','voice'].includes(k)),'invalid_task');
+  assert(UUID.test(value.voice?.session_id)&&Object.keys(value.voice).length===1,'invalid_voice_task');
+  const {kind,voice,...base}=value,l=base.limits;assert(Number.isInteger(l?.model_calls)&&l.model_calls>=1&&l.model_calls<=100,'invalid_limits');
+  const normalized=fixtureRequest({...base,limits:{...l,model_calls:0}});return {...normalized,kind,voice:{...voice},limits:{...normalized.limits,model_calls:l.model_calls}};
+}

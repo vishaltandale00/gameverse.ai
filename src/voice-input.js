@@ -1,3 +1,4 @@
+import {RecordedTranscription} from './recorded-transcription.js';
 import { StandardGamepadInput } from './gamepad.js';
 import { LiveTranscription } from './live-transcription.js';
 
@@ -5,8 +6,8 @@ import { LiveTranscription } from './live-transcription.js';
 // lifetime, asynchronous cancellation and the audio -> transcript -> receipt flow.
 export class VoiceInput {
   constructor({ captureContext, pause, changed, canStart = () => true, transcriptOnly = false, fetchImpl = (...args) => fetch(...args),
-    getUserMedia = options => navigator.mediaDevices.getUserMedia(options), createStream = options => new LiveTranscription(options) }) {
-    Object.assign(this, { captureContext, pause, changed, canStart, transcriptOnly, fetchImpl, getUserMedia, createStream });
+    getUserMedia = options => navigator.mediaDevices.getUserMedia(options), createStream = null, prepare = async () => {}, onCancel = () => {} }) {
+    Object.assign(this, { captureContext, pause, changed, canStart, transcriptOnly, fetchImpl, getUserMedia, createStream, prepare, onCancel });
     this.pad = new StandardGamepadInput(); this.config = { recordButton: 11, maxSeconds: 120, maxBytes: 10 * 1024 * 1024 };
     this.state = 'idle'; this.run = null;
   }
@@ -15,7 +16,7 @@ export class VoiceInput {
   emit(state, data = {}) { this.state = state; this.changed({ state, background: Boolean(this.run?.background), ...data }); }
   async configure() {
     const response = await this.fetchImpl('/api/voice/config', { signal: AbortSignal.timeout(35000) });
-    if (!response.ok) throw Error('Voice input needs the local backend. Start npm run dev.');
+    if (!response.ok) throw Error('The voice backend is unavailable. Check your account and connection.');
     this.config = await response.json(); return this.config;
   }
   poll(gamepads, enabled) {
@@ -47,11 +48,14 @@ export class VoiceInput {
       if (this.run !== run) { await run.resume?.(); return; }
       await this.configure();
       if (this.run !== run) return;
-      if (!this.config.available) throw Error(`Voice input is unavailable. Configure ${this.config.provider === 'openai' ? 'OPENAI_API_KEY' : 'the transcription provider'} on the local server.`);
+      if (!this.config.available) throw Error(this.config.reason || `Voice input is unavailable. Configure ${this.config.provider === 'openai' ? 'OPENAI_API_KEY' : 'the transcription provider'} on the server.`);
+      if(this.transcriptOnly&&this.config.execution==='daytona')throw Error('Use typed character names with hosted voice. Game takeover is available while playing soccer.');
+      await this.prepare({context:run.context,config:this.config,requestId:run.id});
+      if(this.run!==run)return;
       const stream = await this.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 }, video: false });
       if (this.run !== run) { stream.getTracks().forEach(track => track.stop()); return; }
       run.stream = stream;
-      run.live = this.createStream({ stream, requestId: run.id, config: this.config, signal: run.abort.signal,
+      run.live = (this.createStream || (options => this.config.mode==='recorded' ? new RecordedTranscription({...options,fetchImpl:this.fetchImpl}) : new LiveTranscription(options)))({ stream, requestId: run.id, config: this.config, signal: run.abort.signal,
         onText: text => { if (this.run === run && this.state === 'recording') this.emit('recording', { text, maxSeconds: this.config.maxSeconds, startedAt: run.startedAt }); },
         onError: error => this.fail(run, error),
       });
@@ -90,7 +94,7 @@ export class VoiceInput {
       run.submitting = true;
       const receipt = await this.request('/api/voice/requests', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: run.abort.signal,
-        body: JSON.stringify({ requestId: run.id, text: transcript.text, context: run.context, transcriptionMs: transcript.transcriptionMs, transcriptionMode: 'realtime' }),
+        body: JSON.stringify({ requestId: run.id, text: transcript.text, context: run.context, transcriptionMs: transcript.transcriptionMs, transcriptionMode: this.config.mode || 'realtime' }),
       });
       if (this.run !== run) return;
       if (receipt.status === 'cancelled') { await this.close(); return; }
@@ -104,11 +108,12 @@ export class VoiceInput {
     const response = await this.fetchImpl(path, { ...options, signal });
     let result;
     try { result = await response.json(); } catch { throw Error('Voice backend returned an invalid response. Try again.'); }
-    if (!response.ok) throw Error(result.error || 'Voice request failed. Try again.');
+    if (!response.ok) throw Error(result.error?.code || result.error || 'Voice request failed. Try again.');
     return result;
   }
   fail(run, error) {
     if (this.run !== run) return;
+    if(this.config.execution==='daytona')this.onCancel({requestId:run.id});
     this.emit('error', { message: error.name === 'NotAllowedError' ? 'Microphone permission was denied. Allow the microphone in your browser, then try again.' : error.message });
     this.release(run);
     if (run.background || this.transcriptOnly) { this.run = null; this.state = 'idle'; }
@@ -119,6 +124,7 @@ export class VoiceInput {
     // Invalidate before stopping: stream events, permission grants and late HTTP results
     // must never submit the cancelled recording.
     this.run = null; run.abort.abort(); this.release(run);
+    this.onCancel({requestId:run.id});
     this.emit('cancelling', { background: Boolean(run.background) });
     try {
       if (run.submitting) await this.request(`/api/voice/requests/${run.id}`, { method: 'DELETE' });

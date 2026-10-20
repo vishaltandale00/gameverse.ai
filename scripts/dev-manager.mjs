@@ -23,21 +23,22 @@ try{
   if(args.includes('--reconnect')){ident.paired=false;ident.code=randomBytes(8).toString('hex');await store.write('identity.json',ident);}
   const transport=new Transport({url,identity:ident,allowHttp:env.GAMEVERSE_MANAGER_ALLOW_HTTP==='1'});
   if(!ident.paired){try{const recovered=await transport.device({op:'poll'});ident.paired=true;ident.owner=recovered.owner;delete ident.code;await store.write('identity.json',ident);}catch(e){if(!['manager_not_found','pairing_required'].includes(e.message))throw e;}}
-  if(!ident.paired){ident.code=randomBytes(8).toString('hex');await store.write('identity.json',ident);await transport.call('/api/dev-manager/register',{id:ident.id,key:ident.key,code_hash:await digest(ident.code)});
+  if(!ident.paired){ident.code=randomBytes(8).toString('hex');await store.write('identity.json',ident);await transport.call('/api/dev-manager/register',{id:ident.id,key:ident.key,code_hash:await digest(ident.code),source_commit:commit,capabilities:env.GAMEVERSE_VOICE_ENABLED==='1'?['voice-agent']:[]});
     console.log(JSON.stringify({status:'awaiting_pairing',pairing_code:ident.code,expires_in_seconds:300,instructions:'Click Check for dev app and Connect in your Gameverse developer account.'}));}
   const port=Number(env.GAMEVERSE_MANAGER_PORT||4177);if(!Number.isInteger(port)||port<1024||port>65535)throw Error('invalid_manager_port');
   discovery=discoveryServer({identity:ident,origin:new URL(url).origin,port});await discovery.start();
   const daytona=new ManagerDaytona(env),runner=new Runner({store,transport,daytona});await runner.init();
-  let inventoryAt=0,previousError=null;
+  let inventoryAt=0,previousError=null,advertised=false;
   // A signal only requests shutdown. The current awaited operation owns the journal until the loop drains.
   const requestStop=()=>{stopping=true;};
   const stop=async()=>{stopping=true;await discovery.stop();await release();release=null;console.log(JSON.stringify({status:'stopped',remote_jobs:'bounded_existing_work_retained; new_launches_wait_for_reconnection'}));};
   process.once('SIGINT',requestStop);process.once('SIGTERM',requestStop);
-  console.log(JSON.stringify({status:'manager_running',port,protocol:1,source_operations:'model-free reference fixture only',model_calls:0}));
+  console.log(JSON.stringify({status:'manager_running',port,protocol:1,source_operations:env.GAMEVERSE_VOICE_ENABLED==='1'?'reference fixture and scoped voice-agent worker':'model-free reference fixture only',model_calls:0}));
   while(!stopping){
     try{
       const response=await transport.device({op:'poll'});if(stopping)break;
       if(!ident.paired){ident.paired=true;ident.owner=response.owner;delete ident.code;await store.write('identity.json',ident);console.log(JSON.stringify({status:'paired'}));}
+      if(!advertised){await transport.device({op:'capabilities',capabilities:env.GAMEVERSE_VOICE_ENABLED==='1'?['voice-agent']:[],source_commit:commit});advertised=true;}
       await runner.reconcile(response.tasks);if(stopping)break;await runner.commands(response.commands);if(stopping)break;await runner.advance({allowNew:()=>!stopping});if(stopping)break;
       if(Date.now()-inventoryAt>=5000){const items=await daytona.list();await transport.device({op:'inventory',entries:items.map(inventoryEntry)});inventoryAt=Date.now();}
       if(previousError)console.log(JSON.stringify({status:'reconnected'}));previousError=null;

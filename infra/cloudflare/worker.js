@@ -1,3 +1,5 @@
+export {HostedVoiceState} from './hosted-voice-state.js';
+import {browserVoiceRoute} from './browser-voice-api.js';
 export { DevManagerState } from './dev-manager-state.js';
 import {devManagerRoute} from './dev-manager-api.js';
 export { ProjectState } from './project-state.js';
@@ -71,6 +73,7 @@ async function route(request, env) {
   if (url.pathname === '/health' && request.method === 'GET') {
     return json({ service: 'gameverse-host', environment: env.APP_ENV, status: 'ok' });
   }
+  const voice=await browserVoiceRoute(request,env);if(voice)return voice;
   const developer=await devManagerRoute(request,env);if(developer)return developer;
   const platform=await platformRoute(request,env);if(platform)return platform;
   if(env.ASSETS&&!url.pathname.startsWith('/api/')) {

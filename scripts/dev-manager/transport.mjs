@@ -1,4 +1,5 @@
 import {randomBytes,webcrypto} from 'node:crypto';
+import {trustedGameverseOrigin} from '../../src/hosted-origins.js';
 import {signatureInput,digest,publicKey,assert} from '../../src/dev-manager-protocol.js';
 export async function identity(store){let value=await store.read('identity.json');if(value)return value;
   const pair=await webcrypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);
@@ -6,7 +7,7 @@ export async function identity(store){let value=await store.read('identity.json'
   await store.write('identity.json',value);return value;}
 export class Transport {
   constructor({url,identity,fetchImpl=fetch,allowHttp=false}){this.url=new URL(url);this.identity=identity;this.fetch=fetchImpl;
-    assert(this.url.origin==='https://gameverse.build'||allowHttp&&this.url.protocol==='http:'&&this.url.hostname==='127.0.0.1','untrusted_manager_server');
+    assert(trustedGameverseOrigin(this.url,{allowLoopback:allowHttp}),'untrusted_manager_server');
     assert(!this.url.username&&!this.url.password&&this.url.pathname==='/','invalid_manager_url');}
   async call(path,value){const text=JSON.stringify(value),time=String(Date.now()),nonce=randomBytes(16).toString('hex'),id=this.identity.id;
     const key=await webcrypto.subtle.importKey('jwk',this.identity.private_key,{name:'ECDSA',namedCurve:'P-256'},false,['sign']);

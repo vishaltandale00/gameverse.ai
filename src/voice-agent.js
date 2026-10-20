@@ -93,7 +93,7 @@ export class VoiceAgent {
       if (!text(args.goal)) throw Object.assign(Error('start_simulated_user needs a goal.'), { code: 'invalid-args' });
       const session = host.describeSession(args.sessionId);
       const surface = args.surface || session.surfaces.find(entry => !entry.humanOnly)?.name;
-      const status = host.startRun({ sessionId: args.sessionId, surface, goal: args.goal, role: args.role || 'gameplay',
+      const status = await host.startRun({ sessionId: args.sessionId, surface, goal: args.goal, role: args.role || 'gameplay',
         requester: meta.requestId, runner: this.runner });
       return { runId: status.runId, sessionId: status.sessionId, gameId: status.gameId, surface: status.surface, goal: status.goal, state: status.state, harness: status.harness };
     }

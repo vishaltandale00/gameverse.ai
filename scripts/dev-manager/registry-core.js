@@ -1,17 +1,19 @@
-import {assert,canonical,publicKey,fixtureRequest,terminal,UUID,HASH,inventoryEntry} from '../../src/dev-manager-protocol.js';
+import {assert,canonical,publicKey,taskRequest,terminal,UUID,HASH,inventoryEntry} from '../../src/dev-manager-protocol.js';
 const fresh = () => ({devices:{},tasks:{},commands:{},inventory:{}});
 // All mutation methods are synchronous: the Durable Object commits before yielding.
 export class Registry {
   constructor({state=fresh(),save=()=>{},now=()=>Date.now(),id=()=>crypto.randomUUID()}={}) {Object.assign(this,{state,save,now,id});}
   commit(){this.save(this.state);}
-  register({id,key,code_hash},proof) {
+  register({id,key,code_hash,capabilities=[],source_commit=null},proof) {
     assert(UUID.test(id)&&HASH.test(code_hash),'invalid_registration');key=publicKey(key);
+    assert(Array.isArray(capabilities)&&capabilities.every(c=>['voice-agent'].includes(c)),'invalid_capabilities');
+    assert(source_commit===null||/^[a-f0-9]{40}$/.test(source_commit),'invalid_source_commit');
     const old=this.state.devices[id];assert(!old?.owner||old.revoked,'already_paired');
     assert(!old||canonical(old.key)===canonical(key),'device_identity_conflict');
     const nonces=proof?this.nextNonces(old?.nonces||[],proof.nonce,proof.time):old?.nonces||[];
     for(const [other,d] of Object.entries(this.state.devices))if(other!==id&&!d.owner&&d.expires_at<=this.now())delete this.state.devices[other];
     assert(Object.keys(this.state.devices).length<100||old,'registry_limit');
-    this.state.devices[id]={id,key,code_hash,expires_at:this.now()+300000,attempts:0,owner:old?.owner||null,revoked:old?.revoked||false,repair_pending:!!old?.revoked,nonces,last_seen:null};
+    this.state.devices[id]={id,key,code_hash,capabilities,source_commit,expires_at:this.now()+300000,attempts:0,owner:old?.owner||null,revoked:old?.revoked||false,repair_pending:!!old?.revoked,nonces,last_seen:null};
     this.commit();return {id,expires_at:this.state.devices[id].expires_at};
   }
   device(id){const row=this.state.devices[id];assert(row,'manager_not_found',404);return row;}
@@ -23,13 +25,15 @@ export class Registry {
     if(row.owner&&!row.revoked)return this.summary(row);
     assert(row.expires_at>this.now()&&row.attempts<5,'pairing_expired');row.attempts++;this.commit();
     assert(row.code_hash===code_hash,'pairing_code_invalid');row.owner=owner;row.revoked=false;row.repair_pending=false;delete row.code_hash;row.paired_at=this.now();this.commit();return this.summary(row);}
-  summary(row){return {id:row.id,owner:row.owner,paired_at:row.paired_at||null,last_seen:row.last_seen,revoked:row.revoked,online:row.last_seen!==null&&row.last_seen>this.now()-15000,protocol:1};}
+  summary(row){return {id:row.id,owner:row.owner,paired_at:row.paired_at||null,last_seen:row.last_seen,revoked:row.revoked,online:row.last_seen!==null&&row.last_seen>this.now()-15000,protocol:1,capabilities:row.capabilities||[],source_commit:row.source_commit||null};}
   authorize(id){const row=this.device(id);assert(row.owner&&!row.revoked,'pairing_required',401);return row;}
+  capabilities(id,list,source_commit){const row=this.authorize(id);assert(Array.isArray(list)&&list.every(c=>c==='voice-agent')&&/^[a-f0-9]{40}$/.test(source_commit),'invalid_capabilities');row.capabilities=list;row.source_commit=source_commit;this.commit();return this.summary(row);}
   revoke(owner,id){const row=this.device(id);assert(row.owner===owner,'account_mismatch',403);row.revoked=true;this.commit();return this.summary(row);}
   tree(id){const out=[id];for(let i=0;i<out.length;i++)for(const t of Object.values(this.state.tasks))if(t.parent_id===out[i]&&!out.includes(t.id))out.push(t.id);return out;}
   root(task){return task.parent_id?this.state.tasks[task.parent_id]:task;}
   active(task){return !terminal(task.phase)||!task.cleanup_confirmed;}
-  submit(owner,input){const request=fixtureRequest(input),device=this.authorize(request.manager_id);assert(device.owner===owner,'account_mismatch',403);
+  submit(owner,input){const request=taskRequest(input),device=this.authorize(request.manager_id);assert(device.owner===owner,'account_mismatch',403);
+    if(request.kind==='voice-agent'){const session=this.state.voice?.sessions[request.voice.session_id];assert(session?.owner===owner&&session.manager_id===request.manager_id&&!session.revoked&&device.capabilities?.includes('voice-agent'),'invalid_voice_session');}
     const existing=this.state.tasks[request.id];if(existing){assert(existing.owner===owner&&canonical(existing.request)===canonical(request),'request_conflict');return existing;}
     assert(Object.keys(this.state.tasks).length<500,'task_limit');
     if(request.parent_id){const parent=this.state.tasks[request.parent_id];assert(parent&&parent.owner===owner&&!parent.parent_id&&parent.manager_id===request.manager_id,'invalid_parent');

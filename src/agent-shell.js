@@ -23,7 +23,7 @@ export function createTakeoverShell({
     finish: (outcome, detail) => finish(outcome, detail),
   }).start();
   const agent = new VoiceAgent({ host, plan, runner, now, log });
-  const state = { lastAcknowledgment: null, lastRequestId: null, pending: false };
+  const state = { lastAcknowledgment: null, lastRequestId: null, pending: false, remotePending: false };
 
   // Registering a live subgame runtime. `handle` is CustomSportsAdapter.controlHandle().
   function registerSportsSession({ handle, identity = {}, progressKey, displayed = true, origin = null, dispose }) {
@@ -100,7 +100,7 @@ export function createTakeoverShell({
   };
   const observe = () => {
     const sessions = host.listSessions(), runs = host.listRuns();
-    return { sessions, runs, running: runs.filter(run => run.state === 'running'), acknowledgment: state.lastAcknowledgment, pending: state.pending };
+    return { sessions, runs, running: runs.filter(run => run.state === 'running'), acknowledgment: state.lastAcknowledgment, pending: state.pending, remotePending: state.remotePending };
   };
   const publish = () => { syncHold(); render(observe()); };
 
@@ -112,6 +112,7 @@ export function createTakeoverShell({
 
   return {
     version: SHELL_VERSION, host, agent, observe,
+    remoteStatus({pending,acknowledgment}={}) {if(pending!==undefined){state.pending=pending;state.remotePending=pending;}if(acknowledgment!==undefined)state.lastAcknowledgment=acknowledgment;publish();},
     registerSportsSession, registerOverworldSession,
     // A displayed-view change must never dispose a session that a run owns.
     setDisplayed: (sessionId, displayed) => host.setDisplayed(sessionId, displayed),

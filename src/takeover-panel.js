@@ -11,7 +11,7 @@ export function gameplayRows(view, displayedSessionId) {
 }
 export function renderPlayerPanel({ panel, view, displayedSessionId, watchingPending = false, onWatch, onStop, onError, diagnostics }) {
   const rows = gameplayRows(view, displayedSessionId);
-  panel.hidden = rows.length === 0;
+  panel.hidden = rows.length === 0 && !view.remotePending;
   const list = panel.querySelector('#agent-runs');
   const key = rows.map(({ run, watching }) => `${run.runId}:${watching}`).join('|') + ':' + watchingPending;
   if (list.dataset.key !== key) {
@@ -34,7 +34,9 @@ export function renderPlayerPanel({ panel, view, displayedSessionId, watchingPen
       controls.append(stop); row.append(copy, controls); return row;
     }));
   }
-  panel.querySelector('#agent-stop-all').hidden = rows.length < 2;
+  const stopAll = panel.querySelector('#agent-stop-all');
+  stopAll.hidden = rows.length < 2 && !view.remotePending;
+  stopAll.textContent = rows.length ? 'Stop all' : 'Stop voice request';
   const details = panel.querySelector('#agent-details');
   const refresh = () => {
     panel.querySelector('#agent-ack').textContent = view.acknowledgment || '';
