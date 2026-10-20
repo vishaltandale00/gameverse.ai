@@ -45,6 +45,10 @@ export const LOOP_CONFIG = Object.freeze({
     allowOutside: false,
   },
 
+  // Repair policy: stop early when a repair round leaves the diff unchanged (the agent found nothing it may
+  // change, e.g. the failure is outside its allowed files), instead of spending the remaining rounds.
+  repair: { stopWhenUnchanged: true },
+
   // The target kit's own test file ({kitTest}); kits whose file doesn't follow the pattern are listed.
   kitTests: { pattern: 'tests/v2-kit-{kitId}.test.js', creature: 'tests/v2-creature-kit.test.js' },
 
@@ -71,6 +75,7 @@ export function resolveConfig(overrides = {}) {
     agent: { ...base.agent, ...overrides.agent },
     scope: { ...base.scope, ...overrides.scope },
     kitTests: { ...base.kitTests, ...overrides.kitTests },
+    repair: { ...base.repair, ...overrides.repair },
     verification: overrides.verification || base.verification,
   };
   for (const k of POSITIVE) {

@@ -98,6 +98,13 @@ test('repairs are bounded by the config, resume the session and carry the job’
   assert.equal(failed.state, 'failed');
   assert.equal(b.runner.calls.code.length, 2, 'one first attempt plus one repair, then stop');
   assert.match(failed.reason, /after 2 attempt\(s\): mod-tests/);
+
+  // A repair round that changes nothing (the failure is outside what the agent may edit) stops the job early.
+  const stuck = service({ limits: { maxRepairAttempts: 2 }, runner: { attempts: [{ changes: job => goodChanges(job.modId) }], verify: ({ argv }) => argv.includes('tests/v2-mods.test.js') ? { code: 1 } : { code: 0 } } });
+  const st = await stuck.svc.wait((await start(stuck.svc)).id);
+  assert.equal(st.state, 'failed');
+  assert.equal(stuck.runner.calls.code.length, 2);
+  assert.match(st.reason, /mods \(stopped early: the repair round left the diff unchanged\)/);
 });
 
 test('cancel stops a running job and a queued one; both are kept with unmeasured phases marked unavailable', async () => {

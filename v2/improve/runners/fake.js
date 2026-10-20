@@ -39,7 +39,9 @@ export function createFakeRunner({ attempts = [{}], verify = () => ({ code: 0 })
       if (g) await Promise.race([g, new Promise(r => signal?.addEventListener('abort', r, { once: true }))]);
       if (step.delayMs && !(await wait(step.delayMs, signal))) return { aborted: true, completed: false, exitCode: null };
       if (signal?.aborted) return { aborted: true, completed: false, exitCode: null };
-      const changes = typeof step.changes === 'function' ? step.changes(workspace.job) : step.changes ?? goodChanges(workspace.job.modId);
+      // By default every attempt edits the mod (so repairs make progress); scripted changes are taken as given.
+      const changes = typeof step.changes === 'function' ? step.changes(workspace.job) : step.changes
+        ?? goodChanges(workspace.job.modId).map(c => (c.status === 'A' && c.path.startsWith('v2/') ? { ...c, content: `${c.content}// attempt ${attempt}\n` } : c));
       for (const c of changes) workspace.files.set(c.path, c);
       return { completed: step.completed ?? true, exitCode: step.exitCode ?? 0, turns: step.turns ?? 3, costUsd: step.costUsd ?? 0.01, sessionId: `session-${workspace.job.id}`, isError: false, subtype: 'success', resultText: 'done', stderrTail: step.stderr ?? '' };
     },
@@ -50,8 +52,9 @@ export function createFakeRunner({ attempts = [{}], verify = () => ({ code: 0 })
       return { code: r.code ?? 0, timedOut: !!r.timedOut, stdout: r.stdout ?? 'ok', stderr: r.stderr ?? '', ms: r.ms ?? 1 };
     },
     async changes({ workspace }) {
-      const files = [...workspace.files.values()].map(({ path, status }) => ({ path, status }));
-      return { files, diffstat: `${files.length} files changed`, patch: files.map(f => `--- ${f.path}`).join('\n') };
+      const all = [...workspace.files.values()];
+      const files = all.map(({ path, status }) => ({ path, status }));
+      return { files, diffstat: `${files.length} files changed`, patch: all.map(f => `--- ${f.path}\n${f.content ?? ''}`).join('\n') };
     },
     async finalize({ workspace, success, message }) {
       calls.finalize.push({ success });

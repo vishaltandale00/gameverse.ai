@@ -61,7 +61,7 @@ export function createImprovementService({ root, runner, config: overrides = {},
     createdAt: job.createdAt, startedAt: job.startedAt, finishedAt: job.finishedAt,
     outcome: job.outcome, reason: job.reason, cancelRequested: job.cancelRequested,
     queuePosition: job.state === 'queued' ? store.all().filter(j => j.state === 'queued').findIndex(j => j.id === job.id) + 1 : null,
-    attempts: job.attempts.map(a => ({ n: a.n, kind: a.kind, coding: a.coding, verify: a.verify && { ok: a.verify.ok, ms: a.verify.ms, checks: a.verify.checks } })),
+    attempts: job.attempts.map(a => ({ n: a.n, kind: a.kind, coding: a.coding, verify: a.verify && { ok: a.verify.ok, ms: a.verify.ms, checks: a.verify.checks }, stoppedEarly: a.stoppedEarly ?? null })),
     result: job.result, applied: job.applied,
     report: timingReport(job),
     logs: { dir: store.logDir(job.id), events: join(store.jobDir(job.id), 'events.jsonl'), report: join(store.jobDir(job.id), 'report.json') },
@@ -147,11 +147,16 @@ export function createImprovementService({ root, runner, config: overrides = {},
           return;
         }
         feedback = attempt.verify.feedback;
+        const previous = job.attempts.at(-2)?.verify;
+        if (n > 0 && config.repair.stopWhenUnchanged && previous && previous.patchSha256 === attempt.verify.patchSha256) {
+          attempt.stoppedEarly = 'the repair round left the diff unchanged';
+          break;
+        }
       }
       const last = job.attempts.at(-1).verify;
       const scopeFail = last.checks.find(c => c.id === 'scope' && !c.ok);
       outcome = 'failed';
-      reason = scopeFail ? `refused: ${scopeFail.problems.join('; ')}` : `verification failed after ${job.attempts.length} attempt(s): ${last.checks.filter(c => !c.ok).map(c => c.id).join(', ')}`;
+      reason = scopeFail ? `refused: ${scopeFail.problems.join('; ')}` : `verification failed after ${job.attempts.length} attempt(s): ${last.checks.filter(c => !c.ok).map(c => c.id).join(', ')}${job.attempts.at(-1).stoppedEarly ? ` (stopped early: ${job.attempts.at(-1).stoppedEarly})` : ''}`;
     } catch (error) {
       const cancelled = job.cancelRequested;
       outcome = cancelled ? 'cancelled' : 'failed';
@@ -204,7 +209,7 @@ export function createImprovementService({ root, runner, config: overrides = {},
     const feedback = failed.map(c => c.id === 'scope'
       ? `## scope: the result was refused\n${c.problems.map(x => `- ${x}`).join('\n')}\nRevert or move those changes.`
       : `## ${c.id} failed (exit ${c.code}${c.timedOut ? ', timed out' : ''})\n$ ${c.argv.join(' ')}\n${tail(c.tail, per)}`).join('\n\n');
-    return { ok: !failed.length, ms: Date.now() - started, checks, feedback: feedback.slice(0, L.maxFeedbackChars + 200) };
+    return { ok: !failed.length, ms: Date.now() - started, checks, patchSha256: createHash('sha256').update(changes.patch || '').digest('hex'), feedback: feedback.slice(0, L.maxFeedbackChars + 200) };
   }
 
   const commitMessage = job => `Promote experiment ${JSON.stringify(job.experiment.label || job.experiment.id || 'experiment')} to the ${job.modId} mod\n\n` +
