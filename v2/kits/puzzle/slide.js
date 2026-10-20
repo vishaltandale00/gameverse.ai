@@ -144,76 +144,118 @@ export function createSlide(content, { seed = 1, startAt = 0, fast = false } = {
   return { mode: 'slide', content, n, createState, step, gridOf };
 }
 
-// ---------- bot: expectimax over spawns with a per-line heuristic ----------
-// Each row and column scores empties, mergeable neighbors, monotonicity and
-// the total (the well-known 2048 line heuristic), memoized per line.
-export function slideBot(game, { depth = 2 } = {}) {
-  const n = game.n, memo = new Map();
-  const line = new Array(n);
-  const lineScore = ranks => {
-    let key = 0;
-    for (const r of ranks) key = key * 32 + (r < 0 ? 31 : r);
-    let v = memo.get(key);
-    if (v !== undefined) return v;
+
+// ---------- bot: expectimax over spawns ----------
+// The board is n row keys (4 bits per cell: the tile's log2, 0 empty, 15 rock). Row slides and the
+// standard line heuristic (empty cells, mergeable neighbors, monotonicity, a penalty on large
+// scattered tiles) are memoized per row key, and scored on rows and columns so big tiles gather
+// in a corner. Search: max over moves, chance over every spawn (2 at 90%, 4 at 10%), depth from
+// how crowded the board is, a probability cutoff and a transposition table.
+const ROCK = 15, TABLES = new Map(); // per board size, shared by every bot (row results never change)
+function tablesFor(n) {
+  if (!TABLES.has(n)) { const SIZE = 16 ** n, typed = n <= 5; TABLES.set(n, { typed, leftT: typed ? new Int32Array(SIZE).fill(-1) : new Map(), rightT: typed ? new Int32Array(SIZE).fill(-1) : new Map(), heurT: typed ? new Float64Array(SIZE).fill(NaN) : new Map() }); }
+  return TABLES.get(n);
+}
+export function slideBot(game, { maxDepth = 3 } = {}) {
+  const n = game.n, N = n * n, { typed, leftT, rightT, heurT } = tablesFor(n);
+  const nib = (k, j) => (k >>> (4 * j)) & 15;
+  const rev = k => { let r = 0; for (let j = 0; j < n; j++) r |= nib(k, j) << (4 * (n - 1 - j)); return r; };
+  function slideLeft(k) {
+    const out = new Array(n).fill(0);
+    let seg = 0;
+    while (seg < n) {
+      if (nib(k, seg) === ROCK) { out[seg] = ROCK; seg++; continue; }
+      let end = seg; while (end < n && nib(k, end) !== ROCK) end++;
+      let w = seg, last = 0;
+      for (let j = seg; j < end; j++) { const x = nib(k, j); if (!x) continue; if (last === x) { out[w - 1] = Math.min(14, x + 1); last = 0; } else { out[w++] = x; last = x; } }
+      seg = end;
+    }
+    let v = 0; for (let j = 0; j < n; j++) v |= out[j] << (4 * j);
+    return v;
+  }
+  const get = (T, k) => typed ? T[k] : T.get(k);
+  const left = k => { let v = get(leftT, k); if (v === undefined || v === -1) { v = slideLeft(k); typed ? (leftT[k] = v) : leftT.set(k, v); } return v; };
+  const right = k => { let v = get(rightT, k); if (v === undefined || v === -1) { v = rev(slideLeft(rev(k))); typed ? (rightT[k] = v) : rightT.set(k, v); } return v; };
+  function heur(k) {
+    let v = get(heurT, k);
+    if (v !== undefined && !Number.isNaN(v)) return v;
     let empty = 0, merges = 0, prev = 0, counter = 0, sum = 0, monoL = 0, monoR = 0;
-    for (const r of ranks) {
-      if (r < 0) continue;
-      sum += Math.pow(r, 3.5);
-      if (!r) empty++;
-      else { if (prev === r) counter++; else if (counter > 0) { merges += 1 + counter; counter = 0; } prev = r; }
+    for (let j = 0; j < n; j++) {
+      const x = nib(k, j) === ROCK ? 0 : nib(k, j);
+      sum += Math.pow(x, 3.5);
+      if (!x) empty++;
+      else { if (prev === x) counter++; else if (counter > 0) { merges += 1 + counter; counter = 0; } prev = x; }
     }
     if (counter > 0) merges += 1 + counter;
-    for (let i = 1; i < ranks.length; i++) {
-      const a = Math.max(0, ranks[i - 1]), b = Math.max(0, ranks[i]);
-      if (a > b) monoL += a ** 4 - b ** 4; else monoR += b ** 4 - a ** 4;
-    }
+    for (let j = 1; j < n; j++) { const a = nib(k, j - 1) === ROCK ? 0 : nib(k, j - 1), b = nib(k, j) === ROCK ? 0 : nib(k, j); if (a > b) monoL += a ** 4 - b ** 4; else monoR += b ** 4 - a ** 4; }
     v = 200000 + 270 * empty + 700 * merges - 47 * Math.min(monoL, monoR) - 11 * sum;
-    memo.set(key, v);
+    typed ? (heurT[k] = v) : heurT.set(k, v);
     return v;
-  };
-  const rankOf = v => v > 0 ? 31 - Math.clz32(v) : v < 0 ? -1 : 0;
-  const evaluate = g => {
-    let t = 0;
-    for (let a = 0; a < n; a++) {
-      for (let k = 0; k < n; k++) line[k] = rankOf(g[a * n + k]);
-      t += lineScore(line);
-      for (let k = 0; k < n; k++) line[k] = rankOf(g[k * n + a]);
-      t += lineScore(line);
+  }
+  const colKey = (rows, j) => { let c = 0; const sh = 4 * j; for (let i = 0; i < n; i++) c |= ((rows[i] >>> sh) & 15) << (4 * i); return c; };
+  function move(rows, dir) {
+    let out = null;
+    if (dir < 2) {
+      for (let i = 0; i < n; i++) { const k = rows[i], r = dir === 0 ? left(k) : right(k); if (r !== k) { if (!out) out = rows.slice(); out[i] = r; } }
+      return out;
     }
-    return t;
-  };
-  const chance = (g, d) => {
-    const empties = [];
-    for (let i = 0; i < g.length; i++) if (g[i] === 0) empties.push(i);
-    if (!empties.length) return evaluate(g);
-    const pick = empties.length > 6 && d > 1 ? empties.filter((_, k) => k % 2 === 0) : empties;
-    let t = 0;
-    for (const i of pick) for (const [v, p] of [[2, 0.9], [4, 0.1]]) {
-      g[i] = v; t += p * (d > 1 ? maxNode(g, d - 1) : evaluate(g)); g[i] = 0;
+    for (let j = 0; j < n; j++) {
+      const k = colKey(rows, j), r = dir === 2 ? left(k) : right(k);
+      if (r === k) continue;
+      if (!out) out = rows.slice();
+      const sh = 4 * j, clear = ~(15 << sh);
+      for (let i = 0; i < n; i++) out[i] = (out[i] & clear) | (((r >>> (4 * i)) & 15) << sh);
     }
-    return t / pick.length;
-  };
-  const maxNode = (g, d) => {
+    return out;
+  }
+  const evaluate = rows => { let t = 0; for (let i = 0; i < n; i++) t += heur(rows[i]) + heur(colKey(rows, i)); return t; };
+  // transposition table: open addressing on two 32-bit hashes of the rows
+  const TT = 1 << 18, tKey1 = new Int32Array(TT), tKey2 = new Int32Array(TT), tDepth = new Int8Array(TT), tGen = new Int32Array(TT), tVal = new Float64Array(TT);
+  let gen = 0;
+  let h1 = 0, h2 = 0;
+  const hashes = rows => { let a = 0x811c9dc5 | 0, b = 0x01000193 | 0; for (let i = 0; i < n; i++) { a = Math.imul(a ^ rows[i], 0x01000193); b = Math.imul(b + rows[i], 0x9e3779b1) ^ (b >>> 13); } h1 = a; h2 = b; };
+  function chance(rows, depth, prob) {
+    if (depth <= 0 || prob < 0.0001) return evaluate(rows);
+    hashes(rows);
+    const k1 = h1, k2 = h2, slot = (k1 ^ (k2 >>> 7)) & (TT - 1);
+    if (tGen[slot] === gen && tKey1[slot] === k1 && tKey2[slot] === k2 && tDepth[slot] >= depth) return tVal[slot];
+    let total = 0, count = 0;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      if (nib(rows[i], j)) continue;
+      count++;
+      const r = rows[i];
+      rows[i] = r | (1 << (4 * j)); total += 0.9 * maxNode(rows, depth, prob * 0.9);
+      rows[i] = r | (2 << (4 * j)); total += 0.1 * maxNode(rows, depth, prob * 0.1);
+      rows[i] = r;
+    }
+    const v = count ? total / count : evaluate(rows);
+    tGen[slot] = gen; tKey1[slot] = k1; tKey2[slot] = k2; tDepth[slot] = depth; tVal[slot] = v;
+    return v;
+  }
+  function maxNode(rows, depth, prob) {
     let best = 0;
-    for (let dir = 0; dir < 4; dir++) { const r = slideGrid(g, n, dir); if (r.moved) best = Math.max(best, chance(r.grid, d)); }
+    for (let d = 0; d < 4; d++) { const m = move(rows, d); if (m) best = Math.max(best, chance(m, depth - 1, prob)); }
     return best;
-  };
-  const choose = g => {
+  }
+  function choose(grid) {
+    const rows = new Array(n).fill(0);
+    let empty = 0; const seen = new Set();
+    for (let i = 0; i < N; i++) { const v = grid[i], r = v > 0 ? 31 - Math.clz32(v) : v < 0 ? ROCK : 0; rows[Math.floor(i / n)] |= r << (4 * (i % n)); if (!r) empty++; else if (r !== ROCK) seen.add(r); }
+    // Open boards need little lookahead; crowded ones (few empties, many distinct tiles) get the most.
+    const depth = Math.min(maxDepth, empty >= 4 ? 1 : seen.size >= 10 || empty <= 1 ? maxDepth : 2);
+    if (!gen) gen = 1; // the table persists across moves: a board and depth always score the same
     let bestD = -1, bestV = -Infinity;
-    const empties = g.filter(v => v === 0).length, dd = empties <= 3 ? depth + 1 : depth;
-    for (let dir = 0; dir < 4; dir++) {
-      const r = slideGrid(g, n, dir); if (!r.moved) continue;
-      const v = chance(r.grid, dd - 1 || 1);
-      if (v > bestV) { bestV = v; bestD = dir; }
-    }
+    for (let d = 0; d < 4; d++) { const m = move(rows, d); if (!m) continue; const v = chance(m, depth, 1); if (v > bestV) { bestV = v; bestD = d; } }
     return bestD;
-  };
+  }
   let tick = 0;
   const idle = { x: 0, y: 0, a: false, b: false };
-  return s => {
+  const bot = s => {
     if (s.phase !== 'play' || s.anim > 0) return idle;
     if (++tick % 2) return idle;
     const d = choose(game.gridOf(s));
     return d === 0 ? { ...idle, x: -1 } : d === 1 ? { ...idle, x: 1 } : d === 2 ? { ...idle, y: -1 } : d === 3 ? { ...idle, y: 1 } : idle;
   };
+  bot.choose = choose;
+  return bot;
 }

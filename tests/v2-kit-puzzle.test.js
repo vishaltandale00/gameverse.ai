@@ -286,3 +286,14 @@ test('falling verification passes fair content on every seed and blames the leve
   const [p] = impossible.problems;
   assert.equal(p.path, 'levels[1]'); assert.match(p.message, /level 2/); assert.match(p.hint, /timeSec|target/);
 });
+
+test('slide verification reaches the classic 2048 tile and blames an impossible move limit', () => {
+  const S = SAMPLES.slide, lv = o => ({ ...S.levels[0], ...o });
+  const planets = { ...S, title: 'Planet Merge', rules: { ...S.rules, endless: false }, levels: [lv({ target: 256 }), lv({ target: 2048 })] };
+  const r = kit.verify(planets, { seed: seedFrom('2048 with planets'), budgetMs: 2000 });
+  assert.equal(r.ok, true, JSON.stringify(r.problems));
+  assert.ok(r.report.bot.levels[1].wins >= 4, 'the bot reaches 2048 in nearly every run');
+  const tight = kit.verify({ ...planets, levels: [lv({ target: 2048, moves: 300 })] }, { seed: 3, budgetMs: 2000 });
+  assert.equal(tight.ok, false);
+  assert.equal(tight.problems[0].path, 'levels[0]'); assert.match(tight.problems[0].hint, /more moves/);
+});

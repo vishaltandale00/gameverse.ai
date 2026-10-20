@@ -42,7 +42,7 @@ export const PROMPT = `You write content for a block-and-match puzzle game. Pick
 - "falling": a Tetris-style well (10x20 by default, seven tetrominoes, rotation, hold, next queue, line clears, T-spins). palette: 7 entries named and colored for the pieces in order I, O, T, S, Z, J, L (give them themed names). Goals: "lines" (target lines this level), "score", "survive" (timeSec). speed 1-20 is gravity. obstacles = garbage rows that rise at level start (0-8). layout: optional rows of rules.width chars ('.' empty, '#' block) stacked at the bottom. rules.endless true = marathon that keeps going after the last level. Optional customPieces (pieceSet "custom" or "mixed"): rows like ["##", ".#", ".#"], each piece 1-5 connected cells.
 - "chain": falling pairs that pop in same-color groups with chain reactions (Puyo-like), or rules.variant "virus": capsules that clear in lines of rules.groupSize and must wipe out fixed viruses (Dr. Mario-like). rules.colors 3-5 (the virus variant always uses 3), groupSize 4. Goals: "score", "chain" (make a chain of target length, 2-5), "viruses" (virus variant; obstacles = virus count 4-24), "blockers" (obstacles = garbage rows to clear, 1-4), "survive".
 - "swap": a match-3 board (8x8 by default) (Bejeweled/Candy-like) with specials (4 in a line, 5 in a line, L/T shapes). rules.colors 4-5. moves = move limit (10-40). Goals: "score" (target about 150-400 points per move), "jelly" (layout must contain j/J), "blockers" (layout must contain b/B), "collect" (bring target items to the bottom; about 10 moves per item). layout: rules.height rows of rules.width chars (8 rows of 8 by default): '.' gem, 'j' jelly, 'J' double jelly, 'b' blocker, 'B' strong blocker, 'x' hole; or [] for a plain board. stars: three ascending score thresholds.
-- "slide": a 2048-like square board rules.width x rules.width (4; 3-6). Goals: "tile" (target is a power of two like 128, 512, 2048), "score". rules.spawnFour is the chance a new tile is a 4 (0.1). rules.endless true keeps playing after the last target. obstacles = fixed rocks (0-2).
+- "slide": a 2048-like square board rules.width x rules.width (4; 3-6). Goals: "tile" (target is a power of two like 128, 512, 2048), "score". rules.spawnFour is the chance a new tile is a 4 (0.1). rules.endless true keeps playing after the last target. obstacles = fixed rocks (0-2). moves = optional move limit (0 = none; a 2048 tile takes about 1000 moves).
 Board size is real: rules.width and rules.height set it (0 = the mode's default). falling: well width 8-16 (10) x height 16-30 (20). chain: width 4-10 (6) x height 8-18 (12); virus width 7-12 (8) x height 12-20 (16). swap: width and height 5-10 (8x8). slide: width 3-6 (4), height ignored.
 Write 3-6 levels that ramp up, each with a short name and a one-line intro. Fill every field; fields another mode uses can be 0, false, [] or defaults. cast: hero is a mascot who cheers on the player, rival the opponent or virus kind, item the collectible, blocker the obstacle, prize the reward. All names are original.
 Change requests map to real fields; never fake one with a stand-in:
@@ -184,7 +184,7 @@ function normalizeLevel(l, i, content, dims, err, warn) {
     intro: text(l.intro, '', 120),
     goal,
     target: 0,
-    moves: clampInt(l.moves, 0, 99, 0),
+    moves: clampInt(l.moves, 0, content.mode === 'slide' ? 5000 : 99, 0),
     timeSec: clampInt(l.timeSec, 0, 600, 0),
     speed: clampInt(l.speed, 1, 20, Math.min(20, i + 1)),
     obstacles: 0,

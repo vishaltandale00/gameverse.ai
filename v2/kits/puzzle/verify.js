@@ -7,8 +7,8 @@
 //   150 pieces. Lines and score goals past 1000 pieces are extrapolated from a steady clear rate.
 // - chain / virus: a greedy bot with one-pair lookahead must finish each level in ≥ 70% of runs.
 // - swap: every level starts with a move, and a greedy bot meets each goal in ≥ 70% of runs.
-// - slide: an expectimax bot must reach each target in ≥ 70% of runs (tiles ≥ 1024: at least
-//   once, and half of it in ≥ 70%).
+// - slide: an expectimax bot (depth 1-3 over spawns) must reach each target in ≥ 70% of runs
+//   (tiles ≥ 1024: or at least once, with half of it in ≥ 70%). Runs stop once the last target is met.
 // Running out of budget is the kit's limit, not the content's: it is reported as a warning.
 import { createFalling, fallingBot } from './falling.js';
 import { createChain, chainBot } from './chain.js';
@@ -145,7 +145,8 @@ function verifySwap(content, seed, deadline) {
 // ---------- slide ----------
 function verifySlide(content, seed, deadline) {
   const runs = [], N = content.levels.length;
-  for (let k = 0; k < 8; k++) {
+  const big = content.levels.some(L => L.goal === 'tile' && L.target >= 1024), count = big ? 5 : 8; // big targets take ~1000 moves a run
+  for (let k = 0; k < count; k++) {
     if (now() > deadline && runs.length >= 3) break;
     const game = createSlide(content, { seed: seed + 104729 * k, fast: true }), bot = slideBot(game), s = game.createState();
     run(game, bot, s, x => x.level >= N, 30_000, deadline + 400);
