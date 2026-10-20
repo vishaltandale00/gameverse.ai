@@ -28,7 +28,7 @@ export default {
     };
     const exitsFrom = id => zones().get(id)?.exits || [];
     const api = {
-      kind: 'graph', get zones() { return zones(); },
+      kind: 'graph', anchor: 'slot', get zones() { return zones(); },
       place(entity) { if (entity.at == null) entity.at = [...zones().keys()][0] ?? null; },
       remove() {},
       pos: entity => entity.at,
@@ -59,12 +59,12 @@ export default {
         return Infinity;
       },
       /** Zones reachable from `from` given gates as they evaluate in the current state. */
-      reachable(from, rt) {
+      reachable(from, rt, opts = {}) {
         const seen = new Set([from]), queue = [from];
         while (queue.length) for (const x of exitsFrom(queue.shift())) if (!seen.has(x.to) && (!x.gate || rt.test(x.gate))) { seen.add(x.to); queue.push(x.to); }
         return seen;
       },
-      canReach: (a, b, rt) => api.reachable(a, rt).has(b),
+      canReach: (a, b, rt, opts = {}) => api.reachable(a, rt, opts).has(b),
     };
     rt.defineSpace(instance.id, api);
     rt.action('go', (to, rt) => { const p = rt.player(); if (p?.space === instance.id) api.move(p, to, rt); });
