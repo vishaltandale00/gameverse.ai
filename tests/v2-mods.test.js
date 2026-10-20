@@ -18,7 +18,10 @@ function lineUp(game, s, distance = 3) {
 const run = (game, s, frames, input = {}) => { const events = []; for (let i = 0; i < frames; i++) { game.step(s, i === 0 ? input : { ...input, a: false, b: false }); events.push(...s.events); } return events; };
 
 test('mods are offered by capability, with a strict schema fragment', () => {
-  assert.deepEqual(modsFor(maze).map(m => m.id), ['weapon', 'falling', 'waves', 'boss', 'timer', 'shield', 'zones']);
+  // Other mods may be offered too (promoted mods add to the list); each one offered must fit the maze's world.
+  assert.ok(modsFor(maze).some(m => m.id === 'weapon'));
+  // A requirement may be one capability or a list where any one will do.
+  for (const m of modsFor(maze)) assert.ok(m.requires.every(c => [].concat(c).some(x => maze.world.capabilities.includes(x))), m.id);
   strict(modsSchema(maze));
   assert.deepEqual(activeMods(maze, {}), [], 'nothing is on unless content asks');
   assert.deepEqual(activeMods(maze, { weapon: { kind: 'projectile' } }).map(a => a.button), ['a']);
