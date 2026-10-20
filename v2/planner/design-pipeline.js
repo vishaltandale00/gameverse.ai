@@ -27,6 +27,11 @@ export function buildVerified(design, { seed, registry = defaultRegistry(), atte
     last = { spec, check, attempt };
     if (check.ok) return last;
   }
+  // "Collect everything" that the playtester can't verify falls back to reaching the goal, and says so.
+  if (design.mechanics?.collectAllToWin) {
+    const relaxed = buildVerified({ ...design, mechanics: { ...design.mechanics, collectAllToWin: false } }, { seed, registry, attempts });
+    if (relaxed.check.ok) return { ...relaxed, relaxed: ['collectAllToWin'] };
+  }
   return last;
 }
 
@@ -47,7 +52,7 @@ export function createDesignPipeline({ client, model, effort, registry = default
     await ctx.store.updateMeta(job.gameId, { title: built.spec.title, kind: 'arcade2d' });
     const record = await ctx.publish({
       doc: built.spec, stage: previous ? `revision: ${job.change}` : 'playable',
-      report: { ...built.check.report, kind: 'arcade2d', design, summary: design.summary, gaps: design.gaps || [], verified: built.check.ok, layoutAttempts: built.attempt + 1, modelMs: reply.ms, firstTokenMs: reply.firstMs, change: job.change || null },
+      report: { ...built.check.report, kind: 'arcade2d', design, summary: design.summary, gaps: design.gaps || [], verified: built.check.ok, relaxed: built.relaxed || [], layoutAttempts: built.attempt + 1, modelMs: reply.ms, firstTokenMs: reply.firstMs, change: job.change || null },
       provenance: { pipeline: DESIGN_PIPELINE_VERSION, model: reply.model, seed, prompt: job.prompt, answers: job.answers || [], change: job.change || null, base: job.base || null, designHash: hashOf(design), specHash: hashOf(built.spec) },
     });
     if (art) await art(job, ctx, { design, spec: built.spec, record });

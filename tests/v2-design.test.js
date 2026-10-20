@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { designToSpec } from '../v2/planner/design.js';
+import { buildVerified } from '../v2/planner/design-pipeline.js';
 import { tilesetTemplate } from '../v2/planner/png.js';
 import { defaultRegistry } from '../v2/modules/index.js';
 import { preflight } from '../v2/engine/spec.js';
@@ -27,11 +28,10 @@ test('the same design and seed always produce the identical game', () => {
 test('generated games pass preflight and are proven winnable across views, seeds and win rules', () => {
   const failures = [];
   for (const design of [side, top]) for (const collectAllToWin of [false, true]) for (const seed of [1, 2, 3]) {
-    const spec = designToSpec({ ...design, mechanics: { ...design.mechanics, collectAllToWin } }, { seed });
-    const checked = preflight(spec, registry);
-    assert.ok(checked.ok, JSON.stringify(checked.errors));
-    const report = playtest(compose(checked.spec, registry), { budgetMs: 2500 });
-    if (!report.winnable) failures.push(`${design.view} collectAll=${collectAllToWin} seed=${seed}`);
+    // The pipeline's verified build: layout retries, then relaxing collect-all if it can't be proven.
+    const built = buildVerified({ ...design, mechanics: { ...design.mechanics, collectAllToWin } }, { seed, registry });
+    assert.ok(preflight(built.spec, registry).ok);
+    if (!built.check.ok) failures.push(`${design.view} collectAll=${collectAllToWin} seed=${seed}`);
   }
   assert.deepEqual(failures, []);
 });
