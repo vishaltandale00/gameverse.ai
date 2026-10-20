@@ -1757,19 +1757,58 @@
   {
    "use": "engine.input.actions",
    "with": {
-    "verbs": ["move","jump","dash","attack","heal","interact","map","menu","inventory","cast"],
+    "verbs": [
+     "move",
+     "jump",
+     "dash",
+     "attack",
+     "heal",
+     "interact",
+     "map",
+     "menu",
+     "inventory",
+     "cast"
+    ],
     "bindings": {
      "side": {
-      "move": ["arrows","wasd"],
-      "jump": ["z","space"],
-      "dash": ["x","shift"],
-      "attack": ["c","j"],
-      "heal": ["a","k"],
-      "interact": ["up","e"],
-      "map": ["tab"],
-      "inventory": ["i"]
+      "move": [
+       "arrows",
+       "wasd"
+      ],
+      "jump": [
+       "z",
+       "space"
+      ],
+      "dash": [
+       "x",
+       "shift"
+      ],
+      "attack": [
+       "c",
+       "j"
+      ],
+      "heal": [
+       "v",
+       "k"
+      ],
+      "interact": [
+       "up",
+       "e"
+      ],
+      "map": [
+       "tab"
+      ],
+      "inventory": [
+       "i"
+      ]
      }
-    }
+    },
+    "shareKeys": [
+     [
+      "move",
+      "interact"
+     ]
+    ]
    }
   },
   {"use":"engine.physics.character","with":{"radius":0.4,"height":1.3,"stepHeight":0.25,"slopeLimit":45}},

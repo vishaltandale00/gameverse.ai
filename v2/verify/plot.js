@@ -57,9 +57,11 @@ export async function staticPlot(doc, registry, logic, { plotGraph: injected = n
 /** Translate a solver result into problems with document paths. */
 export function solverProblems(doc, r) {
   const out = [];
-  const certain = r.exhaustive;
+  // Steered travel macros are a heuristic player: their dead ends are not proofs.
+  const certain = r.exhaustive && r.travel !== 'steer';
   const sev = certain ? 'error' : 'warning';
-  const why = certain ? 'no sequence of player options reaches it (exhaustive search)' : `not reached within the search budget (${r.states} states, stopped by ${r.budget.limit || 'depth'})`;
+  const via = r.travel ? ` over travel macros (${r.travel})` : '';
+  const why = certain ? `no sequence of player options${via} reaches it (exhaustive search)` : r.exhaustive ? `not reached by steered travel macros (exhaustive over macros, not a proof)` : `not reached within the search budget (${r.states} states, stopped by ${r.budget.limit || 'depth'})`;
   if (r.startOptions === 0) { out.push(problem('solver_no_options', 'systems', 'no primitive offers player options at the start, so the plot solver cannot search; only the playtest covers this game', { severity: 'info', hint: 'expose rt.options() (macro options for continuous spaces)' })); return out; }
   const declared = doc.plot?.endings || [];
   if (declared.length && !r.completable) out.push(problem(certain ? 'plot_uncompletable' : 'plot_unproven', 'plot.endings', `no ending is reachable: ${why}`, { severity: sev, hint: 'check gates, key items and beat triggers on the path to an ending' }));

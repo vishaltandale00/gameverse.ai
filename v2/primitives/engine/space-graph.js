@@ -45,10 +45,15 @@ export default {
         return best;
       },
       neighbors: id => exitsFrom(id).map(x => x.to),
-      canMove(entity, to, rt) { const x = exitsFrom(entity.at).find(e => e.to === to); return Boolean(x) && (!x.gate || rt.test(x.gate)); },
+      // Exit gates: the exit's own predicate, plus any plot gate that locks 'exit:from>to' (plot.gate's service).
+      canMove(entity, to, rt, notify = false) {
+        const x = exitsFrom(entity.at).find(e => e.to === to);
+        if (!x || (x.gate && !rt.test(x.gate))) return false;
+        return !rt.hasService('gates') || rt.service('gates').exit(entity.at, to, { who: entity.id, notify });
+      },
       move(entity, to, rt, { force = false } = {}) {
         if (!zones().has(to)) return false;
-        if (!force && !api.canMove(entity, to, rt)) { rt.emit('blocked', { who: entity.id, from: entity.at, to }); return false; }
+        if (!force && !api.canMove(entity, to, rt, true)) { rt.emit('blocked', { who: entity.id, from: entity.at, to }); return false; }
         const from = entity.at; entity.at = to;
         rt.emit('leave_zone', { who: entity.id, zone: from }); rt.emit('enter_zone', { who: entity.id, zone: to });
         return true;
@@ -61,7 +66,7 @@ export default {
       /** Zones reachable from `from` given gates as they evaluate in the current state. */
       reachable(from, rt, opts = {}) {
         const seen = new Set([from]), queue = [from];
-        while (queue.length) for (const x of exitsFrom(queue.shift())) if (!seen.has(x.to) && (!x.gate || rt.test(x.gate))) { seen.add(x.to); queue.push(x.to); }
+        while (queue.length) { const at = queue.shift(); for (const x of exitsFrom(at)) if (!seen.has(x.to) && (!x.gate || rt.test(x.gate)) && (!rt.hasService('gates') || rt.service('gates').exit(at, x.to, { notify: false }))) { seen.add(x.to); queue.push(x.to); } }
         return seen;
       },
       canReach: (a, b, rt, opts = {}) => api.reachable(a, rt, opts).has(b),
