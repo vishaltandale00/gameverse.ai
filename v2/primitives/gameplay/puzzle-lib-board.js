@@ -16,7 +16,7 @@ import { checkParam } from '../../kernel/params.js';
 
 export const boardParam = (size = [10, 20], name = 'board') => ({
   type: 'object',
-  default: { name, at: [0, 0, 0], size, axes: [0, 1], fall: -1 },
+  default: { name, at: [0, 0, 0], size, axes: [0, 1], fall: -1, layer: '' },
   effect: 'where the board sits in its space: name (shared by primitives on the same board), at (space cell of board column 0 / bottom row), size [w,h] cells, axes [across, vertical] space axis indexes, fall ±1 (space-axis direction pieces fall)',
   fields: {
     name: { type: 'string', default: name, effect: 'board name; primitives with the same name coordinate (board_busy / board_idle)' },
@@ -24,6 +24,7 @@ export const boardParam = (size = [10, 20], name = 'board') => ({
     size: { type: 'list', of: { type: 'integer', min: 1, max: 256 }, min: 2, max: 2, default: size, unit: 'cells', effect: 'board width and height' },
     axes: { type: 'list', of: { type: 'integer', min: 0, max: 2 }, min: 2, max: 2, default: [0, 1], effect: 'space axis indexes for across and vertical' },
     fall: { type: 'integer', min: -1, max: 1, default: -1, effect: 'space-axis direction of falling: -1 toward lower coordinates (y-up spaces), +1 toward higher' },
+    layer: { type: 'string', default: '', effect: "cell layer the board lives on ('' = the space's default layer)" },
   },
 });
 
@@ -40,7 +41,7 @@ export function validateBoard(board, path = 'with.board') {
 /** Board frame + cell access over a space's editCells API. */
 export function boardOf(rt, board, spaceId) {
   const api = rt.space(spaceId);
-  const [W, H] = board.size, [ah, av] = board.axes, base = board.at.slice(), fall = board.fall;
+  const [W, H] = board.size, [ah, av] = board.axes, base = board.at.slice(), fall = board.fall, layer = board.layer || undefined;
   const toSpace = (c, r) => { const p = base.slice(); p[ah] += c; p[av] += fall < 0 ? H - 1 - r : r; return p; };
   const fromSpace = at => {
     if (!Array.isArray(at)) return null;
@@ -49,14 +50,15 @@ export function boardOf(rt, board, spaceId) {
   };
   const inside = (c, r) => c >= 0 && r >= 0 && c < W && r < H;
   const B = {
-    W, H, api, name: board.name, spaceId, toSpace, fromSpace, inside, fall, axes: board.axes,
-    get: (c, r) => inside(c, r) ? (api.getCell(toSpace(c, r)) ?? null) : null,
-    set: (c, r, token, by) => inside(c, r) && api.setCell(toSpace(c, r), token ?? null, rt, by),
+    W, H, api, name: board.name, spaceId, toSpace, fromSpace, inside, fall, axes: board.axes, layer,
+    get: (c, r) => inside(c, r) ? (api.getCell(toSpace(c, r), layer) ?? null) : null,
+    set: (c, r, token, by) => inside(c, r) && api.setCell(toSpace(c, r), token ?? null, rt, by, layer),
     /** Read the whole board into a row-major array (index r*W + c). */
     read() { const g = new Array(W * H); for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) g[r * W + c] = B.get(c, r); return g; },
     /** Write only the cells that differ from `before`. */
     write(grid, before, by) { for (let i = 0; i < W * H; i++) if ((grid[i] ?? null) !== (before[i] ?? null)) B.set(i % W, Math.floor(i / W), grid[i] ?? null, by); },
-    entitiesAt: (c, r) => api.entitiesAt ? api.entitiesAt(toSpace(c, r)).map(id => rt.entity(id)).filter(Boolean) : [],
+    // Probe the cell centre in centre-anchored spaces (cell [i,j] covers [i,i+1)); grid/test cells are addressed directly.
+    entitiesAt: (c, r) => api.entitiesAt ? api.entitiesAt(api.anchor === 'center' ? toSpace(c, r).map((v, i) => i === ah || i === av ? v + 0.5 : v) : toSpace(c, r)).map(id => rt.entity(id)).filter(Boolean) : [],
   };
   return B;
 }
@@ -121,7 +123,7 @@ export function settleBoard(rt, B, { fixed = t => hasTag(t, 'fixed'), blocked = 
   const whole = size[0] === B.W && size[1] === B.H && B.toSpace(0, 0).every((v, i) => i > 1 || v === (i === 0 ? 0 : B.fall < 0 ? B.H - 1 : 0));
   if (typeof api.settle === 'function' && api.kind === 'grid' && whole && B.axes[0] === 0 && B.axes[1] === 1 && !blocked && !before.some(t => linkOf(t) || fixed(t))) {
     const ysign = api.config?.yAxis === 'down' ? -1 : 1;
-    const moves = api.settle(rt, { dir: B.fall === -ysign ? 'down' : 'up', layer: api.layers?.[0], by }) || [];
+    const moves = api.settle(rt, { dir: B.fall === -ysign ? 'down' : 'up', layer: B.layer ?? api.layers?.[0], by }) || [];
     return moves.map(m => { const a = B.fromSpace(m.from), b = B.fromSpace(m.to); return { from: a[1] * B.W + a[0], to: b[1] * B.W + b[0] }; });
   }
   const grid = before.slice();
