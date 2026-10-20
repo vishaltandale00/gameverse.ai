@@ -9,12 +9,16 @@ const actor = { type: 'object', additionalProperties: false, required: ['name', 
 const num = { type: 'number' };
 export const DESIGN_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['title', 'pitch', 'summary', 'view', 'length', 'artStyle', 'background', 'palette', 'cast', 'feel', 'mechanics', 'sections', 'gaps'],
+  required: ['title', 'pitch', 'summary', 'view', 'length', 'artStyle', 'music', 'background', 'palette', 'cast', 'feel', 'mechanics', 'sections', 'gaps'],
   properties: {
     title: { type: 'string' }, pitch: { type: 'string' }, summary: { type: 'string' },
     view: { type: 'string', enum: ['side', 'topdown'] },
     length: { type: 'string', enum: ['short', 'medium', 'long'] },
     artStyle: { type: 'string' },
+    music: { type: 'object', additionalProperties: false, required: ['mood', 'tempo', 'key', 'scale', 'instrument'], properties: {
+      mood: { type: 'string', enum: ['heroic', 'mysterious', 'playful', 'tense', 'dreamy', 'spooky', 'energetic', 'melancholy'] }, tempo: { type: 'integer' },
+      key: { type: 'string', enum: ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] }, scale: { type: 'string', enum: ['major', 'minor', 'dorian', 'mixolydian', 'pentatonic'] },
+      instrument: { type: 'string', enum: ['chip', 'synth', 'bell', 'pluck'] } } },
     background: { type: 'string' },
     palette: { type: 'object', additionalProperties: false, required: ['ground', 'platform'], properties: { ground: { type: 'string' }, platform: { type: 'string' } } },
     cast: { type: 'object', additionalProperties: false, required: ['player', 'pickup', 'enemy', 'hazard', 'goal'], properties: { player: actor, pickup: actor, enemy: actor, hazard: actor, goal: actor } },
@@ -30,6 +34,7 @@ export const DESIGN_PROMPT = `You design small, fun, polished 2D action games fo
 - view: "side" for platformers and runners; "topdown" for dungeon crawls, arenas, twin-stick shooters, chases.
 - length: short (~70 columns), medium (~100), long (~140). Prefer medium or long.
 - artStyle: one phrase describing the visual style for generated sprites and scenery, honoring any player preference (e.g. "crisp 16-bit pixel art", "hand-painted watercolor", "bold cel-shaded cartoon", "moody 32-bit pixel art with rim lighting").
+- music: mood, tempo (70–170 BPM), key, scale and lead instrument that fit the idea's tone (e.g. an icy stealth game: mysterious, 96, D, dorian, bell).
 - background: a hex color that sets the mood; palette.ground and palette.platform: hex tile colors that fit the theme and contrast with the background.
 - cast: name and ONE emoji glyph each for the player, the pickup, the enemy, the hazard and the goal, all fitting the idea.
 - feel (units: tiles and seconds). runSpeed 4–20 (8 normal, 14+ very fast); jumpSpeed 10–24; gravity 25–80 (lower is floatier); airJumps 0–2; friction 10–120 (low is slippery, like ice); airControl 0.3–1.

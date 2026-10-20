@@ -7,7 +7,7 @@ import { mountArcade } from '/v2/web/arcade-player.js';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const mount = (el, record) => record.doc?.schema === 'gameverse.v2.game-spec/0.1' ? mountArcade(el, record) : mountGame(el, record);
-const STAGES = { designing: 'Designing the game', revising: 'Revising the design', building: 'Building the level', playtesting: 'Playtesting', playtested: 'Playtested', painting: 'Painting the art', painted: 'Painting the art', paint_failed: 'Painting the art', outline: 'Outlining', verified: 'Checked', complete: 'Done' };
+const STAGES = { designing: 'Designing the game', revising: 'Revising the design', building: 'Building the level', playtesting: 'Playtesting', playtested: 'Playtested', painting: 'Painting the art', painted: 'Painting the art', paint_failed: 'Painting the art', animating: 'Animating', animated: 'Animating', animate_failed: 'Animating', outline: 'Outlining', verified: 'Checked', complete: 'Done' };
 const QUICK = ['Make it faster', 'Make it harder', 'More enemies', 'Make jumping floatier', 'Make it night time', 'Add a time limit'];
 
 let games = [], selected = null, player = null, selecting = 0, shownVersion = null, tickTimer = 0;
@@ -178,8 +178,8 @@ const events = new EventSource('/api/v2/events');
 events.addEventListener('stage', ev => {
   const e = JSON.parse(ev.data), b = build(e.gameId);
   b.stage = e.stage;
-  b.detail = e.stage === 'painted' ? `${e.done} of ${e.of} images` : e.stage === 'painting' ? `${e.assets} images` : e.stage === 'playtested' ? (e.winnable ? 'winnable' : 'retrying layout') : e.stage === 'revising' ? b.detail : '';
-  b.log.push({ label: (STAGES[e.stage] || e.stage) + (e.stage === 'painted' ? ` ${e.done}/${e.of}` : ''), ms: e.ms });
+  b.detail = e.stage === 'animated' ? `${e.done} of ${e.of} frames` : e.stage === 'painted' ? `${e.done} of ${e.of} images` : e.stage === 'painting' ? `${e.assets} images` : e.stage === 'playtested' ? (e.winnable ? 'winnable' : 'retrying layout') : e.stage === 'revising' ? b.detail : '';
+  b.log.push({ label: (STAGES[e.stage] || e.stage) + (e.stage === 'painted' || e.stage === 'animated' ? ` ${e.done}/${e.of}` : ''), ms: e.ms });
   if (e.gameId === selected) renderSheet();
 });
 events.addEventListener('draft', ev => {
@@ -194,7 +194,7 @@ events.addEventListener('version', async ev => {
   if (e.gameId !== selected) { toast('One of your games has a new version.'); return; }
   const record = await api(`/api/v2/games/${e.gameId}/v/${e.version}`);
   if (!player || !$('#game')) { const { meta } = await api(`/api/v2/games/${e.gameId}`); playView(meta, record); toast('Your game is ready. Play!'); }
-  else if (player.update(record)) { shownVersion = e.version; toast(record.stage === 'art' ? 'The art is in.' : `Version ${e.version} loaded.`); }
+  else if (player.update(record)) { shownVersion = e.version; toast(record.stage === 'art' ? 'The art is in.' : record.stage === 'animation' ? 'Animations are in.' : `Version ${e.version} loaded.`); }
   renderSheet(record);
 });
 for (const type of ['job_done', 'job_failed']) events.addEventListener(type, ev => {
