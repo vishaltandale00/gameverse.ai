@@ -30,13 +30,19 @@ export function macrosFor(spec) {
 
 // Progress = beneficial events so far; used to favour promising cells.
 const PROGRESS_EVENTS = ['collect', 'stomp', 'hit', 'reach_goal', 'checkpoint'];
-// Progress also rewards getting closer to the nearest goal, so long levels pull the search forward.
-function progress(state) {
-  let p = PROGRESS_EVENTS.reduce((n, e) => n + (state.counts[e] || 0), 0);
-  const player = state.entities.find(e => e.tags.includes('player')), goals = state.entities.filter(e => e.tags.includes('goal'));
+const needsAll = predicate => !!predicate && (predicate.var === 'remaining' || (predicate.all || predicate.any || []).some(needsAll));
+/** What the search should head for: remaining pickups first if the win needs them all, else the goal. */
+function targets(state, spec) {
+  if (needsAll(spec?.win) && (state.vars.remaining ?? 0) > 0) { const left = state.entities.filter(e => e.tags.includes('collectible')); if (left.length) return left; }
+  return state.entities.filter(e => e.tags.includes('goal'));
+}
+// Progress also rewards getting closer to the current target, so long levels pull the search forward.
+function progress(state, spec) {
+  let p = PROGRESS_EVENTS.reduce((n, e) => n + (state.counts[e] || 0), 0) * (needsAll(spec?.win) ? 3 : 1);
+  const player = state.entities.find(e => e.tags.includes('player')), goals = targets(state, spec);
   if (player && goals.length) {
     const d = Math.min(...goals.map(g => Math.hypot(g.x - player.x, g.y - player.y)));
-    p += Math.max(0, (state.goalStart ??= d) - d) / 4;
+    p += needsAll(spec?.win) && goals[0]?.tags.includes('collectible') ? Math.max(0, 8 - d) / 8 : Math.max(0, (state.goalStart ??= d) - d) / 4;
   }
   return p;
 }
@@ -73,10 +79,10 @@ export function playtest(game, { budgetMs = 1500, maxFrames = 600000, idleSecond
 
   // 2. Search.
   const start = game.createState();
-  const archive = new Map([[cellKey(game, start), { state: start, path: [], frames: 0, visits: 0, score: progress(start) }]]);
+  const archive = new Map([[cellKey(game, start), { state: start, path: [], frames: 0, visits: 0, score: progress(start, game.spec) }]]);
   // Bias movement toward the nearest goal 60% of the time.
   const pickMacro = state => {
-    const pl = state.entities.find(e => e.tags.includes('player')), gs = state.entities.filter(e => e.tags.includes('goal'));
+    const pl = state.entities.find(e => e.tags.includes('player')), gs = targets(state, game.spec);
     if (pl && gs.length && rand() < 0.6) {
       const g = gs.reduce((a, b) => Math.hypot(a.x - pl.x, a.y - pl.y) <= Math.hypot(b.x - pl.x, b.y - pl.y) ? a : b);
       const dx = Math.sign(Math.round(g.x - pl.x)), dy = Math.sign(Math.round(g.y - pl.y));
@@ -119,7 +125,7 @@ export function playtest(game, { budgetMs = 1500, maxFrames = 600000, idleSecond
       { const pl = state.entities.find(e => e.tags.includes('player')), gs = state.entities.filter(e => e.tags.includes('goal'));
         if (pl && gs.length) { const d = Math.min(...gs.map(g => Math.hypot(g.x - pl.x, g.y - pl.y))); if (!closest || d < closest.d) closest = { d, x: +pl.x.toFixed(1), y: +pl.y.toFixed(1) }; } }
       const key = cellKey(game, state), old = archive.get(key);
-      if (!old || elapsed < old.frames) archive.set(key, { state: game.snapshot(state), path: path.slice(), frames: elapsed, visits: old?.visits || 0, score: progress(state) });
+      if (!old || elapsed < old.frames) archive.set(key, { state: game.snapshot(state), path: path.slice(), frames: elapsed, visits: old?.visits || 0, score: progress(state, game.spec) });
     }
   }
 
