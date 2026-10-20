@@ -53,6 +53,11 @@ test('games: Blockport generates its starting chunks deterministically', t => {
   assert.ok(rt.service('lotAt').lots('old_quarter').some(l => l.building?.landmark === 'clocktower'), 'city landmark');
   assert.equal(rt.service('lotAt').lots('glass_heights').some(l => l.building?.landmark === 'radio_studio'), false, 'pinned structures provide their own landmarks');
   assert.ok(rt.service('roadgraph')().edges.some(e => e.surface === 'rail'));
+  // Spatial verification: every Blockport zone is reachable on foot from the start (cell flood, then the coarse
+  // surface flood, then the proven cave tunnel into the Deep Works).
+  const reach = api.reachable(p.at, rt, {});
+  assert.deepEqual(rt.doc.spaces[0].zones.map(z => z.id).filter(z => !reach.has(z)), []);
+  assert.ok(reach.coarse && reach.has(api.cellOf(p)));
   const again = build('blockport.json').rt, A = again.space(p.space);
   assert.deepEqual(Array.from(A.chunkCells(...near[5]).cells), Array.from(api.chunkCells(...near[5]).cells));
   for (let i = 0; i < 20; i++) { rt.step(); again.step(); }
@@ -73,6 +78,8 @@ test('games: Emberfall generates its realm and the undercroft headless', t => {
   assert.ok(rt.service('roadgraph')().edges.length >= 9);
   assert.ok(objs.some(o => o.model === 'campfire') || objs.some(o => o.model === 'chest'), 'scattered props near the start');
   assert.ok(rt.state.spaces.realm.generated.problems.every(x => ['rivers_short', 'scatter_density_capped', 'structure_unplaced', 'lakes_short'].includes(x.code)), JSON.stringify(rt.state.spaces.realm.generated.problems));
+  const reach = api.reachable(p.at, rt, {});
+  assert.deepEqual(rt.doc.spaces.find(x => x.id === 'realm').zones.map(z => z.id).filter(z => !reach.has(z)), [], 'every realm zone reachable (roads and bridges join the islands)');
   // The undercroft is a separate flat mesh3d space with its own structures.
   const u = rt.space('undercroft');
   assert.ok(u.objects().some(o => o.group?.startsWith('barrow_chambers')));

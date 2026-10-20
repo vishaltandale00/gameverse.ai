@@ -14,6 +14,7 @@
 // objects as upright cylinders (radius = half the larger of width/depth).
 // Object `rot` is a yaw in radians with the three.js rotation.y convention:
 // an object's local +z axis faces world (sin rot, cos rot).
+import { nearestRoad } from './worlds3d-lib-roads.js';
 import { worldModel, zoneHas, zoneCenter, astar, sharedService, entityOps, v3, atOf, moveOpts } from './worlds3d-lib-world.js';
 
 const TILE = 64; // height samples per tile edge
@@ -249,12 +250,13 @@ export default {
         for (const o of colliders(x - p.r, z - p.r, x + p.r, z + p.r)) if (o.at[1] + objHeight(o) > g + p.step && o.at[1] < g + config.body[1] && circlePush(o, x, z, p.r)) return false;
         return !p.avoid?.([x, g, z]);
       };
-      // Coarse cells (much larger than a body) are walkable when any of five samples is: one house does not block 24 m.
+      // Coarse cells (much larger than a body) are walkable when any of five samples is, or a road (bridges included) crosses them.
+      const net = model.data.roads, onRoad = (x, z) => Boolean(!p.avoid && net?.edges.length && nearestRoad(net, x, z, cs * 0.75)); // 0.75 cs: a diagonal road stays 4-connected
       return (ix, iz) => {
         const k = ix * 1048576 + iz; let v = memo.get(k);
         if (v !== undefined) return v;
         const x = (ix + 0.5) * cs, z = (iz + 0.5) * cs;
-        v = point(x, z) || (coarse && (point(x - off, z - off) || point(x + off, z - off) || point(x - off, z + off) || point(x + off, z + off)));
+        v = point(x, z) || (coarse && (point(x - off, z - off) || point(x + off, z - off) || point(x - off, z + off) || point(x + off, z + off) || onRoad(x, z)));
         memo.set(k, v); return v;
       };
     }

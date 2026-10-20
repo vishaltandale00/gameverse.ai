@@ -5,6 +5,7 @@
 // a cell is `cell` metres. `at` is the centre of the body box (api.anchor
 // 'center'; components.body.size, default `body`). Reachable keys are the
 // floored world coordinates of standable feet cells (cellOf gives the same key).
+import { nearestRoad } from './worlds3d-lib-roads.js';
 import { worldModel, zoneHas, zoneCenter, zoneYRange, blockTable, astar, sharedService, entityOps, v3, atOf, moveOpts } from './worlds3d-lib-world.js';
 
 const DIRS6 = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
@@ -33,7 +34,9 @@ export default {
       cacheChunks: { type: 'integer', min: 16, max: 65536, default: 1024, effect: 'generated chunks kept in memory (evicted chunks regenerate identically)' },
       logMax: { type: 'integer', min: 16, max: 1000000, default: 4096, effect: 'edit-log entries kept (the edit map itself is never truncated)' },
       maxFill: { type: 'integer', min: 1, max: 4194304, default: 65536, unit: 'cells', effect: 'largest volume fill() or cellsIn() will touch' },
-      pathNodes: { type: 'integer', min: 100, max: 1000000, default: 20000, effect: 'A* / flood-fill node budget per query' },
+      pathNodes: { type: 'integer', min: 100, max: 1000000, default: 20000, effect: 'A* / cell flood-fill node budget per query' },
+      reachStride: { type: 'integer', min: 2, max: 64, default: 8, unit: 'cells', effect: 'column spacing of the coarse surface flood reachable() continues with past the cell budget' },
+      reachNodes: { type: 'integer', min: 100, max: 4000000, default: 120000, effect: 'coarse surface flood budget' },
     },
     provides: {
       capabilities: ['position', 'distance', 'overlap', 'raycast', 'pathfind', 'reachable', 'editCells', 'gravity', 'surface', 'bounds', 'chunks', 'light', 'procedural'],
@@ -207,7 +210,7 @@ export default {
     const pathOpts = (o = {}) => {
       const m = moveOpts(rt, o), h = o.height ?? m.body?.[1] ?? config.body[1];
       const step = o.step ?? m.env.jumpHeight ?? m.env.stepHeight ?? (m.names.has('jump') ? 1.25 : 1);
-      return { h, hc: Math.max(1, Math.ceil(h / C - 1e-9)), step: Math.max(0, Math.floor(step / C + 1e-9)), drop: Math.max(0, Math.round((o.drop ?? m.env.dropHeight ?? 3) / C)), swim: m.names.has('swim'), climb: true, fly: m.names.has('fly'), maxNodes: o.maxNodes ?? config.pathNodes, avoid: o.avoid };
+      return { opts: o, h, hc: Math.max(1, Math.ceil(h / C - 1e-9)), step: Math.max(0, Math.floor(step / C + 1e-9)), drop: Math.max(0, Math.round((o.drop ?? m.env.dropHeight ?? 3) / C)), swim: m.names.has('swim'), climb: true, fly: m.names.has('fly'), maxNodes: o.maxNodes ?? config.pathNodes, avoid: o.avoid };
     };
     function moves(n, p, push) {
       const [x, y, z] = n;
@@ -257,7 +260,47 @@ export default {
       for (const c of queue) out.add(cellKey(c));
       const zs = zones(); for (const c of queue) for (const z of zs) if (!out.has(z.id) && zoneHas(z, (c[0] + 0.5) * C, (c[1] + 0.5) * C, (c[2] + 0.5) * C)) out.add(z.id);
       out.truncated = seen.size >= p.maxNodes;
+      if (out.truncated && opts.coarse !== false) coarseReach(queue, p, out);
       return out;
+    }
+    /**
+     * Beyond the cell budget, continue over the generated surface on a coarse
+     * column grid (every reachStride cells): neighbours connect when the
+     * height-field rise is climbable or a road joins them, and deep water
+     * needs swim. It ignores edits, buildings and caves, so it is an estimate;
+     * out.coarse is set and its keys are surface cells.
+     */
+    function coarseReach(fine, p, out) {
+      const m = model.ensure(), S = config.reachStride, [ex0, ez0, ex1, ez1] = m.extent(), net = m.data.roads;
+      const col = (i, j) => { const x = (i + 0.5) * S * C, z = (j + 0.5) * S * C, y = m.surfaceY(x, z), w = m.at('water', x, z, null); return { x, z, y, wet: w != null && w - y > p.h * 0.8 }; };
+      const memo = new Map(), get = (i, j) => { const k = i * 65536 + j; let v = memo.get(k); if (!v) memo.set(k, (v = col(i, j))); return v; };
+      const seen = new Set(), queue = [];
+      for (const c of fine) { const i = Math.floor(c[0] / S), j = Math.floor(c[2] / S), k = i * 65536 + j; if (!seen.has(k)) { seen.add(k); queue.push([i, j]); } }
+      const road = (x, z) => Boolean(net?.edges.length && nearestRoad(net, x, z, S * C * 0.75));
+      for (let q = 0; q < queue.length && seen.size < config.reachNodes; q++) {
+        const [i, j] = queue[q], a = get(i, j);
+        for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const ni = i + di, nj = j + dj, k = ni * 65536 + nj; if (seen.has(k)) continue;
+          if ((ni + 0.5) * S * C < ex0 || (ni + 0.5) * S * C > ex1 || (nj + 0.5) * S * C < ez0 || (nj + 0.5) * S * C > ez1) continue;
+          const b = get(ni, nj);
+          if ((b.wet && !p.swim && !road(b.x, b.z)) || (Math.abs(b.y - a.y) > Math.max(1, p.step) * S * C && !road(b.x, b.z))) continue;
+          seen.add(k); queue.push([ni, nj]);
+          out.add(`${Math.floor(b.x)},${Math.floor(b.y)},${Math.floor(b.z)}`);
+          for (const z of zones()) if (!out.has(z.id) && zoneHas(z, b.x, b.y + 0.5, b.z)) out.add(z.id);
+        }
+      }
+      // Cave rooms with a surface entrance in reached ground: prove the tunnel with a cell path, then flood the room.
+      const caves = rt.hasService('caves') ? rt.service('caves').of(sid) : null;
+      for (const room of caves?.rooms() || []) {
+        if (!room.entrance) continue;
+        const ei = Math.floor(room.entrance[0] / C / S), ej = Math.floor(room.entrance[2] / C / S);
+        if (![[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => seen.has((ei + a) * 65536 + ej + b))) continue;
+        const top = [room.entrance[0], room.entrance[1] + p.h / 2, room.entrance[2]], floor = [room.at[0], room.at[1] + p.h / 2, room.at[2]];
+        if (!path(top, floor, { ...p.opts, maxNodes: 100000 })) continue;
+        const inner = reachable(floor, { ...p.opts, coarse: false, maxNodes: 20000 });
+        for (const k of inner) out.add(k);
+      }
+      out.coarse = true; out.truncated = seen.size >= config.reachNodes;
     }
 
     // ----- light -----
