@@ -90,17 +90,17 @@ export default {
       const blocked = { x: false, y: false, z: false }; let grounded = false, normal = null;
       const box = (px, py) => [px - hw, py - hh, px + hw, py + hh];
       const maxStep = Math.max(0.05, Math.min(hw, hh));
-      const nh = Math.ceil(Math.abs(dx) / maxStep);
+      const nh = Math.ceil(Math.abs(dx) / maxStep), x0 = x;
       for (let i = 0; i < nh; i++) {
-        const tx = x + dx / nh, r = hitSolid(box(tx, y));
+        const tx = x0 + dx * (i + 1) / nh, r = hitSolid(box(tx, y));
         if (!r) { x = tx; continue; }
         // Step up small lips when supported.
         if (opts.stepHeight && was) { const top = r[3]; if (top - (y - hh) <= opts.stepHeight + EPS && !hitSolid(box(tx, top + hh + EPS))) { x = tx; y = top + hh + EPS; continue; } }
         x = dx > 0 ? r[0] - hw - EPS : r[2] + hw + EPS; blocked.x = true; normal = [dx > 0 ? -1 : 1, 0]; break;
       }
-      const nv = Math.ceil(Math.abs(dy) / maxStep);
+      const nv = Math.ceil(Math.abs(dy) / maxStep), y0 = y;
       for (let i = 0; i < nv; i++) {
-        const ty = y + dy / nv, bottom0 = y - hh, r = hitSolid(box(x, ty));
+        const ty = y0 + dy * (i + 1) / nv, bottom0 = y - hh, r = hitSolid(box(x, ty));
         if (r) { y = dy > 0 ? r[1] - hh - EPS : r[3] + hh + EPS; blocked.y = true; if (dy < 0) { grounded = true; normal = [0, 1]; } else normal = [0, -1]; break; }
         if (dy < 0 && !opts.drop) {
           const p = config.platforms.find(p => x + hw > p.x0 && x - hw < p.x1 && bottom0 >= p.y - EPS && ty - hh < p.y);

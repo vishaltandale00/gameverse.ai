@@ -157,9 +157,9 @@ export default {
       const inside = (c, r) => { const b0 = box(x, y); return c >= Math.floor(b0[0] + EPS) && c <= Math.floor(b0[2] - EPS) && r >= Math.floor(b0[1] + EPS) && r <= Math.floor(b0[3] - EPS); };
       const hitAt = (px, py, down) => blocksBox(box(px, py), { liquids: !side && !swim, oneway: ledge ? (c, r) => !(down || inside(c, r)) : null });
       // Horizontal.
-      const nh = Math.ceil(Math.abs(dx) / 0.45);
+      const nh = Math.ceil(Math.abs(dx) / 0.45), x0 = x;
       for (let i = 0; i < nh; i++) {
-        const tx = x + dx / nh, hit = hitAt(tx, y, false);
+        const tx = x0 + dx * (i + 1) / nh, hit = hitAt(tx, y, false);
         if (!hit) { x = tx; continue; }
         // Step up onto low obstacles (slope crests, stairs) when supported.
         const allow = side && (was || opts.stepHeight) ? Math.max(opts.stepHeight || 0, onSlope(x, y - hh) ? 1 : 0) : 0;
