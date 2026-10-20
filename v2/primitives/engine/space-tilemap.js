@@ -6,10 +6,11 @@
 // primitive uses: solid tiles, one-way platforms (drop-through), slopes and
 // step-ups. Gravity exists only in side mode. Navigation is ability-aware
 // (spaces2d-tilenav.js) and powers path, reachable and canReach.
-import { cellStore, zoneIndex, zoneTracker, addZoneTo, inSpace, bodyOf, key2, unkey, mod, clamp, rectHas, rectArea, rectCenter, rectDist, boxAround, rectsOverlap, shapeHitsRect, rayRect, edgesParam, checkEdges, wrapDelta, BOUNDS_CAPS } from './spaces2d-lib.js';
+import { cellStore, zoneIndex, zoneTracker, addZoneTo, inSpace, bodyOf, key2, unkey, mod, clamp, rectHas, rectArea, rectCenter, rectDist, boxAround, rectsOverlap, shapeHitsRect, rayRect, edgesParam, checkEdges, wrapDelta, BOUNDS_CAPS, zoneEditor, ownSpaces, obstacleOf, dynamicObstacle, obstaclesIn } from './spaces2d-lib.js';
 import { makeNav } from './spaces2d-tilenav.js';
 
 const EPS = 1e-4;
+const STICK = 0.5; // a rider stays on the entity it stands on if that entity rose at most this far (tiles) since the last slide
 const KIND_RANK = { none: 0, oneway: 1, slope: 2, solid: 3 };
 const LIQUID_TAGS = ['liquid', 'water'];
 
@@ -45,7 +46,7 @@ export default {
     if (Object.values(config.edges || {}).includes('wrap')) caps.push('wrap');
     return caps;
   },
-  validate(config, doc) {
+  validate(config, doc, ctx, inst) {
     const errors = [];
     for (const l of config.collisionLayers || []) if (!(config.layers || []).includes(l)) errors.push({ code: 'layer_unknown', path: 'with.collisionLayers', message: `collision layer '${l}' is not in layers`, hint: `layers: ${(config.layers || []).join(', ')}` });
     for (const [b, v] of Object.entries(config.collision || {})) {
@@ -54,7 +55,7 @@ export default {
     }
     errors.push(...checkEdges(config.edges, 'with.edges'));
     const [W, H] = config.size || [64, 32];
-    for (const [i, s] of (doc.spaces || []).entries()) if (s.use === 'engine.space.tilemap' && sameConfig(s.with, config)) (s.zones || []).forEach((z, j) => {
+    for (const [s, i] of ownSpaces(doc, 'engine.space.tilemap', config, inst)) (s.zones || []).forEach((z, j) => {
       const r = z.rect, path = `spaces[${i}].zones[${j}].rect`;
       if (!Array.isArray(r) || r.length !== 4 || !r.every(Number.isFinite) || r[2] <= r[0] || r[3] <= r[1]) errors.push({ code: 'zone_rect_invalid', path, message: `zone '${z.id}' needs rect [x0,y0,x1,y1] with x1>x0, y1>y0` });
       else if (r[0] < 0 || r[1] < 0 || r[2] > W || r[3] > H) errors.push({ code: 'zone_outside', path, message: `zone '${z.id}' extends outside the ${W}×${H} map` });
@@ -120,20 +121,38 @@ export default {
       if (edge && E[edge] === 'kill') { if (o[e.id] !== edge) { o[e.id] = edge; rt.emitTyped('out_of_bounds', edge, { who: e.id, edge }); } }
       else if (o[e.id]) delete o[e.id];
     };
-    const setPos = (e, at, rt) => { e.at = wrapPos([at[0], at[1]]); tracker.track(e, rt); checkOut(e, rt); };
+    // setPos(e, at, rt, {carry}): with carry, entities standing on e (body.standingOn) move with it.
+    const setPos = (e, at, rt, o = {}) => {
+      const from = e.at;
+      e.at = wrapPos([at[0], at[1]]); tracker.track(e, rt); checkOut(e, rt);
+      if (o.carry && from && obstacleOf(e)) carryRiders(e, [at[0] - from[0], at[1] - from[1]], rt);
+    };
+    function carryRiders(e, d, rt) {
+      if (!d[0] && !d[1]) return;
+      for (const r of inSpace(rt, sid, o => o !== e && o.components.body?.standingOn === e.id)) { slide(r, d, rt, { ignore: [e.id], keepSupport: true }); r.components.body.grounded = true; r.components.body.standingOn = e.id; }
+    }
+    // Entity obstacles for one slide: boxes of body.solid entities; ones already overlapping the mover are
+    // ignored (a door closing on it must not trap it), except the one it stands on.
+    const obstaclesFor = (e, o = {}) => {
+      const start = boxOf(e), on = e.components.body?.standingOn;
+      return obstaclesIn(rt, sid, e, o.ignore).map(x => ({ id: x.id, kind: obstacleOf(x), rect: boxOf(x) })).filter(x => x.id === on || x.kind === 'oneway' || !rectsOverlap(start, x.rect))
+        .map(x => (x.id === on && rectsOverlap(start, x.rect) ? { ...x, kind: 'oneway' } : x)); // a support that rose into its rider only holds it up
+    };
 
     // ---------- collision queries ----------
-    const blocksBox = (box, { slopes = false, oneway = null, liquids = false } = {}) => {
+    /** First blocker overlapping box: a tile rect [c, r, c+1, r+1] or a solid entity's rect (with .id), or null. */
+    const blocksBox = (box, { slopes = false, oneway = null, liquids = false, ents = [] } = {}) => {
       const c0 = Math.floor(box[0] + EPS), c1 = Math.floor(box[2] - EPS), r0 = Math.floor(box[1] + EPS), r1 = Math.floor(box[3] - EPS);
       for (let c = c0; c <= c1; c++) for (let r = r0; r <= r1; r++) {
         const k = kindAt(c, r);
-        if (k === 'solid' || (slopes && k === 'slope') || (oneway && k === 'oneway' && oneway(c, r)) || (liquids && isLiquid(c, r))) return [c, r];
+        if (k === 'solid' || (slopes && k === 'slope') || (oneway && k === 'oneway' && oneway(c, r)) || (liquids && isLiquid(c, r))) return [c, r, c + 1, r + 1];
       }
+      for (const o of ents) if (o.kind === 'solid' && rectsOverlap([box[0] + EPS, box[1] + EPS, box[2] - EPS, box[3] - EPS], o.rect)) return Object.assign(o.rect.slice(), { id: o.id });
       return null;
     };
     // Highest supporting surface under box between yFrom (old bottom) and yTo (new bottom), or null.
-    const landing = (box, yFrom, yTo, drop, stick = 0) => {
-      let best = null, normal = [0, 1];
+    const landing = (box, yFrom, yTo, drop, stick = 0, ents = [], on = null) => {
+      let best = null, normal = [0, 1], by = null;
       const c0 = Math.floor(box[0] + EPS), c1 = Math.floor(box[2] - EPS), cx = (box[0] + box[2]) / 2, cc = Math.floor(cx);
       for (let r = Math.floor(yFrom + stick - EPS); r >= Math.floor(yTo - EPS) - 1; r--) for (let c = c0; c <= c1; c++) {
         const k = kindAt(c, r);
@@ -143,7 +162,13 @@ export default {
         if (k === 'oneway' && top !== null && top > yFrom + EPS) top = null; // one-way only from above
         if (top !== null && top <= yFrom + stick + EPS && top > yTo - EPS && (best === null || top > best)) { best = top; normal = k === 'slope' ? slopeNormal(c, r) : [0, 1]; }
       }
-      return best === null ? null : { y: best, normal };
+      // Entity tops: solid and one-way entities support from above; the one being stood on may have risen up to STICK.
+      for (const o of ents) {
+        if (o.kind === 'oneway' && drop) continue;
+        const top = o.rect[3], lift = o.id === on ? STICK : 0;
+        if (box[0] < o.rect[2] - EPS && o.rect[0] < box[2] - EPS && top <= yFrom + lift + EPS && top > yTo - EPS && (best === null || top > best)) { best = top; normal = [0, 1]; by = o.id; }
+      }
+      return best === null ? null : { y: best, normal, on: by };
     };
 
     /** Collide-and-slide: axis-separated, sub-stepped (≤0.45 tiles), with step-ups and slope following. */
@@ -151,11 +176,13 @@ export default {
       const b = bodyOf(e), [hw, hh] = [b.size[0] / 2, b.size[1] / 2], was = b.grounded;
       let [x, y] = e.at; const dx = d[0] || 0, dy = d[1] || 0;
       const blocked = { x: false, y: false, z: false }, bumped = []; let grounded = false, normal = null;
-      const swim = opts.swim || opts.fly, ledge = !side && !opts.fly;
+      const swim = opts.swim || opts.fly, ledge = !side && !opts.fly, ents = opts.ghost ? [] : obstaclesFor(e, opts), touched = [], on = b.standingOn ?? null;
+      let support = null;
       const box = (px, py) => [px - hw, py - hh, px + hw, py + hh];
       // Top-down one-way tiles are ledges: entered only moving -y (or already overlapped, mid-hop).
       const inside = (c, r) => { const b0 = box(x, y); return c >= Math.floor(b0[0] + EPS) && c <= Math.floor(b0[2] - EPS) && r >= Math.floor(b0[1] + EPS) && r <= Math.floor(b0[3] - EPS); };
-      const hitAt = (px, py, down) => blocksBox(box(px, py), { liquids: !side && !swim, oneway: ledge ? (c, r) => !(down || inside(c, r)) : null });
+      const hitAt = (px, py, down) => blocksBox(box(px, py), { liquids: !side && !swim, oneway: ledge ? (c, r) => !(down || inside(c, r)) : null, ents });
+      const touch = hit => { if (hit?.id && !touched.includes(hit.id)) touched.push(hit.id); };
       // Horizontal.
       const nh = Math.ceil(Math.abs(dx) / 0.45), x0 = x;
       for (let i = 0; i < nh; i++) {
@@ -169,7 +196,7 @@ export default {
           const ny2 = top + hh + EPS;
           if (top > -Infinity && top - (y - hh) <= allow + EPS && !hitAt(tx, ny2, false)) { x = tx; y = ny2; continue; }
         }
-        x = dx > 0 ? hit[0] - hw - EPS : hit[0] + 1 + hw + EPS; blocked.x = true; normal = [dx > 0 ? -1 : 1, 0];
+        x = dx > 0 ? hit[0] - hw - EPS : hit[2] + hw + EPS; blocked.x = true; normal = [dx > 0 ? -1 : 1, 0]; touch(hit);
         if (Math.abs(x - e.at[0]) > Math.abs(dx)) x = e.at[0];
         break;
       }
@@ -179,9 +206,9 @@ export default {
         for (let i = 0; i < nv && dy; i++) {
           const ty = y + dy / nv;
           if (dy < 0) {
-            const l = landing(box(x, ty), y - hh, ty - hh, opts.drop);
-            if (l) { y = l.y + hh; grounded = true; blocked.y = true; normal = l.normal; break; }
-            if (hitAt(x, ty, true)) { blocked.y = true; break; }
+            const l = landing(box(x, ty), y - hh, ty - hh, opts.drop, 0, ents, on);
+            if (l) { y = l.y + hh; grounded = true; blocked.y = true; normal = l.normal; support = l.on; if (l.on) touch({ id: l.on }); break; }
+            const h = hitAt(x, ty, true); if (h) { blocked.y = true; touch(h); break; }
             y = ty;
           } else {
             const top0 = y + hh, bx = box(x, ty); let ceil = null;
@@ -189,32 +216,35 @@ export default {
               const k = kindAt(c, r); if ((k === 'solid' || k === 'slope') && r >= top0 - EPS - 1e-3 && (ceil === null || r < ceil)) ceil = r;
               if ((k === 'solid' || k === 'slope') && r === ceil) bumped.push([nx(c), ny(r)]);
             }
-            if (ceil !== null) { y = ceil - hh - EPS; blocked.y = true; normal = [0, -1]; break; }
+            let ceilBy = null;
+            for (const o of ents) if (o.kind === 'solid' && bx[0] < o.rect[2] - EPS && o.rect[0] < bx[2] - EPS && o.rect[1] >= top0 - EPS - 1e-3 && o.rect[1] < bx[3] && (ceil === null || o.rect[1] < ceil)) { ceil = o.rect[1]; ceilBy = o.id; }
+            if (ceil !== null) { y = ceil - hh - EPS; blocked.y = true; normal = [0, -1]; if (ceilBy) touch({ id: ceilBy }); break; }
             y = ty;
           }
         }
         // Follow slopes and stay glued going downhill when grounded.
         if (!grounded && dy <= 0 && !opts.drop) {
-          const l = landing(box(x, y), y - hh, y - hh - (was ? Math.abs(dx) + 0.1 : 0), false, onSlope(x, y - hh) || was ? 1 : 0);
-          if (l && (was || l.y >= y - hh - EPS) && !hitAt(x, l.y + hh, false)) { y = l.y + hh; grounded = true; normal = normal || l.normal; if (dy < 0) blocked.y = true; }
+          const l = landing(box(x, y), y - hh, y - hh - (was ? Math.abs(dx) + 0.1 : 0), false, onSlope(x, y - hh) || was ? 1 : 0, ents, on);
+          if (l && (was || l.y >= y - hh - EPS || l.on) && !hitAt(x, l.y + hh, false)) { y = l.y + hh; grounded = true; normal = normal || l.normal; support = l.on; if (dy < 0) blocked.y = true; }
         }
-        if (!grounded) grounded = groundedAt(x, y, hw, hh, opts.drop);
+        if (!grounded) { const g = groundedAt(x, y, hw, hh, opts.drop, ents); grounded = Boolean(g); if (g) support = g.on; }
       } else {
         const nv = Math.ceil(Math.abs(dy) / 0.45);
         for (let i = 0; i < nv; i++) {
           const ty = y + dy / nv, hit = hitAt(x, ty, dy < 0);
           if (!hit) { y = ty; continue; }
-          y = dy > 0 ? hit[1] - hh - EPS : hit[1] + 1 + hh + EPS; blocked.y = true; normal = [0, dy > 0 ? -1 : 1];
+          y = dy > 0 ? hit[1] - hh - EPS : hit[3] + hh + EPS; blocked.y = true; normal = [0, dy > 0 ? -1 : 1]; touch(hit);
           break;
         }
       }
       const moved = x !== e.at[0] || y !== e.at[1];
       b.grounded = side ? grounded : false;
-      setPos(e, [x, y], rt);
-      return { moved, blocked, grounded: b.grounded, normal, bumped };
+      if (support && b.grounded) b.standingOn = support; else if (!opts.keepSupport) delete b.standingOn;
+      setPos(e, [x, y], rt, { carry: obstacleOf(e) && !opts.noCarry });
+      return { moved, blocked, grounded: b.grounded, normal, bumped, touched, on: b.standingOn ?? null };
     }
     const onSlope = (x, bottom) => [Math.floor(bottom - EPS), Math.floor(bottom + EPS)].some(r => kindAt(Math.floor(x), r) === 'slope');
-    function groundedAt(x, y, hw, hh, drop) { return Boolean(landing([x - hw, y - hh, x + hw, y + hh], y - hh + 0.02, y - hh - 0.03, drop)); }
+    function groundedAt(x, y, hw, hh, drop, ents = []) { return landing([x - hw, y - hh, x + hw, y + hh], y - hh + 0.02, y - hh - 0.03, drop, 0, ents); }
 
     // ---------- raycast (DDA over cells, exact slopes, optional entities) ----------
     function raycast(from, dir, maxDist, mask = {}) {
@@ -240,13 +270,17 @@ export default {
         }
         if (best.dist > maxDist) best = { hit: 'none', at: null, normal: null, dist: maxDist };
       }
-      if (mask.entities) for (const o of inSpace(rt, sid)) {
+      // Entities: all of them with mask.entities, otherwise solid obstacles unless mask.solids === false
+      // (one-way ones only from above, with mask.oneway).
+      const solidsToo = mask.solids !== false;
+      for (const o of inSpace(rt, sid)) {
         if (o.id === mask.ignore || (typeof mask.entities === 'function' && !mask.entities(o))) continue;
+        if (!mask.entities) { const k = obstacleOf(o); if (!solidsToo || !k || (k === 'oneway' && !(mask.oneway && u[1] < 0))) continue; }
         const r = boxOf(o), t = rayRect(from, u, r, best.dist);
         if (t < best.dist || (t === best.dist && best.hit === 'none' && t <= maxDist)) {
           const p = [from[0] + u[0] * t, from[1] + u[1] * t];
           const n = Math.abs(p[0] - r[0]) < 1e-6 ? [-1, 0] : Math.abs(p[0] - r[2]) < 1e-6 ? [1, 0] : Math.abs(p[1] - r[1]) < 1e-6 ? [0, -1] : [0, 1];
-          best = { hit: 'entity', at: p, normal: n, dist: t, id: o.id };
+          best = { hit: 'entity', at: p, normal: n, dist: t, id: o.id, ...(obstacleOf(o) ? { solid: true } : {}) };
         }
       }
       return best;
@@ -257,7 +291,21 @@ export default {
     const navOpts = (o = {}) => {
       const env = { ...(o.envelope || {}), ...(o.abilities || {}) };
       if (env.jumpGap !== undefined && env.jumpDistance === undefined) env.jumpDistance = env.jumpGap;
-      return { abilities: env, width: o.width ?? (o.radius != null ? o.radius * 2 : 1), height: o.height ?? 1, avoid: o.avoid, diagonals: o.diagonals, maxNodes: o.maxNodes };
+      return { abilities: env, width: o.width ?? (o.radius != null ? o.radius * 2 : 1), height: o.height ?? 1, avoid: o.avoid, diagonals: o.diagonals, maxNodes: o.maxNodes, obstacles: o.obstacles ?? 'static', who: o.who };
+    };
+    // Entity obstacles in navigation (opts.obstacles): 'static' (default) adds solid entities that cannot move
+    // or open as solid cells and one-way ones as one-way tops; 'all' adds dynamic ones at their current
+    // position too; 'none' ignores entities. Dynamic obstacles (doors, lifts, movers) are passable by default.
+    const navFor = o => {
+      if (o.obstacles === 'none') return makeNav(navQ, o);
+      const overlay = new Map(), self = o.who ? (typeof o.who === 'string' ? rt.entity(o.who) : o.who) : null;
+      for (const x of obstaclesIn(rt, sid, self)) {
+        if (o.obstacles !== 'all' && dynamicObstacle(x)) continue;
+        const r = boxOf(x), k = obstacleOf(x), c0 = Math.floor(r[0] + EPS), c1 = Math.floor(r[2] - EPS), r0 = Math.floor(r[1] + EPS), r1 = Math.floor(r[3] - EPS);
+        for (let c = c0; c <= c1; c++) for (let y = k === 'oneway' ? r1 : r0; y <= r1; y++) { const key = y * (W + 8) + c; if (KIND_RANK[k] > KIND_RANK[overlay.get(key) || 'none']) overlay.set(key, k); }
+      }
+      if (!overlay.size) return makeNav(navQ, o);
+      return makeNav({ ...navQ, kindAt: (x, y) => { const base = kindAt(x, y), extra = overlay.get(y * (W + 8) + x); return extra && KIND_RANK[extra] > KIND_RANK[base] ? extra : base; } }, o);
     };
     const feetCell = (at, h = 1) => [Math.floor(at[0]), Math.floor(at[1] - h / 2 + 0.1)]; // tolerant of bodies a little shorter than h
     const zoneNodes = (nav, z) => { const out = new Set(), r = z.rect; for (let x = Math.floor(r[0]); x < r[2]; x++) for (let y = Math.floor(r[1]); y < r[3]; y++) if (nav.isNode(x, y)) out.add(key2(x, y)); return out; };
@@ -327,7 +375,7 @@ export default {
       },
       raycast,
       path(from, to, opts = {}) {
-        const o = navOpts(opts), nav = makeNav(navQ, o), h = o.height;
+        const o = navOpts(opts), nav = navFor(o), h = o.height;
         const starts = startKeys(nav, from, h);
         const z = typeof to === 'string' && zones().byId.get(to);
         const goals = z ? zoneNodes(nav, z) : new Set(startKeys(nav, to, h));
@@ -335,10 +383,10 @@ export default {
         const g = [...goals][0], keys = nav.path(starts[0], g, goals);
         return keys && keys.map(k => { const [x, y] = unkey(k); return [x + 0.5, y + h / 2 + EPS]; });
       },
-      reachable(from, rt, opts = {}) { const o = navOpts(opts), nav = makeNav(navQ, o); return nav.reach(startKeys(nav, from, o.height)); },
+      reachable(from, rt, opts = {}) { const o = navOpts(opts), nav = navFor(o); return nav.reach(startKeys(nav, from, o.height)); },
       canReach(a, b, c, d) {
         const opts = c && c.state ? (d || {}) : (c?.abilities || c?.envelope ? c : { abilities: c || {} });
-        const o = navOpts(opts), nav = makeNav(navQ, o), seen = nav.reach(startKeys(nav, a, o.height));
+        const o = navOpts(opts), nav = navFor(o), seen = nav.reach(startKeys(nav, a, o.height));
         const z = typeof b === 'string' && zones().byId.get(b);
         if (z) { for (const k of zoneNodes(nav, z)) if (seen.has(k)) return true; return false; }
         return startKeys(nav, b, o.height).some(k => seen.has(k));
@@ -349,10 +397,10 @@ export default {
       cellsIn: (box, layer = config.collisionLayers[0]) => cells.cellsIn(box, layer),
       editLog: since => cells.log(since),
       bake: (list, rt, opts = {}) => cells.bake(list, { layer: opts.layer ?? config.collisionLayers[0], box: opts.box }),
-      addZone: (zone, rt) => addZoneTo(rt, sid, zones, zone, z => (Array.isArray(z.rect) && z.rect.length === 4 ? null : 'needs rect [x0,y0,x1,y1]')),
+      ...zoneEditor(rt, sid, zones, z => (Array.isArray(z.rect) && z.rect.length === 4 ? null : 'needs rect [x0,y0,x1,y1]'), rt => { for (const e of inSpace(rt, sid)) tracker.track(e, rt); }),
       gravityAt(at) { if (!side) return [0, 0, 0]; const z = at && zones().byId.get(tracker.zoneAt(at)); return [0, Number.isFinite(z?.rules?.gravity) ? z.rules.gravity : config.gravity, 0]; },
       slide,
-      grounded(e) { const b = bodyOf(e); return side && groundedAt(e.at[0], e.at[1], b.size[0] / 2, b.size[1] / 2, false); },
+      grounded(e) { const b = bodyOf(e); return side && Boolean(groundedAt(e.at[0], e.at[1], b.size[0] / 2, b.size[1] / 2, false, obstaclesFor(e))); },
       groundAt(x, y = H) {
         if (!side) { const b = config.layers.map(l => cells.get([x, y], l)).find(v => v != null) ?? null; return { y: 0, normal: [0, 0, 1], material: b }; }
         for (let r = Math.min(H - 1, Math.floor(y)); r >= 0; r--) {
@@ -376,12 +424,14 @@ export default {
     };
     api.applyImpulse = api.impulse;
     rt.defineSpace(sid, api);
+    cells.init();
 
     // Ballistic bodies (pickups, debris, thrown things): gravity, bounce, ground friction.
     rt.system('physics', rt => {
       for (const e of inSpace(rt, sid, e => e.components.body?.ballistic)) {
         const b = e.components.body, g = api.gravityAt(e.at), gs = b.gravityScale ?? 1, dt = rt.dt, was = b.grounded;
         b.vel = [b.vel[0] + g[0] * gs * dt, b.vel[1] + g[1] * gs * dt];
+        if (b.collide === false) { setPos(e, [e.at[0] + b.vel[0] * dt, e.at[1] + b.vel[1] * dt], rt, { carry: true }); continue; }
         const vy = b.vel[1], r = slide(e, [b.vel[0] * dt, b.vel[1] * dt], rt), bounce = b.bounce ?? 0;
         if (r.blocked.x) b.vel[0] = -b.vel[0] * bounce;
         if (r.blocked.y) b.vel[1] = Math.abs(vy * bounce) > Math.max(0.01, 2 * Math.abs(g[1] * gs) * dt) ? -vy * bounce : 0; // rest instead of micro-bouncing
@@ -392,8 +442,6 @@ export default {
   },
 };
 
-// The validate hook sees only `with`; zones are checked on the space whose with matches.
-function sameConfig(raw = {}, config) { return Object.entries(raw).every(([k, v]) => JSON.stringify(config[k]) === JSON.stringify(v)); }
 
 /** Ray from o (unit u) against the slope polygon in cell (cx, cy): {t, n} or null (Cyrus–Beck). */
 function raySlope(o, u, cx, cy, hl, hr, maxDist) {

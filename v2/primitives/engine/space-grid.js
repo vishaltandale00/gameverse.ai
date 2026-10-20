@@ -304,5 +304,6 @@ export default {
       return moves;
     }
     rt.defineSpace(sid, api);
+    cells.init();
   },
 };

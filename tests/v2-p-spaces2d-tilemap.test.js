@@ -206,6 +206,92 @@ test('tilemap: preflight rejects bad configs with stable codes', () => {
   assert.ok(c.includes('zone_rect_invalid') && c.includes('zone_outside'));
 });
 
+test('tilemap: solid entities block slide until opened (doors), raycasts see them', () => {
+  const rt = make(), api = rt.space('map'), p = rt.player();
+  const door = rt.spawn('crate', { id: 'door', at: [3.5, 3.5], components: { mechanism: 'door1', body: { size: [1, 3], solid: true } } });
+  let r = api.slide(p, [3, 0], rt);
+  assert.equal(r.blocked.x, true); assert.deepEqual(r.touched, ['door']);
+  assert.ok(Math.abs(p.at[0] - (3 - 0.4)) < 1e-3, `stopped at the door: ${p.at}`);
+  let h = api.raycast([0.5, 2.5], [1, 0], 10);
+  assert.equal(h.hit, 'entity'); assert.equal(h.id, 'door'); assert.equal(h.solid, true); assert.ok(Math.abs(h.dist - 2.5) < 1e-9);
+  assert.equal(api.raycast([0.5, 2.5], [1, 0], 20, { solids: false }).hit, 'cell', 'solids:false looks through it (to the step at x=13)');
+  door.components.body.solid = false; // the mechanism opens it
+  r = api.slide(p, [3, 0], rt);
+  assert.equal(r.blocked.x, false); assert.ok(p.at[0] > 4);
+  // Legacy alias: components.blocker without body.solid.
+  delete door.components.body.solid; door.components.blocker = true;
+  api.setPos(p, [1.5, 2.45], rt);
+  assert.equal(api.slide(p, [3, 0], rt).blocked.x, true, 'components.blocker blocks too');
+  // A door closing on a body never traps it.
+  api.setPos(p, [3.5, 2.45], rt);
+  assert.equal(api.slide(p, [2, 0], rt).blocked.x, false);
+  // Standing on a solid crate.
+  rt.spawn('crate', { id: 'box', at: [15.5, 2.5], components: { body: { size: [1, 1], solid: true } } });
+  api.setPos(p, [15.5, 4.5], rt);
+  r = api.slide(p, [0, -3], rt);
+  assert.ok(r.grounded && r.on === 'box' && Math.abs(p.at[1] - 3.45) < 1e-3, `stands on the crate: ${p.at}`);
+  assert.equal(api.grounded(p), true);
+});
+
+test('tilemap: riders on a one-way moving platform; jump through from below; drop through', () => {
+  const rt = make(), api = rt.space('map');
+  const lift = rt.spawn('crate', { id: 'lift', at: [9.5, 3], components: { body: { size: [3, 0.5], solid: true, oneWay: true, ballistic: true, collide: false, gravityScale: 0, vel: [0, 0] } } });
+  const rider = rt.spawn('crate', { id: 'rider', at: [9.5, 6] });
+  run(rt, 60);
+  assert.ok(Math.abs(rider.at[1] - 3.65) < 1e-3 && rider.components.body.standingOn === 'lift', `lands on the platform: ${rider.at}`);
+  lift.components.body.vel = [2, 0]; run(rt, 30);
+  assert.ok(Math.abs(lift.at[0] - 10.5) < 1e-6 && Math.abs(rider.at[0] - 10.5) < 1e-3, `rider carried sideways: ${rider.at}`);
+  lift.components.body.vel = [0, 1.5]; run(rt, 40);
+  assert.ok(Math.abs(lift.at[1] - 4) < 1e-6 && Math.abs(rider.at[1] - 4.65) < 1e-3, `rider carried up: ${rider.at}`);
+  lift.components.body.vel = [0, 0];
+  api.setPos(lift, [10.5, 4.3], rt); run(rt, 1); // moved by someone else without carrying
+  assert.ok(Math.abs(rider.at[1] - 4.95) < 1e-3, 'the rider sticks to the platform it stands on');
+  api.setPos(lift, [10.5, 4.6], rt, { carry: true });
+  assert.ok(Math.abs(rider.at[1] - 5.25) < 1e-3, 'setPos with carry moves riders');
+  const p = rt.player(); api.setPos(p, [10.5, 2.45], rt); p.components.body.grounded = true;
+  let r = api.slide(p, [0, 3], rt);
+  assert.equal(r.blocked.y, false, 'jumps up through the one-way platform');
+  api.setPos(p, [9.5, 6], rt);
+  r = api.slide(p, [0, -2], rt);
+  assert.ok(r.grounded && r.on === 'lift');
+  r = api.slide(p, [0, -0.5], rt, { drop: true });
+  assert.ok(p.at[1] < 4.6 + 0.45 - 0.1 && !r.on, 'drops through');
+});
+
+test('tilemap: navigation treats static solid entities as walls and dynamic ones as passable', () => {
+  const td = () => compile(doc({ mode: 'topdown' }, { player: { archetype: 'hero', at: [6.5, 7.5] } }), { primitives: prims }).rt;
+  let rt = td(), api = rt.space('map');
+  assert.equal(api.canReach([6.5, 7.5], [1.5, 1.5]), true, 'down the ledge');
+  rt.spawn('crate', { id: 'boulder', at: [6.5, 4.5], components: { body: { size: [1, 1], solid: true } } });
+  assert.equal(api.canReach([6.5, 7.5], [1.5, 1.5]), false, 'a boulder below the ledge blocks the only way');
+  assert.equal(api.canReach([6.5, 7.5], [1.5, 1.5], rt, { obstacles: 'none' }), true);
+  rt = td(); api = rt.space('map');
+  rt.spawn('crate', { id: 'gate', at: [6.5, 4.5], components: { mechanism: 'gate1', body: { size: [1, 1], solid: true } } });
+  assert.equal(api.canReach([6.5, 7.5], [1.5, 1.5]), true, 'a mechanism gate is assumed openable');
+  assert.equal(api.canReach([6.5, 7.5], [1.5, 1.5], rt, { obstacles: 'all' }), false, 'unless obstacles: all');
+  // Side view: a static one-way ledge entity becomes a platform to stand on.
+  const s = make(), sa = s.space('map');
+  assert.equal(sa.reachable([1.5, 2.45], s).has('1,6'), false);
+  s.spawn('crate', { id: 'shelf', at: [1.5, 5.25], components: { body: { size: [2, 0.5], solid: true, oneWay: true } } });
+  assert.equal(sa.reachable([1.5, 2.45], s).has('1,6'), true, 'stand on the one-way shelf');
+});
+
+test('tilemap: removeZone and moveZone re-evaluate membership and the kernel zone predicate', () => {
+  const rt = make(), api = rt.space('map'), p = rt.player();
+  api.addZone({ id: 'aura', rect: [10, 0, 12, 4] }, rt);
+  assert.equal(rt.test({ zone: 'aura' }), false);
+  api.moveZone('aura', { rect: [0, 2, 3, 4] }, rt);
+  assert.equal(rt.test({ zone: 'aura' }), true); assert.ok(rt.state.events.some(e => e.name === 'enter_zone:aura'));
+  assert.equal(p.zone, 'aura', 'now the smallest zone');
+  api.removeZone('aura', rt);
+  assert.equal(rt.test({ zone: 'aura' }), false); assert.ok(rt.state.events.some(e => e.name === 'leave_zone:aura'));
+  api.moveZone('start', { rect: [10, 2, 12, 4] }, rt); assert.equal(rt.test({ zone: 'start' }), false, 'document zones can move');
+  const snap = rt.snapshot(); api.removeZone('start', rt); assert.equal(api.zoneAt([11, 3]), 'yard');
+  rt.restore(snap); assert.equal(api.zoneAt([11, 3]), 'start', 'zone edits are state');
+  assert.equal(api.removeZone('nope', rt), false);
+  assert.throws(() => api.moveZone('ledge', { rect: [1, 2] }, rt));
+});
+
 test('tilemap: every instance in v2/games preflights its params with zero errors', () => {
   let n = 0;
   for (const f of readdirSync('v2/games').filter(f => f.endsWith('.json'))) {

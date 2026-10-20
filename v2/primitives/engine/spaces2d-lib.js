@@ -10,31 +10,96 @@ export const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 export const mod = (v, n) => ((v % n) + n) % n;
 
 /**
- * Zones of space `sid`: the document's zones plus zones generators added at
- * runtime with addZone (kept in rt.state.spaces[sid].zones, so they snapshot).
- * Re-indexed when rt.doc or the runtime list changes; document zones win on id.
+ * Zones of space `sid`: the document's zones plus zones added at runtime with
+ * addZone, with moveZone edits applied and removeZone removals hidden. All
+ * runtime changes live in rt.state.spaces[sid] (zones, zoneEdits, zonesRemoved,
+ * zoneVersion) so they snapshot. Re-indexed when rt.doc or the version changes;
+ * document zones win over runtime zones with the same id.
  */
 export function zoneIndex(rt, sid) {
-  let doc = null, extra = null, n = -1, list = [], byId = new Map();
+  let doc = null, st = null, ver = -1, list = [], byId = new Map();
   return () => {
-    const st = rt.state.spaces[sid]?.zones;
-    if (doc !== rt.doc || extra !== st || (st?.length ?? 0) !== n) {
-      doc = rt.doc; extra = st; n = st?.length ?? 0;
-      const own = rt.doc.spaces.find(s => s.id === sid)?.zones || [], ids = new Set(own.map(z => z.id));
-      list = [...own, ...(st || []).filter(z => !ids.has(z.id))]; byId = new Map(list.map(z => [z.id, z]));
+    const s = rt.state.spaces[sid] || {};
+    if (doc !== rt.doc || st !== s || ver !== (s.zoneVersion ?? 0)) {
+      doc = rt.doc; st = s; ver = s.zoneVersion ?? 0;
+      const own = rt.doc.spaces.find(x => x.id === sid)?.zones || [], ids = new Set(own.map(z => z.id)), gone = new Set(s.zonesRemoved || []), edits = s.zoneEdits || {};
+      list = [...own, ...(s.zones || []).filter(z => !ids.has(z.id))].filter(z => !gone.has(z.id)).map(z => (edits[z.id] ? { ...z, ...edits[z.id] } : z));
+      byId = new Map(list.map(z => [z.id, z]));
     }
     return { list, byId };
   };
 }
 
-/** addZone(zone, rt) for generators: validates the id and appends to the space's runtime zones. */
-export function addZoneTo(rt, sid, zones, zone, check = () => null) {
-  if (!zone || typeof zone.id !== 'string' || !/^[a-z0-9][a-z0-9_-]{0,63}$/.test(zone.id)) throw Error(`addZone: zone id must be a lowercase slug`);
-  const bad = check(zone); if (bad) throw Error(`addZone '${zone.id}': ${bad}`);
-  if (zones().byId.has(zone.id)) return false;
-  (rt.state.spaces[sid].zones ??= []).push(structuredClone(zone));
-  rt.emit('zone_added', { space: sid, zone: zone.id });
-  return true;
+/**
+ * Runtime zone editing for a space: addZone(zone, rt), removeZone(id, rt),
+ * moveZone(id, shape, rt) (shape merges over the zone: rect, cells, range,
+ * lanes, spawn...). check(zone) returns an error string for a bad shape.
+ * retrack(rt) re-evaluates membership so enter/leave events fire at once.
+ */
+export function zoneEditor(rt, sid, zones, check = () => null, retrack = () => {}) {
+  const st = () => rt.state.spaces[sid];
+  const bump = () => { st().zoneVersion = (st().zoneVersion ?? 0) + 1; };
+  const inDoc = id => Boolean(rt.doc.spaces.find(x => x.id === sid)?.zones?.some(z => z.id === id));
+  return {
+    addZone(zone, rt) {
+      if (!zone || typeof zone.id !== 'string' || !/^[a-z0-9][a-z0-9_-]{0,63}$/.test(zone.id)) throw Error('addZone: zone id must be a lowercase slug');
+      const bad = check(zone); if (bad) throw Error(`addZone '${zone.id}': ${bad}`);
+      const s = st();
+      if (zones().byId.has(zone.id)) return false;
+      if ((s.zonesRemoved || []).includes(zone.id)) { s.zonesRemoved = s.zonesRemoved.filter(id => id !== zone.id); if (s.zoneEdits) delete s.zoneEdits[zone.id]; if (inDoc(zone.id)) (s.zoneEdits ??= {})[zone.id] = structuredClone(zone); }
+      else (s.zones ??= []).push(structuredClone(zone));
+      bump(); rt.emit('zone_added', { space: sid, zone: zone.id });
+      retrack(rt); return true;
+    },
+    removeZone(id, rt) {
+      if (!zones().byId.has(id)) return false;
+      const s = st();
+      s.zones = (s.zones || []).filter(z => z.id !== id);
+      if (inDoc(id)) (s.zonesRemoved ??= []).push(id);
+      if (s.zoneEdits) delete s.zoneEdits[id];
+      bump(); rt.emit('zone_removed', { space: sid, zone: id });
+      retrack(rt); return true;
+    },
+    moveZone(id, shape, rt) {
+      const z = zones().byId.get(id); if (!z) return false;
+      const bad = check({ ...z, ...shape }); if (bad) throw Error(`moveZone '${id}': ${bad}`);
+      const s = st(), own = !inDoc(id) && (s.zones || []).find(x => x.id === id);
+      if (own) Object.assign(own, structuredClone(shape));
+      else (s.zoneEdits ??= {})[id] = { ...(s.zoneEdits?.[id] || {}), ...structuredClone(shape) };
+      bump(); rt.emit('zone_moved', { space: sid, zone: id });
+      retrack(rt); return true;
+    },
+  };
+}
+
+/** addZone only (kept for callers that need nothing else). */
+export function addZoneTo(rt, sid, zones, zone, check = () => null) { return zoneEditor(rt, sid, zones, check).addZone(zone, rt); }
+
+/** Zone validation targets: the instance's own space when validate gets its 4th arg, else spaces whose `with` matches. */
+export function ownSpaces(doc, use, config, inst) {
+  return (doc.spaces || []).map((s, i) => [s, i]).filter(([s]) => s.use === use && (inst?.id ? s.id === inst.id : Object.entries(s.with || {}).every(([k, v]) => JSON.stringify(config[k]) === JSON.stringify(v))));
+}
+
+// ---------- entity obstacles (KERNEL_API §2: body.solid / body.oneWay) ----------
+/** 'solid' | 'oneway' | null. components.blocker is honoured as a legacy alias for body.solid. */
+export function obstacleOf(e) {
+  const b = e.components?.body;
+  if (!(b?.solid ?? e.components?.blocker)) return null;
+  return b?.oneWay ? 'oneway' : 'solid';
+}
+/**
+ * Obstacles that can move or open are dynamic: mechanism-controlled entities
+ * (components.mechanism), bodies the space integrates (ballistic), kinematic or
+ * moving bodies, and anything marked body.dynamic. Navigation treats them as
+ * passable by default: whether a door opens is the plot/mechanism solver's question.
+ */
+export function dynamicObstacle(e) {
+  const b = e.components?.body || {};
+  return Boolean(e.components?.mechanism || b.dynamic || b.ballistic || b.type === 'kinematic' || (Array.isArray(b.vel) && b.vel.some(v => v)));
+}
+/** Obstacle entities of a space, excluding `self` and ids listed in `ignore`. */
+export function obstaclesIn(rt, sid, self, ignore) {
+  return Object.values(rt.state.entities).filter(o => o.space === sid && o !== self && obstacleOf(o) && !(ignore && ignore.includes(o.id)));
 }
 
 /**
@@ -161,6 +226,7 @@ export function flood(starts, neighbors, maxNodes = 1000000) {
 }
 
 /** Capability methods added by the spaces2d workstream (KERNEL_API §3 "Adding capabilities"); same meaning in every space. */
+export const ZONE_EDIT_METHODS = ['addZone', 'removeZone', 'moveZone'];
 export const BOUNDS_CAPS = {
   bounds: ['bounds', 'inBounds'],      // bounds() → {min, max, wrap:[bool..]} current play window; inBounds(at, margin=0) → b
   wrap: ['wrapPos', 'delta'],          // wrapPos(at) → at folded into the space; delta(a, b) → shortest displacement a→b
@@ -201,7 +267,9 @@ export function cellStore(rt, sid, { W, H, layers, wrapX = false, wrapY = false 
   let started = false;
   rt.on('game_start', () => { started = true; });
   rt.onRestore(() => { started = true; });
+  // st() initialises (writers only); peek() never writes, so reads (options, renderers) leave state untouched.
   const st = () => { const s = rt.state.spaces[sid]; s.palette ??= [null]; s.cells ??= Object.fromEntries(layers.map(l => [l, []])); s.log ??= []; return s; };
+  const EMPTY = { palette: [null], cells: {}, log: [] }, peek = () => { const s = rt.state.spaces[sid]; return s?.cells ? s : EMPTY; };
   const norm = (x, y) => [wrapX ? mod(x, W) : x, wrapY ? mod(y, H) : y];
   const inside = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
   const index = (s, block) => { let i = s.palette.indexOf(block); if (i < 0) { i = s.palette.length; s.palette.push(block); } return i; };
@@ -215,7 +283,9 @@ export function cellStore(rt, sid, { W, H, layers, wrapX = false, wrapY = false 
   };
   const store = {
     layers,
-    get(at, layer = layers[0]) { const [x, y] = norm(Math.floor(at[0]), Math.floor(at[1])); return inside(x, y) ? read(st(), layer, x, y) : null; },
+    /** Create the persisted layout now (call once the space is defined) so state shape never depends on reads. */
+    init: () => { st(); },
+    get(at, layer = layers[0]) { const [x, y] = norm(Math.floor(at[0]), Math.floor(at[1])); return inside(x, y) ? read(peek(), layer, x, y) : null; },
     /** Returns false when unchanged or out of bounds. */
     set(at, block, rt, by = null, layer = layers[0]) {
       if (!layers.includes(layer)) return false;
@@ -235,7 +305,7 @@ export function cellStore(rt, sid, { W, H, layers, wrapX = false, wrapY = false 
     },
     /** Non-empty cells in an inclusive box. */
     cellsIn(box, layer = layers[0]) {
-      const s = st(), out = [], rows = s.cells[layer] || [];
+      const s = peek(), out = [], rows = s.cells[layer] || [];
       const [a, b] = box, x0 = Math.max(0, Math.floor(Math.min(a[0], b[0]))), x1 = Math.min(W - 1, Math.floor(Math.max(a[0], b[0])));
       for (let y = Math.max(0, Math.floor(Math.min(a[1], b[1]))); y <= Math.min(H - 1, Math.floor(Math.max(a[1], b[1]))); y++) {
         const row = rows[y]; if (!row) continue;
@@ -244,7 +314,7 @@ export function cellStore(rt, sid, { W, H, layers, wrapX = false, wrapY = false 
       return out;
     },
     fill(box, block, rt, by = null, layer = layers[0]) { const [a, b] = box; let n = 0; for (let y = Math.min(a[1], b[1]); y <= Math.max(a[1], b[1]); y++) for (let x = Math.min(a[0], b[0]); x <= Math.max(a[0], b[0]); x++) if (store.set([x, y], block, rt, by, layer)) n++; return n; },
-    log: (since = -1) => st().log.filter(e => e.t > since),
+    log: (since = -1) => peek().log.filter(e => e.t > since),
   };
   return store;
 }
