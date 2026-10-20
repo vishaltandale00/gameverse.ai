@@ -14,7 +14,7 @@ export const DEFAULT_LOCOMOTION = { idleWalkRun: [0.2, 3, 6], turnLean: 0.25, st
 /** Gameplay event -> clip (who field) defaults; graphics.anim.clips `triggers` extends this. */
 export const DEFAULT_TRIGGERS = [
   { event: 'attack', clip: 'attack', who: 'who' }, { event: 'swing', clip: 'attack', who: 'who' }, { event: 'melee_swing', clip: 'attack', who: 'who' },
-  { event: 'hit', clip: 'attack', who: 'attacker' }, { event: 'hurt', clip: 'hurt', who: 'who' }, { event: 'damaged', clip: 'hurt', who: 'target' },
+  { event: 'hurt', clip: 'hurt', who: 'who' }, { event: 'damaged', clip: 'hurt', who: 'target' },
   { event: 'hit', clip: 'hurt', who: 'target' }, { event: 'defeated', clip: 'die', who: 'target' }, { event: 'defeated', clip: 'die', who: 'who' }, { event: 'died', clip: 'die', who: 'who' },
   { event: 'jump', clip: 'jump', who: 'who' }, { event: 'jumped', clip: 'jump', who: 'who' }, { event: 'land', clip: 'land', who: 'who' }, { event: 'landed', clip: 'land', who: 'who' },
   { event: 'block_mined', clip: 'mine', who: 'by' }, { event: 'block_mined', clip: 'mine', who: 'who' }, { event: 'block_placed', clip: 'place', who: 'by' }, { event: 'block_placed', clip: 'place', who: 'who' },

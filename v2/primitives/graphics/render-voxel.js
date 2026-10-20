@@ -9,6 +9,9 @@ import { joinStage, presentationOnly } from './three-stage.js';
 import { padVolume, meshVolume, downsample } from './three-voxel-mesh.js';
 import { paletteFor } from './material-palette.js';
 import { syncActors } from './three-actors.js';
+import { ensureDefaultCamera } from './three-camera.js';
+import { createObjectLayer } from './three-objects.js';
+import thirdPerson from './camera-third-person.js';
 
 const key3 = (x, y, z) => `${x},${y},${z}`;
 
@@ -43,7 +46,7 @@ export default {
       highlight: { type: 'boolean', default: true, effect: 'outline the block the player is aiming at (1p/3p)' },
       reach: { type: 'number', default: 6, min: 1, max: 20, unit: 'm', effect: 'aim outline distance' },
     },
-    provides: {},
+    provides: { services: ['camera'] },
     reads: ['content.blocks'],
     requires: { capabilities: ['editCells'] },
   },
@@ -56,10 +59,12 @@ export default {
     const world = new THREE.Group(); world.name = 'voxel-chunks'; root.add(world);
     const actorsRoot = new THREE.Group(); actorsRoot.name = 'actors'; root.add(actorsRoot);
     stage.worldStyle = 'voxel';
+    ensureDefaultCamera(stage, () => thirdPerson.install(rt, { distance: 5, height: 1.7, fov: 70, lockOnBlend: 0.6, shoulder: 'center', collide: true, recenter: 1.5, pitch: -0.25 }, { key: 'default-camera' }));
     stage.settings.shadows = config.shadows;
     const chunks = new Map(), cellCache = new Map(), columnTop = new Map();
     const materials = [null], matIndex = new Map();
     let api = null, info = null, queue = [], planKey = '', dirty = new Set(), paletteRef = null, docRef = rt.doc;
+    const objects = createObjectLayer(stage, spaceId, root, { distance: 160, cell: 64, stats: stage.stats.voxelObjects = {} });
     const stats = stage.stats.voxel = { chunks: 0, queued: 0, meshMs: 0, meshed: 0, lastMs: 0, quads: 0, faces: 0 };
 
     const setup = () => {
@@ -226,6 +231,7 @@ export default {
         build(e);
       }
       stats.chunks = chunks.size; stats.queued = queue.length + dirty.size; stage.stats.chunks = stats.chunks;
+      objects.frame();
       // Aim outline from the player's eye along its look.
       outline.visible = false;
       const p = rt.player();

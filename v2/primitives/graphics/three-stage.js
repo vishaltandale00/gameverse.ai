@@ -38,7 +38,7 @@ function createStage(rt, preset = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.12;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   const canvas = renderer.domElement;
   canvas.className = 'gv-three'; canvas.tabIndex = 0;
@@ -123,6 +123,25 @@ function createStage(rt, preset = {}) {
   };
   stage.models = createModelLibrary(stage);
   view.container.gvThree = stage;
+  // Shared 'camera' service (graphics.ui.hud floating numbers, world prompts):
+  // project a world point to CSS pixels in view.container, null when off screen.
+  const projV = new THREE.Vector3();
+  // A 2D renderer may already provide one (mixed 2D/3D documents): delegate to it while the player is not in a 3D space.
+  const prevCamera = rt.hasService('camera') ? rt.service('camera') : null;
+  const in3d = () => spaceRoots.has(rt.player()?.space ?? rt.doc.spaces?.[0]?.id);
+  rt.provide('camera', {
+    project(at, space) {
+      if (prevCamera && !in3d()) return prevCamera.project(at, space);
+      if (!Array.isArray(at)) return null;
+      projV.set(at[0], at[1] ?? 0, at[2] ?? 0).project(stage.camera);
+      if (projV.z < -1 || projV.z > 1 || Math.abs(projV.x) > 1.05 || Math.abs(projV.y) > 1.05) return null;
+      return [(projV.x + 1) / 2 * (width || view.container.clientWidth), (1 - projV.y) / 2 * (height || view.container.clientHeight)];
+    },
+    /** Head-top screen point for an entity (interpolated), or null. */
+    projectEntity(id) { if (prevCamera && !in3d()) return prevCamera.projectEntity?.(id) ?? null; const p = stage.pose(id); if (!p) return null; const h = stage.actors?.get(id)?.height ?? 1.8; return this.project([p.at[0], p.at[1] + h + 0.2, p.at[2]]); },
+    get kind() { return prevCamera && !in3d() ? prevCamera.kind : '3d'; },
+    unit() { return prevCamera && !in3d() ? prevCamera.unit?.() : null; },
+  });
 
   function feetOf(e) {
     const at = e.at || [0, 0, 0];

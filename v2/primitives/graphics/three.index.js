@@ -14,6 +14,9 @@ import animLocomotion from './anim-locomotion.js';
 import animIk from './anim-ik.js';
 import animSecondary from './anim-secondary.js';
 import animRagdoll from './anim-ragdoll.js';
+import renderMesh3d from './render-mesh3d.js';
+import terrainProcedural from './terrain-procedural.js';
+import foliageScatter from './foliage-scatter.js';
 
 export default [renderVoxel, materialPalette, sky, cameraFirstPerson, cameraThirdPerson, cameraIsometric, modelVoxel, modelLowpoly,
-  rigHumanoid, rigQuadruped, animClips, animLocomotion, animIk, animSecondary, animRagdoll];
+  rigHumanoid, rigQuadruped, animClips, animLocomotion, animIk, animSecondary, animRagdoll, renderMesh3d, terrainProcedural, foliageScatter];

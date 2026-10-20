@@ -95,6 +95,7 @@ export function appendParts(THREE, builder, parts, opts = {}) {
     const unit = unitShape(THREE, shape, p.segments || segments, p.taper ?? 1, flatShade);
     if (shape === 'cap' && !(p.from && p.to)) size = [size[0], size[1] / 2, size[2]];
     m.compose(new THREE.Vector3(...at), q, sc.set(size[0], size[1], size[2]));
+    if (opts.matrix) m.premultiply(opts.matrix); // place the whole model (merged static batches)
     nrm.getNormalMatrix(m);
     const src = unit.attributes.position, srcN = unit.attributes.normal, n = src.count;
     const pos = new Array(n * 3), nor = new Array(n * 3), col = new Array(n * 3);

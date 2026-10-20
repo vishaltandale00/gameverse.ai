@@ -159,7 +159,16 @@ export function quadrupedBody(rig, spec, { saddle = false } = {}) {
  * at/size; `from/to` limbs are kept for orientation.
  */
 export function lowpolyParts(spec, rig, opts = {}) {
-  const own = (spec.parts || []).map(p => ({ ...p, bone: p.bone ? (PART_ALIASES[p.bone] || p.bone) : p.bone, mat: p.mat || (p.glow ? 'glow' : undefined) }));
+  const neck = rig?.bones.find(b => b.name === 'neck')?.head;
+  const own = (spec.parts || []).map(p => {
+    const q = { ...p, bone: p.bone ? (PART_ALIASES[p.bone] || p.bone) : p.bone, mat: p.mat || (p.glow ? 'glow' : undefined) };
+    // Capes and back items hang from the shoulders: keep torso-tagged hanging parts below the neck.
+    if (neck && q.at && q.size && ['spine', 'chest', 'back'].includes(q.bone) && q.secondary) {
+      const top = q.at[1] + q.size[1] / 2, limit = neck[1] + 0.02 * rig.height;
+      if (top > limit) q.at = [q.at[0], q.at[1] - (top - limit), q.at[2]];
+    }
+    return q;
+  });
   if (!rig) return own;
   if (rig.kind === 'humanoid') return [...humanoidBody(rig, spec), ...own];
   if (rig.kind === 'quadruped') return [...quadrupedBody(rig, spec, opts), ...own];

@@ -60,7 +60,7 @@ function grassLayer(stage, cfg) {
   for (let b = 0; b < 3; b++) {
     const a = b * Math.PI / 3, cx = Math.cos(a) * 0.5, cz = Math.sin(a) * 0.5;
     const quad = [[-cx * 0.35, 0, -cz * 0.35], [cx * 0.35, 0, cz * 0.35], [cx * 0.08, 1, cz * 0.08], [-cx * 0.08, 1, -cz * 0.08]];
-    for (const i of [0, 1, 2, 0, 2, 3]) { const q = quad[i]; pos.push(q[0], q[1], q[2]); const t = q[1]; col.push(0.55 + 0.45 * t, 0.6 + 0.4 * t, 0.55 + 0.45 * t); sway.push(t); }
+    for (const i of [0, 1, 2, 0, 2, 3]) { const q = quad[i]; pos.push(q[0], q[1], q[2]); const t = q[1]; col.push(0.75 + 0.55 * t, 0.8 + 0.6 * t, 0.65 + 0.35 * t); sway.push(t); /* darker root, sunlit tip */ }
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
@@ -77,6 +77,8 @@ function grassLayer(stage, cfg) {
     transformed.x += sin(ph) * sway * sway * uWind * gust * 0.9; transformed.z += cos(ph * 0.8) * sway * sway * uWind * gust * 0.45; }`);
     // Normals point up so blades light like the ground they grow from.
     sh.vertexShader = sh.vertexShader.replace('#include <beginnormal_vertex>', 'vec3 objectNormal = vec3(0.0, 1.0, 0.0);');
+    // Both blade faces light like the ground (no dark back faces).
+    sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\n  normal = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);');
   };
   const MAX = 14000;
   const mesh = new THREE.InstancedMesh(geo, mat, MAX); mesh.count = 0; mesh.frustumCulled = false; mesh.receiveShadow = true; mesh.name = 'grass';
@@ -162,10 +164,10 @@ export function ensureTerrain(stage, spaceId, root) {
       const col = splatSample({ ...s, slope: 0, height: s.y }, cfg.splat).color;
       if (!(col[1] > col[0] * 0.95 && col[1] > col[2] * 1.05)) continue; // grassy ground only
       const h = cfg.grass.height * (0.6 + pt.r * 0.8);
-      q.setFromAxisAngle(up, pt.r * 6.283); sc.set(h * 1.4, h, h * 1.4); p3.set(pt.x, s.y - 0.02, pt.z);
+      q.setFromAxisAngle(up, pt.r * 6.283); sc.set(h * 0.8, h, h * 0.8); p3.set(pt.x, s.y - 0.02, pt.z);
       m4.compose(p3, q, sc); grass.mesh.setMatrixAt(n, m4);
       const k = 0.85 + hash3(Math.floor(pt.x), 1, Math.floor(pt.z), 3) * 0.3;
-      grass.mesh.instanceColor.setXYZ(n, col[0] * k * 1.1, col[1] * k * 1.15, col[2] * k);
+      grass.mesh.instanceColor.setXYZ(n, col[0] * k * 1.25, col[1] * k * 1.35, col[2] * k * 1.1);
       n++;
     }
     grass.mesh.count = n; grass.mesh.instanceMatrix.needsUpdate = true; grass.mesh.instanceColor.needsUpdate = true;

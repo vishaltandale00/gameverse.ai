@@ -120,6 +120,7 @@ export function createModelLibrary(stage) {
       // Scale (fitBody) applied at instance level through root scale.
     }
     const geometry = builder.toGeometry(THREE, { skinned: !!rig });
+    geometry.userData.template = true; // shared: owners of instances must not dispose it
     const spinParts = spin.map(s => {
       const g = s.builder.toGeometry(THREE, { skinned: false });
       let center = s.at;
