@@ -71,7 +71,7 @@ test('solver: primitive solverKey shapes the abstraction (dedup) ', () => {
   const mk = keyed => normalized(cellDoc({ size: [4, 4, 1], zones: [{ id: 'exit', rect: [3, 3, 4, 4] }], systems: [{ use: 'gameplay.fixture.step' }, { use: 'gameplay.fixture.clock', with: { keyed } }, { use: 'plot.storyboard' }], plot })).doc;
   const keyed = solve(mk(true), cat.registry, cat.logic, { maxStates: 500 });
   const raw = solve(mk(false), cat.registry, cat.logic, { maxStates: 500 });
-  assert.deepEqual(abstraction(mk(true), cat.registry).declared, ['gameplay.fixture.clock']);
+  assert.ok(abstraction(mk(true), cat.registry).declared.includes('gameplay.fixture.clock'), 'the fixture declares a key (plot primitives may declare theirs too)');
   assert.equal(keyed.exhaustive, true, 'a constant key collapses the clock');
   assert.ok(keyed.states < 20);
   assert.equal(raw.exhaustive, false, 'without abstraction every frame is a new state');

@@ -11,7 +11,10 @@ export const DT = 1 / 60;
 
 export function buildLogic(registry, Logic) {
   const logic = new Logic();
-  for (const id of registry.ids()) registry.get(id).logic?.(logic);
+  for (const id of registry.ids()) { logic.owner = id; registry.get(id).logic?.(logic); }
+  logic.owner = null;
+  // One owner per vocabulary kind: a silent overwrite would change behavior by load order.
+  if (logic.duplicates.length) throw Error(`vocabulary registered twice: ${logic.duplicates.map(d => `${d.type} '${d.kind}' by ${d.first} and ${d.second}`).join('; ')}`);
   return logic;
 }
 
@@ -107,7 +110,7 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
       if (state.status !== 'playing') return state;
       state.events = []; rt.input = input;
       for (const [name, value] of Object.entries(input.actions || {})) {
-        if (!value) continue;
+        if (value === undefined || value === null || value === false) continue; // 0 and '' are real choices
         const fn = actions.get(name);
         if (fn) { fn(value, rt); rt.emit('action', { action: name }); }
       }
