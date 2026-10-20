@@ -218,11 +218,20 @@ export function mountKit(container, record) {
     if (disposed) return false;
     const checked = nextKit.validate(nextDoc.content);
     if (!checked.ok) { screenEl.innerHTML = `<p class="gv-reason">This game failed its checks in the browser.</p>`; return false; }
-    const sameRules = kit?.id === nextKit.id && JSON.stringify([doc.content, doc.mods]) === JSON.stringify([nextDoc.content, nextDoc.mods]);
-    doc = nextDoc; kit = nextKit;
+    const sameRules = kit?.id === nextKit.id && JSON.stringify([doc.content, doc.mods, doc.experiments]) === JSON.stringify([nextDoc.content, nextDoc.mods, nextDoc.experiments]);
     // Mods from other genres ride on top of the kit (v2/kits/mods).
-    game = composeGame(kit, checked.content, { seed: doc.seed ?? 1, mods: doc.mods || {} });
-    render = composeRenderer(kit, game, { art: doc.art || {} });
+    let nextGame = composeGame(nextKit, checked.content, { seed: nextDoc.seed ?? 1, mods: nextDoc.mods || {} });
+    let nextRender = composeRenderer(nextKit, nextGame, { art: nextDoc.art || {} });
+    // Experiments (model-written, sandboxed in Workers) ride on top of both. If they can't load, the game plays without them.
+    if (nextDoc.experiments?.length) {
+      try {
+        const { composeExperiments } = await import('/v2/experiments/compose.js');
+        if (disposed) return false;
+        ({ game: nextGame, render: nextRender } = composeExperiments(nextKit, nextGame, nextRender, nextDoc.experiments, { seed: nextDoc.seed ?? 1, onNote: note => console.warn(`[experiment] ${note}`) }));
+      } catch (error) { console.warn('[experiment] not available:', error?.message || error); }
+    }
+    if (game !== nextGame) game?.dispose?.();
+    doc = nextDoc; kit = nextKit; game = nextGame; render = nextRender;
     kit = { ...kit, gameControls: game.controls };
     canvas.setAttribute('aria-label', doc.title);
     root.dataset.pixel = doc.art?.style && /pixel/i.test(doc.art.style) ? 'true' : 'false';
@@ -243,6 +252,7 @@ export function mountKit(container, record) {
     },
     dispose() {
       disposed = true; cancelAnimationFrame(raf); for (const t of timers) clearTimeout(t);
+      game?.dispose?.();
       removeEventListener('keydown', down); removeEventListener('keyup', up); removeEventListener('blur', blur);
       sound('music', 'off'); sound('dispose');
       container.replaceChildren();

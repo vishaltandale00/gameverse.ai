@@ -42,9 +42,17 @@ export class GeneratedGameAdapter {
       const kit = await loadKit(record.doc.kit);
       const checked = kit.validate(record.doc.content);
       if (!checked.ok) throw Error(`Version ${record.version} of this game failed its checks (${checked.errors[0]?.message || 'invalid content'}).`);
-      const made = composeGame(kit, checked.content, { seed: record.doc.seed ?? 1, mods: record.doc.mods || {} });
+      let made = composeGame(kit, checked.content, { seed: record.doc.seed ?? 1, mods: record.doc.mods || {} });
+      let render = composeRenderer(kit, made, { art: record.doc.art || {} });
+      // Experiments run sandboxed on top (v2/experiments); without them the game still plays.
+      if (record.doc.experiments?.length) {
+        try {
+          const { composeExperiments } = await import('/v2/experiments/compose.js');
+          ({ game: made, render } = composeExperiments(kit, made, render, record.doc.experiments, { seed: record.doc.seed ?? 1, onNote: note => this.toast?.(note) }));
+        } catch (error) { console.warn('[generated] experiments unavailable', error?.message || error); }
+      }
       const game = { createState: () => made.createState(), step: (state, input) => made.step(state, input), check: kitCheck };
-      return { version: record.version, kit, spec: { id: record.doc.id, title: record.doc.title, kit: kit.id, content: record.doc.content, mods: record.doc.mods || {} }, game, render: composeRenderer(kit, made, { art: record.doc.art || {} }) };
+      return { version: record.version, kit, spec: { id: record.doc.id, title: record.doc.title, kit: kit.id, content: record.doc.content, mods: record.doc.mods || {}, experiments: record.doc.experiments || [] }, game, render, controls: made.controls || [], dispose: () => made.dispose?.() };
     }
     const checked = preflight(record.doc, registry);
     if (!checked.ok) throw Error(`Version ${record.version} of this game failed its checks (${checked.errors[0]?.message || 'invalid spec'}).`);
@@ -65,7 +73,7 @@ export class GeneratedGameAdapter {
     this.container.innerHTML = `<div class="generated-stage"><canvas tabindex="0"></canvas>
       <div class="generated-hud"><span class="generated-kicker">CREATOR’S LOT</span><strong class="generated-title"></strong><span class="generated-version"></span></div>
       <p class="generated-toast" role="status" aria-live="polite" hidden></p>
-      <p class="generated-help">Move · arrows / WASD / left stick &nbsp; A · Space / Z / J &nbsp; B · X / K &nbsp; Restart · R &nbsp; Menu · Esc / Start</p></div>`;
+      <p class="generated-help">Move · arrows / WASD / left stick &nbsp; A · Space / Z / J &nbsp; B · X / K &nbsp; Restart · R &nbsp; Menu · Esc / Start</p><p class="generated-help generated-experimental" hidden></p></div>`;
     this.canvas = this.container.querySelector('canvas'); this.context = this.canvas.getContext('2d');
     this.updateHud();
     if (note) this.toast(note);
@@ -115,6 +123,9 @@ export class GeneratedGameAdapter {
     this.canvas.setAttribute('aria-label', `${this.current.spec.title} — generated game, version ${this.current.version}`);
     this.container.querySelector('.generated-title').textContent = this.current.spec.title;
     this.container.querySelector('.generated-version').textContent = `v${this.current.version}`;
+    // Experiments are labelled as such, with the button they use (v2/experiments).
+    const experimental = (this.current.controls || []).filter(c => c.experimental), note = this.container.querySelector('.generated-experimental');
+    if (note) { note.hidden = !experimental.length; note.textContent = experimental.map(c => c.input === 'a' ? `A · ${c.label}` : c.input === 'b' ? `B · ${c.label}` : c.label).join('  ·  '); }
   }
   toast(text) {
     const node = this.container.querySelector('.generated-toast'); if (!node) return;
@@ -144,9 +155,9 @@ export class GeneratedGameAdapter {
     this.loadingVersion = version;
     try {
       const next = await this.build(await this.fetchVersion(version));
-      if (this.disposed || next.version <= this.current.version) return;
+      if (this.disposed || next.version <= this.current.version) { next.dispose?.(); return; }
       // Kit games carry state across versions whose content is unchanged (new art, same rules).
-      let carried = next.kit || this.current.kit ? next.kit === this.current.kit && JSON.stringify([next.spec.content, next.spec.mods]) === JSON.stringify([this.current.spec.content, this.current.spec.mods]) : canCarryState(this.current.spec, next.spec);
+      let carried = next.kit || this.current.kit ? next.kit === this.current.kit && JSON.stringify([next.spec.content, next.spec.mods, next.spec.experiments]) === JSON.stringify([this.current.spec.content, this.current.spec.mods, this.current.spec.experiments]) : canCarryState(this.current.spec, next.spec);
       if (carried) {
         try {
           const probe = structuredClone(this.state);
@@ -154,6 +165,7 @@ export class GeneratedGameAdapter {
           carried = next.game.check(probe).length === 0;
         } catch { carried = false; }
       }
+      this.current.dispose?.();
       this.current = next;
       if (!carried) { this.state = next.game.createState(); this.accumulator = 0; }
       this.game.version = next.version;
@@ -188,7 +200,7 @@ export class GeneratedGameAdapter {
   fail(error) { this.silence(); this.onFailure(error); }
   dispose() {
     if (this.disposed) return;
-    this.disposed = true; cancelAnimationFrame(this.raf); this.abort.abort(); this.events?.close(); this.resize?.disconnect();
+    this.disposed = true; cancelAnimationFrame(this.raf); this.abort.abort(); this.events?.close(); this.resize?.disconnect(); this.current?.dispose?.();
     clearTimeout(this.toastTimer); this.container.replaceChildren();
   }
 }
