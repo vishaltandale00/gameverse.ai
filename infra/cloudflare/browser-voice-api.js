@@ -1,3 +1,4 @@
+import {applicationVoiceCredential} from './hosted-voice-funding.js';
 import {principal} from './phone-sign-in.js';
 import {assert,digest,UUID,canonical} from '../../src/dev-manager-protocol.js';
 import {VOICE_PROTOCOL} from '../../src/browser-voice-protocol.js';
@@ -16,9 +17,10 @@ async function provider(env,registry,task,input){
   if(!reserved.reserved){assert(reserved.result,'voice_provider_outcome_unknown');return reserved.result;}
   let result;const started=Date.now();try{
     const signal=AbortSignal.timeout(Math.max(1,Math.min(25000,task.deadline-Date.now()))),config=agentConfiguration(env);if(task.executor==='hosted-api-key'){config.decisionsUrl='https://api.openai.com/v1/decisions';config.responsesUrl='https://api.openai.com/v1/responses';}let audio,row;
-    const connections=task.executor==='hosted-api-key'?env.AGENT_CONNECTIONS.getByName(task.owner):null;
+    const application=task.executor==='hosted-api-key'&&task.connection?.source==='application';
+    const connections=task.executor==='hosted-api-key'&&!application?env.AGENT_CONNECTIONS.getByName(task.owner):null;
     const grant={...task.connection,task_id:task.id,parent_id:task.id,service:kind,expires_at:task.deadline};
-    const apiKey=connections?await connections.apiKeyCredential(grant):env.OPENAI_API_KEY;
+    const apiKey=application?await applicationVoiceCredential(env,task,kind):connections?await connections.apiKeyCredential(grant):env.OPENAI_API_KEY;
     if(kind==='transcribe'){row=await registry.voice('request',task.owner,payload.request_id);assert(row.task_id===task.id&&row.phase!=='uploading'&&!row.cancelled,'voice_request_cancelled');const object=await env.ARTIFACTS.get(`voice/${task.executor==='hosted-api-key'?task.owner+'/':''}${task.id}/${row.sha256}`);assert(object,'voice_audio_not_found');audio=await object.arrayBuffer();assert(audio.byteLength===row.bytes&&await digest(audio)===row.sha256,'voice_audio_mismatch');}
     if(task.executor==='hosted-api-key')assert(task.synthetic===(env.APP_ENV==='test'&&typeof env.VOICE_TEST_PROVIDER==='function'),'voice_provider_mode_mismatch');
     if(env.APP_ENV==='test'&&typeof env.VOICE_TEST_PROVIDER==='function')result=await env.VOICE_TEST_PROVIDER({kind,payload,task});
@@ -34,7 +36,7 @@ async function provider(env,registry,task,input){
         assert(typeof payload.input==='string','invalid_voice_reflection');result=await agentProviders.openai.reflect({body:{model:config.reflectionModel,input:payload.input},config,apiKey,fetchImpl:fetch,signal});result={...result,model:config.reflectionModel,provider:'openai'};
       }else {assert(false,'voice_speech_not_supported',422);}
     }
-    if(connections)await connections.apiKeyCredential(grant);
+    if(application)await applicationVoiceCredential(env,task,kind);else if(connections)await connections.apiKeyCredential(grant);
     // Reject a result that returned after local/session or connection revocation.
     assert((await registry.voice('work',task.id)).active,'voice_session_revoked');
     result={...result,wallMs:Date.now()-started};

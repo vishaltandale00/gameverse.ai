@@ -1,10 +1,10 @@
-# Hosted API-key voice slice
+# Hosted voice slice
 
 Issue #21 H0–H3. See [the contract](../../contracts/HOSTED_VOICE.md) for authority, identity, credentials and recovery. Existing developer-manager operation remains in [SANDBOX_MANAGER.md](SANDBOX_MANAGER.md).
 
 ## Player flow
 
-Sign into an admitted Gameverse account and save an OpenAI API key in Account. The key must support audio transcription and the configured Decisions/reflection services. The UI distinguishes saved/authenticated keys from tested inference access; a Claude key or Codex subscription login does not supply these services. No local manager discovery, repo or Daytona setup is required for the player.
+Sign into an admitted Gameverse account. Voice and simulated-player takeover are provided by Gameverse; no player API key or local manager is needed. Personal agent connections in Account are for separate coding work. This 2026-10-20 decision supersedes the earlier player-funded voice setup.
 
 Open soccer, deliberately record a request, and let the cloud VoiceAgent request a takeover of that exact browser match. The browser acknowledges and runs the simulated-user controls. Watch the match; Stop immediately releases its controls even if the backend is offline. Normal keyboard/controller play resumes. Construction/checkpoint updates are the next slice, not enabled here.
 
@@ -12,7 +12,7 @@ Open soccer, deliberately record a request, and let the cloud VoiceAgent request
 
 Build the exact committed source with `npm run build` in Daytona. The build packages pinned voice code and the matching soccer artifact. Deploying the Worker/bindings/assets and enabling the feature are separate approval/qualification steps; this implementation does not deploy them.
 
-The new `HOSTED_VOICE` SQLite Durable Object binding/migration supplements the existing account credential vault, private `ARTIFACTS` R2 and Daytona platform credential. Long-lived user model keys stay encrypted in account storage; do not configure an operator `OPENAI_API_KEY` as a player fallback. The existing developer voice pilot can still use its explicit operator-key configuration while the hosted flag is off.
+The new `HOSTED_VOICE` SQLite Durable Object binding/migration supplements the existing account credential vault, private `ARTIFACTS` R2 and Daytona platform credential. Configure `HOSTED_VOICE_CREDENTIALS=application` (the default) and the dedicated `VOICE_OPENAI_API_KEY` server secret. The key must support configured transcription/Decisions/reflection services. Keep it out of Daytona sandboxes and client assets. A generic `OPENAI_API_KEY` or personal key is never a fallback. Legacy account-funded qualification requires explicit `HOSTED_VOICE_CREDENTIALS=account`; those personal keys stay encrypted in account storage. The existing developer voice pilot can still use its explicit operator-key configuration while the hosted flag is off.
 
 Set `HOSTED_VOICE_ENABLED=1` only after supported backend egress and qualification. A missing/invalid policy fails closed. Example **synthetic qualification policy**, not a production allowance or SLA:
 

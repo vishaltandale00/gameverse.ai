@@ -104,12 +104,14 @@ function renderConnections() {
   const drafts = new Map([...document.querySelectorAll('.login-code-form input')].map(input => [input.dataset.run, input.value]));
   $('agent-connections').replaceChildren();
   for (const provider of ['claude', 'codex']) {
+    const applicationVoice=config.hosted_voice&&config.voice_credentials==='application';
     const connection = settings.connections.find(row => row.provider === provider), login = latestLogin(provider);
     const view = connectionView(connection, login, localConnections.get(provider)), name = provider === 'claude' ? 'Claude' : config.hosted_voice ? 'OpenAI' : 'Codex';
+    if(applicationVoice&&provider==='codex'&&!connection&&!login)continue;
     const card = text('article', '', 'agent-card'), row = text('div', '', 'agent-row'); card.dataset.provider = provider;
     const copy = text('div', '', 'agent-copy'), title = text('div', '', 'agent-title'); title.append(text('h3', name));
     if (view.step === 'connected' && settings.default_provider === provider) title.append(text('span', 'Default', 'default-badge'));
-    copy.append(title, text('p', provider === 'codex' && config.hosted_voice ? (view.step === 'connected' ? 'API key saved. Voice service access is checked when used.' : 'Use your OpenAI API key for hosted voice and gameplay decisions.') : provider === 'codex' && view.step === 'idle' ? 'Browser sign-in isn’t available yet.' : ['preparing', 'authorize', 'verifying', 'cancelling'].includes(view.step) ? 'Your personal agent account' : view.detail));
+    copy.append(title, text('p', applicationVoice&&provider==='codex' ? 'Voice is provided by Gameverse. This personal connection is separate.' : provider === 'codex' && config.hosted_voice ? (view.step === 'connected' ? 'API key saved. Voice service access is checked when used.' : 'Use your OpenAI API key for hosted voice and gameplay decisions.') : provider === 'codex' && view.step === 'idle' ? 'Browser sign-in isn’t available yet.' : ['preparing', 'authorize', 'verifying', 'cancelling'].includes(view.step) ? 'Your personal agent account' : view.detail));
     row.append(text('span', provider === 'claude' ? 'C' : '⌘', `agent-symbol ${provider}`), copy);
     const controls = text('div', '', 'agent-control');
     if (['idle', 'reconnect', 'failed'].includes(view.step) && !activeLogin(provider)) {
@@ -159,6 +161,7 @@ function renderJobs() {
   if (fingerprint === lastJobs) return; lastJobs = fingerprint; $('job-list').replaceChildren(); $('empty-jobs').hidden = runs.length > 0;
   const labels = { succeeded: 'Coding check passed', failed: 'Coding check failed', cancelled: 'Coding check cancelled', cleanup_failed: 'Cleanup needs attention', awaiting_connection: 'Waiting for Claude', queued: 'Coding check queued', running: 'Claude is working…', cleaning: 'Saving work & finishing…' };
   for (const job of runs) {
+    if(applicationVoice&&provider==='codex'&&!connection&&!login)continue;
     const card = text('article', '', 'run-card'), heading = text('div', '', 'run-heading'), actions = text('div', '', 'run-actions');
     heading.append(text('h3', labels[job.phase] || 'Preparing coding check…'));
     if (job.result_available) actions.append(button('View result', () => showResult(job.id), 'text-button'));
@@ -180,7 +183,9 @@ async function refresh() {
     $('sign-in-panel').hidden = !!account; $('signed-in-panel').hidden = !account; $('account-summary').hidden = !account;
     await devManagers.refresh(account);
     if (!account) { hostedVoiceInfo.hidden=true; $('send-code').disabled = !config.sign_in.configured; return; }
-    hostedVoiceInfo.hidden=!config.hosted_voice;hostedVoiceInfo.textContent='Voice runs securely in the cloud using your OpenAI API key. No local app is required. Your key must support transcription and Decisions; saving it checks authentication only. Provider usage is billed to your key; compute availability follows your account allowance.';
+    const applicationVoice=config.hosted_voice&&config.voice_credentials==='application';
+    const agentsSection=$('agent-connections').closest('section');agentsSection.querySelector('h2').textContent=applicationVoice?'Personal coding agents':'Your agents';if(applicationVoice)agentsSection.before(hostedVoiceInfo);
+    hostedVoiceInfo.hidden=!config.hosted_voice;hostedVoiceInfo.textContent=config.voice_credentials==='application'?'Voice and simulated-player takeover are provided by Gameverse. No API key or local app is needed. Personal agent connections are for separate coding work.':'Voice runs securely in the cloud using your OpenAI API key. No local app is required. Your key must support transcription and Decisions; saving it checks authentication only. Provider usage is billed to your key; compute availability follows your account allowance.';
     $('account-name').textContent = account.name; $('developer-panel').hidden = !account.developer;
     const [connections, runs] = await Promise.all([api('/api/agent-connections'), api('/api/jobs')]); settings = connections; jobs = runs.jobs;
     for (const [provider, local] of localConnections) {

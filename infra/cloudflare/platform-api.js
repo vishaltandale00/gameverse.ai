@@ -1,3 +1,4 @@
+import {voiceCredentialSource} from './hosted-voice-funding.js';
 import { phoneSignInRoute,phoneConfigured,principal } from './phone-sign-in.js';
 
 const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'}});
@@ -24,7 +25,7 @@ export async function platformRoute(request,env) {
   const url=new URL(request.url);
   const auth=await phoneSignInRoute(request,env);if(auth)return auth;
   if(url.pathname==='/api/auth/config'&&request.method==='GET')return json({sign_in:{method:'phone',configured:phoneConfigured(env),default_country:/^[A-Z]{2}$/.test(request.cf?.country||'')?request.cf.country:null},
-    pilot:true,hosted_voice:env.HOSTED_VOICE_ENABLED==='1',providers:{claude:{browser:true,api_key:true,job_enabled:true},codex:{browser:false,api_key:true,job_enabled:false,
+    pilot:true,hosted_voice:env.HOSTED_VOICE_ENABLED==='1',voice_credentials:voiceCredentialSource(env),providers:{claude:{browser:true,api_key:true,job_enabled:true},codex:{browser:false,api_key:true,job_enabled:false,
       reason:'Hosted ChatGPT connection requires a registered Sign in with ChatGPT client.'}}});
   if(!/^\/api\/(me$|agent-connections(?:\/|$)|jobs(?:\/|$))/.test(url.pathname))return null;
   const account=await principal(request,env);

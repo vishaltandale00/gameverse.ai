@@ -117,6 +117,7 @@
       "HOST_RECONCILE_MS": "5000",
       "MAX_OBJECT_BYTES": "1048576",
       "HOSTED_VOICE_ENABLED": "1",
+      "HOSTED_VOICE_CREDENTIALS": "application",
       "HOSTED_VOICE_BROKER_URL": "https://pr27-gameverse-host-staging.gameverse-environment.workers.dev",
       "HOSTED_VOICE_POLICY": "{\"wall_ms\":120000,\"model_calls\":30,\"account_active\":1,\"platform_active\":2,\"daily_jobs\":3}"
     },

@@ -17,7 +17,7 @@ export class HostedVoiceCore {
     assert(tasks.filter(t=>!t.cleanup_confirmed).length<this.policy.account_active,'hosted_voice_account_capacity',429);
     assert((tasks.filter(t=>t.created_at>=now-86400000).length+(this.history?.countTasksSince(now-86400000)||0))<this.policy.daily_jobs,'hosted_voice_daily_limit',429);
     // H3 admits voice roots only. Construction children are a separate adapter.
-    const t={id:input.id,kind:'voice-agent',executor:this.execution,synthetic:this.synthetic,owner,parent_id:null,voice:input.voice,source_commit:input.source_commit,release_sha256:this.release.sha256,limits:this.voiceLimits,phase:'queued',created_at:now,deadline:now+this.policy.wall_ms,sandbox_name:'gv-hv-'+owner.slice(-16)+'-'+input.id,connection:{provider:'codex',generation:this.connection.generation,revision:this.connection.revision},cancel_requested:false,cleanup_confirmed:false,timings:{queued_at:now},artifacts:[]};
+    const t={id:input.id,kind:'voice-agent',executor:this.execution,synthetic:this.synthetic,owner,parent_id:null,voice:input.voice,source_commit:input.source_commit,release_sha256:this.release.sha256,limits:this.voiceLimits,phase:'queued',created_at:now,deadline:now+this.policy.wall_ms,sandbox_name:'gv-hv-'+owner.slice(-16)+'-'+input.id,connection:{source:this.connection.source||'account',provider:this.connection.source==='application'?'openai':'codex',generation:this.connection.generation,revision:this.connection.revision},cancel_requested:false,cleanup_confirmed:false,timings:{queued_at:now},artifacts:[]};
     this.state.tasks[t.id]=t;this.commit();return t;
   }
   compact(){
@@ -37,5 +37,5 @@ export class HostedVoiceCore {
   }
   cancel(owner,id){const t=this.task(id);assert(t.owner===owner,'account_mismatch',403);if(terminal(t.phase)&&t.cleanup_confirmed)return t;
     t.cancel_requested=true;for(const child of Object.values(this.state.tasks))if(child.parent_id===id)this.cancel(owner,child.id);this.commit();return t;}
-  reconcileConnection(status){let changed=false;for(const t of Object.values(this.state.tasks))if(!t.cleanup_confirmed&&!t.cancel_requested&&(!status.available||t.connection.generation!==status.generation||t.connection.revision!==status.revision)){t.cancel_requested=true;t.reason='api_key_grant_revoked';changed=true;}if(changed)this.commit();}
+  reconcileConnection(status){let changed=false;for(const t of Object.values(this.state.tasks))if(!t.cleanup_confirmed&&!t.cancel_requested&&(!status.available||(t.connection.source||'account')!==(status.source||'account')||t.connection.generation!==status.generation||t.connection.revision!==status.revision)){t.cancel_requested=true;t.reason=t.connection.source==='application'?'voice_application_grant_revoked':'api_key_grant_revoked';changed=true;}if(changed)this.commit();}
 }
