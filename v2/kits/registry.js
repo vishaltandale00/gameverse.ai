@@ -5,6 +5,7 @@ const LOADERS = {
   shmup: () => import('./shmup/index.js'),
   fighting: () => import('./fighting/index.js'),
   puzzle: () => import('./puzzle/index.js'),
+  physics: () => import('./physics/index.js'),
 };
 export const KIT_IDS = Object.keys(LOADERS);
 const cache = new Map();
