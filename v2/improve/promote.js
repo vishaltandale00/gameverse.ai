@@ -185,7 +185,7 @@ export function createImprovementService({ root, runner, config: overrides = {},
     if (scope.outside.length && config.scope.allowOutside) job.result.outsideScopeAllowed = scope.outside;
     checks.push({ id: 'scope', ok: scope.ok, ms: Date.now() - started, problems: scope.problems });
     emit(job, 'improve_check', { attempt: n, id: 'scope', ok: scope.ok, ms: Date.now() - started, problems: scope.problems });
-    const vars = { modTest: p.test, kitTest: `tests/v2-kit-${job.kitId}.test.js`, kitId: job.kitId, modId: job.modId, checker: workspace.checker || CHECKER, workdir: workspace.dir || '.' };
+    const vars = { modTest: p.test, kitTest: config.kitTests[job.kitId] || config.kitTests.pattern.replace('{kitId}', job.kitId), kitId: job.kitId, modId: job.modId, checker: workspace.checker || CHECKER, workdir: workspace.dir || '.' };
     let output = '';
     // Out-of-scope or missing deliverables: nothing else runs (the scope gate refuses the result as it is).
     if (scope.ok) for (const cmd of config.verification) {

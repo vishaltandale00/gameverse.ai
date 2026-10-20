@@ -45,6 +45,9 @@ export const LOOP_CONFIG = Object.freeze({
     allowOutside: false,
   },
 
+  // The target kit's own test file ({kitTest}); kits whose file doesn't follow the pattern are listed.
+  kitTests: { pattern: 'tests/v2-kit-{kitId}.test.js', creature: 'tests/v2-creature-kit.test.js' },
+
   // Run by the job itself in the worktree after every attempt; never trusted from the agent.
   // Placeholders: {modTest} {kitTest} {kitId} {modId} {checker} {workdir}.
   verification: [
@@ -67,6 +70,7 @@ export function resolveConfig(overrides = {}) {
     limits: { ...base.limits, ...overrides.limits },
     agent: { ...base.agent, ...overrides.agent },
     scope: { ...base.scope, ...overrides.scope },
+    kitTests: { ...base.kitTests, ...overrides.kitTests },
     verification: overrides.verification || base.verification,
   };
   for (const k of POSITIVE) {
