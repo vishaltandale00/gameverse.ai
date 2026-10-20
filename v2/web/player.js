@@ -12,6 +12,9 @@ import { experimentPrimitives } from '/v2/experiments/primitive-host.js';
 import { createWorkerBox } from '/v2/experiments/primitive-runtime.js';
 import { withDefaultGraphics } from '/v2/primitives/graphics/ui-defaults.js';
 import { keyName, expand } from '/v2/primitives/engine/runtime-lib-input.js';
+import { withDefaultInput } from '/v2/web/input-defaults.js';
+
+const TOUCH = typeof window !== 'undefined' && ('ontouchstart' in window || window.matchMedia?.('(pointer: coarse)').matches);
 
 // three.js is optional for the host: DOM and canvas renderers work without it (view.THREE is then null).
 const THREE = await import('/runtime/three/three.module.js').catch(() => null);
@@ -44,8 +47,8 @@ function catalogueFor(doc, extra) {
  */
 export function mountGame(container, record, { onState, primitives = null, now = () => performance.now(), createRenderer = undefined } = {}) {
   let cat = catalogueFor(record.doc, primitives);
-  // Every game gets UI, audio and renderers: the document's graphics plus defaults chosen from its systems and spaces.
-  const withGraphics = (d, registry) => { const doc = structuredClone(d); doc.graphics = withDefaultGraphics(doc, registry); return doc; };
+  // Every game gets input, UI, audio and renderers: the document's own plus defaults chosen from its systems, spaces and view.
+  const withGraphics = (d, registry) => { const doc = structuredClone(d); doc.systems = withDefaultInput(doc, registry, { touch: TOUCH }); doc.graphics = withDefaultGraphics(doc, registry); return doc; };
   const doc = withGraphics(record.doc, cat.registry);
   const checked = preflight(doc, cat.registry, cat.logic);
   if (!checked.ok) throw Object.assign(Error('This version failed checks in the browser.'), { errors: checked.errors });
