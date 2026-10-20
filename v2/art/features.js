@@ -7,9 +7,9 @@ import { light, shade, mix } from './color.js';
 
 export const W = 384, H = 256;
 /** Baselines per depth, as fractions of height. Kits hide roughly the bottom 14% behind their floor. */
-export const DEPTH_Y = { far: 0.56, mid: 0.68, near: 0.8 };
+export const DEPTH_Y = { far: 0.54, mid: 0.64, near: 0.78 };
 /** The street band, where traffic and pedestrians move. */
-export const STREET = { top: 0.745, bottom: 0.84 };
+export const STREET = { top: 0.69, bottom: 0.79 };
 
 export const STATIC_FEATURES = ['leafy-forest', 'pine-forest', 'palms', 'bushes', 'flowers', 'tall-grass', 'skyline', 'houses', 'street', 'neon-signs', 'street-lamps', 'bridge', 'mountains', 'hills', 'cliffs', 'river', 'lake', 'ocean', 'waterfall', 'castle', 'ruins', 'windmills', 'fences', 'market-stalls'];
 export const MOVING_FEATURES = ['traffic', 'pedestrians', 'birds', 'falling-leaves', 'fireflies', 'rain', 'snow', 'fog', 'drifting-clouds', 'embers', 'bubbles', 'train'];
