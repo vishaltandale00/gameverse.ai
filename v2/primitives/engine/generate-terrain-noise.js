@@ -20,7 +20,7 @@ const card = {
     rivers: { type: 'integer', min: 0, max: 64, default: 0, effect: 'rivers traced from high ground down to the sea and carved in' },
     erosion: { type: 'integer', min: 0, max: 8, default: 0, effect: 'hydraulic + thermal erosion passes on the coarse grid' },
     warp: { type: 'number', min: 0, max: 1, default: 0, effect: 'domain warp strength: twisted, less grid-like landforms' },
-    landBias: { type: 'number', min: -1, max: 1, default: 0.2, effect: 'shifts terrain up (+) or down (-) relative to sea level, in amplitudes' },
+    landBias: { type: 'number', min: -3, max: 3, default: 0.2, effect: 'shifts terrain up (+) or down (-) relative to sea level, in amplitudes' },
     lacunarity: { type: 'number', min: 1.5, max: 3, default: 2, effect: 'frequency multiplier per octave' },
     gain: { type: 'number', min: 0.2, max: 0.8, default: 0.5, effect: 'amplitude multiplier per octave' },
     extent: { type: 'list', of: { type: 'number' }, min: 4, max: 4, effect: 'world box [x0, z0, x1, z1] for falloff and rivers (default: space size, or the union of zones)' },
