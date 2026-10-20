@@ -120,7 +120,7 @@ export function createRenderer(game, { art = {} } = {}) {
     if (map.dark) {
       const px = v.player.x * TS + 8 - camX, py = v.player.y * TS + 8 - camY;
       const grad = g.createRadialGradient(px, py, 20, px, py, Math.max(VW, VH) * 0.75);
-      grad.addColorStop(0, 'rgba(10,6,20,0)'); grad.addColorStop(1, 'rgba(10,6,20,.62)');
+      grad.addColorStop(0, 'rgba(10,6,20,0)'); grad.addColorStop(1, 'rgba(10,6,20,.5)');
       g.fillStyle = grad; g.fillRect(0, 0, VW, VH);
     }
     if (v.fx === 'heal') { g.fillStyle = `rgba(255,240,250,${0.25 + 0.25 * Math.sin(v.frame * 0.4)})`; g.fillRect(0, 0, VW, VH); }

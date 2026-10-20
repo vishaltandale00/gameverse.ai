@@ -192,6 +192,12 @@ function drawTile(g, p, ch, x, y, nb, r, frame, map) {
     }
     case T.shelf: {
       floorBase();
+      if (map.kind === 'gym') {
+        // Gym partitions: low stone blocks in the gym's colors.
+        R(0, 3, 16, 12, shade(p.wall, 0.15)); R(0, 3, 16, 3, light(p.wall, 0.25)); R(0, 14, 16, 1, shade(p.wall, 0.5));
+        R(7, 6, 1, 8, shade(p.wall, 0.35));
+        break;
+      }
       R(1, 0, 14, 15, p.woodDark); R(2, 1, 12, 13, shade(p.woodDark, 0.25));
       const books = ['#d8403a', '#3a6ad8', '#3fa84a', '#e8b830', '#8a4ac8'];
       for (const sy of [2, 8]) for (let i = 0; i < 5; i++) R(2 + i * 2 + (i > 2 ? 1 : 0), sy, 2, 5, books[(i + x + sy) % 5]);

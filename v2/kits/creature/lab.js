@@ -37,10 +37,11 @@ function boot() {
 }
 boot();
 
-const keys = new Set();
+// Held keys, plus taps latched until a step has seen them (a tap can start and end between steps).
+const keys = new Set(), tapped = new Set();
 const MAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', Space: 'a', KeyZ: 'a', KeyJ: 'a', KeyX: 'b', KeyK: 'b' };
 addEventListener('keydown', e => {
-  if (MAP[e.code]) { e.preventDefault(); keys.add(MAP[e.code]); }
+  if (MAP[e.code]) { e.preventDefault(); keys.add(MAP[e.code]); tapped.add(MAP[e.code]); }
   if (e.code === 'KeyR' && !e.repeat) boot();
   if (/^Digit[1-4]$/.test(e.code) && !e.repeat) { seed = Number(e.code.slice(5)); boot(); }
 });
@@ -48,7 +49,8 @@ addEventListener('keyup', e => { if (MAP[e.code]) keys.delete(MAP[e.code]); });
 addEventListener('blur', () => keys.clear());
 canvas.focus();
 
-const input = () => ({ x: (keys.has('right') ? 1 : 0) - (keys.has('left') ? 1 : 0), y: (keys.has('down') ? 1 : 0) - (keys.has('up') ? 1 : 0), a: keys.has('a'), b: keys.has('b') });
+const on = k => keys.has(k) || tapped.has(k);
+const input = () => ({ x: (on('right') ? 1 : 0) - (on('left') ? 1 : 0), y: (on('down') ? 1 : 0) - (on('up') ? 1 : 0), a: on('a'), b: on('b') });
 let last = performance.now(), acc = 0, pending = [], frames = 0, fpsT = 0, fps = 0, stepMs = 0;
 /** Draw once (also used by automation while the page is in the background). */
 function draw(dt = 1 / 60) {
@@ -67,6 +69,7 @@ function frame(now) {
   while (acc >= 1 / 60) {
     acc -= 1 / 60;
     game.step(state, input());
+    tapped.clear();
     if (state.events.length) pending.push(...state.events);
     if (state.events.some(e => e.name === 'save')) { try { localStorage.setItem(`creature-lab:${seed}`, JSON.stringify(state)); } catch {} }
   }
