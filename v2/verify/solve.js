@@ -12,6 +12,7 @@ import { maker, applyOption, settle, optionLabels, replayOptions } from './drive
 import { abstraction } from './abstraction.js';
 import { objective } from './objective.js';
 import { budget as makeBudget } from './util.js';
+import { withTravel } from './macros.js';
 
 class Heap {
   constructor(less) { this.a = []; this.less = less; }
@@ -33,7 +34,14 @@ const pathOf = node => { const out = []; for (let n = node; n?.label !== undefin
 export function solve(doc, registry, logic, opts = {}) {
   const { search = 'bfs', budgetMs = 2000, maxStates = 20000, maxDepth = Infinity, settleSteps = 2, seed } = opts;
   const b = makeBudget({ ms: budgetMs, states: maxStates, steps: opts.maxSteps ?? Infinity });
-  const make = maker(doc, registry, logic);
+  // Spaces without options of their own get travel macros (warp along the space's path, or steer the real controls).
+  let make = maker(doc, registry, logic), travel = null;
+  if (opts.travel !== false) {
+    const probe = make(seed), p = probe.player();
+    const wanted = opts.travel ?? (!probe.availableOptions().length && p?.space && typeof probe.space(p.space).path === 'function' ? 'auto' : null);
+    if (wanted) travel = withTravel(make, registry, { mode: wanted });
+    if (travel) make = travel.make;
+  }
   const rt = make(seed);
   const abs = abstraction(doc, registry, opts);
   const keyOf = opts.key || abs.key;
@@ -131,7 +139,7 @@ export function solve(doc, registry, logic, opts = {}) {
     deadEnds: deadEnds.slice(0, 5), deadEndCount: deadEnds.length,
     states: b.usedStates + 1, expanded, exhaustive, search,
     bestPath: best.node ? pathOf(best.node) : [], bestScore: best.score,
-    startOptions, errors: errors.slice(0, 5), replayed,
+    startOptions, errors: errors.slice(0, 5), replayed, travel: travel ? travel.mode() : null,
     abstraction: { declared: abs.declared },
     budget: b.report(),
     wallMs: Math.round(b.elapsed()),
