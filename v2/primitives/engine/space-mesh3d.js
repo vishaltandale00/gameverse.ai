@@ -353,7 +353,12 @@ export default {
     const api = {
       kind: 'mesh3d', anchor: 'center', config, size: [W, D], heightRes: R,
       model: () => model.ensure(),
-      bounds() { let lo = Infinity, hi = -Infinity; for (let iz = 0; iz <= NZ; iz += Math.max(1, Math.floor(NZ / 64))) for (let ix = 0; ix <= NX; ix += Math.max(1, Math.floor(NX / 64))) { const h = heightSample(ix, iz); lo = Math.min(lo, h); hi = Math.max(hi, h); } return { min: [0, lo, 0], max: [W, hi, D] }; },
+      /** World box; the height range is estimated once per build from a 65 x 65 sample of the field (cheap to call every step). */
+      bounds() {
+        sync();
+        if (!model.cache.bounds) { let lo = Infinity, hi = -Infinity; for (let j = 0; j <= 64; j++) for (let i = 0; i <= 64; i++) { const h = rawHeight((i / 64) * W, (j / 64) * D); lo = Math.min(lo, h); hi = Math.max(hi, h); } model.cache.bounds = { lo, hi }; }
+        const { lo, hi } = model.cache.bounds; return { min: [0, lo, 0], max: [W, hi, D] };
+      },
       // position
       place(e, rt) {
         ops.body(e);
