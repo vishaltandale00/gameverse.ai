@@ -2,7 +2,7 @@
 // { id: 'family.domain[.name]', card: { intent, views?, params, provides?, requires?, conflicts?, reads? },
 //   validate?(config, doc, ctx) -> errors, install?(rt, config, instance), capabilities?(config) (spaces) }
 export const FAMILIES = ['engine', 'plot', 'graphics', 'gameplay'];
-const ID = /^(engine|plot|graphics|gameplay)(\.[a-z][a-z0-9-]*){1,3}$/;
+const ID = /^(engine|plot|graphics|gameplay)(\.[a-z0-9][a-z0-9-]*){1,3}$/;
 
 export class Registry {
   constructor(primitives = []) { this.items = new Map(); primitives.forEach(p => this.add(p)); }

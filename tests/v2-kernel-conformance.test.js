@@ -33,3 +33,35 @@ test('services, typed events and cross-space moves', () => {
   assert.equal(rt.player().space, 'inside');
   assert.ok(rt.test({ zone: 'room' }));
 });
+
+test('graph exits honor plot gates that lock them', () => {
+  const doc = base('engine.space.graph', [{ id: 'hall', exits: [{ to: 'vault' }] }, { id: 'vault', exits: [{ to: 'hall' }] }]);
+  doc.systems = [{ use: 'plot.gate' }];
+  doc.plot = { gates: [{ id: 'vault_door', requires: { flag: 'has_code' }, hint: 'Find the code.', locks: ['exit:hall>vault'] }] };
+  const { rt } = compile(doc, { primitives: PRIMITIVES });
+  rt.player().at = 'hall';
+  assert.equal(rt.space('world').move(rt.player(), 'vault', rt), false, 'locked by the gate');
+  assert.ok(!rt.space('world').reachable('hall', rt).has('vault'));
+  rt.run([{ do: 'set_flag', flag: 'has_code' }]);
+  assert.equal(rt.space('world').move(rt.player(), 'vault', rt), true, 'opens once the requirement holds');
+});
+
+test('modal input, deferred work, runtime capabilities and ifAbsent actions', () => {
+  const doc = base('engine.space.graph', [{ id: 'hall', exits: [{ to: 'yard' }] }, { id: 'yard', exits: [{ to: 'hall' }] }]);
+  const { rt } = compile(doc, { primitives: PRIMITIVES });
+  const chose = [];
+  rt.action('choose', v => chose.push(v));
+  assert.equal(rt.action('choose', () => {}, { ifAbsent: true }), false, 'keeps the first owner');
+  rt.openModal('plot.dialogue', { actions: ['choose'] });
+  rt.step({ actions: { go: 'yard', choose: 0 } });
+  assert.equal(rt.player().at, 'hall', 'movement is blocked while a modal is open');
+  assert.deepEqual(chose, [0]);
+  assert.deepEqual(rt.availableOptions(), [], 'graph moves are not offered during the modal');
+  const snap = rt.snapshot(); assert.equal(snap.modal.owner, 'plot.dialogue');
+  rt.closeModal('plot.dialogue');
+  let order = [];
+  rt.system('rules', rt => { order.push('system'); rt.defer(() => order.push('deferred')); });
+  rt.step();
+  assert.deepEqual(order, ['system', 'deferred']);
+  assert.deepEqual(rt.capabilities('world').sort(), ['distance', 'navigate', 'position', 'reachable']);
+});
