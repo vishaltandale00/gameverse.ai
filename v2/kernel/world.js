@@ -155,9 +155,14 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
      * changes); those that keep derived caches implement extend(rt, cfg, added).
      */
     extend(normalizedDoc, added) {
-      const before = { systems: (rt.doc.systems || []).length, graphics: (rt.doc.graphics || []).length, spaces: new Set((rt.doc.spaces || []).map(s => s.id)) };
+      const before = { systems: (rt.doc.systems || []).length, graphics: (rt.doc.graphics || []).length, spaces: new Set((rt.doc.spaces || []).map(s => s.id)),
+        generators: new Map((rt.doc.spaces || []).map(s => [s.id, (s.generators || []).length])) };
       rt.doc = normalizedDoc;
-      for (const s of normalizedDoc.spaces) if (!before.spaces.has(s.id)) { install(s, `spaces.${s.id}`); (s.generators || []).forEach((g, j) => install({ ...g, space: s.id }, `spaces.${s.id}.generators[${j}]`)); }
+      for (const s of normalizedDoc.spaces) {
+        if (!before.spaces.has(s.id)) install(s, `spaces.${s.id}`);
+        // New generators run on new spaces and on existing ones (detail patches add rooms, structures, scatter...).
+        (s.generators || []).forEach((g, j) => { if (j >= (before.generators.get(s.id) ?? 0)) install({ ...g, space: s.id }, `spaces.${s.id}.generators[${j}]`); });
+      }
       for (const instance of [...normalizedDoc.spaces, ...(normalizedDoc.systems || []).slice(0, before.systems), ...(headless ? [] : (normalizedDoc.graphics || []).slice(0, before.graphics))]) {
         registry.get(instance.use)?.extend?.(rt, instance.with || {}, added, instance);
       }
