@@ -1,6 +1,7 @@
 // Fighting-kit content: the strict schema the model fills, the writing prompt, a hand-written
 // sample and validation. Validation clamps numbers (the schema carries no min/max for strict
 // mode) and reports errors as { code, path, message, hint } so a generator can repair content.
+import { slugifyIds } from '../ids.js';
 import { THEMES, TIMES } from '../../art/scenery.js';
 
 export const CONTENT_SCHEMA = 'gameverse.v2.fighting-content/0.1';
@@ -212,6 +213,7 @@ const text = (v, d, max = 160) => typeof v === 'string' && v.trim() ? v.trim().s
 
 /** Normalize and check content. Returns { ok, errors, warnings, content }. */
 export function validate(input) {
+  input = slugifyIds(input, ['fighters', 'stages']); // "lava_pit" → "lava-pit", references included
   const errors = [], warnings = [];
   const fail = (code, path, message, hint) => { errors.push({ code, path, message, ...(hint ? { hint } : {}) }); };
   const warn = (code, path, message) => warnings.push({ code, path, message });
