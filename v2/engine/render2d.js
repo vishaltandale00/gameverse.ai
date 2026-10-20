@@ -2,8 +2,21 @@
 // (spec, state, canvas size); keeps no game state of its own.
 const HUD_HIDDEN = new Set(['collected']);
 
+// Generated art (spec.art) loads asynchronously; until an image is ready the
+// renderer draws the placeholder glyph or color, so games are playable at once.
+const images = new Map();
+function image(url) {
+  if (!url || typeof Image === 'undefined') return null;
+  let entry = images.get(url);
+  if (!entry) { const img = new Image(); entry = { img, ready: false }; img.onload = () => { entry.ready = true; }; img.src = url; images.set(url, entry); }
+  return entry.ready ? entry.img : null;
+}
+
 export function createRenderer(game) {
   const { spec, width, height } = game;
+  const art = spec.art || {};
+  const tileArt = { [Object.keys(spec.entities).find(k => k === 'ground')]: art.tiles?.ground, [Object.keys(spec.entities).find(k => k === 'platform')]: art.tiles?.platform };
+  const tileKinds = spec.level.rows.map(row => [...row].map(ch => spec.level.legend[ch]));
   const rows = spec.level.rows;
   const tileColors = rows.map(row => [...row].map(ch => {
     const kind = spec.level.legend[ch];
@@ -21,14 +34,24 @@ export function createRenderer(game) {
     const camY = clampView(player ? player.y + player.h / 2 : height / 2, viewH, height);
     const sx = x => Math.round((x - camX) * tile), sy = y => Math.round((y - camY) * tile);
 
+    ctx.imageSmoothingEnabled = !/pixel/i.test(art.style || '');
     ctx.fillStyle = spec.background || '#101820'; ctx.fillRect(0, 0, w, h);
+    const bg = image(art.background);
+    if (bg) { // cover the view, scrolling slowly for parallax
+      const scale = Math.max(w / bg.width, h / bg.height) * 1.15;
+      const bw = bg.width * scale, bh = bg.height * scale;
+      const px = -((camX / Math.max(1, width - viewW)) || 0) * (bw - w), py = -((camY / Math.max(1, height - viewH)) || 0) * (bh - h);
+      ctx.drawImage(bg, px, py, bw, bh);
+    }
     const x0 = Math.max(0, Math.floor(camX)), x1 = Math.min(width, Math.ceil(camX + viewW));
     const y0 = Math.max(0, Math.floor(camY)), y1 = Math.min(height, Math.ceil(camY + viewH));
     for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
       const color = tileColors[y][x];
       if (!color || !state.solid[y * width + x]) continue;
-      ctx.fillStyle = color; ctx.fillRect(sx(x), sy(y), tile + 1, tile + 1);
-      ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.fillRect(sx(x), sy(y), tile + 1, Math.max(1, tile / 8));
+      const tex = image(tileArt[tileKinds[y][x]]);
+      if (tex) ctx.drawImage(tex, sx(x), sy(y), tile + 1, tile + 1);
+      else { ctx.fillStyle = color; ctx.fillRect(sx(x), sy(y), tile + 1, tile + 1); }
+      if (!state.solid[(y - 1) * width + x]) { ctx.fillStyle = 'rgba(255,255,255,.10)'; ctx.fillRect(sx(x), sy(y), tile + 1, Math.max(1, tile / 10)); }
     }
 
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -38,7 +61,15 @@ export function createRenderer(game) {
       const px = sx(e.x), py = sy(e.y), pw = e.w * tile, ph = e.h * tile;
       if (px + pw < 0 || py + ph < 0 || px > w || py > h) continue;
       if (e.tags.includes('player') && invuln && Math.floor(state.frame / 4) % 2) continue;
-      if (def.glyph) {
+      const sprite = image(art.sprites?.[e.kind]);
+      if (sprite) {
+        ctx.save();
+        const size = Math.max(pw, ph) * 1.35; // sprites have padding; draw a little larger than the hitbox
+        ctx.translate(px + pw / 2, py + ph - size / 2 + size * 0.06);
+        if (e.face < 0 && (e.tags.includes('player') || e.tags.includes('enemy'))) ctx.scale(-1, 1);
+        ctx.drawImage(sprite, -size / 2, -size / 2, size, size);
+        ctx.restore();
+      } else if (def.glyph) {
         ctx.save();
         ctx.font = `${Math.round(Math.max(pw, ph) * 1.1)}px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
         ctx.fillStyle = '#fff'; // emoji glyphs inherit fill alpha

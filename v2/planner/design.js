@@ -9,11 +9,12 @@ const actor = { type: 'object', additionalProperties: false, required: ['name', 
 const num = { type: 'number' };
 export const DESIGN_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['title', 'pitch', 'summary', 'view', 'length', 'background', 'palette', 'cast', 'feel', 'mechanics', 'sections', 'gaps'],
+  required: ['title', 'pitch', 'summary', 'view', 'length', 'artStyle', 'background', 'palette', 'cast', 'feel', 'mechanics', 'sections', 'gaps'],
   properties: {
     title: { type: 'string' }, pitch: { type: 'string' }, summary: { type: 'string' },
     view: { type: 'string', enum: ['side', 'topdown'] },
     length: { type: 'string', enum: ['short', 'medium', 'long'] },
+    artStyle: { type: 'string' },
     background: { type: 'string' },
     palette: { type: 'object', additionalProperties: false, required: ['ground', 'platform'], properties: { ground: { type: 'string' }, platform: { type: 'string' } } },
     cast: { type: 'object', additionalProperties: false, required: ['player', 'pickup', 'enemy', 'hazard', 'goal'], properties: { player: actor, pickup: actor, enemy: actor, hazard: actor, goal: actor } },
@@ -28,6 +29,7 @@ export const DESIGN_PROMPT = `You design small, fun, polished 2D action games fo
 
 - view: "side" for platformers and runners; "topdown" for dungeon crawls, arenas, twin-stick shooters, chases.
 - length: short (~70 columns), medium (~100), long (~140). Prefer medium or long.
+- artStyle: one phrase describing the visual style for generated sprites and scenery, honoring any player preference (e.g. "crisp 16-bit pixel art", "hand-painted watercolor", "bold cel-shaded cartoon", "moody 32-bit pixel art with rim lighting").
 - background: a hex color that sets the mood; palette.ground and palette.platform: hex tile colors that fit the theme and contrast with the background.
 - cast: name and ONE emoji glyph each for the player, the pickup, the enemy, the hazard and the goal, all fitting the idea.
 - feel (units: tiles and seconds). runSpeed 4–20 (8 normal, 14+ very fast); jumpSpeed 10–24; gravity 25–80 (lower is floatier); airJumps 0–2; friction 10–120 (low is slippery, like ice); airControl 0.3–1.
@@ -41,6 +43,13 @@ Match the idea's tone, pace and theme closely.`;
 const clamp = (v, lo, hi, d) => Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d;
 const slug = (s, d) => ((s || '').toLowerCase().match(/[a-z0-9]+/g) || [d]).join('-').slice(0, 40) || d;
 const hex = (s, d) => /^#[0-9a-f]{3,8}$/i.test(s || '') ? s : d;
+const luminance = c => { const h = c.replace('#', ''), v = h.length === 3 ? h.split('').map(x => x + x) : h.match(/../g); const [r, g, b] = v.slice(0, 3).map(x => parseInt(x, 16) / 255); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+/** Keep tiles readable against the background: shift lightness away from it when too close. */
+function contrast(tile, background) {
+  if (Math.abs(luminance(tile) - luminance(background)) >= 0.25) return tile;
+  const dark = luminance(background) > 0.5, h = tile.replace('#', '').padEnd(6, '0').slice(0, 6);
+  return '#' + h.match(/../g).map(x => Math.round(dark ? parseInt(x, 16) * 0.45 : 255 - (255 - parseInt(x, 16)) * 0.45).toString(16).padStart(2, '0')).join('');
+}
 
 /** Convert a design into a spec. attempt varies the layout seed and eases the jump on retries. */
 export function designToSpec(design, { seed = 1, attempt = 0 } = {}) {
@@ -63,8 +72,8 @@ export function designToSpec(design, { seed = 1, attempt = 0 } = {}) {
   for (const role of Object.keys(kinds)) { let k = kinds[role]; while (used.has(k)) k = `${k}-${role}`; used.add(k); kinds[role] = k; }
   const m = design.mechanics || {};
   const entities = {
-    ground: { solid: true, color: hex(design.palette?.ground, '#3b4a5c') },
-    platform: { solid: true, color: hex(design.palette?.platform, '#5b6b7c') },
+    ground: { solid: true, color: contrast(hex(design.palette?.ground, '#3b4a5c'), hex(design.background, '#101820')) },
+    platform: { solid: true, color: contrast(hex(design.palette?.platform, '#5b6b7c'), hex(design.background, '#101820')) },
     [kinds.player]: { tags: ['player'], glyph: cast.player?.glyph || '🙂', w: 0.8, h: 0.9 },
     [kinds.pickup]: { tags: ['collectible'], glyph: cast.pickup?.glyph || '💎', w: 0.6, h: 0.6 },
     [kinds.enemy]: { tags: ['enemy'], glyph: cast.enemy?.glyph || '👾', w: 0.9, h: 0.85 },
@@ -84,7 +93,7 @@ export function designToSpec(design, { seed = 1, attempt = 0 } = {}) {
   const reach = { count: 'reach_goal', gte: 1 };
   const lose = [{ var: 'hp', lte: 0 }, ...(m.timerSeconds > 0 ? [{ count: 'time_up', gte: 1 }] : [])];
   return {
-    schema: SPEC_SCHEMA, id: slug(design.title, 'game'), title: design.title || 'Untitled', pitch: design.pitch || '', seed,
+    schema: SPEC_SCHEMA, id: slug(design.title, 'game'), view: side ? 'side' : 'topdown', title: design.title || 'Untitled', pitch: design.pitch || '', seed,
     background: hex(design.background, '#101820'),
     level: { rows, legend: { '#': 'ground', '=': 'platform', P: kinds.player, C: kinds.pickup, E: kinds.enemy, '^': kinds.hazard, G: kinds.goal } },
     entities, modules,

@@ -8,6 +8,8 @@ import { createJobs, streamEvents } from './jobs.js';
 import { createPipeline, verify } from '../planner/pipeline.js';
 import { createOfflinePlanner } from '../planner/offline-planner.js';
 import { createDesignPipeline } from '../planner/design-pipeline.js';
+import { createArtGenerator } from '../planner/art.js';
+import { askQuestions } from '../planner/questions.js';
 import { createOpenAIClient, loadOpenAIKey } from '../planner/openai.js';
 
 const slug = text => (text.toLowerCase().match(/[a-z0-9]+/g) || ['game']).slice(0, 5).join('-').slice(0, 40);
@@ -23,7 +25,8 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
   const openaiKey = loadOpenAIKey(env, fileURLToPath(new URL('../../', import.meta.url)));
   const specModel = env.V2_OPENAI_DESIGN_MODEL || 'gpt-4.1-mini';
   const openai = openaiKey ? createOpenAIClient({ apiKey: openaiKey }) : null;
-  const pipeline = openai ? createDesignPipeline({ client: openai, model: specModel }) : createPipeline({ registry, logic, planner: active, catalogHash });
+  const art = openaiKey && env.V2_ART !== 'off' ? createArtGenerator({ apiKey: openaiKey, model: env.V2_ART_MODEL || 'gpt-image-1-mini', quality: env.V2_ART_QUALITY || 'low' }) : null;
+  const pipeline = openai ? createDesignPipeline({ client: openai, model: specModel, art }) : createPipeline({ registry, logic, planner: active, catalogHash });
   const plannerName = openaiKey ? `openai:${specModel}` : active.version;
   const jobs = createJobs({ store, pipeline });
 
@@ -50,11 +53,22 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
       const job = jobs.submit({ gameId: m[1], prompt: meta.prompt, change, base: meta.latest, kind: 'revise' });
       return { gameId: m[1], jobId: job.id };
     }],
+    ['POST', /^\/api\/v2\/questions$/, async body => {
+      const prompt = String(body?.prompt || '').trim();
+      if (!prompt) throw Object.assign(Error('Describe your game first.'), { status: 400 });
+      if (!openai) return { questions: [], ms: 0 };
+      return askQuestions(openai, specModel, prompt);
+    }],
+    ['DELETE', /^\/api\/v2\/games\/([a-z0-9-]+)$/, async (_, m) => {
+      if (jobs.running().some(j => j.gameId === m[1])) throw Object.assign(Error('That game is still being built.'), { status: 409 });
+      await store.remove(m[1]); return { removed: m[1] };
+    }],
     ['GET', /^\/api\/v2\/games\/([a-z0-9-]+)$/, async (_, m) => {
       const meta = await store.meta(m[1]);
       if (!meta) throw Object.assign(Error('No such game.'), { status: 404 });
       return { meta, latest: await store.latest(m[1]) };
     }],
+    ['GET', /^\/api\/v2\/games\/([a-z0-9-]+)\/versions$/, async (_, m) => ({ versions: await store.versions(m[1]) })],
     ['GET', /^\/api\/v2\/games\/([a-z0-9-]+)\/v\/(\d+)$/, async (_, m) => {
       const v = await store.version(m[1], Number(m[2]));
       if (!v) throw Object.assign(Error('No such version.'), { status: 404 });
@@ -65,6 +79,12 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
   return {
     store, jobs, registry, logic, planner: active,
     async handle(req, res, path, readJson) {
+      const asset = path.match(/^\/api\/v2\/games\/([a-z0-9-]+)\/assets\/([a-z0-9-]+\.webp)$/i);
+      if (asset && req.method === 'GET') {
+        const bytes = await store.asset(asset[1], asset[2]);
+        if (!bytes) { res.writeHead(404).end(); return true; }
+        res.writeHead(200, { 'Content-Type': 'image/webp', 'Cache-Control': 'public, max-age=31536000, immutable' }).end(bytes); return true;
+      }
       if (path === '/api/v2/events') {
         const game = new URL(req.url, 'http://x').searchParams.get('game');
         streamEvents(jobs, req, res, game); return true;

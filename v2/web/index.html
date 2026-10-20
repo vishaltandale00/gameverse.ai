@@ -7,22 +7,22 @@
   <script type="module" src="/v2/web/studio-app.js"></script>
 </head>
 <body>
-  <aside class="library" aria-label="Your games">
-    <a class="brand" href="/v2">gameverse <b>studio</b></a>
+  <aside class="rail" aria-label="Your games">
+    <a class="brand" href="/v2">Gameverse <span>studio</span></a>
     <form id="create" class="create">
-      <label for="prompt">What should we make?</label>
-      <textarea id="prompt" rows="3" placeholder="Minecraft in GTA: mine, build and drive through a living city…" required></textarea>
-      <button type="submit">Make it</button>
+      <label for="prompt">Describe a game</label>
+      <textarea id="prompt" rows="3" placeholder="A penguin ninja sliding through an ice fortress, throwing snowballs at walrus guards" required></textarea>
+      <button type="submit" class="primary" id="make">Make it</button>
     </form>
-    <h2>Your games</h2>
+    <section id="questions" class="questions" hidden aria-live="polite"></section>
+    <div class="list-head"><h2>Your games</h2><button id="clear" class="quiet" type="button">Clear all</button></div>
     <ul id="games" class="games"></ul>
   </aside>
-  <main id="stage" class="stage">
-    <section class="empty"><h1>Describe a game.</h1><p>It's playable in seconds, and keeps growing while you play.</p></section>
-  </main>
-  <aside id="inspector" class="inspector" aria-label="Build progress and checks" hidden>
+  <main id="stage" class="stage"></main>
+  <aside id="sheet" class="sheet" aria-label="Build details" hidden>
     <h2>Build</h2><ol id="timeline" class="timeline"></ol>
     <h2>Checks</h2><div id="checks" class="checks"></div>
+    <h2>Versions</h2><ol id="versions" class="versions"></ol>
   </aside>
 </body>
 </html>

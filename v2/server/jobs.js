@@ -14,6 +14,8 @@ export function createJobs({ store, pipeline, maxConcurrent = 2 }) {
     const ctx = {
       job, store,
       stage(name, detail = {}) { job.stages.push({ name, at: Math.round(performance.now() - started), ...detail }); broadcast({ type: 'stage', gameId: job.gameId, jobId: job.id, stage: name, ...detail, ms: Math.round(performance.now() - started) }); },
+      /** Live preview of work in progress (e.g. a partially written level). */
+      draft(data) { broadcast({ type: 'draft', gameId: job.gameId, jobId: job.id, ms: Math.round(performance.now() - started), ...data }); },
       async publish(payload) {
         const record = await store.publish(job.gameId, payload);
         broadcast({ type: 'version', gameId: job.gameId, jobId: job.id, version: record.version, stage: payload.stage, ms: Math.round(performance.now() - started), report: record.report });

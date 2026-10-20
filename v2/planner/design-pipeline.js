@@ -22,7 +22,8 @@ export function buildVerified(design, { seed, registry = defaultRegistry(), atte
   let last;
   for (let attempt = 0; attempt < attempts; attempt++) {
     const spec = designToSpec(design, { seed, attempt });
-    const check = checkArcade(spec, registry, { budgetMs: 1200 });
+    // Longer levels need longer searches: ~25 ms per column, 1.5–4 s.
+    const check = checkArcade(spec, registry, { budgetMs: Math.min(4000, Math.max(1500, 25 * spec.level.rows[0].length)) });
     last = { spec, check, attempt };
     if (check.ok) return last;
   }

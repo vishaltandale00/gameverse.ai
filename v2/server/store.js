@@ -34,8 +34,31 @@ export function createStore(root) {
       const version = meta.versions + 1;
       const record = { gameId: id, version, stage, created: new Date().toISOString(), docHash: hashOf(doc), provenance, report };
       await writeJson(join(gameDir(id), `v${version}.json`), { ...record, doc });
-      await this.updateMeta(id, { versions: version, latest: version, title: doc.title || meta.title, logline: doc.logline || meta.logline || '' });
+      await this.updateMeta(id, { versions: version, latest: version, title: meta.sample ? meta.title : (doc.title || meta.title), logline: doc.logline || meta.logline || '' });
       return record;
+    },
+    /** Save a binary asset for a game; returns its URL path. */
+    async saveAsset(id, name, bytes) {
+      if (!/^[a-z0-9-]+\.webp$/i.test(name)) throw Error('invalid asset name');
+      await mkdir(join(gameDir(id), 'assets'), { recursive: true });
+      await writeFile(join(gameDir(id), 'assets', name), bytes);
+      return `/api/v2/games/${id}/assets/${name}`;
+    },
+    async asset(id, name) {
+      if (!/^[a-z0-9-]+$/.test(id) || !/^[a-z0-9-]+\.webp$/i.test(name)) return null;
+      try { return await readFile(join(gameDir(id), 'assets', name)); } catch (error) { if (error.code === 'ENOENT') return null; throw error; }
+    },
+    async versions(id) {
+      const meta = await readJson(join(gameDir(id), 'meta.json'));
+      if (!meta) return [];
+      const out = [];
+      for (let v = 1; v <= meta.versions; v++) { const r = await readJson(join(gameDir(id), `v${v}.json`)); if (r) out.push({ version: v, stage: r.stage, created: r.created, docHash: r.docHash }); }
+      return out;
+    },
+    async remove(id) {
+      if (!/^[a-z0-9-]+$/.test(id)) throw Error('invalid game id');
+      const { rm } = await import('node:fs/promises');
+      await rm(gameDir(id), { recursive: true, force: true });
     },
     async version(id, version) { return readJson(join(gameDir(id), `v${version}.json`)); },
     async latest(id) { const meta = await readJson(join(gameDir(id), 'meta.json')); return meta?.latest ? this.version(id, meta.latest) : null; },

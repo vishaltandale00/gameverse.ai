@@ -148,7 +148,7 @@ barks[]       { channel, when?: pred, say: s, character?: ref:character, cooldow
 | `escort` | `who: archetype/char`, `to: zone`, `failIfDead:b=true` | escortee reaches zone alive |
 | `survive` | `seconds` or `until: pred`, `zone?` | timer elapses with player alive |
 | `build` | `block?`, `structure?`, `count`, `zone?` | `block_placed:<block>` ≥ count since active, or structure detected |
-| `drive` | `vehicle?: archetype`, `to?: zone`, `distance?:n m`, `maxSeconds?` | vehicle condition met |
+| `drive` | `vehicle?: archetype`, `to?: zone`, `distance?:n m`, `maxSeconds?` | vehicle condition met (a `mount` counts as a vehicle) |
 | `craft` | `recipe`, `count` | `crafted:<recipe>` |
 | `use` | `interactable` or `tag`, `count?` | `used:<interactable>` |
 | `discover` | `zone` or `tag`, `count?` | `discovered:*` matches |
@@ -230,7 +230,7 @@ All gameplay primitives are systems over the ECS. Unless stated, they work for a
 | `gameplay.move.climb` | P0 | Ladders and free surface climbing with stamina. `speed:n m/s=1.4` · `surfaces:enum(ladders\|any\|tagged)` · `staminaCost:n/s` · `slipMin:deg` · `ledgeGrab:b` | events `climb_start` `climb_end` `ledge_grab` | — | caps: raycast, overlap; resources `stamina` · 3p |
 | `gameplay.move.swim` | P1 | Buoyancy, dive, breath. `speed:n` · `breath:n s` · `drownDps:n` | events `submerged` `surfaced` | — | caps: surface or editCells · 1p 3p |
 | `gameplay.move.fly` | P1 | Free flight (creative mode, jetpack, wings). `speed` · `fuel?` | — | — | caps: gravity |
-| `gameplay.move.glide` | P1 | Paraglider/wing-suit descent. `fallSpeed:n` · `staminaCost` | — | — | caps: gravity · 3p |
+| `gameplay.move.glide` | P1 | Paraglider/wing-suit descent. `fallSpeed:n[0.5..6]m/s=2.8` · `staminaCost:n/s=6` | — | — | caps: gravity · 3p |
 | `gameplay.move.dodge` | P0 | Roll/dash/backstep with i-frames, cost and recovery. `distance:n m=3` · `sec:n=0.45` · `iframes:[n,n]s` · `cost:n stamina` · `directions:enum(any\|back\|facing)` | events `dodged` | — | caps: gravity · 3p side td |
 | `gameplay.move.grapple` | P2 | Grapple/web swing. `range` · `ropeLen` | — | — | caps: raycast, gravity |
 | `gameplay.mount` | P0 | Mountable creatures: bond, speed, stamina, call whistle, gaits. `walk:n m/s=3` · `trot:n=7` · `gallop:n=14` · `staminaMax:n=100` · `bondGain:n/min` · `callRange:n m=120` · `jumpHeight:n m` · `fightMounted:b=false` | events `mounted` `dismounted` `mount_called` | P: `mounted{mount?}` · E: `mount{mount,who?}` `dismount{}` `call_mount{}` | caps: gravity, pathfind · 3p |
@@ -270,11 +270,11 @@ All gameplay primitives are systems over the ECS. Unless stated, they work for a
 | `gameplay.combat.target` | P0 | Lock-on/target select: cycle, soft-lock, camera binding, strafe. `range:n m=20` · `fov:n deg` · `switchOnDeath:b` · `breakDist:n m` | var `target`; events `locked` `unlocked` | P: `locked{who?}` | caps: raycast · 3p |
 | `gameplay.combat.status` | P1 | Buffs/debuffs: burning, poison, slow, stun, regen, charm effects. Defs in `content.statuses`: `{id,duration,tick:{dps,type},mods:{stat:delta},stacks:i,tags}` | events `status_applied:*` `status_ended:*` | P: `status{status,who?}` · E: `apply_status{who,status,sec?}` `clear_status{who,status?}` | combat.health |
 | `gameplay.combat.boss` | P0 | Authored encounters: arena lock, health bar, phase table keyed on hp thresholds or predicates, adds, enrage, reward. `bosses:list<obj{id req,archetype:ref:archetype req,arena:ref:zone,phases:list<obj{at:n[0..1],pattern:list<s>,speed:n,summon?:list<ref:archetype>,fx?:fx}>,onStart:fx,onDefeat:fx,rewards:obj,gate:b}>` · `retryReset:b=true` | events `boss_start:*` `boss_phase:*` `boss_defeated:*`; vars `boss.hp` | P: `boss{boss,state:idle\|active\|defeated}` · E: `start_boss{boss}` | ai.attacks |
-| `gameplay.combat.stealth` | P1 | Detection meters, noise, light, silent takedowns. `sightRange` · `crouchFactor` · `takedown:b` | events `detected` `lost_target` `takedown` | P: `detected{who?}` | ai.brain |
+| `gameplay.combat.stealth` | P1 | Detection meters, noise, light, silent takedowns. `sightRange:n m=30` · `crouchFactor:n[0..1]=0.5` · `takedown:b` | events `detected` `lost_target` `takedown` | P: `detected{who?}` | ai.brain |
 | `gameplay.combat.cover` | P2 | Cover snapping and cover bonus (shooters/tactics). | — | — | caps: raycast |
 | `gameplay.combat.aim` | P2 | Slow-motion targeting and hit-chance selection (V.A.T.S./Dead Eye). | — | — | — |
 | `gameplay.element` | P1 | Chemistry: element tags on objects/surfaces and reaction rules (fire burns grass, water extinguishes, electric conducts). `reactions:list<obj{a,b,result:fx,spread:n}>` | events `reaction:*` | E: `ignite{at,r}` | caps: overlap |
-| `gameplay.vision.mode` | P1 | Detective/sense overlay that reveals tagged entities & traces. `range` · `tags:list<s>` · `cooldown` | events `scan` | P: `scanned{target}` | — |
+| `gameplay.vision.mode` | P1 | Detective/sense overlay that reveals tagged entities & traces. `range:n[5..200]m=40` · `tags:list<s>` · `cooldown:n s=1` | events `scan` | P: `scanned{target}` | — |
 
 ### 6.4 AI
 
@@ -293,7 +293,7 @@ All gameplay primitives are systems over the ECS. Unless stated, they work for a
 | Id | T | Intent / Params | Provides | Logic | Req |
 | --- | --- | --- | --- | --- | --- |
 | `gameplay.vehicle.core` | P0 | Seats, enter/exit, ownership/theft, damage, fuel, horn, radio. Archetype `vehicle:{seats,health,fuel,model}` · `enterRange:n m=3` · `theftDifficulty:n` · `damage:b` | events `vehicle_entered` `vehicle_exited` `vehicle_destroyed` `vehicle_stolen` | P: `in_vehicle{kind?}` · E: `enter_vehicle{who,vehicle}` `exit_vehicle{who}` | caps: overlap |
-| `gameplay.vehicle.car` | P0 | Wheeled handling: engine/gears simplified, grip, handbrake, drift, suspension, optional boost/drift-boost (kart preset). `preset:enum(arcade\|sim\|kart)` · Archetype `car:{maxSpeed:km/h,accel:n,grip:n[0..2],mass:kg,steer:deg,brake:n,drift:b,boost:obj}` | events `crash{speed}` `drift` | — | caps: gravity, overlap, raycast; vehicle.core |
+| `gameplay.vehicle.car` | P0 | Wheeled handling: engine/gears simplified, grip, handbrake, drift, suspension, optional boost/drift-boost (kart preset). `preset:enum(arcade\|sim\|kart)` · Archetype `car:{maxSpeed:km/h,accel:n,grip:n[0..2],mass:kg,steer:deg,brake:n,drift:b,boost:obj,rail:b (constrained to rail-tagged blocks),lean:b (bike)}` | events `crash{speed}` `drift` | — | caps: gravity, overlap, raycast; vehicle.core |
 | `gameplay.vehicle.boat` | P1 | Buoyancy and water drag. | events `docked` | — | caps: surface; vehicle.core |
 | `gameplay.vehicle.aircraft` | P1 | Lift/thrust simplified flight, takeoff/landing. | events `airborne` `landed` | — | caps: gravity; vehicle.core |
 | `gameplay.race` | P1 | Checkpoints, laps, timers, ghosts, positions. `laps:i` · `checkpoints:list<ref:zone>` | events `lap` `race_finished` | P: `race{race,state}` | vehicle.core |
@@ -337,9 +337,9 @@ Kernel built-ins: predicates `all any not var count flag time`; effects `set_fla
 | `act` | plot.storyboard | `act`, `state?: active\|done` |
 | `quest` | plot.quest | `quest`, `state: available\|active\|complete\|failed` |
 | `objective` | plot.quest | `quest`, `objective`, `state: active\|done` |
-| `said` | plot.dialogue | `dialogue`, `node` |
-| `chose` | plot.dialogue | `dialogue`, `choice` (choice node id) |
-| `met` / `alive` | plot.character | `character` |
+| `said` | plot.dialogue | `{said: dialogue, node}` |
+| `chose` | plot.dialogue | `{chose: dialogue, choice: nodeId}` |
+| `met` / `alive` | plot.character | `{met: character}` / `{alive: character}` |
 | `gate` | plot.gate | `gate`, `open?` |
 | `ending_available` | plot.ending | `ending` |
 | `known` | plot.journal | `entry` |
@@ -349,21 +349,21 @@ Kernel built-ins: predicates `all any not var count flag time`; effects `set_fla
 | `knows` | gameplay.crafting | `recipe` |
 | `ability` | gameplay.progression.abilities | `ability`, `who?` |
 | `perk` | gameplay.progression.tree | `perk` |
-| `health` | gameplay.combat.health | `who?` + comparator (fraction when `frac:true`) |
+| `health` | gameplay.combat.health | `{health: who\|"self", frac?: b}` + comparator (`"self"` = the entity owning the `ai` rule) |
 | `resource` | gameplay.resource | `resource`, `who?` + comparator |
 | `status` | gameplay.combat.status | `status`, `who?` |
 | `locked` | gameplay.combat.target | `who?` |
 | `boss` | gameplay.combat.boss | `boss`, `state` |
 | `mounted` | gameplay.mount | `mount?` |
 | `in_vehicle` | gameplay.vehicle.core | `kind?` |
-| `used` | gameplay.interact | `interactable` (count via comparator) |
+| `used` | gameplay.interact | `{used: interactable}` + comparator on count. An interactable id is an archetype `interact`/mechanism id; every instance of it emits `used:<id>`, so `used:chime` counts all chimes |
 | `mechanism` | gameplay.mechanism | `mechanism`, `state` |
 | `collected` | gameplay.collectible | `counter` + comparator |
 | `at_checkpoint` | gameplay.checkpoint | `checkpoint` |
 | `daytime` | engine.time | primary value is the phase: `{daytime:"night"}` (`dawn\|day\|dusk\|night`); hour/day/season use vars `time.hour` `time.day` `time.season` |
 | `timer` | engine.time | `timer`, `state: running\|done` |
 | `weather` | engine.weather | `weather` |
-| `aware` / `detected` | gameplay.ai.brain / combat.stealth | `who?` |
+| `aware` / `detected` | gameplay.ai.brain / combat.stealth | `{aware: "player"\|"hostile"\|id}`; `{detected: who}` |
 | `in_combat` | gameplay.combat.melee | `who?` |
 | `cell` | engine.space.* (editCells) | `{cell: v3, block}` |
 | `near` | engine.space.* (distance) | `{near: <entity id\|archetype\|zone>, within, who?}` |
@@ -407,6 +407,7 @@ Kernel built-ins: predicates `all any not var count flag time`; effects `set_fla
 | `set_wanted` / `add_wanted` / `report_crime` | gameplay.wanted | `level` / `delta` / `kind` |
 | `start_boss` | gameplay.combat.boss | `boss` |
 | `use_portal` | engine.portal | `portal` |
+| `ignite` | gameplay.element | `at`, `r` |
 | `set_blocks` | gameplay.blocks.place | `box`, `block` |
 | `set_time` / `skip_time` / `start_timer` / `cancel_timer` | engine.time | see §3.2 |
 | `change_weather` | engine.weather | `weather` |
@@ -419,10 +420,10 @@ Kernel built-ins: predicates `all any not var count flag time`; effects `set_fla
 ## 8. Content schemas (`doc.content`)
 
 ```
-items[]       { id, name, kind: material|tool|weapon|armor|food|potion|key|quest|currency|charm|ammo|block|misc,
+items[]       { id, name, kind: material|tool|weapon|armor|food|potion|key|quest|currency|charm|ammo|block|prop|misc,
                 tags?[], stack?: i, value?: n, desc?, use?: { fx, cooldown?, consume?: b },
                 weapon?: { damage, reach, arc, speed, stamina, combo, type, durability? }, ranged?: {...},
-                armor?: { slot, def:{type:n}, durability? }, tool?: { kind, tier }, block?: ref:block,
+                armor?: { slot, def:{type:n}, durability? }, tool?: { kind, tier }, block?: ref:block, place?: ref:archetype (kind prop: placing spawns it),
                 charm?: { cost, mods:{stat:delta}, fx? }, stats?: {stat: delta}, ingredient?: { tags[], effects{} } }
 recipes[]     { id, station?, inputs: [ { item | tag, count } ], output: { item, count }, time?: s, learned?: bool|flag, merge?: bool }
 blocks[]      { id, name, color, solid, hardness, tool?: kind, tier?: i, drops?: [{item,count,p?}], light?: i, transparent?: b, tags?[], tile?: s }

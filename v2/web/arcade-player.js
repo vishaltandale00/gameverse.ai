@@ -11,7 +11,7 @@ export function mountArcade(container, record) {
   const registry = defaultRegistry();
   const checked = preflight(record.doc, registry);
   if (!checked.ok) throw Object.assign(Error('This game failed checks in the browser.'), { errors: checked.errors });
-  const game = compose(checked.spec, registry), render = createRenderer(game);
+  let game = compose(checked.spec, registry), render = createRenderer(game);
   container.replaceChildren();
   container.insertAdjacentHTML('beforeend', `<canvas class="arcade" tabindex="0" aria-label="${checked.spec.title}"></canvas>
     <p class="arcade-help">Move: arrows or WASD · Jump/A: Space or Z · Fire/B: X or K · Restart: R · Gamepad supported</p>`);
@@ -47,7 +47,15 @@ export function mountArcade(container, record) {
   canvas.focus();
   return {
     version: record.version,
-    update(next) { return false; }, // arcade versions replace the game on selection
+    /** Hot-swap a newer version: same level and rules (e.g. new art) keeps the run going; otherwise restart. */
+    update(next) {
+      const nextChecked = preflight(next.doc, registry);
+      if (!nextChecked.ok) return false;
+      const same = JSON.stringify([next.doc.level, next.doc.modules, next.doc.win, next.doc.lose]) === JSON.stringify([record.doc.level, record.doc.modules, record.doc.win, record.doc.lose]);
+      game = compose(nextChecked.spec, registry); render = createRenderer(game);
+      if (!same) state = game.createState();
+      record = next; this.version = next.version; return true;
+    },
     dispose() { disposed = true; cancelAnimationFrame(raf); removeEventListener('keydown', down); removeEventListener('keyup', up); container.replaceChildren(); },
   };
 }
