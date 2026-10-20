@@ -194,7 +194,8 @@ export function validate(input) {
   for (const [i, lv] of (Array.isArray(c.levels) ? c.levels : []).slice(0, MAX_LEVELS).entries()) {
     const path = `levels[${i}]`;
     if (!MODES.includes(lv?.mode)) { fail('bad_mode', `${path}.mode`, `mode must be one of ${MODES.join(', ')}`); continue; }
-    const entries = Array.isArray(lv[lv.mode]) ? lv[lv.mode] : [];
+    // The model writes a one-element list; normalized content holds the object itself (validate is idempotent).
+    const raw = lv[lv.mode], entries = Array.isArray(raw) ? raw : raw && typeof raw === 'object' ? [raw] : [];
     if (!entries.length) { fail('missing_mode_settings', `${path}.${lv.mode}`, `a ${lv.mode} level needs exactly one entry in "${lv.mode}"`, `fill levels[${i}].${lv.mode}[0]`); continue; }
     if (entries.length > 1) warn('extra_mode_settings', `${path}.${lv.mode}`, 'only the first entry is used');
     const level = { name: text(lv.name, `Level ${i + 1}`, 40), intro: text(lv.intro, '', 90), mode: lv.mode };

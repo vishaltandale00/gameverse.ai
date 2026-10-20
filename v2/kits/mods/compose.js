@@ -45,7 +45,9 @@ export function activeMods(kit, mods = {}) {
 export function composeGame(kit, content, { seed = 1, mods = {} } = {}) {
   const game = kit.createGame(content, { seed });
   const active = activeMods(kit, mods);
-  if (!active.length) return Object.assign(game, { mods: [], controls: kit.controls || [] });
+  // Controls can depend on content (a runner's flap mode has one button, lanes has four directions).
+  const base = kit.controlsFor?.(content) || kit.controls || [];
+  if (!active.length) return Object.assign(game, { mods: [], controls: base });
   const world = kit.world.adapter(game);
   const createState = (...args) => {
     const s = game.createState(...args);
@@ -66,7 +68,7 @@ export function composeGame(kit, content, { seed = 1, mods = {} } = {}) {
     next.modHeld = { a: !!input.a, b: !!input.b };
     return next;
   };
-  const controls = [...(kit.controls || []), ...active.filter(a => a.button).map(({ mod, cfg, button }) => ({ input: button, label: mod.label(cfg) }))];
+  const controls = [...base, ...active.filter(a => a.button).map(({ mod, cfg, button }) => ({ input: button, label: mod.label(cfg) }))];
   return { ...game, createState, step, mods: active, controls };
 }
 

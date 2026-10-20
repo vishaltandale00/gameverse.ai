@@ -25,7 +25,8 @@ const rgba = (h, a) => { const [r, g, b] = hexRgb(h); return `rgba(${r},${g},${b
 function mix(a, b, t) { const x = hexRgb(a), y = hexRgb(b); return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
 const lighten = (c, t) => mix(c, '#ffffff', t), darken = (c, t) => mix(c, '#000000', t);
 function mulberry(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-const surface = (w, h) => typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(w, h) : Object.assign(document.createElement('canvas'), { width: w, height: h });
+// Offscreen surfaces need a DOM or OffscreenCanvas; headless (Node) rendering skips the cached glows.
+const surface = (w, h) => typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(w, h) : typeof document !== 'undefined' ? Object.assign(document.createElement('canvas'), { width: w, height: h }) : null;
 const ease = t => 1 - (1 - Math.min(1, Math.max(0, t))) ** 3;
 
 // Own bitmap enemies for the retro shapes (two animation frames each).
@@ -71,6 +72,7 @@ export function createRenderer(game, { art = {} } = {}) {
     if (c) return c;
     const n = pixel ? 16 : 64;
     c = surface(n, n);
+    if (!c) return null;
     const g = c.getContext('2d'), [r, gg, b] = hexRgb(color);
     if (pixel) {
       for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
@@ -91,7 +93,8 @@ export function createRenderer(game, { art = {} } = {}) {
     if (pixel) { radius = Math.round(radius * 0.55); alpha *= 0.7; if (radius < 2) return; }
     const prev = g.globalCompositeOperation, pa = g.globalAlpha;
     g.globalCompositeOperation = 'lighter'; g.globalAlpha = pa * Math.min(1, alpha);
-    g.drawImage(glowSprite(color), x - radius, y - radius, radius * 2, radius * 2);
+    const sprite = glowSprite(color);
+    if (sprite) g.drawImage(sprite, x - radius, y - radius, radius * 2, radius * 2);
     g.globalCompositeOperation = prev; g.globalAlpha = pa;
   }
 
@@ -832,8 +835,8 @@ export function createRenderer(game, { art = {} } = {}) {
     const W = s.W, H = s.H, sc = Math.min(cw / W, ch / H), pw = W * sc, ph = H * sc, ox = (cw - pw) / 2, oy = (ch - ph) / 2;
     drawOuter(ctx, cw, ch, s);
     const k = reduced ? 0 : V.shake * V.shake * 7 * sc / 1.5, sx = (V.r() - 0.5) * 2 * k, sy = (V.r() - 0.5) * 2 * k;
-    if (pixel) {
-      if (!V.buffer || V.buffer.width !== W || V.buffer.height !== H) { V.buffer = surface(W, H); V.bufferCtx = V.buffer.getContext('2d'); }
+    if (pixel && (V.buffer?.width === W && V.buffer?.height === H || (V.buffer = surface(W, H)))) {
+      if (!V.bufferCtx || V.bufferCtx.canvas !== V.buffer) V.bufferCtx = V.buffer.getContext('2d');
       const g = V.bufferCtx;
       g.setTransform(1, 0, 0, 1, 0, 0); g.imageSmoothingEnabled = false; g.clearRect(0, 0, W, H);
       drawWorld(g, s);
