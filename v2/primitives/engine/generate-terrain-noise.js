@@ -5,7 +5,7 @@
 // also adds the cell layer that fills columns with bedrock/stone/sub/surface
 // blocks (biome-aware when engine.generate.biomes is present).
 import { fbm2, ridged2, warp2, smoothstep, clamp, subSeed, Rng } from './worlds3d-lib-noise.js';
-import { STAGES, withDefaults, generatorModel, chaikin, segDist2 } from './worlds3d-lib-world.js';
+import { STAGES, withDefaults, generatorModel, chaikin, segDist2, checkBlocks } from './worlds3d-lib-world.js';
 
 const card = {
   intent: 'Fractal terrain heightfield: rolling hills to ridged mountains, optional island or radial falloff, domain warp, hydraulic/thermal erosion and downhill rivers. Fills voxel columns with stone, subsoil and surface blocks.',
@@ -75,8 +75,8 @@ function erode(hm, N, cellM, passes, seed, amplitude) {
 export default {
   id: 'engine.generate.terrain.noise',
   card,
-  validate(config) {
-    const errors = [];
+  validate(config, doc, ctx, inst) {
+    const errors = checkBlocks(doc, inst, Object.entries(config.blocks || {}).map(([k, id]) => [`with.blocks.${k}`, id]));
     if (config.extent && !(config.extent[2] > config.extent[0] && config.extent[3] > config.extent[1])) errors.push({ code: 'terrain_extent_invalid', path: 'with.extent', message: 'extent must be [x0, z0, x1, z1] with x1 > x0 and z1 > z0' });
     return errors;
   },

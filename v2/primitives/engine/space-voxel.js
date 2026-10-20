@@ -2,9 +2,10 @@
 // [0, height) in y. Chunks are generated lazily and deterministically from the
 // space seed by the generator layers in its WorldModel, so state holds only the
 // seed and the edits (edit map + bounded edit log). Coordinates are metres;
-// a cell is `cell` metres. Entities stand at their feet: `at` is the
-// bottom-centre of the body box (components.body.size, default `body`).
-import { worldModel, zoneHas, zoneCenter, zoneYRange, blockTable, astar, sharedService, entityOps, v3 } from './worlds3d-lib-world.js';
+// a cell is `cell` metres. `at` is the centre of the body box (api.anchor
+// 'center'; components.body.size, default `body`). Reachable keys are the
+// floored world coordinates of standable feet cells (cellOf gives the same key).
+import { worldModel, zoneHas, zoneCenter, zoneYRange, blockTable, astar, sharedService, entityOps, v3, atOf, moveOpts } from './worlds3d-lib-world.js';
 
 const DIRS6 = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
 const H8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
@@ -35,8 +36,8 @@ export default {
       pathNodes: { type: 'integer', min: 100, max: 1000000, default: 20000, effect: 'A* / flood-fill node budget per query' },
     },
     provides: {
-      capabilities: ['position', 'distance', 'overlap', 'raycast', 'pathfind', 'reachable', 'editCells', 'gravity', 'surface', 'chunks', 'light', 'procedural'],
-      capabilityMethods: { chunks: ['chunkCells', 'chunkOf', 'chunksNear', 'blockDef'], light: ['lightAt'], procedural: ['model'] },
+      capabilities: ['position', 'distance', 'overlap', 'raycast', 'pathfind', 'reachable', 'editCells', 'gravity', 'surface', 'bounds', 'chunks', 'light', 'procedural'],
+      capabilityMethods: { chunks: ['chunkCells', 'chunkOf', 'chunksNear', 'blockDef', 'cellOf'], light: ['lightAt'], procedural: ['model', 'standAt'] },
       events: ['enter_zone', 'leave_zone', 'cell_changed', 'generated', 'fluid_flow'],
       services: ['surface'],
     },
@@ -144,7 +145,7 @@ export default {
     rt.onRestore(() => { chunks.clear(); last = null; lastKey = -1; model.cache.editsFor = null; });
 
     // ----- bodies and zones -----
-    const ops = entityOps({ rt, sid, model, defaultBody: config.body, st }), { bodySize, boxOf, entities, zones, track } = ops;
+    const ops = entityOps({ rt, sid, model, defaultBody: config.body, st }), { bodySize, boxOf, entities, zones, track, feet, fromFeet } = ops;
     const boxHitsSolid = (min, max) => {
       const eps = 1e-6;
       const a = [Math.floor(min[0] / C), Math.floor(min[1] / C), Math.floor(min[2] / C)], b = [Math.floor((max[0] - eps) / C), Math.floor((max[1] - eps) / C), Math.floor((max[2] - eps) / C)];
@@ -161,7 +162,7 @@ export default {
     const columnTop = (x, z, yMax = H - 1, yMin = 0) => { for (let y = Math.min(yMax, H - 1); y >= yMin; y--) if (solidCell(x, y, z)) return y; return -1; };
     /** A standable spot for a zone: its `spawn`/`at`, else near its centre within its height range. */
     const anchor = zone => {
-      if (zone.spawn || zone.at) { const a = zone.spawn || zone.at; return a.length === 2 ? surfaceAt(a[0], a[1]) : v3(a); }
+      if (zone.spawn || zone.at) { const a = zone.spawn || zone.at; return a.length === 2 ? surfaceAt(a[0], a[1]) : v3(a); } // feet position
       const c = zoneCenter(zone); if (!c) return null;
       const [y0, y1] = zoneYRange(zone), hc = Math.ceil(bodySize({ components: {} })[1] / C);
       const cx = Math.floor(c[0] / C), cz = Math.floor(c[1] / C);
@@ -201,9 +202,11 @@ export default {
     }
 
     // ----- pathfinding over standable cells (walk, step up, drop; swim/climb/fly abilities) -----
+    /** opts: {abilities, envelope: {jumpHeight, dropHeight, swim, fly...}, who, height, step, drop, maxNodes, avoid}. */
     const pathOpts = (o = {}) => {
-      const abilities = new Set(Array.isArray(o) ? o : o.abilities || []);
-      return { hc: Math.max(1, Math.ceil((o.height ?? config.body[1]) / C)), step: Math.max(0, Math.round((o.step ?? (abilities.has('jump') ? 1.25 : 1)) / C)), drop: Math.max(0, Math.round((o.drop ?? 3) / C)), swim: abilities.has('swim'), climb: true, fly: abilities.has('fly'), maxNodes: o.maxNodes ?? config.pathNodes, avoid: o.avoid };
+      const m = moveOpts(rt, o), h = o.height ?? m.body?.[1] ?? config.body[1];
+      const step = o.step ?? m.env.jumpHeight ?? m.env.stepHeight ?? (m.names.has('jump') ? 1.25 : 1);
+      return { h, hc: Math.max(1, Math.ceil(h / C - 1e-9)), step: Math.max(0, Math.floor(step / C + 1e-9)), drop: Math.max(0, Math.round((o.drop ?? m.env.dropHeight ?? 3) / C)), swim: m.names.has('swim'), climb: true, fly: m.names.has('fly'), maxNodes: o.maxNodes ?? config.pathNodes, avoid: o.avoid };
     };
     function moves(n, p, push) {
       const [x, y, z] = n;
@@ -225,26 +228,33 @@ export default {
       if (p.swim && fluidCell(x, y + 1, z) && !solidCell(x, y + p.hc, z)) push([x, y + 1, z], 1.5);
       if (p.swim && fluidCell(x, y - 1, z)) push([x, y - 1, z], 1.2);
     }
+    /** Nearest standable feet cell for a centre position (or a zone id: its anchor). */
     const snap = (at, p) => {
-      const [x, y, z] = toCell(v3(at));
+      if (typeof at === 'string' && !at.includes(',')) { const z = zones().find(q => q.id === at); const f = z && anchor(z); if (!f) return null; at = [f[0], f[1] + p.h / 2, f[2]]; }
+      const c = v3(atOf(at)), [x, y, z] = toCell([c[0], c[1] - p.h / 2 + C * 0.5, c[2]]);
       for (let dy = 0; dy <= p.drop + 2; dy++) for (const yy of [y - dy, y + dy]) if (yy >= 0 && yy < H && (p.fly ? !solidCell(x, yy, z) : standable(x, yy, z, p.hc, p.swim))) return [x, yy, z];
       return null;
     };
     const keyOf = c => `${c[0]},${c[1]},${c[2]}`;
+    /** Reachable/cellOf key of a feet cell: floored world coordinates of its feet point. */
+    const cellKey = c => `${Math.floor((c[0] + 0.5) * C)},${Math.floor(c[1] * C)},${Math.floor((c[2] + 0.5) * C)}`;
+    const centreOf = (c, p) => { const a = toAt(...c); return [a[0], +(a[1] + p.h / 2).toFixed(9), a[2]]; };
     function path(from, to, o) {
       const p = pathOpts(o), a = snap(from, p), b = snap(to, p);
       if (!a || !b) return null;
       const r = astar({ start: a, isGoal: c => c[0] === b[0] && c[1] === b[1] && c[2] === b[2], neighbors: (n, push) => moves(n, p, push), h: c => Math.hypot(c[0] - b[0], (c[1] - b[1]) * 0.5, c[2] - b[2]), key: keyOf, maxNodes: p.maxNodes });
-      return r.path ? r.path.map(c => toAt(...c)) : null;
+      return r.path ? r.path.map(c => centreOf(c, p)) : null;
     }
+    /** Flood fill of standable feet cells: a Set of cellKey keys plus the ids of zones reached (.truncated when the budget ran out). */
     function reachable(from, rtOrOpts, o) {
       const opts = rtOrOpts && !rtOrOpts.state ? rtOrOpts : o || {};
       const p = pathOpts(opts), a = snap(from, p), out = new Set();
+      out.truncated = false;
       if (!a) return out;
       const seen = new Set([keyOf(a)]), queue = [a];
       for (let i = 0; i < queue.length && seen.size < p.maxNodes; i++) moves(queue[i], p, q => { const k = keyOf(q); if (!seen.has(k)) { seen.add(k); queue.push(q); } });
-      for (const k of seen) out.add(k);
-      const zs = zones(); for (const c of queue) for (const z of zs) if (!out.has(z.id) && zoneHas(z, (c[0] + 0.5) * C, c[1] * C, (c[2] + 0.5) * C)) out.add(z.id);
+      for (const c of queue) out.add(cellKey(c));
+      const zs = zones(); for (const c of queue) for (const z of zs) if (!out.has(z.id) && zoneHas(z, (c[0] + 0.5) * C, (c[1] + 0.5) * C, (c[2] + 0.5) * C)) out.add(z.id);
       out.truncated = seen.size >= p.maxNodes;
       return out;
     }
@@ -296,18 +306,29 @@ export default {
     }
 
     const api = {
-      kind: 'voxel', config, cell: C, chunkSize: [SX, SY, SZ], size: [Infinity, H * C, Infinity],
+      kind: 'voxel', anchor: 'center', config, cell: C, chunkSize: [SX, SY, SZ], size: [Infinity, H * C, Infinity],
+      /** Generated extent (zones' union or the terrain extent) in x/z, full height in y; the grid itself is unbounded in x/z. */
+      bounds() { const [x0, z0, x1, z1] = model.extent(); return { min: [x0, 0, z0], max: [x1, H * C, z1] }; },
+      inBounds(at, margin = 0) { const p = v3(atOf(at)), [x0, z0, x1, z1] = model.extent(); return p[1] >= -margin && p[1] <= H * C + margin && p[0] >= x0 - margin && p[0] <= x1 + margin && p[2] >= z0 - margin && p[2] <= z1 + margin; },
+      /** Reachable key of an entity's feet cell, or of the cell containing a point. */
+      cellOf(eOrAt) { const f = Array.isArray(eOrAt) || typeof eOrAt === 'string' ? v3(atOf(eOrAt)) : feet(eOrAt); return cellKey(toCell(f)); },
+      /** Centre position for an entity standing with its feet at `f` (or on the surface at [x, z]). */
+      standAt(f, e = { components: {} }) { const q = f.length === 2 ? surfaceAt(f[0], f[1]) : v3(f); return fromFeet(e, q); },
       model: () => model.ensure(),
       // position
       place(e, rt) {
-        if (e.at == null) { const start = zones().find(z => (z.tags || []).includes('start')) || zones()[0]; e.at = (start && anchor(start)) || surfaceAt(0, 0); }
-        e.at = e.at.length === 2 ? surfaceAt(e.at[0], e.at[1]) : v3(e.at); e.zone = null; track(e, rt);
+        ops.body(e);
+        if (e.at == null) { const start = zones().find(z => (z.tags || []).includes('start')) || zones()[0]; e.at = fromFeet(e, (start && anchor(start)) || surfaceAt(0, 0)); }
+        e.at = e.at.length === 2 ? fromFeet(e, surfaceAt(e.at[0], e.at[1])) : v3(e.at);
+        // Spawned inside solid cells: lift to the first free spot (up to 8 m).
+        for (let up = 0; up <= 8 && boxHitsSolid(boxOf(e).min, boxOf(e).max); up += C / 4) e.at = [e.at[0], e.at[1] + C / 4, e.at[2]];
+        e.zone = null; track(e, rt);
       },
       remove(e) { ops.untrack(e); },
       pos: e => e.at,
-      setPos(e, at, rt) { e.at = at.length === 2 ? surfaceAt(at[0], at[1]) : v3(at); track(e, rt); },
+      setPos(e, at, rt) { e.at = at.length === 2 ? fromFeet(e, surfaceAt(at[0], at[1])) : v3(at); track(e, rt); },
       entitiesAt: ops.entitiesAt, inZone: ops.inZone, zoneAt: ops.zoneAt,
-      teleport(e, { zone, at }, rt) { const z = zone && zones().find(x => x.id === zone); const to = at ?? (z && anchor(z)); if (to) api.setPos(e, to, rt); },
+      teleport(e, { zone, at }, rt) { const z = zone && zones().find(x => x.id === zone); const to = at ?? (z && anchor(z) && fromFeet(e, anchor(z))); if (to) { if (e.components?.body) e.components.body.vel = [0, 0, 0]; api.setPos(e, to, rt); } },
       nearest: (e, target) => ops.nearest(e, target),
       // distance
       distance: (a, b, metric = 'euclid') => ops.distance(a, b, metric, path),
@@ -328,9 +349,14 @@ export default {
       raycast,
       path,
       reachable,
-      canReach(a, b, o) { const opts = o && !o.state ? o : {}; return path(a, b, opts) !== null; },
+      /** canReach(a, b, rt?, opts?): b is a position or a zone id. */
+      canReach(a, b, c, d) {
+        const opts = c && c.state ? d || {} : c || {};
+        if (typeof b === 'string' && !b.includes(',')) return reachable(a, opts).has(b);
+        return path(a, b, opts) !== null;
+      },
       // editCells
-      getCell: at => { const [x, y, z] = toCell(v3(at)); return palette[cellIdx(x, y, z)] ?? null; },
+      getCell: (at, layer) => { const [x, y, z] = toCell(v3(atOf(at))); return palette[cellIdx(x, y, z)] ?? null; },
       setCell(at, block, rt, by = null) {
         const [x, y, z] = toCell(v3(at)); if (y < 0 || y >= H) return false;
         const from = palette[cellIdx(x, y, z)] ?? null, to = block ?? null; if (from === to) return false;
@@ -366,8 +392,8 @@ export default {
         const d = v3(delta), p = v3(e.at), s = bodySize(e), stepH = e.components?.body?.step ?? 0;
         const n = Math.min(64, Math.max(1, Math.ceil(Math.max(...d.map(Math.abs)) / (0.45 * Math.min(C, s[0], s[2], s[1])))));
         const blocked = { x: false, y: false, z: false }; let normal = null;
-        const half = [s[0] / 2, 0, s[2] / 2];
-        const box = q => ({ min: [q[0] - half[0], q[1], q[2] - half[2]], max: [q[0] + half[0], q[1] + s[1], q[2] + half[2]] });
+        const half = [s[0] / 2, s[1] / 2, s[2] / 2];
+        const box = q => ({ min: [q[0] - half[0], q[1] - half[1], q[2] - half[2]], max: [q[0] + half[0], q[1] + half[1], q[2] + half[2]] });
         const free = q => { const b = box(q); return !boxHitsSolid(b.min, b.max); };
         const wasGrounded = api.grounded(e);
         for (let k = 0; k < n; k++) for (const i of [0, 2, 1]) {
@@ -380,7 +406,7 @@ export default {
             if (lifted) continue;
           }
           // flush against the blocking cell face
-          if (i === 1) p[1] = di < 0 ? Math.floor(p[1] / C + 1e-9) * C : Math.ceil((p[1] + s[1]) / C - 1e-9) * C - s[1];
+          if (i === 1) p[1] = di < 0 ? Math.floor((p[1] - half[1]) / C + 1e-9) * C + half[1] : Math.ceil((p[1] + half[1]) / C - 1e-9) * C - half[1];
           else p[i] = di > 0 ? Math.ceil((p[i] + half[i]) / C - 1e-9) * C - half[i] - 1e-4 : Math.floor((p[i] - half[i]) / C + 1e-9) * C + half[i] + 1e-4;
           if (!free(p)) p[i] = v3(e.at)[i];
           blocked[i === 0 ? 'x' : i === 1 ? 'y' : 'z'] = true;
@@ -388,7 +414,8 @@ export default {
         }
         const before = v3(e.at), moved = p.some((v, i) => Math.abs(v - before[i]) > 1e-12);
         api.setPos(e, p.map(v => +v.toFixed(9)), rt);
-        return { moved, blocked, grounded: api.grounded(e), normal };
+        const grounded = api.grounded(e); if (e.components?.body) e.components.body.grounded = grounded;
+        return { moved, blocked, grounded, normal };
       },
       grounded(e) { const b = boxOf(e); return boxHitsSolid([b.min[0] + 1e-4, b.min[1] - 0.05, b.min[2] + 1e-4], [b.max[0] - 1e-4, b.min[1], b.max[2] - 1e-4]); },
       // surface

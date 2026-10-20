@@ -7,7 +7,7 @@
 // object tiles and voxel chunks generate lazily and identically. Voxel props
 // can be single cells, columns, trees (trunk + crown), bushes or boulders.
 import { hash3, fbm2, subSeed } from './worlds3d-lib-noise.js';
-import { STAGES, withDefaults, generatorModel, zoneHas } from './worlds3d-lib-world.js';
+import { STAGES, withDefaults, generatorModel, zoneHas, checkBlocks } from './worlds3d-lib-world.js';
 import { roadNet, nearestRoad } from './worlds3d-lib-roads.js';
 
 const card = {
@@ -38,8 +38,11 @@ const card = {
 export default {
   id: 'engine.generate.scatter',
   card,
-  validate(config) {
-    return (config.props || []).flatMap((p, i) => (!p.model === !p.block ? [{ code: 'scatter_prop_kind', path: `with.props[${i}]`, message: 'each prop needs exactly one of model or block' }] : []));
+  validate(config, doc, ctx, inst) {
+    return (config.props || []).flatMap((p, i) => [
+      ...(!p.model === !p.block ? [{ code: 'scatter_prop_kind', path: `with.props[${i}]`, message: 'each prop needs exactly one of model or block' }] : []),
+      ...(p.block && ['tree', 'bush'].includes(p.shape) ? checkBlocks(doc, inst, [[`with.props[${i}].crown`, p.crown]]) : []),
+    ]);
   },
   install(rt, raw, instance) {
     const config = withDefaults(card, raw), model = generatorModel(rt, instance);

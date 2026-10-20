@@ -6,7 +6,7 @@
 // water layer fills empty cells under the surface with the water block.
 // Provides the `waterDepthAt` service (depth, level, flow along rivers).
 import { Rng, smoothstep, subSeed } from './worlds3d-lib-noise.js';
-import { STAGES, withDefaults, generatorModel, sharedService, segDist2, zoneDistance } from './worlds3d-lib-world.js';
+import { STAGES, withDefaults, generatorModel, sharedService, segDist2, zoneDistance, checkBlocks } from './worlds3d-lib-world.js';
 
 const card = {
   intent: 'Water: sea up to a level, inland lakes carved into basins, and river water (with flow direction). Fills voxel worlds with water blocks; answers waterDepthAt for swimming, boats and navigation.',
@@ -28,8 +28,8 @@ const card = {
 export default {
   id: 'engine.generate.water',
   card,
-  validate(config) {
-    return config.lakeRadius && config.lakeRadius[0] > config.lakeRadius[1] ? [{ code: 'param_range', path: 'with.lakeRadius', message: 'lakeRadius must be [min, max]' }] : [];
+  validate(config, doc, ctx, inst) {
+    return [...checkBlocks(doc, inst, [['with.block', config.block]]), ...(config.lakeRadius && config.lakeRadius[0] > config.lakeRadius[1] ? [{ code: 'param_range', path: 'with.lakeRadius', message: 'lakeRadius must be [min, max]' }] : [])];
   },
   install(rt, raw, instance) {
     const config = withDefaults(card, raw), model = generatorModel(rt, instance);

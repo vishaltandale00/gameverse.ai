@@ -7,12 +7,14 @@
 // seed; state stores only the seed and a runtime object overlay
 // (added/removed), so snapshots stay small.
 //
-// Entities stand at their feet: `at` is the bottom-centre of the body box. An
-// `at` with two numbers [x, z] is placed on the ground. Bodies collide with
+// `at` is the centre of the body box (api.anchor 'center'). An entity `at`
+// with two numbers [x, z] stands on the ground there. Path waypoints are body
+// centres; reachable keys are floored world coordinates of nav-cell centres
+// on the ground ("x,y,z"), the same keys cellOf returns. Bodies collide with
 // objects as upright cylinders (radius = half the larger of width/depth).
 // Object `rot` is a yaw in radians with the three.js rotation.y convention:
 // an object's local +z axis faces world (sin rot, cos rot).
-import { worldModel, zoneHas, zoneCenter, astar, sharedService, entityOps, v3 } from './worlds3d-lib-world.js';
+import { worldModel, zoneHas, zoneCenter, astar, sharedService, entityOps, v3, atOf, moveOpts } from './worlds3d-lib-world.js';
 
 const TILE = 64; // height samples per tile edge
 const OBJ_CELL = 32; // object spatial hash cell (m)
@@ -96,17 +98,17 @@ export default {
       pathNodes: { type: 'integer', min: 100, max: 1000000, default: 20000, effect: 'A* / flood-fill node budget per query' },
     },
     provides: {
-      capabilities: ['position', 'distance', 'overlap', 'raycast', 'pathfind', 'reachable', 'gravity', 'surface', 'placement', 'heightfield', 'procedural'],
-      capabilityMethods: { placement: ['objects', 'addObject', 'removeObject', 'objectsIn'], heightfield: ['heightSample', 'heightTile', 'bounds'], procedural: ['model'] },
+      capabilities: ['position', 'distance', 'overlap', 'raycast', 'pathfind', 'reachable', 'gravity', 'surface', 'bounds', 'placement', 'heightfield', 'procedural'],
+      capabilityMethods: { placement: ['objects', 'addObject', 'removeObject', 'objectsIn'], heightfield: ['heightSample', 'heightTile', 'cellOf'], procedural: ['model', 'standAt'] },
       events: ['enter_zone', 'leave_zone', 'generated', 'object_added', 'object_removed'],
       services: ['surface'],
     },
     reads: [],
   },
-  validate(config, doc) {
+  validate(config, doc, ctx, inst) {
     const errors = [];
     (doc.spaces || []).forEach((s, i) => {
-      if (s.use !== 'engine.space.mesh3d') return;
+      if (s.use !== 'engine.space.mesh3d' || (inst?.id && s.id !== inst.id)) return;
       (s.zones || []).forEach((z, j) => {
         if (!z.bounds && !z.center && !z.polygon && !z.rect) errors.push({ code: 'zone_shape_missing', path: `spaces[${i}].zones[${j}]`, message: `zone '${z.id}' needs bounds, center+r, polygon or rect` });
         if (z.center && !(z.r > 0)) errors.push({ code: 'zone_shape_invalid', path: `spaces[${i}].zones[${j}].r`, message: `zone '${z.id}' with a center needs r > 0` });
@@ -122,7 +124,7 @@ export default {
     rt.defineSpace(sid, null);
     st().seed ??= Math.floor(rt.random() * 4294967296) >>> 0 || 1;
     st().members ??= {}; st().added ??= {}; st().removed ??= {}; st().nextObject ??= 1;
-    const ops = entityOps({ rt, sid, model, defaultBody: config.body, st }), { bodySize, boxOf, entities, zones, track } = ops;
+    const ops = entityOps({ rt, sid, model, defaultBody: config.body, st }), { bodySize, boxOf, entities, zones, track, feet, fromFeet } = ops;
 
     // ----- heightfield -----
     let version = -1;
@@ -216,7 +218,15 @@ export default {
     const tooSteep = (x, z) => slopeAt(x, z) > config.slopeLimit;
 
     // ----- navigation grid -----
-    const navOpts = (o = {}) => { const abilities = new Set(Array.isArray(o) ? o : o.abilities || []); return { swim: abilities.has('swim'), climb: abilities.has('climb'), fly: abilities.has('fly'), r: o.radius ?? config.body[0] / 2, step: o.step ?? config.stepHeight, slope: o.slopeMax ?? config.slopeLimit, maxNodes: o.maxNodes ?? config.pathNodes, avoid: o.avoid, cell: o.cell }; };
+    /** opts: {abilities, envelope: {stepHeight, slopeMax, swim, climb, fly...}, who, radius, height, cell, maxNodes, avoid}. */
+    const navOpts = (o = {}) => {
+      const m = moveOpts(rt, o), b = m.body || config.body;
+      return { swim: m.names.has('swim'), climb: m.names.has('climb'), fly: m.names.has('fly'), r: o.radius ?? Math.max(b[0], b[2]) / 2, h: o.height ?? b[1], step: o.step ?? m.env.stepHeight ?? config.stepHeight, slope: o.slopeMax ?? m.env.slopeMax ?? config.slopeLimit, maxNodes: o.maxNodes ?? config.pathNodes, avoid: o.avoid, cell: o.cell };
+    };
+    const reachCell = () => Math.max(config.navCell, Math.min(W, D) / 256);
+    const navKey = (ix, iz, cs) => { const x = (ix + 0.5) * cs, z = (iz + 0.5) * cs; return `${Math.floor(x)},${Math.floor(terrainY(x, z))},${Math.floor(z)}`; };
+    /** A point (centre or [x, z]) or a zone id as a ground point. */
+    const target = at => { if (typeof at === 'string' && !at.includes(',')) { const z = zones().find(q => q.id === at); return z ? anchor(z) : null; } const p = atOf(at); return p.length === 2 ? [p[0], terrainY(p[0], p[1]), p[1]] : v3(p); };
     function walkableFn(p, cs) {
       const memo = new Map();
       return (ix, iz) => {
@@ -235,7 +245,8 @@ export default {
     }
     const navCellFor = (p, a, b) => p.cell ?? Math.max(config.navCell, Math.hypot(b[0] - a[0], b[2] - a[2]) / 160);
     function path(from, to, o) {
-      const p = navOpts(o), a = v3(norm(from)), b = v3(norm(to)), cs = navCellFor(p, a, b), ok = walkableFn(p, cs);
+      const p = navOpts(o), a = target(from), b = target(to); if (!a || !b) return null;
+      const cs = navCellFor(p, a, b), ok = walkableFn(p, cs);
       const s = [Math.floor(a[0] / cs), Math.floor(a[2] / cs)], g = [Math.floor(b[0] / cs), Math.floor(b[2] / cs)];
       if (!ok(...g) || !ok(...s)) return null;
       const r = astar({
@@ -253,11 +264,11 @@ export default {
       const pts = r.path.map(c => [(c[0] + 0.5) * cs, 0, (c[1] + 0.5) * cs]);
       pts[0] = [a[0], 0, a[2]]; pts[pts.length - 1] = [b[0], 0, b[2]];
       const out = pts.filter((q, i) => i === 0 || i === pts.length - 1 || (pts[i - 1][0] - q[0]) * (pts[i + 1][2] - q[2]) - (pts[i - 1][2] - q[2]) * (pts[i + 1][0] - q[0]) !== 0);
-      return out.map(q => [q[0], terrainY(q[0], q[2]), q[2]]);
+      return out.map(q => [q[0], +(terrainY(q[0], q[2]) + p.h / 2).toFixed(9), q[2]]);
     }
     function reachable(from, rtOrOpts, o) {
       const opts = rtOrOpts && !rtOrOpts.state ? rtOrOpts : o || {};
-      const p = navOpts(opts), a = v3(norm(from)), cs = p.cell ?? Math.max(config.navCell, Math.min(W, D) / 256), ok = walkableFn(p, cs), out = new Set();
+      const p = navOpts(opts), a = target(from), cs = p.cell ?? reachCell(), ok = walkableFn(p, cs), out = new Set();
       const s = [Math.floor(a[0] / cs), Math.floor(a[2] / cs)];
       out.cell = cs; out.truncated = false;
       if (!ok(...s)) return out;
@@ -267,7 +278,7 @@ export default {
         const c = queue[i];
         for (const [dx, dz] of H8.slice(0, 4)) { const n = [c[0] + dx, c[1] + dz], k = `${n[0]},${n[1]}`; if (!seen.has(k) && ok(...n)) { seen.add(k); queue.push(n); } }
       }
-      for (const k of seen) out.add(k);
+      for (const c of queue) out.add(navKey(c[0], c[1], cs));
       const zs = zones();
       for (const c of queue) { const x = (c[0] + 0.5) * cs, z = (c[1] + 0.5) * cs; for (const zn of zs) if (!out.has(zn.id) && zoneHas(zn, x, undefined, z)) out.add(zn.id); }
       return out;
@@ -305,10 +316,11 @@ export default {
     }
 
     // ----- positions -----
-    const norm = at => (at.length === 2 ? [at[0], terrainY(at[0], at[1]), at[1]] : v3(at));
+    /** [x, z] -> ground point (or, for an entity, its standing centre); 3 numbers pass through. */
+    const norm = (at, e) => { const p = atOf(at); return p.length === 2 ? (e ? fromFeet(e, [p[0], terrainY(p[0], p[1]), p[1]]) : [p[0], terrainY(p[0], p[1]), p[1]]) : v3(p); };
     const anchor = zone => {
       const a = zone.spawn || zone.at;
-      if (a) return norm(a);
+      if (a) return a.length === 2 ? [a[0], terrainY(a[0], a[1]), a[1]] : v3(a); // feet
       const c = zoneCenter(zone); if (!c) return null;
       const p = navOpts({}), ok = walkableFn(p, Math.max(config.navCell, 2));
       for (let r = 0; r <= 32; r++) for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++) {
@@ -316,28 +328,34 @@ export default {
         const cs = Math.max(config.navCell, 2), ix = Math.floor(c[0] / cs) + dx, iz = Math.floor(c[1] / cs) + dz, x = (ix + 0.5) * cs, z = (iz + 0.5) * cs;
         if (ok(ix, iz) && zoneHas(zone, x, undefined, z)) { const y = supportAt(x, z, config.body[0] / 2, terrainY(x, z), config.stepHeight); if (!zone.bounds?.min || zoneHas(zone, x, y, z)) return [x, y, z]; }
       }
-      return norm(c);
+      return [c[0], terrainY(c[0], c[1]), c[1]];
     };
 
     const api = {
-      kind: 'mesh3d', config, size: [W, D], heightRes: R,
+      kind: 'mesh3d', anchor: 'center', config, size: [W, D], heightRes: R,
       model: () => model.ensure(),
       bounds() { let lo = Infinity, hi = -Infinity; for (let iz = 0; iz <= NZ; iz += Math.max(1, Math.floor(NZ / 64))) for (let ix = 0; ix <= NX; ix += Math.max(1, Math.floor(NX / 64))) { const h = heightSample(ix, iz); lo = Math.min(lo, h); hi = Math.max(hi, h); } return { min: [0, lo, 0], max: [W, hi, D] }; },
       // position
       place(e, rt) {
-        if (e.at == null) { const start = zones().find(z => (z.tags || []).includes('start')) || zones()[0]; e.at = (start && anchor(start)) || norm([W / 2, D / 2]); }
-        e.at = norm(e.at); e.zone = null; track(e, rt);
+        ops.body(e);
+        if (e.at == null) { const start = zones().find(z => (z.tags || []).includes('start')) || zones()[0]; e.at = fromFeet(e, (start && anchor(start)) || [W / 2, terrainY(W / 2, D / 2), D / 2]); }
+        e.at = norm(e.at, e);
+        const f = feet(e), g = terrainY(f[0], f[2]); if (f[1] < g) e.at = fromFeet(e, [f[0], g, f[2]]); // spawned under ground: stand on it
+        e.zone = null; track(e, rt);
       },
       remove: e => ops.untrack(e),
       pos: e => e.at,
-      setPos(e, at, rt) { e.at = norm(at); track(e, rt); },
+      setPos(e, at, rt) { e.at = norm(at, e); track(e, rt); },
       entitiesAt: ops.entitiesAt, inZone: ops.inZone, zoneAt: ops.zoneAt,
-      teleport(e, { zone, at }, rt) { const z = zone && zones().find(x => x.id === zone); const to = at ?? (z && anchor(z)); if (to) api.setPos(e, to, rt); },
+      teleport(e, { zone, at }, rt) { const z = zone && zones().find(x => x.id === zone); const to = at ?? (z && fromFeet(e, anchor(z))); if (to) { if (e.components?.body) e.components.body.vel = [0, 0, 0]; api.setPos(e, to, rt); } },
       nearest: (e, target) => ops.nearest(e, target),
       distance: (a, b, metric = 'euclid') => ops.distance(norm(a), norm(b), metric, path),
+      cellOf(eOrAt) { const p = Array.isArray(eOrAt) || typeof eOrAt === 'string' ? target(eOrAt) : feet(eOrAt), cs = reachCell(); return navKey(Math.floor(p[0] / cs), Math.floor(p[2] / cs), cs); },
+      standAt(f, e = { components: {} }) { return fromFeet(e, f.length === 2 ? [f[0], terrainY(f[0], f[1]), f[1]] : v3(f)); },
+      inBounds(at, margin = 0) { const p = v3(atOf(at)); return p[0] >= -margin && p[0] <= W + margin && p[2] >= -margin && p[2] <= D + margin; },
       overlap: (shape, filter) => ops.overlap(shape, filter),
       contacts(e) {
-        const p = v3(e.at), r = radiusOf(e), h = bodySize(e)[1], out = [];
+        const p = feet(e), r = radiusOf(e), h = bodySize(e)[1], out = [];
         for (const o of colliders(p[0] - r - 0.05, p[2] - r - 0.05, p[0] + r + 0.05, p[2] + r + 0.05)) {
           if (o.at[1] > p[1] + h || o.at[1] + objHeight(o) < p[1]) continue;
           const push = circlePush(o, p[0], p[2], r + 0.05); if (push) out.push({ id: o.id, object: true, normal: [push[0], 0, push[1]] });
@@ -347,7 +365,8 @@ export default {
         return out;
       },
       raycast, path, reachable,
-      canReach(a, b, o) { const opts = o && !o.state ? o : {}; return path(a, b, opts) !== null; },
+      /** canReach(a, b, rt?, opts?): b is a position or a zone id. */
+      canReach(a, b, c, d) { const opts = c && c.state ? d || {} : c || {}; if (typeof b === 'string' && !b.includes(',')) return reachable(a, opts).has(b); return path(a, b, opts) !== null; },
       // gravity
       gravityAt: () => [0, config.gravity, 0],
       /**
@@ -358,7 +377,7 @@ export default {
        * Ledges up to body.step (default stepHeight) are stepped onto.
        */
       slide(e, delta, rt) {
-        const d = v3(delta), p = v3(e.at), r = radiusOf(e), h = bodySize(e)[1], step = stepOf(e);
+        const d = v3(delta), p = feet(e), r = radiusOf(e), h = bodySize(e)[1], step = stepOf(e);
         const n = Math.min(64, Math.max(1, Math.ceil(Math.max(Math.hypot(d[0], d[2]) / Math.max(0.05, r * 0.5), Math.abs(d[1]) / 0.5))));
         const blocked = { x: false, y: false, z: false }; let normal = null;
         let grounded = p[1] - supportAt(p[0], p[2], r, p[1], step) < 0.05;
@@ -395,11 +414,12 @@ export default {
           p[1] = ny;
           grounded = p[1] - supportAt(p[0], p[2], r, p[1], step) < 0.05;
         }
-        const before = v3(e.at), moved = p.some((v, i) => Math.abs(v - before[i]) > 1e-12);
-        e.at = p.map(v => +v.toFixed(9)); track(e, rt);
+        const before = feet(e), moved = p.some((v, i) => Math.abs(v - before[i]) > 1e-12);
+        e.at = fromFeet(e, p).map(v => +v.toFixed(9)); track(e, rt);
+        if (e.components?.body) e.components.body.grounded = grounded;
         return { moved, blocked, grounded, normal };
       },
-      grounded(e) { const p = v3(e.at), r = radiusOf(e); return p[1] - supportAt(p[0], p[2], r, p[1], 0.05) < 0.05; },
+      grounded(e) { const p = feet(e), r = radiusOf(e); return p[1] - supportAt(p[0], p[2], r, p[1], 0.05) < 0.05; },
       // surface
       groundAt, slopeAt, waterDepthAt, waterLevelAt,
       // heightfield (renderers)

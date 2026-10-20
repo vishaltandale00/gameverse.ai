@@ -267,6 +267,14 @@ export function generatorModel(rt, instance) {
   return m;
 }
 
+/** The document space an instance belongs to (validate's 4th argument, KERNEL_API §3). */
+export const spaceOf = (doc, inst) => (doc.spaces || []).find(s => s.id === (inst?.space ?? doc.spaces?.[0]?.id)) || null;
+/** Preflight: block ids a voxel generator uses must exist in content.blocks (when the document lists blocks). */
+export function checkBlocks(doc, inst, entries) {
+  const sp = spaceOf(doc, inst), known = new Set((doc.content?.blocks || []).map(b => b.id));
+  if (sp?.use !== 'engine.space.voxel' || !known.size) return [];
+  return entries.filter(([, id]) => id != null && !known.has(id)).map(([path, id]) => ({ code: 'block_unknown', path, message: `block '${id}' is not in content.blocks`, hint: `blocks: ${[...known].slice(0, 20).join(', ')}` }));
+}
 /** Block definitions from content.blocks: unknown ids are solid and opaque. */
 export function blockTable(doc) {
   const defs = new Map();
@@ -276,19 +284,33 @@ export function blockTable(doc) {
 
 // ---------- entity operations shared by 3D spaces ----------
 export const v3 = a => [a?.[0] ?? 0, a?.[1] ?? 0, a?.[2] ?? 0];
+/** Parse an At or a reachable key ("x,y,z") into an At. */
+export const atOf = at => (typeof at === 'string' ? at.split(',').map(Number) : at);
+/** Movement options from {abilities: [ids] | {id: true}, envelope: {...}, who, ...} (KERNEL_API §3 reachability). */
+export function moveOpts(rt, o = {}) {
+  if (Array.isArray(o)) o = { abilities: o };
+  const ab = o.abilities, env = o.envelope || {}, names = new Set(Array.isArray(ab) ? ab : Object.keys(ab || {}).filter(k => ab[k]));
+  for (const [k, v] of Object.entries(env)) if (v === true) names.add(k);
+  const who = o.who != null ? rt?.state?.entities?.[o.who] : null;
+  return { ...o, names, env: { ...env, ...(ab && !Array.isArray(ab) ? ab : {}) }, body: who?.components?.body?.size || null };
+}
 /**
  * Position, zone, overlap and entity-raycast operations over entities whose
- * `at` is the bottom-centre (feet) of an axis-aligned body box. Zone
+ * `at` is the centre of an axis-aligned body box (api.anchor 'center'). Zone
  * membership is tracked per entity in space state (`members`), so nested
  * zones each get enter/leave events; entity.zone is the smallest containing zone.
  */
 export function entityOps({ rt, sid, model, defaultBody, st }) {
   const bodySize = e => v3(e.components?.body?.size || defaultBody);
-  const boxOf = (e, at = e.at) => { const s = bodySize(e), p = v3(at); return { min: [p[0] - s[0] / 2, p[1], p[2] - s[2] / 2], max: [p[0] + s[0] / 2, p[1] + s[1], p[2] + s[2] / 2] }; };
+  const boxOf = (e, at = e.at) => { const s = bodySize(e), p = v3(at); return { min: [p[0] - s[0] / 2, p[1] - s[1] / 2, p[2] - s[2] / 2], max: [p[0] + s[0] / 2, p[1] + s[1] / 2, p[2] + s[2] / 2] }; };
+  /** Ensure the frozen body fields exist (KERNEL_API §2): size, vel, facing (vector), grounded. */
+  const body = e => { const b = (e.components.body ??= {}); b.size ??= defaultBody.slice(); b.vel ??= [0, 0, 0]; b.facing ??= [0, 0, 1]; b.grounded ??= false; return b; };
+  const feet = (e, at = e.at) => { const p = v3(at); return [p[0], p[1] - bodySize(e)[1] / 2, p[2]]; };
+  const fromFeet = (e, f) => [f[0], f[1] + bodySize(e)[1] / 2, f[2]];
   const entities = () => Object.values(rt.state.entities).filter(e => e.space === sid && Array.isArray(e.at));
   const zones = () => model.zones();
   const ops = {
-    bodySize, boxOf, entities, zones,
+    bodySize, boxOf, entities, zones, body, feet, fromFeet,
     track(e, rt) {
       const p = v3(e.at), inside = zonesContaining(zones(), p[0], p[1], p[2]).map(z => z.id);
       const s = st(); s.members ??= {};
@@ -299,7 +321,7 @@ export function entityOps({ rt, sid, model, defaultBody, st }) {
     },
     untrack(e) { delete st().members?.[e.id]; },
     inZone: (e, zone) => { const z = zones().find(x => x.id === zone); const p = v3(e.at); return Boolean(z) && zoneHas(z, p[0], p[1], p[2]); },
-    zoneAt: at => { const p = v3(at); return zonesContaining(zones(), p[0], p[1], p[2])[0]?.id ?? null; },
+    zoneAt: at => { const p = v3(atOf(at)); return zonesContaining(zones(), p[0], p[1], p[2])[0]?.id ?? null; },
     entitiesAt: at => { const p = v3(at); return entities().filter(e => { const b = boxOf(e); return p.every((v, i) => v >= b.min[i] - 1e-9 && v <= b.max[i] + 1e-9); }).map(e => e.id); },
     nearest(e, target) {
       const p = v3(e.at), z = zones().find(x => x.id === target);

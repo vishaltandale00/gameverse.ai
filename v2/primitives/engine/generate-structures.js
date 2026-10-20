@@ -75,13 +75,13 @@ export default {
         const h = size.length === 3 ? size[2] : p.kind === 'tower' && size.length === 2 ? size[1] : undefined;
         const custom = p.prefab && (rt.doc.content?.structures || []).find(s => s.id === p.prefab);
         const n = p.count ? rng.int(p.count[0], p.count[1]) : 1, box = zoneBox(zone), [zy0, zy1] = zoneYRange(zone);
-        let made = 0;
+        let made = 0; const why = { outside: 0, slope: 0, water: 0, road: 0, lot: 0, crowded: 0 };
         for (let k = 0; k < n; k++) {
           let site = null;
           for (let a = 0; a < (p.at ? 1 : config.attempts) && !site; a++) {
             let x, z, y = null;
             if (p.at) { x = p.at[0]; z = p.at.length === 3 ? p.at[2] : p.at[1]; if (p.at.length === 3) y = p.at[1]; }
-            else { x = rng.range(box[0] + w / 2, box[2] - w / 2); z = rng.range(box[1] + d / 2, box[3] - d / 2); if (!zoneHas(zone, x, undefined, z)) continue; }
+            else { x = rng.range(box[0] + w / 2, box[2] - w / 2); z = rng.range(box[1] + d / 2, box[3] - d / 2); if (!zoneHas(zone, x, undefined, z)) { why.outside++; continue; } }
             const g = ground(x, z);
             const under = (y != null && y < g - 2) || (!p.at && Number.isFinite(zy1) && zy1 < g - 2);
             if (under && y == null) y = Math.max(zy0 + 4, 4);
@@ -93,14 +93,14 @@ export default {
             const corners = [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]].map(([lx, lz]) => toWorld([x, 0, z], rot, lx, lz));
             if (!p.at && !under) {
               const hs = corners.map(([cx, cz]) => ground(cx, cz)), slope = (Math.max(...hs, g) - Math.min(...hs, g)) / (Math.hypot(w, d) / 2);
-              if (slope > Math.tan((config.maxSlope * Math.PI) / 180)) continue;
-              if ([[x, z], ...corners].some(([cx, cz]) => water(cx, cz) > 0.3)) continue;
-              if (config.avoidRoads && net?.edges.length) { const r = nearestRoad(net, x, z, Math.hypot(w, d) / 2 + 12); if (r && r.dist < Math.hypot(w, d) / 2 + 3) continue; }
-              if (config.avoidRoads && lots.some(l => l.building && x > l.rect[0] - w / 2 && x < l.rect[2] + w / 2 && z > l.rect[1] - d / 2 && z < l.rect[3] + d / 2)) continue;
+              if (p.kind !== 'mine' && slope > Math.tan((config.maxSlope * Math.PI) / 180)) { why.slope++; continue; }
+              if ([[x, z], ...corners].some(([cx, cz]) => water(cx, cz) > 0.3)) { why.water++; continue; }
+              if (config.avoidRoads && net?.edges.length) { const r = nearestRoad(net, x, z, Math.hypot(w, d) / 2 + 12); if (r && r.dist < Math.hypot(w, d) / 2 + 3) { why.road++; continue; } }
+              if (config.avoidRoads && lots.some(l => l.building && x > l.rect[0] - w / 2 && x < l.rect[2] + w / 2 && z > l.rect[1] - d / 2 && z < l.rect[3] + d / 2)) { why.lot++; continue; }
             }
-            if (!p.at && placed.some(o => Math.hypot(o.at[0] - x, o.at[2] - z) < (Math.hypot(w, d) + Math.hypot(o.size[0], o.size[1])) / 2 + config.spacing)) continue;
+            if (!p.at && placed.some(o => Math.hypot(o.at[0] - x, o.at[2] - z) < (Math.hypot(w, d) + Math.hypot(o.size[0], o.size[1])) / 2 + config.spacing)) { why.crowded++; continue; }
             const gy = under ? (voxel ? Math.floor(y / C) * C : y) : voxel ? Math.round([[x, z], ...corners].reduce((s, [cx, cz]) => s + ground(cx, cz), 0) / 5 / C) * C : [[x, z], ...corners].reduce((s, [cx, cz]) => s + ground(cx, cz), 0) / 5;
-            site = { x, z, y: gy, rot, under };
+            site = { x, z, y: gy, rot, under, corners };
           }
           if (!site) continue;
           const floors = p.floors ? rng.int(p.floors[0], p.floors[1]) : undefined;
@@ -113,11 +113,11 @@ export default {
           placed.push({
             id, group: p.id, kind: p.kind, zone: p.zone, at, rot: st.rot, size: [w, d, +pf.height.toFixed(3)], style: p.style, interior: p.interior, underground: site.under,
             door: pf.door ? W(pf.door) : null, rooms: pf.rooms.map(r => { const a = W(r.min), b = W(r.max); return { min: a.map((v, i) => Math.min(v, b[i])), max: a.map((v, i) => Math.max(v, b[i])) }; }),
-            loot: p.loot ?? null, spawns: p.spawns, tags: p.tags, footprint: corners.map(([cx, cz]) => [+cx.toFixed(3), +cz.toFixed(3)]),
+            loot: p.loot ?? null, spawns: p.spawns, tags: p.tags, footprint: site.corners.map(([cx, cz]) => [+cx.toFixed(3), +cz.toFixed(3)]),
           });
           made++;
         }
-        if (made < (p.count ? p.count[0] : 1)) problem('structure_unplaced', `placed ${made} of ${p.count ? `${p.count[0]}..${p.count[1]}` : 1} '${p.id}' in zone '${p.zone}'`);
+        if (made < (p.count ? p.count[0] : 1)) problem('structure_unplaced', `placed ${made} of ${p.count ? `${p.count[0]}..${p.count[1]}` : 1} '${p.id}' in zone '${p.zone}' (rejected sites: ${Object.entries(why).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'})`);
       });
       m.info.summary = { ...(m.info.summary || {}), structures: placed.length };
     });
@@ -129,14 +129,15 @@ export default {
       tagged: tag => list().filter(s => s.tags?.includes(tag)),
     }, ['get', 'at', 'tagged']);
     // Occupants appear once, at game start (after every space and the player exist).
-    rt.on('game_start', rt => {
+    rt.on('game_start', (data, rt) => {
       const s = rt.store(instance.key); if (s.spawned) return; s.spawned = true;
       const mine = new Set(config.place.map(p => p.id));
       for (const st of list()) {
         if (!mine.has(st.group) || !st.spawns?.length) continue;
         st.spawns.forEach((arch, i) => {
           const room = st.rooms[0], at = room ? [(room.min[0] + room.max[0]) / 2 + (i % 3) - 1, room.min[1], (room.min[2] + room.max[2]) / 2] : st.door ? [st.door[0] + Math.sin(st.rot) * 2, st.door[1], st.door[2] + Math.cos(st.rot) * 2] : [st.at[0] + Math.sin(st.rot) * (st.size[1] / 2 + 2), st.at[1], st.at[2] + Math.cos(st.rot) * (st.size[1] / 2 + 2)];
-          rt.spawn(arch, { space: model.sid, at: at.map(v => +v.toFixed(3)) });
+          const api = rt.space(model.sid), body = rt.archetype(arch)?.components?.body;
+          rt.spawn(arch, { space: model.sid, at: api.standAt(at, { components: { body: body?.size ? body : undefined } }).map(v => +v.toFixed(3)) });
         });
       }
     });

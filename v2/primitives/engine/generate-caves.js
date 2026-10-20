@@ -5,7 +5,7 @@
 // level floods the deepest carved cells. Features are placed once per seed
 // and bucketed by column; chunks carve them lazily.
 import { fbm3, Rng, subSeed } from './worlds3d-lib-noise.js';
-import { STAGES, withDefaults, generatorModel, sharedService, zoneBox } from './worlds3d-lib-world.js';
+import { STAGES, withDefaults, generatorModel, sharedService, zoneBox, checkBlocks } from './worlds3d-lib-world.js';
 
 const B = 16; // feature bucket size (cells)
 const card = {
@@ -35,8 +35,8 @@ const card = {
 export default {
   id: 'engine.generate.caves',
   card,
-  validate(config) {
-    const e = [];
+  validate(config, doc, ctx, inst) {
+    const e = config.lavaLevel != null ? checkBlocks(doc, inst, [['with.lavaBlock', config.lavaBlock]]) : [];
     if (config.minY > config.maxY) e.push({ code: 'param_range', path: 'with.minY', message: 'minY must be at most maxY' });
     return e;
   },
