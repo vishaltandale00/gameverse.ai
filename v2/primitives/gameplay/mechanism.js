@@ -136,7 +136,8 @@ export default {
     const st = () => { const s = rt.store(KEY); s.m ??= {}; s.sig ??= {}; s.forced ??= {}; s.prev ??= {}; s.contact ??= {}; s.rides ??= []; s.groups ??= {}; s.init ??= false; return s; };
     st(); // created at install, so reads later never add state
     const frames = sec => Math.max(1, Math.round(sec / rt.dt));
-    const gateOk = (m, who) => m.gate === undefined || rt.test(typeof m.gate === 'string' ? { gate: m.gate } : m.gate, { actor: who, self: entIdOf(m) });
+    // plot.gate locks ('mechanism:<id>') apply on top of the mechanism's own gate predicate.
+    const gateOk = (m, who) => !(rt.hasService('gates') && rt.service('gates').locked(`mechanism:${m.id}`)) && (m.gate === undefined || rt.test(typeof m.gate === 'string' ? { gate: m.gate } : m.gate, { actor: who, self: entIdOf(m) }));
     const entIdOf = m => `mech_${m.id}`;
     const pattern = m => m.pattern ?? (m.preset === 'bunker' ? BUNKER : null);
 

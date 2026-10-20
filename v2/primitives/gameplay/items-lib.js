@@ -149,6 +149,8 @@ export function entityByRef(rt, ref, context) {
 // ---- cells (editCells + raycast spaces) ----
 export const cellKey = c => c.join(',');
 export const cellOf = at => v3(at).map(Math.floor);
+/** The point to look an entity's own cell up with getCell: its box centre cell on min-anchored spaces, else its position (cell and centre anchors round/floor it themselves). */
+export function cellPoint(rt, e) { const p = pos(rt, e); return anchor(rt, e.space) === 'min' ? center(rt, e).map(Math.floor) : v3(p).slice(0, p.length); }
 /** Look direction: components.body.look, else facing; null if neither. */
 export function lookDir(e) { const l = e?.components?.body?.look; return isVec(l) ? norm(l) : facing(e); }
 /** Eye point: box centre raised by components.body.eye (default 0). */

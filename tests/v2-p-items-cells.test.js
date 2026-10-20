@@ -154,7 +154,7 @@ test('farming: till, plant, water, grow by day and season, harvest, regrow, with
   for (let day = 2; day <= 3; day++) { rt.step({ actions: { water: { cell: [2, 0, 0] } } }); rt.state.vars['time.day'] = day; rt.step(); }
   assert.equal(rt.state.counts['ripened:wheat'], 1);
   assert.ok(rt.test({ crops: 'ripe', gte: 1 }));
-  const opt = rt.availableOptions().find(o => o.label === 'harvest wheat');
+  const opt = rt.availableOptions().find(o => o.label.startsWith('harvest wheat'));
   rt.step({ actions: opt.actions });
   assert.ok(bagOf(rt).wheat >= 2 && bagOf(rt).wheat <= 3);
   // Regrows in one watered day; rain waters it.

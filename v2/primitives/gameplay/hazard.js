@@ -11,7 +11,7 @@
 // Entry applies `damage`, `status`, `kill` and, for instant hazards, returns the
 // entity to its last safe footing or its checkpoint; staying applies `dps` in
 // `interval` chunks. Falls deal (drop - minHeight) × perMeter on landing.
-import { runIf, boxAt, boxOf, boxesTouch, center, isVec, api as spaceApi, pos } from './items-lib.js';
+import { runIf, boxAt, boxOf, boxesTouch, center, isVec, api as spaceApi, pos, cellPoint, anchor as anchorOf } from './items-lib.js';
 import { respawn as toCheckpoint } from './checkpoint.js';
 
 const KEY = 'gameplay.hazard';
@@ -66,7 +66,7 @@ export default {
     // Blocks name their hazard with `hazard: type`, or carry the tag 'hazard' and share a hazard type's id.
     const blocks = () => { if (rt.caches.hazardBlocksDoc !== rt.doc) { rt.caches.hazardBlocksDoc = rt.doc; rt.caches.hazardBlocks = new Map((rt.doc.content?.blocks || []).map(b => [b.id, b.hazard ?? ((b.tags || []).includes('hazard') && types.has(b.id) ? b.id : null)]).filter(([, t]) => t)); } return rt.caches.hazardBlocks; };
     const zoneDef = e => rt.doc.spaces.find(s => s.id === e.space)?.zones?.find(z => z.id === e.zone);
-    const affected = e => config.affects === 'all' ? Boolean(e.components.body) || e.id === 'player' : config.affects === 'player' ? e.id === 'player' : e.id === 'player' || 'health' in e.components;
+    const affected = e => !e.components.health?.dead && (config.affects === 'all' ? Boolean(e.components.body) || e.id === 'player' : config.affects === 'player' ? e.id === 'player' : e.id === 'player' || 'health' in e.components);
     const grounded = e => { if (e.components.body?.grounded != null) return e.components.body.grounded; const s = spaceApi(rt, e); if (!s || typeof s.grounded !== 'function') return true; if (typeof s.gravityAt === 'function' && !s.gravityAt(pos(rt, e)).some(Boolean)) return true; return s.grounded(e); };
 
     function touching(e) {
@@ -80,7 +80,8 @@ export default {
       for (const o of Object.values(rt.state.entities)) { const h = o.components.hazard; if (h == null || o === e || o.space !== e.space || !isVec(o.at)) continue; if (boxesTouch(box, boxOf(rt, o))) out.add(typeof h === 'string' ? h : h.type); }
       const sp = spaceApi(rt, e);
       if (sp && typeof sp.getCell === 'function' && blocks().size) {
-        for (const cell of [c.map(Math.floor), [Math.floor(c[0]), Math.floor(box.min[1] - 0.01), Math.floor(c[2])]]) { const t = blocks().get(sp.getCell(cell)); if (t) out.add(t); }
+        const feet = cellPoint(rt, e).slice(); feet[1] = anchorOf(rt, e.space) === 'min' ? Math.floor(box.min[1] - 0.01) : feet[1] - (box.max[1] - box.min[1]) / 2 - 0.01;
+        for (const cell of [cellPoint(rt, e), feet]) { const t = blocks().get(sp.getCell(cell)); if (t) out.add(t); }
       }
       const kt = config.killType || KILL;
       if (config.killY != null && c[1] < config.killY) out.add(kt);

@@ -40,7 +40,10 @@ export function install(rt, config) {
   const holdOf = e => e.components.interact.hold ?? config.holdMs / 1000;
   const enabled = e => !aliases(e).some(id => st().disabled[id]) && !st().disabled[e.id];
   const spent = e => { const c = e.components.interact, n = st().uses[e.id] || 0; return (c.once && n >= 1) || (c.uses != null && n >= c.uses); };
-  const allowed = (e, who) => !e.components.interact.when || rt.test(e.components.interact.when, { self: e.id, actor: who });
+  // plot.gate locks ('interactable:<id>') are enforced here through the gates service.
+  const gateTargets = e => [...aliases(e), e.id].map(id => `interactable:${id}`);
+  const gated = e => rt.hasService('gates') && gateTargets(e).some(t => rt.service('gates').locked(t));
+  const allowed = (e, who) => !gated(e) && (!e.components.interact.when || rt.test(e.components.interact.when, { self: e.id, actor: who }));
 
   function inReach(actor, e) {
     if (actor.space !== e.space || dist(rt, actor, e) > rangeOf(e)) return false;
@@ -66,7 +69,7 @@ export function install(rt, config) {
     if (spent(target)) return deny('spent');
     if ((st().ready[target.id] ?? -1) > rt.state.frame) return deny('cooldown');
     if (!force && !inReach(actor, target)) return deny('range');
-    if (!allowed(target, who)) return deny('locked');
+    if (!allowed(target, who)) { if (gated(target)) for (const t of gateTargets(target)) rt.service('gates').allows(t, { who }); return deny('locked'); }
     for (const t of c.take || []) if (count(rt, who, t.item) < (t.count ?? 1)) return deny('missing');
     const kind = kindOf(rt, target), ids = aliases(target);
     const gives = (c.give || []).map(g => ({ item: g.item, count: roll(rt, g.count, 1) }));
@@ -137,7 +140,7 @@ export function install(rt, config) {
       for (const { e, steps } of far.slice(0, config.macroOptions)) {
         const path = sp.path(sp.pos(p), sp.pos(e)); if (!path) continue;
         const stand = path.length > 1 ? path[path.length - 2] : path[0];
-        out.push({ label: `go to and interact ${aliases(e)[0]}`, actions: { interact: e.id }, steps, apply(rt) { const q = rt.player(); rt.space(q.space).setPos(q, stand, rt); } });
+        out.push({ label: `go to and interact ${aliases(e)[0]}${e.id !== aliases(e)[0] ? ` (${e.id})` : ''}`, actions: { interact: e.id }, steps, apply(rt) { const q = rt.player(); rt.space(q.space).setPos(q, stand, rt); } });
       }
     }
     return out;

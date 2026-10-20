@@ -7,7 +7,7 @@
 // level, run effects on completion and spawn timed prizes at chosen counts.
 import { compare } from '../../kernel/logic.js';
 import { give } from './inventory.js';
-import { addScore, boxOf, boxesTouch, center, isVec, len, sub, pull, entityByRef, whoKey } from './items-lib.js';
+import { addScore, boxOf, boxesTouch, center, isVec, len, sub, pull, entityByRef, whoKey, cellPoint } from './items-lib.js';
 
 const KEY = 'gameplay.collectible';
 const counterOf = e => { const c = e.components.collectible; return typeof c === 'string' ? { counter: c } : c || null; };
@@ -160,7 +160,7 @@ export default {
         // Cell pickups: the collector's cell holds a counter's block.
         const api = rt.space(who.space);
         if (typeof api.getCell === 'function') for (const c of config.counters) if (c.block) {
-          const cell = wc.map(Math.floor);
+          const cell = cellPoint(rt, who);
           if (api.getCell(cell) === c.block) { api.setCell(cell, null, rt, who.id); for (const id of targets(c.id)) countUp(id, who.id, c.value, who.zone ?? null, cell); addScore(rt, c.points); if (c.onCollect.length) rt.run(c.onCollect, { actor: who.id }); }
         }
       }
