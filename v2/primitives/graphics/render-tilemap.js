@@ -4,6 +4,7 @@
 // rasterized once and cached (LRU, rebuilt on cell_changed), with blob47/wang16
 // autotiling, overhang shadows, live liquids, haze and hazards. Entities draw
 // through flat-models (sprites, rigs, generated art) with interpolation.
+import { ensureJuice } from './flat-juice.js';
 import { hubOf, bindSpace, ORDER, stageProjection, checkBinding } from './flat-stage.js';
 import { buildChunk, chunkCache, drawHazard, drawLiquid, MARGIN } from './flat-chunks.js';
 import { normalizeTheme, themeFromBlock, patternFor } from './flat-tiles.js';
@@ -69,6 +70,7 @@ export default {
   install(rt, config, instance) {
     if (rt.headless || !rt.view) return;
     const H = hubOf(rt), space = bindSpace(rt, instance, ['tilemap']), S = H.stage(space, 'tilemap');
+    ensureJuice(rt);
     const cache = chunkCache(160), dirty = new Set();
     const fade = new Map();
     H.onReset(() => { cache.clear(); H.terrain = null; });

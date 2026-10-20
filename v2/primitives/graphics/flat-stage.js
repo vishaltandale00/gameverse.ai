@@ -100,6 +100,28 @@ export function hubOf(rt) {
   rt.on('content_added', () => { for (const fn of H.resets) fn('content'); });
   rt.on('*', ev => onEvent(H, ev));
   if (view?.onFrame) view.onFrame(alpha => H.frame(alpha));
+  // 'camera' service for UI overlays (world → CSS px in view.container); delegates to a 3D camera when
+  // the player is not in a flat stage.
+  const prevCam = rt.hasService?.('camera') ? rt.service('camera') : null;
+  const flatActive = () => H.lastFrame && H.stages.has(rt.player()?.space ?? H.lastFrame.stage.space);
+  const project = (at, space) => {
+    const F = H.lastFrame;
+    if (!F || (space && space !== F.stage.space) || !Array.isArray(at)) return null;
+    const p = F.toScreen(at);
+    return p && p[0] >= -20 && p[1] >= -20 && p[0] <= F.w + 20 && p[1] <= F.h + 20 ? p : null;
+  };
+  rt.provide?.('camera', {
+    get kind() { return flatActive() || !prevCam ? '2d' : prevCam.kind; },
+    project: (at, space) => (flatActive() || !prevCam ? project(at, space) : prevCam.project(at, space)),
+    projectEntity(id) {
+      if (!flatActive() && prevCam?.projectEntity) return prevCam.projectEntity(id);
+      const F = H.lastFrame, it = F?.byId?.get(id); if (!it) return null;
+      const size = it.e.components?.body?.size || [1, 1];
+      const top = F.stage.kind === 'grid' ? it.pos : [it.pos[0], it.pos[1] + size[1] / 2];
+      return project(top, it.e.space);
+    },
+    unit: () => H.lastFrame?.unit ?? null,
+  });
   H.frame = alpha => frame(H, alpha);
   return H;
 }
@@ -165,7 +187,8 @@ function resize(S) {
 function entitiesOf(H, S, alpha) {
   const rt = H.rt, out = [];
   for (const e of Object.values(rt.state.entities)) {
-    if (e.space !== S.space || !Array.isArray(e.at)) continue;
+    if (e.space !== S.space) continue;
+    if (!Array.isArray(e.at)) { if (S.kind === 'dom') out.push({ e, id: e.id, pos: [0, 0], vel: [0, 0] }); continue; }
     const p = H.prev.get(e.id), at = e.at;
     let pos = at;
     if (p && p.length === at.length) {
@@ -229,6 +252,9 @@ function frame(H, alpha) {
   fb.shakeX = shake[0]; fb.shakeY = shake[1];
   F.cam = cam; F.proj = S.proj; F.X = viewTransform(cam, S.proj, S.w, S.h, shake); F.unit = cam.zoom;
   F.toScreen = F.X.toScreen; F.toWorld = F.X.toWorld;
+  // Renderers with their own projection (the pseudo-3D track) replace the transform.
+  const custom = S.renderer?.transform?.(F, shake);
+  if (custom) { F.toScreen = custom.toScreen; F.toWorld = custom.toWorld || F.toWorld; F.unit = custom.unit ?? F.unit; F.custom = custom; }
   g.clearRect(0, 0, S.w, S.h);
   for (const L of H.layers) if (L.space == null || L.space === S.space) safe(H, L.name || `layer${L.order}`, () => L.fn(F));
   S.clicks.length = 0;

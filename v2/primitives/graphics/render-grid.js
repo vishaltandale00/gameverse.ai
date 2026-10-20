@@ -6,6 +6,7 @@
 // out on cell changes; entities glide between cells with a hop; highlights for
 // hover, selection, move and attack ranges (hub API for rules primitives);
 // clicks can send a verb with the cell.
+import { ensureJuice } from './flat-juice.js';
 import { hubOf, bindSpace, ORDER, stageProjection, checkBinding } from './flat-stage.js';
 import { driveFit, driveTopDown } from './flat-follow.js';
 import { drawEntity } from './flat-models.js';
@@ -56,6 +57,7 @@ export default {
   install(rt, config, instance) {
     if (rt.headless || !rt.view) return;
     const H = hubOf(rt), space = bindSpace(rt, instance, ['grid']), S = H.stage(space, 'grid');
+    ensureJuice(rt);
     const apiOf = () => { try { return rt.space(space); } catch { return null; } };
     const doc = () => rt.doc;
     const blocks = () => (S.blockMap?.doc === rt.doc ? S.blockMap.map : (S.blockMap = { doc: rt.doc, map: new Map((rt.doc.content?.blocks || []).map(b => [b.id, b])) }).map);
