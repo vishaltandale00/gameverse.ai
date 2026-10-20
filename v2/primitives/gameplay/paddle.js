@@ -46,6 +46,7 @@ export default {
     },
     provides: { events: ['ball_served', 'ball_launched', 'paddle_hit', 'ball_caught', 'ball_lost', 'balls_out', 'cell_broken', 'cell_broken:*', 'contact', 'multiball'], vars: ['paddle.balls', 'paddle.speed'], actions: ['launch', 'paddle_left', 'paddle_right'] },
     requires: { capabilities: ['position'] },
+    actionSpace: { launch: { type: 'number', min: -1, max: 1 } },
     reads: [],
   },
   logic(logic) {

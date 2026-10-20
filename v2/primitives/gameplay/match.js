@@ -267,6 +267,8 @@ export default {
     if (config.rule === 'line' && config.min > Math.max(W, H)) errors.push({ code: 'match_min', path: 'with.min', message: 'run length longer than the board' });
     return errors;
   },
+  solverKey: (rt, config) => solverKey(rt, config.board.name),
+  progress: rt => rt.state.vars.score ?? 0,
   install(rt, config, instance) {
     const key = `${ID}:${config.board.name}`, spaceId = instance.space ?? rt.doc.spaces[0].id;
     const B = () => boardOf(rt, config.board, spaceId), st = () => rt.store(key);

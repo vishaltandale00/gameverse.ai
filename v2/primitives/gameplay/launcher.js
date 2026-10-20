@@ -41,6 +41,7 @@ export default {
     },
     provides: { events: ['launched', 'launched:*', 'ability_used', 'ability_used:*', 'shot_end', 'shots_empty', 'explosion', 'contact', 'move'], vars: ['launcher.shots', 'launcher.aim', 'launcher.power'], actions: ['aim', 'aim_left', 'aim_right', 'pull', 'power', 'fire', 'ability'] },
     requires: { capabilities: ['position'] },
+    actionSpace: { aim: { type: 'number', min: -3.2, max: 3.2 }, power: { type: 'number', min: 0.2, max: 1 }, pull: { type: 'vector', min: -50, max: 50 } },
   },
   validate(config) {
     const errors = [];

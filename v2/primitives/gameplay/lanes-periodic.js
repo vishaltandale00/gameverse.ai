@@ -7,7 +7,6 @@
 // eagle: idle too long without new forward progress, or fall behind a
 // creeping line, and onIdle runs. Movers can also be spawned as entities so
 // renderers and other primitives (combat, overlap) see them.
-import { centerOf } from './puzzle-lib-body.js';
 
 const ID = 'gameplay.lanes.periodic';
 const mod = (a, n) => ((a % n) + n) % n;
@@ -65,6 +64,7 @@ export default {
     config.lanes.forEach((l, i) => { if (rows.has(l.row)) errors.push({ code: 'lanes_row_duplicate', path: `with.lanes[${i}].row`, message: `two lanes on row ${l.row}` }); rows.add(l.row); if (l.dir === 0) errors.push({ code: 'lanes_dir', path: `with.lanes[${i}].dir`, message: 'dir is -1 or 1' }); });
     return errors;
   },
+  progress: rt => rt.state.vars['lanes.progress'] ?? 0,
   install(rt, config) {
     const st = () => rt.store(ID);
     const factor = () => 1 + config.ramp.factor * Math.min(1, rt.state.time / config.ramp.seconds);
@@ -150,6 +150,5 @@ export default {
       }
     }, ID);
     rt.options(() => [{ label: 'wait', actions: {} }]);
-    void centerOf;
   },
 };

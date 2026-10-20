@@ -167,6 +167,8 @@ export default {
     if (config.board.size[1] <= config.hidden + 1) errors.push({ code: 'board_too_small', path: 'with.board.size', message: 'board must be taller than hidden rows + 1' });
     return errors;
   },
+  solverKey: (rt, config) => solverKey(rt, config.board.name),
+  progress: rt => Object.entries(rt.state.prim).filter(([k]) => k.startsWith(`${ID}:`)).reduce((n, [, s]) => n + (s.lines || 0), 0),
   install(rt, config, instance) {
     const key = `${ID}:${config.board.name}`, types = typesFor(config);
     const spaceId = instance.space ?? rt.doc.spaces[0].id;
@@ -511,7 +513,7 @@ export default {
     rt.options(rt => {
       const s = st();
       if (config.steer !== 'player' || s.phase !== 'play' || !s.piece) return [];
-      return placements(s, B()).map(o => ({ label: `place ${types[s.piece.t].key} r${o.r} x${o.x}`, actions: { place: { r: o.r, x: o.x, ccw: o.ccw } } }));
+      return placements(s, B()).map(o => ({ label: `place ${types[s.piece.t].key} r${o.r} x${o.x}${o.ccw ? ' ccw' : ''}`, actions: { place: { r: o.r, x: o.x, ccw: o.ccw } } }));
     });
     function placements(s, b) {
       const out = [], seen = new Set(), p0 = s.piece;

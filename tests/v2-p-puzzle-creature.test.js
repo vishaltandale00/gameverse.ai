@@ -156,7 +156,7 @@ test('creature battle: level-ups queue learn prompts answered through options', 
   let prompted = false;
   for (let i = 0; i < 300 && BT(rt).battle; i++) {
     const o = rt.availableOptions();
-    if (o.some(x => x.actions.battle.kind === 'learn')) { prompted = true; rt.step({ actions: o.find(x => x.label === 'forget growl').actions }); continue; }
+    if (o.some(x => x.actions.battle.kind === 'learn')) { prompted = true; rt.step({ actions: o.find(x => x.actions.battle.kind === 'learn' && x.label.endsWith(' growl')).actions }); continue; }
     rt.step({ actions: (o.find(x => x.label === 'use vine') || o[0]).actions });
   }
   assert.ok(prompted, 'learn prompt offered');

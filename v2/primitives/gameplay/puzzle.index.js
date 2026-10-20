@@ -9,6 +9,7 @@ import creatureParty from './creature-party.js';
 import creatureBattle from './creature-battle.js';
 import creatureCatch from './creature-catch.js';
 import encounter from './encounter.js';
+import lanesPeriodic from './lanes-periodic.js';
 
 export default [fallingPieces, match, slideMerge, paddle, launcher, destructible,
-  creatureParty, creatureBattle, creatureCatch, encounter];
+  creatureParty, creatureBattle, creatureCatch, encounter, lanesPeriodic];

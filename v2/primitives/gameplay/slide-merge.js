@@ -74,6 +74,8 @@ export default {
     if (config.target & (config.target - 1)) errors.push({ code: 'slide_target', path: 'with.target', message: 'target must be a power of two' });
     return errors;
   },
+  solverKey: (rt, config) => solverKey(rt, config.board.name),
+  progress: rt => Math.log2(Math.max(1, rt.state.vars['slide.max'] ?? 1)),
   install(rt, config, instance) {
     const key = `${ID}:${config.board.name}`, spaceId = instance.space ?? rt.doc.spaces[0].id, name = config.board.name;
     const B = () => boardOf(rt, config.board, spaceId), st = () => rt.store(key);

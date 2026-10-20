@@ -434,15 +434,15 @@ export default {
       const eng = E(), need = eng.needsInput(b); if (!need) return [];
       const party = b.player.party, me = party[b.player.active], out = [];
       const opt = (label, v) => out.push({ label, actions: { battle: v } });
-      if (need.kind === 'learn') { opt('keep moves', { kind: 'learn', forget: null }); const c = party.find(x => x.uid === need.uid); (c?.moves || []).forEach((m, i) => opt(`forget ${m.id}`, { kind: 'learn', forget: i })); return out; }
-      if (need.kind === 'switch') { party.forEach((c, i) => { if (c.hp > 0) opt(`send ${c.name}`, { kind: 'switch', index: i }); }); return out; }
+      if (need.kind === 'learn') { opt('keep moves', { kind: 'learn', forget: null }); const c = party.find(x => x.uid === need.uid); (c?.moves || []).forEach((m, i) => opt(`forget #${i} ${m.id}`, { kind: 'learn', forget: i })); return out; }
+      if (need.kind === 'switch') { party.forEach((c, i) => { if (c.hp > 0) opt(`send #${i} ${c.name}`, { kind: 'switch', index: i }); }); return out; }
       const usable = me.moves.map((m, i) => m.pp > 0 ? i : -1).filter(i => i >= 0);
       if (usable.length) usable.forEach(i => opt(`use ${me.moves[i].id}`, { kind: 'move', index: i })); else opt('struggle', { kind: 'move', index: 0 });
-      party.forEach((c, i) => { if (c.hp > 0 && i !== b.player.active) opt(`switch to ${c.name}`, { kind: 'switch', index: i }); });
+      party.forEach((c, i) => { if (c.hp > 0 && i !== b.player.active) opt(`switch to #${i} ${c.name}`, { kind: 'switch', index: i }); });
       for (const it of (content().items || []).filter(i => i.creature)) {
         if (hasInv() && !rt.test({ item: it.id, gte: 1 }, {})) continue;
         if (it.creature.kind === 'ball') { if (b.kind === 'wild') opt(`throw ${it.id}`, { kind: 'item', item: it.id }); continue; }
-        party.forEach((c, i) => { const max = statsOf(content(), c).hp; if ((it.creature.kind === 'heal' && c.hp > 0 && c.hp < max) || (it.creature.kind === 'revive' && c.hp <= 0) || (it.creature.kind === 'status' && c.hp > 0 && c.status)) opt(`${it.id} on ${c.name}`, { kind: 'item', item: it.id, target: i }); });
+        party.forEach((c, i) => { const max = statsOf(content(), c).hp; if ((it.creature.kind === 'heal' && c.hp > 0 && c.hp < max) || (it.creature.kind === 'revive' && c.hp <= 0) || (it.creature.kind === 'status' && c.hp > 0 && c.status)) opt(`${it.id} on #${i} ${c.name}`, { kind: 'item', item: it.id, target: i }); });
       }
       if (b.kind === 'wild') opt('run', { kind: 'run' });
       return out;
