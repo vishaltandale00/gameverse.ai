@@ -5,7 +5,7 @@
 // combo/chain popups, crosshair, tracked objective, toasts and zone titles.
 // hudModel() is the pure view model; install() renders it and animates changes.
 import { THEMES, resolveTheme } from './ui-theme.js';
-import { uiHost, later, setText, setStyle, setClass, setHidden, keyed, fill, pulse, clamp, isNum, fmtInt, fmtHour, titleCase, itemName, zoneName, docItem, docSystem, docZone } from './ui-lib.js';
+import { uiHost, later, setText, setStyle, setClass, setHidden, keyed, fill, pulse, clamp, isNum, fmtInt, fmtHour, fmtClock, titleCase, itemName, zoneName, docItem, docSystem, docZone } from './ui-lib.js';
 import { icon, itemIcon } from './ui-icons.js';
 import { glyph } from './ui-input.js';
 import * as S from './ui-sources.js';
@@ -37,6 +37,11 @@ const card = {
     score: { type: 'object', default: null, fields: { var: { type: 'string', default: 'score' }, label: { type: 'string', default: 'Score' }, pos: pos('top-center') }, effect: 'big score readout' },
     lives: { type: 'object', default: null, fields: { var: { type: 'string', default: 'lives' }, icon: { type: 'string', default: 'heart' }, pos: pos('top-left') }, effect: 'lives as icons' },
     stars: { type: 'object', default: null, fields: { var: { type: 'string', default: 'wanted' }, max: { type: 'integer', default: 5, min: 1, max: 10 }, icon: { type: 'string', default: 'star' }, pos: pos('top-right') }, effect: 'wanted-level style stars' },
+    readouts: { type: 'list', default: [], of: { type: 'object', fields: {
+      var: { type: 'string', required: true }, label: { type: 'string' }, pos: pos('top-center'),
+      format: { type: 'string', default: 'number', options: ['number', 'clock', 'percent', 'ordinal', 'speed'], effect: 'how the value is written' },
+      max: { type: 'json', effect: 'optional max (number or var) shown as value/max' },
+    } }, effect: 'labelled values: timers, laps, positions, speed, moves' },
     prompt: { type: 'boolean', default: true, effect: 'contextual interact prompt with the device glyph' },
     compass: { type: 'boolean', default: false, effect: 'heading strip with the tracked objective marker' },
     clock: { type: 'boolean', default: false, effect: 'time of day and day count (engine.time vars)' },
@@ -82,6 +87,30 @@ export function counterDisplay(style, max) {
 /** Fill fraction (0, 0.5, 1 …) of each icon slot. */
 export const iconFills = (value, per, slots) => Array.from({ length: slots }, (_, i) => clamp((value - i * per) / per, 0, 1));
 
+/** Vars other primitives publish that the HUD shows by itself when auto is on (catalog/var conventions). */
+export const AUTO_READOUTS = [
+  { var: 'round.timer', label: 'Time', format: 'clock', pos: 'top-center' }, { var: 'round', label: 'Round', format: 'number', pos: 'top-center' },
+  { var: 'race.position', label: 'Pos', format: 'ordinal', pos: 'top-right' }, { var: 'race.lap', label: 'Lap', format: 'number', pos: 'top-right', max: 'race.laps' },
+  { var: 'race.time', label: 'Time', format: 'clock', pos: 'top-right' }, { var: 'vehicle.speed', label: 'km/h', format: 'speed', pos: 'bottom-right' },
+  { var: 'stage.number', label: 'Stage', format: 'number', pos: 'top-center' }, { var: 'stage.moves', label: 'Moves', format: 'number', pos: 'top-right' },
+  { var: 'stage.time', label: 'Time', format: 'clock', pos: 'top-right' }, { var: 'wave', label: 'Wave', format: 'number', pos: 'top-center' },
+  { var: 'level', label: 'Level', format: 'number', pos: 'top-left' }, { var: 'minigame.progress', label: 'Progress', format: 'percent', pos: 'top-center' },
+];
+const ordinal = n => { const v = Math.round(n), s = ['th', 'st', 'nd', 'rd'], m = v % 100; return `${v}${s[(m - 20) % 10] || s[m] || s[0]}`; };
+export function formatReadout(value, format) {
+  if (format === 'clock') return fmtClock(value);
+  if (format === 'percent') return `${Math.round(value <= 1 ? value * 100 : value)}%`;
+  if (format === 'ordinal') return ordinal(value);
+  if (format === 'speed') return fmtInt(Math.abs(value));
+  return fmtInt(value);
+}
+/** Readouts to show: configured ones, then auto ones whose vars exist and are not already shown elsewhere. */
+export function readoutsFor(rt, config) {
+  const vars = rt.state.vars, shown = new Set([...config.meters.map(m => meterVars(m).value), ...config.counters.map(c => c.var), config.score?.var, config.lives?.var, config.stars?.var]);
+  const list = [...config.readouts, ...(config.auto ? AUTO_READOUTS.filter(a => !config.readouts.some(r => r.var === a.var)) : [])];
+  return list.filter(r => isNum(vars[r.var]) && !shown.has(r.var)).map(r => { const max = isNum(r.max) ? r.max : typeof r.max === 'string' ? vars[r.max] : undefined; return { key: `r:${r.var}`, var: r.var, label: r.label ?? titleCase(r.var.split('.').pop()), text: formatReadout(vars[r.var], r.format) + (isNum(max) ? `/${fmtInt(max)}` : ''), pos: r.pos || 'top-center', format: r.format || 'number', low: r.format === 'clock' && vars[r.var] <= 10 }; });
+}
+
 /**
  * The HUD view model: everything the HUD shows for this state. `local` holds
  * UI-only memory fed by events (prompt fallback, boss name, combo).
@@ -114,6 +143,9 @@ export function hudModel(rt, config, local = {}) {
   if (sc && isNum(vars[sc.var])) out.score = { value: vars[sc.var], label: sc.label, pos: sc.pos, best: vars[`${sc.var}.best`] };
   const lv = config.lives || (config.auto && isNum(vars.lives) ? { var: 'lives', icon: 'heart', pos: 'top-left' } : null);
   if (lv && isNum(vars[lv.var])) out.lives = { value: vars[lv.var], icon: lv.icon, pos: lv.pos };
+  out.readouts = readoutsFor(rt, config);
+  const teams = Object.keys(vars).filter(k => /^score\.[^.]+$/.test(k));
+  if (config.auto && teams.length >= 2) out.scoreboard = { teams: teams.slice(0, 2).map(k => ({ id: k.slice(6), name: titleCase(k.slice(6)), value: vars[k] })), clock: isNum(vars['match.clock']) ? fmtClock(vars['match.clock']) : null, period: vars['match.period'] ?? null };
   if (config.stars && isNum(vars[config.stars.var] ?? 0)) out.stars = { value: clamp(Math.round(vars[config.stars.var] ?? 0), 0, config.stars.max), max: config.stars.max, icon: config.stars.icon, pos: config.stars.pos };
   if (config.prompt) {
     const f = S.interactFocus(rt, 'player', local.focus || null);
@@ -309,6 +341,19 @@ export default {
         seen.add('score'); setText(n.children[0], vm.score.label);
         if (prev.score !== undefined && prev.score !== vm.score.value) pulse(n.children[1], 'is-pop');
         setText(n.children[1], fmtInt(vm.score.value)); prev.score = vm.score.value;
+      }
+      for (const r of vm.readouts) {
+        const n = place(r.key, r.pos, () => el(`div.gv-readout${r.format === 'speed' ? '.is-speed' : ''}`, { data: { var: r.var } }, el('span.gv-readout-label'), el('span.gv-readout-value.gv-display')));
+        seen.add(r.key); setText(n.children[0], r.label);
+        if (prev[r.key] !== undefined && prev[r.key] !== r.text && r.format !== 'clock' && r.format !== 'speed') pulse(n.children[1], 'is-pop');
+        setText(n.children[1], r.text); setClass(n, 'is-low', r.low); prev[r.key] = r.text;
+      }
+      if (vm.scoreboard) {
+        const n = place('scoreboard', 'top-center', () => el('div.gv-scoreboard.gv-panel', {}, el('span.gv-sb-a'), el('b.gv-sb-score.gv-display'), el('span.gv-sb-b'), el('small.gv-sb-clock')));
+        seen.add('scoreboard'); const [a, b] = vm.scoreboard.teams;
+        setText(n.children[0], a.name); setText(n.children[2], b.name);
+        const sig = `${a.value} – ${b.value}`; if (prev.scoreboard && prev.scoreboard !== sig) pulse(n.children[1], 'is-pop'); setText(n.children[1], sig); prev.scoreboard = sig;
+        setText(n.children[3], [vm.scoreboard.period ? `P${vm.scoreboard.period}` : '', vm.scoreboard.clock || ''].filter(Boolean).join(' · '));
       }
       if (vm.lives) {
         const n = place('lives', vm.lives.pos, () => el('div.gv-icons.gv-lives'));

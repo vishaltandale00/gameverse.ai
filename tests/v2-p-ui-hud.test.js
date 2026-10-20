@@ -61,6 +61,14 @@ test('hud: auto widgets, boss bar, statuses, prompt and objective come from the 
   assert.deepEqual([vm.objective.title, vm.objective.text, vm.objective.progress], ['Find the bell', 'Collect shards', ' 2/5']);
 });
 
+test('hud: readouts for timers, laps, positions and team scores, configured or automatic', () => {
+  const { rt, checked } = compile(hudDoc({ readouts: [{ var: 'moves.left', label: 'Moves', pos: 'top-right' }] }), { primitives: P });
+  run(rt, 1, setVars({ 'moves.left': 12, 'round.timer': 8, 'race.position': 2, 'race.lap': 1, 'race.laps': 3, 'score.red': 2, 'score.blue': 1, 'match.clock': 754 }));
+  const vm = hudModel(rt, checked.doc.graphics[0].with);
+  assert.deepEqual(vm.readouts.map(r => [r.label, r.text, r.low]), [['Moves', '12', false], ['Time', '0:08', true], ['Pos', '2nd', false], ['Lap', '1/3', false]]);
+  assert.deepEqual([vm.scoreboard.teams.map(t => [t.name, t.value]), vm.scoreboard.clock], [[['Red', 2], ['Blue', 1]], '12:34']);
+});
+
 test('hud: renders in the browser host, animates changes and never touches simulation state', () => {
   const doc = hudDoc({ meters: [{ pool: 'stamina' }], counters: [{ var: 'money.gold', icon: 'coin' }], stars: { var: 'wanted', max: 5 }, crosshair: 'cross' });
   const m = mount(doc, { primitives: P });

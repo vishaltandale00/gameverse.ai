@@ -155,6 +155,14 @@ export const THEME_CSS = `
 .gv-score{display:flex;flex-direction:column;align-items:inherit;line-height:1}
 .gv-score-label{font-size:.66em;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--gv-ink-dim)}
 .gv-score-value{font:900 1.9em/1 var(--gv-display)}
+.gv-readout{display:flex;flex-direction:column;align-items:inherit;line-height:1;padding:.35em .7em;border-radius:10px;background:rgba(0,0,0,.35)}
+.gv-readout-label{font-size:.64em;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--gv-ink-dim)}
+.gv-readout-value{font-size:1.45em;font-variant-numeric:tabular-nums}
+.gv-readout.is-low .gv-readout-value{color:var(--gv-bad);animation:gv-pulse .5s ease-in-out infinite}
+.gv-readout.is-speed .gv-readout-value{font-size:2.4em;font-style:italic}
+.gv-scoreboard{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.8em;padding:.4em .9em;border-radius:10px}
+.gv-scoreboard .gv-sb-a{text-align:right;font-weight:800}.gv-scoreboard .gv-sb-b{font-weight:800}.gv-sb-score{font-size:1.5em}
+.gv-sb-clock{grid-column:1/-1;text-align:center;color:var(--gv-ink-dim);font-weight:700}
 .gv-prompt{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);display:flex;align-items:center;gap:.6em;padding:.45em .9em .45em .5em;
   border-radius:99px;background:var(--gv-panel);border:var(--gv-bw) solid var(--gv-edge);box-shadow:var(--gv-shadow);font-weight:700;opacity:0;
   transition:opacity .18s var(--gv-ease),transform .18s var(--gv-ease);transform:translate(-50%,8px)}
