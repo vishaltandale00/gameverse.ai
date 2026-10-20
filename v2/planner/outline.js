@@ -291,6 +291,15 @@ Return the corrected complete document.`;
   }
   // A valid draft that still has verification problems beats the skeleton: keep it, the report shows them.
   if (last?.verified) return { doc: last.verified, ok: true, source: model, rounds, firstPassOk, modelMs, removed: last.removed, errors: [] };
+  // The model's last draft is usually one primitive away from valid: isolate that primitive (reported as a gap)
+  // rather than throw away the model's world and story for the placeholder skeleton.
+  if (last?.doc) {
+    const isolated = repairDocument(last.doc, { registry, logic, fallbackSpace, isolate: true });
+    if (isolated.ok) {
+      rounds.push({ kind: 'isolate', ok: true, removed: isolated.removed.map(r => r.use) });
+      return { doc: isolated.doc, ok: true, source: model, isolated: true, rounds, firstPassOk, modelMs, removed: [...(last.removed || []), ...isolated.removed], errors: [] };
+    }
+  }
   // The model never produced a valid outline: the skeleton is valid and playable; say so in the report.
   return { doc: skeleton.doc, ok: skeleton.ok, source: 'procedural', fellBack: true, rounds, firstPassOk: firstPassOk ?? false, modelMs, removed: skeleton.removed, errors: last?.errors || [] };
 }

@@ -23,11 +23,11 @@ A detail patch can add zones, generators and content, but not add an exit (or ta
 - **Workaround:** the outline creates the whole zone graph; detail patches add content inside zones only (`detail.js` `sanitizePatch`).
 - **Request:** `mergePatch` merges `exits` (and other list fields) of a zone whose id already exists, and reports `added.exits`.
 
-## 4. `rt.extend` does not install generators appended to existing spaces
+## 4. `rt.extend` does not install generators appended to existing spaces (done: kernel 6cfddd80)
 
 `extend` installs generators only for new spaces.
 
-- **Workaround:** detail patches may append generators, but they take effect on the next load (the studio rebuilds the world for non-additive versions).
+- **Now:** `rt.extend` installs generators appended to existing spaces, so detail patches that add generators hot-load like other additions.
 - **Request:** install generators that `mergePatch` appended to existing spaces (`added.generators`).
 
 ## 5. Player agency is not declared

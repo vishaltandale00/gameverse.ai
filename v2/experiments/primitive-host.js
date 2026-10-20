@@ -140,7 +140,6 @@ export function hostPrimitive(experiment, { box: makeBox }) {
 function paintOverlay(rt, stats) {
   const canvas = document.createElement('canvas');
   canvas.className = 'gv-overlay gv-experiment-overlay';
-  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;';
   rt.view.container.append(canvas);
   rt.view.onFrame(() => {
     const w = canvas.clientWidth, h = canvas.clientHeight, dpr = globalThis.devicePixelRatio || 1;

@@ -282,7 +282,9 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   const systems = [...chosen].filter(id => !isGenerator(id) && !isSpace(id)).sort((a, b) => order(a) - order(b) || a.localeCompare(b));
   return {
     version: SELECT_VERSION, mechanics: mechanics.map(({ candidates, ...m }) => ({ ...m, candidates: candidates.slice(0, 3) })),
-    systems, generators, graphics: chooseGraphics(registry, spaces), spaces, bind, gaps, provider, ms: Math.round(performance.now() - started),
+    // Renderers, UI and audio are chosen by the host from the document's systems and spaces
+    // (graphics/ui-defaults.js withDefaultGraphics); the planner adds graphics only when a mechanic needs one.
+    systems, generators, graphics: [], spaces, bind, gaps, provider, ms: Math.round(performance.now() - started),
   };
 }
 // Install order inside systems[]: engine runtime first, then gameplay, then plot (catalog §0 convention).
