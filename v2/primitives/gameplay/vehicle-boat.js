@@ -4,7 +4,7 @@
 // rudder needs flow, the keel resists sideways slip, shallow water beaches the
 // hull, and coming to rest in a dock zone (or near a dock archetype) docks it.
 // Archetype components.boat: { maxSpeed km/h, accel m/s², turn deg/s, drag, draft m, planing km/h }.
-import { has, planeFor, planeUW, clamp, KMH, DEG, sign, approach, r6, err, matchesAny, dist, sortedEntities } from './modes-lib-util.js';
+import { footOffset, has, planeFor, planeUW, clamp, KMH, DEG, sign, approach, r6, err, matchesAny, dist, sortedEntities } from './modes-lib-util.js';
 import { initDrive, reproject, moveVehicle, resolveBlock, publish, motionVehicles } from './modes-lib-drive.js';
 
 const ID = 'gameplay.vehicle.boat';
@@ -77,7 +77,7 @@ export default {
         if (plane === 'xz' && has(api, 'groundAt')) {
           const surfaceY = api.groundAt(u, w).y + depth;
           const bob = config.swell * Math.sin(rt.state.time * 1.7 + (v.id.length % 7)) * (1 - clamp(Math.abs(d.vf) / maxV, 0, 0.8));
-          keepY = afloat ? r6(surfaceY - spec.draft * 0.5 + bob) : null;
+          keepY = afloat ? r6(surfaceY - spec.draft * 0.5 + bob + footOffset(api, v)) : null;
         }
         const hit = moveVehicle(rt, v, api, plane, d, dt, { keepY, gravity: !afloat, stepUp: 0.3 });
         const impact = resolveBlock(d, hit, 0.3);

@@ -7,7 +7,7 @@
 // Terrain: follows surface/gravity (ramps launch, landings hurt), surface
 // materials change grip/drag/top speed, deep water stalls the engine. Rail
 // cars follow rail cells (editCells) and pick branches with steering.
-import { has, planeFor, clamp, KMH, DEG, sign, approach, r6, err, cellKey } from './modes-lib-util.js';
+import { cellPos, has, planeFor, clamp, KMH, DEG, sign, approach, r6, err, cellKey } from './modes-lib-util.js';
 import { initDrive, reproject, moveVehicle, resolveBlock, publish, material, waterDepth, motionVehicles } from './modes-lib-drive.js';
 
 const ID = 'gameplay.vehicle.car';
@@ -180,7 +180,7 @@ function stepRail(rt, v, api, plane, d, spec, P, ctl, throttle, config, dt, svc)
       if (isRail(cell)) next = { cell, o };
     }
     if (!next) { d.vf = 0; d.railP = 0; rt.emit('rail_end', { vehicle: v.id, at: here }); break; }
-    api.setPos(v, next.cell.map((x, i) => (i < next.cell.length ? x : x)), rt);
+    api.setPos(v, cellPos(api, next.cell), rt);
     d.railDir = [next.o[0] * s, next.o[1] * s];
     d.heading = Math.atan2(d.railDir[1], d.railDir[0]);
     d.railP -= s;

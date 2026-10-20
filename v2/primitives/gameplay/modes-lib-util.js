@@ -120,3 +120,8 @@ export function needFields(e, fields, path, errors) {
 
 /** Apply a field schema's defaults to a value (list/object defaults skip nested defaults in preflight). */
 export function withDefaults(fields, value = {}) { return checkFields(fields, value, '', [], null, true); }
+
+/** Height from an entity's anchor down to its feet (y-up spaces): half the body for 'center' anchors, else 0. */
+export const footOffset = (api, e) => (api?.anchor === 'center' ? (e.components?.body?.size?.[1] ?? 1) / 2 : 0);
+/** Position that puts an entity in a cell, honoring the space anchor ('center' -> cell centre). */
+export const cellPos = (api, cell) => (api?.anchor === 'center' ? cell.map(c => c + 0.5) : cell.slice());

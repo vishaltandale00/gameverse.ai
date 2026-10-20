@@ -5,7 +5,7 @@
 // landings judged by sink rate, speed and bank: soft ones land, hard ones crash.
 // Archetype components.aircraft: { stall km/h, maxSpeed km/h, climb m/s, turn deg/s, takeoffSpeed km/h, vtol? b }.
 // Controls: move[1] pitch, move[0] bank; held throttle_up/accelerate, throttle_down/brake.
-import { has, planeFor, clamp, KMH, DEG, sign, approach, r6, err } from './modes-lib-util.js';
+import { footOffset, has, planeFor, clamp, KMH, DEG, sign, approach, r6, err } from './modes-lib-util.js';
 import { initDrive, publish, gravityY, motionVehicles } from './modes-lib-drive.js';
 
 const ID = 'gameplay.vehicle.aircraft';
@@ -41,9 +41,9 @@ export default {
     return errors;
   },
   install(rt, config) {
-    const groundAt = (api, plane, at) => {
-      if (plane === 'xz' && has(api, 'groundAt')) return api.groundAt(at[0], at[2]).y;
-      if (has(api, 'raycast')) { const r = api.raycast(at, [0, -1, 0], 1000); if (r.hit !== 'none') return at[1] - r.dist; }
+    const groundAt = (api, plane, at, e) => {
+      if (plane === 'xz' && has(api, 'groundAt')) return api.groundAt(at[0], at[2]).y + footOffset(api, e);
+      if (has(api, 'raycast')) { const r = api.raycast(at, [0, -1, 0], 1000); if (r.hit !== 'none') return at[1] - r.dist + footOffset(api, e); }
       return 0;
     };
     rt.system('movement', rt => {
@@ -93,7 +93,7 @@ export default {
         const at = v.at.slice();
         if (plane === 'xz') { at[0] += f[0] * hs * dt; at[2] += f[1] * hs * dt; } else at[0] += (f[0] >= 0 ? 1 : -1) * hs * dt;
         at[1] = Math.min(config.ceiling, at[1] + vy * dt);
-        const floor = groundAt(api, plane, at);
+        const floor = groundAt(api, plane, at, v);
         if (at[1] <= floor && vy <= 0) {
           at[1] = floor;
           if (d.airborne) {

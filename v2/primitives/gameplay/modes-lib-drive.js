@@ -4,7 +4,7 @@
 //     vl (lateral m/s, + = left), vy (vertical m/s), speed (|v| m/s),
 //     airborne, control? (written by AI drivers) , ... per-primitive fields }
 // and mirrors world velocity into components.body.vel for other primitives.
-import { has, planeFor, planeUW, fromPlane, r6, sign } from './modes-lib-util.js';
+import { has, planeFor, planeUW, fromPlane, r6, sign, footOffset } from './modes-lib-util.js';
 
 export function initDrive(v) {
   const d = (v.components.drive ??= {});
@@ -57,10 +57,12 @@ export function moveVehicle(rt, v, api, plane, d, dt, { stepUp = 1.05, gravity =
   const du = (f[0] * d.vf + l[0] * d.vl) * dt, dw = (f[1] * d.vf + l[1] * d.vl) * dt;
   const at = v.at.slice(), out = { blockedU: false, blockedW: false, landed: false, impactY: 0, tookOff: false };
   let dy = 0;
-  const gNow = groundY(api, plane, at);
+  // Ground heights are compared with the body's feet (anchor-aware), then shifted back.
+  const foot = plane === 'xz' ? footOffset(api, v) : 0;
+  const g0 = groundY(api, plane, at), gNow = g0 === null ? null : g0 + foot;
   if (plane === 'xz' && keepY !== null) dy = keepY - at[1];
   else if (plane === 'xz' && gNow !== null) {
-    const next = [at[0] + du, at[1], at[2] + dw], gNext = groundY(api, plane, next);
+    const next = [at[0] + du, at[1], at[2] + dw], gNext = groundY(api, plane, next) + foot;
     if (!d.airborne) {
       const rise = gNext - at[1];
       if (rise > 0 && rise <= stepUp) { dy = rise; d.vy = rise / dt; }
