@@ -29,9 +29,10 @@ test('rewind: holding rewind walks the world back; spawns are undone; vars and f
   assert.equal(rt.state.vars.t, 41);
   rt.step();
   assert.equal(rt.state.counts.rewind_end, 1);
+  walk(rt, 300); const far = rt.player().at[0];
   hold(rt, 200);
-  assert.equal(rt.state.counts.rewind_empty >= 1, true, 'history is bounded (2 s)');
-  assert.ok(rt.player().at[0] >= 41 - 122 && rt.player().at[0] <= 41 - 100, `${rt.player().at[0]}`);
+  assert.equal(rt.state.counts.rewind_empty >= 1, true);
+  assert.ok(far - rt.player().at[0] <= 122 && far - rt.player().at[0] >= 116, 'history is bounded to 2 s (120 frames)');
 });
 
 test('rewind: immune entities keep their timeline; the echo replays the undone path', () => {
