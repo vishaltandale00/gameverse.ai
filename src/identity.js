@@ -3,6 +3,9 @@ export async function digest(bytes) {
   return Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('');
 }
 export function progressKey(identity) {
+  // A made game keeps one progress line across its versions; each checkpoint
+  // records its version and only restores onto the same version.
+  if (identity.kind === 'generated') return ['generated-progress', identity.profileId, identity.gameId, identity.adapter, identity.snapshotFormat].join(':');
   if (identity.kind === 'custom-sports') return ['custom-progress', identity.profileId, identity.gameId, identity.version, identity.artifactSha256, identity.adapter, identity.snapshotFormat].join(':');
   return ['progress', identity.profileId, identity.gameId, identity.cartridgeSha256,
     identity.wasmSha256, identity.loaderSha256, identity.adapter, identity.snapshotFormat].join(':');

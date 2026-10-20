@@ -37,7 +37,15 @@ export function configuredGames(config, catalog) {
   });
 }
 
+// Generated games come from the v2 service at runtime, not from configured
+// bindings. Only the neighborhood base hosts them, through one known adapter.
+export const GENERATED_GAME_ADAPTER = 'gameverse-generated/0.1.0';
 export function validateGameBinding(config, game, runtime) {
+  if (game?.kind === 'generated') {
+    if (config?.base?.kind !== 'neighborhood') throw Error('Made games open from the Creator’s Lot in Gameverse v1.');
+    if (!/^gen-[a-z0-9][a-z0-9-]*$/.test(game.id || '') || game.adapter !== GENERATED_GAME_ADAPTER || runtime?.adapter !== GENERATED_GAME_ADAPTER) throw Error('This made game needs a different adapter version.');
+    return;
+  }
   const binding = config.subgames.find(item => item.id === game.id);
   if (!binding || binding.catalogId !== game.id) throw Error('This game is not available in the active Gameverse configuration.');
   if (binding.adapter !== runtime?.adapter) throw Error('This game requires a different adapter version. Its existing progress is retained.');
