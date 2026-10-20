@@ -1,5 +1,6 @@
 :root { color-scheme: dark; --bg:#0c0f14; --panel:#131821; --line:#232b38; --fg:#e9eef5; --muted:#8d9aab; --accent:#7ce0b0; --warn:#f2c46d; --bad:#ff8b7b; font: 15px/1.45 ui-sans-serif, system-ui, sans-serif; }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; } /* author display rules must not reveal hidden elements */
 body { margin:0; background:var(--bg); color:var(--fg); display:grid; grid-template-columns: 300px 1fr 320px; min-height:100vh; }
 .library, .inspector { background:var(--panel); border-right:1px solid var(--line); padding:18px; overflow:auto; max-height:100vh; position:sticky; top:0; }
 .inspector { border-right:0; border-left:1px solid var(--line); }
