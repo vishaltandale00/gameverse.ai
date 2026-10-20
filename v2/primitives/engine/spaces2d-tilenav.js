@@ -20,22 +20,29 @@ export function makeNav(q, opts = {}) {
   const w = Math.max(1, Math.ceil((opts.width ?? 1) - 1e-6)), h = Math.max(1, Math.ceil((opts.height ?? 1) - 1e-6));
   const avoid = new Set(opts.avoid ?? ['hazard']);
   const nx = x => (q.wrapX ? mod(x, q.W) : x), ny = y => (q.wrapY ? mod(y, q.H) : y);
-  const kind = (x, y) => q.kindAt(nx(x), ny(y));
-  const tags = (x, y) => q.tagsAt(nx(x), ny(y));
-  const has = (x, y, t) => tags(x, y).includes(t);
-  const avoided = (x, y) => avoid.size > 0 && tags(x, y).some(t => avoid.has(t));
+  // Per-cell facts are memoised for the life of this nav object (one query): kind and tag bits.
+  const KINDS = ['none', 'oneway', 'slope', 'solid'], AV = 4, LQ = 8, CL = 16, memo = new Map();
+  const info = (x, y) => {
+    x = nx(x); y = ny(y); const k = (y + 2) * (q.W + 8) + x + 4; let v = memo.get(k); // collision-free for the off-map margin probes use
+    if (v === undefined) { const t = q.tagsAt(x, y); v = KINDS.indexOf(q.kindAt(x, y)) | (avoid.size && t.some(z => avoid.has(z)) ? AV << 2 : 0) | (t.includes('liquid') ? LQ << 2 : 0) | (t.includes('climbable') ? CL << 2 : 0); memo.set(k, v); }
+    return v;
+  };
+  const kind = (x, y) => KINDS[info(x, y) & 3];
+  const has = (x, y, t) => Boolean(info(x, y) & ((t === 'liquid' ? LQ : t === 'climbable' ? CL : 0) << 2));
+  const avoided = (x, y) => Boolean(info(x, y) & (AV << 2));
   const liquid = (x, y) => has(x, y, 'liquid');
   const inMap = (x, y) => (q.wrapX || (x >= 0 && x < q.W)) && (q.wrapY || (y >= 0 && y < q.H));
   // A cell a body part may overlap: not solid, not a slope (except at the feet), not avoided.
-  const open = (x, y) => inMap(x, y) && (kind(x, y) === 'none' || kind(x, y) === 'oneway') && !avoided(x, y) && (q.mode === 'side' || !liquid(x, y) || ab.swim || ab.fly);
+  const open = (x, y) => { if (!inMap(x, y)) return false; const v = info(x, y), k = v & 3; return k <= 1 && !(v & (AV << 2)) && (q.mode === 'side' || !(v & (LQ << 2)) || ab.swim || ab.fly); };
   const feetOk = (x, y) => inMap(x, y) && !avoided(x, y) && (open(x, y) || (q.mode === 'side' && kind(x, y) === 'slope'));
   const clear = (x, y) => { for (let i = 0; i < w; i++) { if (!feetOk(x + i, y)) return false; for (let j = 1; j < h; j++) if (!open(x + i, y + j)) return false; } return true; };
-  const supportAt = (x, y) => { const k = kind(x, y); return k === 'solid' || k === 'oneway' || k === 'slope'; };
-  const slopeNode = (x, y) => kind(x, y) === 'slope';
+  const supportAt = (x, y) => (info(x, y) & 3) > 0;
+  const slopeNode = (x, y) => (info(x, y) & 3) === 2;
   const standable = (x, y) => { if (!clear(x, y)) return false; for (let i = 0; i < w; i++) if (slopeNode(x + i, y) || supportAt(x + i, y - 1)) return true; return false; };
   const climbable = (x, y) => clear(x, y) && (ab.climb && (has(x, y, 'climbable') || [-1, w].some(d => kind(x + d, y) === 'solid' && has(x + d, y, 'climbable'))) || ab.wallJump && [-1, w].some(d => kind(x + d, y) === 'solid'));
   const swimmable = (x, y) => ab.swim && clear(x, y) && liquid(x, y);
-  const anchored = (x, y) => standable(x, y) || climbable(x, y) || swimmable(x, y);
+  const amemo = new Map();
+  const anchored = (x, y) => { const k = (ny(y) + 2) * (q.W + 8) + nx(x) + 4; let v = amemo.get(k); if (v === undefined) { v = inMap(x, y) && (standable(x, y) || climbable(x, y) || swimmable(x, y)); amemo.set(k, v); } return v; };
   const nodeKey = (x, y) => key2(nx(x), ny(y));
 
   /** Where a body released at (x, y) comes to rest (standable, climbable or swimmable), or null. */
