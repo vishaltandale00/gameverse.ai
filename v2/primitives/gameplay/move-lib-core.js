@@ -307,7 +307,7 @@ export const project = (fr, vec) => { const out = [0, 0, 0]; for (const i of fr.
  * opts.free3d: steer moveTo/steer in full 3D (fliers, swimmers). opts.tol: arrival tolerance.
  */
 export function intent(rt, e, api, fr, opts = {}) {
-  const cache = frameCache(rt).intent, key = `${e.id}|${opts.free3d ? 1 : 0}`;
+  const cache = frameCache(rt).intent, key = `${e.id}|${opts.free3d ? 1 : 0}${opts.jumpIsUp ? 1 : 0}${opts.crouchIsDown ? 1 : 0}${opts.stickIsVert ? 1 : 0}|${opts.tol ?? ''}`;
   if (cache.has(key)) return cache.get(key);
   const out = { dir: [0, 0, 0], vert: 0, stick: [0, 0], run: false, jump: false, jumpHeld: false, ctl: null, source: null, speed: null };
   const npc = e.id !== 'player';
@@ -391,7 +391,8 @@ function follow(rt, e, api, fr, opts) {
   const near = wp => (opts.free3d ? len(sub(v3(e.at), v3(wp))) : planeDist(fr, e.at, wp)) <= tol;
   while (P.i < P.pts.length - 1 && near(P.pts[P.i])) P.i++;
   const wp = P.pts[P.i];
-  if (P.best === null || dist < P.best - 0.02) { P.best = dist; P.stuck = 0; } else P.stuck += rt.dt;
+  if (P.best === null || dist < P.best - 0.02) { P.best = dist; P.stuck = 0; } else if (P.f !== rt.state.frame) P.stuck += rt.dt;
+  P.f = rt.state.frame;
   if (P.stuck > (opts.stuckSec ?? 2)) { P.pts = null; P.tries++; P.stuck = 0; P.best = null; if (P.tries > 3) return done('stuck'); }
   const raw = sub(v3(wp), v3(e.at));
   out.dir = norm(opts.free3d ? raw : project(fr, raw));
