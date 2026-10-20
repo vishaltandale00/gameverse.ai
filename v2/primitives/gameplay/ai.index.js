@@ -6,5 +6,6 @@ import abilities from './progression-abilities.js';
 import tree from './progression-tree.js';
 import wanted from './wanted.js';
 import motion from './ai-motion.js';
+import formation from './ai-formation.js';
 
-export default [brain, attacks, motion, level, abilities, tree, wanted];
+export default [brain, attacks, motion, formation, level, abilities, tree, wanted];
