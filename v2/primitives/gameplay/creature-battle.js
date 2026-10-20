@@ -360,7 +360,7 @@ export default {
     const content = () => rt.doc.content;
     const E = () => engine({ content: content(), rand: () => rt.random(), capture: rt.hasService('capture') ? rt.service('capture') : null });
     const cs = () => rt.service('creatures');
-    const hasInv = () => rt.logic.predicates.has('item');
+    const hasInv = () => rt.canTest('item');
     function flush(events) {
       const s = st(); s.log = (s.log || []).concat(events).slice(-60);
       for (const e of events) {
@@ -396,7 +396,7 @@ export default {
       cs().setParty('player', b.player.party);
       if (config.evolve && b.leveled.length) cs().evolveReady('player');
       if (b.captured) { rt.emitTyped('caught', b.captured.species, { uid: b.captured.uid, level: b.captured.level }); cs().add('player', b.captured, { caught: true }); }
-      if (b.money) { if (rt.logic.effects.has('give_money')) rt.run([{ do: 'give_money', amount: b.money, currency: config.currency }]); else { const k = `money.${config.currency}`; rt.state.vars[k] = (rt.state.vars[k] ?? 0) + b.money; } }
+      if (b.money) { if (rt.canRun('give_money')) rt.run([{ do: 'give_money', amount: b.money, currency: config.currency }]); else { const k = `money.${config.currency}`; rt.state.vars[k] = (rt.state.vars[k] ?? 0) + b.money; } }
       if (b.foe.trainer && b.outcome === 'win') rt.emitTyped('trainer_defeated', b.foe.trainer.id, { prize: b.money });
       s.battle = null;
       if (s.returnTo) { const p = rt.player(); if (p) rt.moveToSpace(p, s.returnTo.space, s.returnTo.at, s.returnTo.zone || undefined); s.returnTo = null; }

@@ -53,7 +53,7 @@ Base kinds (`character item zone quest model archetype space beat ending recipe 
 | `rt.spawn(archetype, {space, at, components, id})` / `rt.despawn(id)` | Entities. Characters spawn with `id = character id`. |
 | `rt.entity(id)`, `rt.player()`, `rt.query(...components)`, `rt.resolve(who, context)` | Lookups. `resolve` maps `'player'` or undefined to the player, `'self'` to `context.self`, and anything else to an entity id. |
 | `rt.moveToSpace(entity, spaceId, at?, zone?)` | Cross-space travel (portals, interiors, battle screens). |
-| `rt.test(pred, context)` / `rt.run(effects, context)` | Evaluate predicates and run effects. `context.self` is the acting entity. |
+| `rt.test(pred, context)` / `rt.run(effects, context)` | Evaluate predicates and run effects. `context.self` is the acting entity. `context.defaultWho` (e.g. `'self'` for AI rules) is the subject when a predicate or effect omits `who`. |
 | `rt.random()` | The only randomness allowed. It is seeded and stored in state. Never use `Math.random`, `Date` or `performance` in simulation. |
 | `rt.input` | This step's input: `{actions:{verb:value}, axes:{move:[x,y], look:[x,y]}, held:{verb:true}}`. |
 | `rt.headless` / `rt.view` | `view` exists only in the browser (§6). Simulation must never depend on it. |

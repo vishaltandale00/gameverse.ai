@@ -2415,13 +2415,13 @@
    "with": {
     "useBased": true,
     "nodes": [
-     {"id":"drift_control","cost":1,"requires":[],"mods":{"stat.drift_grip":0.2}},
-     {"id":"engine_tune","cost":2,"requires":["drift_control"],"mods":{"stat.car_accel":0.15}},
-     {"id":"mining_fortune","cost":1,"requires":[],"mods":{"stat.ore_drop":0.25}},
-     {"id":"mining_speed","cost":2,"requires":["mining_fortune"],"mods":{"stat.mine_speed":0.3}},
-     {"id":"quiet_step","cost":1,"requires":[],"mods":{"stat.noise":-0.3}},
-     {"id":"quick_hands","cost":2,"requires":[],"mods":{"stat.reload":-0.3}},
-     {"id":"builder_blueprint","cost":2,"requires":[],"mods":{"stat.build_reach":2}},
+     {"id":"drift_control","cost":1,"requires":[],"mods":{"stat.drift_grip":0.2},"use":{"event":"drift","count":40}},
+     {"id":"engine_tune","cost":2,"requires":["drift_control"],"mods":{"stat.car_accel":0.15},"use":{"event":"race_finished","count":3}},
+     {"id":"mining_fortune","cost":1,"requires":[],"mods":{"stat.ore_drop":0.25},"use":{"event":"block_mined:*","count":200}},
+     {"id":"mining_speed","cost":2,"requires":["mining_fortune"],"mods":{"stat.mine_speed":0.3},"use":{"event":"block_mined:*","count":600}},
+     {"id":"quiet_step","cost":1,"requires":[],"mods":{"stat.noise":-0.3},"use":{"event":"takedown","count":5}},
+     {"id":"quick_hands","cost":2,"requires":[],"mods":{"stat.reload":-0.3},"use":{"event":"fired","count":300}},
+     {"id":"builder_blueprint","cost":2,"requires":[],"mods":{"stat.build_reach":2},"use":{"event":"block_placed:*","count":250}},
      {"id":"thick_skin","cost":2,"requires":[],"mods":{"hp.max":8}}
     ]
    }

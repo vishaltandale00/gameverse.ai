@@ -39,7 +39,7 @@ export default {
   install(rt, config) {
     const content = () => rt.doc.content;
     const bonusOf = item => item == null ? 1 : config.balls.find(b => b.item === item)?.bonus ?? (itemRule(content(), item)?.kind === 'ball' ? itemRule(content(), item).value || 1 : null);
-    const hasInv = () => rt.logic.predicates.has('item');
+    const hasInv = () => rt.canTest('item');
     const api = {
       bonusOf, isBall: item => bonusOf(item) != null && item != null,
       odds: (c, bonus = 1) => captureOdds(content(), c, bonus),

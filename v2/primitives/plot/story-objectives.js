@@ -49,7 +49,7 @@ export const OBJECTIVES = {
     check: (o, path, errors, ctx) => ctx.checkPredicate({ item: o.item, gte: o.count ?? 1 }, path, errors),
     poll(o, prog, rt) {
       const need = o.count ?? 1;
-      prog.n = Math.min(need, rt.logic.predicates.has('item') ? countHeld(rt, o.item, o.who) : 0);
+      prog.n = Math.min(need, rt.canTest('item') ? countHeld(rt, o.item, o.who) : 0);
       if (prog.n < need) return false;
       if (o.consume) rt.run([{ do: 'take_item', item: o.item, count: need, who: o.who }]);
       return true;
@@ -213,7 +213,7 @@ function countHeld(rt, item, who) {
   // Prefer the inventory service's pure count; otherwise read through the `item` predicate (binary search on gte).
   const inv = rt.hasService('inventory') ? rt.service('inventory') : null;
   if (typeof inv?.count === 'function') return inv.count(who ?? 'player', item) || 0;
-  if (!rt.logic.predicates.has('item')) return 0;
+  if (!rt.canTest('item')) return 0;
   if (!rt.test({ item, gte: 1, who })) return 0;
   let lo = 1, hi = 2;
   while (rt.test({ item, gte: hi, who }) && hi < 1e6) { lo = hi; hi *= 2; }
