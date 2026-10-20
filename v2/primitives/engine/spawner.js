@@ -39,6 +39,7 @@ export default {
           biome: { type: 'string', effect: 'only where the biomeAt service reports this biome' },
           telegraph: { type: 'number', default: 0, min: 0, unit: 's', effect: 'emit spawn_telegraph, spawn after this delay' },
           unique: { type: 'boolean', default: false, effect: 'one named entity whose id is the rule id' },
+          snap: { type: 'boolean', effect: 'put 3D spawns on the ground (surface capability); default: for sampled positions, not for explicit at' },
           components: { type: 'object', open: true, default: {}, effect: 'component overrides for spawned entities' },
           onSpawn: { type: 'effects', default: [], effect: 'run with self = the new entity' },
           release: { type: 'object', effect: 'hold spawns and release them one at a time', fields: {
@@ -114,9 +115,9 @@ export default {
       const p = rt.player(), z = r.zone ? zoneDef(rt.doc, r.zone) : null;
       const space = r.space ?? z?.space ?? p?.space ?? rt.doc.spaces[0].id, api = rt.space(space);
       for (let attempt = 0; attempt < 8; attempt++) {
-        let at = null, teleportZone = null;
+        let at = null, teleportZone = null, sampled = true;
         if (anchor) at = scatter(anchor, r.spread || 2, rt.random);
-        else if (r.at !== undefined) at = scatter(Array.isArray(r.at) && r.at.every(isVec) && !isVec(r.at) ? pick(r.at, rt.random) : r.at, r.spread, rt.random);
+        else if (r.at !== undefined) sampled = false, at = scatter(Array.isArray(r.at) && r.at.every(isVec) && !isVec(r.at) ? pick(r.at, rt.random) : r.at, r.spread, rt.random);
         else if (r.near && Object.values(rt.state.entities).some(e => e.space === space && (e.id === r.near || e.archetype === r.near))) {
           const t = Object.values(rt.state.entities).filter(e => e.space === space && (e.id === r.near || e.archetype === r.near));
           at = scatter(pick(t, rt.random).at, r.spread || 3, rt.random);
@@ -125,7 +126,7 @@ export default {
           if (at === null || at === undefined) { at = null; teleportZone = r.zone; }
         } else if (p && p.space === space) at = scatter(p.at, r.spread || 4, rt.random);
         if (isVec(at)) {
-          if (api.groundAt && at.length >= 3) { const g = api.groundAt(at[0], at[2]); if (r.surface?.length && !r.surface.includes(g.material)) continue; at = [at[0], g.y, at[2]]; }
+          if (api.groundAt && at.length >= 3) { const g = api.groundAt(at[0], at[2]); if (r.surface?.length && !r.surface.includes(g.material)) continue; if (r.snap ?? sampled) at = [at[0], g.y, at[2]]; }
           else if (r.surface?.length && !api.groundAt) return null;
           if (api.getCell && (rt.hasService('blocks') ? rt.service('blocks').solidAt(at, space) : api.getCell(at) != null)) continue;
           if (r.despawnDist && p?.space === space && isVec(p.at) && api.distance && api.distance(p.at, at) > r.despawnDist) continue;
@@ -195,7 +196,7 @@ export default {
     const api = {
       place, alive: ruleId => rs(ruleId).alive.slice(), held: ruleId => rs(ruleId).queue.slice(),
       spawn(e, c = {}) {
-        const count = e.count ?? 1, spec = { archetype: e.archetype, zone: e.zone, space: e.space, spread: e.spread, components: e.components, onSpawn: e.onSpawn, id: count === 1 ? e.id : undefined };
+        const count = e.count ?? 1, spec = { archetype: e.archetype, zone: e.zone, space: e.space, spread: e.spread, snap: e.snap, components: e.components, onSpawn: e.onSpawn, id: count === 1 ? e.id : undefined };
         if (e.near) { const t = rt.resolve(e.near, c); if (t) spec.at = t.at; else spec.near = e.near; } else if (e.at !== undefined) spec.at = e.at;
         const out = [];
         for (let k = 0; k < count; k++) {

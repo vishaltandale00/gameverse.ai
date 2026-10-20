@@ -123,12 +123,14 @@ export default {
       }
       return null;
     };
+    // Steps are matched backwards; each must be a different direction from the step after it, so one held
+    // direction cannot satisfy two steps (holding down-back does not make a reverse dragon punch).
     const steps = (f, m, pi) => {
-      let at = pi;
+      let at = pi, next = null;
       for (let s = m.steps.length - 1; s >= 0; s--) {
         const set = m.steps[s], limit = s === m.steps.length - 1 ? Math.max(0, pi - (m.last ?? 6)) : Math.max(0, pi - m.window);
         let found = -1;
-        for (let i = at; i >= limit; i--) if (set.includes(rel(f, dirOf(f.buf[i])))) { found = i; break; }
+        for (let i = at; i >= limit; i--) { const d = rel(f, dirOf(f.buf[i])); if (set.includes(d) && d !== next) { found = i; next = d; break; } }
         if (found < 0) return false;
         if (s === m.steps.length - 1 && m.noAfter) for (let i = found + 1; i <= pi; i++) if (m.noAfter.includes(rel(f, dirOf(f.buf[i])))) return false;
         at = found - 1;

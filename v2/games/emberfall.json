@@ -1822,24 +1822,84 @@
     ],
     "bindings": {
      "3p": {
-      "move": ["wasd","lstick"],
-      "look": ["mouse","rstick"],
-      "jump": ["space","a"],
-      "sprint": ["shift","lstick_press"],
-      "attack": ["lmb","x"],
-      "alt_attack": ["rmb","y"],
-      "block": ["q","lb"],
-      "dodge": ["ctrl","b"],
-      "aim": ["rmb","lt"],
-      "lockon": ["tab","rstick_press"],
-      "interact": ["e","a"],
-      "cast": ["f","rb"],
-      "heal": ["h","dpad_down"],
-      "mount": ["e","a"],
-      "call_mount": ["c","dpad_up"],
-      "glide": ["space","a"]
+      "move": [
+       "wasd",
+       "lstick"
+      ],
+      "look": [
+       "mouse",
+       "rstick"
+      ],
+      "jump": [
+       "space",
+       "pad_a"
+      ],
+      "sprint": [
+       "shift",
+       "lstick_press"
+      ],
+      "attack": [
+       "lmb",
+       "pad_x"
+      ],
+      "alt_attack": [
+       "rmb",
+       "pad_y"
+      ],
+      "block": [
+       "q",
+       "lb"
+      ],
+      "dodge": [
+       "ctrl",
+       "pad_b"
+      ],
+      "aim": [
+       "rmb",
+       "lt"
+      ],
+      "lockon": [
+       "tab",
+       "rstick_press"
+      ],
+      "interact": [
+       "e",
+       "pad_a"
+      ],
+      "cast": [
+       "f",
+       "rb"
+      ],
+      "heal": [
+       "h",
+       "dpad_down"
+      ],
+      "mount": [
+       "e",
+       "pad_a"
+      ],
+      "call_mount": [
+       "c",
+       "dpad_up"
+      ],
+      "glide": [
+       "space",
+       "pad_a"
+      ]
      }
-    }
+    },
+    "shareKeys": [
+     [
+      "jump",
+      "glide",
+      "interact",
+      "mount"
+     ],
+     [
+      "alt_attack",
+      "aim"
+     ]
+    ]
    }
   },
   {"use":"engine.physics.character","with":{"radius":0.35,"height":1.8,"stepHeight":0.45,"slopeLimit":55}},

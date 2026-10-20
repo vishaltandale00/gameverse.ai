@@ -1904,32 +1904,87 @@
     ],
     "bindings": {
      "1p": {
-      "move": ["wasd"],
-      "look": ["mouse"],
-      "jump": ["space"],
-      "sprint": ["shift"],
-      "crouch": ["ctrl"],
-      "mine": ["lmb"],
-      "place": ["rmb"],
-      "interact": ["e"],
-      "inventory": ["tab"],
-      "hotbar": ["1-9","wheel"],
-      "swap_camera": ["f5"]
+      "move": [
+       "wasd"
+      ],
+      "look": [
+       "mouse"
+      ],
+      "jump": [
+       "space"
+      ],
+      "sprint": [
+       "shift"
+      ],
+      "crouch": [
+       "ctrl"
+      ],
+      "mine": [
+       "lmb"
+      ],
+      "place": [
+       "rmb"
+      ],
+      "interact": [
+       "e"
+      ],
+      "inventory": [
+       "tab"
+      ],
+      "hotbar": [
+       "1-9",
+       "wheel"
+      ],
+      "swap_camera": [
+       "f5"
+      ]
      },
      "3p": {
-      "move": ["wasd"],
-      "look": ["mouse"],
-      "jump": ["space"],
-      "sprint": ["shift"],
-      "mine": ["lmb"],
-      "place": ["rmb"],
-      "interact": ["e"],
-      "drive": ["wasd"],
-      "handbrake": ["space"],
-      "horn": ["h"],
-      "swap_camera": ["f5"]
+      "move": [
+       "wasd"
+      ],
+      "look": [
+       "mouse"
+      ],
+      "jump": [
+       "space"
+      ],
+      "sprint": [
+       "shift"
+      ],
+      "mine": [
+       "lmb"
+      ],
+      "place": [
+       "rmb"
+      ],
+      "interact": [
+       "e"
+      ],
+      "drive": [
+       "wasd"
+      ],
+      "handbrake": [
+       "space"
+      ],
+      "horn": [
+       "h"
+      ],
+      "swap_camera": [
+       "f5"
+      ]
      }
-    }
+    },
+    "shareKeys": [
+     [
+      "move",
+      "drive"
+     ],
+     [
+      "jump",
+      "handbrake"
+     ]
+    ]
    }
   },
   {"use":"engine.physics.character","with":{"radius":0.3,"height":1.8,"stepHeight":0.6,"slopeLimit":45}},

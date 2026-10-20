@@ -65,7 +65,8 @@ export default {
     };
     const frameInput = id => {
       const c = cache(), e = rt.entity(id); if (!e) return EMPTY();
-      if (c.frame === rt.state.frame && c.by[id]) return c.by[id];
+      // This step's view once the input phase ran; between steps (and before the input phase) the last resolved view while rt.input is unchanged.
+      if ((c.frame === rt.state.frame || c.ref === rt.input) && c.by[id]) return c.by[id];
       const r = resolve(e, rt.store(ID).prev?.[id] || []);
       if (c.frame === rt.state.frame) c.by[id] = r;
       return r;
@@ -98,7 +99,7 @@ export default {
     for (const v of config.verbs) if (!axisVerbs.has(v) && !rt.actions().includes(v)) rt.action(v, () => {});
     rt.system('input', rt => {
       const s = rt.store(ID); s.prev ??= {};
-      const c = cache(); c.frame = rt.state.frame; c.by = {};
+      const c = cache(); c.frame = rt.state.frame; c.ref = rt.input; c.by = {};
       const ids = ['player', ...Object.values(rt.state.entities).filter(e => e.id !== 'player' && e.components.input).map(e => e.id)];
       for (const id of ids) {
         const e = rt.entity(id); if (!e) continue;
