@@ -53,14 +53,17 @@ export class Logic {
     this.effect('end_game', { refs: e => e.ending ? [['ending', e.ending]] : [], run: (e, rt) => { rt.state.status = e.outcome || 'won'; rt.state.ending = e.ending || null; rt.emit('game_end', { ending: e.ending || null, outcome: rt.state.status }); } });
   }
   /** Register a predicate kind: { check?(p, path, errors, ctx), refs?(p) -> [[kind, id]], test(p, rt) }. */
-  predicate(kind, def) { this.claim('predicate', kind); this.predicates.set(kind, def); }
+  predicate(kind, def) { if (this.claim('predicate', kind)) this.predicates.set(kind, def); }
+  /** Returns false when an ambient (stand-in) provider defers to a real owner of the kind. */
   claim(type, kind) {
+    if (this.ambient && this.owners[type].has(kind)) return false;
     const owner = this.owner ?? 'kernel', first = this.owners[type].get(kind);
     if (first !== undefined && first !== owner) this.duplicates.push({ type, kind, first, second: owner });
     this.owners[type].set(kind, owner);
+    return true;
   }
   /** Register an effect kind: { check?(e, path, errors, ctx), refs?(e), run(e, rt) }. */
-  effect(kind, def) { this.claim('effect', kind); this.effects.set(kind, def); }
+  effect(kind, def) { if (this.claim('effect', kind)) this.effects.set(kind, def); }
   kindOf(p) { return p && typeof p === 'object' ? Object.keys(p).find(k => this.predicates.has(k)) : undefined; }
   /** context: { self?, ...} carried from the caller (ai rule owner, interactable, beat). */
   test(p, rt, context = {}) { const kind = this.kindOf(p); if (!kind) throw Error(`unknown predicate ${JSON.stringify(p)}`); return this.predicates.get(kind).test(p, rt, context); }

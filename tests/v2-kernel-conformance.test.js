@@ -65,3 +65,28 @@ test('modal input, deferred work, runtime capabilities and ifAbsent actions', ()
   assert.deepEqual(order, ['system', 'deferred']);
   assert.deepEqual(rt.capabilities('world').sort(), ['distance', 'navigate', 'position', 'reachable']);
 });
+
+test('preflight fills generator defaults, and hot-loaded generators run on existing spaces', async () => {
+  const { preflight, mergePatch } = await import('../v2/kernel/document.js');
+  const ran = [];
+  const gen = { id: 'engine.generate.test-marker', card: { intent: 'test generator', params: { tag: { type: 'string', default: 'x' } } }, install(rt, cfg, inst) { ran.push([inst.space, cfg.tag]); } };
+  const doc = base('engine.space.graph', [{ id: 'hall', exits: [] }]);
+  doc.spaces[0].generators = [{ use: 'engine.generate.test-marker' }];
+  const { rt, registry, logic, checked } = compile(doc, { primitives: [...PRIMITIVES, gen] });
+  assert.equal(checked.doc.spaces[0].generators[0].with.tag, 'x', 'defaults applied');
+  const { doc: next, added } = mergePatch(rt.doc, { spaces: [{ id: 'world', generators: [{ use: 'engine.generate.test-marker', with: { tag: 'y' } }] }] });
+  const c2 = preflight(next, registry, logic); assert.ok(c2.ok, JSON.stringify(c2.errors));
+  rt.extend(c2.doc, added);
+  assert.deepEqual(ran, [['world', 'x'], ['world', 'y']]);
+});
+
+test('omitted object params get field defaults; context.defaultWho sets the subject', async () => {
+  const { checkFields } = await import('../v2/kernel/params.js');
+  const out = checkFields({ dash: { type: 'object', default: {}, fields: { speed: { type: 'number', default: 12 }, sec: { type: 'number', default: 0.2 } } } }, {}, 'with', []);
+  assert.deepEqual(out.dash, { speed: 12, sec: 0.2 });
+  const doc = base('engine.space.graph', [{ id: 'hall', exits: [{ to: 'yard' }] }, { id: 'yard', exits: [{ to: 'hall' }] }]);
+  const { rt } = compile(doc, { primitives: PRIMITIVES });
+  const guard = rt.spawn('hero', { id: 'guard', space: 'world', at: 'yard' });
+  assert.equal(rt.test({ zone: 'yard' }, { self: guard.id, defaultWho: 'self' }), true);
+  assert.equal(rt.test({ zone: 'yard' }), false, 'without it the subject is the player');
+});

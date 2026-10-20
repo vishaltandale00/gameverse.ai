@@ -133,7 +133,8 @@ export function preflight(doc, registry, logic) {
   for (const [id, path] of refs.event.read) if (!provided(ctx.provides.events, id)) warnings.push({ code: 'event_never_emitted', path, message: `no primitive emits '${id}'` });
 
   const ok = !errors.length;
-  const out = ok ? { ...doc, spaces: doc.spaces.map((s, i) => ({ ...s, with: normalized.find(n => n._path === `spaces[${i}]`)?.with ?? s.with })),
+  const out = ok ? { ...doc, spaces: doc.spaces.map((s, i) => ({ ...s, with: normalized.find(n => n._path === `spaces[${i}]`)?.with ?? s.with,
+      ...(s.generators ? { generators: s.generators.map((g, j) => ({ ...g, with: normalized.find(n => n._path === `spaces[${i}].generators[${j}]`)?.with ?? g.with })) } : {}) })),
     systems: (doc.systems || []).map((s, i) => ({ ...s, with: normalized.find(n => n._path === `systems[${i}]`).with })),
     graphics: (doc.graphics || []).map((g, i) => ({ ...g, with: normalized.find(n => n._path === `graphics[${i}]`).with })) } : null;
   return { ok, errors, warnings, doc: out, capabilities: Object.fromEntries([...spaceCaps].map(([k, v]) => [k, [...v]])), ms: +(performance.now() - started).toFixed(2) };

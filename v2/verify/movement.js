@@ -39,7 +39,7 @@ export function abilityIds(doc, registry) {
 /** Abilities the player holds now: the `ability` predicate when registered, plus the document's starting list. */
 export function currentAbilities(rt, ids, start = []) {
   const out = new Set(start);
-  if (!rt.logic.predicates.has('ability')) return out;
+  if (!rt.canTest('ability')) return out;
   for (const id of ids) { try { if (rt.test({ ability: id })) out.add(id); } catch { /* not testable here */ } }
   return out;
 }
