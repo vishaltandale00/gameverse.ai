@@ -79,6 +79,62 @@ export default {
     problems: ['exit_unreachable', 'feature_unreachable', 'room_unreachable', 'room_isolated', 'exit_unmatched', 'door_unpaired', 'start_blocked'],
     validates: ['room_rect_invalid', 'room_overlap', 'room_outside_zone', 'room_outside_space', 'room_style_unknown', 'ability_unknown', 'room_duplicate'],
   },
+  /**
+   * Planner hook (v2/planner/world.js): a config that builds a world for a space that has none yet,
+   * derived from the space's own zones. One room per zone rect (skipping zones too small for a room or
+   * overlapping one already kept), an exit to every room it touches, tall side-view rooms as climbable
+   * shafts, and the proof's movement taken from the document's movement envelope, so the generator only
+   * builds what the player's real movement can traverse. -> { with, content? } or null.
+   */
+  scaffold(space, doc, { envelope = {} } = {}) {
+    const E = this.card.params.exitSize.default, mode = space.with?.mode === 'topdown' ? 'topdown' : 'side';
+    const [W, H] = Array.isArray(space.with?.size) ? space.with.size : [Infinity, Infinity];
+    const rooms = [];
+    for (const z of space.zones || []) {
+      const r = zoneRect(z); if (!r || !r.every(Number.isFinite)) continue;
+      const rect = [Math.max(0, Math.ceil(r[0])), Math.max(0, Math.ceil(r[1])), Math.min(W, Math.floor(r[2])), Math.min(H, Math.floor(r[3]))];
+      if (rect[2] - rect[0] < E + 2 || rect[3] - rect[1] < E + 3 || rooms.some(o => rectsOverlap(o.rect, rect))) continue;
+      const tall = mode === 'side' && rect[3] - rect[1] >= 1.5 * (rect[2] - rect[0]);
+      rooms.push({ id: z.id, zone: z.id, rect, style: tall ? 'shaft' : 'hall' });
+    }
+    if (!rooms.length) return null;
+    const span = (a0, a1, b0, b1) => Math.min(a1, b1) - Math.max(a0, b0);
+    for (const a of rooms) a.exits = rooms.filter(b => b !== a).flatMap(b => {
+      const [ax0, ay0, ax1, ay1] = a.rect, [bx0, by0, bx1, by1] = b.rect;
+      const side = bx0 === ax1 ? 'r' : bx1 === ax0 ? 'l' : by0 === ay1 ? 't' : by1 === ay0 ? 'b' : null;
+      const overlap = side === 'l' || side === 'r' ? span(ay0, ay1, by0, by1) : side ? span(ax0, ax1, bx0, bx1) : 0;
+      return overlap >= E + 2 ? [{ side, to: b.zone }] : [];
+    });
+    // The proof's movement: the envelope's reach in whole tiles (rounded down, so the proof never assumes more
+    // than the controller does). Wall climbing counts only for controllers that climb any wall.
+    const tiles = (v, max) => Math.max(0, Math.min(max, Math.floor(v)));
+    const movement = {};
+    if (Number.isFinite(envelope.jumpHeight)) movement.jumpHeight = tiles(envelope.jumpHeight, 20);
+    if (Number.isFinite(envelope.jumpGap)) movement.jumpDistance = tiles(envelope.jumpGap, 30);
+    if (Number.isFinite(envelope.dash) && envelope.dash > 0) movement.dash = tiles(envelope.dash, 20);
+    for (const k of ['doubleJump', 'wallJump', 'swim', 'fly']) if (envelope[k]) movement[k] = true;
+    if (envelope.climb && envelope.climbSurfaces === 'any') movement.climb = true;
+    // Palette from the document's own blocks where they fit, else blocks this config adds.
+    const blocks = doc.content?.blocks || [], add = [];
+    const tagged = (b, ...t) => (b.tags || []).some(x => t.includes(x));
+    const solid = blocks.find(b => b?.id && b.solid !== false && !b.oneWay && !b.slope && !tagged(b, 'hazard', 'liquid', 'one_way', 'oneway'))?.id
+      ?? (add.push({ id: 'stone', name: 'Stone', solid: true }), 'stone');
+    const ledge = blocks.find(b => b?.id && (b.oneWay || tagged(b, 'one_way', 'oneway')))?.id
+      ?? (add.push({ id: 'ledge', name: 'Ledge', solid: false, tags: ['one_way'] }), 'ledge');
+    // A start on the built floor of the player's room (else the first room): the zone corner an outline
+    // places the player at is inside the shell and the ground.
+    const p = doc.player, here = p && (p.space ?? doc.spaces?.[0]?.id) === space.id;
+    const at = here && Array.isArray(p.at) ? p.at : null;
+    const room = (at && rooms.find(r => inRect(r.rect, Math.floor(at[0]), Math.floor(at[1])))) || rooms[0];
+    const [x0, y0, x1, y1] = room.rect, floor = mode === 'side' ? 1 + (ROOM_STYLES[room.style].ground ?? 1) : 1;
+    const cx = clamp(Math.floor(at?.[0] ?? x0 + 2), x0 + 2, x1 - 3) + 0.5;
+    const start = mode === 'side' ? [cx, y0 + floor + 1] : [cx, clamp(Math.floor(at?.[1] ?? y0 + 2), y0 + 2, y1 - 3) + 0.5];
+    return {
+      with: { mode, rooms, movement, palette: { wall: solid, ground: solid, platform: solid, rung: ledge } },
+      ...(add.length ? { content: { blocks: add } } : {}),
+      ...(here ? { start } : {}),
+    };
+  },
   validate(raw, doc, ctx, inst = {}) {
     const config = withDefaults(this.card, raw);
     const errors = [], styles = { ...ROOM_STYLES, ...config.styles }, sp = doc.spaces.find(s => s.id === inst.space) || doc.spaces.find(s => (s.zones || []).some(z => z.id === config.rooms[0]?.zone)) || null;
