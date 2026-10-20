@@ -10,5 +10,6 @@ import waves from './waves.js';
 import rounds from './rounds.js';
 import stageSequence from './stage-sequence.js';
 import minigame from './minigame.js';
+import rts from './rts.js';
 
-export default [vehicleCore, vehicleCar, vehicleBoat, vehicleAircraft, race, turns, cards, waves, rounds, stageSequence, minigame];
+export default [vehicleCore, vehicleCar, vehicleBoat, vehicleAircraft, race, turns, cards, waves, rounds, stageSequence, minigame, rts];
