@@ -136,7 +136,7 @@ export function settleBoard(rt, B, { fixed = t => hasTag(t, 'fixed'), blocked = 
 /** Points go to gameplay.score's add_score when it is registered; otherwise to var `score` plus a `score` event. */
 export function award(rt, amount, reason, data = {}) {
   if (!amount) return;
-  if (rt.logic.effects.has('add_score')) rt.run([{ do: 'add_score', amount, reason }]);
+  if (rt.canRun('add_score')) rt.run([{ do: 'add_score', amount, reason }]);
   else { rt.state.vars.score = (rt.state.vars.score ?? 0) + amount; rt.emit('score', { amount, reason, ...data }); }
 }
 

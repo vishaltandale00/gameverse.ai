@@ -564,7 +564,7 @@ export function hasAbility(rt, e, name) {
   if (rt.state.flags[`ability.${name}`]) return true;
   const ids = grantsIndex(rt).get(name) || [];
   const all = ids.includes(name) ? ids : [name, ...ids];
-  if (rt.logic.predicates.has('ability')) {
+  if (rt.canTest('ability')) {
     for (const id of all) { try { if (rt.test({ ability: id, ...(e.id === 'player' ? {} : { who: e.id }) })) return true; } catch { /* malformed predicate in another workstream */ } }
     return false;
   }
@@ -588,7 +588,7 @@ export function pool(rt, e, id, { max = 100, regen = 0 } = {}) {
     return {
       external: true, get value() { return v[key]; }, get max() { return v[`${key}.max`] ?? max; },
       get locked() { return Boolean(v[`${key}.locked`]); },
-      spend(a) { if (a <= 0) return true; if (rt.logic.effects.has('spend')) rt.run([{ do: 'spend', resource: id, amount: a }]); else v[key] = Math.max(0, v[key] - a); return true; },
+      spend(a) { if (a <= 0) return true; if (rt.canRun('spend')) rt.run([{ do: 'spend', resource: id, amount: a }]); else v[key] = Math.max(0, v[key] - a); return true; },
       regen() {},
     };
   }
@@ -607,7 +607,7 @@ export const canSpend = (p, amount) => !p || (!p.locked && p.value >= Math.max(a
 
 /** Apply damage through combat.health's `damage` effect when present; otherwise emit only. */
 export function hurt(rt, e, amount, type, reason) {
-  if (rt.logic.effects.has('damage')) rt.run([{ do: 'damage', who: e.id, amount, type }], { self: e.id });
+  if (rt.canRun('damage')) rt.run([{ do: 'damage', who: e.id, amount, type }], { self: e.id });
   rt.emit('move_hurt', { who: e.id, amount, type, reason });
 }
 

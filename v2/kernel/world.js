@@ -11,8 +11,10 @@ export const DT = 1 / 60;
 
 export function buildLogic(registry, Logic) {
   const logic = new Logic();
-  for (const id of registry.ids()) { logic.owner = id; registry.get(id).logic?.(logic); }
-  logic.owner = null;
+  // Real owners first; ambient providers (stand-ins, pure vocabulary libraries) only fill kinds nobody owns.
+  const ids = registry.ids(), ambient = id => Boolean(registry.get(id).card.ambient);
+  for (const id of [...ids.filter(i => !ambient(i)), ...ids.filter(ambient)]) { logic.owner = id; logic.ambient = ambient(id); registry.get(id).logic?.(logic); }
+  logic.owner = null; logic.ambient = false;
   // One owner per vocabulary kind: a silent overwrite would change behavior by load order.
   if (logic.duplicates.length) throw Error(`vocabulary registered twice: ${logic.duplicates.map(d => `${d.type} '${d.kind}' by ${d.first} and ${d.second}`).join('; ')}`);
   return logic;
