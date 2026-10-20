@@ -52,8 +52,9 @@ Gameplay events that trigger clips (fields read): `attack|swing|melee_swing {who
   flood-fill from lamps onto neighbouring blocks.
 - **Cascaded shadows.** `cascade` is one stabilised sun shadow map fitted around the player, wider and at
   4096², not a multi-split CSM.
-- **Meshing runs on the main thread** under `meshBudgetMs`. The mesher is pure and worker-ready; no
-  worker pool is wired yet.
+- **Meshing workers** (`workers`, default 2) run in browsers with module workers; cell gathering
+  (`chunkCells`/`cellsIn`) stays on the main thread under `meshBudgetMs`. Node and hosts without
+  `Worker` mesh on the main thread.
 - **Lakes above sea level** are not drawn: the water plane uses `water.level` only (`waterLevelAt` is not
   read yet).
 - **Ragdoll** is a particle-and-stick verlet body with ground collision only (no collision with walls

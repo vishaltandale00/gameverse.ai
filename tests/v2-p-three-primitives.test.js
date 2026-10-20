@@ -241,6 +241,22 @@ test('cameras: third-person behind and above, swap to first-person at the eye, i
   assert.ok(proj && proj[0] > 0 && proj[0] < 640 && proj[1] > 0 && proj[1] < 360, `projects on screen ${proj}`);
 });
 
+test('camera collision pulls in before walls; 3D particle adapter spawns on bound events', async () => {
+  const { clearDistance } = await import('../v2/primitives/graphics/three-camera.js');
+  const h = make(voxelDoc());
+  play(h, 2, 2);
+  const d = clearDistance(h.stage, 'w', [20.5, 6.5, 23.5], [0, 0, -1], 6);
+  assert.ok(d < 3.6 && d > 2, `log at z=20..21 blocks the view at ${d}`);
+  assert.equal(clearDistance(h.stage, 'w', [20.5, 12, 23.5], [0, 0, -1], 6), 6, 'clear above the log');
+  const handle = h.stage.adapters['graphics.particles'](h.rt, { budget: 500, presets: [{ id: 'break', shape: 'debris', color: '#9a9a9a', count: 16, life: 0.6, speed: 4, gravity: 12 }], bind: [{ event: 'block_mined', preset: 'break', at: 'target' }] });
+  h.rt.emit('block_mined', { by: 'player', at: [10, 4, 10] });
+  play(h, 0, 3);
+  assert.equal(h.stage.stats.particles, 16);
+  for (let i = 0; i < 60; i++) h.frame(0.5);
+  assert.equal(h.stage.stats.particles, 0, 'they expire');
+  handle.dispose();
+});
+
 test('sky: time.hour drives the sun, weather drives cover and precipitation', () => {
   const h = make(meshDoc());
   h.rt.state.vars['time.hour'] = 12; play(h, 1, 2);

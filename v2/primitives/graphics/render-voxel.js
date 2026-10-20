@@ -7,6 +7,7 @@
 // keep draw calls bounded. Entities in the space are drawn as rigged actors.
 import { joinStage, presentationOnly } from './three-stage.js';
 import { padVolume, meshVolume, downsample } from './three-voxel-mesh.js';
+import { skyFromTops } from './three-voxel-sky.js';
 import { paletteFor } from './material-palette.js';
 import { syncActors } from './three-actors.js';
 import { ensureDefaultCamera } from './three-camera.js';
@@ -45,6 +46,7 @@ export default {
       viewDistance: { type: 'integer', min: 2, max: 32, unit: 'chunks', effect: 'override the space viewDistance' },
       highlight: { type: 'boolean', default: true, effect: 'outline the block the player is aiming at (1p/3p)' },
       reach: { type: 'number', default: 6, min: 1, max: 20, unit: 'm', effect: 'aim outline distance' },
+      workers: { type: 'integer', default: 2, min: 0, max: 8, effect: 'meshing web workers (0 = mesh on the main thread within meshBudgetMs)' },
     },
     provides: { services: ['camera'] },
     reads: ['content.blocks'],
@@ -138,16 +140,42 @@ export default {
       const [cx, cy, cz] = entry.at, [sx, sy, sz] = info.chunk, ox = cx * sx, oy = cy * sy, oz = cz * sz;
       const own = chunkCells(cx, cy, cz);
       let any = false; for (let i = 0; i < own.length; i++) if (own[i]) { any = true; break; }
+      // Keep the old mesh visible until its replacement is ready (no flicker on edits).
       const old = chunks.get(entry.key);
-      if (old?.group) { world.remove(old.group); old.group.traverse(o => o.geometry?.dispose()); }
-      const rec = { key: entry.key, at: entry.at, lod: entry.lod, group: null, empty: !any };
+      const rec = { key: entry.key, at: entry.at, lod: entry.lod, group: old?.group ?? null, empty: !any, version: (old?.version ?? 0) + 1 };
       chunks.set(entry.key, rec);
-      if (!any) { stats.lastMs = performance.now() - t0; return; }
+      if (!any) { swap(rec, null); stats.lastMs = performance.now() - t0; return; }
       let volume = padVolume(info.chunk, (x, y, z) => (x >= 0 && y >= 0 && z >= 0 && x < sx && y < sy && z < sz) ? own[x + sx * (z + sz * y)] : cellAt(ox + x, oy + y, oz + z));
       let size = info.chunk, scale = 1;
       for (let l = 0; l < entry.lod; l++) { const d = downsample(volume, size); volume = d.volume; size = d.size; scale *= 2; }
-      const skylight = info.sky ? (x, y, z) => { const wy = oy + y * scale, top = topAt(ox + Math.floor(x * scale), oz + Math.floor(z * scale)); const depth = top - wy; return depth <= 0 ? 1 : depth <= 8 ? 1 - depth * 0.055 : Math.max(0, 0.5 - (depth - 8) * 0.06); } : null;
-      const mesh = meshVolume(volume, size, materials, { ao: config.ao && entry.lod < 2, faceShade: paletteFor(stage).faceShade, scale, skylight });
+      let sky = null;
+      if (info.sky) {
+        const tops = new Int16Array((sx + 2) * (sz + 2));
+        for (let z = -1; z <= sz; z++) for (let x = -1; x <= sx; x++) tops[(x + 1) + (sx + 2) * (z + 1)] = Math.max(-32768, Math.min(32767, topAt(ox + x, oz + z)));
+        sky = { tops, oy, scale, sx, sz };
+      }
+      const opts = { ao: config.ao && entry.lod < 2, faceShade: paletteFor(stage).faceShade, scale };
+      const prepMs = performance.now() - t0;
+      const pool = workerPool();
+      if (pool) {
+        pool.run({ volume, size, materials, opts, sky }, [volume.buffer, ...(sky ? [sky.tops.buffer] : [])]).then(res => {
+          if (chunks.get(entry.key) !== rec) return; // superseded by a newer build
+          finish(rec, res, entry, prepMs + res.ms);
+        });
+        stats.lastMs = prepMs;
+        return;
+      }
+      const mesh = meshVolume(volume, size, materials, { ...opts, skylight: sky ? skyFromTops(sky) : null });
+      finish(rec, mesh, entry, performance.now() - t0);
+    };
+    const swap = (rec, group) => {
+      const prev = rec.group;
+      if (prev && prev !== group) { world.remove(prev); stage.collidables.delete(prev); prev.traverse(o => o.geometry?.dispose()); }
+      rec.group = group;
+      if (group) { world.add(group); stage.collidables.add(group); }
+    };
+    const finish = (rec, mesh, entry, ms) => {
+      const [ox, oy, oz] = entry.at.map((v, i) => v * info.chunk[i]);
       const group = new THREE.Group(); group.position.set(ox, oy, oz); group.name = `chunk:${entry.key}`;
       const [opaqueMat, transMat] = paletteFor(stage).worldMaterials();
       for (const [m, mat, opaque] of [[mesh.opaque, opaqueMat, true], [mesh.transparent, transMat, false]]) {
@@ -168,10 +196,25 @@ export default {
         stats.quads += m.quads;
       }
       group.matrixAutoUpdate = false; group.updateMatrix();
-      world.add(group); rec.group = group; stage.collidables.add(group);
-      const ms = performance.now() - t0;
+      swap(rec, group.children.length ? group : null);
       stats.lastMs = ms; stats.meshMs = stats.meshMs ? stats.meshMs * 0.9 + ms * 0.1 : ms; stats.meshed++;
       stage.stats.meshMs = stats.meshMs; stage.stats.meshCount = stats.meshed;
+    };
+    // Optional worker pool (browser only): meshing leaves the main thread; the budget then covers gathering cells.
+    let pool = undefined;
+    const workerPool = () => {
+      if (pool !== undefined) return pool;
+      pool = null;
+      if (!config.workers || typeof Worker !== 'function') return pool;
+      try {
+        const workers = Array.from({ length: config.workers }, () => new Worker(new URL('./three-voxel-worker.js', import.meta.url), { type: 'module' }));
+        const waiting = new Map(); let next = 0, rr = 0;
+        for (const w of workers) { w.onmessage = e => { const cb = waiting.get(e.data.id); waiting.delete(e.data.id); cb?.(e.data); }; w.onerror = () => { pool = null; }; }
+        pool = { run: (job, transfer) => new Promise(resolve => { const id = ++next; waiting.set(id, resolve); workers[rr++ % workers.length].postMessage({ id, ...job }, transfer); }), workers, waiting };
+        stats.workers = workers.length;
+        stage.disposers.push(() => workers.forEach(w => w.terminate()));
+      } catch { pool = null; }
+      return pool;
     };
 
     const markDirty = (wx, wy, wz, to) => {
