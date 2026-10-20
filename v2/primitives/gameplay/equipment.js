@@ -5,7 +5,7 @@
 // worn down by events and repaired by effects. Equipped items stay in the bag.
 // Each entity's worn set is mirrored in components.equipment.worn for readers.
 import { compare } from '../../kernel/logic.js';
-import { count, take } from './inventory.js';
+import { count, take, bag } from './inventory.js';
 import { item as itemDef, matches, whoKey } from './items-lib.js';
 
 const KEY = 'gameplay.equipment';
@@ -72,18 +72,21 @@ export default {
   install(rt, config) {
     const slots = new Map(config.slots.map(s => [s.id, s]));
     const st = () => { const s = rt.store(KEY); s.worn ??= {}; s.dur ??= {}; s.applied ??= {}; s.started ??= false; return s; };
+    st(); // created at install, so reads later never add state
     const slotsFor = who => { const allow = rt.entity(who)?.components?.equipment?.slots; return config.slots.filter(s => !allow || allow.includes(s.id)); };
     const wornOf = who => (st().worn[who] ??= {});
-    const wornCount = (who, id) => Object.values(wornOf(who)).reduce((n, l) => n + l.filter(x => x === id).length, 0);
+    // Reads never create state (UI calls these every frame).
+    const wornRead = who => rt.state.prim[KEY]?.worn?.[who] || {};
+    const wornCount = (who, id) => Object.values(wornRead(who)).reduce((n, l) => n + l.filter(x => x === id).length, 0);
     const pool = config.budget?.pool, budgetVar = pool ? `budget.${pool}` : null;
     const costed = slot => config.budget && (!config.budget.slots || config.budget.slots.includes(slot));
     const costOf = id => { const d = itemDef(rt, id); return d?.charm?.cost ?? d?.cost ?? 0; };
     const capacity = () => (budgetVar ? rt.state.vars[budgetVar] ?? config.budget.total : Infinity);
-    const used = who => Object.entries(wornOf(who)).reduce((n, [s, l]) => n + (costed(s) ? l.reduce((k, i) => k + costOf(i), 0) : 0), 0);
+    const used = who => Object.entries(wornRead(who)).reduce((n, [s, l]) => n + (costed(s) ? l.reduce((k, i) => k + costOf(i), 0) : 0), 0);
     if (budgetVar && rt.state.vars[budgetVar] == null) rt.state.vars[budgetVar] = config.budget.total;
 
     function sync(who) {
-      const worn = wornOf(who), e = rt.entity(who);
+      const worn = wornRead(who), e = rt.entity(who);
       const mods = {};
       if (config.statMods) for (const l of Object.values(worn)) for (const id of l) for (const [k, v] of Object.entries(modsOf(itemDef(rt, id)))) mods[k] = (mods[k] ?? 0) + v;
       if (who === 'player') {
@@ -135,17 +138,17 @@ export default {
       else d[k] = 0;
     }
     function repair(who, id, amount) {
-      const targets = id ? [id] : Object.keys(rt.store('gameplay.inventory')[who] || {});
+      const targets = id ? [id] : Object.keys(bag(rt, who));
       for (const t of targets) {
         const max = maxDurability(itemDef(rt, t)); if (max == null) continue;
         const k = `${who}:${t}`; st().dur[k] = Math.min(max, amount == null ? max : (st().dur[k] ?? max) + amount);
         rt.emit('repaired', { who, item: t, durability: st().dur[k] });
       }
     }
-    rt.caches.equipment = { equip, unequip, repair, wear: (who, id, n) => wear(who, id, n), worn: who => wornOf(who) };
+    rt.caches.equipment = { equip, unequip, repair, wear: (who, id, n) => wear(who, id, n), worn: who => wornRead(who) };
     for (const rule of config.wear) rt.on(rule.event, d => {
       const who = d[rule.who] ?? 'player';
-      if (rule.slots) { for (const s of rule.slots) for (const id of [...(wornOf(who)[s] || [])]) wear(who, id, rule.amount); }
+      if (rule.slots) { for (const s of rule.slots) for (const id of [...(wornRead(who)[s] || [])]) wear(who, id, rule.amount); }
       else if (d.item) wear(who, d.item, rule.amount);
     });
     // Items that leave the bag can no longer be worn.
@@ -157,9 +160,9 @@ export default {
     rt.system('input', rt => {
       const s = st(); if (s.started) return; s.started = true;
       if (!config.autoEquip) return;
-      for (const id of Object.keys(rt.store('gameplay.inventory').player || {})) {
+      for (const id of Object.keys(bag(rt, 'player'))) {
         const def = itemDef(rt, id); if (!def || wornCount('player', id)) continue;
-        const slot = slotsFor('player').find(sl => matches(def, sl.accepts) && !(wornOf('player')[sl.id]?.length) && !costed(sl.id));
+        const slot = slotsFor('player').find(sl => matches(def, sl.accepts) && !(wornRead('player')[sl.id]?.length) && !costed(sl.id));
         if (slot) equip('player', id, slot.id);
       }
     }, KEY);
@@ -167,17 +170,17 @@ export default {
     rt.action('unequip', (v, rt) => unequip('player', typeof v === 'object' ? v.slot ?? v.item : v));
     rt.options(rt => {
       const out = [];
-      for (const id of Object.keys(rt.store('gameplay.inventory').player || {}).sort()) {
+      for (const id of Object.keys(bag(rt, 'player')).sort()) {
         const def = itemDef(rt, id); if (!def || wornCount('player', id) >= count(rt, 'player', id)) continue;
-        const slot = slotsFor('player').find(s => matches(def, s.accepts) && (wornOf('player')[s.id]?.length ?? 0) < s.max && (!costed(s.id) || used('player') + costOf(id) <= capacity()));
+        const slot = slotsFor('player').find(s => matches(def, s.accepts) && (wornRead('player')[s.id]?.length ?? 0) < s.max && (!costed(s.id) || used('player') + costOf(id) <= capacity()));
         if (slot) out.push({ label: `equip ${id}`, actions: { equip: id } });
       }
       return out.slice(0, 8);
     });
     rt.provide('equipment', {
-      slots: (who = 'player') => slotsFor(who).map(s => ({ id: s.id, accepts: s.accepts, max: s.max, items: [...(wornOf(who)[s.id] || [])], item: wornOf(who)[s.id]?.[0] ?? null })),
+      slots: (who = 'player') => slotsFor(who).map(s => ({ id: s.id, accepts: s.accepts, max: s.max, items: [...(wornRead(who)[s.id] || [])], item: wornRead(who)[s.id]?.[0] ?? null })),
       budget: (who = 'player') => (pool ? { pool, used: used(who), total: capacity() } : null),
-      worn: (who = 'player') => structuredClone(wornOf(who)),
+      worn: (who = 'player') => structuredClone(wornRead(who)),
       durability: (who, id) => st().dur[`${who}:${id}`] ?? null,
     });
   },

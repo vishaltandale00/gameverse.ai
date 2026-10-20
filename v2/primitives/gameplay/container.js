@@ -52,6 +52,7 @@ export default {
   install(rt, config) {
     rt.caches.containerSlots = config.slots;
     const st = () => { const s = rt.store(KEY); s.open ??= {}; s.filled ??= {}; s.unlocked ??= {}; return s; };
+    st(); // created at install, so reads later never add state
     const day = () => rt.state.vars['time.day'] ?? 0;
     function fill(e) {
       const c = e.components.container, s = st(), last = s.filled[e.id];

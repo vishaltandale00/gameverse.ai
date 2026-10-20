@@ -10,7 +10,10 @@ import { item as itemDef, tokens, whoKey } from './items-lib.js';
 
 const KEY = 'gameplay.inventory';
 const cfg = rt => rt.caches.inventory || { slots: 36, stackDefault: 999 };
-export const bag = (rt, who = 'player') => (rt.store(KEY)[who] ??= {});
+/** Read-only view of a bag (never creates state; UI and options call this every frame). */
+const NONE = Object.freeze({});
+export const bag = (rt, who = 'player') => rt.state.prim[KEY]?.[who] || NONE;
+const mutable = (rt, who) => (rt.store(KEY)[who] ??= {});
 export const count = (rt, who, id) => bag(rt, who)[id] || 0;
 /** Count of items in a bag answering to a token (tag, kind, id; see items-lib tokens). */
 export const countTag = (rt, who, tag) => Object.entries(bag(rt, who)).reduce((s, [id, n]) => s + (tokens(itemDef(rt, id) || { id }).has(tag) ? n : 0), 0);
@@ -29,14 +32,15 @@ export function room(rt, who, id) {
 export function give(rt, who, id, n = 1, { silent = false } = {}) {
   if (n <= 0) return 0;
   const fit = Math.min(n, room(rt, who, id));
-  if (fit > 0) { const b = bag(rt, who); b[id] = (b[id] || 0) + fit; if (!silent) rt.emitTyped('item_gained', id, { item: id, count: fit, who }); }
+  if (fit > 0) { const b = mutable(rt, who); b[id] = (b[id] || 0) + fit; if (!silent) rt.emitTyped('item_gained', id, { item: id, count: fit, who }); }
   if (fit < n && !silent) rt.emit('inventory_full', { item: id, count: n - fit, who });
   return fit;
 }
 /** Remove up to n items; returns how many were removed. Emits item_lost(+:<item>). */
 export function take(rt, who, id, n = 1, { silent = false } = {}) {
-  const b = bag(rt, who), k = Math.min(b[id] || 0, n);
+  const k = Math.min(bag(rt, who)[id] || 0, n);
   if (!k) return 0;
+  const b = mutable(rt, who);
   b[id] -= k; if (!b[id]) delete b[id];
   // Per-instance data (merged crafted effects) never outlives the items it describes.
   const meta = rt.state.prim['gameplay.inventory.meta']?.[who]?.[id];
@@ -86,7 +90,7 @@ export default {
   },
   install(rt, config) {
     rt.caches.inventory = config;
-    if (!rt.state.frame) { const b = bag(rt, 'player'); for (const { item, count: n } of config.start) b[item] = (b[item] || 0) + n; }
+    if (!rt.state.frame) { const b = mutable(rt, 'player'); for (const { item, count: n } of config.start) b[item] = (b[item] || 0) + n; }
     // Entities spawned with components.inventory.start get their own bag.
     rt.on('spawn', ({ id }) => {
       const e = rt.entity(id), start = e?.components?.inventory?.start;

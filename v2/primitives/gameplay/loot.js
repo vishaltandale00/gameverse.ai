@@ -80,6 +80,7 @@ export default {
   },
   install(rt, config) {
     const st = () => { const s = rt.store(KEY); s.dropped ??= {}; s.expire ??= {}; return s; };
+    st(); // created at install, so reads later never add state
     function spawnPickup(item, count, space, at) {
       const p = isVec(at) ? at.map((v, i) => (i < 2 && config.scatter ? +(v + (rt.random() * 2 - 1) * config.scatter).toFixed(4) : v)) : at;
       const e = rt.spawn(config.pickupArchetype ?? null, { space, at: p, components: { pickup: { item, count } } });

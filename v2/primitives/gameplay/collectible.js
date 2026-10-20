@@ -74,6 +74,7 @@ export default {
   install(rt, config) {
     const defs = new Map(config.counters.map(c => [c.id, c]));
     const st = () => { const s = rt.store(KEY); s.count ??= {}; s.byZone ??= {}; s.totals ??= null; s.done ??= {}; s.prizes ??= {}; s.spawned ??= {}; return s; };
+    st(); // created at install, so reads later never add state
     const varOf = c => c.var || `collected.${c.id}`;
     const isCollector = e => config.collectors.includes(e.id) || config.collectors.includes(e.archetype);
     // Counters a pickup of counter `id` advances: itself plus every counter that includes it.

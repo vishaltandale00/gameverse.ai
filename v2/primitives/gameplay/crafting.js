@@ -60,6 +60,7 @@ export default {
   install(rt, config) {
     const recipes = () => { if (rt.caches.recipesDoc !== rt.doc) { rt.caches.recipesDoc = rt.doc; rt.caches.recipes = new Map((rt.doc.content?.recipes || []).map(r => [r.id, r])); } return rt.caches.recipes; };
     const st = () => { const s = rt.store(KEY); s.known ??= {}; s.jobs ??= {}; return s; };
+    st(); // created at install, so reads later never add state
     const mergeOn = r => r.merge ?? config.merge.enabled;
     function known(id) {
       const r = recipes().get(id); if (!r) return false;

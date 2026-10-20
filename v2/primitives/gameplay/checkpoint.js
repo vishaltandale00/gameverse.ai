@@ -46,6 +46,7 @@ export default {
     logic.effect('respawn_at_checkpoint', { run: (e, rt, c) => { respawn(rt, whoKey(e.who, c)); } });
   },
   install(rt, config) {
+    st(rt); // created at install, so reads later never add state
     function activate(who, id, entity) {
       const s = st(rt), actor = rt.entity(who); if (!actor) return;
       const at = entity && isVec(pos(rt, actor)) ? structuredClone(pos(rt, actor)) : structuredClone(entity ? pos(rt, entity) : pos(rt, actor));

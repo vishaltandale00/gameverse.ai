@@ -35,6 +35,7 @@ function kindOf(rt, e) {
 
 export function install(rt, config) {
   const st = () => { const s = rt.store(KEY); s.uses ??= {}; s.ready ??= {}; s.disabled ??= {}; s.hold ??= {}; s.focus ??= {}; s.seated ??= {}; s.on ??= {}; return s; };
+  st(); // created at install, so reads later never add state
   const rangeOf = e => e.components.interact.range ?? config.range;
   const holdOf = e => e.components.interact.hold ?? config.holdMs / 1000;
   const enabled = e => !aliases(e).some(id => st().disabled[id]) && !st().disabled[e.id];

@@ -62,7 +62,9 @@ export default {
     const types = new Map(config.types.map(t => [t.id, t]));
     const KILL = '$kill';
     const st = () => { const s = rt.store(KEY); s.in ??= {}; s.acc ??= {}; s.safe ??= {}; s.air ??= {}; s.cam ??= {}; s.pending ??= {}; return s; };
-    const blocks = () => { if (rt.caches.hazardBlocksDoc !== rt.doc) { rt.caches.hazardBlocksDoc = rt.doc; rt.caches.hazardBlocks = new Map((rt.doc.content?.blocks || []).filter(b => b.hazard).map(b => [b.id, b.hazard])); } return rt.caches.hazardBlocks; };
+    st(); // created at install, so reads later never add state
+    // Blocks name their hazard with `hazard: type`, or carry the tag 'hazard' and share a hazard type's id.
+    const blocks = () => { if (rt.caches.hazardBlocksDoc !== rt.doc) { rt.caches.hazardBlocksDoc = rt.doc; rt.caches.hazardBlocks = new Map((rt.doc.content?.blocks || []).map(b => [b.id, b.hazard ?? ((b.tags || []).includes('hazard') && types.has(b.id) ? b.id : null)]).filter(([, t]) => t)); } return rt.caches.hazardBlocks; };
     const zoneDef = e => rt.doc.spaces.find(s => s.id === e.space)?.zones?.find(z => z.id === e.zone);
     const affected = e => config.affects === 'all' ? Boolean(e.components.body) || e.id === 'player' : config.affects === 'player' ? e.id === 'player' : e.id === 'player' || 'health' in e.components;
     const grounded = e => { if (e.components.body?.grounded != null) return e.components.body.grounded; const s = spaceApi(rt, e); if (!s || typeof s.grounded !== 'function') return true; if (typeof s.gravityAt === 'function' && !s.gravityAt(pos(rt, e)).some(Boolean)) return true; return s.grounded(e); };

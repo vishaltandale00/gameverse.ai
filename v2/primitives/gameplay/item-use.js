@@ -2,7 +2,7 @@
 // content.items[].use = { fx, cooldown?: s, consume?: b (default true), when?: pred, group?: s }.
 // Effects run with self = the user and item = the item id. Crafted items that
 // carry merged ingredient effects (gameplay.crafting merge) apply them too.
-import { count, take } from './inventory.js';
+import { count, take, bag } from './inventory.js';
 import { item as itemDef, whoKey, hasEffect } from './items-lib.js';
 
 const KEY = 'gameplay.item.use';
@@ -50,6 +50,7 @@ export default {
   },
   install(rt, config) {
     const st = () => { const s = rt.store(KEY); s.ready ??= {}; s.last ??= {}; return s; };
+    st(); // created at install, so reads later never add state
     function use(who, id, { free = false } = {}) {
       const def = itemDef(rt, id), u = def?.use;
       const deny = reason => { rt.emit('use_denied', { who, item: id, reason }); return false; };
@@ -75,8 +76,8 @@ export default {
     rt.caches.useItem = use;
     rt.action('use_item', (id, rt) => use('player', typeof id === 'object' ? id.item : id));
     rt.options(rt => {
-      const bag = rt.store('gameplay.inventory').player || {}, s = st();
-      return Object.keys(bag).sort().filter(id => itemDef(rt, id)?.use && (s.ready[`player:${itemDef(rt, id).use.group ?? id}`] ?? -1) <= rt.state.frame && (!itemDef(rt, id).use.when || rt.test(itemDef(rt, id).use.when, { self: 'player', item: id })))
+      const held = bag(rt, 'player'), s = st();
+      return Object.keys(held).sort().filter(id => itemDef(rt, id)?.use && (s.ready[`player:${itemDef(rt, id).use.group ?? id}`] ?? -1) <= rt.state.frame && (!itemDef(rt, id).use.when || rt.test(itemDef(rt, id).use.when, { self: 'player', item: id })))
         .slice(0, config.options).map(id => ({ label: `use ${id}`, actions: { use_item: id } }));
     });
   },

@@ -2,7 +2,7 @@
 // on pickup (coin pouches, cash), shops with stock, prices, a buy/sell spread,
 // accepted goods, restocking by day and haggling. A shop opens through
 // open_shop, an entity with a `shop` component (shop id), or talking to its owner.
-import { give, take, count, room } from './inventory.js';
+import { give, take, count, room, bag } from './inventory.js';
 import { item as itemDef, matches, whoKey } from './items-lib.js';
 
 const KEY = 'gameplay.economy';
@@ -63,6 +63,7 @@ export default {
     const def0 = config.currencies[0].id;
     const varOf = id => curs.get(id ?? def0)?.var || `money.${id ?? def0}`;
     const st = () => { const s = rt.store(KEY); s.stock ??= Object.fromEntries(config.shops.map(sh => [sh.id, Object.fromEntries(sh.stock.map(x => [x.item, x.count]))])); s.open ??= {}; s.deal ??= {}; s.haggled ??= {}; s.period ??= {}; return s; };
+    st(); // created at install, so reads later never add state
     const balance = id => rt.state.vars[varOf(id)] ?? 0;
     const add = (n, id) => { rt.state.vars[varOf(id)] = +(balance(id) + n).toFixed(4); };
     function spend(n, id, { clamp = false } = {}) {
@@ -141,10 +142,10 @@ export default {
       const shop = shopOf('player'); if (!shop) return [];
       const out = [];
       for (const [itemId, n] of Object.entries(st().stock[shop.id]).sort()) if (n > 0 && balance(shop.currency) >= price(shop, itemId)) out.push({ label: `buy ${itemId}`, actions: { buy: itemId } });
-      for (const itemId of Object.keys(rt.store('gameplay.inventory').player || {}).sort()) if (sellPrice(shop, itemId) > 0) out.push({ label: `sell ${itemId}`, actions: { sell: itemId } });
+      for (const itemId of Object.keys(bag(rt, 'player')).sort()) if (sellPrice(shop, itemId) > 0) out.push({ label: `sell ${itemId}`, actions: { sell: itemId } });
       return [...out.slice(0, 16), { label: `leave ${shop.id}`, actions: { close_shop: true } }];
     });
-    const view = who => { const shop = shopOf(who); if (!shop) return null; const stock = Object.entries(st().stock[shop.id]).map(([item, n]) => ({ item, count: n, price: price(shop, item) })); const sellPrices = {}; for (const item of Object.keys(rt.store('gameplay.inventory')[who] || {})) { const p = sellPrice(shop, item); if (p > 0) sellPrices[item] = p; } return { shop: shop.id, owner: shop.owner ?? null, currency: shop.currency ?? def0, stock, sellPrices }; };
+    const view = who => { const shop = shopOf(who); if (!shop) return null; const stock = Object.entries(st().stock[shop.id]).map(([item, n]) => ({ item, count: n, price: price(shop, item) })); const sellPrices = {}; for (const item of Object.keys(bag(rt, who))) { const p = sellPrice(shop, item); if (p > 0) sellPrices[item] = p; } return { shop: shop.id, owner: shop.owner ?? null, currency: shop.currency ?? def0, stock, sellPrices }; };
     rt.provide('shop', { open: (who = 'player') => view(who), price: (shop, item) => price(shops.get(shop), item) });
     rt.provide('economy', { balance: id => balance(id), add, spend, currencies: () => [...curs.keys()] });
   },

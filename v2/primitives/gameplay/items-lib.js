@@ -134,6 +134,29 @@ export function entityByRef(rt, ref, context) {
   return Object.values(rt.state.entities).find(x => x.archetype === ref) || null;
 }
 
+// ---- cells (editCells + raycast spaces) ----
+export const cellKey = c => c.join(',');
+export const cellOf = at => v3(at).map(Math.floor);
+/** Look direction: components.body.look, else facing; null if neither. */
+export function lookDir(e) { const l = e?.components?.body?.look; return isVec(l) ? norm(l) : facing(e); }
+/** Eye point: box centre raised by components.body.eye (default 0). */
+export function eyeOf(rt, e) { const c = center(rt, e); return isVec(c) ? add(c, [0, e.components?.body?.eye ?? 0, 0]) : c; }
+/** The cell an entity looks at within reach: { cell, normal } or null (raycast capability). */
+export function lookCell(rt, e, reach) {
+  const s = api(rt, e), dir = lookDir(e);
+  if (!s || typeof s.raycast !== 'function' || !dir) return null;
+  const hit = s.raycast(eyeOf(rt, e), dir, reach);
+  return hit?.hit === 'cell' && hit.cell ? { cell: v3(hit.cell), normal: (hit.normal || [0, 0, 0]).map(Math.round) } : null;
+}
+/** Distance from an entity's eye to a cell's centre. */
+export const cellDist = (rt, e, cell) => len(sub(eyeOf(rt, e), add(cell, [0.5, 0.5, 0.5])));
+/** Blocks by id (content.blocks), re-indexed when rt.doc changes. */
+export function blocks(rt) {
+  const c = rt.caches;
+  if (c.blocksDoc !== rt.doc) { c.blocksDoc = rt.doc; c.blocks = new Map((rt.doc.content?.blocks || []).map(b => [b.id, b])); }
+  return c.blocks;
+}
+
 /** Push a param-style error for list entries with duplicate ids. */
 export function uniqueIds(list, path, errors, what = 'entry') {
   const seen = new Set();
