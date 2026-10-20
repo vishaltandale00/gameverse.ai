@@ -48,6 +48,7 @@ export default {
     },
     provides: { events: ['super', 'guard', 'counter_hit', 'juggle_limit', 'knockdown', 'wakeup', 'jump', 'dash', 'wall_push'], vars: ['meter'], actions: ['dash'] },
     requires: { primitives: ['gameplay.combat.melee', 'gameplay.combat.health'] },
+    actionSpace: { dash: { type: 'enum', options: ['fwd', 'back'] } },
   },
   validate(config, doc) {
     const errors = [];

@@ -31,7 +31,7 @@ export const dot = (a, b) => v3(a).reduce((s, v, i) => s + v * (b[i] ?? 0), 0);
 export const len = a => Math.hypot(...v3(a));
 export const norm = a => { const l = len(a); return l > 1e-9 ? mul(a, 1 / l) : [0, 0, 0]; };
 export const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
-export const wrapAng = a => { while (a > Math.PI) a -= TAU; while (a < -Math.PI) a += TAU; return a; };
+export const wrapAng = a => { a = Number.isFinite(a) ? a % TAU : 0; while (a > Math.PI) a -= TAU; while (a < -Math.PI) a += TAU; return a; }; // % first: Infinity or 1e9 would otherwise loop for ever / ~1e8 times
 export const steerAng = (cur, target, max) => cur + clamp(wrapAng(target - cur), -max, max);
 export const round6 = v => Math.round(v * 1e6) / 1e6;
 export const r6 = a => a.map(round6);

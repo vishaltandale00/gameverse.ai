@@ -66,6 +66,7 @@ export default {
     },
     provides: { events: ['slid', 'merged', 'merged:*', 'tile_spawned', 'tile_reached', 'move', 'slide_blocked', 'board_stuck', 'score'], vars: ['slide.max', 'slide.moves', 'score'], actions: ['slide'], services: ['board'] },
     requires: { capabilities: ['editCells'] },
+    actionSpace: { slide: { type: 'enum', options: DIRS } },
   },
   validate(config) {
     const errors = validateBoard(config.board), [W, H] = config.board.size;

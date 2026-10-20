@@ -153,7 +153,7 @@ export default {
       else if (d.item) wear(who, d.item, rule.amount);
     });
     // Items that leave the bag can no longer be worn.
-    rt.on('item_lost', d => { while (wornCount(d.who, d.item) > count(rt, d.who, d.item)) unequip(d.who, d.item); });
+    rt.on('item_lost', d => { while (wornCount(d.who, d.item) > count(rt, d.who, d.item) && unequip(d.who, d.item)); }); // stops when nothing more can be taken off
     rt.on('spawn', ({ id }) => {
       const e = rt.entity(id); if (!config.autoEquip || !e || id === 'player') return;
       for (const item of e.components.equipment?.start || []) equip(id, item);
