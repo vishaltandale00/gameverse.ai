@@ -10,7 +10,7 @@ This is for the next session continuing Gameverse v2: game generation from ideas
 - Based on `origin/main`; all v2 work lives under `v2/`. The only touches to v1 are `scripts/serve.mjs`
   (two lines mounting `/v2` and `/api/v2/*`) and `package.json` (pinned `@anthropic-ai/sdk`,
   currently unused at runtime).
-- Tests: `node --test tests/*.test.js` → **362 pass**.
+- Tests: `node --test tests/*.test.js` → **373 pass**.
 
 **Run it:**
 ```bash
@@ -121,7 +121,13 @@ Its open requests:
 - generated games aren't yet registered as voice/takeover targets;
 - the lot sits outside the sun's shadow area, so it has no shadows.
 
-**Visual polish and screens** (`worktree-agent-a4ea5154d0291f2e0`). It covers:
+**Visual polish and screens: merged** (`ab756614`). The agent was stopped after committing, so
+treat it as lightly verified: title screen, HUD and gameplay were checked in the browser. Tile seams
+and transparency were fixed afterwards: an opaque base under textures, translucent overlays sized
+exactly to each tile, continuous depth shading, and cropped legacy textures. Failed art images are
+retried once.
+
+Original brief: **Visual polish and screens** (`worktree-agent-a4ea5154d0291f2e0`). It covers:
 - procedural animation, using pose frames when present;
 - particles, shake, hit-stop and camera feel;
 - the HUD redesign;

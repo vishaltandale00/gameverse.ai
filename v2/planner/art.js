@@ -92,7 +92,7 @@ export function createArtGenerator({ apiKey, model = 'gpt-image-1-mini', quality
       while (queue.length) {
         const { key, p, hash } = queue.shift();
         try {
-          const bytes = await image(p);
+          const bytes = await image(p).catch(() => image(p)); // one retry: image calls occasionally fail transiently
           const url = await ctx.store.saveAsset(job.gameId, `${key.replace(/[^a-z0-9]+/gi, '-')}-${hash}.webp`, bytes);
           assign(result, p, url);
           ctx.stage('painted', { asset: key, done: ++done, of: todo.length });
@@ -129,7 +129,7 @@ export function createArtGenerator({ apiKey, model = 'gpt-image-1-mini', quality
         const j = frameQueue.shift();
         try {
           const source = await ctx.store.asset(job.gameId, j.file);
-          const bytes = await pose(source, j.posePrompt, style, facing);
+          const bytes = await pose(source, j.posePrompt, style, facing).catch(() => pose(source, j.posePrompt, style, facing));
           result.frames[j.kind][j.name] = await ctx.store.saveAsset(job.gameId, `frame-${j.kind}-${j.name}-${j.hash}.webp`, bytes);
           ctx.stage('animated', { frame: `${j.kind}:${j.name}`, done: ++animated, of: jobs.length });
         } catch (error) { ctx.stage('animate_failed', { frame: `${j.kind}:${j.name}`, error: String(error.message).slice(0, 160) }); }

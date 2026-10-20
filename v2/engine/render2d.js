@@ -297,34 +297,48 @@ export function createRenderer(game, { fx } = {}) {
       const color = tileColors[y][x];
       if (!color || !state.solid[y * width + x]) continue;
       const kind = kindAt[y][x], above = solidAt(state, x, y - 1) && y > 0, below = solidAt(state, x, y + 1);
-      const X = sx(x), Y = sy(y), S = tile + 1;
+      // Opaque layers overlap the next tile by 1 px so no background shows between
+      // blocks; translucent overlays use the exact snapped footprint (TW x TH) so
+      // neighbouring overlays never double up into grid lines.
+      const X = sx(x), Y = sy(y), S = tile + 1, TW = sx(x + 1) - X, TH = sy(y + 1) - Y;
+      ctx.fillStyle = color; ctx.fillRect(X, Y, S, S); // base under textures: generated tiles may contain transparent pixels
       if (sheet) {
         const c = !side ? ts.cells.wall : kind === 'platform' ? ts.cells.platform : above ? ts.cells.groundFill : ts.cells.groundTop;
         ctx.drawImage(sheet, ...cell(c), X, Y, S, S);
       } else {
         const tex = image(tileArt[kind]);
-        if (tex) ctx.drawImage(tex, X, Y, S, S);
+        if (tex) { const i = 0.06; ctx.drawImage(tex, tex.width * i, tex.height * i, tex.width * (1 - 2 * i), tex.height * (1 - 2 * i), X, Y, S, S); } // crop borders of free-form textures
         else {
-          ctx.fillStyle = color; ctx.fillRect(X, Y, S, S);
-          ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(X, Y + tile * 0.82, S, tile * 0.18 + 1);
-          ctx.fillStyle = 'rgba(255,255,255,.07)'; const k = (x * 7 + y * 13) % 5; ctx.fillRect(X + tile * (0.15 + k * 0.13), Y + tile * (0.3 + (k % 3) * 0.18), Math.max(1, tile * 0.1), Math.max(1, tile * 0.1));
+          // No texture yet: a quiet procedural surface (speckles seeded by position), no seams.
+          const k = (x * 73856093 ^ y * 19349663) >>> 0, q = Math.max(1, Math.round(tile / 8));
+          ctx.fillStyle = 'rgba(0,0,0,.10)';
+          for (let i = 0; i < 3; i++) ctx.fillRect(X + ((k >> (i * 5)) % 7) * q, Y + ((k >> (i * 5 + 3)) % 7) * q, q, q);
+          ctx.fillStyle = 'rgba(255,255,255,.08)';
+          for (let i = 0; i < 2; i++) ctx.fillRect(X + ((k >> (i * 7 + 2)) % 7) * q, Y + ((k >> (i * 7 + 9)) % 7) * q, q, q);
         }
       }
       // Ambient occlusion deeper inside ground, lit top edges, side edges.
-      if (above) { let d = 1; while (d < 4 && solidAt(state, x, y - d - 1) && y - d - 1 >= 0) d++; ctx.fillStyle = `rgba(0,0,0,${0.06 * d})`; ctx.fillRect(X, Y, S, S); }
-      else {
-        ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fillRect(X, Y, S, Math.max(2, tile * 0.12));
-        ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.fillRect(X, Y, S, Math.max(1, Math.round(tile * 0.04)));
+      if (above) {
+        // Depth shading as one continuous gradient down the column (no per-row steps / stripes).
+        let d = 1; while (d < 6 && solidAt(state, x, y - d - 1) && y - d - 1 >= 0) d++;
+        const a0 = Math.min(0.3, 0.05 * (d - 1)), a1 = Math.min(0.3, 0.05 * d);
+        if (a1 > 0) { const g = ctx.createLinearGradient(0, Y, 0, Y + TH); g.addColorStop(0, `rgba(0,0,0,${a0})`); g.addColorStop(1, `rgba(0,0,0,${a1})`); ctx.fillStyle = g; ctx.fillRect(X, Y, TW, TH); }
       }
-      if (!solidAt(state, x - 1, y)) { ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(X, Y, Math.max(1, tile * 0.06), S); }
-      if (!solidAt(state, x + 1, y)) { ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(X + tile - Math.max(1, tile * 0.06), Y, Math.max(1, tile * 0.06) + 1, S); }
-      if (!below && y + 1 < height) shadows.push(X, Y + tile, S);
+      else {
+        ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fillRect(X, Y, TW, Math.max(2, Math.round(tile * 0.12)));
+        ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.fillRect(X, Y, TW, Math.max(1, Math.round(tile * 0.04)));
+      }
+      const edge = Math.max(1, Math.round(tile * 0.06));
+      if (!solidAt(state, x - 1, y)) { ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(X, Y, edge, TH); }
+      if (!solidAt(state, x + 1, y)) { ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(X + TW - edge, Y, edge, TH); }
+      if (!below && y + 1 < height) shadows.push(X, Y + TH, TW);
     }
     for (let i = 0; i < shadows.length; i += 3) { // soft shadow under overhangs
       const X = shadows[i], Y = shadows[i + 1], S = shadows[i + 2];
-      ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(X, Y, S, tile * 0.12);
-      ctx.fillStyle = 'rgba(0,0,0,.11)'; ctx.fillRect(X, Y + tile * 0.12, S, tile * 0.14);
-      ctx.fillStyle = 'rgba(0,0,0,.05)'; ctx.fillRect(X, Y + tile * 0.26, S, tile * 0.18);
+      const b1 = Math.round(tile * 0.12), b2 = Math.round(tile * 0.26), b3 = Math.round(tile * 0.44); // whole-pixel bands: no anti-aliased seams
+      ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(X, Y, S, b1);
+      ctx.fillStyle = 'rgba(0,0,0,.11)'; ctx.fillRect(X, Y + b1, S, b2 - b1);
+      ctx.fillStyle = 'rgba(0,0,0,.05)'; ctx.fillRect(X, Y + b2, S, b3 - b2);
     }
 
     // ---- goal glow and beacon ----
