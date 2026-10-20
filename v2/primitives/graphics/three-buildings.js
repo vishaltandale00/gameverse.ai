@@ -92,3 +92,19 @@ export function roadRibbon(edge, groundAt, { surfaceColors = {}, lift = 0.06 } =
   for (let i = 0; i < dense.length - 1; i++) for (let k = 0; k < 3; k++) { const a = i * 4 + k, b = a + 1, c = a + 4, d = c + 1; idx.push(a, b, c, b, d, c); }
   return { positions: new Float32Array(pos), colors: new Float32Array(col), indices: new Uint32Array(idx) };
 }
+
+/** Cells (cell m) covered by road edges, as a Set of "ix,iz" keys (pure): keeps grass and decor off roads. */
+export function roadMask(edges, cell = 2) {
+  const out = new Set();
+  for (const e of edges || []) {
+    const pts = e.points || [], w = (e.width || 6) / 2 + 0.6;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = pts[i], b = pts[i + 1], L = Math.hypot(b[0] - a[0], b[2] - a[2]), n = Math.max(1, Math.ceil(L / (cell * 0.5)));
+      for (let k = 0; k <= n; k++) {
+        const x = a[0] + (b[0] - a[0]) * k / n, z = a[2] + (b[2] - a[2]) * k / n;
+        for (let dx = -w; dx <= w; dx += cell * 0.5) for (let dz = -w; dz <= w; dz += cell * 0.5) if (dx * dx + dz * dz <= w * w) out.add(`${Math.floor((x + dx) / cell)},${Math.floor((z + dz) / cell)}`);
+      }
+    }
+  }
+  return out;
+}

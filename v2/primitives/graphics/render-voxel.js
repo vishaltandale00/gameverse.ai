@@ -174,10 +174,13 @@ export default {
       stage.stats.meshMs = stats.meshMs; stage.stats.meshCount = stats.meshed;
     };
 
-    const markDirty = (wx, wy, wz) => {
+    const markDirty = (wx, wy, wz, to) => {
       if (!info) return;
       const [sx, sy, sz] = info.chunk, cx = Math.floor(wx / sx), cy = Math.floor(wy / sy), cz = Math.floor(wz / sz);
-      cellCache.delete(key3(cx, cy, cz));
+      // Patch the cached cells in place (no refetch): re-meshing is then the mesher alone.
+      const cached = cellCache.get(key3(cx, cy, cz));
+      if (cached && to !== undefined) cached[(wx - cx * sx) + sx * ((wz - cz * sz) + sz * (wy - cy * sy))] = mi(to);
+      else cellCache.delete(key3(cx, cy, cz));
       columnTop.delete(`${wx},${wz}`);
       const lx = wx - cx * sx, ly = wy - cy * sy, lz = wz - cz * sz;
       // The chunk itself plus neighbours sharing the edited cell's faces or AO corners.
@@ -188,7 +191,7 @@ export default {
       // Sky exposure below the edit changes too.
       for (let y = cy - 1; y >= Math.max(0, cy - 3); y--) { const k = key3(cx, y, cz); if (chunks.has(k)) dirty.add(k); }
     };
-    rt.on('cell_changed', e => { const at = e.at || []; markDirty(Math.floor(at[0]), Math.floor(at[1]), Math.floor(at[2])); });
+    rt.on('cell_changed', e => { const at = e.at || []; markDirty(Math.floor(at[0]), Math.floor(at[1]), Math.floor(at[2]), e.to); });
     stage.restoreHooks.push(() => { cellCache.clear(); columnTop.clear(); for (const k of chunks.keys()) dirty.add(k); });
 
     // Aim outline.

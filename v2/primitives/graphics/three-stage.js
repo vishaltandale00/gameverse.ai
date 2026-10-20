@@ -9,6 +9,7 @@
 // the host's alpha.
 import { createModelLibrary } from './three-models.js';
 import { bodyBox } from '../../kernel/testing.js';
+import { installEffectAdapters } from './three-effects.js';
 
 export const PHASES = ['pre', 'anim', 'camera', 'world', 'render', 'post'];
 const TAU = Math.PI * 2;
@@ -41,6 +42,7 @@ function createStage(rt, preset = {}) {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.12;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  if (renderer.info) renderer.info.autoReset = false; // post passes: count the whole frame
   const canvas = renderer.domElement;
   canvas.className = 'gv-three'; canvas.tabIndex = 0;
   Object.assign(canvas.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', display: 'block', outline: 'none' });
@@ -123,6 +125,7 @@ function createStage(rt, preset = {}) {
     get disposed() { return disposed; },
   };
   stage.models = createModelLibrary(stage);
+  installEffectAdapters(stage);
   view.container.gvThree = stage;
   // Shared 'camera' service (graphics.ui.hud floating numbers, world prompts):
   // project a world point to CSS pixels in view.container, null when off screen.
@@ -196,6 +199,7 @@ function createStage(rt, preset = {}) {
       for (const h of hooks[phase]) h.fn(ctx);
       if (phase === 'camera') fitSunShadow();
     }
+    renderer.info?.reset?.();
     const post = stage.adapters.$post;
     if (post?.render) post.render(ctx); else renderer.render(scene, stage.camera);
     const ms = performance.now() - t0;

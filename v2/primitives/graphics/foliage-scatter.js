@@ -122,7 +122,8 @@ export default {
       const R = config.decorRadius, counts = decorMeshes.map(() => 0), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
       const splat = stage.terrains?.get(spaceId)?.config?.splat || [];
       const water = stage.terrains?.get(spaceId)?.config?.water?.level ?? -Infinity;
-      for (const p of scatterPoints(c.x - R, c.z - R, R * 2, config.decor, 23, (x, z) => (x - c.x) ** 2 + (z - c.z) ** 2 < R * R)) {
+      const onRoad = stage.roadMasks?.get(spaceId);
+      for (const p of scatterPoints(c.x - R, c.z - R, R * 2, config.decor, 23, (x, z) => (x - c.x) ** 2 + (z - c.z) ** 2 < R * R && !onRoad?.(x, z))) {
         const g = stage.groundAt(spaceId, p.x, p.z); if (g.y < water + 0.3) continue;
         const col = splatSample({ biome: g.biome, material: g.material, slope: 0, height: g.y }, splat).color;
         const grassy = col[1] > col[0] && col[1] > col[2];

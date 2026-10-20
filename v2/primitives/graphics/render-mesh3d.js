@@ -8,7 +8,7 @@
 import { joinStage, presentationOnly } from './three-stage.js';
 import { ensureTerrain } from './terrain-procedural.js';
 import { syncActors } from './three-actors.js';
-import { roadRibbon } from './three-buildings.js';
+import { roadRibbon, roadMask } from './three-buildings.js';
 import { createObjectLayer } from './three-objects.js';
 import { ensureDefaultCamera } from './three-camera.js';
 import thirdPerson from './camera-third-person.js';
@@ -55,6 +55,8 @@ export default {
       let graph; try { const svc = rt.service('roadgraph'); graph = typeof svc === 'function' ? svc(spaceId) : svc.of?.(spaceId) ?? svc; } catch { return; }
       const edges = graph?.edges || [];
       if (!edges.length) return;
+      const mask = roadMask(edges, 2);
+      (stage.roadMasks ??= new Map()).set(spaceId, (x, z) => mask.has(`${Math.floor(x / 2)},${Math.floor(z / 2)}`));
       const all = { pos: [], col: [], idx: [] };
       for (const e of edges) {
         const r = roadRibbon(e, (x, z) => stage.groundAt(spaceId, x, z));
@@ -78,9 +80,9 @@ export default {
 
     stage.hook('world', ctx => {
       if (stage.activeSpace !== spaceId || !api()) return;
+      if (!roadsBuilt) buildRoads(); // first: grass and decor read the road mask
       terrain ??= ensureTerrain(stage, spaceId, root);
       terrain.frame(ctx);
-      if (!roadsBuilt) buildRoads();
       objects.frame();
     }, 'graphics.render.mesh3d');
   },

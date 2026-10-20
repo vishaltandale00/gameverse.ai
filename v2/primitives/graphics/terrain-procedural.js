@@ -154,7 +154,8 @@ export function ensureTerrain(stage, spaceId, root) {
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), p3 = new THREE.Vector3();
     let n = 0;
     const density = Math.min(4, cfg.grass.density * 1.2);
-    const pts = scatterPoints(c.x - R, c.z - R, R * 2, density, 11, (x, z) => (x - c.x) ** 2 + (z - c.z) ** 2 < R * R);
+    const onRoad = stage.roadMasks?.get(spaceId);
+    const pts = scatterPoints(c.x - R, c.z - R, R * 2, density, 11, (x, z) => (x - c.x) ** 2 + (z - c.z) ** 2 < R * R && !onRoad?.(x, z));
     for (const pt of pts) {
       if (n >= grass.MAX) break;
       const s = sampler(pt.x, pt.z);
