@@ -15,7 +15,10 @@ export const count = (rt, who, id) => bag(rt, who)[id] || 0;
 /** Count of items in a bag answering to a token (tag, kind, id; see items-lib tokens). */
 export const countTag = (rt, who, tag) => Object.entries(bag(rt, who)).reduce((s, [id, n]) => s + (tokens(itemDef(rt, id) || { id }).has(tag) ? n : 0), 0);
 export const stackOf = (rt, id) => Math.max(1, itemDef(rt, id)?.stack ?? cfg(rt).stackDefault);
-export const slotsOf = (rt, who) => rt.entity(who)?.components?.inventory?.slots ?? (who === 'player' ? cfg(rt).slots : cfg(rt).otherSlots ?? cfg(rt).slots);
+export const slotsOf = (rt, who) => {
+  const c = rt.entity(who)?.components;
+  return c?.inventory?.slots ?? c?.container?.slots ?? (c?.container ? rt.caches.containerSlots : undefined) ?? (who === 'player' ? cfg(rt).slots : cfg(rt).otherSlots ?? cfg(rt).slots);
+};
 export const stacksUsed = (rt, who) => Object.entries(bag(rt, who)).reduce((s, [id, n]) => s + Math.ceil(n / stackOf(rt, id)), 0);
 /** How many of `id` still fit in who's bag. */
 export function room(rt, who, id) {
@@ -35,6 +38,9 @@ export function take(rt, who, id, n = 1, { silent = false } = {}) {
   const b = bag(rt, who), k = Math.min(b[id] || 0, n);
   if (!k) return 0;
   b[id] -= k; if (!b[id]) delete b[id];
+  // Per-instance data (merged crafted effects) never outlives the items it describes.
+  const meta = rt.state.prim['gameplay.inventory.meta']?.[who]?.[id];
+  if (meta && meta.length > (b[id] || 0)) meta.length = b[id] || 0;
   if (!silent) rt.emitTyped('item_lost', id, { item: id, count: k, who });
   return k;
 }

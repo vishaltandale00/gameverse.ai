@@ -31,7 +31,7 @@ export function doc(over = {}) {
     player: { archetype: 'hero', space: 'world', at: over.at || [1, 1, 0] },
   };
   if (over.plot) d.plot = over.plot;
-  return d;
+  return structuredClone(d);
 }
 export const make = (d, extra = []) => compile(d, { primitives: [...ALL, stubs, ...extra] });
 export const steps = (rt, n, input = {}) => { for (let i = 0; i < n && rt.state.status === 'playing'; i++) rt.step(input); return rt; };
