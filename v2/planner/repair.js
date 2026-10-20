@@ -131,7 +131,7 @@ export function normalizeShape(doc, fixes = []) {
 /** preflight that reports a validator crash as an error instead of throwing. */
 function safePreflight(doc, registry, logic) {
   try { return preflight(doc, registry, logic); }
-  catch (error) { return { ok: false, errors: [{ code: 'preflight_threw', path: '$', message: `a validator crashed: ${String(error?.message || error).slice(0, 200)}`, hint: 'a section has the wrong shape (a list written as an object, a missing field)' }], warnings: [] }; }
+  catch (error) { if (process.env.GV_DEBUG) console.error(error.stack); return { ok: false, errors: [{ code: 'preflight_threw', path: '$', message: `a validator crashed: ${String(error?.message || error).slice(0, 200)}`, hint: 'a section has the wrong shape (a list written as an object, a missing field)' }], warnings: [] }; }
 }
 
 /**
@@ -342,6 +342,18 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
         return [...out];
       };
       const without = idx => ({ ...doc, systems: doc.systems.filter((_, j) => !idx.includes(j)) });
+      // A generator (spaces[i].generators[j]) or graphics instance its own validator rejects is dropped the same way.
+      const gen = checked.errors.map(e => parsePath(e.path)).find(k => (k[0] === 'spaces' && k[2] === 'generators' && Number.isInteger(k[3])) || (k[0] === 'graphics' && Number.isInteger(k[1])));
+      if (gen) {
+        const list = gen[0] === 'graphics' ? doc.graphics : doc.spaces[gen[1]].generators, i = gen[0] === 'graphics' ? gen[1] : gen[3], inst = list[i];
+        removed.push({ use: inst.use, why: `could not be configured automatically: ${checked.errors.slice(0, 2).map(e => `${e.code} ${e.path}`).join('; ')}` });
+        fixes.push({ code: 'isolate', path: gen.slice(0, gen[0] === 'graphics' ? 2 : 4).join('.'), action: `removed ${inst.use}` });
+        list.splice(i, 1);
+        const again = repairDocument(doc, { registry, logic, rounds, fallbackSpace });
+        Object.assign(doc, again.doc); fixes.push(...again.fixes); removed.push(...again.removed);
+        checked = again.checked || safePreflight(doc, registry, logic);
+        continue;
+      }
       const located = checked.errors.map(e => locate(doc, registry, parsePath(e.path))).find(l => l?.keys[0] === 'systems');
       let drop = located ? withDependents(located.keys[1]) : null;
       if (!drop) {
