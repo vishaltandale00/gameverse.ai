@@ -72,7 +72,8 @@ export function mountKit(container, record) {
   let doc = record.doc, kit = null, game = null, render = null, state = null;
   let screen = 'loading', screenT = 0, device = 'keyboard', muted = store.get(MUTE_KEY) === '1';
   let pending = [], endAt = null, fading = false, last = performance.now(), acc = 0, raf = 0, disposed = false, runStart = 0;
-  const keys = new Set(), timers = new Set();
+  // `tapped` holds keys pressed since the last step, so a tap shorter than one step still registers.
+  const keys = new Set(), tapped = new Set(), timers = new Set();
   const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); if (!disposed) fn(); }, ms); timers.add(t); return t; };
 
   // ---------- sound ----------
@@ -94,7 +95,7 @@ export function mountKit(container, record) {
   function moveFocus(d) { const list = buttons(); if (!list.length) return; const i = list.indexOf(selected() || document.activeElement); select(list[(i + d + list.length) % list.length]); }
   screenEl.addEventListener('pointerover', e => { const b = e.target.closest?.('button'); if (b && !b.hasAttribute('data-selected')) select(b); });
   function setScreen(name, html = '') {
-    screen = name; screenT = 0; keys.clear(); acc = 0;
+    screen = name; screenT = 0; keys.clear(); tapped.clear(); acc = 0;
     root.dataset.screen = name; screenEl.innerHTML = html;
     sound('music', musicFor(name));
     if (['pause', 'over', 'won'].includes(name)) focusFirst(); else canvas.focus({ preventScroll: true });
@@ -142,7 +143,7 @@ export function mountKit(container, record) {
     if (screen === 'play') {
       if (BACK.has(c)) { e.preventDefault(); if (!e.repeat) pause(); return; }
       if (c === 'KeyR') { e.preventDefault(); if (!e.repeat) action('restart'); return; }
-      if (KEYS.has(c)) { e.preventDefault(); keys.add(c); }
+      if (KEYS.has(c)) { e.preventDefault(); keys.add(c); if (!e.repeat) tapped.add(c); }
       return;
     }
     if (!menu()) return;
@@ -152,7 +153,7 @@ export function mountKit(container, record) {
     else if (BACK.has(c) && screen === 'pause') { e.preventDefault(); resume(); }
   };
   const up = e => keys.delete(e.code);
-  const blur = () => keys.clear();
+  const blur = () => { keys.clear(); tapped.clear(); };
   addEventListener('keydown', down); addEventListener('keyup', up); addEventListener('blur', blur);
   root.addEventListener('pointerdown', unlock);
 
@@ -169,7 +170,7 @@ export function mountKit(container, record) {
     return p;
   }
   const input = p => {
-    const k = c => keys.has(c), axis = i => (p && Math.abs(p.axes[i]) > 0.35 ? Math.sign(p.axes[i]) : 0);
+    const k = c => keys.has(c) || tapped.has(c), axis = i => (p && Math.abs(p.axes[i]) > 0.35 ? Math.sign(p.axes[i]) : 0);
     return {
       x: ((k('ArrowRight') || k('KeyD') || p?.buttons[15]?.pressed) ? 1 : 0) - ((k('ArrowLeft') || k('KeyA') || p?.buttons[14]?.pressed) ? 1 : 0) || axis(0),
       y: ((k('ArrowDown') || k('KeyS') || p?.buttons[13]?.pressed) ? 1 : 0) - ((k('ArrowUp') || k('KeyW') || p?.buttons[12]?.pressed) ? 1 : 0) || axis(1),
@@ -186,6 +187,7 @@ export function mountKit(container, record) {
       acc -= DT;
       if (state.status !== 'playing') { acc = 0; break; }
       game.step(state, i);
+      if (tapped.size) { tapped.clear(); Object.assign(i, input(p)); }
       const events = state.events || [];
       if (events.length) { pending.push(...events); sound('onEvents', events.map(e => SOUND_OF[e.name] ? { ...e, name: SOUND_OF[e.name] } : e), state); }
       if (state.status !== 'playing') endAt = screenT;
