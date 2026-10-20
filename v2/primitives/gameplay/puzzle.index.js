@@ -2,5 +2,8 @@
 import fallingPieces from './falling-pieces.js';
 import match from './match.js';
 import slideMerge from './slide-merge.js';
+import paddle from './paddle.js';
+import launcher from './launcher.js';
+import destructible from './destructible.js';
 
-export default [fallingPieces, match, slideMerge];
+export default [fallingPieces, match, slideMerge, paddle, launcher, destructible];
