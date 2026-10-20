@@ -95,7 +95,8 @@ export default {
       wade: { type: 'number', min: 0, max: 10, default: 0.9, unit: 'm', effect: 'deepest water navigation walks through without the swim ability' },
       objectTile: { type: 'number', min: 16, max: 2048, default: 128, unit: 'm', effect: 'tile size for lazily generated objects (scatter)' },
       cacheTiles: { type: 'integer', min: 8, max: 65536, default: 512, effect: 'height and object tiles kept in memory' },
-      pathNodes: { type: 'integer', min: 100, max: 1000000, default: 20000, effect: 'A* / flood-fill node budget per query' },
+      pathNodes: { type: 'integer', min: 100, max: 1000000, default: 20000, effect: 'A* node budget per path query' },
+      reachNodes: { type: 'integer', min: 100, max: 4000000, default: 65536, effect: 'reachable() budget; its grid coarsens so the whole world fits' },
     },
     provides: {
       capabilities: ['position', 'distance', 'overlap', 'raycast', 'pathfind', 'reachable', 'gravity', 'surface', 'bounds', 'placement', 'heightfield', 'procedural'],
@@ -153,7 +154,7 @@ export default {
       const a = heightSample(ix, iz), b = heightSample(ix + 1, iz), c = heightSample(ix, iz + 1), d = heightSample(ix + 1, iz + 1);
       return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
     };
-    const normalAt = (x, z) => { const e = R, hx = terrainY(x + e, z) - terrainY(x - e, z), hz = terrainY(x, z + e) - terrainY(x, z - e), n = [-hx / (2 * e), 1, -hz / (2 * e)], l = Math.hypot(...n); return n.map(v => v / l); };
+    const normalAt = (x, z) => { const e = R, hx = terrainY(x + e, z) - terrainY(x - e, z), hz = terrainY(x, z + e) - terrainY(x, z - e), n = [-hx / (2 * e), 1, -hz / (2 * e)], l = Math.hypot(...n); return n.map(v => v / l + 0); }; // + 0 turns -0 into 0
     const waterLevelAt = (x, z) => model.at('water', x, z, null);
     const groundAt = (x, z) => {
       const biome = model.ensure().at('biome', x, z, null);
@@ -223,7 +224,8 @@ export default {
       const m = moveOpts(rt, o), b = m.body || config.body;
       return { swim: m.names.has('swim'), climb: m.names.has('climb'), fly: m.names.has('fly'), r: o.radius ?? Math.max(b[0], b[2]) / 2, h: o.height ?? b[1], step: o.step ?? m.env.stepHeight ?? config.stepHeight, slope: o.slopeMax ?? m.env.slopeMax ?? config.slopeLimit, maxNodes: o.maxNodes ?? config.pathNodes, avoid: o.avoid, cell: o.cell };
     };
-    const reachCell = () => Math.max(config.navCell, Math.min(W, D) / 256);
+    /** reachable() cell: fine enough for the world to fit the node budget (whole-map flood fills for the verifier). */
+    const reachCell = () => Math.max(config.navCell, Math.sqrt((W * D) / config.reachNodes));
     const navKey = (ix, iz, cs) => { const x = (ix + 0.5) * cs, z = (iz + 0.5) * cs; return `${Math.floor(x)},${Math.floor(terrainY(x, z))},${Math.floor(z)}`; };
     /** A point (centre or [x, z]) or a zone id as a ground point. */
     const target = at => { if (typeof at === 'string' && !at.includes(',')) { const z = zones().find(q => q.id === at); return z ? anchor(z) : null; } const p = atOf(at); return p.length === 2 ? [p[0], terrainY(p[0], p[1]), p[1]] : v3(p); };
@@ -268,7 +270,7 @@ export default {
     }
     function reachable(from, rtOrOpts, o) {
       const opts = rtOrOpts && !rtOrOpts.state ? rtOrOpts : o || {};
-      const p = navOpts(opts), a = target(from), cs = p.cell ?? reachCell(), ok = walkableFn(p, cs), out = new Set();
+      const p = navOpts({ maxNodes: config.reachNodes, ...opts }), a = target(from), cs = p.cell ?? reachCell(), ok = walkableFn(p, cs), out = new Set();
       const s = [Math.floor(a[0] / cs), Math.floor(a[2] / cs)];
       out.cell = cs; out.truncated = false;
       if (!ok(...s)) return out;

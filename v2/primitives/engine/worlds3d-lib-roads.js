@@ -120,6 +120,8 @@ export function finalize(net, { drive = 'right' } = {}) {
   net.adj = new Map(net.nodes.map(n => [n.id, []]));
   for (const e of edges) { net.adj.get(e.from)?.push([e.to, e.length, e.id]); net.adj.get(e.to)?.push([e.from, e.length, e.id]); }
   net.edgeIndex = new Map(edges.map(e => [e.id, e]));
+  // Signalised junctions: street or junction nodes where three or more edges meet.
+  for (const n of net.nodes) { n.degree = net.adj.get(n.id).length; n.light = n.degree >= 3 && n.kind !== 'zone'; }
   return net;
 }
 

@@ -152,10 +152,11 @@ export default {
       for (let y = a[1]; y <= b[1]; y++) for (let x = a[0]; x <= b[0]; x++) for (let z = a[2]; z <= b[2]; z++) if (solidCell(x, y, z)) return true;
       return false;
     };
-    /** Feet cell free, head room free, and support below (solid, ladder, or water when swimming). */
+    /** Feet cell free, head room free (and above water unless swimming), and support below (solid, ladder, or water when swimming). */
     function standable(x, y, z, hc, swim) {
       if (y < 0 || y >= H || solidCell(x, y, z)) return false;
       for (let k = 1; k < hc; k++) if (solidCell(x, y + k, z)) return false;
+      if (!swim && fluidCell(x, y + hc - 1, z)) return false; // wading is fine, walking under water is not
       return solidCell(x, y - 1, z) || (swim && fluidCell(x, y, z)) || climbable(x, y, z);
     }
     const climbable = (x, y, z) => { const id = palette[cellIdx(x, y, z)]; if (!id) return false; const d = blockDef(id); return d.tags?.includes('climbable') || /ladder|vine/.test(id); };
@@ -295,7 +296,7 @@ export default {
       let y = H - 1; while (y >= 0 && !solidCell(cx, y, cz)) y--;
       const top = y, hx = columnTop(cx + 1, cz, top + 8) - columnTop(cx - 1, cz, top + 8), hz = columnTop(cx, cz + 1, top + 8) - columnTop(cx, cz - 1, top + 8);
       const n = [-hx / 2, 1, -hz / 2], l = Math.hypot(...n);
-      return { y: (top + 1) * C, normal: n.map(v => v / l), material: top >= 0 ? palette[cellIdx(cx, top, cz)] : null, biome: model.ensure().at('biome', x, z, null) };
+      return { y: (top + 1) * C, normal: n.map(v => v / l + 0), material: top >= 0 ? palette[cellIdx(cx, top, cz)] : null, biome: model.ensure().at('biome', x, z, null) };
     }
     const slopeAt = (x, z) => { const n = groundAt(x, z).normal; return +(Math.acos(Math.min(1, n[1])) * 180 / Math.PI).toFixed(3); };
     function waterDepthAt(x, z) {
