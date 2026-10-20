@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shmup kit lab</title>
+  <link rel="stylesheet" href="./lab.css">
+</head>
+<body>
+  <header>
+    <h1>Shmup kit lab</h1>
+    <label>Stage <select id="stage"></select></label>
+    <label><input type="checkbox" id="bot"> Bot plays</label>
+    <label><input type="checkbox" id="pixel"> Pixel style</label>
+    <label><input type="checkbox" id="reduced"> Reduced motion</label>
+    <label><input type="checkbox" id="attract"> Attract</label>
+    <button type="button" id="restart">Restart (R)</button>
+    <button type="button" id="pause">Pause (P)</button>
+    <span id="stats" aria-live="polite"></span>
+  </header>
+  <main><canvas id="view" tabindex="0" aria-label="Shmup kit lab"></canvas></main>
+  <p class="help">Arrows/WASD move, Space/Z fire, X/K bomb. Asteroids: left/right rotate, up thrust, down hyperspace.</p>
+  <script type="module" src="./lab.js"></script>
+</body>
+</html>
