@@ -212,6 +212,26 @@ test('creature: preflight rejects bad data and configs with stable codes', () =>
   assert.ok(codes(noParty).includes('requires_unmet'));
 });
 
+test('creature battle: the battle service gives a pure-read view; every log line has text', () => {
+  const { rt } = compile(doc({ start: [{ species: 'sprout', level: 8 }, { species: 'ember_pup', level: 8 }] }), { primitives: PRIMS });
+  assert.equal(rt.service('battle').view(), null);
+  rt.run([{ do: 'start_battle', foe: [{ species: 'mote', level: 3 }] }]);
+  const snap = rt.snapshot(), v = rt.service('battle').view();
+  assert.deepEqual(rt.snapshot(), snap, 'view() does not mutate state');
+  assert.equal(v.turn, 'player');
+  assert.deepEqual(v.sides.map(s => s.id), ['player', 'foe']);
+  const me = v.sides[0].units[0];
+  assert.equal(me.active, true); assert.equal(me.hpMax, statsOf(rt.doc.content, P(rt).party[0]).hp);
+  assert.ok(v.menu.some(m => m.kind === 'move' && m.pp > 0 && m.type === 'normal'));
+  assert.ok(v.menu.some(m => m.kind === 'switch') && v.menu.some(m => m.kind === 'run') && v.menu.some(m => m.kind === 'item'));
+  assert.deepEqual(v.menu.filter(m => m.enabled).map(m => m.label), rt.availableOptions().map(o => o.label), 'options are the enabled menu');
+  const lines = [];
+  rt.on('battle_log', e => lines.push(e));
+  playOut(rt, o => o.find(x => x.label === 'use tackle') || o[0]);
+  assert.ok(lines.length > 3);
+  assert.deepEqual(lines.filter(e => !e.text).map(e => e.type), [], 'every battle_log line has text');
+});
+
 test('creature battle: stat-stage moves change stages; switching resets them', () => {
   const { rt } = compile(doc({ start: [{ species: 'sprout', level: 8 }, { species: 'ember_pup', level: 8 }] }), { primitives: PRIMS });
   rt.run([{ do: 'start_battle', foe: [{ species: 'mote', level: 30 }] }]);
