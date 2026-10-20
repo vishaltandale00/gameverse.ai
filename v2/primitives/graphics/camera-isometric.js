@@ -6,7 +6,7 @@ import { installIso3d, isoOffset } from './three-camera-iso.js';
 import { installIso2d } from './flat-camera-iso.js';
 
 export { isoOffset };
-const THREE_D = ['engine.space.voxel', 'engine.space.mesh3d'];
+const UNSUPPORTED = ['engine.space.physics2d', 'engine.space.arena2d', 'engine.space.track', 'engine.space.graph', 'engine.space.none'];
 const FLAT = s => s.use === 'engine.space.grid' || (s.use === 'engine.space.tilemap' && s.with?.mode === 'topdown');
 const boundSpace = (doc, instance) => doc.spaces?.find(s => s.id === (instance?.space ?? doc.spaces?.[0]?.id));
 
@@ -29,11 +29,12 @@ export default {
   },
   validate(config, doc, ctx, where) {
     const s = boundSpace(doc, where);
-    return s && (THREE_D.includes(s.use) || FLAT(s)) ? [] : [{ code: 'iso_space', message: 'graphics.camera.isometric needs a voxel, mesh3d or grid space, or a top-down tilemap', hint: `bound space: ${s?.use || 'none'}` }];
+    const ok = s && !UNSUPPORTED.includes(s.use) && !(s.use === 'engine.space.tilemap' && !FLAT(s));
+    return ok ? [] : [{ code: 'iso_space', message: 'graphics.camera.isometric needs a 3D space (voxel, mesh3d), a grid board or a top-down tilemap', hint: `bound space: ${s?.use || 'none'}` }];
   },
   install(rt, config, instance) {
     const s = boundSpace(rt.doc, instance);
-    if (s && THREE_D.includes(s.use)) installIso3d(rt, config, instance);
-    else installIso2d(rt, config, instance);
+    if (s && FLAT(s)) installIso2d(rt, config, instance);
+    else installIso3d(rt, config, instance); // voxel, mesh3d and other 3D spaces
   },
 };

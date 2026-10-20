@@ -26,7 +26,18 @@ function alive(rt, id) {
 }
 
 function spawnCharacter(rt, c, config) {
-  if (rt.entity(c.id) || isPlayerCharacter(c, rt.doc) || c.spawn === false) return null;
+  if (isPlayerCharacter(c, rt.doc) || c.spawn === false) return null;
+  // Another primitive (a room generator placing an NPC, a spawner, a boss) may already have created the
+  // entity under the character's id: adopt it, so spawn order between primitives never matters.
+  const existing = rt.entity(c.id);
+  if (existing) {
+    existing.components.character ??= { id: c.id, name: c.name, role: c.role ?? null, faction: c.faction ?? null, home: c.home ?? null };
+    if (c.model && !existing.components.model) existing.components.model = c.model;
+    if (c.schedule && !existing.components.schedule) existing.components.schedule = structuredClone(c.schedule);
+    for (const [k, v] of Object.entries(c.components || {})) existing.components[k] ??= structuredClone(v);
+    st(rt).spawned[c.id] = true;
+    return existing;
+  }
   const archetype = c.archetype || config.defaultArchetype;
   if (!archetype) return null;
   const zi = zoneIndex(rt.doc);
