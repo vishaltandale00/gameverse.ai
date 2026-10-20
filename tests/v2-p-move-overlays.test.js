@@ -7,11 +7,14 @@ import { Registry } from '../v2/kernel/registry.js';
 import { Logic } from '../v2/kernel/logic.js';
 import { buildLogic } from '../v2/kernel/world.js';
 import { preflight } from '../v2/kernel/document.js';
+import combat from '../v2/primitives/gameplay/combat.index.js';
+
+const health = combat.find(p => p.id === 'gameplay.combat.health');
 
 const wallAt = (x, y0, y1) => { const out = []; for (let y = y0; y <= y1; y++) out.push([x, y, 0]); return out; };
 const sys = (...list) => [{ use: 'gameplay.move.walk', with: {} }, ...list.map(([use, w]) => ({ use, with: w || {} }))];
 const side = (systems, o = {}) => doc({ size: [30, 20, 1], gravity: 30, solid: floor(0, 29, o.extra || []), zones: o.zones || [], at: o.at || [2, 1, 0], systems });
-const damageStub = { id: 'gameplay.test.damage', card: { intent: 'test damage' }, logic(l) { l.effect('damage', { run: (e, rt) => { rt.state.vars.hurt = (rt.state.vars.hurt || 0) + e.amount; } }); } };
+const damageStub = { id: 'gameplay.test.damage', card: { ambient: true, intent: 'test damage' }, logic(l) { l.effect('damage', { run: (e, rt) => { rt.state.vars.hurt = (rt.state.vars.hurt || 0) + e.amount; } }); } };
 const codes = (d, extra = []) => { const r = new Registry([testSpace, ...move, ...extra]); return preflight(d, r, buildLogic(r, Logic)).errors.map(e => e.code); };
 
 test('climb: pushing into a wall climbs, stamina drains, mantles over the top with ledgeGrab', () => {
@@ -61,20 +64,48 @@ test('climb: ladders in tagged zones; not climbable without the ability', () => 
   assert.equal(rt.state.counts.climb_start, 1);
 });
 
-test('swim: float, dive, breath and drowning damage through combat damage', () => {
+test('swim: float, dive, breath and drowning damage through the real combat.health damage effect', () => {
   const zones = [{ id: 'lake', rect: [0, 1, 30, 10], tags: ['water'] }];
-  const { rt } = make(side(sys(['gameplay.move.swim', { speed: 3, breath: 1, drownDps: 7, buoyancy: 2 }]), { zones, at: [5, 6, 0] }), [damageStub]);
+  const d = side([{ use: 'gameplay.combat.health', with: {} }, ...sys(['gameplay.move.swim', { speed: 3, breath: 1, drownDps: 7, buoyancy: 2 }])], { zones, at: [5, 6, 0] });
+  d.content.archetypes[0].components.health = { max: 100 };
+  const { rt } = make(d, [health]);
+  assert.equal(rt.canRun('damage'), true, 'combat owns damage here');
   run(rt, 90, {});
   const p = rt.player();
   assert.equal(p.components.move.mode, 'swim');
   assert.ok(p.at[1] > 7.5, `floated to the surface (${p.at[1]})`);
   assert.equal(rt.state.counts.swim_start, 1);
+  assert.equal(p.components.health.hp, 100, 'no damage while breathing');
   run(rt, 200, { held: { dive: true } });
   assert.ok(p.at[1] < 3, `dove down (${p.at[1]})`);
-  assert.ok(rt.state.counts.drowning >= 1 && rt.state.vars.hurt >= 7, 'drowned after breath ran out');
+  const ticks = rt.state.counts.drowning;
+  assert.ok(ticks >= 1, 'drowned after breath ran out');
+  assert.equal(p.components.health.hp, 100 - 7 * ticks, `combat applied 7 per drowning tick (${p.components.health.hp})`);
+  assert.equal(rt.state.vars.hp, p.components.health.hp, 'mirrored to the hp var');
   assert.equal(rt.state.vars['move.breath'], 0);
   run(rt, 300, { held: { ascend: true } });
   assert.ok(rt.state.vars['move.breath'] > 0.5, 'breath refills at the surface');
+});
+
+test('dodge i-frames cancel combat hits through its interceptor chain; health.invulnerable is untouched', () => {
+  const d = side([{ use: 'gameplay.combat.health', with: { iframes: 0 } }, ...sys(['gameplay.move.dodge', { distance: 3, sec: 0.4, iframes: [0.05, 0.25], recovery: 0.1 }])]);
+  d.content.archetypes[0].components.health = { max: 30 };
+  const { rt } = make(d, [health]);
+  run(rt, 5, {});
+  const p = rt.player(), hit = () => rt.run([{ do: 'damage', who: 'player', amount: 5 }]);
+  rt.step({ actions: { dodge: true }, axes: { move: [1, 0] } });
+  run(rt, 6, {});
+  assert.equal(p.components.body.iframes, true);
+  hit();
+  assert.equal(p.components.health.hp, 30, 'inside the window: evaded');
+  assert.equal(rt.state.counts.evaded, 1);
+  assert.equal(p.components.health.invulnerable, 0, 'move never writes combat\'s own field');
+  rt.run([{ do: 'damage', who: 'player', amount: 5, ignoreIframes: true }]);
+  assert.equal(p.components.health.hp, 25, 'ignoreIframes hits still land');
+  run(rt, 20, {});
+  assert.equal(p.components.body.iframes, false);
+  hit();
+  assert.equal(p.components.health.hp, 20, 'after the window: hit');
 });
 
 test('glide: jump-hold while falling caps the sink rate and drains stamina; ability gate', () => {

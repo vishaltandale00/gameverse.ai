@@ -38,6 +38,15 @@ export const norm = a => { const l = len(a); return l > 1e-9 ? a.map(v => v / l)
 export const round6 = v => Math.round(v * 1e6) / 1e6;
 const AXES = ['x', 'y', 'z'];
 
+import { movementEnvelope } from './move-lib-envelope.js';
+import { intercept } from './combat-lib.js';
+
+// ---------------------------------------------------------------- vocabulary of other primitives
+
+/** Another primitive's effect/predicate is usable only when its owner is installed (KERNEL_API §5). */
+export const canRun = (rt, kind) => (typeof rt.canRun === 'function' ? rt.canRun(kind) : rt.logic.effects.has(kind));
+export const canTest = (rt, kind) => (typeof rt.canTest === 'function' ? rt.canTest(kind) : rt.logic.predicates.has(kind));
+
 // ---------------------------------------------------------------- components
 
 export const mv = e => (e.components.move ??= {});
@@ -273,15 +282,17 @@ export function controls(rt, e) {
   if (!src) return null;
   const cache = frameCache(rt).ctl;
   if (cache.has(e.id)) return cache.get(e.id);
-  const actions = src.actions || {}, held = src.held || {}, prev = new Set(mv(e).held || []);
+  const modal = e.id === 'player' ? rt.state.modal : null, allow = v => !modal || modal.actions.includes(v);
+  const pick = o => Object.fromEntries(Object.entries(o || {}).filter(([k]) => allow(k)));
+  const actions = pick(src.actions), held = pick(src.held), prev = new Set(mv(e).held || []);
   const down = v => Boolean(actions[v] || held[v]);
   const pressed = v => Boolean(actions[v]) && !prev.has(v);
   const released = v => prev.has(v) && !down(v);
-  let move = src.axes?.move ?? (Array.isArray(actions.move) ? actions.move : null);
+  let move = allow('move') ? src.axes?.move ?? (Array.isArray(actions.move) ? actions.move : null) : [0, 0];
   if (!move) move = [(down('right') ? 1 : 0) - (down('left') ? 1 : 0), (down('up') ? 1 : 0) - (down('down') ? 1 : 0)];
   let [x, y] = [Number(move[0]) || 0, Number(move[1]) || 0];
   const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; }
-  const c = { move: [x, y], look: src.axes?.look ?? null, camera: src.axes?.camera ?? null, heading: src.axes?.heading ?? null, aim: src.axes?.aim ?? null, down, pressed, released, actions, held, value: v => actions[v] };
+  const c = { move: [x, y], look: allow('look') ? src.axes?.look ?? null : null, camera: src.axes?.camera ?? null, heading: src.axes?.heading ?? null, aim: allow('aim') ? src.axes?.aim ?? null : null, down, pressed, released, actions, held, value: v => actions[v] };
   cache.set(e.id, c);
   return c;
 }
@@ -501,6 +512,7 @@ function bfs(rt, e, api, goal, test = null) {
 /** Claim the entity for `mode` this frame (call in the 'input' phase). Highest priority wins. */
 export function claim(rt, e, mode, pri, owner) {
   const m = mv(e), f = rt.state.frame;
+  bodyOf(e).controller = 'move';
   if (!m.req || m.req.f !== f || pri > m.req.pri) m.req = { f, mode, pri, owner };
 }
 /** Resolve (once per frame, in 'movement') and return the mode that owns e now. */
@@ -564,7 +576,7 @@ export function hasAbility(rt, e, name) {
   if (rt.state.flags[`ability.${name}`]) return true;
   const ids = grantsIndex(rt).get(name) || [];
   const all = ids.includes(name) ? ids : [name, ...ids];
-  if (rt.canTest('ability')) {
+  if (canTest(rt, 'ability')) {
     for (const id of all) { try { if (rt.test({ ability: id, ...(e.id === 'player' ? {} : { who: e.id }) })) return true; } catch { /* malformed predicate in another workstream */ } }
     return false;
   }
@@ -588,7 +600,7 @@ export function pool(rt, e, id, { max = 100, regen = 0 } = {}) {
     return {
       external: true, get value() { return v[key]; }, get max() { return v[`${key}.max`] ?? max; },
       get locked() { return Boolean(v[`${key}.locked`]); },
-      spend(a) { if (a <= 0) return true; if (rt.canRun('spend')) rt.run([{ do: 'spend', resource: id, amount: a }]); else v[key] = Math.max(0, v[key] - a); return true; },
+      spend(a) { if (a <= 0) return true; if (canRun(rt, 'spend')) rt.run([{ do: 'spend', resource: id, amount: a }]); else v[key] = Math.max(0, v[key] - a); return true; },
       regen() {},
     };
   }
@@ -607,7 +619,7 @@ export const canSpend = (p, amount) => !p || (!p.locked && p.value >= Math.max(a
 
 /** Apply damage through combat.health's `damage` effect when present; otherwise emit only. */
 export function hurt(rt, e, amount, type, reason) {
-  if (rt.canRun('damage')) rt.run([{ do: 'damage', who: e.id, amount, type }], { self: e.id });
+  if (canRun(rt, 'damage')) rt.run([{ do: 'damage', who: e.id, amount, type }], { self: e.id });
   rt.emit('move_hurt', { who: e.id, amount, type, reason });
 }
 
@@ -655,6 +667,16 @@ export function verbs(rt, names) { const have = new Set(rt.actions()); for (cons
 export function ensureShared(rt, macro = {}) {
   if (rt.caches.moveShared) { if (macro.speed) rt.caches.moveShared.speed = Math.max(rt.caches.moveShared.speed, macro.speed); return; }
   const S = rt.caches.moveShared = { speed: macro.speed || 3, seconds: macro.seconds ?? 60, teleport: macro.teleport ?? true, max: macro.max ?? 16 };
+  // Movement i-frames (dodge rolls, dashes, ledge grabs, hyperspace) cancel hits through combat's
+  // shared hit-interceptor chain, first in order. combat.health reads only its own health.invulnerable,
+  // so move never writes that field; hits marked ignoreIframes still land.
+  intercept(rt, 1, (target, hit, rt) => {
+    const m = target?.components?.move;
+    if (!m || m.invulnerableUntil == null || hit.ignoreIframes) return null;
+    const t = rt.state.time;
+    if (t >= (m.invulnerableFrom ?? -Infinity) && t < m.invulnerableUntil) { rt.emit('evaded', { who: target.id, by: hit.by ?? null, type: hit.type ?? null }); return { cancel: true, reason: 'iframes' }; }
+    return null;
+  }, 'gameplay.move');
   rt.system('late', rt => {
     for (const e of Object.values(rt.state.entities)) {
       const src = source(rt, e); if (!src) continue;
@@ -670,22 +692,80 @@ export function ensureShared(rt, macro = {}) {
   rt.options(rt => {
     const p = rt.player(); if (!p?.space || S.max <= 0) return [];
     const api = spaceApi(rt, p); if (!api) return [];
-    const zones = rt.doc.spaces.find(s => s.id === p.space)?.zones || [];
-    const here = zones.filter(z => api.inZone?.(p, z.id, rt)).map(z => z.id);
-    const out = [];
-    for (const z of zones) {
-      if (here.includes(z.id)) continue;
-      const to = zoneAnchor(rt, p, z.id); if (to == null) continue;
-      let pathLen = null;
-      if (dimsOf(p) && typeof api.path === 'function') { const path = api.path(p.at, to, {}); if (!path) continue; pathLen = path.length; }
-      else if (dimsOf(p)) pathLen = len(sub(v3(to), v3(p.at)));
-      else pathLen = 1;
-      const steps = Math.min(Math.round(S.seconds / rt.dt), Math.max(30, Math.ceil(((pathLen + 2) / S.speed) * 1.6 / rt.dt)));
-      out.push({ label: `travel to ${z.id}`, actions: { travel: z.id }, steps, macro: true, apply: rt => travel(rt, z.id, steps, S) });
-      if (out.length >= S.max) break;
-    }
-    return out;
+    // Listing is cheap: one reachable() set per step (memoised), membership tests, a distance
+    // heuristic for `steps`. The real path is planned only when the option is applied or stepped.
+    const listed = reachableZones(rt, p, api);
+    return listed.slice(0, S.max).map(({ id, dist }) => {
+      const steps = Math.min(Math.round(S.seconds / rt.dt), Math.max(30, Math.ceil(((dist + 2) / S.speed) * 1.6 / rt.dt)));
+      return { label: `travel to ${id}`, actions: { travel: id }, steps, macro: true, apply: rt => travel(rt, id, steps, S) };
+    });
   });
+}
+
+/** Cheap point for a zone (no cell scans): at, spawn, rect/bounds centre, centre, polygon centroid. */
+function zoneCentre(z, e) {
+  const dims = dimsOf(e), fill = q => { const out = e.at.slice(); q.forEach((v, i) => { if (v != null && i < dims) out[i] = v; }); return out; };
+  if (Array.isArray(z.at)) return fill(z.at);
+  if (Array.isArray(z.spawn)) return fill(z.spawn);
+  if (Array.isArray(z.rect)) return fill([(z.rect[0] + z.rect[2]) / 2, (z.rect[1] + z.rect[3]) / 2]);
+  if (z.bounds?.min && z.bounds?.max) return fill(z.bounds.min.map((v, i) => (v + z.bounds.max[i]) / 2));
+  const c = z.bounds?.center || z.center;
+  if (c) return dims === 3 ? fill([c[0], null, c[1]]) : fill(c);
+  if (Array.isArray(z.polygon) && z.polygon.length) { const n = z.polygon.length, cx = z.polygon.reduce((a, q) => a + q[0], 0) / n, cz = z.polygon.reduce((a, q) => a + q[1], 0) / n; return dims === 3 ? fill([cx, null, cz]) : fill([cx, cz]); }
+  return null;
+}
+
+/** The movement envelope the player has now (current abilities and grants), memoised per step. */
+export function playerEnvelope(rt, e) {
+  const c = rt.caches, key = `${rt.state.frame}|${e.id}`;
+  if (c.moveEnvKey === key && c.moveEnvState === rt.state.prim) return c.moveEnv;
+  const names = new Set([...grantsIndex(rt).keys()].filter(n => hasAbility(rt, e, n)));
+  for (const k of Object.keys(rt.state.flags)) if (k.startsWith('ability.') && rt.state.flags[k]) names.add(k.slice(8));
+  const env = rt.registry ? movementEnvelope(rt.doc, rt.registry, [...names]) : {};
+  c.moveEnvKey = key; c.moveEnvState = rt.state.prim; c.moveEnv = { env, names };
+  return c.moveEnv;
+}
+
+/**
+ * Zones of e's space it is not in and can reach, nearest first: [{id, dist}]. One
+ * space.reachable() call per step and player cell (memoised in rt.caches), then membership:
+ * zone ids (graph spaces) or the cell keys of a zone's cells (cellOf keys, else joined integer cells).
+ * Spaces without reachable list every zone. dist is a straight-line heuristic, not a path length.
+ */
+export function reachableZones(rt, e, api) {
+  const zones = rt.doc.spaces.find(s => s.id === e.space)?.zones || [];
+  const cellKey = at => (typeof api.cellOf === 'function' ? api.cellOf({ ...e, at }) : Array.isArray(at) ? at.map(v => Math.floor(v)).join(',') : at);
+  const here = typeof api.cellOf === 'function' ? api.cellOf(e) : cellKey(e.at);
+  const c = rt.caches, key = `${rt.state.frame}|${e.space}|${JSON.stringify(here)}`;
+  if (c.moveZonesKey === key && c.moveZonesState === rt.state.prim) return c.moveZones;
+  let set = null;
+  if (typeof api.reachable === 'function') {
+    const { env, names } = playerEnvelope(rt, e), size = e.components.body?.size;
+    const opts = { envelope: env, abilities: Object.fromEntries([...names].map(n => [n, true])), who: e.id, ...(size ? { width: size[0], height: size[1] } : {}) };
+    set = api.reachable(typeof api.cellOf === 'function' ? here : e.at, rt, opts);
+  }
+  const reached = z => {
+    if (!set) return true;
+    if (set.has(z.id)) return true;
+    const cells = [];
+    if (Array.isArray(z.cells)) cells.push(...z.cells);
+    else if (Array.isArray(z.rect)) { let n = 0; for (let x = Math.floor(z.rect[0]); x < z.rect[2] && n < 4096; x++) for (let y = Math.floor(z.rect[1]); y < z.rect[3] && n < 4096; y++, n++) cells.push([x, y]); }
+    const off = api.anchor === 'center' ? 0.5 : 0, h = e.components.body?.size?.[1] ?? 1;
+    for (const [x, y] of cells) {
+      const at = e.at.slice(); at[0] = x + off; at[1] = y + (api.anchor === 'center' ? h / 2 : 0);
+      if (set.has(cellKey(at))) return true;
+    }
+    return false;
+  };
+  const out = [];
+  for (const z of zones) {
+    if (api.inZone?.(e, z.id, rt) || !reached(z)) continue;
+    const to = dimsOf(e) ? zoneCentre(z, e) : z.id;
+    out.push({ id: z.id, dist: dimsOf(e) && to ? len(sub(v3(to), v3(e.at))) : 1 });
+  }
+  out.sort((a, b) => a.dist - b.dist || (a.id < b.id ? -1 : 1));
+  c.moveZonesKey = key; c.moveZonesState = rt.state.prim; c.moveZones = out;
+  return out;
 }
 
 function travel(rt, zone, steps, S) {

@@ -55,7 +55,7 @@ test('walk: jump height follows jump speed and gravity; coyote and buffer', () =
 });
 
 test('walk: sprint drains the resource var through the spend effect and stops when empty', () => {
-  const spend = { id: 'gameplay.test.spend', card: { intent: 'test spend' }, logic(l) { l.effect('spend', { run: (e, rt) => { rt.state.vars[`res.${e.resource}`] -= e.amount; } }); } };
+  const spend = { id: 'gameplay.test.spend', card: { ambient: true, intent: 'test spend' }, logic(l) { l.effect('spend', { run: (e, rt) => { rt.state.vars[`res.${e.resource}`] -= e.amount; } }); } };
   const { rt } = make(side({ with: { sprintCost: 30, sprintMin: 5 } }), [spend]);
   rt.state.vars['res.stamina'] = 10; rt.state.vars['res.stamina.max'] = 100;
   run(rt, 3, {});
@@ -196,6 +196,37 @@ test('walk: preflight rejects bad config with stable codes', () => {
   assert.ok(bad({ nope: 1 }).includes('param_unknown'));
   const d = side(); d.systems[0].with = {}; d.spaces[0].use = 'engine.space.none';
   assert.ok(preflight(d, registry, logic).errors.some(e => e.code === 'primitive_unknown'));
+});
+
+test('walk on engine.physics.character: one integration, its step-up through the character service', async () => {
+  const { default: runtime } = await import('../v2/primitives/engine/runtime.index.js');
+  const character = runtime.find(p => p.id === 'engine.physics.character');
+  const d = side({ solid: floor(0, 23, [[8, 1, 0]]), at: [2, 4, 0] });
+  d.systems.unshift({ use: 'engine.physics.character', with: { stepHeight: 1.1 } });
+  const { rt } = make(d, [character]);
+  const p = rt.player();
+  rt.step({});
+  assert.equal(p.components.body.controller, 'move', 'claimed before the physics phase');
+  const fall = [];
+  for (let i = 0; i < 10; i++) { const y = p.at[1]; rt.step({}); fall.push(y - p.at[1]); }
+  // Gravity 30 × arcade fallMultiplier 1.4 per s², integrated once: Δv per frame = 42/60².
+  assert.ok(Math.abs((fall[9] - fall[8]) - 42 / 3600) < 1e-6, `single integration (${fall[9] - fall[8]})`);
+  run(rt, 40, {});
+  let top = 0; for (let i = 0; i < 90; i++) { rt.step({ axes: { move: [1, 0] } }); top = Math.max(top, p.at[1]); }
+  assert.ok(p.at[0] > 9 && top >= 2 - 0.01, `stepped over the 1-cell block via the character service (top ${top}, at ${p.at})`);
+});
+
+test('walk: an open modal (dialogue, menu) blocks movement verbs', () => {
+  const { rt } = make(side());
+  run(rt, 5, {});
+  const x0 = rt.player().at[0];
+  rt.openModal('dialogue', { actions: ['choose'] });
+  run(rt, 30, { axes: { move: [1, 0] }, actions: { jump: true } });
+  assert.equal(rt.player().at[0], x0);
+  assert.equal(rt.state.counts.jumped, undefined);
+  rt.closeModal('dialogue');
+  run(rt, 30, { axes: { move: [1, 0] } });
+  assert.ok(rt.player().at[0] > x0 + 1);
 });
 
 test('walk: moving predicate', () => {
