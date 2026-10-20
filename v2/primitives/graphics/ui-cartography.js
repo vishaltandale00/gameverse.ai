@@ -35,7 +35,7 @@ export function entityHasTag(rt, e, tag) {
 }
 
 /**
- * opts: { markers: [{tag, icon, color}], quests: true, fog: true }
+ * opts: { markers: [{tag, icon, color}], quests: true, fog: true, visited?: Set of zone ids the player entered (UI memory) }
  * Returns { space, plane, graph, zones:[{id,name,tags,shape,center,discovered,current,travel}], edges, player:{pos,heading}|null, markers:[{id,pos,icon,color,tag}], pins:[{zone,pos,kind,label,tracked}], bounds }
  */
 export function mapModel(rt, opts = {}) {
@@ -44,7 +44,7 @@ export function mapModel(rt, opts = {}) {
   const graph = geo.graph;
   const here = p ? entityPos(rt, p, geo) : null;
   const currentZone = p ? (graph ? p.at : p.zone || geo.zones.find(z => here && insideShape(z.shape, here))?.id) : null;
-  const zones = geo.zones.map(z => ({ ...z, discovered: !opts.fog || S.discovered(rt, z.id) || z.id === currentZone, current: z.id === currentZone, travel: TRAVEL_TAGS.some(t => z.tags.includes(t)) }));
+  const zones = geo.zones.map(z => ({ ...z, discovered: !opts.fog || S.discovered(rt, z.id, opts.visited) || z.id === currentZone, current: z.id === currentZone, travel: TRAVEL_TAGS.some(t => z.tags.includes(t)) }));
   const markers = [];
   if (opts.markers?.length) for (const e of Object.values(rt.state.entities)) {
     if (e.id === 'player' || e.space !== space.id || e.components?.health?.dead) continue;
@@ -149,4 +149,12 @@ export function fitTransform(bounds, w, h, pad = 40) {
   const [u0, v0, u1, v1] = bounds, bw = Math.max(1e-6, u1 - u0), bh = Math.max(1e-6, v1 - v0);
   const scale = Math.min((w - pad * 2) / bw, (h - pad * 2) / bh);
   return { scale, cx: w / 2, cy: h / 2, ou: (u0 + u1) / 2, ov: (v0 + v1) / 2, rot: 0 };
+}
+
+/** UI-local memory of zones the player entered (shared by map, minimap and HUD per runtime). */
+const VISITED = new WeakMap();
+export function visitedZones(rt) {
+  let v = VISITED.get(rt);
+  if (!v) { v = new Set(); VISITED.set(rt, v); rt.on('enter_zone', e => { if ((e.who ?? 'player') === 'player' && e.zone) v.add(e.zone); }); }
+  return v;
 }

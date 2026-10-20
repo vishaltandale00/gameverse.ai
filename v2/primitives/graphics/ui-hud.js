@@ -240,7 +240,7 @@ export default {
     // Zone titles.
     rt.on('enter_zone', e => {
       if (config.zoneTitles === 'off' || (e.who ?? 'player') !== 'player' || !e.zone || rt.state.frame < 1) return;
-      const first = !local.seenZones.has(e.zone) && (rt.state.counts[`enter_zone:${e.zone}`] ?? 1) <= 1;
+      const first = !local.seenZones.has(e.zone);
       local.seenZones.add(e.zone);
       if (config.zoneTitles === 'first' && !first) return;
       const z = docZone(rt.doc, e.zone);

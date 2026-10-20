@@ -9,8 +9,8 @@
 //   crafting   service crafting.station(who) / craftable(who); predicate knows      (items)
 //   shop       service shop.open(who); actions buy/sell/close_shop                 (items)
 //   container  service container.open(who); actions take/store/take_all/close_container (items)
-//   interact   service interact.focus(who); events interact_focus/interact_blur    (items)
-//   status     service status.list(entity) | components.status.active              (combat)
+//   interact   service interact.focus(who); events interact_focus/interact_blur; nearest components.interact {prompt, range} (items, frozen)
+//   status     service status.list(entity) | components.status {id: secondsLeft}   (combat, frozen)
 //   boss       vars boss.hp boss.hp.max boss.phase boss.id; events boss_*          (combat)
 //   quests     service quests.list() | predicates quest/objective                  (story)
 //   dialogue   service dialogue.view() | events dialogue_line/dialogue_end         (story)
@@ -79,8 +79,10 @@ export function statuses(rt, entity) {
   if (!entity) return [];
   const list = svc(rt, 'status', 'list', entity);
   if (Array.isArray(list)) return list;
-  const active = entity.components?.status?.active || {};
-  return Object.entries(active).map(([id, s]) => ({ id, remaining: (s.left ?? 0) / 60, stacks: s.stacks ?? 1 }));
+  // Frozen field (KERNEL_API §2): components.status = { statusId: secondsLeft }.
+  const st = entity.components?.status || {};
+  if (st.active && typeof st.active === 'object') return Object.entries(st.active).map(([id, s]) => ({ id, remaining: (s.left ?? 0) / 60, stacks: s.stacks ?? 1 }));
+  return Object.entries(st).filter(([, v]) => typeof v === 'number' && v > 0).map(([id, v]) => ({ id, remaining: v, stacks: 1 }));
 }
 export function boss(rt) {
   const hp = vars(rt, 'boss.hp'), id = vars(rt, 'boss.id');
@@ -93,7 +95,21 @@ export function boss(rt) {
 export function interactFocus(rt, who = 'player', last = null) {
   const f = svc(rt, 'interact', 'focus', who);
   if (f !== undefined) return f || null;
-  return last; // event-driven fallback tracked by the HUD
+  if (last) return last; // event-driven fallback tracked by the HUD
+  return nearestInteractable(rt, who);
+}
+/** Presentation-only fallback: the nearest entity with an interact component in range (frozen fields id, kind, prompt, range). */
+export function nearestInteractable(rt, who = 'player') {
+  const p = rt.resolve(who); if (!p?.space) return null;
+  let api; try { api = rt.space(p.space); } catch { return null; }
+  if (typeof api.distance !== 'function') return null;
+  let best = null, bestD = Infinity;
+  for (const e of Object.values(rt.state.entities)) {
+    const it = e.components?.interact; if (!it || e === p || e.space !== p.space) continue;
+    let d; try { d = api.distance(p.at, e.at); } catch { continue; }
+    if (Number.isFinite(d) && d <= (it.range ?? 1.5) && d < bestD) { bestD = d; best = { target: e.id, label: it.prompt || `${String(it.kind || 'use').replace(/^./, c => c.toUpperCase())}`, verb: 'interact', kind: it.kind || null }; }
+  }
+  return best;
 }
 
 // ---------------------------------------------------------------- plot
@@ -121,7 +137,8 @@ export const objectiveProgress = o => (typeof o.progress === 'number' && o.count
 export function dialogueView(rt) { const v = svc(rt, 'dialogue', 'view'); return v === undefined ? undefined : (v?.active ? v : null); }
 export function known(rt, entry) { const k = svc(rt, 'journal', 'known', entry.id); if (typeof k === 'boolean') return k; return hasPredicate(rt, 'known') ? safeTest(rt, { known: entry.id }) : !docSystem(rt.doc, 'plot.journal'); }
 export function met(rt, id) { return safeTest(rt, { met: id }) || count(rt, `talked:${id}`) > 0; }
-export const discovered = (rt, zone) => count(rt, `discovered:${zone}`) > 0 || count(rt, `enter_zone:${zone}`) > 0 || safeTest(rt, { discovered: zone }) || rt.player()?.zone === zone || rt.player()?.at === zone;
+/** Discovered: engine.zones' discovered:<zone> count or predicate, the player's current zone, or a UI-local visited set (enter_zone counts include every entity, so they are not used). */
+export const discovered = (rt, zone, visited) => count(rt, `discovered:${zone}`) > 0 || safeTest(rt, { discovered: zone }) || rt.player()?.zone === zone || rt.player()?.at === zone || Boolean(visited?.has(zone));
 
 // ---------------------------------------------------------------- modes
 export function battleView(rt) {

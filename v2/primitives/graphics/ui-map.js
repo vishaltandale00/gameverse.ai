@@ -6,7 +6,7 @@ import { THEMES, resolveTheme } from './ui-theme.js';
 import { uiHost, fill, titleCase, zoneName, docZone, clamp } from './ui-lib.js';
 import { icon } from './ui-icons.js';
 import { createSheet } from './ui-sheet.js';
-import { mapModel, drawMap, fitTransform, TRAVEL_TAGS } from './ui-cartography.js';
+import { mapModel, drawMap, fitTransform, TRAVEL_TAGS, visitedZones } from './ui-cartography.js';
 import * as S from './ui-sources.js';
 
 /** Nearest selectable zone from `from` in a direction (screen-up = +v). */
@@ -47,14 +47,14 @@ export default {
   },
   install(rt, config) {
     const host = uiHost(rt); if (!host) return;
-    const el = host.el;
+    const el = host.el, visited = visitedZones(rt);
     let selected = null, zoom = 1, pan = [0, 0], model = null, canvas = null, ctx = null, info = null, drag = null, pins = loadPins();
     const sheet = createSheet(host, {
       id: 'map', title: 'Map', theme: resolveTheme(rt.doc, config.style), hotkey: 'map', pause: config.pause,
       tabs: () => [{ id: 'map', label: 'Map' }],
       hints: () => [['confirm', config.fastTravel && S.canAct(rt, 'fast_travel') ? 'Travel / pin' : 'Pin'], ['prev', 'Zoom']],
       renderTab(tab, body, sh) {
-        model = mapModel(rt, { markers: config.markers, fog: config.fog });
+        model = mapModel(rt, { markers: config.markers, fog: config.fog, visited });
         sh.retitle(titleCase(rt.doc.spaces.find(s => s.id === model.space)?.name || model.space) || 'Map');
         canvas = el('canvas', { attrs: { 'aria-label': 'World map', role: 'img' } });
         const stage = el('div.gv-map-canvas', { on: { wheel: e => { e.preventDefault?.(); zoomBy(e.deltaY < 0 ? 1.15 : 1 / 1.15); }, pointerdown: e => { drag = { x: e.clientX, y: e.clientY, pan: [...pan], moved: false }; }, pointermove: e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.hypot(dx, dy) > 4) drag.moved = true; pan = [drag.pan[0] + dx, drag.pan[1] + dy]; paint(); }, pointerup: e => { if (drag && !drag.moved) pickAt(e); drag = null; } } }, canvas);
@@ -65,7 +65,7 @@ export default {
         sh.setItems([stage], { onMove: dir => { const next = zoneInDirection(model.zones.filter(z => z.discovered || !config.fog), selected, dir); if (next) { selected = next; host.sound('move'); paintInfo(); paint(); } return true; }, onConfirm: () => activate(), onVerb: v => { if (v === 'prev' || v === 'next') zoomBy(v === 'next' ? 1.25 : 0.8); return true; } });
         paintInfo(); paint();
       },
-      refresh() { const next = mapModel(rt, { markers: config.markers, fog: config.fog }); if (JSON.stringify(next.player) !== JSON.stringify(model?.player) || next.pins.length !== model?.pins.length) { model = next; paintInfo(); } else model = next; paint(); },
+      refresh() { const next = mapModel(rt, { markers: config.markers, fog: config.fog, visited }); if (JSON.stringify(next.player) !== JSON.stringify(model?.player) || next.pins.length !== model?.pins.length) { model = next; paintInfo(); } else model = next; paint(); },
     });
     function zoomBy(k) { zoom = clamp(zoom * k, 0.5, 8); paint(); }
     function size() { const w = canvas.parentNode?.clientWidth || 800, h = canvas.parentNode?.clientHeight || 500; return [w, h]; }

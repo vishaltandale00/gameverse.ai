@@ -6,5 +6,7 @@ import journal from './ui-journal.js';
 import inventory from './ui-inventory.js';
 import menu from './ui-menu.js';
 import audioSynth from './audio-synth.js';
+import minimap from './ui-minimap.js';
+import map from './ui-map.js';
 
-export default [hud, dialogue, journal, inventory, menu, audioSynth];
+export default [hud, dialogue, journal, inventory, menu, minimap, map, audioSynth];
