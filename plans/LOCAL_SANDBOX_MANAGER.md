@@ -1,3 +1,5 @@
+> 2026-10-20 scope update: ordinary API-key players use fully hosted cloud dispatch without the local manager. This plan describes developer sandbox work and personal Codex fallback. [Hosted voice contract](../contracts/HOSTED_VOICE.md) and [operation/qualification](../docs/development/HOSTED_VOICE.md) describe issue #21 H0–H3. Manager-online requirements below apply only to the developer route. The dated decisions in #21 supersede older universal-manager or remote-game assumptions.
+
 # Local cloud sandbox manager — issue #21 implementation plan
 
 Status: packages 0–2 were explicitly authorized and implemented in Daytona on 2026-10-19. The next authorized slice is N0–N2: a Daytona voice agent with browser game/takeover authority and local Stop/handback. See [the voice slice](../docs/development/BROWSER_VOICE.md). See `docs/development/SANDBOX_MANAGER.md` and its qualification report. Deployment, real provider-model runs, publication and N3–N5 remain outside this slice. Provider, deployed-browser, remote-gameplay and authored-harness gates remain. The source review below records the original planning baseline.

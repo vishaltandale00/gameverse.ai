@@ -39,7 +39,7 @@ export class TestAgentConnections extends AgentConnections {
   releaseSeal() { this.release(); return true; }
 }
 
-const operations = new Set(['getConnections', 'startConnection', 'completeConnection',
+const operations = new Set(['apiKeyStatus','apiKeyCredential','getConnections', 'startConnection', 'completeConnection',
   'cancelConnection', 'setDefault', 'disconnect', 'claimUse', 'saveRefreshedCredential',
   'requireReconnect', 'finishUse', 'inspectStorage', 'holdNextSeal', 'sealIsHeld', 'releaseSeal',
   'expireUse', 'tryOtherOwner']);

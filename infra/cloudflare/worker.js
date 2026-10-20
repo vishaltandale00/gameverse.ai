@@ -1,3 +1,4 @@
+export {HostedVoiceState} from './hosted-voice-state.js';
 import {browserVoiceRoute} from './browser-voice-api.js';
 export { DevManagerState } from './dev-manager-state.js';
 import {devManagerRoute} from './dev-manager-api.js';

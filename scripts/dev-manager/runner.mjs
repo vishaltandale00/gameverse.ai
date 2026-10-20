@@ -71,7 +71,7 @@ export class Runner {
       if(t.kind==='voice-agent'){
         const pkg=await voicePackage(t.source_commit),permit=await this.transport.device({op:'voice-launch',id:t.id});
         const broker=new URL(this.daytona.voiceBroker||this.transport.url);assert(broker.origin==='https://gameverse.build'||this.daytona.allowVoiceTestBroker===true&&broker.protocol==='https:'&&broker.hostname.endsWith('.daytonaproxy01.net'),'untrusted_voice_broker');
-        const launch={task_id:t.id,source_commit:t.source_commit,session_id:t.voice.session_id,deadline:Math.min(t.deadline,j.started_at+t.limits.job_wall_ms),url:new URL('/api/browser-voice/worker/'+t.id,broker).href,token:permit.token,synthetic:permit.synthetic===true};
+        const launch={task_id:t.id,source_commit:t.source_commit,session_id:t.voice.session_id,model_calls:t.limits.model_calls,deadline:Math.min(t.deadline,j.started_at+t.limits.job_wall_ms),url:new URL('/api/browser-voice/worker/'+t.id,broker).href,token:permit.token,synthetic:permit.synthetic===true};
         for(const [name,text] of [...pkg.files,['verify.mjs',voiceVerifier],['launch.json',JSON.stringify(launch)]])await this.daytona.upload(sandbox,`${root}/${name}`,new TextEncoder().encode(text));
       }else for(const [name,text] of [['worker.mjs',fixtureRuntime],['verify.mjs',fixtureVerifier],['request.json',JSON.stringify({id:t.id,source_commit:t.source_commit,limits:t.limits})]])await this.daytona.upload(sandbox,`${root}/${name}`,new TextEncoder().encode(text));
       j.phase='prepared';await this.save();return;}

@@ -29,6 +29,10 @@
       {
         "name": "DEV_MANAGERS",
         "class_name": "DevManagerState"
+      },
+      {
+        "name": "HOSTED_VOICE",
+        "class_name": "HostedVoiceState"
       }
     ]
   },
@@ -41,7 +45,8 @@
         "IdentityState",
         "AccountJobs",
         "SandboxAdmission",
-        "DevManagerState"
+        "DevManagerState",
+        "HostedVoiceState"
       ]
     }
   ],
@@ -63,6 +68,7 @@
     "GAMEVERSE_PILOT_PHONES": "+12025550101,+12025550102,+12025550103",
     "GAMEVERSE_DEVELOPER_PHONES": "+12025550101,+12025550102",
     "AGENT_CREDENTIAL_KEY": "2222222222222222222222222222222222222222222222222222222222222222",
-    "VOICE_AGENT_ENABLED": "1"
+    "VOICE_AGENT_ENABLED": "1",
+    "HOSTED_VOICE_SYNTHETIC": "1"
   }
 }

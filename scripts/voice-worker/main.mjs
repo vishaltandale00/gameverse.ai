@@ -5,7 +5,7 @@ const launch=JSON.parse(await readFile(new URL('./launch.json',import.meta.url))
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const record=(event,data={})=>{events.push({event,at:Date.now(),...data});if(events.length>80)events.shift();};
 const call=async value=>{if(Date.now()>=launch.deadline)throw Error('voice_deadline');let r;try{r=await fetch(launch.url,{method:'POST',headers:{Authorization:'Bearer '+launch.token,'Content-Type':'application/json'},body:JSON.stringify(value),signal:AbortSignal.timeout(Math.min(28000,Math.max(1,launch.deadline-Date.now())))});}catch{throw Error('voice_broker_network_failed');}let data;try{data=await r.json();}catch{throw Error('voice_broker_response_invalid');}if(!r.ok)throw Error(data.error?.code||'voice_broker_failed');return data;};
-const provide=async(id,kind,payload)=>{attempts++;record('provider-requested',{id,kind});const value=await call({op:'provider',id,kind,payload});if(value.error)throw Error(value.error);return value;};
+const provide=async(id,kind,payload)=>{const cap=Number.isInteger(launch.model_calls)?launch.model_calls:100;if(cap<1||cap>100||attempts>=cap)throw Error('voice_budget_exhausted');attempts++;record('provider-requested',{id,kind});const value=await call({op:'provider',id,kind,payload});if(value.error)throw Error(value.error);return value;};
 async function request(row){
   const claimed=await call({op:'claim',id:row.id});if(!claimed.claimed)return;record('voice-request',{id:row.id});
   try{

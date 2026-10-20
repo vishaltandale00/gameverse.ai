@@ -1,3 +1,7 @@
+import {voicePackage} from './dev-manager/voice-package.mjs';
+import {execFileSync} from 'node:child_process';
+import {releaseContent} from '../src/hosted-voice-protocol.js';
+import {hash} from './runtime.mjs';
 import { cp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { root, runtimeDirectory, runtimeIdentity } from './runtime.mjs';
 import { gameCatalog, customArtifacts } from './catalog.mjs';
@@ -27,4 +31,10 @@ for (const [id, files] of customArtifacts) {
   for (const [name, bytes] of files) await writeFile(new URL(`dist/custom/${id}/${name}`, root), bytes);
 }
 await writeFile(new URL('dist/games/catalog.json', root), JSON.stringify(catalog));
-console.log(`Shell copied in ${(performance.now() - start).toFixed(1)} ms. Original sports bundled. GBA cartridges stay local; npm run dev serves them.`);
+
+
+const source_commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),voice=await voicePackage(source_commit);
+const release={schema:'gameverse.hosted-voice-release/1',source_commit,files:Object.fromEntries(voice.files),games:catalog.filter(g=>g.id==='soccer').map(g=>({gameId:g.id,version:g.version,artifactSha256:g.artifactSha256}))};
+release.sha256=hash(releaseContent(release));await writeFile(new URL('dist/runtime/voice-worker.json',root),JSON.stringify(release));
+
+console.log(`Shell and pinned voice package built in ${(performance.now() - start).toFixed(1)} ms. Original sports bundled; GBA cartridges stay local.`);

@@ -19,7 +19,7 @@ export class BrowserVoice {
     const session=this.shell.host.describeSession(sessionId);
     const game=this.shell.host.listGames().find(g=>g.gameId===session.gameId),target={sessionId:session.sessionId,gameId:session.gameId,version:session.version,profileId:session.identity.profileId,artifactSha256:game?.artifactSha256,sourceCommit:config.source_commit};
     if(this.binding&&JSON.stringify(this.binding.target)!==JSON.stringify(target))this.revoke('session changed');
-    if(!this.binding){this.binding={id:crypto.randomUUID(),epoch:crypto.randomUUID(),manager_id:config.manager_id,target};this.acks.clear();this.sequence=0;}
+    if(!this.binding){this.binding={id:crypto.randomUUID(),epoch:crypto.randomUUID(),...(config.executor==='hosted-api-key'?{execution:config.executor}:{manager_id:config.manager_id}),target};this.acks.clear();this.sequence=0;}
     const b=this.binding,snapshot=this.shell.agent.snapshot({gameId:session.gameId,sessionId:session.sessionId});snapshot.games=snapshot.games.filter(g=>g.gameId===target.gameId);snapshot.sessions=snapshot.sessions.filter(s=>s.sessionId===target.sessionId);snapshot.runs=snapshot.runs.filter(r=>this.shell.host.runStatus(r.runId).sessionId===target.sessionId);
     this.lastSuccess=this.now();await this.post('/api/browser-voice/bind',{...b,snapshot});if(this.binding!==b)throw Error('voice_session_revoked');this.shell.remoteStatus({pending:true});if(this.polling!==b){this.polling=b;void this.poll(b);}
   }

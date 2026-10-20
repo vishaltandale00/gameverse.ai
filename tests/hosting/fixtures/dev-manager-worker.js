@@ -1,3 +1,7 @@
+import {HostedVoiceState as HostedBase} from '../../../infra/cloudflare/hosted-voice-state.js';
+import {voiceCapability} from '../../../infra/cloudflare/browser-voice-api.js';
+import {principal} from '../../../infra/cloudflare/phone-sign-in.js';
+export class HostedVoiceState extends HostedBase { inspect(){return this.core.state;} launchToken(id){return voiceCapability(this.env,this.core.task(id));} async tick(){await this.alarm();return this.core.state;} }
 import {scriptedVoiceProvider} from './voice-test-provider.js';
 // Synthetic local qualification entrypoint. Never deploy this login bypass.
 import worker from '../../../infra/cloudflare/worker.js';
@@ -17,7 +21,8 @@ export default {async fetch(request,env){const url=new URL(request.url);
     await env.IDENTITY.getByName('session:'+await sha256(token)).putRecord({kind:'session',account,expires_at:Date.now()+3600000});
     return Response.json({account},{headers:{'Set-Cookie':`__Host-gameverse=${token}; Path=/; HttpOnly; Secure; SameSite=Lax`}});
   }
+  if(env.APP_ENV==='test'&&url.pathname.startsWith('/test/hosted/')){const account=await principal(request,env);if(!account)return new Response(null,{status:401});const object=env.HOSTED_VOICE.getByName(account.id);await object.initialize(account.id);const op=url.pathname.split('/').pop();if(op==='inspect')return Response.json(await object.inspect());if(op==='tick')return Response.json(await object.tick());if(op==='token')return Response.json({token:await object.launchToken(url.searchParams.get('id'))});if(op==='audio'){const state=await object.inspect(),row=state.voice.requests[url.searchParams.get('id')];if(!row)return new Response(null,{status:404});const audio=await env.ARTIFACTS.get(`voice/${account.id}/${row.task_id}/${row.sha256}`);return audio?new Response(audio.body,{headers:{'Content-Type':row.mime}}):new Response(null,{status:404});}}
   if(env.APP_ENV==='test'&&url.pathname==='/test/context')return Response.json({origin:url.origin,header:request.headers.get('Origin')});
   if(env.APP_ENV==='test'&&url.pathname==='/test/inspect')return Response.json(await env.DEV_MANAGERS.getByName('shared-daytona-development').inspect());
-  return worker.fetch(request,env.VOICE_AGENT_ENABLED==='1'?{...env,VOICE_TEST_PROVIDER:scriptedVoiceProvider}:env);
+  return worker.fetch(request,env.VOICE_AGENT_ENABLED==='1'||env.HOSTED_VOICE_ENABLED==='1'?{...env,VOICE_TEST_PROVIDER:scriptedVoiceProvider,VERIFY_API_KEY_TEST:async(provider,key)=>{if(provider!=='codex'||!key.startsWith('sk-hosted-fixture-'))throw Error('provider_authentication_failed');}}:env);
 }};

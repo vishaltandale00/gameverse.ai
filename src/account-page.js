@@ -105,16 +105,16 @@ function renderConnections() {
   $('agent-connections').replaceChildren();
   for (const provider of ['claude', 'codex']) {
     const connection = settings.connections.find(row => row.provider === provider), login = latestLogin(provider);
-    const view = connectionView(connection, login, localConnections.get(provider)), name = provider === 'claude' ? 'Claude' : 'Codex';
+    const view = connectionView(connection, login, localConnections.get(provider)), name = provider === 'claude' ? 'Claude' : config.hosted_voice ? 'OpenAI' : 'Codex';
     const card = text('article', '', 'agent-card'), row = text('div', '', 'agent-row'); card.dataset.provider = provider;
     const copy = text('div', '', 'agent-copy'), title = text('div', '', 'agent-title'); title.append(text('h3', name));
     if (view.step === 'connected' && settings.default_provider === provider) title.append(text('span', 'Default', 'default-badge'));
-    copy.append(title, text('p', provider === 'codex' && view.step === 'idle' ? 'Browser sign-in isn’t available yet.' : ['preparing', 'authorize', 'verifying', 'cancelling'].includes(view.step) ? 'Your personal agent account' : view.detail));
+    copy.append(title, text('p', provider === 'codex' && config.hosted_voice ? (view.step === 'connected' ? 'API key saved. Voice service access is checked when used.' : 'Use your OpenAI API key for hosted voice and gameplay decisions.') : provider === 'codex' && view.step === 'idle' ? 'Browser sign-in isn’t available yet.' : ['preparing', 'authorize', 'verifying', 'cancelling'].includes(view.step) ? 'Your personal agent account' : view.detail));
     row.append(text('span', provider === 'claude' ? 'C' : '⌘', `agent-symbol ${provider}`), copy);
     const controls = text('div', '', 'agent-control');
     if (['idle', 'reconnect', 'failed'].includes(view.step) && !activeLogin(provider)) {
       const connect = button(view.step === 'reconnect' ? 'Reconnect' : view.step === 'failed' ? 'Try again' : 'Connect', () => startConnection(provider), 'primary');
-      connect.disabled = !config.providers[provider].browser || !account.developer; controls.append(connect);
+      connect.disabled = !config.providers[provider].browser || !account.developer;if(account.developer)controls.append(connect);
     } else {
       controls.append(text('span', view.label, `connection-state ${view.step} ${view.busy ? 'busy' : ''}`));
     }
@@ -171,6 +171,7 @@ function renderJobs() {
     if (job.reason) details.append(text('p', job.reason.replaceAll('_', ' '))); card.append(details); $('job-list').append(card);
   }
 }
+const hostedVoiceInfo=document.createElement('p');hostedVoiceInfo.id='hosted-voice-info';hostedVoiceInfo.hidden=true;document.getElementById('dev-manager-panel').before(hostedVoiceInfo);
 const devManagers=createDevManagerPanel({root:document.getElementById('dev-manager-panel'),api});
 async function refresh() {
   if (polling) return; polling = true;
@@ -178,7 +179,8 @@ async function refresh() {
     account = (await api('/api/me')).account;
     $('sign-in-panel').hidden = !!account; $('signed-in-panel').hidden = !account; $('account-summary').hidden = !account;
     await devManagers.refresh(account);
-    if (!account) { $('send-code').disabled = !config.sign_in.configured; return; }
+    if (!account) { hostedVoiceInfo.hidden=true; $('send-code').disabled = !config.sign_in.configured; return; }
+    hostedVoiceInfo.hidden=!config.hosted_voice;hostedVoiceInfo.textContent='Voice runs securely in the cloud using your OpenAI API key. No local app is required. Your key must support transcription and Decisions; saving it checks authentication only. Provider usage is billed to your key; compute availability follows your account allowance.';
     $('account-name').textContent = account.name; $('developer-panel').hidden = !account.developer;
     const [connections, runs] = await Promise.all([api('/api/agent-connections'), api('/api/jobs')]); settings = connections; jobs = runs.jobs;
     for (const [provider, local] of localConnections) {

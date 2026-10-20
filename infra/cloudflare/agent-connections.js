@@ -157,6 +157,33 @@ export class AgentConnections extends DurableObject {
       auth_method: row.auth_method, credential };
   }
 
+  // API-key inference is concurrent and task-scoped. It never claims or copies
+  // the exclusive lease used for rotating subscription credentials.
+  apiKeyStatus(provider = 'codex') {
+    const row = this.connection(provider);
+    return {available: row?.status === 'connected' && row.auth_method === 'api-key' && !!row.credential,
+      provider, generation: row?.generation ?? null, revision: row?.revision ?? null};
+  }
+
+  async apiKeyCredential(scope) {
+    const {provider, generation, revision, task_id, parent_id, service, expires_at} = scope || {};
+    if (provider !== 'codex' || !identifier(task_id) || task_id !== parent_id ||
+        !['transcribe','plan','decisions','reflect'].includes(service) ||
+        !Number.isSafeInteger(expires_at) || expires_at <= Date.now() || expires_at > Date.now()+300000) {
+      throw Error('invalid_api_key_grant');
+    }
+    const check = () => {
+      const row = this.connection(provider);
+      if (!this.apiKeyStatus(provider).available || row.generation !== generation || row.revision !== revision)
+        throw Error('api_key_grant_revoked');
+      return row;
+    };
+    const row = check(), credential = await this.vault.open(JSON.parse(row.credential), this.scope(row));
+    check();
+    // Trusted server-only RPC. Never pass this result to the sandbox or browser.
+    return credential;
+  }
+
   async saveRefreshedCredential(provider, leaseId, expectedRevision, credential) {
     const { row } = this.assertUse(provider, leaseId, expectedRevision);
     const envelope = await this.vault.seal(credential, this.scope({ ...row, revision: row.revision + 1 }));

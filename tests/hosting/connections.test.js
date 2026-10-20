@@ -155,4 +155,21 @@ test('account connection lifecycle retains refreshes, fences cancellation and su
     assert.equal((await call('vishal', 'claimUse', 'codex', 'restart-run', 300000)).credential, 'restart-fixture-auth');
     await call('vishal', 'finishUse', 'codex', use.lease_id);
   });
+  await t.test('API-key grants allow bounded concurrent services without a rotating-auth lease and fence rotation', async () => {
+    await login('api-player','codex','sk-fixture-account-key','api-key');
+    const status=await call('api-player','apiKeyStatus','codex');
+    assert.equal(status.available,true);
+    const scope={provider:'codex',generation:status.generation,revision:status.revision,task_id:'voice-root',parent_id:'voice-root',service:'plan',expires_at:Date.now()+120000};
+    assert.deepEqual(await Promise.all(['plan','decisions','reflect','transcribe'].map(service=>call('api-player','apiKeyCredential',{...scope,service}))),Array(4).fill('sk-fixture-account-key'));
+    assert.equal((await call('api-player','getConnections')).connections[0].active_run,null);
+    assert.equal((await call('vishal','apiKeyStatus','codex')).available,false,'browser credential is not an API key');
+    await assert.rejects(call('api-player','apiKeyCredential',{...scope,service:'coding'}),/invalid_api_key_grant/);
+    await assert.rejects(call('api-player','apiKeyCredential',{...scope,expires_at:Date.now()-1}),/invalid_api_key_grant/);
+    await login('api-player','codex','sk-fixture-rotated-key','api-key');
+    await assert.rejects(call('api-player','apiKeyCredential',scope),/api_key_grant_revoked/);
+    const current=await call('api-player','apiKeyStatus','codex');
+    await call('api-player','disconnect','codex');
+    await assert.rejects(call('api-player','apiKeyCredential',{...scope,generation:current.generation}),/api_key_grant_revoked/);
+  });
+
 });

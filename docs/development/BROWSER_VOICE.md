@@ -1,3 +1,5 @@
+> 2026-10-20: this document describes the developer-managed voice pilot. Ordinary API-key players use the separate [fully hosted route](HOSTED_VOICE.md) without pairing or a local manager. Browser controls/Stop and the remote voice protocol are shared; execution admission and credential custody are distinct.
+
 # Browser game, Daytona voice agent
 
 Issue #21, N0–N2. The player game and its existing `AgentHost`/`SimulatedUser` remain in the browser. A fixed `VoiceAgent` runs in a separate manager-created Daytona sandbox. It uses the authenticated backend broker for transcription, planning, gameplay decisions and reflection. It does not execute arbitrary model-written code.
