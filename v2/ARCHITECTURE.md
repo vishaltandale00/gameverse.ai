@@ -213,3 +213,32 @@ the next one builds on it:
 | `v2/planner/` | Layered generation |
 | `v2/verify/` | Plot solver, spatial checks, playtest |
 | `v2/web/` | Player and builder UI |
+
+## 7. Benchmarks
+
+**Game creation**
+- request → first playable latency;
+- preflight and plot-solver pass rate;
+- detail patches accepted ÷ proposed;
+- repeatability: the same document and seed replay to an identical state hash.
+
+**Playtesting and general play: ARC-AGI-3**
+
+ARC-AGI-3 games are interactive grid worlds with hidden rules:
+- 1–64 × 1–64 cells, 16 colors;
+- `ACTION1`–`ACTION7`, where `ACTION6` is a click at x, y;
+- several levels per game.
+
+**Scoring:** each level scores `min(115, (baseline_actions / actions)² × 100)`, and levels are averaged with
+weights by level index. We use this as the efficiency metric for our playtester and solver.
+
+Two tracks:
+1. **Native ARC-style games.** Author them in Gameverse on `engine.space.grid` and score our agents with
+   the formula above.
+2. **The real public games**, run through a bridge to the ARC SDK in the user's `d1_arc_agi` workspace
+   (offline mode, seeded). Snapshot and restore there are reset plus action-prefix replay, which fits
+   our solver's restore contract.
+
+The first is the routine benchmark. The second is a separately triggered qualification run (per
+AGENTS.md: no long or model-heavy runs in routine CI). **Never copy ARC game sources into this
+repository.**

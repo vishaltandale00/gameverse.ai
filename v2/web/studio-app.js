@@ -5,7 +5,7 @@ import { mountGame } from '/v2/web/player.js';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-let games = [], selected = null, player = null;
+let games = [], selected = null, player = null, selecting = 0;
 const timeline = new Map(); // gameId -> [{label, ms}]
 
 async function api(path, body) {
@@ -35,10 +35,13 @@ function renderInspector(record) {
 }
 
 async function select(id) {
+  const token = ++selecting; // ignore results from superseded selections
   selected = id || null; player?.dispose(); player = null;
   await refreshLibrary();
+  if (token !== selecting) return;
   if (!selected) { $('#stage').innerHTML = '<section class="empty"><h1>Describe a game.</h1><p>It\'s playable in seconds, and keeps growing while you play.</p></section>'; renderInspector(null); return; }
   const { meta, latest } = await api(`/api/v2/games/${selected}`);
+  if (token !== selecting) return;
   $('#stage').innerHTML = `<header class="game-head"><h1>${esc(meta.title)}</h1><span>${esc(meta.prompt)}</span></header><div class="game" id="game"></div>`;
   if (latest) { player = mountGame($('#game'), latest); }
   else $('#game').innerHTML = '<section class="empty"><h1>Building…</h1><p>The first playable version appears here automatically.</p></section>';
@@ -53,7 +56,7 @@ events.addEventListener('version', async ev => {
   refreshLibrary();
   if (e.gameId !== selected) { toast(`A game you made has a new version (v${e.version}).`); return; }
   const record = await api(`/api/v2/games/${e.gameId}/v/${e.version}`);
-  if (!player) { $('#game').innerHTML = ''; player = mountGame($('#game'), record); toast('Your game is playable.'); }
+  if (!player) { if (!$('#game')) return select(e.gameId); $('#game').innerHTML = ''; player = mountGame($('#game'), record); toast('Your game is playable.'); }
   else if (player.update(record)) toast(`New content loaded (v${e.version}).`);
   renderInspector(record);
 });
