@@ -227,6 +227,24 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
       if (!m.primitives.length) gaps.push({ mechanic: m.id, description: m.description, importance: m.importance, kind: 'capability', why: `${u.id} needs ${u.missing.join(', ')}, which no registered space provides` });
     }
   }
+  // Mechanics the chosen space itself provides (travelling between its places) are not gaps: ask the decision
+  // model once for every no-primitive gap, else fall back to lexical relevance against the space card.
+  const noPrim = gaps.filter(g => g.kind === 'no_primitive');
+  if (noPrim.length && spaces.length) {
+    const spaceCards = spaces.map(s => ({ id: s.use, ...registry.get(s.use).card }));
+    let covered = new Set();
+    if (decisions) {
+      try {
+        const r = await decisions.decide({ state: `Game idea: ${decomposition.premise}\nSpaces: ${spaceCards.map(c => `${c.id}: ${c.intent}`).join(' | ')}`, questions: Object.fromEntries(noPrim.map((g, i) => [`g${i}`, { type: 'noul', instructions: `Does one of these spaces, on its own, give the player this mechanic as the game needs it? Mechanic: ${g.description}` }])) });
+        const bar = r.provider === 'd1' ? 0.7 : 0.5;
+        noPrim.forEach((g, i) => { if ((r.answers[`g${i}`]?.noul ?? 0) >= bar) covered.add(g.mechanic); });
+      } catch { covered = new Set(); }
+    } else for (const g of noPrim) if (spaceCards.some(c => relevance({ verb: '', description: g.description }, c) >= LEXICAL_ACCEPT)) covered.add(g.mechanic);
+    for (const g of noPrim) if (covered.has(g.mechanic)) {
+      gaps.splice(gaps.indexOf(g), 1);
+      const m = mechanics.find(x => x.id === g.mechanic); if (m) { m.primitives = [spaces[0].use]; m.source = `${m.source}+space`; }
+    }
+  }
   const generators = [...chosen].filter(isGenerator).map(id => ({ id, space: (spaces.find(s => requirementsOf(registry, id).capabilities.every(c => s.caps.includes(c))) || spaces[0])?.id }));
   const systems = [...chosen].filter(id => !isGenerator(id) && !isSpace(id)).sort((a, b) => order(a) - order(b) || a.localeCompare(b));
   return {

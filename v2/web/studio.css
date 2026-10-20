@@ -96,3 +96,12 @@ body.theater .board { max-width: min(100%, calc((100vh - 110px) * 16 / 9)); marg
 .experiment small { color: var(--muted); }
 .experiment .badge { font-size: 11px; font-weight: 700; color: #1b1503; background: var(--signal); border-radius: 999px; padding: 1px 8px; }
 .experiment .promotion em { color: var(--muted); font-size: 13px; }
+/* Kernel build plan on the drafting table: references, mechanics, primitives and gaps as they are decided. */
+.cast.plan { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items: start; }
+.cast.plan figure { width: auto; justify-items: start; text-align: left; font-size: 13px; color: var(--text, inherit); animation: plan-in .35s ease-out both; }
+.cast.plan figcaption { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.cast.plan ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+.cast.plan code { font-size: 11px; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--line); margin: 2px 2px 0 0; display: inline-block; }
+.cast.plan .chip { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); margin: 2px 2px 0 0; }
+@keyframes plan-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .cast.plan figure { animation: none; } }

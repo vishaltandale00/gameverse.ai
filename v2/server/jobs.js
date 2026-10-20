@@ -26,7 +26,7 @@ export function createJobs({ store, pipeline, maxConcurrent = 2 }) {
     };
     try {
       await pipeline(job, ctx);
-      await store.updateMeta(job.gameId, { status: 'ready' });
+      await store.updateMeta(job.gameId, { status: 'ready', error: null });
       broadcast({ type: 'job_done', gameId: job.gameId, jobId: job.id, ms: Math.round(performance.now() - started) });
     } catch (error) {
       await store.updateMeta(job.gameId, { status: 'failed', error: String(error?.message || error) }).catch(() => {});

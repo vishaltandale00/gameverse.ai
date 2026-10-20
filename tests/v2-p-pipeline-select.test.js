@@ -78,11 +78,13 @@ test('a decision model picks among the candidates per mechanic; "none" makes a g
   const { registry } = testCatalogue();
   const d = decomposition(['collect shiny things', 'dash forward quickly']);
   const decisions = fakeDecisions(questions => Object.fromEntries(Object.entries(questions).map(([k, q]) => {
+    if (q.type === 'noul') return [k, { type: 'noul', noul: 0.1 }]; // the space-coverage check: no
     const pick = /dash/.test(q.instructions) ? 'none' : Object.keys(q.criteria)[0];
     return [k, { type: 'choice', choice: pick, probabilities: { [pick]: 0.9 } }];
   })));
   const sel = await selectPrimitives({ decomposition: d, registry, decisions });
-  assert.equal(decisions.calls.length, 1, 'one batched decision call');
+  assert.equal(decisions.calls.length, 2, 'one batched call for the picks, one for whether the chosen space covers the gaps');
+  assert.ok(Object.values(decisions.calls[1].questions).every(q => q.type === 'noul'));
   assert.ok(Object.values(decisions.calls[0].questions).every(q => q.criteria.none), 'every question can answer none');
   assert.equal(sel.mechanics[1].primitives.length, 0);
   assert.equal(sel.gaps[0].mechanic, 'm1');

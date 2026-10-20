@@ -8,9 +8,11 @@
 import { catalogue, PRIMITIVES } from '/v2/primitives/index.js';
 import { preflight, mergePatch } from '/v2/kernel/document.js';
 import { createWorld, DT } from '/v2/kernel/world.js';
-import * as THREE from '/runtime/three/three.module.js';
 import { experimentPrimitives } from '/v2/experiments/primitive-host.js';
 import { createWorkerBox } from '/v2/experiments/primitive-runtime.js';
+
+// three.js is optional for the host: DOM and canvas renderers work without it (view.THREE is then null).
+const THREE = await import('/runtime/three/three.module.js').catch(() => null);
 
 const DEFAULT_GRAPHICS = { 'engine.space.graph': [{ use: 'graphics.ui.story' }] };
 

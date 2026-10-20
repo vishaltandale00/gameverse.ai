@@ -20,7 +20,7 @@ import { catalogHash } from './catalog.js';
 
 export const KERNEL_PIPELINE_VERSION = 'v2-kernel/0.1';
 export const PIPELINE_CONFIG = Object.freeze({
-  detailConcurrency: 3, maxDetailTasks: 8, detailRepairs: 1, outlineRepairRounds: 2, reviseRepairs: 1,
+  detailConcurrency: 3, maxDetailTasks: 8, detailRepairs: 1, outlineRepairRounds: 2, reviseRepairs: 2,
   solveBudgetMs: 800, gaps: 'offer', maxGapPrimitives: 1,
 });
 
@@ -173,7 +173,9 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     if (regressed(vBefore, v)) throw Object.assign(Error('That change would make the game impossible to finish.'), { status: 422, code: 'plot_regressed' });
     const notApplied = guard.revisionCheck?.notApplied || (guard.diff === 0);
     const gaps = [...(unsupported || []).map(u => ({ capability: String(u.request).slice(0, 160), why: String(u.why || '').slice(0, 240), kind: 'unsupported' })),
-      ...(notApplied && !(unsupported || []).length ? [{ capability: job.change, why: guard.revisionCheck?.why || 'Nothing in this game changed for that request.', kind: 'unsupported' }] : [])];
+      ...(notApplied && !(unsupported || []).length ? [guard.diff
+        ? { capability: job.change, why: `Changed ${guard.changes.join(', ')}, but the checker isn't sure that fully does what you asked.`, kind: 'partial' }
+        : { capability: job.change, why: 'Nothing in this game changed for that request: no primitive here has a setting for it yet.', kind: 'unsupported' }] : [])];
     timings.totalMs = ms(t0);
     return ctx.publish({
       doc: v.doc, stage: `revision: ${job.change}`,

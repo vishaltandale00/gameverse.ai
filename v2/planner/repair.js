@@ -313,6 +313,13 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
           if (loc?.schema && !loc.schema.required && loc.rest.length > 1) { removals.push(keys); fix(`reset ${e.code} param to default`); }
           // A primitive's "<something>_unknown" on document data is a dangling field or pointer: drop that field
           // (an optional `next`, an unknown key). Only fields, never whole entries, so content is not lost.
+          // A malformed entry in document data (a primitive's validator ran checkFields on it): drop the field when
+          // optional-looking, else the list element that holds it. Base content is protected by the callers' guards.
+          else if (!loc && ['param_type', 'param_missing', 'param_option', 'param_range', 'param_unknown'].includes(e.code) && /^(plot|content)\./.test(e.path)) {
+            const parentKeys = keys.slice(0, -1), grand = getAt(doc, parentKeys.slice(0, -1));
+            if (e.code === 'param_unknown' || (e.code !== 'param_missing' && !['id', 'kind'].includes(keys.at(-1)) && typeof keys.at(-1) === 'string' && getAt(doc, keys) !== undefined && !Array.isArray(grand))) { removals.push(keys); fix(`dropped malformed field (${e.code})`); }
+            else if (Array.isArray(grand) && typeof parentKeys.at(-1) === 'number') { removals.push(parentKeys); fix(`dropped malformed entry (${e.code})`); }
+          }
           else if (!loc && /_unknown$/.test(e.code) && /^(plot|content)\./.test(e.path) && typeof keys.at(-1) === 'string' && getAt(doc, keys) !== undefined && !['id', 'kind'].includes(keys.at(-1))) { removals.push(keys); fix(`dropped field (${e.code})`); }
       }
     }

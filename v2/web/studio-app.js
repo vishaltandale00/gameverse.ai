@@ -94,6 +94,7 @@ function constructionView(meta) {
 
 function renderPlan(b) {
   const p = b.plan || {}, el = $('#ct-cast'); if (!el) return;
+  el.classList.add('plan');
   el.innerHTML = [
     p.references?.length ? `<figure><figcaption>References</figcaption>${p.references.map(r => `<span class="chip">${esc(r)}</span>`).join(' ')}</figure>` : '',
     p.mechanics?.length ? `<figure><figcaption>Mechanics</figcaption><ul>${p.mechanics.map(m => `<li>${esc(m)}</li>`).join('')}</ul></figure>` : '',
@@ -137,6 +138,7 @@ async function playView(meta, record) {
     ${legacy ? '<p class="notice">This game was made with the retired genre engine. It still plays, but changes need a new game.</p>' : ''}
     ${record?.report?.change && record.report.changes?.length ? `<p class="changed">Changed for “${esc(record.report.change)}”: ${record.report.changes.map(esc).join(' · ')}</p>` : ''}
     ${(record?.report?.gaps || []).filter(g => g.kind === 'renamed').map(g => `<p class="changed">${esc(g.why)}</p>`).join('')}
+    ${gaps.filter(g => g.kind === 'partial').map(g => `<p class="notice">${esc(g.why)}${!legacy ? ` <button type="button" class="inline" data-experiment="${esc(g.capability)}">Try the rest as an experiment</button>` : ''}</p>`).join('')}
     ${gaps.filter(g => g.kind === 'unsupported' || g.kind === 'capability').length ? `<div class="notice">Not in this game yet (no primitive covers it):<ul>${gaps.filter(g => g.kind === 'unsupported' || g.kind === 'capability').slice(0, 6).map(g => `<li>${esc(g.capability)}${g.why ? ` <small>${esc(g.why)}</small>` : ''}${!legacy ? ` <button type="button" class="inline" data-experiment="${esc(g.capability)}" title="A code model writes it as a new primitive, checked in a sandbox and labelled experimental">Try it as an experiment</button>` : ''}</li>`).join('')}</ul></div>` : ''}
     ${experimentsList(record)}
     <div class="board" id="game"></div>
