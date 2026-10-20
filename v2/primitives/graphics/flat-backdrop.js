@@ -161,11 +161,37 @@ function tile(g, s, ox, oy, w) {
   for (let x = x0; x < w; x += STRIP) g.drawImage(s, Math.floor(x), Math.round(oy));
 }
 const ambients = new Map();
+const SEAM_BLEND = 0.22;
+const seamlessCache = new WeakMap();
+/** A copy of an image whose left SEAM_BLEND fades in from transparent (null without an offscreen canvas). */
+function seamless(src) {
+  if (seamlessCache.has(src)) return seamlessCache.get(src);
+  const W = src.naturalWidth || src.width, H = src.naturalHeight || src.height;
+  if (!W || !H) return null; // not decoded yet: draw the plain image this frame and try again on the next
+  let out = null;
+  const c = surface(W, H), g = ctx2d(c);
+  if (g && g.createLinearGradient) {
+    g.drawImage(src, 0, 0, W, H);
+    const gr = g.createLinearGradient(0, 0, W * SEAM_BLEND, 0);
+    gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,1)');
+    g.globalCompositeOperation = 'destination-in'; g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    out = c;
+  }
+  seamlessCache.set(src, out);
+  return out;
+}
 function drawScenery(F, L, ox, oy) {
   const theme = L.theme || themeFor(F.doc, null), night = /cave|space|haunted/.test(theme);
   const img = sceneryImage({ theme, time: night ? 'night' : 'day', features: L.features || [] }, F.style === 'pixel', F.doc.id);
   const g = F.ctx, h = F.h * 1.08, w = h * 1.5;
-  if (img) { const x0 = ((ox * 0.5 % w) + w) % w - w; for (let x = x0; x < F.w; x += w) { g.drawImage(img.img, x, F.h - h + oy * 0.2, w, h); } }
+  if (img) {
+    // The painted scenery is not periodic, so butting copies together leaves a hard seam where its right edge
+    // meets its left. Copies overlap by SEAM_BLEND of their width instead, and each copy's overlapping left
+    // edge fades in over the previous copy's right edge, so clouds and ridges crossfade across the join.
+    const faded = seamless(img.img), period = w * (faded ? 1 - SEAM_BLEND : 1);
+    const p = ox * 0.5, y = F.h - h + oy * 0.2, ww = Math.ceil(w) + 1;
+    for (let k = Math.floor(-p / period) - (faded ? 1 : 0); p + k * period < F.w; k++) g.drawImage(faded || img.img, Math.floor(p + k * period), y, ww, h);
+  }
   const key = `${theme}|${JSON.stringify(L.features || [])}`;
   if (!ambients.has(key)) ambients.set(key, createAmbient(L.features?.length ? L.features : defaultFeatures(theme), { seed: F.doc.id, night }));
   const amb = ambients.get(key);
