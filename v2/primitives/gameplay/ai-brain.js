@@ -340,7 +340,7 @@ function idle(e, a, face) { const c = e.components; delete c.steer; if (c.moveTo
 function act(rt, e, a, config) {
   const c = e.components;
   if (c.moveTo && c.moveTo.by !== 'ai') { delete c.steer; return; } // scripted move_to has priority (plot, cutscenes)
-  if (attacking(rt, e.id)) { idle(e, a); return; }
+  if (attacking(rt, e.id)) { if (c.moveTo?.by === 'ai') delete c.moveTo; return; } // gameplay.ai.attacks owns steer while attacking
   const b = behaviorOf(e, a), api = spaceOf(rt, e); if (!api) return;
   const t = a.target ? rt.entity(a.target) : null;
   const mem = t ? a.mem[t.id] : null;

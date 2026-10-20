@@ -103,7 +103,7 @@ export function centerOf(e) {
 export function moverOwned(e) { return Boolean(e?.components?.move) || e?.components?.ai?.drive === 'intent'; }
 
 /** Busy flag shared between brain and attacks: an attack in progress roots the agent. */
-export function attacking(rt, id) { const a = rt.state.prim['gameplay.ai.attacks']?.agents?.[id]; return Boolean(a && a.phase && a.phase !== 'idle' && !a.mobile); }
+export function attacking(rt, id) { const a = rt.state.prim['gameplay.ai.attacks']?.agents?.[id]; return Boolean(a && a.phase && a.phase !== 'idle'); }
 
 /** Seeded pick from weighted entries [{weight}] using rt.random(). */
 export function weighted(rt, list, w = x => x.weight ?? 1) {
