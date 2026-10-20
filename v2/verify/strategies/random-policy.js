@@ -8,8 +8,9 @@ import { budget as makeBudget, prng } from '../util.js';
 import { problem, entityPath } from './common.js';
 
 const speed = e => Math.hypot(...velOf(e));
-/** Space bounds from the space API (`size`, or `bounds` [min, max]); null if unknown. */
+/** Space bounds from the space API: the `bounds` capability ({min, max, wrap}), a [min, max] pair, or `size`; null if unknown. Wrapping axes are unbounded. */
 export function boundsOf(api) {
+  if (typeof api.bounds === 'function') { const b = api.bounds(); if (b?.min && b?.max) return { min: b.min.map((v, i) => (b.wrap?.[i] ? -Infinity : v)), max: b.max.map((v, i) => (b.wrap?.[i] ? Infinity : v)) }; }
   if (Array.isArray(api.bounds) && Array.isArray(api.bounds[0])) return { min: api.bounds[0], max: api.bounds[1] };
   if (Array.isArray(api.size)) return { min: api.size.map(() => 0), max: api.size };
   return null;
