@@ -2064,7 +2064,7 @@
       "despawnDist": 96,
       "groupSize": [1,3],
       "respawnSec": 60,
-      "surface": ["b_grass","b_dirt"]
+      "surface": ["grass","dirt"]
      },
      {
       "id": "sp_night_gloomer_meadow",

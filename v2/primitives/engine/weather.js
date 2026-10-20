@@ -30,7 +30,7 @@ export default {
       transitionSec: { type: 'number', default: 8, min: 0, max: 120, unit: 's', effect: 'weather.intensity ramps 0 -> 1 over this after a change' },
       season: { type: 'string', effect: 'season override when engine.time is absent' },
     },
-    provides: { events: ['weather_changed', 'weather:*'], vars: ['weather', 'weather.wind', 'weather.temp', 'weather.intensity', 'weather.previous', 'weather.*'] },
+    provides: { events: ['weather_changed', 'weather:*', 'weather_unknown'], vars: ['weather', 'weather.wind', 'weather.temp', 'weather.intensity', 'weather.previous', 'weather.*'] },
     requires: {},
   },
   logic(logic) {

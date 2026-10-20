@@ -94,6 +94,7 @@ export default {
       if ((s.cool[e.id] ?? -1) > rt.state.frame) return { ok: false, reason: 'cooldown' };
       if (s.transit[e.id]) return { ok: false, reason: 'transit' };
       const g = gatePred(p); if (g && !rt.test(g, { self: e.id })) return { ok: false, reason: 'gate' };
+      if (rt.hasService('gates') && rt.service('gates').locked(`portal:${id}`)) return { ok: false, reason: 'gate' }; // plot.gates locks
       if (p.key && !rt.test({ item: p.key, gte: 1, who: e.id === 'player' ? undefined : e.id }, { self: e.id })) return { ok: false, reason: 'key' };
       return { ok: true };
     };
@@ -115,6 +116,7 @@ export default {
       const p = byId[id]; if (!p || !e) return false;
       const u = force ? { ok: true } : usable(id, e, { reverse });
       if (!u.ok) {
+        if (u.reason === 'gate' && rt.hasService('gates')) rt.service('gates').allows(`portal:${id}`, { who: e.id }); // emits gate_blocked with the gate's hint
         rt.emit('blocked', { who: e.id, portal: id, reason: u.reason });
         rt.emitTyped('portal_locked', id, { who: e.id, portal: id, reason: u.reason, text: p.lockedText });
         return false;

@@ -125,6 +125,7 @@ export default {
           at = api.randomPoint?.(r.zone, rt.random, rt) ?? samplePoint(z.zone, rt.random);
           if (at === null || at === undefined) { at = null; teleportZone = r.zone; }
         } else if (p && p.space === space) at = scatter(p.at, r.spread || 4, rt.random);
+        if (isVec(at) && api.anchor === 'cell') at = at.map(Math.floor); // cell spaces take integer cells
         if (isVec(at)) {
           if (api.groundAt && at.length >= 3) { const g = api.groundAt(at[0], at[2]); if (r.surface?.length && !r.surface.includes(g.material)) continue; if (r.snap ?? sampled) at = [at[0], g.y, at[2]]; }
           else if (r.surface?.length && !api.groundAt) return null;

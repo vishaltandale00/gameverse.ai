@@ -38,7 +38,7 @@ export default {
         } } },
       trackAll: { type: 'boolean', default: false, effect: 'also track dynamic-zone membership for non-player entities (costlier)' },
     },
-    provides: { events: ['discovered', 'discovered:*', 'enter_zone', 'enter_zone:*', 'leave_zone', 'zone_opened', 'zone_opened:*', 'zone_closed', 'zone_closed:*'], vars: ['zone.current', 'zone.previous', 'zones.discovered', 'zone.rule.*', 'zone.dynamic'] },
+    provides: { events: ['blocked', 'discovered', 'discovered:*', 'enter_zone', 'enter_zone:*', 'leave_zone', 'zone_opened', 'zone_opened:*', 'zone_closed', 'zone_closed:*'], vars: ['zone.current', 'zone.previous', 'zones.discovered', 'zone.rule.*', 'zone.dynamic'] },
     requires: { capabilities: ['position'] },
     defines: [{ kind: 'zone', in: 'dynamic' }, { kind: 'region', in: 'dynamic' }],
   },
@@ -100,8 +100,19 @@ export default {
       if (who === 'player') publishRules();
     };
     // Space zone events (static zones). Events we emit ourselves carry dynamic:true and are skipped here.
-    rt.on('enter_zone', (e, rt) => { if (!e.dynamic && e.zone && e.who) entered(e.who, e.zone, false); });
-    rt.on('leave_zone', (e, rt) => { if (!e.dynamic && e.zone && e.who) left(e.who, e.zone, false); });
+    // plot.gates locks (`zone:<id>`, `exit:<from>><to>`): an entity entering a locked zone is sent back to where it
+    // last stood outside (deferred to this primitive's system, so a space is never re-entered mid-update).
+    const gates = () => (rt.hasService('gates') ? rt.service('gates') : null);
+    const tracked = id => id === 'player' || config.trackAll;
+    const lockedFor = (who, zone, from) => { const g = gates(); return Boolean(g) && (!g.allows(`zone:${zone}`, { who }) || (from != null && from !== zone && !g.exit(from, zone, { who }))); };
+    rt.on('enter_zone', (e, rt) => {
+      if (e.dynamic || !e.zone || !e.who) return;
+      const s = st();
+      if (tracked(e.who) && s.last?.[e.who] && lockedFor(e.who, e.zone, s.zoneOf?.[e.who])) { (s.bounce ??= {})[e.who] = e.zone; return; }
+      if (tracked(e.who)) (s.zoneOf ??= {})[e.who] = e.zone;
+      entered(e.who, e.zone, false);
+    });
+    rt.on('leave_zone', (e, rt) => { if (e.dynamic || !e.zone || !e.who || st().bounce?.[e.who] === e.zone) return; left(e.who, e.zone, false); });
     const api = {
       discover, discovered: id => Boolean(st().discovered[id]), current: () => rt.state.vars['zone.current'] ?? null,
       open(id, { at, size, r, lifetimeSec } = {}) {
@@ -127,6 +138,14 @@ export default {
     rt.system('interaction', rt => {
       const s = st();
       if (!s.started) { s.started = true; for (const d of config.dynamic) if (d.open) api.open(d.id); publishRules(); }
+      // Bounce entities out of zones their gates keep shut, then remember where everyone tracked stands.
+      for (const [who, zone] of Object.entries(s.bounce || {})) {
+        const e = rt.entity(who), back = s.last?.[who];
+        if (e && back && e.space === back.space) { rt.space(e.space).setPos(e, structuredClone(back.at), rt); if (e.components.body?.vel) e.components.body.vel = e.components.body.vel.map(() => 0); delete e.components.moveTo; }
+        rt.emit('blocked', { who, zone, reason: 'gate' });
+      }
+      delete s.bounce;
+      for (const e of config.trackAll ? Object.values(rt.state.entities) : [rt.player()].filter(Boolean)) if (e.space && e.at != null) (s.last ??= {})[e.id] = { space: e.space, at: structuredClone(e.at) };
       // Expiring dynamic zones.
       for (const [id, d] of Object.entries(s.dyn)) if (d.open && d.until !== null && rt.state.frame >= d.until) api.close(id);
       // Periodic `while` effects for entities inside zones.

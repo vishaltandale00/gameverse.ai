@@ -45,7 +45,7 @@ export default {
         } } },
     },
     provides: {
-      events: ['dawn', 'day', 'dusk', 'night', 'phase', 'phase:*', 'new_day', 'midnight', 'season_change', 'season_change:*', 'new_year', 'time_skipped', 'timer', 'timer:*', 'timer_started', 'timer_cancelled'],
+      events: ['dawn', 'day', 'dusk', 'night', 'phase', 'phase:*', 'new_day', 'midnight', 'season_change', 'season_change:*', 'new_year', 'time_skipped', 'timer', 'timer:*', 'timer_started', 'timer_cancelled', 'timer_unknown'],
       vars: ['time.hour', 'time.minute', 'time.day', 'time.weekday', 'time.season', 'time.season_index', 'time.year', 'time.phase', 'time.paused', 'time.scale'],
       services: ['clock'],
     },
