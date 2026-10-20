@@ -127,6 +127,11 @@ it or a solver checks it. The `report` records:
 
 Keep it under `budgetMs`, by default 2000 ms.
 
+Verification must fail only on content that is actually at fault. Each problem names that content
+with a `path` (like `levels[3]`), a `message` and a `hint` (like "lower speed"), because the pipeline
+sends problems back to the model for repair, up to three tries. A bot too weak for fair content is a
+kit bug, not a content problem.
+
 ## Game document
 
 The pipeline stores kit games as:
