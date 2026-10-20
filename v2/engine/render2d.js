@@ -41,6 +41,7 @@ export function createRenderer(game) {
       if (def.glyph) {
         ctx.save();
         ctx.font = `${Math.round(Math.max(pw, ph) * 1.1)}px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+        ctx.fillStyle = '#fff'; // emoji glyphs inherit fill alpha
         ctx.translate(px + pw / 2, py + ph / 2);
         if (e.face < 0 && e.tags.includes('player')) ctx.scale(-1, 1);
         ctx.fillText(def.glyph, 0, ph * 0.05);
