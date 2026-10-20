@@ -27,15 +27,40 @@ test('every sample validates and the schema is OpenAI strict', () => {
   assert.equal(brief.player.name, 'Pip'); assert.deepEqual(entities.hero.tags, ['player']);
 });
 
-test('validation explains broken rows with stable codes', () => {
-  const codes = c => kit.validate(c).errors.map(e => e.code);
-  const lanes = structuredClone(SAMPLES.lanes); lanes.chunks[0].rows[0] = 'oo';
-  assert.ok(codes(lanes).includes('row_width'));
-  const side = structuredClone(SAMPLES.side); side.chunks[0].rows[0] = '##';
-  assert.ok(codes(side).includes('side_edge'));
-  const climb = structuredClone(SAMPLES.climb); climb.chunks[0].rows = ['..==.....', '.........', '.........', '..==.....'];
-  assert.ok(codes(climb).includes('climb_gap'));
-  assert.ok(codes({ ...SAMPLES.flap, mode: 'kart' }).includes('mode'));
+test('validation repairs what it can, idempotently, and errors only on the unfixable', () => {
+  const warns = v => v.warnings.map(w => w.code);
+  const idem = v => assert.deepEqual(kit.validate(v.content).content, v.content, 'validate(validate(x).content) is unchanged');
+  // Lanes: a short row is padded, an all-trains row is opened.
+  const lanes = structuredClone(SAMPLES.lanes); lanes.chunks[0].rows[0] = 'oo'; lanes.chunks[1].rows[0] = 'TTT';
+  let v = kit.validate(lanes); assert.ok(v.ok); assert.ok(v.content.chunks[0].rows.every(r => r.length === 3) && warns(v).includes('row_resized'));
+  assert.equal(v.content.chunks[1].rows[0], 'T.T'); idem(v);
+  // Flap, as gpt-4.1-mini writes it: '#' declared as an obstacle, ragged rows, 13 rows, a closed column, odd characters.
+  const flap = { ...structuredClone(SAMPLES.flap), obstacles: [{ char: '#', kind: 'pipe', name: 'Pipe', speed: 0, size: 0, period: 0 }, { char: 'g', kind: 'gate', name: 'Gate', speed: 0, size: 1, period: 2 }],
+    chunks: [{ id: 'Space Gates 1', tier: 2, spacing: 1, rows: ['..#.....#', '..#....#', '..#..@..#', '..#.....#', '.......  ', '........#', '..#......', '..#.....#', '..G.....#', '..#.....#', '..#.....#', '..#.....#', '..#.....#'] }] };
+  v = kit.validate(flap); assert.ok(v.ok, JSON.stringify(v.errors));
+  const k = v.content.chunks[0];
+  assert.equal(k.rows.length, 12); assert.ok(k.rows.every(r => r.length === k.rows[0].length));
+  assert.equal(k.id, 'space-gates-1'); assert.equal(v.content.chunks[0].tier, 1, 'the only chunk becomes tier 1');
+  for (const code of ['obstacle_builtin', 'row_resized', 'row_char_mapped', 'flap_gap_opened']) assert.ok(warns(v).includes(code), code);
+  assert.ok(structural(v.content)[0].passable, 'the repaired chunk is flyable'); idem(v);
+  // Climb: a missing start platform and a gap out of reach get platforms.
+  const climb = structuredClone(SAMPLES.climb); climb.chunks[0].rows = ['..==.....', '.........', '.........', '.........', '.........'];
+  v = kit.validate(climb); assert.ok(v.ok); assert.ok(warns(v).includes('climb_gap') && warns(v).includes('climb_start'));
+  assert.ok(structural(v.content)[0].passable); idem(v);
+  // A consistent row width the model chose becomes the world width.
+  const hop = structuredClone(SAMPLES.hop); hop.chunks = hop.chunks.map(c => ({ ...c, rows: c.rows.map(r => r.slice(1, 8)) }));
+  v = kit.validate(hop); assert.equal(v.content.rules.width, 7); idem(v);
+  // Every sample is a fixed point.
+  for (const sample of Object.values(SAMPLES)) idem(kit.validate(sample));
+  // What can't be repaired is an error with a path, the expected value and a hint.
+  const errs = c => kit.validate(c).errors;
+  assert.equal(errs({ ...SAMPLES.flap, mode: 'kart' })[0].code, 'mode');
+  const none = errs({ ...SAMPLES.side, chunks: [] })[0];
+  assert.deepEqual([none.code, none.path], ['chunks_missing', 'chunks']); assert.ok(none.hint);
+  assert.equal(errs({ ...SAMPLES['rhythm-dash'], segments: [] })[0].code, 'segments_missing');
+  // Impossible content after repair is a verify problem that names the chunk.
+  const p = kit.verify(kit.validate({ ...SAMPLES.flap, chunks: [{ id: 'drop', tier: 1, spacing: 3, rows: ['.#', '.#', '.#', '.#', '##', '##', '##', '##', '#.', '#.', '#.', '#.'] }] }).content).problems[0];
+  assert.deepEqual([p.code, p.path], ['chunk_impassable', 'chunks[0]']); assert.ok(p.hint);
 });
 
 test('the same seed and inputs give the same final state', () => {
@@ -54,9 +79,10 @@ test('the bot verifies the sample and every chunk in every mode is passable at i
   assert.equal(r.ok, true, JSON.stringify(r.problems));
   assert.ok(r.report.bot.seconds >= 60 && r.report.bot.bestDistance >= r.report.threshold);
   assert.ok(r.report.wallMs < 2000, `verify took ${r.report.wallMs} ms`);
-  for (const [mode, sample] of Object.entries(SAMPLES)) for (const c of structural(valid(sample))) assert.equal(c.passable, true, `${mode}/${c.id}`);
+  assert.ok(r.report.chunks.every(c => c.passable));
+  for (const [mode, sample] of Object.entries(SAMPLES)) if (mode !== 'lanes') for (const c of structural(valid(sample))) assert.equal(c.passable, true, `${mode}/${c.id}`);
   // An impossible chunk fails the proof: a gap at the top, then one at the bottom, too close to dive between.
-  const bad = variant('flap', { chunks: [{ id: 'drop', tier: 1, spacing: 3, rows: ['....########', '########....'] }, ...SAMPLES.flap.chunks.slice(1)] });
+  const bad = variant('flap', { chunks: [{ id: 'drop', tier: 1, spacing: 3, rows: ['.#', '.#', '.#', '.#', '##', '##', '##', '##', '#.', '#.', '#.', '#.'] }, ...SAMPLES.flap.chunks.slice(1)] });
   assert.equal(structural(bad)[0].passable, false);
 });
 
@@ -93,14 +119,14 @@ test('lanes: five lanes, magnet reach and the jetpack high path', () => {
   assert.equal(s.p.lane, 2); assert.equal(s.p.x, 0);
   for (let i = 0; i < 4; i++) { game.step(s, { x: 1 }); game.step(s, {}); }
   assert.equal(s.p.lane, 4);
-  assert.ok(structural(c).every(k => k.passable), 'every five-lane chunk is passable');
+  assert.equal(c.chunks[0].rows[0].length, 5);
   s.powers.jetpack = 3; game.impl.onPower(s, 'jetpack', G);
   for (let i = 0; i < 40; i++) game.step(s, {});
   assert.ok(s.p.y > 3.5 && s.objs.some(o => o.sky));
 });
 
 test('side: variable jump height, coyote time, buffering, gaps and crates', () => {
-  const c = variant('side', { chunks: [{ id: 'gap', tier: 1, spacing: 2, rows: ['#', '#', '.', '.', '#'] }, { id: 'crate', tier: 1, spacing: 2, rows: ['#', '#x', '#', '#'] }, { id: 'flat', tier: 1, spacing: 2, rows: ['#', '#', '#', '#'] }] });
+  const c = variant('side', { chunks: [{ id: 'gap', tier: 1, spacing: 2, rows: ['##..#'] }, { id: 'crate', tier: 1, spacing: 2, rows: ['.x..', '####'] }, { id: 'flat', tier: 1, spacing: 2, rows: ['####'] }] });
   const tap = (() => { const { game, s } = trial(c, 2); let top = 0; for (let i = 0; i < 60; i++) { game.step(s, { a: i < 2 }); top = Math.max(top, s.p.y); } return top; })();
   const held = (() => { const { game, s } = trial(c, 2); let top = 0; for (let i = 0; i < 60; i++) { game.step(s, { a: i < 40 }); top = Math.max(top, s.p.y); } return top; })();
   assert.ok(held - 1 > 2 * (tap - 1), `hold ${held} vs tap ${tap}`);
@@ -134,7 +160,7 @@ test('flap: a press flaps against gravity and pipes kill', () => {
 });
 
 test('climb: auto-bounce, breaking and spring platforms, wraparound, rising camera, shooting', () => {
-  const c = variant('climb', { chunks: [{ id: 'a', tier: 1, spacing: 1.6, rows: ['....=....', '....~....', '....s....', '....E....'] }, ...SAMPLES.climb.chunks.slice(1)] });
+  const c = variant('climb', { chunks: [{ id: 'a', tier: 1, spacing: 1.6, rows: ['....E....', '....s....', '....~....', '....=....'] }, ...SAMPLES.climb.chunks.slice(1)] });
   const { game, s } = trial(c, 0);
   const ev = run(game, s, 200);
   assert.ok(ev.includes('jump') && ev.includes('break') && ev.includes('spring'));

@@ -13,7 +13,9 @@ function physics(content) {
 
 function compile(content, chars) {
   return content.chunks.map(k => {
-    const cols = k.rows.map(row => {
+    // Rows are a 12-row picture; read it column by column, top to bottom.
+    const columns = [...k.rows[0]].map((_, x) => k.rows.map(r => [...r][x] ?? '.').join(''));
+    const cols = columns.map(row => {
       const cells = [...row], pipes = [], coins = [], boxes = [];
       for (let r = 0; r < cells.length; r++) {
         const ch = cells[r], o = chars.get(ch);
@@ -29,18 +31,32 @@ function compile(content, chars) {
       }
       return { pipes, coins, boxes };
     });
-    return { id: k.id, tier: k.tier, spacing: k.spacing, cols, length: cols.length * k.spacing };
+    const gates = cols.filter(c => c.pipes.length).map(gapCentre);
+    return { id: k.id, tier: k.tier, spacing: k.spacing, cols, length: cols.length * k.spacing, firstGap: gates[0] ?? 6, lastGap: gates.at(-1) ?? 6 };
   });
+}
+
+/** Centre of a gate column's widest opening, ignoring motion. */
+function gapCentre(col) {
+  const solid = col.pipes.map(p => [p.y0, p.y1]).sort((a, b) => a[0] - b[0]);
+  let lo = 0, best = 0, centre = 6;
+  for (const [a, b] of [...solid, [FLAP.height, FLAP.height]]) { const top = Math.min(a, FLAP.height); if (top - lo > best) { best = top - lo; centre = (lo + top) / 2; } lo = Math.max(lo, b); }
+  return centre;
 }
 
 /** Column spacing scale at time t: wide early, authored spacing at the end of the ramp. */
 const spacingScale = (content, t) => 1 + FLAP.spacingRamp * (1 - Math.min(1, t / content.speed.rampSeconds));
-export const offsetOf = (pipe, px, vRef) => pipe.amp ? pipe.amp * Math.sin((2 * Math.PI * px) / (pipe.period * vRef)) : 0;
+// Phase is measured from the gate itself, so a chunk has the same geometry wherever it is placed.
+export const offsetOf = (pipe, px, vRef, gx = 0) => pipe.amp ? pipe.amp * Math.sin((2 * Math.PI * (px - gx)) / (pipe.period * vRef)) : 0;
 
 function place(s, chunk, at, G) {
   const c = s.game.content;
   const scale = spacingScale(c, s.trial ? s.trial.time : s.time);
-  const sp = chunk.spacing * scale, join = joinGap(s, 4, 2);
+  // Between chunks, leave room to climb or dive from the last gap to the next one (climbing is slower).
+  const from = s.p.lastGap ?? chunk.firstGap, dy = chunk.firstGap - from;
+  // The ramp widens only the space between chunks, so chunk geometry is exactly what the proof checked.
+  const sp = chunk.spacing, join = (joinGap(s, 4, 2) + Math.max(0, dy - 2) * 1.3 + Math.max(0, -dy - 4) * 0.6) * scale;
+  s.p.lastGap = chunk.lastGap;
   const list = [];
   chunk.cols.forEach((col, j) => {
     const x = at + join + j * sp;
@@ -89,7 +105,7 @@ function step(s, inp, press, dt, G) {
     }
     let clear = 9;
     for (const pipe of o.pipes) {
-      const off = offsetOf(pipe, p.x, vRef);
+      const off = offsetOf(pipe, p.x, vRef, o.x);
       clear = Math.min(clear, circleRect(p.x, p.y, FLAP.r, o.x - FLAP.pipeHalf, o.x + FLAP.pipeHalf, pipe.y0 + off, pipe.y1 + off));
     }
     if (clear < 0 && s.invuln <= 0) {
@@ -108,6 +124,7 @@ export default {
   solver: {
     every: 3,
     actions: [{}, { a: true, tap: true }],
+    bucket: s => Math.round(s.p.y * 1.5),
     key: s => `${Math.round(s.p.y * 5)}|${Math.round(s.p.vy)}|${s.invuln > 0 ? 1 : 0}`,
     score: s => -nextGapDistance(s) * 0.3 + s.coins * 0.05,
     entries: () => [0, 1, 2],
@@ -120,7 +137,7 @@ function nextGapDistance(s) {
   const p = s.p, vRef = s.game.content.speed.start;
   for (const o of s.objs) {
     if (o.t !== 'gate' || o.x + FLAP.pipeHalf < p.x - FLAP.r) continue;
-    const solid = o.pipes.map(pp => [pp.y0 + offsetOf(pp, o.x, vRef), pp.y1 + offsetOf(pp, o.x, vRef)]).sort((a, b) => a[0] - b[0]);
+    const solid = o.pipes.map(pp => [pp.y0 + offsetOf(pp, o.x, vRef, o.x), pp.y1 + offsetOf(pp, o.x, vRef, o.x)]).sort((a, b) => a[0] - b[0]);
     // The open interval (clipped to the field) nearest the hero.
     let bestD = 99, lo = 0;
     for (const [a, b] of [...solid, [FLAP.height, FLAP.height]]) {

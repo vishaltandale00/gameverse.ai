@@ -17,7 +17,8 @@ function physics(content) {
 function compile(content, chars) {
   return content.chunks.map(k => {
     const objs = [];
-    k.rows.forEach((row, r) => {
+    // Rows are a picture: the bottom row is the lowest.
+    k.rows.slice().reverse().forEach((row, r) => {
       const y = r * k.spacing, cells = [...row];
       for (let c = 0; c < cells.length; c++) {
         const ch = cells[c], o = chars.get(ch);
@@ -146,6 +147,7 @@ export default {
   solver: {
     every: 6,
     actions: [{}, { x: -1 }, { x: 1 }, { a: true, tap: true }],
+    bucket: s => `${Math.round(s.p.x)}|${Math.round(s.p.landY)}`,
     key: s => `${Math.round(s.p.x * 2)}|${Math.round(s.p.y * 2)}|${Math.round(s.p.vy / 2)}|${Math.round(s.p.vx / 2)}|${s.p.shots.length}|${s.invuln > 0 ? 1 : 0}`,
     score: s => s.p.landY * 2 + s.p.cam * 0.5 + s.p.y * 0.2 - aim(s) * 0.4 + s.coins * 0.05,
     entries: () => [0, 1],

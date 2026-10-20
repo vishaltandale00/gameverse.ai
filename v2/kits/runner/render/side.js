@@ -208,7 +208,7 @@ export function drawFlap(ctx, state, look, fx, w, h, v, frame) {
       const x = v.X(o.x), half = FLAP.pipeHalf * U;
       if (x < -half * 2 || x > w + half * 2) continue;
       for (const pipe of o.pipes) {
-        const off = offsetOf(pipe, p.x, vRef);
+        const off = offsetOf(pipe, p.x, vRef, o.x);
         const y0 = v.Y(pipe.y1 + off), y1 = v.Y(pipe.y0 + off);
         const moving = pipe.amp > 0;
         const body = moving ? mixHex(look.platform, look.pal.accent2, 0.35) : look.platform;

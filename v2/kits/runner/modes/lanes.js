@@ -23,7 +23,9 @@ function compile(content, chars) {
     const objs = [];
     const sp = k.spacing;
     const walls = Array(content.rules.width).fill(null);
-    k.rows.forEach((row, r) => {
+    // Rows are a picture: the bottom row is reached first.
+    const rows = k.rows.slice().reverse();
+    rows.forEach((row, r) => {
       const z = r * sp;
       [...row].forEach((ch, lane) => {
         const o = chars.get(ch);
@@ -191,6 +193,7 @@ export default {
   solver: {
     every: 6,
     actions: [{}, { x: -1 }, { x: 1 }, { a: true }, { y: 1 }],
+    bucket: s => `${s.p.lane}|${s.p.y > 0.3 ? 1 : 0}|${s.p.slideT > 0 ? 1 : 0}`,
     key: s => `${s.p.lane}|${Math.round(s.p.x * 4)}|${Math.round(s.p.y * 4)}|${Math.round(s.p.vy)}|${s.p.slideT > 0 ? Math.ceil(s.p.slideT * 10) : 0}|${s.p.chaseT > 0 ? 1 : 0}|${s.invuln > 0 ? 1 : 0}`,
     score: s => -Math.abs(s.p.x) * 0.2 - (s.p.chaseT > 0 ? 2 : 0) + s.coins * 0.05,
     entries: s => Array.from({ length: s.game.content.rules.width }, (_, i) => i),

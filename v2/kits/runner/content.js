@@ -4,6 +4,7 @@
 // pipeline can send them back to the model for repair.
 import { PROPS } from '../../art/props.js';
 import { MOOD_NAMES } from '../../engine/audio.js';
+import { slug } from '../ids.js';
 
 export const MODES = ['lanes', 'side', 'flap', 'climb', 'rhythm-dash', 'hop'];
 export const FEELS = ['snappy', 'floaty', 'heavy'];
@@ -46,14 +47,16 @@ const INSTRUMENTS = ['chip', 'synth', 'bell', 'pluck'];
 export const BUILTIN = {
   lanes: '.o*', side: '.o*#', flap: '.o*#', climb: '.o*=', hop: '.o*T', 'rhythm-dash': '.',
 };
-// Row shape per mode: exact width (or max height for side slices), row count limits, spacing clamp.
+// Chunk rows are a picture of the chunk as seen on screen, top row first. Shape per mode:
+// lanes/climb/hop rows are rules.width cells across; side pictures are up to 8 rows tall and
+// flap pictures exactly 12, any number of columns. spacing: [min, max, default].
 export const SHAPE = {
-  lanes: { width: 3, rows: [2, 24], spacing: [5, 20] },
-  side: { maxHeight: 8, rows: [4, 40], spacing: [1, 3] },
-  flap: { width: 12, rows: [2, 16], spacing: [3, 9] },
-  climb: { width: 9, rows: [4, 40], spacing: [0.9, 2.6] },
-  hop: { width: 9, rows: [2, 24], spacing: [1, 1] },
-  'rhythm-dash': { rows: [0, 0], spacing: [1, 1] },
+  lanes: { rows: [1, 24], spacing: [5, 20, 10] },
+  side: { height: 8, cols: [2, 60], spacing: [1, 3, 1.5] },
+  flap: { height: 12, cols: [2, 60], spacing: [0.8, 2, 1] },
+  climb: { rows: [2, 40], spacing: [0.9, 2.6, 1.6] },
+  hop: { rows: [1, 24], spacing: [1, 1, 1] },
+  'rhythm-dash': { rows: [0, 0], spacing: [1, 1, 1] },
 };
 // World width per mode: [min, max, default]; lanes = lane count, climb = field width, hop = columns.
 export const WIDTH = { lanes: [3, 5, 3], climb: [7, 13, 9], hop: [7, 13, 9] };
@@ -133,12 +136,12 @@ Content:
   flap kinds: pipe (static gate cell), gate (moving gate cell; size = amplitude cells 0.5-3, period seconds).
   climb kinds: platform, moving (speed 0.5-4, size = range 1-3.5), breaking (falls when landed on), spring (super bounce), vanishing (one bounce), enemy (stomp or shoot; speed, size = patrol range), hole (deadly; size = radius 0.5-1.2).
   hop kinds: road (cars; speed cells/s 1-6, size = car length 1-3, period = spacing 3-12), river (logs; speed 0.6-3, size = log length 2-5, period = spacing 3-8), rail (train; size = length, period = seconds between trains 4-14).
-- chunks: 6-12 hand-made chunks with tier 1 (easy), 2 or 3 (hard). Rows are strings; first row is nearest. '.' empty, 'o' coin, '*' power-up box.
-  lanes: each row is 3 chars (left, middle, right lane), rows are spacing units apart (6-14). Always leave a way through every row.
-  side: each row is one vertical slice listed bottom to top, up to 8 chars; spacing = slice width (1-3). '#' is solid roof. In jump control every chunk's first and last slice is exactly "#" (street height 1); a slice with no '#' is a gap; keep gaps ≤ 3 units wide and climbs ≤ 2 cells. In fly control the floor is automatic: index 0 is the floor cell; lasers stack vertically.
-  flap: each row is one gate column, 12 chars top to bottom; '#' (or a pipe/gate char) blocks; leave a gap of 3-5 open cells; spacing between columns 4-7.
-  climb: each row is 9 chars across, listed bottom to top, spacing 1.2-2.2 units apart; '=' is a normal platform; the first row needs a '=' platform; never leave more than 2 empty rows in a row.
-  hop: each row is 9 chars. A row containing a road/river/rail char is that lane type (fill it with that char; coins allowed). Other rows are grass: '.', 'T' trees, 'o' coins. Never wall off grass rows completely with trees.
+- chunks: 6-12 hand-made chunks with tier 1 (easy), 2 or 3 (hard). rows are a picture of the chunk as seen on screen, top row first, one character per cell. '.' empty, 'o' coin, '*' power-up box. Never give an obstacle the char of a built-in ('.', 'o', '*', and '#', '=' or 'T' where listed).
+  lanes: each row has one cell per lane (rules.width, 3 by default); the top row is farthest ahead, the bottom row is reached first; rows are spacing units apart (6-14). Always leave a way through every row.
+  side: a side view up to 8 rows tall, top row = sky, bottom row = street level; columns run left to right in the direction you run, each spacing units wide (1-3). '#' is solid roof or ground. In jump control start and end each chunk on street level (bottom row '#'), keep gaps ≤ 3 units wide and climbs ≤ 2 cells. In fly control the floor is automatic: the bottom row is the floor lane; lasers stack vertically.
+  flap: a side view exactly 12 rows tall, columns left to right, each spacing units wide (1). Draw each gate as a vertical line of '#' (or a pipe/gate char) from the top edge and from the bottom edge, leaving a gap of 3-5 open rows; leave 4-6 empty columns between gates.
+  climb: a picture, rules.width cells across (9), top row highest; rows spacing units apart (1.2-2.2); '=' is a normal platform; the bottom row needs a '=' platform; never leave more than 2 empty rows in a row.
+  hop: a picture, rules.width cells across (9), top row farthest. A row containing a road/river/rail char is that lane type (fill it with that char; coins allowed). Other rows are grass: '.', 'T' trees, 'o' coins. Never wall off grass rows completely with trees.
 - segments (rhythm-dash only, else []): 16-40 bars total in order; types run, spikes, blocks, stairs, pads, orbs, gravity, speed, gaps; intensity 1-3.
 - rules: width (lanes 3, climb 9, hop 9 by default; rows must be exactly that many characters), lives (1 classic), goalDistance (0 for endless), density (1 normal).
 - powerups: 2-4 from magnet, multiplier, jetpack, shield, superjump, slowmo with seconds 5-15.
@@ -200,133 +203,228 @@ export function normalize(input) {
   c.chunks = (Array.isArray(c.chunks) ? c.chunks : []).map((k, i) => ({
     id: typeof k?.id === 'string' && k.id ? k.id : `chunk-${i + 1}`,
     tier: Math.round(clamp(numOr(k?.tier, 1), 1, 3)),
-    spacing: clamp(numOr(k?.spacing, sh.spacing[0]), ...sh.spacing),
-    rows: Array.isArray(k?.rows) ? k.rows.map(r => String(r ?? '')) : [],
+    spacing: clamp(numOr(k?.spacing, sh.spacing[2]), sh.spacing[0], sh.spacing[1]),
+    rows: Array.isArray(k?.rows) ? k.rows.map(r => typeof r === 'string' ? r : String(r ?? '')) : [],
   }));
   c.segments = (Array.isArray(c.segments) ? c.segments : []).map(s => ({ type: SEGMENTS.includes(s?.type) ? s.type : 'run', bars: Math.round(clamp(numOr(s?.bars, 2), 1, 8)), intensity: Math.round(clamp(numOr(s?.intensity, 1), 1, 3)) }));
   c.powerups = (Array.isArray(c.powerups) ? c.powerups : []).map(p => ({ kind: p?.kind, name: String(p?.name || p?.kind || 'Power').slice(0, 40), seconds: clamp(numOr(p?.seconds, 8), 3, 20) }));
   c.missions = (Array.isArray(c.missions) ? c.missions : []).map(m => ({ kind: m?.kind, target: Math.round(clamp(numOr(m?.target, 10), 1, 100000)), label: String(m?.label || `${m?.kind} ${m?.target}`).slice(0, 60) }));
-  c.title = typeof c.title === 'string' ? c.title.slice(0, 80) : '';
+  c.title = typeof c.title === 'string' ? c.title.trim().slice(0, 80) : '';
   c.logline = typeof c.logline === 'string' ? c.logline.slice(0, 200) : '';
   return c;
 }
 
-/** Validate content. Returns { ok, errors, warnings, content } where content is normalized. */
+// ---------- repair ----------
+// Models get the shape of chunk rows wrong far more often than the idea. Validation repairs
+// everything that has an obvious fix (row widths, picture height, unknown characters, clashing
+// obstacle chars, unreachable climb gaps, walled-off rows) and warns; errors remain only for
+// content with nothing to repair from. Passability after repair is the structural proof's job.
+const SOLIDISH = '#=|X█▓[]{}H';
+const COINISH = 'oO0c$•@';
+const POWERISH = '*+?!P';
+const FREE = 'ABCDEFGHIJKLMNPQRSUVWXYZabdefghijklmnpqrstuvwxyz123456789^~%&-:;!?<>/\\';
+const BOUNCE_KINDS = ['platform', 'moving', 'spring', 'vanishing'];
+const SOLID_OF = { side: '#', flap: '#', climb: '=', hop: 'T' };
+// Built-in chars carry fixed meanings; an obstacle redefining one with the same meaning is redundant.
+const BUILTIN_KIND = { side: { '#': null }, flap: { '#': 'pipe' }, climb: { '=': 'platform' }, hop: { T: null }, lanes: {} };
+
+/** Map a character the mode doesn't know to the closest valid one, or empty. */
+function closestChar(ch, valid, mode, chars) {
+  if (valid.has(ch)) return ch;
+  for (const alt of [ch.toLowerCase(), ch.toUpperCase()]) if (valid.has(alt)) return alt;
+  if (/\s/.test(ch) || ch === '_' || ch === ',' || ch === '`') return '.';
+  if (SOLIDISH.includes(ch)) {
+    if (SOLID_OF[mode]) return SOLID_OF[mode];
+    const wall = [...chars.values()].find(o => o.kind === 'wall');
+    return wall ? wall.char : '.';
+  }
+  if (COINISH.includes(ch)) return 'o';
+  if (POWERISH.includes(ch)) return '*';
+  return '.';
+}
+
+// Width repair: pad with empty cells; trim from the end least likely to remove a needed gap.
+function fitRow(row, width, mode, chars) {
+  let cells = [...row];
+  const kind = ch => chars.get(ch)?.kind;
+  const lane = mode === 'hop' ? cells.find(ch => ['road', 'river', 'rail'].includes(kind(ch))) : null;
+  while (cells.length < width) {
+    const fill = lane || '.';
+    if (mode === 'lanes' && cells.length % 2) cells.unshift(fill); else cells.push(fill);
+  }
+  while (cells.length > width) {
+    const a = cells[0], b = cells[cells.length - 1];
+    // Prefer dropping what blocks (lanes, hop trees) or what is empty (climb), keeping open cells and platforms.
+    const cost = ch => mode === 'climb' ? (ch === '.' ? 0 : 2) : mode === 'lanes' ? (ch === '.' ? 2 : 0) : mode === 'hop' ? (ch === 'T' ? 0 : ch === '.' ? 1 : 2) : 0;
+    if (cost(a) < cost(b)) cells.shift(); else cells.pop();
+  }
+  return cells.join('');
+}
+
+/** Validate and repair content. Returns { ok, errors, warnings, content } where content is normalized. */
 export function validate(input) {
   const errors = [], warnings = [];
   const fail = (code, path, message, hint) => { errors.push({ code, path, message, ...(hint ? { hint } : {}) }); };
   const warn = (code, path, message) => { warnings.push({ code, path, message }); };
-  if (!input || typeof input !== 'object' || Array.isArray(input)) return { ok: false, errors: [{ code: 'schema', path: '$', message: 'content must be an object' }], warnings, content: null };
-  if (!MODES.includes(input.mode)) fail('mode', 'mode', `unknown mode '${input.mode}'`, MODES.join(', '));
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return { ok: false, errors: [{ code: 'schema', path: '$', message: 'content must be an object', hint: 'reply with the content object' }], warnings, content: null };
+  if (!MODES.includes(input.mode)) fail('mode', 'mode', `unknown mode '${input.mode}'`, `one of ${MODES.join(', ')}`);
   const c = normalize(input);
   const mode = c.mode;
-  if (!c.title.trim()) fail('schema', 'title', 'title is required');
+  if (!c.title) { c.title = 'Runner'; warn('title_default', 'title', 'no title; using "Runner"'); }
   if (c.rules.goalDistance > 0 && c.rules.goalDistance < 50) warn('goal_short', 'rules.goalDistance', 'a finish under 50 ends almost at once');
 
-  // Obstacles: unique single chars that don't shadow built-ins, kinds valid for the mode.
+  // Obstacles: one visible char each, kinds valid for the mode, no clashes with built-ins or each other.
   const allowed = KINDS_BY_MODE[mode], builtin = BUILTIN[mode];
   const chars = new Map();
+  const taken = new Set(builtin);
   c.obstacles = c.obstacles.filter((o, i) => {
     const p = `obstacles[${i}]`;
-    if (!KINDS.includes(o.kind)) { fail('obstacle_kind', `${p}.kind`, `unknown obstacle kind '${o.kind}'`, allowed.join(', ')); return false; }
+    if (!KINDS.includes(o.kind)) { warn('obstacle_kind', `${p}.kind`, `unknown kind '${o.kind}'; dropped`); return false; }
     if (!allowed.includes(o.kind)) { warn('obstacle_mode', `${p}.kind`, `kind '${o.kind}' is not used in ${mode} mode; dropped`); return false; }
-    if ([...o.char].length !== 1 || /\s/.test(o.char)) { fail('obstacle_char', `${p}.char`, 'char must be exactly one visible character'); return false; }
-    if (builtin.includes(o.char)) { fail('obstacle_char', `${p}.char`, `'${o.char}' is a built-in row character in ${mode} mode`, `avoid ${[...builtin].join(' ')}`); return false; }
-    if (chars.has(o.char)) { fail('duplicate_char', `${p}.char`, `char '${o.char}' is used twice`); return false; }
-    chars.set(o.char, o); return true;
+    const ch = [...String(o.char).replace(/\s/g, '')][0] || '';
+    if (ch && builtin.includes(ch)) {
+      warn('obstacle_builtin', `${p}.char`, `'${ch}' is built in for ${mode} (${ch === 'o' ? 'coin' : ch === '*' ? 'power-up' : ch === '.' ? 'empty' : 'solid'}); rows keep that meaning and this obstacle is dropped`);
+      return false;
+    }
+    if (ch && chars.has(ch)) { warn('duplicate_char', `${p}.char`, `char '${ch}' is used twice; the first one wins`); return false; }
+    o.char = ch || [...FREE].find(x => !taken.has(x));
+    if (!ch) warn('obstacle_char', `${p}.char`, `no char; using '${o.char}'`);
+    taken.add(o.char); chars.set(o.char, o);
+    return true;
   });
+  const valid = new Set([...builtin, ...chars.keys()]);
 
-  // Chunks.
-  const sh = SHAPE[mode];
   if (mode === 'rhythm-dash') {
     if (c.chunks.length) warn('chunks_unused', 'chunks', 'rhythm-dash builds its level from segments; chunks are ignored');
     c.chunks = [];
-    const bars = c.segments.reduce((s, x) => s + x.bars, 0);
-    if (c.segments.length < 4) fail('segments_count', 'segments', `need at least 4 segments, got ${c.segments.length}`);
-    if (bars < 12 || bars > 64) fail('segments_length', 'segments', `the level needs 12-64 bars, got ${bars}`, 'about 16-40 bars makes a 30-80 s level');
+    if (!c.segments.length) fail('segments_missing', 'segments', 'rhythm-dash needs segments', 'list 6-12 segments like { type: "spikes", bars: 2, intensity: 1 }, 16-40 bars in total');
+    else {
+      // Too short: repeat what was written. Too long for a fair 90 s level: trim the end.
+      const barsOf = list => list.reduce((s, x) => s + x.bars, 0);
+      const base = c.segments.slice();
+      for (let i = 0; barsOf(c.segments) < 12; i++) c.segments.push({ ...base[i % base.length] });
+      if (c.segments.length > base.length) warn('segments_repeated', 'segments', `level was under 12 bars; repeated the segments to ${barsOf(c.segments)} bars`);
+      const maxBars = Math.floor((90 * c.music.tempo) / 240);
+      while (barsOf(c.segments) > maxBars && c.segments.length > 1) c.segments.pop();
+      if (barsOf(c.segments) > maxBars) c.segments[0].bars = Math.max(1, maxBars);
+      if (barsOf(base) > maxBars) warn('segments_trimmed', 'segments', `level longer than 90 s at ${c.music.tempo} bpm; trimmed to ${barsOf(c.segments)} bars`);
+    }
   } else {
     if (c.segments.length) c.segments = [];
-    if (c.chunks.length < 3 || c.chunks.length > 16) fail('chunks_count', 'chunks', `need 3-16 chunks, got ${c.chunks.length}`);
-    if (!c.chunks.some(k => k.tier === 1)) fail('chunks_tier', 'chunks', 'at least one chunk must be tier 1');
+    c.chunks = c.chunks.filter((k, i) => { if (k.rows.length) return true; warn('chunk_empty', `chunks[${i}]`, 'empty chunk dropped'); return false; });
+    if (!c.chunks.length) fail('chunks_missing', 'chunks', 'no chunks with rows', `write 3-12 chunks; ${ROWS_HINT[mode]}`);
+    if (c.chunks.length > 16) { warn('chunks_trimmed', 'chunks', `kept the first 16 of ${c.chunks.length} chunks`); c.chunks = c.chunks.slice(0, 16); }
+    if (c.chunks.length && !c.chunks.some(k => k.tier === 1)) { const easiest = c.chunks.reduce((a, b) => (b.tier < a.tier ? b : a)); warn('chunks_tier', `chunks[${c.chunks.indexOf(easiest)}].tier`, 'no tier 1 chunk; the easiest one becomes tier 1'); easiest.tier = 1; }
+    // Ids: slugs, unique.
     const ids = new Set();
-    c.chunks.forEach((k, i) => {
-      const p = `chunks[${i}]`;
-      if (!SLUG.test(k.id)) k.id = `chunk-${i + 1}`;
-      if (ids.has(k.id)) k.id = `${k.id}-${i + 1}`;
-      ids.add(k.id);
-      if (k.rows.length < sh.rows[0] || k.rows.length > sh.rows[1]) fail('chunk_rows', `${p}.rows`, `${mode} chunks need ${sh.rows[0]}-${sh.rows[1]} rows, got ${k.rows.length}`);
-      k.rows.forEach((row, j) => {
-        const rp = `${p}.rows[${j}]`;
-        const cells = [...row];
-        const width = WIDTH[mode] ? c.rules.width : sh.width;
-        if (width && cells.length !== width) fail('row_width', rp, `${mode} rows must be exactly ${width} characters (rules.width), got ${cells.length}`, `pad with '.'`);
-        if (sh.maxHeight && (cells.length < 1 || cells.length > sh.maxHeight)) fail('row_height', rp, `side slices are 1-${sh.maxHeight} characters bottom to top`, `use '.' for an empty slice`);
-        for (const ch of cells) if (!builtin.includes(ch) && !chars.has(ch)) { fail('row_char', rp, `unknown character '${ch}'`, `use ${[...builtin].join(' ')} or an obstacle char`); break; }
-      });
-      if (errors.length) return;
-      checkChunk(mode, c, k, chars, p, fail, warn);
-    });
+    c.chunks.forEach((k, i) => { let id = slug(k.id) || `chunk-${i + 1}`; if (ids.has(id)) id = `${id}-${i + 1}`.slice(0, 32); ids.add(id); k.id = id; });
+    // A shared row width the model chose consistently is taken as the world width.
+    const wd = WIDTH[mode];
+    if (wd) {
+      const widths = c.chunks.flatMap(k => k.rows.map(r => [...r].length));
+      const common = widths.length && widths.every(w => w === widths[0]) ? widths[0] : null;
+      if (common && common !== c.rules.width && common >= wd[0] && common <= wd[1]) { warn('width_from_rows', 'rules.width', `every row is ${common} cells; rules.width set to ${common}`); c.rules.width = common; }
+    }
+    c.chunks.forEach((k, i) => repairChunk(mode, c, k, chars, valid, `chunks[${i}]`, warn));
   }
 
-  // Power-ups and missions.
+  // Power-ups and missions the mode can't use are dropped, never fatal.
   const powers = POWERS_BY_MODE[mode];
   c.powerups = c.powerups.filter((x, i) => {
-    if (!POWERS.includes(x.kind)) { fail('power_kind', `powerups[${i}].kind`, `unknown power-up '${x.kind}'`, POWERS.join(', ')); return false; }
-    if (!powers.includes(x.kind)) { warn('power_mode', `powerups[${i}].kind`, `'${x.kind}' does nothing in ${mode} mode; dropped`); return false; }
-    return true;
+    if (powers.includes(x.kind)) return true;
+    warn('power_mode', `powerups[${i}].kind`, `'${x.kind}' does nothing in ${mode} mode; dropped`); return false;
   });
   const missions = MISSIONS_BY_MODE[mode];
   c.missions = c.missions.filter((x, i) => {
-    if (!MISSIONS.includes(x.kind)) { fail('mission_kind', `missions[${i}].kind`, `unknown mission '${x.kind}'`, MISSIONS.join(', ')); return false; }
-    if (!missions.includes(x.kind)) { warn('mission_mode', `missions[${i}].kind`, `'${x.kind}' can't progress in ${mode} mode; dropped`); return false; }
-    return true;
+    if (missions.includes(x.kind)) return true;
+    warn('mission_mode', `missions[${i}].kind`, `'${x.kind}' can't progress in ${mode} mode; dropped`); return false;
   });
   if (!c.missions.length) warn('missions_none', 'missions', 'no missions; players get no mid-run goals');
   return { ok: errors.length === 0, errors, warnings, content: c };
 }
 
-// Mode-specific structural rules the solver would otherwise report less helpfully.
-function checkChunk(mode, c, k, chars, p, fail, warn) {
+const ROWS_HINT = {
+  lanes: 'each row is one string per lane across, the top row farthest ahead',
+  side: 'rows are a picture up to 8 rows tall, top row = sky, bottom row = street',
+  flap: 'rows are a picture exactly 12 rows tall, columns left to right',
+  climb: 'rows are a picture, top row highest, each row the field width',
+  hop: 'rows are a picture, top row farthest, each row the field width',
+};
+
+function repairChunk(mode, c, k, chars, valid, p, warn) {
   const kindOf = ch => chars.get(ch)?.kind;
+  const sh = SHAPE[mode];
+  // Unknown characters → the closest valid one.
+  const mapped = new Set();
+  k.rows = k.rows.map(row => [...row].map(ch => { const v = closestChar(ch, valid, mode, chars); if (v !== ch) mapped.add(`'${ch}'→'${v}'`); return v; }).join(''));
+  if (mapped.size) warn('row_char_mapped', `${p}.rows`, `unknown characters mapped: ${[...mapped].slice(0, 6).join(', ')}`);
+  let resized = 0;
+  const note = () => { resized++; };
+  if (mode === 'side' || mode === 'flap') {
+    // Pictures: equal-length rows (pad on the right), fixed or capped height.
+    const longest = Math.min(sh.cols[1], Math.max(...k.rows.map(r => [...r].length)));
+    k.rows = k.rows.map(r => { const cells = [...r]; if (cells.length !== longest) note(); while (cells.length < longest) cells.push('.'); return cells.slice(0, longest).join(''); });
+    if (mode === 'side') {
+      while (k.rows.length > sh.height && /^\.*$/.test(k.rows[0])) { k.rows.shift(); note(); }
+      while (k.rows.length > sh.height) { k.rows.shift(); note(); }
+    } else {
+      const solid = ch => ch === '#' || ['pipe', 'gate'].includes(kindOf(ch));
+      const gateCols = [...k.rows[0]].map((_, x) => k.rows.some(r => solid(r[x])));
+      const openIn = row => [...row].filter((ch, x) => gateCols[x] && !solid(ch)).length;
+      // Too tall: drop the edge row that opens the fewest gate cells. Too short: extend pipes at the edges.
+      while (k.rows.length > sh.height) { if (openIn(k.rows[0]) <= openIn(k.rows[k.rows.length - 1])) k.rows.shift(); else k.rows.pop(); note(); }
+      for (let n = 0; k.rows.length < sh.height; n++) {
+        const top = n % 2 === 0, edge = top ? k.rows[0] : k.rows[k.rows.length - 1];
+        const row = [...edge].map(ch => (solid(ch) ? ch : '.')).join('');
+        if (top) k.rows.unshift(row); else k.rows.push(row);
+        note();
+      }
+      // A gate column with no 3-cell opening can never be flown: open its middle.
+      for (let x = 0; x < gateCols.length; x++) {
+        if (!k.rows.some(r => solid(r[x]))) continue;
+        let best = 0, run = 0; for (const r of k.rows) { run = solid(r[x]) ? 0 : run + 1; best = Math.max(best, run); }
+        if (best >= 3) continue;
+        for (let y = 4; y <= 7; y++) k.rows[y] = k.rows[y].slice(0, x) + '.' + k.rows[y].slice(x + 1);
+        warn('flap_gap_opened', `${p}.rows`, `column ${x} had no 3-cell gap; opened rows 4-7`);
+      }
+    }
+    if (k.rows[0] && [...k.rows[0]].length < sh.cols[0]) { k.rows = k.rows.map(r => r.padEnd(sh.cols[0], '.')); note(); }
+  } else {
+    const width = c.rules.width;
+    k.rows = k.rows.map(r => { const fitted = fitRow(r, width, mode, chars); if (fitted !== r) note(); return fitted; });
+    if (k.rows.length > sh.rows[1]) { k.rows = k.rows.slice(k.rows.length - sh.rows[1]); note(); }
+  }
+  if (resized) warn('row_resized', `${p}.rows`, `${resized} row${resized > 1 ? 's' : ''} padded or trimmed to the ${mode} shape (${ROWS_HINT[mode]})`);
+
   if (mode === 'lanes') {
     k.rows.forEach((row, j) => {
-      if ([...row].every(ch => ['wall', 'mover'].includes(kindOf(ch)))) fail('row_blocked', `${p}.rows[${j}]`, 'every lane is a train; leave a lane open or use a barrier', `e.g. '${row[0]}.${row[2]}'`);
+      if ([...row].every(ch => ['wall', 'mover'].includes(kindOf(ch)))) {
+        const mid = Math.floor(row.length / 2);
+        k.rows[j] = row.slice(0, mid) + '.' + row.slice(mid + 1);
+        warn('row_opened', `${p}.rows[${j}]`, 'every lane was a train; opened the middle lane');
+      }
     });
-  } else if (mode === 'side' && c.control === 'jump') {
-    const height = s => { let h = 0; while (s[h] === '#') h++; return h; };
-    if (height(k.rows[0]) !== 1 || k.rows[0].replace(/^#/, '').includes('#')) fail('side_edge', `${p}.rows[0]`, 'the first slice must be exactly street height 1 ("#")', 'chunks join at height 1');
-    const last = k.rows[k.rows.length - 1];
-    if (height(last) !== 1 || last.replace(/^#/, '').includes('#')) fail('side_edge', `${p}.rows[${k.rows.length - 1}]`, 'the last slice must be exactly street height 1 ("#")', 'chunks join at height 1');
-    let gap = 0;
-    k.rows.forEach((row, j) => {
-      gap = row.includes('#') ? 0 : gap + k.spacing;
-      if (gap > 4.5) fail('side_gap', `${p}.rows[${j}]`, `gap of ${gap} units is too wide to jump`, 'keep gaps ≤ 4 units');
-      if (j && height(row) - height(k.rows[j - 1]) > 2 && height(k.rows[j - 1]) > 0) fail('side_climb', `${p}.rows[${j}]`, 'a roof more than 2 cells above the previous one is a wall', 'step up 1-2 cells at a time');
-    });
-  } else if (mode === 'side' && c.control === 'fly') {
-    if (k.rows.some(r => r.includes('#'))) warn('fly_solid', p, "fly control has an automatic floor; '#' cells are ignored");
-  } else if (mode === 'flap') {
-    k.rows.forEach((row, j) => {
-      const open = [...row].map(ch => ch === '#' || ['pipe', 'gate'].includes(kindOf(ch)) ? 0 : 1);
-      if (open.every(Boolean)) return;
-      let best = 0, run = 0; for (const o of open) { run = o ? run + 1 : 0; best = Math.max(best, run); }
-      if (best < 3) fail('flap_gap', `${p}.rows[${j}]`, `gate gap of ${best} cells is too small`, 'leave 3-5 open cells');
-    });
-  } else if (mode === 'climb') {
-    const solid = ch => ch === '=' || ['platform', 'moving', 'breaking', 'spring', 'vanishing'].includes(kindOf(ch));
-    const bounce = ch => ch === '=' || ['platform', 'moving', 'spring'].includes(kindOf(ch));
-    if (![...k.rows[0]].some(bounce)) fail('climb_start', `${p}.rows[0]`, "the first row needs a platform you can bounce on ('=')");
-    // A bounce rises about 4 units: bounceable rows (and the join to the next chunk) must be closer than that.
-    const rows = k.rows.map((r, j) => [...r].some(ch => bounce(ch) || kindOf(ch) === 'vanishing') ? j : -1).filter(j => j >= 0);
-    for (let i = 1; i < rows.length; i++) if ((rows[i] - rows[i - 1]) * k.spacing > CLIMB_REACH) fail('climb_gap', `${p}.rows[${rows[i]}]`, `${((rows[i] - rows[i - 1]) * k.spacing).toFixed(1)} units since the last bounceable row; a bounce reaches ${CLIMB_REACH}`, 'add a platform in between or lower spacing');
-    if (rows.length && (k.rows.length - rows.at(-1)) * k.spacing > CLIMB_REACH) fail('climb_gap', `${p}.rows[${k.rows.length - 1}]`, 'the top rows are too far below the next chunk', 'end with a platform near the top');
-    if (![...k.rows[k.rows.length - 1]].some(solid)) warn('climb_end', `${p}.rows[${k.rows.length - 1}]`, 'the last row has no platform');
+  } else if (mode === 'side' && c.control === 'fly' && k.rows.some(r => r.includes('#'))) warn('fly_solid', `${p}.rows`, "fly control has an automatic floor; '#' cells are ignored");
+  else if (mode === 'climb') {
+    // Rows are a picture (top row highest); work bottom-up.
+    const W = c.rules.width, up = k.rows.slice().reverse();
+    const bounce = ch => ch === '=' || BOUNCE_KINDS.includes(kindOf(ch));
+    const has = r => [...r].some(bounce);
+    const put = (j, x) => { const cells = [...up[j]]; const a = Math.max(0, Math.min(W - 2, x)); cells[a] = '='; cells[a + 1] = '='; up[j] = cells.join(''); };
+    const platX = r => { const x = [...r].findIndex(bounce); return x < 0 ? Math.floor(W / 2) - 1 : x; };
+    if (!has(up[0])) { put(0, Math.floor(W / 2) - 1); warn('climb_start', `${p}.rows[${k.rows.length - 1}]`, 'the bottom row had no platform to bounce on; added one'); }
+    const step = Math.max(1, Math.floor(CLIMB_REACH / k.spacing));
+    let last = 0;
+    for (let j = 1; j < up.length; j++) {
+      if (has(up[j])) { last = j; continue; }
+      if (j - last >= step) { put(j, platX(up[last])); last = j; warn('climb_gap', `${p}.rows[${k.rows.length - 1 - j}]`, `no bounceable row within reach (${CLIMB_REACH} units); added a platform`); }
+    }
+    if ((up.length - last) * k.spacing > CLIMB_REACH) { const j = up.length - 1; put(j, platX(up[last])); warn('climb_gap', `${p}.rows[0]`, 'the top row was too far below the next chunk; added a platform'); }
+    k.rows = up.reverse();
   } else if (mode === 'hop') {
     k.rows.forEach((row, j) => {
       const lane = [...row].map(kindOf).find(Boolean);
-      if (lane && [...row].some(ch => ch !== 'o' && ch !== '*' && kindOf(ch) !== lane && ch !== '.' && chars.get(ch)?.kind !== lane)) warn('hop_mixed', `${p}.rows[${j}]`, 'a lane row mixes types; the first one wins');
-      if (!lane && [...row].every(ch => ch === 'T')) fail('hop_blocked', `${p}.rows[${j}]`, 'a grass row is all trees', "leave at least one '.' cell");
+      if (!lane && [...row].every(ch => ch === 'T')) { const mid = Math.floor(row.length / 2); k.rows[j] = row.slice(0, mid) + '.' + row.slice(mid + 1); warn('hop_opened', `${p}.rows[${j}]`, 'a grass row was all trees; opened the middle'); }
     });
   }
-  if (!k.rows.length) warn('chunk_empty', p, 'empty chunk');
 }

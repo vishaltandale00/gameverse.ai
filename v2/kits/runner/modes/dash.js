@@ -181,6 +181,7 @@ export default {
   solver: {
     every: 2,
     actions: [{}, { a: true }],
+    bucket: s => `${Math.round(s.p.y * 2)}|${s.p.grav}`,
     key: s => `${Math.round(s.p.y * 8)}|${Math.round(s.p.vy)}|${s.p.grav}|${s.p.ground ? 1 : 0}|${s.p.buffer > 0 ? 1 : 0}|${s.p.sf}`,
     score: s => (s.p.ground ? 0.5 : 0) + s.coins * 0.05,
   },
