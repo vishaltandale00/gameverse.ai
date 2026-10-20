@@ -1,0 +1,146 @@
+// Shared helpers for the items workstream (KERNEL_API.md §7: helpers prefixed
+// with the area). Item lookups and tag tokens, deterministic rolls, entity
+// geometry through space capabilities, and optional cross-primitive effects
+// (run only when their owner registered them).
+
+/** Item definitions by id, re-indexed whenever rt.doc changes (hot-loaded items appear). */
+export function items(rt) {
+  const c = rt.caches;
+  if (c.itemsDoc !== rt.doc) { c.itemsDoc = rt.doc; c.items = new Map((rt.doc.content?.items || []).map(i => [i.id, i])); }
+  return c.items;
+}
+export const item = (rt, id) => items(rt).get(id);
+
+/**
+ * Tokens an item answers to in `accepts`, `buys` and tag-based recipe inputs:
+ * its id, kind, tags, ingredient tags, `armor:<slot>`, `tool:<kind>`, `charm`, `block`, and `*`.
+ */
+export function tokens(def) {
+  if (!def) return new Set(['*']);
+  const t = new Set(['*', def.id, def.kind, ...(def.tags || []), ...(def.ingredient?.tags || [])]);
+  if (def.armor?.slot) { t.add('armor'); t.add(`armor:${def.armor.slot}`); }
+  if (def.tool) { t.add('tool'); if (def.tool.kind) t.add(`tool:${def.tool.kind}`); }
+  if (def.weapon && def.kind === 'weapon') t.add('weapon');
+  if (def.charm) t.add('charm');
+  if (def.block) t.add('block');
+  return t;
+}
+export const matches = (def, accepts) => { const t = tokens(def); return (accepts || []).some(a => t.has(a)); };
+
+/** Integer in [a, b] from rt.random(); a number n means exactly n. */
+export function roll(rt, range, fallback = 1) {
+  if (range == null) return fallback;
+  if (typeof range === 'number') return range;
+  const [a, b] = range; return a + Math.floor(rt.random() * (b - a + 1));
+}
+/** Weighted pick over entries with `weight` (default 1); null when total weight is 0. */
+export function pick(rt, entries) {
+  const total = entries.reduce((s, e) => s + (e.weight ?? 1), 0);
+  if (total <= 0) return null;
+  let r = rt.random() * total;
+  for (const e of entries) { r -= e.weight ?? 1; if (r < 0) return e; }
+  return entries[entries.length - 1];
+}
+
+/** Bag / entity key for an effect's `who`: undefined|'player' -> 'player', 'self' -> context.self, else the id. */
+export const whoKey = (who, context = {}) => (who == null || who === 'player' ? 'player' : who === 'self' ? context.self ?? 'player' : who);
+
+/** Run `effect` only if its kind is registered; returns whether it ran. */
+export function runIf(rt, effect, context) {
+  if (!rt.logic.effects.has(effect.do)) return false;
+  rt.run([effect], context); return true;
+}
+export const hasEffect = (rt, kind) => rt.logic.effects.has(kind);
+
+/** Add score through gameplay.score's add_score when present, else the `score` var. */
+export function addScore(rt, points, context) {
+  if (!points) return;
+  if (!runIf(rt, { do: 'add_score', amount: points }, context)) rt.state.vars.score = (rt.state.vars.score ?? 0) + points;
+}
+
+/** Heal to full and refill every published resource pool for `who` (rest, checkpoints). */
+export function restoreAll(rt, who = 'player', { resources = true } = {}) {
+  const v = rt.state.vars;
+  if (who === 'player' && v['hp.max'] != null) { const need = v['hp.max'] - (v.hp ?? 0); if (need > 0) runIf(rt, { do: 'heal', who, amount: need }); }
+  else runIf(rt, { do: 'heal', who, amount: 1e9 });
+  if (resources && who === 'player') for (const k of Object.keys(v)) {
+    const m = /^res\.([^.]+)\.max$/.exec(k); if (!m) continue;
+    const need = v[k] - (v[`res.${m[1]}`] ?? 0);
+    if (need > 0) runIf(rt, { do: 'gain', resource: m[1], amount: need });
+  }
+}
+
+// ---- geometry through space capabilities ----
+export const isVec = a => Array.isArray(a);
+export const v3 = a => [a[0] ?? 0, a[1] ?? 0, a[2] ?? 0];
+export const add = (a, b) => v3(a).map((x, i) => x + (v3(b)[i] ?? 0));
+export const sub = (a, b) => v3(a).map((x, i) => x - (v3(b)[i] ?? 0));
+export const len = a => Math.hypot(...v3(a));
+export const norm = a => { const l = len(a) || 1; return v3(a).map(x => x / l); };
+export const dot = (a, b) => v3(a).reduce((s, x, i) => s + x * v3(b)[i], 0);
+export const api = (rt, e) => (e?.space && rt.spaces().includes(e.space) ? rt.space(e.space) : null);
+export const pos = (rt, e) => { const s = api(rt, e); return s ? s.pos(e) : e?.at; };
+/** Where a space anchors entity positions in components.body.size: 'min' corner (testSpace) or 'center' (api.anchor). */
+export const anchor = (rt, spaceId) => (spaceId && rt.spaces().includes(spaceId) ? rt.space(spaceId).anchor ?? 'min' : 'min');
+export const sizeOf = e => v3(e.components?.body?.size || [0, 0, 0]);
+/** World box {min, max} of a box of `size` positioned at `at` in a space (anchor-aware). */
+export function boxAt(rt, spaceId, at, size = [0, 0, 0]) {
+  const s = v3(size), a = v3(at), min = anchor(rt, spaceId) === 'center' ? a.map((x, i) => x - s[i] / 2) : a;
+  return { min, max: min.map((x, i) => x + s[i]) };
+}
+/** World box of an entity (array positions only). */
+export const boxOf = (rt, e) => boxAt(rt, e.space, pos(rt, e), sizeOf(e));
+/** Box centre of an entity; opaque positions are returned as-is. */
+export function center(rt, e) { const p = pos(rt, e); if (!isVec(p)) return p; const b = boxOf(rt, e); return b.min.map((x, i) => (x + b.max[i]) / 2); }
+/** Position that puts an entity's box min corner at `min` (anchor-aware), trimmed to the entity's dimensionality. */
+export function posForMin(rt, e, min) { const p = anchor(rt, e.space) === 'center' ? v3(min).map((x, i) => x + sizeOf(e)[i] / 2) : v3(min); return isVec(e.at) ? p.slice(0, Math.max(e.at.length, 2)) : p; }
+/** Distance between entities of the same space; opaque positions (graph nodes) are 0 when equal, else Infinity. */
+export function dist(rt, a, b) {
+  if (!a || !b || a.space !== b.space) return Infinity;
+  const pa = pos(rt, a), pb = pos(rt, b);
+  if (!isVec(pa) || !isVec(pb)) return pa === pb ? 0 : Infinity;
+  return len(sub(center(rt, a), center(rt, b)));
+}
+/** Distance from an entity's centre to a point (array positions only). */
+export function distTo(rt, e, at) { const p = pos(rt, e); return isVec(p) && isVec(at) ? len(sub(center(rt, e), at)) : (p === at ? 0 : Infinity); }
+/** Half-open overlap per axis; a zero-extent side is a point (inside when min <= p < max). Axes where both are flat count as overlapping when equal. */
+const span = (a0, a1, b0, b1, eps) => a0 === a1 && b0 === b1 ? Math.abs(a0 - b0) <= eps : a0 === a1 ? a0 >= b0 - eps && a0 < b1 + eps : b0 === b1 ? b0 >= a0 - eps && b0 < a1 + eps : a0 < b1 + eps && b0 < a1 + eps;
+export const boxesTouch = (a, b, eps = 0) => a.min.every((m, i) => span(m, a.max[i], b.min[i], b.max[i], eps));
+/** Entities whose box touches the world box {min, max} in a space (anchor-aware; zero-size entities are points). */
+export function inBox(rt, spaceId, box, filter = () => true) {
+  const out = [];
+  for (const e of Object.values(rt.state.entities)) if (e.space === spaceId && isVec(e.at) && filter(e) && boxesTouch(boxOf(rt, e), box)) out.push(e.id);
+  return out;
+}
+/** Move an entity toward a point by at most `step` (magnets); array positions only. */
+export function pull(rt, e, to, step) {
+  const s = api(rt, e), p = pos(rt, e); if (!s || !isVec(p)) return;
+  const d = sub(to, center(rt, e)), l = len(d); if (l < 1e-6) return;
+  s.setPos(e, add(p, d.map(x => x / l * Math.min(step, l))).slice(0, p.length), rt);
+}
+/** Unit facing vector from components.body.facing (vector, or ±1 along x for side views); null if unknown. */
+export function facing(e) {
+  const f = e?.components?.body?.facing;
+  if (isVec(f)) return norm(f);
+  if (typeof f === 'number' && f) return [Math.sign(f), 0, 0];
+  return null;
+}
+/** Hostile = archetype kind enemy|boss or components.hostile (used by rest safety checks). */
+export function hostile(rt, e) { return e.id !== 'player' && (e.components.hostile === true || ['enemy', 'boss'].includes(rt.archetype(e.archetype)?.kind)); }
+
+/** Entity a `who`/target string names: an entity id, else the first entity of that archetype. */
+export function entityByRef(rt, ref, context) {
+  const e = rt.resolve(ref, context); if (e) return e;
+  return Object.values(rt.state.entities).find(x => x.archetype === ref) || null;
+}
+
+/** Push a param-style error for list entries with duplicate ids. */
+export function uniqueIds(list, path, errors, what = 'entry') {
+  const seen = new Set();
+  (list || []).forEach((x, i) => { if (seen.has(x.id)) errors.push({ code: 'id_duplicate', path: `${path}[${i}].id`, message: `duplicate ${what} id '${x.id}'` }); seen.add(x.id); });
+}
+/** Error helper: unknown item id in content (refs checked by the kernel only for card params). */
+export function checkItem(doc, id, path, errors) {
+  if (id == null) return;
+  if (!(doc.content?.items || []).some(i => i.id === id)) errors.push({ code: 'ref_unknown', path, message: `unknown item '${id}'` });
+}
