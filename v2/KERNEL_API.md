@@ -61,6 +61,26 @@ Base kinds (`character item zone quest model archetype space beat ending recipe 
 
 **Entities** are plain JSON: `{id, archetype, space, at, zone?, components:{...}}`. Components are keyed by the owning primitive (catalog §0): `health melee ranged ai attacks schedule vehicle mount interact shop container equipment loot level resources status model body`. Continuous spaces keep kinematics in `components.body` = `{size, vel, grounded, facing, layer}`. A primitive owns only its own component and reads others' through their documented fields.
 
+**Shared component fields (frozen).** Primitives that own these components must use these field names; others may read them:
+
+| Component | Fields |
+| --- | --- |
+| `body` | `size` (box extents), `vel`, `facing` (+1 or -1 in 2D, a vector in 3D), `grounded`, `layer` |
+| `health` | `hp`, `max`, `invulnerable` (seconds left, 0 when vulnerable), `dead` |
+| `status` | `{statusId: secondsLeft}`, with `Infinity` not allowed: use a large number |
+| `collectible` | `counter`, `value` |
+| `interact` | `id` (an interactable id), `kind`, `prompt`, `range?` |
+| `ai` | owned by `gameplay.ai.brain` (catalog §6.4) |
+
+The player's scalars are mirrored to vars: `hp`, `hp.max`, `res.<pool>`, `score`, `lives`.
+
+**Solver conventions.**
+- Option `label`s must be unique within one state's `availableOptions()`.
+- `state.rng` is a uint32 that solvers may reseed to sample chance.
+- A primitive with continuous verbs declares `card.actionSpace: {verb: {type: 'number'|'vector'|'enum', min?, max?, options?}}` so playtesters can sweep it.
+- A primitive may shape its part of the solver's state key with an optional `solverKey(rt, config, instance)`, and report progress with `progress(rt)`.
+- Spaces expose `size` (or `bounds()` with the `bounds` capability) and, when they are cell-based, `cellOf(at) → key`. `reachable` returns a Set of those keys (or zone ids in graph spaces).
+
 **Determinism rule:** the same document, seed and inputs must give the same `snapshot()`. Tests must assert this.
 
 ## 3. Space API
