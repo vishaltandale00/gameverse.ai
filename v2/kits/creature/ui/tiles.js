@@ -7,8 +7,15 @@ import { seedFrom } from '../../../kernel/rng.js';
 
 export const TS = 16;
 
+// Headless (Node tests with a stub context): a canvas whose drawing calls do nothing.
+const NOOP_CTX = new Proxy({}, {
+  get: (t, k) => (k in t ? t[k] : k === 'measureText' ? () => ({ width: 0 }) : typeof k === 'string' && k.startsWith('create') ? () => ({ addColorStop() {} }) : () => {}),
+  set: (t, k, v) => { t[k] = v; return true; },
+});
+
 export function makeCanvas(w, h) {
   if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h);
+  if (typeof document === 'undefined') return { width: w, height: h, getContext: () => NOOP_CTX };
   const c = document.createElement('canvas'); c.width = w; c.height = h; return c;
 }
 

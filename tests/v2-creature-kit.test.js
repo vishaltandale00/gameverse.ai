@@ -121,3 +121,35 @@ test('rig looks come from content text, deterministically', () => {
   assert.equal(p.headwear, 'cap');
   assert.equal(p.colors.primary, '#3a6ad8');
 });
+
+test('the renderer draws every screen headless without throwing', async () => {
+  const { createBot } = await import('../v2/kits/creature/verify/bot.js');
+  const { createCreature } = await import('../v2/kits/creature/rules/index.js');
+  let texts = 0;
+  const ctx = new Proxy({}, { get: (t, k) => (k in t ? t[k] : k === 'measureText' ? () => ({ width: 30 }) : typeof k === 'string' && k.startsWith('create') ? () => ({ addColorStop() {} }) : () => { if (k === 'fillText') texts++; }), set: (t, k, v) => { t[k] = v; return true; } });
+  const content = kit.validate(kit.content.sample).content;
+  const game = kit.createGame(content, { seed: 2 });
+  const s = game.createState();
+  const render = kit.createRenderer(game, { art: {} });
+  const modes = new Set(), phases = new Set();
+  // Render every third step the bot (or the test) takes.
+  const step = game.step;
+  let n = 0;
+  game.step = (st, inp) => {
+    const r = step(st, inp);
+    if (n++ % 3 === 0) { render(ctx, st, { cssWidth: 720, cssHeight: 480, dt: 1 / 60, events: st.events, reducedMotion: false, attract: false }); modes.add(st.mode); if (st.battle) phases.add(st.battle.phase); }
+    return r;
+  };
+  const bot = createBot(game, s, { catchSpecies: 'any' });
+  bot.settle(); bot.goTo('route-1'); bot.grind(120);
+  for (const inp of [{ b: true }, {}, { a: true }, {}, {}, { b: true }, {}, { b: true }, {}]) game.step(s, inp);
+  s.party[0].level = 16; s.script.push({ op: 'evolve', uid: s.party[0].uid });
+  for (let i = 0; i < 400; i++) game.step(s, { a: i % 20 === 0 });
+  s.party.push(createCreature(content, 'galewing', 20, s));
+  s.script.push({ op: 'end_game' });
+  for (let i = 0; i < 200; i++) game.step(s, {});
+  game.step = step;
+  for (const m of ['dialogue', 'overworld', 'transition', 'battle', 'menu', 'evolution', 'ending']) assert.ok(modes.has(m), `rendered ${m}`);
+  for (const p of ['beats', 'menu', 'moves']) assert.ok(phases.has(p), `rendered battle ${p}`);
+  assert.ok(texts > 100);
+});
