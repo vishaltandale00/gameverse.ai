@@ -41,10 +41,10 @@ export default {
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'pathfind'], services: ['character'] },
     envelope,
-  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
-  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   install(rt, c, instance) {
     verbs(rt, ['fly', 'ascend', 'descend', 'jump', 'sprint']);
     ensureShared(rt, { speed: c.speed, ...c.macro });

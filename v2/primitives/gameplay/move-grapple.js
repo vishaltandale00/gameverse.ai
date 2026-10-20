@@ -41,10 +41,10 @@ export default {
     requires: { capabilities: ['position', 'raycast'] },
     optional: { capabilities: ['gravity', 'editCells'] },
     envelope,
-  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
-  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   validate(config) { return config.minLen > config.ropeLen ? [{ code: 'grapple_rope_order', field: 'minLen', message: 'minLen is longer than ropeLen' }] : []; },
   install(rt, c, instance) {
     verbs(rt, [c.verb]);

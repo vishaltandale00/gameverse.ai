@@ -124,10 +124,10 @@ export default {
     requires: { capabilities: ['position', 'gravity'] },
     optional: { capabilities: ['overlap', 'raycast', 'editCells', 'pathfind'], services: ['character'] },
     envelope,
-  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
-  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   validate(config) {
     const errors = [], c = platformerConfig(config);
     if (c.jump === 0 && c.flap.velocity === 0 && c.autoBounce.velocity === 0 && c.thrust.accel === 0) errors.push({ code: 'platformer_no_lift', field: 'jump', message: 'no way to leave the ground: jump, flap, autoBounce and thrust are all 0', hint: 'set jump > 0 or pick a preset' });

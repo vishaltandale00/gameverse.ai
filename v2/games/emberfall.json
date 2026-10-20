@@ -2249,7 +2249,7 @@
   },
   {"use":"gameplay.move.climb","with":{"speed":1.5,"surfaces":"any","staminaCost":8,"slipMin":70,"ledgeGrab":true}},
   {"use":"gameplay.move.swim","with":{"speed":2.5,"breath":25,"drownDps":15}},
-  {"use":"gameplay.move.glide","with":{"fallSpeed":2.8,"staminaCost":6}},
+  {"use":"gameplay.move.glide","with":{"fallSpeed":2.8,"staminaCost":6,"ability":"glide"}},
   {"use":"gameplay.move.dodge","with":{"distance":3.2,"sec":0.5,"iframes":[0.05,0.3],"cost":15,"directions":"any"}},
   {"use":"gameplay.mount","with":{"walk":3,"trot":7,"gallop":14,"staminaMax":100,"bondGain":3,"callRange":160,"jumpHeight":1.6,"fightMounted":false}},
   {"use":"gameplay.interact","with":{"range":2.6,"facingOnly":false,"holdMs":0,"prompts":true}},

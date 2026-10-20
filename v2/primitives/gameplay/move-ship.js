@@ -49,10 +49,10 @@ export default {
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['bounds', 'wrap', 'overlap', 'distance'] },
     envelope,
-  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
-  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   install(rt, c, instance) {
     const owner = ownerKey(instance), wrap = c.wrap ?? c.mode === 'inertial';
     const hyper = { enabled: false, cooldown: SHIP.hyperCooldown, invuln: SHIP.hyperInvuln, keep: SHIP.hyperKeep, margin: SHIP.hyperMargin, ...c.hyperspace };
@@ -81,8 +81,18 @@ export default {
         let pos = v3(e.at);
         if (c.mode === 'inertial') {
           s.ang ??= (c.heading * Math.PI) / 180;
-          s.ang = round6(s.ang - x * c.rotate * dt);
-          const thrusting = ctl ? y > 0.3 || ctl.down('thrust') : y > 0.3;
+          const npc = it.source === 'moveTo' || it.source === 'steer';
+          let thrusting;
+          if (npc) {
+            // Steered ships turn toward the wanted heading and thrust once roughly aligned.
+            const want = Math.hypot(x, y) > 1e-6 ? Math.atan2(y, x) : s.ang;
+            let d = want - s.ang; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+            s.ang = round6(s.ang + Math.max(-c.rotate * dt, Math.min(c.rotate * dt, d)));
+            thrusting = Math.hypot(x, y) > 1e-6 && Math.abs(d) < 0.5;
+          } else {
+            s.ang = round6(s.ang - x * c.rotate * dt);
+            thrusting = ctl ? y > 0.3 || ctl.down('thrust') : y > 0.3;
+          }
           if (thrusting !== Boolean(s.thrust)) { s.thrust = thrusting; rt.emit(thrusting ? 'thrust_start' : 'thrust_end', { who: e.id }); }
           if (thrusting) { b.vel[A] += Math.cos(s.ang) * c.thrust * dt; b.vel[B] += Math.sin(s.ang) * c.thrust * dt; }
           const k = 1 - c.drag * dt; b.vel[A] *= k; b.vel[B] *= k;
@@ -95,7 +105,8 @@ export default {
             rt.emit('hyperspace', { who: e.id, at: [pos[A], pos[B]] });
           }
         } else {
-          let dx = x, dy = c.mode === 'rail' ? 0 : y;
+          // Rail ships take the stick's horizontal as full deflection (the kit's digital input).
+          let dx = c.mode === 'rail' ? (Math.abs(x) > 0.2 ? Math.sign(x) * Math.min(1, Math.abs(x) * Math.SQRT2) : 0) : x, dy = c.mode === 'rail' ? 0 : y;
           if (dx && dy) { const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; } }
           b.vel[A] = dx * sp; b.vel[B] = dy * sp;
           if (c.mode === 'twinstick') {

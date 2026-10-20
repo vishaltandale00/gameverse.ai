@@ -42,10 +42,10 @@ export default {
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['editCells', 'surface', 'gravity', 'raycast'] },
     envelope,
-  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
-  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   install(rt, c, instance) {
     verbs(rt, ['dive', 'ascend', 'jump']);
     ensureShared(rt, { speed: c.speed });

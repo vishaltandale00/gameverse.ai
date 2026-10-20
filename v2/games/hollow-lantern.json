@@ -2017,7 +2017,8 @@
     "abilities": {"doubleJump":false,"dash":false,"wallSlide":false,"wallJump":false,"wallClimb":false,"glide":false,"swim":true,"crouch":true},
     "dash": {"speed":30,"sec":0.18,"cooldown":0.55,"airOnce":true,"iframes":0.12},
     "wallSlide": 3.5,
-    "wallClimbStamina": 22
+    "wallClimbStamina": 22,
+    "climbPool": "grip"
    }
   },
   {

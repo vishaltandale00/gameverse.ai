@@ -33,10 +33,10 @@ export default {
     requires: { capabilities: ['position', 'gravity'] },
     optional: { capabilities: ['editCells', 'raycast'] },
     envelope,
-  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
-  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   install(rt, c, instance) {
     verbs(rt, ['glide', 'jump']);
     const lifted = (e, api) => {

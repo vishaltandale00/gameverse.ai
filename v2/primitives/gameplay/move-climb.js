@@ -41,10 +41,10 @@ export default {
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'editCells', 'raycast', 'overlap'] },
     envelope,
-  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
-  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   validate(config) {
     if (config.surfaces === 'tagged' && !config.tags.length) return [{ code: 'climb_no_tags', field: 'tags', message: 'surfaces=tagged needs at least one tag' }];
     return [];

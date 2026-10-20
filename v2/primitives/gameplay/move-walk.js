@@ -64,10 +64,10 @@ export default {
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity', 'overlap', 'pathfind', 'navigate', 'editCells'], services: ['character'] },
     envelope,
-  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
-  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   logic(logic) {
     logic.predicate('moving', {
       check(p, path, errors) { if (p.moving !== true && p.moving !== false && typeof p.moving !== 'string') errors.push({ code: 'predicate_invalid', path, message: 'moving takes true/false or an entity id', hint: '{ "moving": true } or { "moving": "self", "gte": 2 }' }); },
@@ -121,7 +121,9 @@ export function stepWalk(rt, e, c, over = {}) {
   if (wantSprint && (c.sprintCost <= 0 || (w.sprinting ? canSpend(stam, c.sprintCost * dt) : canSpend(stam, Math.max(c.sprintMin, c.sprintCost * dt))))) { sprinting = true; tier = 'sprint'; if (c.sprintCost > 0 && stam) stam.spend(c.sprintCost * dt); }
   if (sprinting !== Boolean(w.sprinting)) { w.sprinting = sprinting; rt.emit(sprinting ? 'sprint_start' : 'sprint_end', { who: e.id }); }
   if (!sprinting && stam && !stam.external) stam.regen(dt);
-  const speed = over.speed ?? it.speed ?? c[tier];
+  let speed = over.speed ?? it.speed ?? c[tier];
+  // Path following brakes for corners and the destination (v² = 2·decel·d).
+  if (it.brake != null && grounded) speed = Math.min(speed, Math.sqrt(2 * c.decel * Math.max(0, it.brake)) + 1);
   const want = mag > 1e-3 ? norm(it.dir).map(v => v * speed * (ctl && tier !== 'walk' ? Math.max(mag, c.walkThreshold) : 1)) : [0, 0, 0];
   // Horizontal acceleration on the plane.
   const rate = (mag > 1e-3 ? c.accel : c.decel) * (grounded ? 1 : c.airControl) * dt;

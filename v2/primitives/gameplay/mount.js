@@ -48,10 +48,10 @@ export default {
     optional: { capabilities: ['gravity', 'pathfind', 'distance'] },
     reads: ['content.archetypes'],
     envelope,
-  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
-  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   logic(logic) {
     logic.predicate('mounted', {
       test(p, rt, c) {

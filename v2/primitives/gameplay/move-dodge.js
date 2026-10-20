@@ -35,10 +35,10 @@ export default {
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity'] },
     envelope,
-  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
-  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   },
   envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   validate(config) {
     const [a, b] = config.iframes || [];
     if (a > b) return [{ code: 'dodge_iframes_order', field: 'iframes', message: `iframes start ${a} is after end ${b}` }];

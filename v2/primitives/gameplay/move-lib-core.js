@@ -405,7 +405,10 @@ function follow(rt, e, api, fr, opts) {
     P.pts = structuredClone(p); P.i = 0;
   }
   const near = wp => (opts.free3d ? len(sub(v3(e.at), v3(wp))) : planeDist(fr, e.at, wp)) <= tol && vOk(wp);
-  while (P.i < P.pts.length - 1 && near(P.pts[P.i])) P.i++;
+  // Advance past waypoints that are reached, already passed (overshoot at speed) or farther than the next one (corner cutting).
+  const pd = p => (opts.free3d ? len(sub(v3(e.at), v3(p))) : planeDist(fr, e.at, p));
+  const passed = i => { if (i === 0) return false; const a = v3(P.pts[i - 1]), b = v3(P.pts[i]), pos = v3(e.at), seg = opts.free3d ? sub(b, a) : project(fr, sub(b, a)), rel = opts.free3d ? sub(b, pos) : project(fr, sub(b, pos)); return dot(seg, rel) <= 0 && vOk(P.pts[i]); };
+  while (P.i < P.pts.length - 1 && (near(P.pts[P.i]) || passed(P.i) || (pd(P.pts[P.i + 1]) < pd(P.pts[P.i]) && vOk(P.pts[P.i + 1])))) P.i++;
   const wp = P.pts[P.i];
   if (P.best === null || dist < P.best - 0.02) { P.best = dist; P.stuck = 0; } else if (P.f !== rt.state.frame) P.stuck += rt.dt;
   P.f = rt.state.frame;
@@ -413,6 +416,14 @@ function follow(rt, e, api, fr, opts) {
   const raw = sub(v3(wp), v3(e.at));
   out.dir = norm(opts.free3d ? raw : project(fr, raw));
   out.wp = v3(wp);
+  // Distance to the next sharp turn (>30°) or the end: controllers brake so they make the corner.
+  const dirOf = (a, b) => norm(opts.free3d ? sub(v3(b), v3(a)) : project(fr, sub(v3(b), v3(a))));
+  let brake = pd(P.pts[P.pts.length - 1]);
+  if (P.i >= 1) {
+    const d0 = dirOf(P.pts[P.i - 1], P.pts[P.i]);
+    for (let j = P.i + 1; j < P.pts.length; j++) if (dot(d0, dirOf(P.pts[j - 1], P.pts[j])) < 0.866) { brake = pd(P.pts[j - 1]); break; }
+  }
+  out.brake = brake;
   if (fr.vert !== null) {
     out.vert = clamp(raw[fr.vert], -1, 1);
     if (!opts.free3d && raw[fr.vert] > (opts.jumpRise ?? 0.6)) out.jump = out.jumpHeld = true;

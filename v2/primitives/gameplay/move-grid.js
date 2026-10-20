@@ -61,10 +61,10 @@ export default {
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['navigate', 'editCells', 'pathfind', 'bounds', 'wrap'] },
     envelope,
-  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
-  travel: (rt, path, config, instance) => travelAlong(rt, path, { discrete: true, perWaypoint: 60 }),
   },
   envelope,
+  /** Verifier travel macro: drive this controller along a space path in real steps; true when it arrived. */
+  travel: (rt, path, config, instance) => travelAlong(rt, path, { discrete: true, perWaypoint: 60 }),
   install(rt, c, instance) {
     const owner = ownerKey(instance);
     registerBase(rt, owner, 'grid', instance);
