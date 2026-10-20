@@ -151,5 +151,17 @@ export function buildTopdown({ sections, length = 'medium', seed = 1 }) {
   clear(W - 4, py); set(W - 4, py, 'G');
   // Keep every section door open along the middle row too, so the goal is reachable.
   for (let x = 1; x < W - 1; x++) if (at(x, py) === '#') g[py][x] = '.';
+  // Flood-fill from the player through non-wall cells; anything unreachable
+  // (pickups sealed in rooms, enemies in voids) is removed so levels are fair.
+  const seen = new Set([`3,${py}`]), queue = [[3, py]];
+  while (queue.length) {
+    const [x, y] = queue.shift();
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, ny = y + dy, key = `${nx},${ny}`;
+      if (seen.has(key) || !at(nx, ny) || at(nx, ny) === '#') continue;
+      seen.add(key); queue.push([nx, ny]);
+    }
+  }
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) if ('CE^'.includes(g[y][x]) && !seen.has(`${x},${y}`)) g[y][x] = '.';
   return g.map(row => row.join(''));
 }
