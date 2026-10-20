@@ -9,43 +9,10 @@ import { maker, settle, applyOption, optionLabels } from './drive.js';
 import { plotZones } from './objective.js';
 import { instancesOf, memberOf, problem, padCell } from './util.js';
 import { entityPath } from './strategies/common.js';
+import { movementEnvelope, abilityIds, navOptions, navFrom } from './movement.js';
+import { withTravel } from './macros.js';
 
-/** Merge every movement primitive's envelope: max of numbers, OR of booleans, first string. */
-export function movementEnvelope(doc, registry, abilities = new Set()) {
-  const out = {};
-  let sources = 0;
-  for (const x of instancesOf(doc)) {
-    const p = registry.get(x.inst?.use), env = p?.card?.envelope ?? p?.envelope;
-    if (!env) continue;
-    const e = typeof env === 'function' ? env(x.inst.with || {}, abilities) : env;
-    if (!e || typeof e !== 'object') continue;
-    sources++;
-    for (const [k, v] of Object.entries(e)) {
-      if (typeof v === 'number') out[k] = Math.max(out[k] ?? -Infinity, v);
-      else if (typeof v === 'boolean') out[k] = Boolean(out[k]) || v;
-      else if (out[k] === undefined) out[k] = v;
-    }
-  }
-  return { envelope: out, sources };
-}
-
-/** Ability ids a document mentions: player.abilities and every `ability` reference kind defined by primitives. */
-function abilityIds(doc, registry) {
-  const ids = new Set(doc.player?.abilities || []);
-  for (const x of instancesOf(doc)) for (const d of registry.get(x.inst?.use)?.card.defines || []) {
-    if (d.kind === 'ability' && d.in) for (const a of x.inst.with?.[d.in] || []) if (a?.id) ids.add(a.id);
-    if (d.kind === 'ability' && d.at) { const v = d.at.split('.').reduce((o, k) => o?.[k], doc); for (const a of Array.isArray(v) ? v : Object.keys(v || {})) ids.add(a?.id ?? a); }
-  }
-  return ids;
-}
-/** Abilities the player holds now: the `ability` predicate when registered, else the document's starting list. */
-function currentAbilities(rt, ids, start) {
-  if (!rt.logic.predicates.has('ability')) return new Set(start);
-  const out = new Set();
-  for (const id of ids) { try { if (rt.test({ ability: id })) out.add(id); } catch { /* not testable */ } }
-  for (const id of start) out.add(id);
-  return out;
-}
+export { movementEnvelope };
 
 /** Targets to check: zones, plot-referenced zones, defined places (portals, interactables...) and live entities. */
 function targetsOf(doc, registry) {
@@ -84,12 +51,13 @@ function stages(make, seed, path, settleSteps, maxStages) {
  * plot: a solver result (its shortest ending path, else its best path, gives the gate order).
  */
 export function verifySpatial(doc, registry, logic, { plot = null, seed, settleSteps = 2, maxStages = 24 } = {}) {
-  const make = maker(doc, registry, logic);
+  // Replay the plot path with the same travel macros the solver used.
+  const make = plot?.travel ? withTravel(maker(doc, registry, logic), registry, { mode: plot.travel }).make : maker(doc, registry, logic);
   const ending = plot && Object.entries(plot.endings || {}).filter(([k]) => (plot.outcomes?.[k] ?? (k === 'lost' ? 'lost' : 'won')) !== 'lost').sort((a, b) => a[1].length - b[1].length)[0];
   const path = ending ? ending[1] : plot?.bestPath || [];
   const order = ending ? 'critical-path' : path.length ? 'best-path' : 'start-only';
   const rt = make(seed);
-  const ids = abilityIds(doc, registry), start = doc.player?.abilities || [];
+  const ids = abilityIds(doc, registry);
   const targets = targetsOf(doc, registry);
   const reached = new Map(targets.map(t => [t, null]));
   const entityReach = new Map(), entityInfo = new Map(); // entity id → first stage; id → { id, archetype }
@@ -103,15 +71,14 @@ export function verifySpatial(doc, registry, logic, { plot = null, seed, settleS
     visitedSpaces.add(p.space);
     const api = rt.space(p.space);
     if (typeof api.reachable !== 'function') { unsupported.add(p.space); continue; }
-    const abilities = currentAbilities(rt, ids, start);
-    const { envelope, sources } = movementEnvelope(rt.doc, registry, abilities);
-    envelopeSources = sources;
-    const set = api.reachable(api.pos?.(p) ?? p.at, rt, { abilities: [...abilities], envelope });
+    const nav = navOptions(rt, registry, p, ids);
+    envelopeSources = nav.sources;
+    const set = api.reachable(navFrom(api, p), rt, nav.opts);
     const zones = new Set(), keys = new Set();
     let dims = 0;
     for (const m of set) {
       const n = memberOf(m);
-      if (n.cell) { dims = n.cell.length; keys.add(n.cell.join(',')); const z = api.zoneAt?.(n.cell, rt); if (z != null) zones.add(z); }
+      if (n.cell) { dims = n.cell.length; keys.add(n.cell.join(',')); const z = api.zoneAt?.(typeof m === 'string' && api.cellOf ? m : n.cell, rt); /* spaces with cellOf speak cell keys */ if (z != null) zones.add(z); }
       else { keys.add(String(n.zone)); const z = api.zoneAt?.(n.zone, rt) ?? n.zone; if (z != null) zones.add(z); }
     }
     const has = at => { if (at == null) return false; if (!Array.isArray(at)) return keys.has(String(at)) || zones.has(at); return keys.has(padCell(at.map(Math.floor), dims || at.length).join(',')); };

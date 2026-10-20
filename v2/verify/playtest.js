@@ -8,6 +8,7 @@
 import { maker, hold, applyOption, optionLabels, inputMacros, posOf } from './drive.js';
 import { objective, plotZones } from './objective.js';
 import { stepChecker } from './invariants.js';
+import { withTravel } from './macros.js';
 import { prng, problem, budget as makeBudget, walkJson } from './util.js';
 
 const DT = 1 / 60;
@@ -37,7 +38,13 @@ export function replayPlay(make, seed, path) {
 export function playtest(doc, registry, logic, opts = {}) {
   const { seed, budgetMs = 1500, maxFrames = 200000, maxRounds = Infinity, idleSeconds = 10, quantum = 1, limits } = opts;
   const b = makeBudget({ ms: budgetMs, steps: maxFrames, states: maxRounds });
-  const make = maker(doc, registry, logic);
+  // Spaces without options get steered travel macros (real controls, never warps): they extend the
+  // reach of the random macros without claiming anything the controls cannot do.
+  let make = maker(doc, registry, logic), travel = null;
+  if (opts.travel !== false) {
+    const probe = make(seed), p = probe.player();
+    if (!probe.availableOptions().length && p?.space && typeof probe.space(p.space).path === 'function') { travel = withTravel(make, registry, { mode: 'steer' }); make = travel.make; }
+  }
   const goal = objective(doc, registry, logic);
   const targets = [...plotZones(doc).keys()];
   const rand = prng(`playtest:${seed ?? doc.seed ?? doc.id}`);
@@ -129,7 +136,7 @@ export function playtest(doc, registry, logic, opts = {}) {
     winnable: Boolean(win),
     win: win ? { frames: win.frames, seconds: +(win.frames * DT).toFixed(2), ending: win.ending, path: win.path.map(r => r.o ?? `${r.label}×${r.n}`), replayed } : null,
     idle: { status: idle.state.status, seconds: +idle.state.time.toFixed(2) },
-    explored: archive.size, rounds, framesSimulated: b.usedSteps, bestScore: best.score,
+    explored: archive.size, rounds, framesSimulated: b.usedSteps, bestScore: best.score, travel: travel ? 'steer' : null,
     losses, eventsFired: fired, exhaustive: false, budget: b.report(), problems,
   };
 }

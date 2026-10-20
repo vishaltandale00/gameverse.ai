@@ -28,9 +28,11 @@ export function buildLogic(registry, Logic) {
 export function createWorld(doc, registry, logic, { seed, headless = true, view = null } = {}) {
   const state = {
     schema: 'gameverse.v2.state/0.1', docId: doc.id, frame: 0, time: 0, status: 'playing', ending: null,
-    rng: seedFrom(seed ?? doc.seed ?? doc.id), vars: {}, flags: {}, counts: {}, events: [],
+    rng: seedFrom(seed ?? doc.seed ?? doc.id), modal: null, vars: {}, flags: {}, counts: {}, events: [],
     entities: {}, nextId: 1, spaces: {}, prim: {},
   };
+  const deferred = [], installed = new Set();
+  const ownerInstalled = owner => !owner || owner === 'kernel' || installed.has(owner) || Boolean(registry.get(owner)?.card.ambient);
   const systems = [], handlers = new Map(), actions = new Map(), spaces = new Map(), services = new Map(), restorers = [], optionProviders = [];
   let order = 0;
 
@@ -53,11 +55,34 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
       systems.push({ p, order: order++, fn, owner });
       systems.sort((a, b) => a.p - b.p || a.order - b.order);
     },
-    action(name, fn) { actions.set(name, fn); },
+    /** Register a player verb. { ifAbsent: true } keeps an existing registration (shared verbs like `interact`). */
+    action(name, fn, { ifAbsent = false } = {}) { if (ifAbsent && actions.has(name)) return false; actions.set(name, fn); return true; },
+    /** Run fn(rt) at the end of the current step, after every system (state-replacing effects such as load_game). */
+    defer(fn) { deferred.push(fn); },
+    /**
+     * Modal input: while a modal is open (dialogue, menu, battle prompt), only its `actions` are dispatched and
+     * only options that use them are offered. State lives in state.modal so snapshots keep it.
+     */
+    openModal(owner, { actions: allowed = [], kind = owner } = {}) { state.modal = { owner, kind, actions: [...allowed] }; rt.emit('modal_open', { owner, kind }); },
+    closeModal(owner) { if (state.modal && (!owner || state.modal.owner === owner)) { const m = state.modal; state.modal = null; rt.emit('modal_close', { owner: m.owner, kind: m.kind }); } },
+    get modal() { return state.modal || null; },
+    /** Capabilities a space instance reports (same as preflight's). */
+    /** True when the document installed this primitive (directly, as a space/generator, or as graphics). */
+    has: id => installed.has(id),
+    /** Whether an effect/predicate kind can run in THIS world: registered, and its owner is installed (or the kernel). */
+    canRun: kind => logic.effects.has(kind) && ownerInstalled(logic.owners.effect.get(kind)),
+    canTest: kind => logic.predicates.has(kind) && ownerInstalled(logic.owners.predicate.get(kind)),
+    capabilities(spaceId = doc.spaces?.[0]?.id) {
+      const s = rt.doc.spaces.find(x => x.id === spaceId); const p = s && registry.get(s.use);
+      return p ? (p.capabilities ? p.capabilities(s.with || {}) : p.card.provides.capabilities || []) : [];
+    },
     /** Register fn(rt) -> [{ label, actions: { name: value }, steps? }] of meaningful player choices now.
      *  Used by solvers and playtesters; continuous spaces offer macro options (travel to a zone). */
     options(fn) { optionProviders.push(fn); },
-    availableOptions() { return optionProviders.flatMap(fn => fn(rt) || []); },
+    availableOptions() {
+      const all = optionProviders.flatMap(fn => fn(rt) || []), m = state.modal;
+      return m ? all.filter(o => o.modal === m.owner || Object.keys(o.actions || {}).some(a => m.actions.includes(a))) : all;
+    },
     actions: () => [...actions.keys()],
     /** Named services shared between primitives (roadgraph, surface, biomeAt...). Declared in card.provides.services. */
     provide(name, api) { services.set(name, api); },
@@ -111,10 +136,12 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
       state.events = []; rt.input = input;
       for (const [name, value] of Object.entries(input.actions || {})) {
         if (value === undefined || value === null || value === false) continue; // 0 and '' are real choices
+        if (state.modal && !state.modal.actions.includes(name)) continue;
         const fn = actions.get(name);
         if (fn) { fn(value, rt); rt.emit('action', { action: name }); }
       }
       for (const s of systems) { s.fn(rt); if (state.status !== 'playing') break; }
+      while (deferred.length) deferred.shift()(rt);
       state.frame++; state.time = +(state.frame * DT).toFixed(6);
       return state;
     },
@@ -146,6 +173,7 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
 
   const install = (instance, key) => {
     const p = registry.get(instance.use);
+    if (p && !(p.family === 'graphics' && headless)) installed.add(p.id);
     if (!p?.install || (p.family === 'graphics' && headless)) return;
     p.install(rt, instance.with || {}, { key, ...instance });
   };
