@@ -364,6 +364,7 @@ export const THEME_CSS = `
 .gv-bmenu .gv-btn{justify-content:space-between}
 .gv-bmenu .gv-btn small{font-weight:700;opacity:.75}
 .gv-type{display:inline-block;padding:.1em .5em;border-radius:4px;font-size:.72em;font-weight:900;text-transform:uppercase;letter-spacing:.06em;background:var(--t,#888);color:#111}
+.gv-battle-panel{pointer-events:none;background:transparent}.gv-battle-panel .gv-bottom{height:auto;max-height:38%;top:auto}.gv-battle-panel .gv-panel{pointer-events:auto}
 .gv-cards{background:radial-gradient(ellipse at 50% 120%,color-mix(in srgb,var(--gv-accent) 22%,transparent),transparent 60%),linear-gradient(180deg,#12101c,#0a0910)}
 .gv-enemies{position:absolute;left:0;right:0;top:8%;display:flex;justify-content:center;gap:5%}
 .gv-foe{display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:auto;cursor:pointer;transition:transform .2s var(--gv-ease)}

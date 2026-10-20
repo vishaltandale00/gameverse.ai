@@ -145,7 +145,7 @@ export function battleView(rt) {
   const b = svc(rt, 'battle', 'view');
   if (b?.active) return { source: 'battle', ...b };
   const t = svc(rt, 'turns', 'view');
-  if (t?.active && rt.doc.spaces?.find(s => s.id === rt.player()?.space)?.use === 'engine.space.none') return { source: 'turns', ...fromTurns(rt, t) };
+  if (t?.active) return { source: 'turns', ...fromTurns(rt, t) };
   return null;
 }
 /** Map gameplay.turns' view onto the battle view shape. */
