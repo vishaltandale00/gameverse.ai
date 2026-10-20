@@ -280,6 +280,11 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
       const w = furnishWorld(repaired.doc, registry, logic, { seed });
       if (w.added.length) { repaired.doc = w.doc; worldAdded = w.added.map(a => a.use); }
       if (!skeleton.world?.problems?.length) worldLeft = w.problems;
+      // Boot it (ms): a primitive that throws on install or on its first steps is isolated with what pointed at it;
+      // when isolation cannot save the world, the error (naming the primitive, install or step) goes to the model.
+      const fp = firstPlayable(repaired.doc, registry, logic, { seed, furnish: false });
+      if (fp.ok && fp.removed.length) { repaired.doc = fp.doc; repaired.removed = [...(repaired.removed || []), ...fp.removed]; }
+      else if (!fp.ok) { repaired.ok = false; repaired.errors = fp.errors.length ? fp.errors : fp.problems; }
     }
     const before = repaired.fixes.length ? repaired.fixes.length : 0;
     if (firstPassOk === null) firstPassOk = repaired.ok && before === 0;
@@ -322,7 +327,7 @@ Return the corrected complete document.`;
   // rather than throw away the model's world and story for the placeholder skeleton.
   if (last?.doc) {
     const isolated = repairDocument(last.doc, { registry, logic, fallbackSpace, isolate: true });
-    if (isolated.ok) {
+    if (isolated.ok && firstPlayable(isolated.doc, registry, logic, { seed, furnish: false }).ok) {
       rounds.push({ kind: 'isolate', ok: true, removed: isolated.removed.map(r => r.use) });
       return { doc: isolated.doc, ok: true, source: model, isolated: true, rounds, firstPassOk, modelMs, removed: [...(last.removed || []), ...isolated.removed], errors: [] };
     }
