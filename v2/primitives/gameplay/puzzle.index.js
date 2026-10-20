@@ -5,5 +5,10 @@ import slideMerge from './slide-merge.js';
 import paddle from './paddle.js';
 import launcher from './launcher.js';
 import destructible from './destructible.js';
+import creatureParty from './creature-party.js';
+import creatureBattle from './creature-battle.js';
+import creatureCatch from './creature-catch.js';
+import encounter from './encounter.js';
 
-export default [fallingPieces, match, slideMerge, paddle, launcher, destructible];
+export default [fallingPieces, match, slideMerge, paddle, launcher, destructible,
+  creatureParty, creatureBattle, creatureCatch, encounter];

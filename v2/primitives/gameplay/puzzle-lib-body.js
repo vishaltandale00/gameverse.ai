@@ -9,7 +9,8 @@
 // emits the same `contact` events, so destructibles behave the same everywhere.
 
 /** Anchor convention of entity positions: physics spaces use centres; cell spaces box corners. */
-const anchorOf = (api, fallback) => api.anchor ?? fallback ?? (api.kind === 'test' ? 'min' : 'center');
+// 'cell' (grid spaces: integer cell = box min corner) behaves like 'min'; spaces without the field anchor at the min corner (test space).
+const anchorOf = (api, fallback) => { const a = api.anchor ?? fallback ?? 'min'; return a === 'cell' ? 'min' : a; };
 export const sizeOf = e => { const s = e.components.body?.size || [1, 1]; return [s[0] ?? 1, s[1] ?? 1]; };
 export function centerOf(api, e, anchor) {
   const at = api.pos ? api.pos(e) : e.at, s = sizeOf(e);
