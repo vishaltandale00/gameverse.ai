@@ -137,7 +137,8 @@ body:not(.has-game) .theater-toggle { display: none; }
 /* The player focuses the game so keys reach it: the frame's corner marks turn amber while it has the keyboard. */
 .board:focus { outline: none; }
 .cabinet.playing:has(.board:focus) .marks { --c: rgba(255, 201, 74, .7); }
-.cabinet:has(.board:focus-visible) { outline: 2px solid var(--signal); outline-offset: 3px; }
+/* The player focuses the game on mount, so keep this calm: a thin amber edge rather than a full focus ring. */
+.cabinet.playing:has(.board:focus-visible) { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 0 0 1.5px rgba(255, 201, 74, .6), 0 34px 70px -38px rgba(0, 0, 0, .9), 0 30px 90px -50px rgba(255, 201, 74, .32); }
 .board > canvas.art, .board > #ct-canvas { position: absolute; inset: 0; display: block; }
 .blueprint { background-color: #0b1a2e; background-image: radial-gradient(ellipse at 50% 120%, rgba(143, 208, 255, .12), transparent 60%); }
 .board .scan { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent, rgba(143, 208, 255, .07), transparent); width: 30%; animation: scan 3.2s linear infinite; }
