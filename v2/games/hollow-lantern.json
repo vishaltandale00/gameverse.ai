@@ -2165,7 +2165,7 @@
     "kind": "misc",
     "stack": 3,
     "desc": "Adds a charm notch when used.",
-    "use": {"fx":[{"do":"add_stat","stat":"notches","delta":1}],"consume":true}
+    "use": {"fx":[{"do":"add_var","var":"budget.notches","value":1}],"consume":true}
    },
    {"id":"ash_pouch","name":"Ash Pouch","kind":"currency","stack":9999,"value":1},
    {

@@ -136,8 +136,9 @@ export default {
       test: (p, rt, c) => { const e = target(rt, c, p.who); return agentOf(rt, e?.id)?.kind === p.behavior; } });
     logic.effect('set_ai', { check: (e, path, errs) => { if (e.mode != null && !KINDS.includes(e.mode)) errs.push({ code: 'ai_behavior_unknown', path: `${path}.mode`, message: `unknown behavior '${e.mode}'` }); },
       run: (e, rt, c) => { const ent = rt.resolve(e.who, c); if (!ent) return; const a = ensureAgent(rt, ent); a.mode = e.mode ?? null; a.next = 0; } });
-    logic.effect('command', { check: (e, path, errs) => { if (!e.order || !KINDS.includes(e.order.do)) errs.push({ code: 'ai_order_invalid', path: `${path}.order`, message: 'order needs {do: <behavior kind>, ...}', hint: KINDS.join(', ') }); },
-      run: (e, rt, c) => { const ent = rt.resolve(e.who, c); if (!ent) return; const a = ensureAgent(rt, ent); a.order = e.order.do === 'clear' ? null : { ...e.order, until: e.sec ? rt.state.time + e.sec : null }; a.next = 0; } });
+    const orderOf = o => (typeof o === 'string' ? { do: o } : o); // `order: 'follow'` is shorthand for { do: 'follow' }
+    logic.effect('command', { check: (e, path, errs) => { if (!orderOf(e.order) || !KINDS.includes(orderOf(e.order).do)) errs.push({ code: 'ai_order_invalid', path: `${path}.order`, message: 'order needs {do: <behavior kind>, ...}', hint: KINDS.join(', ') }); },
+      run: (e, rt, c) => { const ent = rt.resolve(e.who, c); if (!ent) return; const a = ensureAgent(rt, ent); const order = orderOf(e.order); a.order = order.do === 'clear' ? null : { ...order, until: e.sec ? rt.state.time + e.sec : null }; a.next = 0; } });
     logic.effect('make_noise', { run: (e, rt, c) => { const src = rt.resolve(e.who, c); hear(rt, { at: e.at ?? src?.at, space: e.space ?? src?.space, who: src?.id ?? null, radius: e.radius ?? 10 }); } });
     logic.effect('set_hostile', { run: (e, rt) => { (st(rt).overrides ??= {})[`${e.faction}>${e.toward}`] = e.on ?? true; } });
   },
