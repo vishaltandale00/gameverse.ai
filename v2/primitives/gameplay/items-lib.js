@@ -45,12 +45,19 @@ export function pick(rt, entries) {
 /** Bag / entity key for an effect's `who`: undefined|'player' -> 'player', 'self' -> context.self, else the id. */
 export const whoKey = (who, context = {}) => (who == null || who === 'player' ? 'player' : who === 'self' ? context.self ?? 'player' : who);
 
-/** Run `effect` only if its kind is registered; returns whether it ran. */
+/** Optional vocabulary owned by other primitives: usable only when its owner is installed (rt.canRun / rt.canTest). */
+export const hasEffect = (rt, kind) => rt.canRun(kind);
+export const hasPredicate = (rt, kind) => rt.canTest(kind);
+/** Run `effect` only if its owner is installed; returns whether it ran. */
 export function runIf(rt, effect, context) {
-  if (!(rt.canRun ? rt.canRun(effect.do) : rt.logic.effects.has(effect.do))) return false;
+  if (!rt.canRun(effect.do)) return false;
   rt.run([effect], context); return true;
 }
-export const hasEffect = (rt, kind) => (rt.canRun ? rt.canRun(kind) : rt.logic.effects.has(kind));
+/** Test `pred` when every predicate kind in it can be tested; otherwise return `fallback`. */
+export function testIf(rt, pred, context, fallback = false) {
+  const ok = p => { if (!p || typeof p !== 'object') return false; const k = rt.logic.kindOf(p); if (!k || !rt.canTest(k)) return false; return k === 'all' || k === 'any' ? p[k].every(ok) : k === 'not' ? ok(p.not) : true; };
+  return ok(pred) ? rt.test(pred, context) : fallback;
+}
 
 /** Add score through gameplay.score's add_score when present, else the `score` var. */
 export function addScore(rt, points, context) {
