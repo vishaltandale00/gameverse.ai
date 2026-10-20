@@ -36,7 +36,7 @@ const handleAgent = createAgentApi({ ledger: qualificationLedger, caps: effectiv
 const server = http.createServer(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self'; connect-src 'self'; img-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");
   try {
     const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
     if(path==='/account') {
@@ -73,6 +73,8 @@ const server = http.createServer(async (req, res) => {
     else if (['/', '/v0', '/v0/', '/v1', '/v1/'].includes(path)) file = new URL('index.html', root);
     else if (/^\/games\/configs\/gameverse-v[01]\.json$/.test(path)) file = new URL(path.slice(1), root);
     else if (path === '/style.css' || path === '/src/neighborhood-certified.generated.js' || /^\/src\/[a-z-]+\.js$/.test(path)) file = new URL(path.slice(1), root);
+    // Browser half of v2 experiments (sandbox runtime and composer); belongs in v2/server STATIC once the integrator wires routes.
+    else if (/^\/v2\/experiments\/(compose|runtime|sandbox)\.js$/.test(path)) file = new URL(path.slice(1), root);
     else { res.writeHead(404).end('Not found'); return; }
     const actual = await realpath(file);
     if (!actual.startsWith(resolve(appRoot) + sep)) throw Error('Path outside workspace');
