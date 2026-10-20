@@ -145,7 +145,21 @@ export default {
     const fluidCell = (x, y, z) => y >= 0 && y < H && fluidIdx[cellIdx(x, y, z)] === 1;
     const toCell = at => [Math.floor((at[0] ?? 0) / C), Math.floor((at[1] ?? 0) / C), Math.floor((at[2] ?? 0) / C)];
     const toAt = (x, y, z) => [(x + 0.5) * C, y * C, (z + 0.5) * C];
-    rt.onRestore(() => { chunks.clear(); last = null; lastKey = -1; model.cache.editsFor = null; });
+    // Restore: patch cached chunks with the edits that differ instead of regenerating everything (solvers restore often).
+    let synced = new Map(Object.entries(st().edits));
+    rt.onRestore(() => {
+      last = null; lastKey = -1; model.cache.editsFor = null;
+      const next = st().edits || {}, keys = new Set([...synced.keys(), ...Object.keys(next)]);
+      for (const k of keys) {
+        const was = synced.has(k) ? synced.get(k) : undefined, now = Object.prototype.hasOwnProperty.call(next, k) ? next[k] : undefined;
+        if (was === now) continue;
+        const [x, y, z] = k.split(',').map(Number), cx = Math.floor(x / SX), cy = Math.floor(y / SY), cz = Math.floor(z / SZ), ck = ckey(cx, cy, cz), c = chunks.get(ck);
+        if (!c) continue;
+        if (now === undefined) chunks.delete(ck); // edit undone: the generated value is not cached, so regenerate
+        else c.cells[(x - cx * SX) + SX * ((z - cz * SZ) + SZ * (y - cy * SY))] = idx(now);
+      }
+      synced = new Map(Object.entries(next));
+    });
 
     // ----- bodies and zones -----
     const ops = entityOps({ rt, sid, model, defaultBody: config.body, st }), { bodySize, boxOf, entities, zones, track, feet, fromFeet } = ops;
@@ -408,7 +422,7 @@ export default {
         // Store the edit (a fresh map object so the edit index is rebuilt lazily).
         const c = chunk(Math.floor(x / SX), Math.floor(y / SY), Math.floor(z / SZ));
         c.cells[(x - c.cx * SX) + SX * ((z - c.cz * SZ) + SZ * (y - c.cy * SY))] = idx(to);
-        s.edits[k] = to;
+        s.edits[k] = to; synced.set(k, to);
         const list = model.cache.editsFor === s.edits && model.cache.editsIdx; if (list) { const ck = ckey(c.cx, c.cy, c.cz); if (!list.has(ck)) list.set(ck, []); if (!list.get(ck).includes(k)) list.get(ck).push(k); }
         s.log.push({ t: rt.state.frame, at: [x, y, z], from, to, by }); if (s.log.length > config.logMax) s.log.splice(0, s.log.length - config.logMax);
         if (by !== 'fluid') delete s.fluidLevel[k];

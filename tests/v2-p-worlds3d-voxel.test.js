@@ -230,4 +230,9 @@ test('voxel: snapshot/restore keeps edits, members and replays', () => {
   api.setCell([9, 4, 9], 'stone', rt); rt.step();
   assert.deepEqual(rt.snapshot(), after);
   assert.ok(JSON.stringify(after.spaces.world).length < 2000, 'space state holds only seed and edits');
+  // Restoring a state that has an edit the cache lacks (and vice versa) patches the cached chunk.
+  api.setCell([9, 4, 9], null, rt); api.setCell([1, 2, 1], null, rt);
+  assert.equal(api.getCell([9, 4, 9]), null);
+  rt.restore(after);
+  assert.equal(api.getCell([9, 4, 9]), 'stone'); assert.equal(api.getCell([1, 2, 1]), 'stone');
 });
