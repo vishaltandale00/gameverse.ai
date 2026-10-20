@@ -152,8 +152,8 @@ function start(rt, e, a, config, shapes) {
   const pick = weighted(rt, ok); if (!pick) return;
   const api = spaceOf(rt, e);
   a.attack = pick.id; a.phase = 'windup'; a.t0 = now; a.target = t.id; a.hits = {}; a.fired = 0; a.lastTick = -1;
-  a.aim = continuous(t) ? r6(centerOf(t)) : t.at;
-  a.dir = continuous(e) && continuous(t) ? r6(norm(planar(api, e.at, sub(centerOf(t), centerOf(e))))) : [1, 0, 0];
+  a.aim = continuous(t) ? r6(centerOf(t, api)) : t.at;
+  a.dir = continuous(e) && continuous(t) ? r6(norm(planar(api, e.at, sub(centerOf(t, api), centerOf(e, api))))) : [1, 0, 0];
   if (len(a.dir) < 1e-6) a.dir = r6(facingOf(e, headingOf(rt, e.id)));
   delete e.components.steer; if (e.components.moveTo?.by === 'ai') delete e.components.moveTo;
   if (config.telegraph) rt.emit('telegraph', { who: e.id, attack: pick.id, target: t.id, at: a.aim, windup: pick.windup ?? 0, shape: pick.shape ?? null });
@@ -193,7 +193,7 @@ function onset(rt, e, a, atk, sh, config) {
     if (!can(api, 'getCell') || !api.getCell(to)) { api.setPos(e, to, rt); a.dir = r6(norm(sub(t.at, e.at))); }
   }
   if (atk.blastBlocks > 0 && can(api, 'cellsIn') && can(api, 'setCell') && continuous(e)) {
-    const c = centerOf(e), r = atk.blastBlocks, lo = c.map(v => Math.floor(v - r)), hi = c.map(v => Math.floor(v + r));
+    const c = centerOf(e, api), r = atk.blastBlocks, lo = c.map(v => Math.floor(v - r)), hi = c.map(v => Math.floor(v + r));
     for (const cell of api.cellsIn([lo, hi])) if (len(sub(add(cell.at, [0.5, 0.5, 0.5]), c)) <= r) api.setCell(cell.at, null, rt, e.id);
   }
   if (sh.kind === 'summon') {
@@ -217,7 +217,7 @@ function activeFrame(rt, e, a, atk, sh, config, ae) {
   // Committed movement during the active window: lunges, dashes, charges, leaps and dives.
   if (atk.move && atk.move !== 'teleport_behind' && continuous(e)) {
     const speed = atk.moveSpeed ?? (atk.range ?? 3) / Math.max(0.1, atk.active ?? 0.3);
-    const dir = atk.move === 'retreat' ? mul(a.dir, -1) : atk.move === 'dive' || atk.move === 'leap' ? norm(sub(a.aim, centerOf(e))) : a.dir;
+    const dir = atk.move === 'retreat' ? mul(a.dir, -1) : atk.move === 'dive' || atk.move === 'leap' ? norm(sub(a.aim, centerOf(e, api))) : a.dir;
     e.components.steer = { dir: r6(norm(dir)), speed: round6(speed), fly: atk.move === 'dive' || atk.move === 'leap', by: 'ai' };
   }
   if (atk.emitter) { emit(rt, e, a, atk, config, ae); return; }
@@ -233,7 +233,7 @@ function strike(rt, e, a, atk, sh, api) {
   const t = rt.entity(a.target);
   if (sh.kind === 'ray') {
     if (!t || t.space !== e.space || a.hits[t.id]) return;
-    if (distBetween(rt, e, t) <= range && (!continuous(e) || clearLine(api, centerOf(e), centerOf(t)))) hit(rt, e, a, atk, sh, t);
+    if (distBetween(rt, e, t) <= range && (!continuous(e) || clearLine(api, centerOf(e, api), centerOf(t, api)))) hit(rt, e, a, atk, sh, t);
     return;
   }
   if (!continuous(e)) { // discrete spaces: everyone hostile at the same node (or the target in range)
@@ -241,11 +241,11 @@ function strike(rt, e, a, atk, sh, api) {
     return;
   }
   const r = atk.radius ?? sh.r ?? range;
-  const origin = sh.at === 'target' ? v3(a.aim) : centerOf(e);
+  const origin = sh.at === 'target' ? v3(a.aim) : centerOf(e, api);
   const ids = can(api, 'overlap') ? api.overlap({ kind: sh.kind === 'cone' ? 'cone' : 'sphere', at: origin, r: sh.kind === 'box' ? range : r, dir: a.dir, angle: atk.arc ?? sh.angle }, o => o.id !== e.id) : Object.values(rt.state.entities).filter(o => o.space === e.space && o.id !== e.id).map(o => o.id);
   for (const id of ids) {
     const o = rt.entity(id); if (!o || a.hits[id] || dead(o) || !hostile(rt, e, o) || o.components.aiShot) continue;
-    const rel = sub(centerOf(o), origin), d = len(rel);
+    const rel = sub(centerOf(o, api), origin), d = len(rel);
     if (sh.kind === 'sphere' && d > r + 0.5) continue;
     if (sh.kind === 'cone') { if (d > r + 0.5) continue; const ang = atk.arc ?? sh.angle ?? 90; if (d > 0.5 && dot(norm(rel), a.dir) < Math.cos((ang / 2) * Math.PI / 180)) continue; }
     if (sh.kind === 'box') { const along = dot(rel, a.dir), across = len(sub(rel, mul(a.dir, along))); if (along < -0.5 || along > range + 0.5 || across > (atk.radius ?? sh.width ?? 1.2) / 2 + 0.5) continue; }
@@ -282,7 +282,7 @@ function shoot(rt, e, a, atk, sh, config) {
   // Lob: with gravity, aim above the target so the arc lands (flat-ground ballistic estimate).
   const base = (() => {
     if (!t || !continuous(t)) return a.dir;
-    const to = sub(centerOf(t), centerOf(e));
+    const to = sub(centerOf(t, api), centerOf(e, api));
     if (!spec.gravity || !up) return norm(to);
     const flat = sub(to, mul(up, dot(to, up))), dist = len(flat), tFlight = dist / Math.max(0.1, spec.speed);
     return norm(add(to, mul(up, 0.5 * spec.gravity * tFlight * tFlight)));
@@ -292,7 +292,7 @@ function shoot(rt, e, a, atk, sh, config) {
     if (liveShots(rt) >= capOf(rt, config)) break;
     let dir = base;
     if (sh.rain && t) { // drop from above around the target
-      const off = [between(rt, -2, 2), 0, between(rt, -2, 2)], from = add(centerOf(t), add(mul(axisUp, 6), planar(api, t.at, off)));
+      const off = [between(rt, -2, 2), 0, between(rt, -2, 2)], from = add(centerOf(t, api), add(mul(axisUp, 6), planar(api, t.at, off)));
       fireShot(rt, { ...e, at: r6(from), components: e.components }, mul(axisUp, -1), spec, t); continue;
     }
     if (count > 1) { const ang = ((k / (count - 1)) - 0.5) * spread * Math.PI / 180; dir = rotateAbout(base, axisUp, ang); }
@@ -311,7 +311,7 @@ function emit(rt, e, a, atk, config, ae) {
   // Pattern plane: perpendicular to gravity, or xy when there is none.
   const ax = up ? norm(planar(api, e.at, len(planar(api, e.at, [1, 0, 0])) > 0.5 ? [1, 0, 0] : [0, 0, 1])) : [1, 0, 0];
   const bx = up ? norm(sub(planar(api, e.at, [0, 0, 1]), mul(ax, dot(planar(api, e.at, [0, 0, 1]), ax)))) : [0, 1, 0];
-  const aimV = t && continuous(t) ? sub(centerOf(t), centerOf(e)) : a.dir;
+  const aimV = t && continuous(t) ? sub(centerOf(t, api), centerOf(e, api)) : a.dir;
   const aim = Math.atan2(dot(aimV, len(bx) > 0.5 ? bx : [0, 1, 0]), dot(aimV, ax));
   const spec = { speed: v, damage: atk.damage ?? config.bullet.damage, type: atk.type, status: atk.status, radius: em.radius ?? config.bullet.radius, life: em.life ?? config.bullet.life };
   const put = list => { for (const s of list) { if (liveShots(rt) >= capOf(rt, config)) break; fireShot(rt, e, add(mul(ax, Math.cos(s.a)), mul(len(bx) > 0.5 ? bx : [0, 1, 0], Math.sin(s.a))), { ...spec, speed: v * s.k, radius: s.big ? spec.radius * 1.3 : spec.radius }, t); } };

@@ -445,7 +445,7 @@ function act(rt, e, a, config) {
 
 /** Best open direction away from a threat: the escape vector, else the most-away of 16 probes with a clear line. */
 function fleeDir(api, e, away, plane) {
-  const probe = 2.5, from = centerOf(e), up = upAt(api, e.at);
+  const probe = 2.5, from = centerOf(e, api), up = upAt(api, e.at);
   const open = d => clearLine(api, from, add(from, mul(d, probe)));
   if (open(away)) return away;
   const ax = up ? norm(planar(api, e.at, len(planar(api, e.at, [1, 0, 0])) > 0.5 ? [1, 0, 0] : [0, 0, 1], plane)) : [1, 0, 0];
@@ -608,7 +608,7 @@ function sightChallenge(rt, e, a, b, api, speed) {
     let spotted = d <= range;
     if (spotted && continuous(e)) {
       const rel = sub(t.at, e.at), along = dot(rel, facing), across = len(sub(rel, mul(facing, along)));
-      spotted = along > 0 && (b.fov ? dot(norm(rel), facing) >= Math.cos(b.fov / 2 * Math.PI / 180) : across < 0.5) && clearLine(api, centerOf(e), centerOf(t));
+      spotted = along > 0 && (b.fov ? dot(norm(rel), facing) >= Math.cos(b.fov / 2 * Math.PI / 180) : across < 0.5) && clearLine(api, centerOf(e, api), centerOf(t, api));
     }
     if (!spotted) { idle(e, a); return; }
     a.phase = 'approach';

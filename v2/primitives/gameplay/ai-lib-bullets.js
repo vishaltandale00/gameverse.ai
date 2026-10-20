@@ -5,7 +5,7 @@
 // Shots go through combat's `projectiles` service when it exists (combat owns
 // components.projectile). Otherwise the ai workstream moves its own shots under
 // a separate component key, `aiShot`, so nothing is moved twice.
-import { v3, add, sub, mul, len, norm, r6, round6, spaceOf, can, continuous, applyHit, dead, TAU } from './ai-lib.js';
+import { v3, add, sub, mul, len, norm, r6, round6, spaceOf, can, continuous, applyHit, dead, centerOf, atFromCenter, TAU } from './ai-lib.js';
 
 export const PATTERNS = ['aimedOne', 'aimed', 'spread', 'ring', 'spiral', 'burst', 'flower'];
 /** Difficulty multipliers: bullet speed (bs) and fire rate (fr), as in the kit. */
@@ -52,14 +52,14 @@ export function liveShots(rt) {
 export function fireShot(rt, src, dir, spec, target = null) {
   const d = norm(dir);
   if (rt.hasService('projectiles')) return rt.service('projectiles').fire(src, { ...spec, count: 1, pattern: 'single' }, { dir: d, target: target?.id ?? null }) || [];
-  const at = r6(add(continuous(src) ? centerOfShot(src) : [0, 0, 0], mul(d, spec.offset ?? 0.5)));
-  const e = rt.spawn(spec.archetype ?? 'ai_shot', { space: src.space, at, components: { aiShot: {
+  const api = spaceOf(rt, src), r = spec.radius ?? 0.25, size = [2 * r, 2 * r, 2 * r];
+  const c = add(continuous(src) ? centerOf(src, api) : [0, 0, 0], mul(d, spec.offset ?? 0.5));
+  const e = rt.spawn(spec.archetype ?? 'ai_shot', { space: src.space, at: atFromCenter(api, c, size), components: { body: { size }, aiShot: {
     by: src.id, vel: r6(mul(d, spec.speed ?? 10)), damage: spec.damage ?? 1, type: spec.type ?? null, status: spec.status ?? null,
     life: spec.life ?? 4, gravity: spec.gravity ?? 0, radius: spec.radius ?? 0.25, pierce: spec.pierce ?? 0, homing: spec.homing ?? 0, target: target?.id ?? null, hit: [],
   } } });
   return [e.id];
 }
-function centerOfShot(e) { const s = e.components.body?.size; return Array.isArray(s) ? add(e.at, mul(s, 0.5)) : v3(e.at); }
 
 /**
  * Install (once) the system that moves `aiShot` entities, applies gravity and
@@ -83,7 +83,7 @@ export function ensureShots(rt, hostileFn) {
       if (can(api, 'raycast') && dist > 0) { const r = api.raycast(e.at, delta, dist); if (r.hit === 'cell') { rt.emit('shot_blocked', { who: e.id, by: s.by, at: r.at }); rt.despawn(e.id); continue; } }
       api.setPos(e, r6(add(e.at, delta)), rt);
       const owner = rt.entity(s.by) || { id: s.by };
-      const ids = can(api, 'overlap') ? api.overlap({ kind: 'sphere', at: e.at, r: s.radius }, o => o.id !== e.id && o.id !== s.by && !o.components.aiShot && !o.components.projectile) : [];
+      const ids = can(api, 'overlap') ? api.overlap({ kind: 'sphere', at: centerOf(e, api), r: s.radius }, o => o.id !== e.id && o.id !== s.by && !o.components.aiShot && !o.components.projectile) : [];
       for (const id of ids) {
         const o = rt.entity(id); if (!o || dead(o) || s.hit.includes(id) || !hostileFn(owner, o)) continue;
         s.hit.push(id);

@@ -98,15 +98,27 @@ export function sees(rt, viewer, target, { range, fov = 360, facing }) {
   if (!continuous(viewer)) return true; // discrete spaces: same-node or within hop range
   const api = spaceOf(rt, viewer);
   if (fov < 360 && d > 1e-6) {
-    const to = norm(sub(target.at, viewer.at)), f = facing || facingOf(viewer);
+    const to = norm(deltaTo(api, viewer.at, target.at)), f = facing || facingOf(viewer);
     if (dot(to, f) < Math.cos((fov / 2) * Math.PI / 180) - 1e-9) return false;
   }
-  return clearLine(api, centerOf(viewer), centerOf(target));
+  return clearLine(api, centerOf(viewer, api), centerOf(target, api));
 }
-/** Box centre of an entity (positions are box min corners in cell spaces). */
-export function centerOf(e) {
-  const s = e?.components?.body?.size;
-  return Array.isArray(s) ? add(e.at, mul(s, 0.5)) : v3(e.at);
+/**
+ * Body centre of an entity, honoring the space's anchor (KERNEL_API §3): 'center'
+ * spaces and 'cell' grids store the centre already; 'min' (the test space)
+ * stores the box min corner.
+ */
+export function centerOf(e, api) {
+  if ((api?.anchor ?? 'center') !== 'min') return v3(e.at);
+  const s = e?.components?.body?.size || [1, 1, 1];
+  return add(e.at, mul(v3(s).map((v, i) => (i < s.length ? v : 1)), 0.5));
+}
+/** Inverse of centerOf: the `at` that puts a body of `size` centred on `c`. */
+export function atFromCenter(api, c, size = [1, 1, 1]) { return (api?.anchor ?? 'center') === 'min' ? r6(sub(c, mul(v3(size), 0.5))) : r6(v3(c)); }
+/** Wrap-aware displacement from a to b (spaces with the wrap capability), else b − a. */
+export function deltaTo(api, a, b) {
+  if (can(api, 'delta')) return v3(api.delta(a, b));
+  return sub(b, a);
 }
 
 /** True when a gameplay.move.* primitive owns this entity's locomotion. */
