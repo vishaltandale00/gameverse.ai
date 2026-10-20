@@ -74,6 +74,11 @@ Base kinds (`character item zone quest model archetype space beat ending recipe 
 
 The player's scalars are mirrored to vars: `hp`, `hp.max`, `res.<pool>`, `score`, `lives`.
 
+**Shared effect contracts (frozen).** These effects have a single owner but many callers:
+- `add_score {amount, reason?, who?}` is owned by `gameplay.score`. The `score` var mirrors the total.
+- `damage {who, amount, type?, from?}` is owned by `gameplay.combat.health`. Deaths emit `died {id, archetype}` plus `defeated` / `defeated:<archetype>`.
+- Physics contact events are `contact`, `impact` and `contact_end`, with the fields documented on `engine.space.physics2d`. A primitive that moves its own bodies in another space may emit the same events.
+
 **Solver conventions.**
 - Option `label`s must be unique within one state's `availableOptions()`.
 - `state.rng` is a uint32 that solvers may reseed to sample chance.
@@ -131,6 +136,7 @@ A space's `install()` calls `rt.defineSpace(instance.id, api)`. Its card's `prov
 - **Kernel built-ins:** `all any not var count flag time zone near cell` and `set_flag clear_flag set_var add_var emit end_game teleport move_to`. Everything else is registered by its owning primitive in `logic()`, as listed in catalog §7.
 - **Scalar state uses vars** (`hp`, `res.stamina`, `money.gold`, `score`...); don't add a predicate for a number.
 - **One owner per kind.** Registering a predicate or effect kind that another primitive already registered throws when the catalogue is built. Agree on one owner; others read the owner's state (for example `alive` is owned by `plot.character`, and checks `components.health.dead` when present).
+- **Owners must be present.** Preflight rejects document data using a kind whose owner the document doesn't use (`vocabulary_owner_missing`). At runtime, call another primitive's vocabulary only when `rt.canRun(kind)` / `rt.canTest(kind)` is true. Never test `rt.logic.effects.has`, which ignores whether the owner is installed. `rt.has(primitiveId)` says whether a primitive is installed. A card with `ambient: true` (pure vocabulary providers, test stand-ins) is exempt.
 - **Warnings.** Validators can report non-fatal findings with `ctx.warn({code, path, message, hint})`.
 - **Action values.** Only `undefined`, `null` and `false` mean "no action"; `0` and `''` are delivered.
 - **New vocabulary.** If your primitive needs a kind that's missing, register it in your own `logic()`, add `refs()` for reference checking, and add `check()` for field validation.

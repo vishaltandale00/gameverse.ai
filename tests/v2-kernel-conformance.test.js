@@ -45,3 +45,23 @@ test('graph exits honor plot gates that lock them', () => {
   rt.run([{ do: 'set_flag', flag: 'has_code' }]);
   assert.equal(rt.space('world').move(rt.player(), 'vault', rt), true, 'opens once the requirement holds');
 });
+
+test('modal input, deferred work, runtime capabilities and ifAbsent actions', () => {
+  const doc = base('engine.space.graph', [{ id: 'hall', exits: [{ to: 'yard' }] }, { id: 'yard', exits: [{ to: 'hall' }] }]);
+  const { rt } = compile(doc, { primitives: PRIMITIVES });
+  const chose = [];
+  rt.action('choose', v => chose.push(v));
+  assert.equal(rt.action('choose', () => {}, { ifAbsent: true }), false, 'keeps the first owner');
+  rt.openModal('plot.dialogue', { actions: ['choose'] });
+  rt.step({ actions: { go: 'yard', choose: 0 } });
+  assert.equal(rt.player().at, 'hall', 'movement is blocked while a modal is open');
+  assert.deepEqual(chose, [0]);
+  assert.deepEqual(rt.availableOptions(), [], 'graph moves are not offered during the modal');
+  const snap = rt.snapshot(); assert.equal(snap.modal.owner, 'plot.dialogue');
+  rt.closeModal('plot.dialogue');
+  let order = [];
+  rt.system('rules', rt => { order.push('system'); rt.defer(() => order.push('deferred')); });
+  rt.step();
+  assert.deepEqual(order, ['system', 'deferred']);
+  assert.deepEqual(rt.capabilities('world').sort(), ['distance', 'navigate', 'position', 'reachable']);
+});

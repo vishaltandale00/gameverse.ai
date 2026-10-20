@@ -59,8 +59,13 @@ export function travel(rt, registry, zone, { mode = 'warp', jump = null, perWayp
     return api.inZone(p, zone, rt);
   }
   // A movement primitive that knows its own controls may steer instead: export travel(rt, path, config, instance).
-  const own = instancesOf(rt.doc).map(x => ({ x, prim: registry.get(x.inst?.use) })).find(e => typeof e.prim?.travel === 'function');
-  if (own) { own.prim.travel(rt, path, own.x.inst.with || {}, { key: own.x.key, ...own.x.inst }); return rt.state.status !== 'playing' ? rt.state.status !== 'lost' : api.inZone(p, zone, rt); }
+  // Prefer the controller bound to the player's space; the first one declared wins ties.
+  const owners = instancesOf(rt.doc).map(x => ({ x, prim: registry.get(x.inst?.use) })).filter(e => typeof e.prim?.travel === 'function');
+  const own = owners.find(e => e.x.space === p.space) || owners[0];
+  if (own) {
+    const arrived = own.prim.travel(rt, path, own.x.inst.with || {}, { key: own.x.key, ...own.x.inst });
+    return rt.state.status !== 'playing' ? rt.state.status !== 'lost' : Boolean(arrived) && api.inZone(p, zone, rt);
+  }
   const side = sideView(api);
   let prev = posOf(rt, p);
   for (const wp of path.slice(1)) {

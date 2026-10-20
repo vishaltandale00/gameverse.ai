@@ -65,13 +65,14 @@ export function preflight(doc, registry, logic) {
   (doc.systems || []).forEach((s, i) => instances.push({ inst: s, path: `systems[${i}]`, family: null, space: s.space }));
   (doc.graphics || []).forEach((g, i) => instances.push({ inst: g, path: `graphics[${i}]`, family: 'graphics', space: g.space }));
   const indexes = buildIndexes(doc, errors, registry, instances);
+  const vocab = [];
   const refs = { flag: { read: new Map(), write: new Map() }, var: { read: new Map(), write: new Map() }, event: { read: new Map(), write: new Map() } };
   const ctx = {
     doc, registry, indexes,
     /** Validators push non-fatal findings here: ctx.warn({code, path, message, hint}). */
     warn: w => warnings.push(w),
-    checkPredicate: (p, path, errs) => logic.checkPredicate(p, path, errs, ctx),
-    checkEffect: (e, path, errs) => logic.checkEffect(e, path, errs, ctx),
+    checkPredicate: (p, path, errs) => { const k = logic.kindOf(p); if (k) vocab.push(['predicate', k, path]); logic.checkPredicate(p, path, errs, ctx); },
+    checkEffect: (e, path, errs) => { if (e?.do) vocab.push(['effect', e.do, path]); logic.checkEffect(e, path, errs, ctx); },
     noteRef(kind, id, path, mode) {
       if (refs[kind]) { const m = refs[kind][mode]; if (!m.has(id)) m.set(id, path); return; }
       if (indexes[kind] && !indexes[kind].has(id)) errors.push({ code: 'ref_unknown', path, message: `unknown ${kind} '${id}'` });
@@ -108,6 +109,15 @@ export function preflight(doc, registry, logic) {
     for (const sv of p.card.requires.services || []) if (!ctx.provides.services.has(sv)) errors.push({ code: 'service_missing', path: n._path, message: `'${p.id}' needs service '${sv}'`, hint: 'add a primitive whose card provides it' });
     for (const c of p.card.conflicts || []) if (used.has(c)) errors.push({ code: 'primitive_conflict', path: n._path, message: `'${p.id}' conflicts with '${c}'` });
     for (const err of p.validate?.(n.with, doc, ctx, { path: n._path, id: n.id, use: n.use, space: n._space ?? doc.spaces?.[0]?.id }) || []) errors.push({ ...err, path: err.path || n._path });
+  }
+
+  // Vocabulary in the document must be owned by the kernel or by a primitive the document uses.
+  const reported = new Set();
+  for (const [type, kind, path] of vocab) {
+    const owner = logic.owners?.[type]?.get(kind);
+    if (!owner || owner === 'kernel' || used.has(owner) || registry.get(owner)?.card.ambient || reported.has(`${type}:${kind}`)) continue;
+    reported.add(`${type}:${kind}`);
+    errors.push({ code: 'vocabulary_owner_missing', path, message: `${type} '${kind}' is provided by '${owner}', which this document does not use`, hint: `add { "use": "${owner}" } to the document` });
   }
 
   // Data sections must be read by some primitive.
