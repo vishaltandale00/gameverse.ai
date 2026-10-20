@@ -1,103 +1,60 @@
-# v2 handoff, 2026-10-20 (evening)
+# v2 handoff, 2026-10-20 (night)
 
-Read this first, then `v2/ARCHITECTURE.md` and `v2/PRIMITIVE_CATALOG.md`.
+Read this first, then `v2/KERNEL_API.md` (the frozen contract), `v2/ARCHITECTURE.md` and `v2/PRIMITIVE_CATALOG.md`.
 
-## The main point: return to the architecture
+**First goal for the next session:** the user must be able to type an idea into the studio and play the result. Get that one path working end to end before any other work. Restart the server whenever the user asks, and don't run anything else at the same time.
 
-**`v2/ARCHITECTURE.md` is the plan and must be followed.** Its design:
-- one space-agnostic kernel (`v2/kernel/`);
-- primitives as the only unit of extension (four families: engine, plot, graphics, gameplay), each with a card, params, capabilities and install/render hooks;
-- a game is a document of primitives (`gameverse.v2.game/0.2`);
-- layered generation (outline, then first playable, then detail, then gap-filling with new primitives);
-- verification by plot solver, spatial checks and headless playtest.
+## State
 
-`v2/PRIMITIVE_CATALOG.md` already specifies the primitives, the capability interfaces, the content schemas, a coverage matrix across 55 games and a P0 build list (§10).
+- **Branch:** `claude/handoff-task-distribution-0a6108`. It is pushed to `claude/v2-kernel` and is PR [#31](https://github.com/vishaltandale00/gameverse.ai/pull/31), which supersedes #28–#30 (those are closed).
+- **Kernel:** `v2/kernel/` follows `KERNEL_API.md`.
+  - Primitives declare their own reference kinds and services.
+  - The kernel owns the spatial vocabulary: zone, near, cell, teleport, move_to.
+  - Modal input, deferred work, `rt.canRun`/`canTest`/`has`, ambient providers, and one owner per vocabulary kind.
+  - Preflight never throws, and validator paths are anchored to the document root.
+  - Tests use `kernel/testing.js`: a reference test space plus `spaceConformance`.
+- **Primitives:** 180, all registered with no vocabulary collisions. They come from these workstreams:
+  - spaces2d, generate2d, runtime, story, move, items, combat, ai, modes, puzzle;
+  - graphics: flat, ui and audio, three;
+  - verification: `v2/verify`.
+- **Tests:** `node --test tests/v2-kernel*.test.js tests/v2-p-*.test.js` takes about 15 s with the navigation cache. The last full run passed 860 of 862.
+  - The Hollow Lantern "talk to bosses" check fails because boss characters won't talk.
+  - The 3D isometric camera test has had a fix applied but hasn't been rerun.
+- **Studio:** `/v2` runs the kernel pipeline in `v2/planner/kernel-pipeline.js`: decompose, select, outline, first playable, detail, revise. Games made with the old kits are refused as legacy, so create new games.
+- **Run:** `npm ci --ignore-scripts` (needs `@anthropic-ai/sdk`), then `PORT=4181 node scripts/serve.mjs` and open `http://localhost:4181/v2`. The OpenAI key is loaded automatically from the main checkout's `.env.local`.
 
-**This session strayed from that plan.** It built monolithic per-genre "kits" (`v2/kits/*`), then patched gaps with kit-level mods, look presets and scenery features. The user rejected this firmly:
-- they need one truly modular framework where any idea, including any mashup, composes from shared primitives;
-- they don't want one engine per genre or one-off pieces;
-- example requests ("Dark Souls Pokémon", "Call of Duty × Minecraft") are illustrations of the scope, never the requirements.
+## Blocking bugs, in order
 
-The next agent should:
-1. Build out `v2/kernel` and the catalog's primitives across all families, against the coverage matrix. Distribute the work across parallel subagents by family, against a stable, written kernel API.
-2. Build the ARCHITECTURE §4 generation pipeline:
-   - decompose an idea into the mechanics of every game it references;
-   - map those to primitives;
-   - compose and preflight a document;
-   - publish a first playable, then detail;
-   - fill gaps by generating new primitives (experiments), promoted to tested primitives.
-3. Decompose the existing kits into primitives and catalog entries so their depth carries over. Kits may survive only as presets (documents), not as engines.
+1. **Creating a game crashes the server (V8 heap out of memory).**
+   - It happens synchronously, right after the model's first outline draft returns, inside `writeOutline` in `v2/planner/outline.js`. The heap is flat at about 23 MB, then reaches 3 GB within seconds while the event loop is blocked.
+   - Suspects:
+     - `repairDocument` running on the model draft (`v2/planner/repair.js`), for example unbounded list or stub synthesis;
+     - `staticPlot` or `verifyDocument` not honouring their budgets.
+   - The quickest diagnosis is to log each call after `parseReply` in `writeOutline`.
+   - Also run jobs in a `Worker` with `resourceLimits` and a timeout (`v2/server/jobs.js`), so one runaway job never takes the server down.
+2. **Model mapping quality.** It sometimes omits a central primitive; for example, the Tetris platformer got `move.grid` instead of `move.platformer`. Tighten the mapping prompt in `select.js` `mapWithCatalogue`, or add a pass that checks the core loop.
+3. **Boss characters won't talk** in the Hollow Lantern story test, which checks every character can be talked to.
 
-## Where things are
+## Fixed this session, not yet verified end to end
 
-- **Branch:** `claude/handoff-continuation-d50036`, worktree `/Users/shishirtandale/Projects/gameverse.ai/.claude/worktrees/handoff-continuation-d50036`. Local; not pushed since PR #28/#29 were refreshed.
-- **PRs (stacked, open):** all of them are far behind the branch.
-  - [#28](https://github.com/vishaltandale00/gameverse.ai/pull/28): v2 into main.
-  - [#29](https://github.com/vishaltandale00/gameverse.ai/pull/29): overworld venues, for Vishal.
-  - [#30](https://github.com/vishaltandale00/gameverse.ai/pull/30): maze kit.
-- **Run:** `PORT=4181 node scripts/serve.mjs`, then `/v2` (studio). `.claude/launch.json` has a `gameverse-v2` entry. Restart the server after any change to `v2/art`, `v2/planner` or `v2/kits`: it caches modules, and stale servers caused several bad results.
-- **Tests:** `node --test tests/*.test.js`, about 600 tests, passing when the machine is idle. Other repositories on this machine run heavy test suites, with load averages of 20–60, and a few wall-clock-sensitive verify tests flake under that load.
-- **Qualification** (paid model calls, run separately): `node v2/tools/kit-qualify.mjs --kit <id> --n 3`.
-- **Credentials:** `OPENAI_API_KEY` is in the main checkout's `.env.local` and loaded by `loadOpenAIKey`; never print it.
-  - Local d1 (decision model) is at `http://rrh-llm-1:4000/v1/decisions` and needs no key.
-  - The `auto` decisions provider falls back to OpenAI Decisions (`gpt-6-luna`) when d1 is unreachable.
+- **Whole-catalogue selection** (`v2/planner/select.js` `mapWithCatalogue`): the model sees every card and maps each mechanic to primitive ids. It replaces word overlap, which wrongly declared that "collect rings" and "falling Tetris pieces" had no primitive. Checked with the real model on the Sonic runner, the Tetris platformer and Pokémon × Street Fighter: correct primitives, no false gaps.
 
-## What exists (reusable as the framework is built)
+## Unmerged
 
-**Kernel and catalog** (the intended framework, still thin):
-- `v2/kernel/{world,registry,document,params,logic,rng}.js`;
-- `v2/primitives/*`;
-- `v2/verify/solve.js`;
-- `v2/games/*.json` (full-scale example documents).
+- **3D spaces and generators:** branch `worktree-agent-af591cfc70052b953` (voxel, mesh3d, terrain/biomes/caves/ores/roads/city/structures/scatter/water). The agent was stopped just before a final hot-load test. Merge it and run `tests/v2-p-worlds3d-*`.
+- **Pipeline agent:** its later uncommitted work in `worktree-agent-aa3916f77e7e1aa56` (4 files). Everything committed up to `baedc263` is merged.
 
-**Generation pieces:**
-- `v2/planner/decisions.js`: d1 and OpenAI Decisions behind one interface (`V2_DECISIONS=auto|d1|openai|off`).
-- `v2/planner/router.js`: genre routing. Its kit-based routing should become primitive selection.
-- `v2/planner/revision-check.js`:
-  - diffs with identity-aware lists;
-  - a guard against dropped content;
-  - the original-names check (`V2_ORIGINAL_NAMES=on`; real names are the default, by the user's choice);
-  - a revision-applied check, which now flags only revisions that changed nothing.
-- `v2/planner/kit-pipeline.js`: schema-constrained content, validate/verify repair rounds, the art lock.
-- `v2/planner/art-procedural.js` plus `v2/art/*`: code-drawn SVG art.
-  - character rigs: 6 body plans, many parts, 13 archetype presets;
-  - props; seamless tiles;
-  - scenery: themes plus composable features, with `v2/art/ambient.js` for live traffic, leaves, weather and so on;
-  - a locked art direction, so revisions repaint only the targets they name.
+## Still to do after the studio works
 
-**Extensibility tiers** (`v2/kits/EXTENDING.md`), generalizable to primitives:
-- **Mods:** `v2/kits/mods/` (weapon, falling, waves, boss, timer, shield, zones), on kit world adapters, with `snapshot()`/`applyOps()`.
-- **Experiments:** `v2/experiments/`. Model-written code (default model `gpt-6-luna`), checked with `node:vm` and run in a locked-down Worker with a watchdog. Routes: `POST/DELETE /api/v2/games/:id/experiments`.
-- **Promotion:** `v2/improve/`. A local Claude Code CLI job in a disposable worktree; the job verifies the result itself; Apply fast-forwards only and never pushes. Routes: `/api/v2/games/:id/promote`, `/api/v2/improve/*`. One real run succeeded (136 s).
-  - `infra/cloudflare` Daytona runner: interface only.
+- Retire `v2/kits` and `v2/engine`, rebuilding the kit games as documents (`v2/research/KIT_DECOMPOSITION.md` maps every kit mechanic to its primitive).
+- Regenerate `PRIMITIVE_CATALOG.md` from the cards.
+- `player.js` should mount `withDefaultGraphics` and offer the `view.pause`, `restart` and `load` API the UI requested (`v2/kernel/requests/ui.md`).
+- Open kernel requests are in `v2/kernel/requests/*.md`.
 
-**Kits** (to be decomposed into primitives):
-- maze (Pac-Man; sizes up to 92×95 with a camera);
-- shmup;
-- fighting;
-- puzzle (falling/chain/swap/slide);
-- physics (breakout/peggle/slingshot/pinball);
-- runner (lanes/side/flap/climb/dash/hop);
-- creature RPG.
+## User feedback to honor
 
-Each has a strict schema, a repairing validator, a bot verifier and tests. `tests/v2-kits-contract.test.js` checks them all.
-
-**Studio** (`v2/web`): kit-player host, theater view, change box, "Try as experiment", the experiments list with "Build it properly" and Apply, and the change summaries.
-
-**v1 overworld:** `src/generated-adapter.js` hosts arcade and kit games as venues (PR #29).
-
-## Stopped work
-
-- **Agent worktree `worktree-agent-a6d37640d134a467c`** (stopped mid-way). It was first briefed as a 3D action RPG kit, then redirected to the kernel framework. Review its diff before reusing anything; it may hold partial three.js host and primitive work.
-- **Runner lanes corridor:** still hard-coded city (buildings, lamps, rails) whatever the scenery. The user reported "it's just city". Unfixed.
-- **Live scenery (`ambient.js`):** drawn only in the fighting and arcade renderers.
-
-## Known user feedback to honor
-
-- Be truly general and modular. Don't take shortcuts or ship one-off patches, and don't treat example words as the full requirement.
-- Delegate to subagents for scale, then integrate and verify.
-- Polish by default: animation in every state, typography, look and feel.
-- Revisions must be targeted: art and content keep what wasn't asked for.
-- Recognizable characters when asked: real names are allowed. Never copy official artwork.
-- Be honest about limits, without false "not possible" notices.
-- Workstream split (AGENTS.md): Vishal owns the base game and overworld; Shishir owns the creation/improvement loop.
+- Build general primitives, never one-off patches or per-genre engines.
+- Get something working and testable first, and allocate time so the user can test.
+- When they ask for a server restart, do only that. Keep the server up.
+- Don't chase side investigations while they're waiting.
+- Ports: only use 4181 for this branch; other agents' servers were on 4187/4188.

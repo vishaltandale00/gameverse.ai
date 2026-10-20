@@ -6,6 +6,7 @@
 // when available; otherwise the lexical ranking decides.
 import { Logic } from '../kernel/logic.js';
 import { isSpace, isGenerator, isGraphics, spaceVariants, requirementsOf, satisfying } from './catalog.js';
+import { parseReply } from './writer.js';
 
 export const SELECT_VERSION = 'select/0.1';
 export const LEXICAL_ACCEPT = 0.75;    // calibrated in tests/v2-p-pipeline-select.test.js
@@ -165,13 +166,37 @@ const DECIDE = 'Which listed primitive implements this mechanic as the game need
  *   systems: [id], generators: [{ id, space }], graphics: [{ id, space }], spaces: [{ id, use, with, role, caps }],
  *   bind: { primitiveId: spaceId }, gaps: [{ mechanic, description, importance, kind, why }], ms }
  */
-export async function selectPrimitives({ decomposition, registry, decisions = null, log = () => {}, excludeSpaces = [] }) {
+/**
+ * Whole-catalogue mapping: the model sees every gameplay/engine/plot card (id + intent) and maps each
+ * mechanic to the primitives that implement it. Word overlap can't know that "rings" are collectibles or
+ * that "tetromino" means falling pieces; the model can, so it is the primary selector when available.
+ * Returns { [mechanicId]: { primitives: [ids], covered: bool, why } } or null.
+ */
+export async function mapWithCatalogue({ writer, decomposition, mechanics, cards, registry, log = () => {} }) {
+  if (!writer?.complete) return null;
+  const index = cards.map(c => `${c.id}: ${String(c.intent || '').replace(/\s+/g, ' ').slice(0, 170)}`).join('\n');
+  const system = 'You map game mechanics onto a fixed catalogue of composable game primitives. Each primitive is general: "collectible" covers rings, coins, pellets, gems; "falling.pieces" covers Tetris/tetrominoes/falling blocks; "move.lanes" covers endless-runner lanes; a space covers travel inside it. For every mechanic, list the primitive ids (exact ids from the catalogue) that together implement it, most important first. Only say covered=false when no combination of catalogue primitives could implement it. Use only ids that appear in the catalogue.';
+  const user = `Game idea: ${decomposition.premise}\n\nMechanics:\n${mechanics.map(m => `- ${m.id}: ${m.description}`).join('\n')}\n\nCatalogue:\n${index}`;
+  const schema = { name: 'mechanic_map', schema: { type: 'object', additionalProperties: false, required: ['mappings'], properties: { mappings: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['mechanic', 'primitives', 'covered', 'why'], properties: { mechanic: { type: 'string' }, primitives: { type: 'array', items: { type: 'string' } }, covered: { type: 'boolean' }, why: { type: 'string' } } } } } } };
+  try {
+    const reply = await writer.complete({ system, user, schema });
+    const out = {};
+    for (const m of parseReply(reply.text)?.mappings || []) {
+      const ids = (m.primitives || []).filter(id => registry.has(id) && !isGraphics(id));
+      out[m.mechanic] = { primitives: [...new Set(ids)], covered: Boolean(m.covered) && ids.length > 0, why: String(m.why || '').slice(0, 200) };
+    }
+    return Object.keys(out).length ? out : null;
+  } catch (error) { log(`catalogue mapping failed: ${error.message}`); return null; }
+}
+
+export async function selectPrimitives({ decomposition, registry, decisions = null, writer = null, log = () => {}, excludeSpaces = [] }) {
   const started = performance.now();
   // Spaces compete too: a mechanic a space provides (travelling between places) prefers that space.
   const cards = registry.cards().filter(c => !isGraphics(c.id));
   const mechanics = decomposition.mechanics.map(m => ({ ...m, candidates: rankCandidates(m, cards) }));
-  let decided = null, provider = null;
-  if (decisions && mechanics.some(m => m.candidates.length)) {
+  const mapped = await mapWithCatalogue({ writer, decomposition, mechanics, cards, registry, log });
+  let decided = null, provider = mapped ? 'catalogue-model' : null;
+  if (!mapped && decisions && mechanics.some(m => m.candidates.length)) {
     try {
       const questions = Object.fromEntries(mechanics.filter(m => m.candidates.length).map(m => [m.id, { type: 'choice', instructions: `${DECIDE}\nMechanic: ${m.description}`,
         criteria: { ...Object.fromEntries(m.candidates.map(c => [c.id, registry.get(c.id).card.intent.slice(0, 300)])), none: 'None of these implements it.' } }]));
@@ -181,6 +206,14 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   }
   const chosen = new Set(), gaps = [];
   for (const m of mechanics) {
+    const map = mapped?.[m.id];
+    if (map) {
+      m.primitives = map.covered ? map.primitives : [];
+      m.source = 'catalogue-model'; m.score = map.covered ? 1 : 0;
+      m.primitives.forEach(id => chosen.add(id));
+      if (!map.covered) gaps.push({ mechanic: m.id, description: m.description, importance: m.importance, kind: 'no_primitive', why: map.why || 'no catalogue primitive implements it' });
+      continue;
+    }
     const top = m.candidates[0];
     const answer = decided?.[m.id];
     let pick = null, source = 'lexical';

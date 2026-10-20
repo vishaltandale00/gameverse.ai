@@ -45,7 +45,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     timings.decomposeMs = ms(t);
     ctx.stage('decomposed', { ms: timings.decomposeMs, source: decomposition.source, references: decomposition.references.map(r => r.name), mechanics: decomposition.mechanics.map(m => m.description), ...(decomposition.error ? { error: decomposition.error } : {}) });
     t = performance.now();
-    const chosen = await selectPrimitives({ decomposition, registry, decisions });
+    const chosen = await selectPrimitives({ decomposition, registry, decisions, writer: spec });
     const agency = await ensureAgency({ decomposition, selection: chosen, registry, logic, seed, prompt: job.prompt });
     const selection = agency.selection;
     timings.selectMs = ms(t);
