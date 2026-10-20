@@ -74,6 +74,11 @@ Base kinds (`character item zone quest model archetype space beat ending recipe 
 
 The player's scalars are mirrored to vars: `hp`, `hp.max`, `res.<pool>`, `score`, `lives`.
 
+**Shared effect contracts (frozen).** These effects have a single owner but many callers:
+- `add_score {amount, reason?, who?}` is owned by `gameplay.score`. The `score` var mirrors the total.
+- `damage {who, amount, type?, from?}` is owned by `gameplay.combat.health`. Deaths emit `died {id, archetype}` plus `defeated` / `defeated:<archetype>`.
+- Physics contact events are `contact`, `impact` and `contact_end`, with the fields documented on `engine.space.physics2d`. A primitive that moves its own bodies in another space may emit the same events.
+
 **Solver conventions.**
 - Option `label`s must be unique within one state's `availableOptions()`.
 - `state.rng` is a uint32 that solvers may reseed to sample chance.
