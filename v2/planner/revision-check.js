@@ -51,6 +51,7 @@ export function changeSummary(diff, limit = 4) {
 export const NOT_APPLIED = 0.8;
 // Per provider: OpenAI Decisions separates at 0.5 (faked 0.00-0.06, real 0.74-0.95 on the same cases).
 export const notAppliedBar = provider => provider === 'openai' ? 0.5 : NOT_APPLIED;
+const SPECIFIC = 'Is the request specific and checkable, naming a concrete size, count, mechanic, mode, feature or object (e.g. "bigger map", "add a sword", "3 lives", "busy cars on the streets")? Answer no if it is a matter of taste or overall feel that could be met in many ways (e.g. "make it more like Mario", "make it better", "cooler", "more fun").';
 const INSTRUCTIONS = "Do these changes actually carry out the player's request, as the player would see it in the game? Answer no if the changes are only cosmetic, unrelated, or a stand-in for something the engine cannot really do (for example renaming something or switching a style when the request asks for a different size, a new mechanic or a new mode).";
 
 /** { applied, why, summary, diff, provider } or null when there's nothing to check. */
@@ -61,11 +62,15 @@ export async function checkRevision(decisions, { change, engine, before, after, 
   try {
     const { answers, provider } = await decisions.decide({
       state: { engine, request: change, changes: diff.length ? diff : ['nothing changed'], reportedUnsupported: unsupported.map(u => u.request), ...(originalStandIns ? { note: 'Games use original names: a request for an existing character is carried out by adding an original look-alike with a new name. That counts as doing it.' } : {}) },
-      questions: { applied: { type: 'noul', instructions: INSTRUCTIONS } },
+      questions: { applied: { type: 'noul', instructions: INSTRUCTIONS }, specific: { type: 'noul', instructions: SPECIFIC } },
     });
-    const applied = answers.applied?.noul ?? null;
-    const why = diff.length ? `The engine may not be able to do that yet: the changes it made (${summary.join(', ')}) don't really do it.` : 'The engine may not be able to do that yet: nothing changed.';
-    return { applied, notApplied: applied != null && applied < notAppliedBar(provider), why, summary, diff: diff.length, provider };
+    const applied = answers.applied?.noul ?? null, specific = answers.specific?.noul ?? null;
+    // Subjective requests ("make it more like X", "better", "cooler") can be met many ways, so they're
+    // flagged only when essentially nothing changed; specific ones get the full check.
+    const subjective = specific != null && specific < 0.5;
+    if (subjective) return { applied, specific, subjective, notApplied: diff.length === 0, why: 'Nothing changed for that request yet.', summary, diff: diff.length, provider };
+    const why = 'Nothing changed for that request: this game\'s engine has no setting for it yet.';
+    return { applied, specific, subjective, notApplied: applied != null && applied < notAppliedBar(provider), why, summary, diff: diff.length, provider };
   } catch { return { applied: null, summary, diff: diff.length, provider: null }; }
 }
 

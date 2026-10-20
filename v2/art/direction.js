@@ -2,7 +2,7 @@
 // painters draw. It is made once per game and then locked: a revision reuses
 // it unchanged unless the change request is about how something looks, and
 // even then only the named targets are replaced.
-import { BODIES, PARTS, normalizeLook } from './characters.js';
+import { BODIES, PARTS, PRESET_NAMES, normalizeLook } from './characters.js';
 import { PROPS } from './props.js';
 import { MATERIALS, SURFACES, PLATFORMS } from './tiles.js';
 import { THEMES, TIMES } from './scenery.js';
@@ -17,6 +17,8 @@ const color = { type: 'string', description: 'hex color like #3a7bd5' };
 const en = list => ({ type: 'string', enum: list });
 const obj = (properties) => ({ type: 'object', additionalProperties: false, required: Object.keys(properties), properties });
 const look = obj({
+  preset: { type: 'string', enum: PRESET_NAMES, description: 'A curated look for a well-known character archetype; "none" to build from parts. When set, the parts below are ignored.' },
+  recolor: { type: 'boolean', description: 'true only when the player asked to change this preset character\'s colors; then colors below apply.' },
   body: en(BODIES), build: en(['chibi', 'normal', 'stocky', 'tall']),
   colors: obj({ primary: color, secondary: color, accent: color, eye: color, outfit: color, hair: color }),
   ears: en(PARTS.ears), top: en(PARTS.top), headwear: en(PARTS.headwear), snout: en(PARTS.snout), eyes: en(PARTS.eyes),
@@ -45,7 +47,7 @@ export const DIRECTION_PROMPT = `You are the art director for a 2D game. Code dr
 - tiles: material is the soil or wall body; surface is the walkable top layer; platform is floating blocks. Ground and platforms must contrast with each other and with the sky.
 - player and enemy: build each character from parts. body is the body plan (biped for people and upright animals, quadruped for four-legged animals, blob for slimes, flyer for birds and bats, robot for wheeled machines, ghost for spirits). primary is the main fur, skin or clothing color, secondary the belly, face or skin, accent shoes, hats and trim, eye the iris. Give the player bright, friendly colors and the enemy a contrasting, menacing palette (eyes "angry" or "visor").
 - pickup, hazard, goal: the closest kind and a color.
-- When the idea names a known character, rebuild its look from parts so it is instantly recognizable: its silhouette, palette, outfit and signature features. A mustached plumber: build stocky, headwear cap, snout big-nose, facial mustache, outfit overalls (outfit color) over a shirt (primary), hands gloves, feet boots. A blue hedgehog: top quills, ears pointed, snout muzzle, arms skin (secondary peach), eye green, feet shoes red with the white strap, hands gloves, tail spiky. A martial-arts hero: top spikes (hair color), outfit gi, belt in outfit color. Never draw logos, letters or emblems.
+- When the idea names a well-known character, set preset to the matching archetype: plumber-hero (Mario-like), plumber-brother (Luigi-like), blue-hedgehog (Sonic-like), fox-sidekick (Tails-like), spiky-martial-artist (Goku-like), princess (Peach-like), turtle-king (Bowser-like), mushroom-walker (Goomba-like), green-elf-hero (Link-like), space-hunter (Samus-like), ninja, knight, yellow-electric-mouse (Pikachu-like). Keep recolor false unless the player asked for different colors. Otherwise set preset none and rebuild its look from parts so it is instantly recognizable: its silhouette, palette, outfit and signature features. A mustached plumber: build stocky, headwear cap, snout big-nose, facial mustache, outfit overalls (outfit color) over a shirt (primary), hands gloves, feet boots. A blue hedgehog: top quills, ears pointed, snout muzzle, arms skin (secondary peach), eye green, feet shoes red with the white strap, hands gloves, tail spiky. A martial-arts hero: top spikes (hair color), outfit gi, belt in outfit color. Never draw logos, letters or emblems.
 - outfit color is overalls, pants or belt; hair color is hair and facial hair.
 - changed: when revising an existing direction, list ONLY the targets the change request is about (e.g. "make the hero red" → ["player"]). Copy every other target exactly. When creating new, list all targets.`;
 

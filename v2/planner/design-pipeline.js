@@ -64,7 +64,7 @@ export function createDesignPipeline({ client, model, effort, registry = default
     }
     // On revisions, check the change really happened (same check every game type uses).
     const revisionCheck = previous && job.change ? await checkRevision(decisions, { change: job.change, engine: 'side-scrolling or top-down 2D action', before: previous.report?.design, after: design, unsupported: (design.gaps || []).map(g => ({ request: g.capability })) }) : null;
-    if (revisionCheck?.notApplied && !(design.gaps || []).length) design.gaps = [{ capability: job.change, why: revisionCheck.why }];
+    if (revisionCheck && revisionCheck.diff === 0 && !(design.gaps || []).length) design.gaps = [{ capability: job.change, why: revisionCheck.why }];
     // No engine plays this genre yet: say so plainly rather than pass a different genre off as the idea.
     if (route && route.needs && route.needs !== 'none') design.gaps = [{ capability: `${PLANNED[route.needs] || route.needs} kit`, why: `${route.why} This version is the closest platformer/top-down game until that kit exists.` }, ...(design.gaps || [])];
     const seed = previous?.provenance?.seed ?? job.seed ?? seedFrom(job.prompt);

@@ -24,11 +24,34 @@ export const PARTS = {
   accessory: ['none', 'scarf', 'cape', 'backpack', 'belt', 'spots', 'stripes'],
   held: ['none', 'sword', 'blaster', 'staff', 'shield', 'hammer'],
 };
+// Curated looks for well-known character archetypes. A small model assembling parts freely can
+// turn a plumber into a bear (round ears + muzzle); a preset gets the silhouette right every time,
+// and the director only recolors it. Drawn in our own style: no logos, emblems or copied art.
+export const PRESETS = {
+  'plumber-hero': { body: 'biped', build: 'stocky', colors: { primary: '#e0302a', secondary: '#f5c99b', accent: '#7a4a2a', outfit: '#2a52be', hair: '#3a2418', eye: '#2a5ad8' }, headwear: 'cap', snout: 'big-nose', facial: 'mustache', outfit: 'overalls', feet: 'boots', hands: 'gloves', ears: 'none', top: 'none', eyes: 'cartoon', tail: 'none' },
+  'plumber-brother': { body: 'biped', build: 'tall', colors: { primary: '#2ea84a', secondary: '#f5c99b', accent: '#7a4a2a', outfit: '#2a52be', hair: '#3a2418', eye: '#2a5ad8' }, headwear: 'cap', snout: 'big-nose', facial: 'mustache', outfit: 'overalls', feet: 'boots', hands: 'gloves', ears: 'none', top: 'none', eyes: 'cartoon', tail: 'none' },
+  'blue-hedgehog': { body: 'biped', build: 'chibi', colors: { primary: '#1f5fd6', secondary: '#f2c79a', accent: '#e0302f', eye: '#1f9a4c' }, ears: 'pointed', top: 'quills', snout: 'muzzle', arms: 'skin', tail: 'spiky', feet: 'shoes', hands: 'gloves', eyes: 'cartoon', headwear: 'none' },
+  'fox-sidekick': { body: 'biped', build: 'chibi', colors: { primary: '#f0a030', secondary: '#fff4e0', accent: '#e0302f', eye: '#2a6ad8' }, ears: 'pointed', snout: 'muzzle', tail: 'fluffy', feet: 'shoes', hands: 'gloves', eyes: 'cartoon' },
+  'spiky-martial-artist': { body: 'biped', build: 'normal', colors: { primary: '#f07a1a', secondary: '#f5c99b', accent: '#2a52be', outfit: '#2a52be', hair: '#1a1a22', eye: '#1a1a22' }, top: 'spikes', outfit: 'gi', feet: 'boots', hands: 'none', eyes: 'cartoon', ears: 'none', snout: 'none' },
+  'princess': { body: 'biped', build: 'tall', colors: { primary: '#ff8ac8', secondary: '#f8d8c0', accent: '#f5c542', outfit: '#ff8ac8', hair: '#f5d040', eye: '#2a6ad8' }, headwear: 'crown', top: 'long-hair', feet: 'boots', hands: 'gloves', eyes: 'cartoon', snout: 'none', ears: 'none' },
+  'turtle-king': { body: 'biped', build: 'stocky', colors: { primary: '#f0b429', secondary: '#f0e08a', accent: '#3a9a3a', hair: '#e8402a', eye: '#d82a2a' }, headwear: 'horns', top: 'mohawk', snout: 'muzzle', eyes: 'angry', hands: 'claws', feet: 'paws', tail: 'spiky', accessory: 'spots' },
+  'mushroom-walker': { body: 'blob', colors: { primary: '#a0683a', secondary: '#f0d8b0', accent: '#5a3a1a', eye: '#1a1a1a' }, eyes: 'angry' },
+  'green-elf-hero': { body: 'biped', build: 'normal', colors: { primary: '#3a9a3a', secondary: '#f5d0a8', accent: '#7a4a2a', hair: '#e8c040', eye: '#2a6ad8' }, headwear: 'wizard-hat', ears: 'pointed', held: 'sword', feet: 'boots', hands: 'gloves', eyes: 'cartoon', snout: 'none' },
+  'space-hunter': { body: 'biped', build: 'stocky', colors: { primary: '#e07a2a', secondary: '#e0e0e8', accent: '#d8302a', eye: '#3ad0e8' }, headwear: 'helmet', eyes: 'visor', held: 'blaster', feet: 'boots', hands: 'gloves', snout: 'none', ears: 'none' },
+  'ninja': { body: 'biped', build: 'normal', colors: { primary: '#2a2a38', secondary: '#f0c8a0', accent: '#d8262c', eye: '#202020' }, headwear: 'bandana', accessory: 'scarf', held: 'sword', feet: 'boots', eyes: 'angry' },
+  'knight': { body: 'biped', build: 'stocky', colors: { primary: '#8d99ae', secondary: '#f0c8a0', accent: '#b8323a', eye: '#3060c0' }, headwear: 'helmet', feet: 'boots', hands: 'gloves', held: 'sword', accessory: 'cape' },
+  'yellow-electric-mouse': { body: 'quadruped', colors: { primary: '#f8d030', secondary: '#f8d030', accent: '#e8402a', eye: '#202020' }, ears: 'long', tail: 'thin', snout: 'nose', eyes: 'dots' },
+};
+export const PRESET_NAMES = ['none', ...Object.keys(PRESETS)];
+
 export const POSE_NAMES = ['idle', 'idleB', 'runA', 'runB', 'runC', 'runD', 'jump', 'fall', 'hurt'];
 
 const pick = (v, list, d) => list.includes(v) ? v : d;
 /** Fill defaults so painters never see missing fields. */
-export function normalizeLook(look = {}) {
+export function normalizeLook(input = {}) {
+  // A preset sets the silhouette and parts; colors given alongside it recolor it ("make his overalls green").
+  const preset = PRESETS[input?.preset];
+  const look = preset ? { ...preset, colors: { ...preset.colors, ...(input.recolor ? input.colors : {}) } } : input;
   const c = look.colors || {};
   const primary = hex(c.primary, '#3a7bd5');
   return {
