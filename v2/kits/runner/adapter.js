@@ -10,6 +10,17 @@ import { zOf, mid } from './modes/lanes.js';
 import { birdX, birdY, missileX } from './modes/side.js';
 import { offsetOf, FLAP } from './modes/flap.js';
 import { xOf, wrap, CLIMB } from './modes/climb.js';
+import { G } from './world.js';
+import { random } from '../../kernel/rng.js';
+
+/** Which world operations each mode honors (see EXTENDING.md): every mode scores, hurts and ends; lanes and climb spawn; all but the beat-locked dash can be shielded. */
+export function capabilitiesFor(content) {
+  const mode = content?.mode;
+  const caps = ['player', 'enemies', 'blocked', 'defeat', 'lives', 'score', 'hurt', 'end'];
+  if (mode === 'lanes' || mode === 'climb') caps.push('spawn');
+  if (mode !== 'rhythm-dash') caps.push('invulnerable');
+  return caps;
+}
 
 const inBox = (x, y, x0, x1, y0, y1) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
 
@@ -17,7 +28,32 @@ export function worldAdapter(game) {
   const mode = game.content.mode;
   const live = s => s.status === 'playing' && s.time > 0.9;
   const defeat = (s, id) => { s.gone[id] = s.time; const pts = 100 * s.mult; s.bonus += pts; return pts; };
-  const base = { active: live, defeat, lives: s => s.lives };
+  // World operations shared by every mode. Score lands in the bonus pool the kit adds to distance points.
+  const ops = {
+    addScore: (s, n) => { s.bonus += n; },
+    hurtPlayer: (s, { by = 'trouble' } = {}) => { if (s.status !== 'playing') return false; if (s.invuln > 0) { G.emit(s, 'shielded'); return false; } G.hit(s, by); return true; },
+    invulnerable: (s, frames) => { if (mode !== 'rhythm-dash') s.invuln = Math.max(s.invuln, frames / 60); },
+    end: (s, { won = false, reason = '' } = {}) => {
+      if (s.status !== 'playing') return;
+      s.status = won ? 'won' : 'lost'; s.reason = reason || (won ? 'Finished' : 'Game over'); s.deathT = s.time;
+      G.emit(s, won ? 'won' : 'lost', { reason: s.reason });
+    },
+  };
+  // Spawned obstacles join the placed objects, ahead of the hero: a low barrier to jump (lanes) or a monster above the view (climb).
+  const name = kind => game.content.obstacles.find(o => o.kind === kind)?.name;
+  const spawn = mode === 'lanes' ? (s, { x, y } = {}) => {
+    const w = game.content.rules.width, m = mid(game.content);
+    const lane = Number.isFinite(x) ? Math.max(0, Math.min(w - 1, Math.round(x + s.p.x + m))) : Math.floor(random(s) * w);
+    const z = s.p.z + (Number.isFinite(y) ? Math.max(30, y) : 42);
+    G.add(s, [{ t: 'low', lane, z, len: 0.5, name: name('low') || 'Barrier', p: z - 0.5, e: z + 0.5, spawned: true }]);
+    return s.nextId - 1;
+  } : mode === 'climb' ? (s, { x, y } = {}) => {
+    const W = game.content.rules.width, cy = Number.isFinite(y) ? Math.max(s.p.cam + 9, y) : s.p.cam + 11;
+    const cx = Number.isFinite(x) ? wrap(x, W) : 0.5 + random(s) * (W - 1);
+    G.add(s, [{ t: 'enemy', cx, y: cy, speed: 1.2, range: 1.5, phase: random(s) * 6, name: name('enemy') || 'Monster', p: cy - 0.5, e: cy + 0.5, spawned: true }]);
+    return s.nextId - 1;
+  } : undefined;
+  const base = { active: live, defeat, lives: s => s.lives, ...ops, ...(spawn ? { spawn } : {}) };
   if (mode === 'lanes') return {
     ...base,
     player: s => ({ x: 0, y: 0, facing: { x: 0, y: 1 } }),

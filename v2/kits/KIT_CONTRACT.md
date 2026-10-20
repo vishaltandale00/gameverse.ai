@@ -111,6 +111,11 @@ world: {
 }
 ```
 
+Kits can also offer world operations (spawn, terrain, score, hurt, invulnerable, end, a grid and
+a level read), declared as capabilities and narrowed per content with `capabilitiesFor(content)`;
+see `EXTENDING.md`. They let mods such as falling blocks, waves, a boss, a timer or a shield run
+natively in any kit that has them.
+
 The renderer sets `render.view = { X(x), Y(y), s, clip?, hud?, camera? }` each frame, mapping world units to
 CSS pixels, so mods draw in the same space. When a world is too big to fit at a readable size the
 renderer scrolls: X/Y then include the camera, `clip` is the visible viewport, and `camera` is

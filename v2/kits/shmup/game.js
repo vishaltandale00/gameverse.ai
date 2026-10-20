@@ -557,7 +557,7 @@ export function createGame(content, { seed = 1 } = {}) {
           else if (++e.subT > 90) { e.sub = 0; e.subT = 0; e.tx = range(s, 40, W - 40); e.ty = range(s, 40, H - 40); }
           if (e.t === 1) { e.tx = range(s, 40, W - 40); e.ty = range(s, 40, H - 40); }
         } else if (e.sub === 0) { fwd(e.speed); if (e.y >= e.hy && e.onScreen) { e.sub = 1; e.subT = 0; e.bx = e.x; e.by = e.y; } }
-        else if (e.sub === 1) { e.subT++; e.x = e.bx + Math.sin(e.subT * 0.03) * 10; e.y = e.by + Math.sin(e.subT * 0.05) * 4; if (e.subT > 260) { e.sub = 2; e.ang = -Math.PI / 2 + (e.x < W / 2 ? -0.4 : 0.4); } }
+        else if (e.sub === 1) { e.subT++; e.x = e.stay ? clamp(e.bx + Math.sin(e.subT * 0.012) * W * 0.3, 16, W - 16) : e.bx + Math.sin(e.subT * 0.03) * 10; e.y = e.by + Math.sin(e.subT * 0.05) * 4; if (e.subT > 260 && !e.stay) { e.sub = 2; e.ang = -Math.PI / 2 + (e.x < W / 2 ? -0.4 : 0.4); } }
         else fwd(e.speed * 0.9);
         break;
       }
@@ -919,8 +919,46 @@ export function createGame(content, { seed = 1 } = {}) {
 
   function hitPlayerForced(s, cause) { const p = s.player; p.invuln = 0; p.shield = false; hitPlayer(s, cause); }
 
+  // ---------- world operations for mods (v2/kits/EXTENDING.md) ----------
+  /**
+   * A mod's extra enemy: one of the content's enemy types (kind may name one; otherwise the stage's
+   * current wave type) that flies in from the top, or appears away from the ship in an arena, and
+   * stays to fight. kind 'boss' is the toughest type, scaled up. hp counts standard hits, about
+   * five tier-1 shots each for a boss. Spawned enemies hold the stage clear like any other.
+   */
+  function spawnEnemy(s, { x, y, kind, hp } = {}) {
+    if (s.status !== 'playing' || s.phase === 'clear' || s.phase === 'intro') return null;
+    if (s.enemies.filter(e => e.spawned && !e.dead).length >= 16) return null;
+    const big = kind === 'boss', st = stageOf(s), arena = s.mode === 'twinstick' || s.mode === 'asteroids';
+    const pool = C.enemies.filter(e => !['gravity', 'rock', 'saucer', 'snake', 'split'].includes(e.move));
+    const list = pool.length ? pool : C.enemies;
+    const type = enemyById.get(kind) || (big ? [...list].sort((a, b) => b.hp - a.hp)[0] : enemyById.get(st.waves[Math.max(0, s.waveIdx - 1)]?.enemy) || list[0]);
+    if (!type) return null;
+    let px = range(s, 30, s.W - 30), py = -20;
+    if (Number.isFinite(x) && Number.isFinite(y)) { px = clamp(x, 10, s.W - 10); py = clamp(y, -30, s.H - 40); }
+    else if (arena) for (let k = 0; k < 8; k++) { px = range(s, 30, s.W - 30); py = range(s, 30, s.H - 30); if (!s.player.alive || Math.hypot(px - s.player.x, py - s.player.y) > 110) break; }
+    const hits = Math.max(1, Math.min(60, Math.round(Number(hp) || (big ? 8 : 1))));
+    const e = makeEnemy(s, type, px, py, Math.PI / 2, {
+      mv: 'hover', stay: true, spawned: true, kind: big ? 'boss' : 'wave', hy: range(s, s.H * 0.14, s.H * (big ? 0.22 : 0.42)), onScreen: arena,
+      ...(big ? { r: 26, points: type.points * 12, fireRate: Math.max(0.6, type.fireRate * 2.2), fire: type.fire === 'none' ? 'aimed' : type.fire } : {}),
+    });
+    e.hp = e.maxHp = hits * (big ? 5 : Math.max(1, type.hp)) * scale(s).hp;
+    emit(s, 'spawn', { id: e.id, kind: e.kind, x: e.x, y: e.y });
+    return e.id;
+  }
+  /** Defeat for a mod: a heavy hit (a third of a big enemy's health), so bosses take a few. */
+  function strike(s, id) {
+    if (id === 'boss') { const b = s.boss; if (!b || b.st !== 'fight') return 0; const before = s.score; b.invuln = 0; damageBoss(s, Math.max(6, b.maxHp * 0.08)); return s.score - before; }
+    const e = s.enemies.find(q => q.id === id && !q.dead);
+    if (!e) return 0;
+    const before = s.score;
+    damageEnemy(s, e, e.maxHp > 8 ? Math.max(4, e.maxHp / 3) : 99);
+    return s.score - before;
+  }
+
   return {
     content: C, seed, createState, step, enemyType: id => enemyById.get(id), bossType: id => bossById.get(id), nameOf,
     stageCount: C.stages.length, world: mode => WORLD[mode],
+    spawnEnemy, strike, addScore, hitPlayer,
   };
 }

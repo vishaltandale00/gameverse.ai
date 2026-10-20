@@ -9,7 +9,7 @@ export const TILE = 40;
 const DEFEAT_DAMAGE = 120;   // a mod "defeat" is a heavy knockdown hit, not an instant KO
 
 export const world = {
-  capabilities: ['player', 'enemies', 'blocked', 'defeat', 'stun', 'lives'],
+  capabilities: ['player', 'enemies', 'blocked', 'defeat', 'stun', 'lives', 'score', 'hurt', 'invulnerable', 'end'],
   // Both buttons drive the fighter (punch and kick), so button mods are not offered here.
   buttons: ['a', 'b'],
   adapter(game) {
@@ -26,6 +26,22 @@ export const world = {
       },
       defeat: (s, id, { by } = {}) => externalHit(game, s, id, { damage: DEFEAT_DAMAGE, from: s.fighters[0].x, by }),
       stun: (s, id, frames) => { externalHit(game, s, id, { stun: frames }); },
+      // A level is a rung of the arcade ladder (versus: the one match).
+      level: s => s.arcade?.rung ?? 0,
+      addScore: (s, n) => { s.score = Math.max(0, s.score + n); },
+      // Hurt is a heavy hit on the player's fighter, through the normal hit path (blocks, KOs and all).
+      hurtPlayer: (s, { by } = {}) => {
+        const f = s.fighters?.[0];
+        if (!f || s.phase !== 'fight') return false;
+        if (f.invuln > 0) { s.events.push({ name: 'shielded', x: f.x / TILE, y: f.y / TILE }); return false; }
+        return externalHit(game, s, 0, { damage: DEFEAT_DAMAGE * 0.6, from: s.fighters[1]?.x, by }) > 0;
+      },
+      invulnerable: (s, frames) => { const f = s.fighters?.[0]; if (f) f.invuln = Math.max(f.invuln, frames); },
+      end: (s, { won = false, reason = '' } = {}) => {
+        if (s.status !== 'playing') return;
+        s.status = won ? 'won' : 'lost'; s.reason = reason || (won ? 'Finished' : 'Game over');
+        s.events.push({ name: won ? 'won' : 'lost', reason: s.reason });
+      },
       // A life is a round you can still afford to lose (platform mode: stocks).
       lives: s => !s.fighters?.length ? null : game.platform ? s.fighters[0].stocks : game.toWin - (s.match?.wins?.[1] || 0),
     };

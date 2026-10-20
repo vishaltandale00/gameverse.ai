@@ -5,7 +5,7 @@ import { SAMPLE, SAMPLES } from './samples.js';
 import { createGame as createWorld } from './world.js';
 import { verify } from './verify.js';
 import { createRenderer } from './render/index.js';
-import { worldAdapter } from './adapter.js';
+import { worldAdapter, capabilitiesFor } from './adapter.js';
 
 const CONTROLS = {
   lanes: [{ input: 'move', label: 'Switch lanes, jump (up), slide (down)' }, { input: 'a', label: 'Jump' }],
@@ -59,7 +59,8 @@ const kit = {
   verify,
   // What cross-genre mods (v2/kits/mods) can see and do. Scrolling modes report x relative to the hero.
   world: {
-    capabilities: ['player', 'enemies', 'blocked', 'defeat', 'lives'],
+    capabilities: ['player', 'enemies', 'blocked', 'defeat', 'lives', 'score', 'hurt', 'end', 'spawn', 'invulnerable'],
+    capabilitiesFor: content => capabilitiesFor(validate(content).content || content),
     buttons: ['a'], // every mode uses a (jump, flap, shoot, hop); b is free for mods
     adapter: worldAdapter,
   },

@@ -3,6 +3,7 @@
 // a warping neon grid in the arena, bullets with glow and trails, explosions
 // with particles and shockwaves, shake, banners and the HUD. Everything here is
 // visual: it reads the game state and events and never changes them.
+import { TILE } from './world.js';
 import { ROCK_R } from './game.js';
 
 const TAU = Math.PI * 2;
@@ -823,8 +824,8 @@ export function createRenderer(game, { art = {} } = {}) {
   }
 
   // ---------- frame ----------
-  return function render(ctx, s, frame = {}) {
-    if (!s || !s.player) return;
+  const render = function render(ctx, s, frame = {}) {
+    if (!s || !s.player) { render.view = null; return; }
     if (V.ref !== s) reset(s);
     const reduced = !!frame.reducedMotion, dt = frame.paused ? 0 : Math.min(0.05, frame.dt || 1 / 60);
     V.time += dt;
@@ -851,5 +852,8 @@ export function createRenderer(game, { art = {} } = {}) {
     }
     if (V.flash > 0) { ctx.fillStyle = rgba(V.flashColor, Math.min(0.85, V.flash) * (reduced ? 0.4 : 0.6)); ctx.fillRect(ox, oy, pw, ph); }
     drawHud(ctx, s, ox, oy, pw, ph, sc, cw, ch, frame);
+    // World-to-screen mapping for mods drawn on top (v2/kits/mods/compose.js), in world.js tiles.
+    render.view = frame.attract ? null : { X: x => ox + sx + x * TILE * sc, Y: y => oy + sy + y * TILE * sc, s: TILE * sc, clip: { x: ox, y: oy, w: pw, h: ph }, hud: { x: ox + pw / 2, y: oy + Math.min(ph * 0.2, Math.max(70, ph * 0.13)), w: pw * 0.96 } };
   };
+  return render;
 }
