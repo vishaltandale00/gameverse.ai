@@ -3,6 +3,7 @@
 // mode) and reports errors as { code, path, message, hint } so a generator can repair content.
 import { slugifyIds } from '../ids.js';
 import { THEMES, TIMES } from '../../art/scenery.js';
+import { FEATURES, DEPTHS, normalizeFeatures } from '../../art/features.js';
 
 export const CONTENT_SCHEMA = 'gameverse.v2.fighting-content/0.1';
 export const MODES = ['traditional', 'platform'];
@@ -68,7 +69,7 @@ export const schema = obj({
     winQuote: str('short victory line'),
     ending: str('arcade ending, 1-2 sentences'),
   }), '2-8 fighters'),
-  stages: arr(obj({ id: str('slug'), name: str('stage name'), theme: en(THEMES), time: en(TIMES), width: num('arena width in units, 520-4000; 920 standard (two screens), 1600 wide, 3000 huge') }), '1-8 stages'),
+  stages: arr(obj({ id: str('slug'), name: str('stage name'), theme: en(THEMES), time: en(TIMES), width: num('arena width in units, 520-4000; 920 standard (two screens), 1600 wide, 3000 huge'), features: arr(obj({ kind: en(FEATURES), density: num('0.05 sparse … 1 packed'), depth: en(DEPTHS) }), 'environment parts composed on the theme, static and animated: e.g. street + traffic + pedestrians + skyline; leafy-forest (far and mid) + falling-leaves') }), '1-8 stages'),
   ladder: arr(obj({ fighter: str('fighter id'), difficulty: num('1-5') }), 'arcade opponents in order, easiest first'),
   boss: obj({ fighter: str('fighter id of the final boss'), difficulty: num('1-5'), stage: str('stage id') }),
 });
@@ -84,6 +85,7 @@ export const prompt = `You write content for a 2D fighting game in the style of 
 - intro, winQuote and ending are short, punchy, original story lines. Keep everything family-friendly: knockouts are stylized, never gory.
 
 Change requests map to real fields; never fake one with another:
+- environments ("better environments", "leafy forests", "busy cars on city streets", "rainy", "crowds"): stages[].features. Compose parts on each stage's theme, static (leafy-forest, pine-forest, palms, bushes, flowers, tall-grass, skyline, houses, street, street-lamps, neon-signs, bridge, mountains, hills, cliffs, river, lake, ocean, waterfall, castle, ruins, windmills, fences, market-stalls) and moving (traffic, pedestrians, birds, falling-leaves, fireflies, rain, snow, fog, drifting-clouds, embers, bubbles, train), each with density 0.05–1 and depth far/mid/near. Busy city streets: street, traffic 0.9, pedestrians 0.7, skyline (mid), street-lamps, neon-signs at night. Leafy forests: leafy-forest 1 (far) and 0.9 (mid), bushes (near), falling-leaves, birds. Give every stage 3-6 features.
 - bigger/smaller stage or arena: stages[].width (920 standard, 1600 wide, 3000 huge, 600 cramped); the camera follows.
 - more/fewer fighters: add/remove fighters (2-8) and update ladder and boss refs; longer/shorter arcade: ladder entries (up to 10, a fighter may repeat).
 - more/fewer rounds: roundsToWin (1 = single round, 2 = best of 3, 3 = best of 5); longer/shorter rounds: roundTime.
@@ -190,10 +192,10 @@ export const sample = {
     },
   ],
   stages: [
-    { id: 'harbor', name: 'Lantern Harbor', theme: 'city', time: 'night', width: 920 },
+    { id: 'harbor', name: 'Lantern Harbor', theme: 'city', time: 'night', width: 920, features: [{ kind: 'skyline', density: 0.9, depth: 'mid' }, { kind: 'neon-signs', density: 0.6, depth: 'mid' }, { kind: 'street', density: 0.8, depth: 'near' }, { kind: 'traffic', density: 0.8, depth: 'near' }, { kind: 'pedestrians', density: 0.5, depth: 'near' }] },
     { id: 'market', name: 'Dune Market', theme: 'desert', time: 'sunset', width: 920 },
     { id: 'glacier', name: 'Glacier Rim', theme: 'snow', time: 'day', width: 920 },
-    { id: 'shrine', name: 'Cedar Shrine', theme: 'forest', time: 'dawn', width: 920 },
+    { id: 'shrine', name: 'Cedar Shrine', theme: 'forest', time: 'dawn', width: 920, features: [{ kind: 'leafy-forest', density: 1, depth: 'far' }, { kind: 'leafy-forest', density: 0.8, depth: 'mid' }, { kind: 'bushes', density: 0.6, depth: 'near' }, { kind: 'falling-leaves', density: 0.6, depth: 'near' }, { kind: 'birds', density: 0.4, depth: 'far' }] },
     { id: 'foundry', name: 'Ember Foundry', theme: 'factory', time: 'day', width: 920 },
     { id: 'spire', name: 'Crown Spire', theme: 'castle', time: 'night', width: 1400 },
   ],
@@ -243,6 +245,7 @@ export function validate(input) {
     s.theme = pick(s.theme, THEMES, `${p}.theme`, 'city');
     s.time = pick(s.time, TIMES, `${p}.time`, 'day');
     s.width = Math.round(clamp(s.width, 520, 4000, 920));
+    s.features = normalizeFeatures(s.features);
   });
   c.stages = stages;
 

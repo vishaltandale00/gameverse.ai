@@ -35,7 +35,7 @@ export function changeSummary(diff, limit = 4) {
   for (const line of diff) {
     const m = line.match(/^(?:content\.)?([^:]+): (added|removed) (.+)$/);
     if (m) { groups.set(`${m[2]} ${m[3]}`, 1); continue; }
-    const field = line.split(':')[0].replace(/\[[^\]]+\]/g, '').replace(/^content\./, '').replace(/^mods\./, 'mods: ');
+    const field = line.split(':')[0].replace(/\[[^\]]+\]/g, '').replace(/^content\./, '').replace(/^mods\./, 'mods: ').replace(/^art\./, 'art: ');
     const words = field.split('.').slice(-2).join(' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
     groups.set(words, (groups.get(words) || 0) + 1);
   }

@@ -5,6 +5,7 @@
 // render(ctx, state, options) is a function of (state, events). All visual
 // state (animations, particles, camera) lives in render.fx, outside game
 // state, so the simulation stays deterministic and replayable.
+import { createAmbient } from '../art/ambient.js';
 import {
   createAnim, stepAnim, bodyBob, breathe, pickFrame, paletteFrom, ambientTheme, rand, hashString,
   createParticles, addParticles, stepParticles, particlesFor, dustBurst, shakeFor, stepCamera, formatClock, hexToRgb,
@@ -104,6 +105,7 @@ export function createRenderer(game, { fx } = {}) {
   const tileArt = { ground: art.tiles?.ground, platform: art.tiles?.platform };
   const ts = art.tileset?.url ? { cols: 2, rows: 2, inset: 0, ...art.tileset, cells: { groundTop: [0, 0], groundFill: [1, 0], platform: [0, 1], wall: [1, 1], ...(art.tileset.cells || {}) } } : null;
   const seed = hashString(spec.id || spec.title || 'game');
+  const liveScenery = art.direction?.scenery?.features?.length ? createAmbient(art.direction.scenery.features, { seed: spec.id || 'scene', night: art.direction.scenery.time === 'night' }) : null;
   const ridgeRand = rand(seed);
   const ridges = [0, 1].map(() => [0, 1, 2].map(i => ({ f: (0.004 + ridgeRand() * 0.006) * (i + 1), a: 1 / (i + 1.4), p: ridgeRand() * TAU })));
   const jagged = theme !== 'leaves' && theme !== 'bubbles';
@@ -261,6 +263,8 @@ export function createRenderer(game, { fx } = {}) {
       const bw = bg.width * scale, bh = bg.height * scale;
       const px = -((camX / Math.max(1, width - viewW)) || 0) * (bw - w), py = -((camY / Math.max(1, height - viewH)) || 0) * (bh - h);
       ctx.drawImage(bg, clamp(px, w - bw, 0), clamp(py, h - bh, 0), bw, bh);
+      // The scene's moving parts (traffic, leaves, weather) in the backdrop's own layout.
+      liveScenery?.(ctx, { x: clamp(px, w - bw, 0), y: clamp(py, h - bh, 0), w: bw, h: bh }, v.time, { reduced });
     }
     if (theme === 'stars') drawAmbient(ctx, ambient, w, h, dt, camDx, camDy, false, reduced);
     if (side && !art.procedural) { // tinted far layers: generated ridgelines at two depths (painted scenery has its own)

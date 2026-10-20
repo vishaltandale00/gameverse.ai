@@ -90,12 +90,6 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
   // Keep only mods this kit can run, normalized, so hosts and saves see a stable shape.
   mods = Object.fromEntries(available.map(m => [m.id, m.normalize(mods?.[m.id])]).filter(([id, cfg]) => available.find(m => m.id === id).enabled(cfg)));
   // On revisions, check that the change really happened; if not, say so rather than claim it.
-  // A request naming an existing character ("add Goku") is done with an original look-alike; say so plainly.
-  const namesFranchise = names === 'original' && previousContent && job.change ? (await usesFranchiseNames(decisions, [job.change]))?.flagged : false;
-  const revisionCheck = previousContent ? await checkRevision(decisions, { change: job.change, engine: kit.name, before: { content: previousContent, mods: previous.doc.mods || {} }, after: { content, mods }, unsupported: unsupported || [], originalStandIns: namesFranchise }) : null;
-  const renamedNote = namesFranchise && revisionCheck?.diff ? [{ capability: job.change, why: `Games use original names, so this was added as an original look-alike with its own name (${revisionCheck.summary.join(', ')}). Ask for a different name or look anytime.`, kind: 'renamed' }] : [];
-  if (revisionCheck?.applied != null && revisionCheck.applied < NOT_APPLIED && !(unsupported || []).length)
-    unsupported = [{ request: job.change, why: revisionCheck.why }];
   const doc = { schema: KIT_GAME_SCHEMA, kit: kit.id, kitVersion: kit.version, mods, id: previous?.doc?.id || slug(content.title, kit.id), title: content.title, logline: content.logline || '', seed, content };
   const inputs = artInputs(kit, content, doc);
   // Art direction starts now; the content is already verified.
@@ -110,6 +104,13 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
     painted = await art.paint({ job, ctx, spec: inputs.spec, directed: await directing, previous });
     ctx.stage('painted', { ms: painted.report.paintMs, assets: painted.report.assets, reused: painted.report.reused, changed: painted.report.changed });
   }
+  // On revisions, check the change really happened (content, mods and art); if not, say so.
+  // A request naming an existing character ("add Goku") is done with an original look-alike; say so plainly.
+  const namesFranchise = names === 'original' && previousContent && job.change ? (await usesFranchiseNames(decisions, [job.change]))?.flagged : false;
+  const revisionCheck = previousContent ? await checkRevision(decisions, { change: job.change, engine: kit.name, before: { content: previousContent, mods: previous.doc.mods || {}, art: previous.doc.art?.direction || null }, after: { content, mods, art: painted?.art?.direction || previous.doc.art?.direction || null }, unsupported: unsupported || [], originalStandIns: namesFranchise }) : null;
+  const renamedNote = namesFranchise && revisionCheck?.diff ? [{ capability: job.change, why: `Games use original names, so this was added as an original look-alike with its own name (${revisionCheck.summary.join(', ')}). Ask for a different name or look anytime.`, kind: 'renamed' }] : [];
+  if (revisionCheck?.applied != null && revisionCheck.applied < NOT_APPLIED && !(unsupported || []).length)
+    unsupported = [{ request: job.change, why: revisionCheck.why }];
   await ctx.store.updateMeta(job.gameId, { title: doc.title, kind: `kit:${kit.id}` });
   return ctx.publish({
     doc: painted ? { ...doc, art: painted.art } : doc,

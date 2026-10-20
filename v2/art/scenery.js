@@ -3,6 +3,7 @@
 // reads at a glance and characters stay legible in front.
 import { defs as makeDefs, document, f, pt, rng } from './svg.js';
 import { hex, light, shade, mix, hexToRgb, rgbToHsl } from './color.js';
+import { paintFeatures } from './features.js';
 
 export const THEMES = ['meadow', 'forest', 'desert', 'snow', 'cave', 'volcano', 'city', 'castle', 'space', 'ocean', 'jungle', 'haunted', 'factory', 'sky', 'candy'];
 export const TIMES = ['day', 'sunset', 'night', 'dawn'];
@@ -134,6 +135,8 @@ export function paintScenery(input = {}, { pixel = false, seed = 'scenery' } = {
   }
   if (theme === 'city' || theme === 'factory') out.push(`<rect y="${f(H * 0.86)}" width="${W}" height="${f(H * 0.14)}" fill="${far(0.2)}"/>`);
   out.push(clouds(r, H * 0.28, mix(cloudColor, haze, 0.05), 3, 0.8, theme === 'cave' || theme === 'space' ? 0 : 0.95));
+  // Composed features ("leafy forest, dense", "street") on top of the theme's own layers.
+  if (Array.isArray(input.features) && input.features.length) out.push(paintFeatures(input.features, { r: rng(`${seed}|features`), haze, night, land, foliage, d }));
   // A soft vignette keeps edges calm.
   out.push(`<rect width="${W}" height="${H}" fill="${d.radial([[0.6, '#000000', 0], [1, '#000000', 0.28]], { r: 0.75 })}"/>`);
   const scale = pixel ? 1 : 4;

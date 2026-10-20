@@ -7,6 +7,7 @@ import { phaseOf, SUPER_COST } from './moves.js';
 import { ARENA, useArenaOf } from './arena.js';
 import { TILE } from './world.js';
 import { paintScenery } from '../../art/scenery.js';
+import { createAmbient } from '../../art/ambient.js';
 
 const FONT = '"Avenir Next", "Nunito", ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif';
 const DISPLAY = '"Avenir Next Condensed", "Arial Narrow", "Roboto Condensed", Impact, sans-serif';
@@ -25,15 +26,21 @@ function image(url) {
   if (!e) { const img = new Image(); e = { img, ready: false }; img.onload = () => { e.ready = true; }; img.src = url; images.set(url, e); }
   return e.ready ? e.img : null;
 }
-const painted = new Map();
+const painted = new Map(), ambients = new Map();
+/** The stage's moving parts (traffic, leaves, weather), cached per stage. */
+function stageAmbient(stage) {
+  const key = `${stage.id}|${JSON.stringify(stage.features || [])}|${stage.time}`;
+  if (!ambients.has(key)) ambients.set(key, createAmbient(stage.features || [], { seed: stage.id, night: stage.time === 'night' }));
+  return ambients.get(key);
+}
 function stageImage(stage, art) {
   if (!stage) return null;
   const dir = art?.direction;
-  if (art?.background && (!dir || dir.scenery?.theme === stage.theme)) return image(art.background);
+  if (art?.background && (!dir || dir.scenery?.theme === stage.theme) && !stage.features?.length) return image(art.background);
   if (typeof Blob === 'undefined' || typeof URL === 'undefined' || !URL.createObjectURL) return null;
-  const key = `${stage.id}|${stage.theme}|${stage.time}|${dir?.style || ''}`;
+  const key = `${stage.id}|${stage.theme}|${stage.time}|${dir?.style || ''}|${JSON.stringify(stage.features || [])}`;
   if (!painted.has(key)) {
-    try { painted.set(key, URL.createObjectURL(new Blob([paintScenery({ theme: stage.theme, time: stage.time }, { pixel: dir?.style === 'pixel', seed: stage.id })], { type: 'image/svg+xml' }))); }
+    try { painted.set(key, URL.createObjectURL(new Blob([paintScenery({ theme: stage.theme, time: stage.time, features: stage.features || [] }, { pixel: dir?.style === 'pixel', seed: stage.id })], { type: 'image/svg+xml' }))); }
     catch { painted.set(key, null); }
   }
   return image(painted.get(key));
@@ -117,6 +124,7 @@ export function createRenderer(game, { art = {} } = {}) {
   // ---------- events → effects ----------
   function handleEvents(state, events, frame) {
     const reduced = frame.reducedMotion;
+    fx.reduced = !!reduced;
     for (const e of events || []) {
       switch (e.name) {
         case 'hit': {
@@ -226,6 +234,7 @@ export function createRenderer(game, { art = {} } = {}) {
       const px = W / 2 - iw / 2 - (cam.cx - 500) * cam.zoom * 0.22;
       const py = horizon - ih * 0.86 + (game.platform ? 0 : fx.cam.y * cam.zoom * 0.3);
       ctx.drawImage(img, clamp(px, W - iw, 0), py, iw, ih);
+      stageAmbient(stage)?.(ctx, { x: clamp(px, W - iw, 0), y: py, w: iw, h: ih }, fx.time / 60, { reduced: !!fx.reduced });
     } else {
       const g = ctx.createLinearGradient(0, 0, 0, horizon);
       g.addColorStop(0, shadeHex(floorC, 0.7)); g.addColorStop(1, lightHex(floorC, 0.3));

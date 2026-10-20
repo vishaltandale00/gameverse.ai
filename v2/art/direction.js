@@ -6,6 +6,7 @@ import { BODIES, PARTS, normalizeLook } from './characters.js';
 import { PROPS } from './props.js';
 import { MATERIALS, SURFACES, PLATFORMS } from './tiles.js';
 import { THEMES, TIMES } from './scenery.js';
+import { FEATURES, DEPTHS, normalizeFeatures } from './features.js';
 import { hex } from './color.js';
 
 export const DIRECTION_SCHEMA_ID = 'gameverse.v2.art-direction/0.1';
@@ -27,7 +28,8 @@ export const DIRECTION_SCHEMA = obj({
   style: en(['pixel', 'vector']),
   styleLabel: { type: 'string' },
   font: en(FONTS),
-  scenery: obj({ theme: en(THEMES), time: en(TIMES), sky: { type: 'array', items: color }, land: color }),
+  scenery: obj({ theme: en(THEMES), time: en(TIMES), sky: { type: 'array', items: color }, land: color,
+    features: { type: 'array', description: 'Parts of the environment, composed on the theme: e.g. leafy-forest (dense, far and mid) with falling-leaves; street with traffic and pedestrians in front of a skyline with neon-signs.', items: obj({ kind: en(FEATURES), density: { type: 'number', description: '0.05 sparse … 1 packed' }, depth: en(DEPTHS) }) } }),
   tiles: obj({ material: en(MATERIALS), surface: en(SURFACES), platform: en(PLATFORMS), groundColor: color, surfaceColor: color, platformColor: color }),
   player: look, enemy: look,
   pickup: prop('pickup'), hazard: prop('hazard'), goal: prop('goal'),
@@ -38,7 +40,7 @@ export const DIRECTION_PROMPT = `You are the art director for a 2D game. Code dr
 
 - style: "pixel" for pixel-art or retro requests (16-bit, 8-bit, SNES), otherwise "vector" (clean cartoon). styleLabel: a short phrase like "crisp 16-bit pixel art".
 - font: title typography that fits the tone.
-- scenery: the background world. sky: three hex colors top, middle, horizon. land: the main color of distant hills, rock or buildings (an earthy or stone color that differs clearly from the sky, never another sky blue).
+- scenery: the background world. Compose it from features on top of the theme: static ones (leafy-forest, pine-forest, palms, bushes, flowers, tall-grass, skyline, houses, street, street-lamps, neon-signs, bridge, mountains, hills, cliffs, river, lake, ocean, waterfall, castle, ruins, windmills, fences, market-stalls) and moving ones animated live (traffic, pedestrians, birds, falling-leaves, fireflies, rain, snow, fog, drifting-clouds, embers, bubbles, train). Requests about environments map here: "leafy forests" → leafy-forest dense at far and mid plus falling-leaves; "busy city streets" → street, traffic dense, pedestrians, skyline, street-lamps. sky: three hex colors top, middle, horizon. land: the main color of distant hills, rock or buildings (an earthy or stone color that differs clearly from the sky, never another sky blue).
 - tiles: material is the soil or wall body; surface is the walkable top layer; platform is floating blocks. Ground and platforms must contrast with each other and with the sky.
 - player and enemy: build each character from parts. body is the body plan (biped for people and upright animals, quadruped for four-legged animals, blob for slimes, flyer for birds and bats, robot for wheeled machines, ghost for spirits). primary is the main fur, skin or clothing color, secondary the belly, face or skin, accent shoes, hats and trim, eye the iris. Give the player bright, friendly colors and the enemy a contrasting, menacing palette (eyes "angry" or "visor").
 - pickup, hazard, goal: the closest kind and a color.
@@ -63,7 +65,7 @@ export function normalizeDirection(input = {}) {
     style: pick(d.style, ['pixel', 'vector'], 'vector'),
     styleLabel: typeof d.styleLabel === 'string' && d.styleLabel ? d.styleLabel.slice(0, 80) : 'clean cartoon vector art',
     font: pick(d.font, FONTS, 'rounded'),
-    scenery: { theme: pick(d.scenery?.theme, THEMES, 'meadow'), time: pick(d.scenery?.time, TIMES, 'day'), sky: Array.isArray(d.scenery?.sky) && d.scenery.sky.length === 3 && d.scenery.sky.every(c => hex(c)) ? d.scenery.sky.map(c => hex(c)) : null, land: hex(d.scenery?.land, undefined) },
+    scenery: { features: normalizeFeatures(d.scenery?.features), theme: pick(d.scenery?.theme, THEMES, 'meadow'), time: pick(d.scenery?.time, TIMES, 'day'), sky: Array.isArray(d.scenery?.sky) && d.scenery.sky.length === 3 && d.scenery.sky.every(c => hex(c)) ? d.scenery.sky.map(c => hex(c)) : null, land: hex(d.scenery?.land, undefined) },
     tiles: { material: pick(d.tiles?.material, MATERIALS, 'dirt'), surface: pick(d.tiles?.surface, SURFACES, 'grass'), platform: pick(d.tiles?.platform, PLATFORMS, 'brick'), groundColor: hex(d.tiles?.groundColor, '#8a5a2b'), surfaceColor: hex(d.tiles?.surfaceColor, '#4fbf3a'), platformColor: hex(d.tiles?.platformColor, '#c0603a') },
     player: normalizeLook(d.player), enemy: normalizeLook({ eyes: 'angry', ...d.enemy }),
     pickup: propOf('pickup', 'coin'), hazard: propOf('hazard', 'spikes'), goal: propOf('goal', 'flag'),
