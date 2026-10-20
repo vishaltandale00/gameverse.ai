@@ -9,7 +9,7 @@
 //   chooseAction(battle, action)  → records the action (or answers a switch/learn prompt at once)
 //   resolveTurn(content, battle, rng) → plays the turn; returns { events, battle }
 //   battleResult(battle)          → the outcome once it's over
-import { STAGE_STATS } from '../content.js';
+import { STAGE_STATS, settingsOf } from '../content.js';
 import { moveOf, statsOf, summary, levelUp, newMovesAt, learnSlot, expToLevel, speciesOf, lookup, STRUGGLE } from './stats.js';
 import { calcDamage, accMult, clampStage, stageMult } from './damage.js';
 import { attemptCapture } from './capture.js';
@@ -26,9 +26,9 @@ const STATUS_TEXT = { burn: 'was burned', poison: 'was poisoned', paralysis: 'is
  * Start a battle. foeTrainer: { id, name, class?, prize? } for trainer, leader and champion battles.
  */
 export function startBattle(content, { kind = 'wild', player, foe, foeTrainer = null, rng }) {
-  void rng; void content;
+  void rng;
   const battle = {
-    kind, turn: 0, over: false, outcome: null, money: 0, expTotal: 0,
+    kind, difficulty: settingsOf(content).difficulty, turn: 0, over: false, outcome: null, money: 0, expTotal: 0,
     player: { party: player, active: firstAlive(player), stages: freshStages(), vol: freshVol() },
     foe: { party: foe, active: firstAlive(foe), stages: freshStages(), vol: freshVol(), trainer: foeTrainer, healUsed: false },
     participants: [], leveled: [], escapeAttempts: 0, action: null, mustSwitch: false, learnQueue: [], captured: null,

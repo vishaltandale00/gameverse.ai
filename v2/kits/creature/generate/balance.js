@@ -4,7 +4,7 @@
 // fills thin learnsets; makes every type weak to and resisted by something and closes the
 // starter triangle; puts wild, trainer, leader and champion levels on the level curve; and stocks
 // marts by progress. Returns { content, fixes } where fixes lists what changed.
-import { STATUSES, STAGE_STATS, STATS, GROWTHS, ITEM_KINDS, areaStages, gymOrder, levelCurve } from '../content.js';
+import { STATUSES, STAGE_STATS, STATS, GROWTHS, ITEM_KINDS, areaStages, gymOrder, levelCurve, difficultyOffset, settingsOf } from '../content.js';
 import { seedFrom } from '../../../kernel/rng.js';
 
 const clamp = (v, lo, hi, d = lo) => (Number.isFinite(Number(v)) ? Math.max(lo, Math.min(hi, Math.round(Number(v)))) : d);
@@ -144,12 +144,15 @@ export function balance(input) {
     if (!out.length) out.push(wildPool[0] || c.species[0].id);
     return out.map((id, i) => { const lv = i === out.length - 1 ? ace : Math.max(2, ace - spread - ((out.length - 2 - i) % 2)); return { species: evolvedAt(id, lv), level: lv }; });
   };
+  c.settings = settingsOf(c);
+  const off = difficultyOffset(c);
   const stages = areaStages(c);
   for (const a of c.areas || []) {
     if (!stages.has(a.id)) continue;
-    const g = stages.get(a.id) + 1, L = levelCurve(g);
+    const g = stages.get(a.id) + 1, L = levelCurve(g, c) + off;
     if (a.kind === 'route' || a.kind === 'cave') {
-      const [lo, hi] = g === 1 ? [2, 5] : [L - 6, L - 3];
+      // The first route stays gentle for a level-5 starter; later routes follow L(g) − 6 .. L(g) − 3.
+      const [lo, hi] = g === 1 ? [2, 5] : [L - off - 6, L - off - 3];
       a.encounters = (a.encounters || []).map(e => ({ ...e, species: valid(e.species) })).filter(e => e.species);
       if (!a.encounters.length) a.encounters = wildPool.slice(0, 2).map(id => ({ species: id, weight: 50 }));
       a.encounters = a.encounters.map(e => ({ species: evolvedAt(e.species, hi), minLevel: lo, maxLevel: hi, weight: clamp(e.weight, 1, 100, 20) }));
@@ -158,7 +161,7 @@ export function balance(input) {
     if (a.leader) a.leader.party = party(a.leader.party, L, 2);
   }
   const G = gymOrder(c).length;
-  if (c.champion) c.champion.party = party(c.champion.party, levelCurve(G) + 6, 2);
+  if (c.champion) c.champion.party = party(c.champion.party, levelCurve(G, c) + 6 + off, 2);
 
   // ---- marts by progress
   const byPrice = kind => c.items.filter(i => i.kind === kind).sort((a, b) => a.price - b.price);

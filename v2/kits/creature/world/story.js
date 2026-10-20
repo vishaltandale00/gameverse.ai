@@ -100,7 +100,7 @@ export function evolvedAt(content, speciesId, level) {
 /** The rival's party for their nth battle: their starter line plus fillers on the level curve. */
 export function rivalParty(content, rivalStarter, badges, n) {
   const stages = areaStages(content);
-  const ace = badges === 0 ? STARTER_LEVEL : levelCurve(badges + 1) - 3;
+  const ace = badges === 0 ? STARTER_LEVEL : levelCurve(badges + 1, content) - 3;
   const party = [{ species: evolvedAt(content, rivalStarter, ace), level: ace }];
   const pool = [...new Set(content.areas.filter(a => stages.has(a.id) && stages.get(a.id) <= badges).flatMap(a => (a.encounters || []).map(e => e.species)))];
   const s = { rng: seedFrom(`${content.id}:rival:${n}`) };

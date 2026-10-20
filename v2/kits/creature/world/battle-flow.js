@@ -3,7 +3,6 @@
 // The displayed state (`disp`) advances beat by beat, so HP bars and sprites match the text.
 import { createCreature, summary, statsOf, moveOf, evolutionOf, lookup, speciesOf, movesAt, startBattle, chooseAction, resolveTurn, needsInput, battleResult, expBar } from '../rules/index.js';
 import { rivalParty, speakerName, fill } from './story.js';
-import { levelCurve } from '../content.js';
 
 export const REVEAL = 1.5; // characters per frame
 const HOLD = 42;           // frames a revealed battle message stays before advancing on its own
@@ -322,6 +321,5 @@ export function battleView(game, state) {
     party: R.player.party.map(c => ({ ...summary(content, c), active: c === me })),
     item: B.item ? lookup(content).items.get(B.item)?.name : null,
     learn: learnFor ? { name: learnFor.name, move: moveOf(content, q.move).name, moves: learnFor.moves.map(m => moveOf(content, m.id).name) } : null,
-    levelCurve: levelCurve(1),
   };
 }

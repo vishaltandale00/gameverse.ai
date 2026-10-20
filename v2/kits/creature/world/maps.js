@@ -120,6 +120,8 @@ export function checkMap(input) {
   const blocked = blockers(map);
   // Gate guards stand aside once open; check with the open layout.
   for (const e of map.entities) if (e.kind === 'guard') blocked.delete(`${e.x},${e.y}`);
+  // Doors and mats warp you away: they are destinations, never shortcuts.
+  for (const d of [...map.doors, ...map.mats]) blocked.add(`${d.x},${d.y}`);
   const entries = [...map.openings.map(o => o.inner[0]), ...map.mats.map(m => m.inner)];
   if (!entries.length) return problems;
   const dists = entries.map(p => reach(map, p, blocked));
@@ -128,7 +130,7 @@ export function checkMap(input) {
     const closed = reach(input, entries[0], blocked);
     if (!closed.has(`${input.puzzle.switch.x},${input.puzzle.switch.y}`)) problems.push({ code: 'switch_unreachable', map: map.id });
   }
-  for (const d of map.doors) if (!adjacentReached(dists[0], d.x, d.y) && !dists[0].has(`${d.x},${d.y + 1}`)) problems.push({ code: 'door_unreachable', map: map.id, door: d.to });
+  for (const d of map.doors) if (!dists[0].has(`${d.x},${d.y + 1}`)) problems.push({ code: 'door_unreachable', map: map.id, door: d.to });
   for (const e of map.entities) {
     if (e.kind === 'guard' || e.kind === 'starter') continue;
     const ok = e.kind === 'trainer' || e.kind === 'leader' || e.kind === 'champion' || e.kind === 'item' || e.kind === 'npc' ? adjacentReached(dists[0], e.x, e.y) : true;
@@ -265,10 +267,13 @@ function genTown(content, area, exits, roomDoors, r, { isStart }) {
 
 function genOutdoor(content, area, exits, r, { cave, attempt }) {
   const vertical = !exits.length || exits.some(e => e.side === 'N' || e.side === 'S');
+  // Length along the travel axis comes from the content (area.length, default settings.routeLength);
+  // longer routes also get a little wider so big worlds feel open, not just long.
+  const len = Math.max(24, Math.min(160, Math.round((area.length || 50) * (cave ? 0.75 : 1)) + r.range(-3, 3)));
+  const across = Math.max(0, Math.round((len - 50) / 8));
   let w, h;
-  if (cave) { if (vertical) { w = 24 + r.int(5); h = 30 + r.int(11); } else { w = 30 + r.int(11); h = 22 + r.int(4); } }
-  else if (vertical) { w = 22 + r.int(5); h = 40 + r.int(17); }
-  else { w = 40 + r.int(17); h = 20 + r.int(3); }
+  if (vertical) { w = (cave ? 24 : 22) + r.int(5) + across; h = len; }
+  else { w = len; h = (cave ? 22 : 20) + r.int(3) + across; }
   const FILL = cave ? T.rock : T.tree, OPEN = cave ? T.floor : T.ground, PATH = cave ? T.floor : T.path;
   const { g, map } = newMap(area.id, area, cave ? 'cave' : 'route', w, h, FILL, { dark: !!cave });
   map.encounter = cave ? 'floor' : 'grass';
@@ -440,7 +445,7 @@ function genGym(content, area, exits, doorLinked, r) {
   g.set(cx - 2, h - 3, T.statue); g.set(cx + 2, h - 3, T.statue);
   map.puzzle = { switch: { x: sx, y: sy }, barrier: 5, flag: `switch:${area.id}` };
   entity(map, area.leader.id, { kind: 'leader', trainer: area.leader.id, x: cx, y: 3, facing: 'down', name: area.leader.name, look: area.leader.look, sight: 0 });
-  entity(map, 'guide', { kind: 'npc', x: cx + 1, y: h - 3, facing: 'down', name: 'Gym Guide', look: 'a cheerful guide in a cap', lines: gymGuideLines(content, area, sx < cx) });
+  entity(map, 'guide', { kind: 'npc', x: cx - 3, y: h - 3, facing: 'down', name: 'Gym Guide', look: 'a cheerful guide in a cap', lines: gymGuideLines(content, area, sx < cx) });
   roomEntrance(g, map, exits, doorLinked, cx, h);
   return finish(g, map);
 }

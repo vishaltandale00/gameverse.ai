@@ -36,6 +36,7 @@ export function fromModel(m) {
 
   const content = {
     schema: CONTENT_SCHEMA,
+    settings: { ...(m.settings || {}) },
     id: slug(m.title, 'creature-game'), title: m.title || 'Untitled', logline: m.logline || '', artStyle: m.artStyle || '',
     music: m.music, region: m.region, player: m.player, rival: m.rival, mentor: m.mentor,
     types: (m.types || []).map(t => ({ id: slug(t.id), name: t.name || t.id, color: t.color, look: t.look || '' })),
@@ -66,13 +67,16 @@ export function fromModel(m) {
   areas.push(home);
   let prevTown = home, badges = 0;
   const route = (r, from) => {
-    const a = { id: uniq(r.id, 'route'), name: r.name || 'Route', kind: r.kind === 'cave' ? 'cave' : 'route', theme: r.theme || '', description: r.description || '', connects: [{ to: from.id }], encounters: (r.encounters || []).map(e => ({ species: slug(e.species), minLevel: 2, maxLevel: 4, weight: e.weight || 10 })), trainers: (r.trainers || []).map(trainerOf) };
-    from.connects.push({ to: a.id, ...(badges ? { gate: { badge: badges } } : {}) });
+    const a = { id: uniq(r.id, 'route'), name: r.name || 'Route', kind: r.kind === 'cave' ? 'cave' : 'route', theme: r.theme || '', description: r.description || '', connects: [{ to: from.id }],
+      ...(r.length > 0 ? { length: r.length } : {}), ...(r.encounterRate > 0 ? { encounterRate: r.encounterRate / 100 } : {}), encounters: (r.encounters || []).map(e => ({ species: slug(e.species), minLevel: 2, maxLevel: 4, weight: e.weight || 10 })), trainers: (r.trainers || []).map(trainerOf) };
+    from.connects.push({ to: a.id, ...(badges && from.kind === 'town' ? { gate: { badge: badges } } : {}) });
     areas.push(a);
     return a;
   };
+  // A chain of routes from a town; returns the last one. Old single-route shapes still work.
+  const routes = (list, from) => { let at = from; for (const r of (Array.isArray(list) ? list : [list]).filter(Boolean)) { at = route(r, at); } return at; };
   for (const ch of m.chapters) {
-    const r = route(ch.route, prevTown);
+    const r = routes(ch.routes || ch.route, prevTown);
     const town = { id: uniq(ch.town.id, 'town'), name: ch.town.name || 'Town', kind: 'town', theme: ch.town.theme || '', description: ch.town.description || '', connects: [{ to: r.id }], services: ['heal', 'mart', 'pc'], mart: [], npcs: npcsOf(ch.town.npcs) };
     r.connects.push({ to: town.id });
     areas.push(town);
@@ -87,7 +91,7 @@ export function fromModel(m) {
     badges++;
     prevTown = town;
   }
-  const fr = route(m.finale.route, prevTown);
+  const fr = routes(m.finale.routes || m.finale.route, prevTown);
   const league = { id: uniq(m.finale.league.id, 'league'), name: m.finale.league.name || 'League', kind: 'league', theme: m.finale.league.theme || '', description: m.finale.league.description || '', connects: [{ to: fr.id }], services: ['heal'] };
   fr.connects.push({ to: league.id });
   areas.push(league);

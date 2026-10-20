@@ -210,7 +210,8 @@ function stepNpcs(game, state, map) {
     const p = state.player;
     if ((nx === p.x && ny === p.y) || (p.move && p.move.fx === nx && p.move.fy === ny)) continue;
     if (!passable(game, state, map, nx, ny) || occupied(game, state, map.id, nx, ny, e.id)) continue;
-    if (map.warps.some(w => w.x === nx && w.y === ny)) continue;
+    // Never stand on a warp or the doorstep in front of one (that would seal a door).
+    if (map.warps.some(w => w.x === nx && (w.y === ny || w.y === ny - 1 || w.y === ny + 1))) continue;
     s.move = { fx: s.x, fy: s.y, tx: nx, ty: ny, t: 0, dur: NPC_FRAMES };
   }
 }

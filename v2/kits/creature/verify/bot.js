@@ -197,16 +197,16 @@ export function createBot(game, state, opts = {}) {
         if (!tile) return true;
         if (state.player.x === tile.x && state.player.y === tile.y) return true;
         const dirs = bot.path((x, y) => x === tile.x && y === tile.y, { avoidGrass });
-        if (!dirs) return false;
+        if (!dirs) { bot.fail = `no path to ${tile.x},${tile.y} on ${mapId}`; step({}); continue; }
         bot.walk(dirs);
         continue;
       }
       const route = bot.mapRoute(mapId);
-      if (!route) return false;
+      if (!route) { bot.fail = `no map route to ${mapId}`; return false; }
       const next = route[0], map = game.maps[state.player.map];
       const exits = map.warps.filter(w => w.to === next);
       const dirs = bot.path((x, y) => exits.some(w => w.x === x && w.y === y), { avoidGrass });
-      if (!dirs) { bot.stuck++; return false; }
+      if (!dirs) { bot.fail = `no path on ${state.player.map} from ${state.player.x},${state.player.y} to ${next}`; for (let i = 0; i < 40; i++) step({}); continue; }
       bot.walk(dirs);
     }
     return state.player.map === mapId;
@@ -226,6 +226,21 @@ export function createBot(game, state, opts = {}) {
     if (p.facing !== dir) { step(INPUT[dir]); step({}); }
     tap('a');
     return true;
+  };
+
+  /** Move party member i to the front through the start menu (Party → Switch). */
+  bot.swapToFront = i => {
+    if (i <= 0 || i >= state.party.length || !bot.settle()) return false;
+    const want = state.party[i].uid;
+    tap('b');                                   // open the start menu
+    if (state.mode !== 'menu') return false;
+    tap('a');                                   // Party
+    for (let k = 0; k < i; k++) tap('down');
+    tap('a'); tap('down'); tap('a');            // Switch
+    for (let k = 0; k < i; k++) tap('up');
+    tap('a');                                   // swap with the first slot
+    for (let k = 0; k < 3 && state.mode === 'menu'; k++) tap('b');
+    return state.party[0].uid === want;
   };
 
   /** Walk back and forth in encounter tiles until a battle starts (or a step budget runs out). */

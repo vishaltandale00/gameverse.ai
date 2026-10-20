@@ -4,7 +4,7 @@
 // trainers send in their best type matchup. The same scoring is the verifier's greedy player policy.
 import { moveOf, statsOf, STRUGGLE } from './stats.js';
 import { effectiveness, typesOf } from './damage.js';
-import { int } from './random.js';
+import { int, rand } from './random.js';
 
 export const usableMoves = c => c.moves.map((m, i) => (m.pp > 0 ? i : -1)).filter(i => i >= 0);
 
@@ -76,7 +76,10 @@ export function bestMatchup(content, party, against, exclude = -1) {
 export function foeAction(content, battle, rng) {
   const side = battle.foe, me = side.party[side.active];
   if (battle.kind === 'wild') return { kind: 'move', index: wildMove(me, rng) };
-  if ((battle.kind === 'leader' || battle.kind === 'champion') && !side.healUsed && me.hp > 0 && me.hp < statsOf(content, me).hp * 0.25) return { kind: 'heal' };
+  // Difficulty (content.settings.difficulty): easy trainers often pick at random; hard ones all heal once.
+  const healer = battle.kind === 'leader' || battle.kind === 'champion' || battle.difficulty === 'hard';
+  if (healer && !side.healUsed && me.hp > 0 && me.hp < statsOf(content, me).hp * 0.25) return { kind: 'heal' };
+  if (battle.difficulty === 'easy' && rand(rng) < 0.5) return { kind: 'move', index: wildMove(me, rng) };
   return { kind: 'move', index: bestMove(content, side, battle.player) };
 }
 

@@ -17,9 +17,23 @@ export const EFFECT_KINDS = ['none', 'status', 'stat', 'heal', 'drain', 'recoil'
 const person = obj({ name: str(), look: str('short visual description: clothes, colors, hair') });
 const npc = obj({ id: str('lowercase slug'), name: str(), look: str(), lines: arr(str()) });
 const member = obj({ species: str('species id') });
+const routeOf = obj({
+  id: str('lowercase slug'), name: str(), kind: en(['route', 'cave']), theme: str(), description: str(),
+  length: int('tiles along the route; 0 = settings.routeLength'), encounterRate: int('percent per step in grass; 0 = settings.encounterRate'),
+  encounters: null, trainers: null,
+});
 const trainer = obj({ id: str('lowercase slug, unique'), name: str(), class: str('e.g. Hiker, Lass, Fisher'), look: str(), party: arr(member, '1–3 creatures'), intro: str(), defeat: str() });
 
+routeOf.properties.encounters = arr(obj({ species: str('species id'), weight: int('1–100') }), '2–4 wild species');
+routeOf.properties.trainers = arr(trainer, '1–2 trainers');
+
 export const MODEL_SCHEMA = obj({
+  settings: obj({
+    routeLength: int('typical route length in tiles: 35 small, 50 normal, 80 large, 120–160 huge'),
+    encounterRate: int('percent chance of a wild battle per step in tall grass; 10 normal, 4 rare, 20 frequent'),
+    difficulty: en(['easy', 'normal', 'hard'], 'trainer skill and level offset'),
+    levelStep: int('levels the curve climbs per gym: 7 normal, 5 gentle, 9 steep'),
+  }),
   title: str(), logline: str('one sentence'), artStyle: str('e.g. "bright 16-bit pixel art"'),
   music: obj({ mood: en(['adventurous', 'calm', 'tense', 'playful', 'mysterious', 'heroic']), tempo: int('80–150'), key: en(['C', 'D', 'E', 'F', 'G', 'A', 'B']), scale: en(['major', 'minor', 'dorian', 'mixolydian']), instrument: en(['square', 'triangle', 'sawtooth', 'sine']) }),
   region: obj({ name: str(), description: str('one sentence') }),
@@ -48,13 +62,13 @@ export const MODEL_SCHEMA = obj({
   items: arr(obj({ id: str('lowercase slug'), name: str(), kind: en(['ball', 'heal', 'status', 'revive', 'repel']), price: int(), value: num('ball: catch bonus 1–2; heal: HP restored; revive: fraction 0.5'), description: str() }), '5–8 items with at least one ball and one heal'),
   home: obj({ id: str('lowercase slug'), name: str('starting town'), theme: str('visual theme, e.g. "cozy village with thatched roofs"'), description: str(), npcs: arr(npc) }),
   chapters: arr(obj({
-    route: obj({ id: str('lowercase slug'), name: str(), kind: en(['route', 'cave']), theme: str(), description: str(), encounters: arr(obj({ species: str('species id'), weight: int('1–100') }), '2–4 wild species'), trainers: arr(trainer, '1–2 trainers') }),
+    routes: arr(routeOf, '1–3 routes or caves in a row leading to the town (more = a bigger world)'),
     town: obj({ id: str('lowercase slug'), name: str(), theme: str(), description: str(), npcs: arr(npc) }),
     gym: obj({ id: str('lowercase slug'), name: str(), theme: str(), description: str(), trainers: arr(trainer, '0–2 gym trainers'),
       leader: obj({ id: str('lowercase slug'), name: str(), look: str(), type: str('type id this gym specializes in'), badge: str('badge name'), party: arr(member, '2–4 creatures, mostly of the gym type'), intro: str(), defeat: str() }) }),
-  }), '2 or 3 chapters in order: a route (or cave) leading to a town that has a gym'),
+  }), 'one chapter per gym, in order (2–3 by default, up to 8): routes leading to a town that has a gym'),
   finale: obj({
-    route: obj({ id: str('lowercase slug'), name: str(), kind: en(['route', 'cave']), theme: str(), description: str(), encounters: arr(obj({ species: str(), weight: int() })), trainers: arr(trainer) }),
+    routes: arr(routeOf, '1–2 routes or caves leading to the league'),
     league: obj({ id: str('lowercase slug'), name: str(), theme: str(), description: str() }),
     champion: obj({ name: str(), look: str(), party: arr(member, '3–5 strong, evolved creatures'), intro: str(), defeat: str() }),
   }),
@@ -73,4 +87,14 @@ Rules for your content:
 - Items: 5–8, including a basic ball (price 200, value 1), a better ball (value 1.5), a heal (value 20), a strong heal (value 50), a status cure and a revive (value 0.5).
 - The journey: a home town, then 2–3 chapters (a route or cave with wild encounters and trainers, then a town whose gym leader specializes in one type), then a finale route and the league with the champion. Wild encounters list species ids that fit the place; early routes use base forms. Gym leaders use their type; the champion uses evolved creatures of several types.
 - Levels are set by the engine on a level curve, so parties only list species.
-- Keep text short: one-line descriptions, dialogue lines under 90 characters.`;
+- Keep text short: one-line descriptions, dialogue lines under 90 characters.
+- settings: routeLength 50, encounterRate 10, difficulty "normal", levelStep 7 unless the idea asks otherwise. Route length and encounterRate 0 mean "use settings".
+
+Common requests map to these real fields (never fake them with a different field):
+- Bigger or smaller world: settings.routeLength (and per-route length), and more or fewer routes per chapter (chapters[].routes, finale.routes). An open or huge world: routeLength 120–160 and 2–3 routes per chapter.
+- More or fewer gyms or badges: add or remove chapters (each has its own gym).
+- More creatures: add species (with learnsets and looks) and use them in encounters.
+- Harder or easier: settings.difficulty, and settings.levelStep for a steeper or gentler level curve.
+- More or fewer wild battles: settings.encounterRate (or a route's encounterRate).
+- Theme and cast: names, looks, themes and descriptions.
+When revising, start from the current content and change only what the request asks; keep every other field, list and count exactly as it is.`;
