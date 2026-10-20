@@ -35,4 +35,29 @@ export function gameInstanceErrors(file, ids) {
 }
 
 export function hold(rt, n, input) { return run(rt, n, input); }
+
+// Real 2D spaces (engine.space.tilemap/grid/arena2d...) plus a test-only generator that bakes cells.
+import spaces2d from '../v2/primitives/engine/spaces2d.index.js';
+export const bakeCells = {
+  id: 'engine.generate.movetest', card: { intent: 'test-only: bake listed cells', params: { cells: { type: 'json', default: [] }, layer: { type: 'string', default: '' } } },
+  install(rt, cfg, inst) { rt.space(inst.space).bake(cfg.cells, rt, cfg.layer ? { layer: cfg.layer } : {}); },
+};
+export const makeReal = (d, extra = []) => compile(d, { primitives: [...spaces2d, bakeCells, ...move, ...extra] });
+/** Cells from a picture: rows top to bottom, legend char → block id. */
+export function picture(rows, legend) {
+  const H = rows.length, out = [];
+  rows.forEach((line, i) => [...line].forEach((ch, x) => { if (legend[ch]) out.push({ at: [x, H - 1 - i], block: legend[ch] }); }));
+  return out;
+}
+export const BLOCKS = [
+  { id: 'stone', solid: true }, { id: 'plank', solid: false, tags: ['one_way'] }, { id: 'ladder', solid: false, tags: ['climbable'] },
+  { id: 'water', solid: false, tags: ['liquid'] }, { id: 'ledge', solid: true, tags: ['ledge:down'] }, { id: 'door', solid: false }, { id: 'tunnel', solid: false },
+];
+export function realDoc({ space, with: w = {}, cells = [], zones = [], systems = [], body = { size: [0.8, 0.9] }, at, archetypes = [], blocks = BLOCKS, layer } = {}) {
+  return {
+    schema: 'gameverse.v2.game/0.2', id: 'movereal', title: 'Move on real spaces', seed: 5,
+    spaces: [{ id: 'map', use: space, with: w, zones, generators: cells.length ? [{ use: 'engine.generate.movetest', with: { cells, ...(layer ? { layer } : {}) } }] : [] }],
+    systems, content: { blocks, archetypes: [{ id: 'hero', components: { body } }, ...archetypes] }, player: { archetype: 'hero', at },
+  };
+}
 export const games = () => fs.readdirSync(new URL('../v2/games/', import.meta.url)).filter(f => f.endsWith('.json'));
