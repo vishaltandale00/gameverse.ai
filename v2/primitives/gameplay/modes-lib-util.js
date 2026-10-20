@@ -12,7 +12,7 @@ export const len = a => Math.hypot(...a);
 export const norm = a => { const l = len(a); return l ? a.map(v => v / l) : a.map(() => 0); };
 export const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 /** Round to 1e-6 so JSON state stays compact; deterministic either way. */
-export const r6 = x => Math.round(x * 1e6) / 1e6;
+export const r6 = x => Math.round(x * 1e6) / 1e6 + 0; // + 0 turns -0 into 0
 export const r6v = a => a.map(r6);
 export const KMH = 1 / 3.6;
 export const DEG = Math.PI / 180;
