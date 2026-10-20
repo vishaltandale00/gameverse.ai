@@ -1232,6 +1232,9 @@
       "requiresAbilities": [],
       "movement": {"jumpHeight": 3, "jumpDistance": 4},
       "abilities": {"ember_step": {"dash": 3}, "briar_grip": {"climb": true}, "moth_wings": {"doubleJump": true}},
+      "palette": {"wall": "stone", "ground": "stone", "platform": "one_way", "rung": "one_way", "hazard": "spikes", "water": "water", "door": "breakable_wall"},
+      "oneWayPlatforms": true,
+      "themes": {"moss": {"wall": "moss_stone", "ground": "moss_stone"}, "wet": {"wall": "wet_stone", "ground": "wet_stone"}, "rust": {"wall": "rust_plate", "ground": "rust_plate"}, "thorn": {"wall": "thorn_wood", "ground": "moss_stone"}, "ash": {"wall": "ash_stone", "ground": "bone_ash"}, "dark": {"wall": "glass_brick"}, "void": {"wall": "ash_stone"}},
       "rooms": [
        {
         "id": "cw_square",

@@ -82,7 +82,7 @@ export default {
       maxShift: { type: 'integer', min: 0, max: 8, default: 1, effect: 'cross cells a line may shift per step in the passability proof' },
       clearBehind: { type: 'boolean', default: true, effect: 'clear placed cells behind as well as entities' },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem', 'chunk_placed', 'chunk_placed:*'], services: ['chunks'] },
+    provides: { events: ['generated', 'generated:*', 'generate_problem', 'chunk_placed', 'chunk_placed:*'], services: ['generation', 'chunks'] },
     requires: { capabilities: ['position'] },
     problems: ['chunk_impassable', 'chunk_tier_missing', 'chunks_fallback'],
     validates: ['chunk_duplicate', 'chunk_rows_ragged', 'chunk_char_unknown', 'chunk_axis_invalid', 'chunk_legend_invalid'],

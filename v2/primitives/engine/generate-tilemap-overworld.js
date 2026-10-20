@@ -61,7 +61,7 @@ export default {
       autoWarp: { type: 'boolean', default: true, effect: 'stepping on an exit or door tile moves the walker to its pair' },
       placePlayer: { type: 'boolean', default: true },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem', 'warp', 'warp:*'], services: ['overworld'] },
+    provides: { events: ['generated', 'generated:*', 'generate_problem', 'warp', 'warp:*'], services: ['generation', 'overworld'] },
     requires: { capabilities: ['position', 'editCells'] },
     defines: [{ kind: 'zone', in: 'areas' }], // each area's map becomes a zone named after the area (unless bound to a doc zone)
     problems: ['exit_unreachable', 'door_unreachable', 'switch_unreachable', 'trainer_unreachable', 'item_unreachable', 'npc_unreachable', 'leader_unreachable', 'champion_unreachable', 'map_unreachable', 'warp_unpaired', 'area_too_big'],

@@ -47,7 +47,7 @@ export default {
       placePlayer: { type: 'boolean', default: true },
       attempts: { type: 'integer', min: 0, max: 16, default: 6 },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['worldgraph'] },
+    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'worldgraph'] },
     requires: { capabilities: ['position'] },
     problems: ['node_unreachable', 'node_dead_end', 'edge_crossing', 'template_min', 'repeat_kind', 'graph_fallback'],
     validates: ['template_zone_reused', 'template_range_invalid', 'graph_too_small'],
@@ -193,14 +193,14 @@ function prove(config, g) {
   const walk = (from, next) => { const seen = new Set([from]), q = [from]; while (q.length) for (const n of next[q.shift()]) if (!seen.has(n)) { seen.add(n); q.push(n); } return seen; };
   const fwd = walk(g.start, succ), back = walk(g.end, pred);
   for (let i = 0; i < N; i++) {
-    if (!fwd.has(i)) problems.push(problem('node_unreachable', g.nodes[i].id, `node '${g.nodes[i].id}' cannot be reached from the start`));
-    else if (!back.has(i) && !g.nodes[i].optional) problems.push(problem('node_dead_end', g.nodes[i].id, `the end cannot be reached from '${g.nodes[i].id}'`));
+    if (!fwd.has(i)) problems.push(problem('node_unreachable', 'layout', `node '${g.nodes[i].id}' cannot be reached from the start`));
+    else if (!back.has(i) && !g.nodes[i].optional) problems.push(problem('node_dead_end', 'layout', `the end cannot be reached from '${g.nodes[i].id}'`));
   }
   if (config.layout === 'layered' && !g.undirected) for (let i = 0; i < g.edges.length; i++) for (let j = i + 1; j < g.edges.length; j++) {
     const [a, b] = g.edges[i], [c, d] = g.edges[j];
-    if (cross(g.nodes[a].pos, g.nodes[b].pos, g.nodes[c].pos, g.nodes[d].pos)) problems.push(problem('edge_crossing', g.nodes[a].id, `edge ${g.nodes[a].id}→${g.nodes[b].id} crosses ${g.nodes[c].id}→${g.nodes[d].id}`));
+    if (cross(g.nodes[a].pos, g.nodes[b].pos, g.nodes[c].pos, g.nodes[d].pos)) problems.push(problem('edge_crossing', 'layout', `edge ${g.nodes[a].id}→${g.nodes[b].id} crosses ${g.nodes[c].id}→${g.nodes[d].id}`));
   }
   for (const t of config.templates) if ((g.counts[t.kind] || 0) < t.min) problems.push(problem('template_min', `templates`, `only ${g.counts[t.kind] || 0} '${t.kind}' nodes; ${t.min} required`));
-  for (const k of config.noRepeat) for (const [a, b] of g.edges) if (g.nodes[a].kind === k && g.nodes[b].kind === k) { problems.push(problem('repeat_kind', g.nodes[b].id, `'${k}' follows '${k}' along ${g.nodes[a].id}→${g.nodes[b].id}`)); break; }
+  for (const k of config.noRepeat) for (const [a, b] of g.edges) if (g.nodes[a].kind === k && g.nodes[b].kind === k) { problems.push(problem('repeat_kind', 'noRepeat', `'${k}' follows '${k}' along ${g.nodes[a].id}→${g.nodes[b].id}`)); break; }
   return problems;
 }

@@ -47,7 +47,7 @@ export default {
       starts: { type: 'integer', min: 0, max: 16, default: 2 }, minStartDistance: { type: 'integer', min: 1, max: 64, default: 6 }, landPerStart: { type: 'integer', min: 1, default: 20 },
       attempts: { type: 'integer', min: 0, max: 16, default: 8 },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['board'] },
+    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'board'] },
     requires: { capabilities: ['position', 'editCells'] },
     problems: ['board_has_match', 'board_no_move', 'cells_disconnected', 'deploy_unreachable', 'lane_broken', 'start_on_water', 'start_crowded', 'start_land_short', 'board_fallback'],
     validates: ['board_size_missing', 'board_pieces_few', 'board_terrain_open'],

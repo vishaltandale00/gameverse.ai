@@ -40,7 +40,7 @@ export default {
       placePlayer: { type: 'boolean', default: true },
       attempts: { type: 'integer', min: 0, max: 16, default: 6 },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem', 'unlocked', 'unlocked:*', 'key_found', 'key_found:*'], services: ['dungeon'] },
+    provides: { events: ['generated', 'generated:*', 'generate_problem', 'unlocked', 'unlocked:*', 'key_found', 'key_found:*'], services: ['generation', 'dungeon'] },
     requires: { capabilities: ['position'] },
     defines: [],
     problems: ['dungeon_unsolvable', 'room_unreachable', 'key_behind_lock', 'cells_unreachable', 'dungeon_cramped', 'dungeon_fallback'],

@@ -34,12 +34,12 @@ test('tilemap.rooms: generates every room, proves it and announces it', () => {
   assert.deepEqual(st.problems, [], JSON.stringify(st.problems));
   assert.equal(rt.state.counts['generated:w'], 1);
   assert.equal(st.rooms.length, 5);
-  // Walls on the shell, openings matched between neighbours, a ladder through the shared hall/shaft wall.
+  // Walls on the shell, openings matched between neighbours, rungs through the shared hall/shaft wall.
   assert.ok(rt.test({ cell: [0, 5], space: 'w', block: 'stone' }));
   const hall = st.rooms.find(r => r.id === 'hall');
   assert.deepEqual(hall.exits.map(e => [e.side, e.peer]), [['r', 'cave'], ['t', 'shaft']]);
   for (const [x, y] of hall.exits[0].cells) assert.equal(rt.space('w').getCell([x, y]), null, 'the shared wall is cut');
-  assert.ok(hall.exits[1].cells.some(([x, y]) => rt.space('w').getCell([x, y]) === 'ladder'));
+  assert.ok(hall.exits[1].cells.some(([x, y]) => rt.space('w').getCell([x, y - 1]) === 'rung'), 'a rung stack climbs through the shared wall');
   // Features spawn as entities on reachable tiles, the boss inside its own room.
   assert.equal(rt.entity('bench_1').components.feature.kind, 'bench');
   assert.equal(rt.query('feature').filter(e => e.archetype === 'slime').length, 2);

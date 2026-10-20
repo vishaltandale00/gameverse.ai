@@ -99,7 +99,7 @@ export default {
       openSide: { type: 'string', options: ['bottom', 'top'], default: 'bottom', effect: 'side of a row picture the ball comes from' },
       archetype: { type: 'string', default: 'piece', effect: 'archetype when a group names none' },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['layout'] },
+    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'layout'] },
     requires: { capabilities: ['position'] },
     problems: ['piece_sealed', 'piece_overlap', 'piece_unsupported', 'role_shortfall', 'layout_empty'],
     validates: ['material_unknown', 'shape_data_missing', 'roles_overfull'],
@@ -161,7 +161,7 @@ export function layout(config, r) {
       const list = structurePieces(g);
       for (const p of list) {
         if (!inBounds(p.x, p.y)) { skipped++; continue; }
-        pieces.push({ id: `${gid}_${pieces.length + 1}`, group: gid, kind: g.kind === 'peg' ? 'block' : g.kind, shape: p.shape || 'box', archetype: arch, x: p.x, y: p.y, w: p.w, h: p.h, ang: 0, anchor: 'bottom', motion: g.motion, tags: g.tags, ...matOf(p.material || g.material, p.w, p.h) });
+        pieces.push({ id: `${gid}_${pieces.length + 1}`, gi, group: gid, kind: g.kind === 'peg' ? 'block' : g.kind, shape: p.shape || 'box', archetype: arch, x: p.x, y: p.y, w: p.w, h: p.h, ang: 0, anchor: 'bottom', motion: g.motion, tags: g.tags, ...matOf(p.material || g.material, p.w, p.h) });
       }
     }
   });
@@ -169,12 +169,12 @@ export function layout(config, r) {
   const blocks = pieces.filter(p => p.anchor === 'bottom'), box = p => [p.x - p.w / 2, p.y, p.x + p.w / 2, p.y + p.h];
   for (let i = 0; i < blocks.length; i++) for (let j = i + 1; j < blocks.length; j++) {
     const a = box(blocks[i]), b = box(blocks[j]), ox = Math.min(a[2], b[2]) - Math.max(a[0], b[0]), oy = Math.min(a[3], b[3]) - Math.max(a[1], b[1]);
-    if (ox > 0.08 && oy > 0.08) problems.push(problem('piece_overlap', blocks[j].group, `${blocks[j].id} overlaps ${blocks[i].id}`, { hint: `set y to ${Math.max(a[3], b[3]).toFixed(2)} to stack it` }));
+    if (ox > 0.08 && oy > 0.08) problems.push(problem('piece_overlap', `groups[${blocks[j].gi}]`, `${blocks[j].id} overlaps ${blocks[i].id}`, { hint: `set y to ${Math.max(a[3], b[3]).toFixed(2)} to stack it` }));
   }
   if (config.support) for (const p of blocks) {
     if (p.static || Math.abs(p.y) < 0.05) continue;
     const a = box(p), held = blocks.some(q => q !== p && Math.abs(box(q)[3] - p.y) < 0.05 && Math.min(a[2], box(q)[2]) - Math.max(a[0], box(q)[0]) > 0.05);
-    if (!held) problems.push(problem('piece_unsupported', p.group, `${p.id} at y ${p.y} rests on nothing`));
+    if (!held) problems.push(problem('piece_unsupported', `groups[${p.gi}]`, `${p.id} at y ${p.y} rests on nothing`));
   }
   if (!pieces.length) problems.push(problem('layout_empty', 'groups', 'no piece was placed'));
   // Roles from the seed: shuffle candidates, hand out counts / fractions in order.

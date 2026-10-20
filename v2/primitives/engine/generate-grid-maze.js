@@ -232,7 +232,7 @@ export function generateMaze(params, seed) {
   for (let attempt = 0; attempt <= params.attempts; attempt++) {
     const fallback = attempt === params.attempts;
     const maze = buildMaze(fallback ? { ...params, density: 1 } : params, attempt ? seedFrom(`${seed}:${attempt}`) : seed);
-    const problems = checkMaze(maze, expect);
+    const problems = checkMaze(maze, expect, '');
     if (!best || problems.length < best.problems.length) best = { maze, problems, attempts: attempt + 1, fallback };
     if (!problems.length) break;
   }
@@ -257,10 +257,12 @@ export default {
       palette: { type: 'object', default: {}, fields: { wall: { type: 'string', default: 'wall' }, houseWall: { type: 'string', default: 'house_wall' }, door: { type: 'string', default: 'house_door' } } },
       pellet: { type: 'string', default: 'pellet', effect: 'archetype spawned on pellet tiles ("" for none)' },
       power: { type: 'string', default: 'power_pellet', effect: 'archetype spawned on power-pellet tiles ("" for none)' },
+      pelletCounter: { type: 'string', default: 'pellets', effect: 'collectible counter of pellets (component collectible.counter)' },
+      powerCounter: { type: 'string', default: 'power_pellets', effect: 'collectible counter of power pellets' },
       placePlayer: { type: 'boolean', default: true, effect: 'move the player to the maze start when it spawns' },
       attempts: { type: 'integer', min: 0, max: 16, default: 4, effect: 'sub-seeds before the complete-lattice fallback' },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['maze'] },
+    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'maze'] },
     requires: { capabilities: ['position', 'editCells'] },
     problems: ['maze_size', 'maze_mirror', 'maze_wide', 'maze_dead_end', 'maze_start', 'maze_disconnected', 'pellet_unreachable', 'no_pellets', 'power_misplaced', 'power_count', 'house_missing', 'house_interior', 'house_door', 'house_slot', 'house_exit', 'bonus_spot', 'tunnel_mismatch', 'tunnel_unlisted', 'tunnel_closed', 'tunnel_count'],
     validates: ['maze_size_unknown', 'maze_style_unknown', 'maze_size_invalid', 'maze_outside_space'],
@@ -289,7 +291,7 @@ export default {
     for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) writer.set(toAt(x, y), block[maze.cells[y * MW + x]] ?? null);
     writer.flush();
     const powerSet = new Set(maze.power);
-    for (const i of maze.pellets) { const arch = powerSet.has(i) ? config.power : config.pellet; if (arch) spawnAt(rt, space, arch, toAt(i % MW, Math.floor(i / MW)), { pickup: { maze: instance.key, power: powerSet.has(i) } }); }
+    for (const i of maze.pellets) { const arch = powerSet.has(i) ? config.power : config.pellet; if (arch) spawnAt(rt, space, arch, toAt(i % MW, Math.floor(i / MW)), { collectible: { counter: powerSet.has(i) ? config.powerCounter : config.pelletCounter, value: 1 } }); }
     const pt = p => toAt(p.x, p.y);
     addZones(rt, space, maze.houses.map((q, i) => {
       const a = toAt(q.x0, q.y0), b = toAt(q.x1, q.y1);

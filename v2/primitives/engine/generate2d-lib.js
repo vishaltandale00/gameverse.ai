@@ -124,12 +124,29 @@ export function patchZones(rt, space, byId) {
 }
 
 /** Store the result, publish services and announce: generated + generated:<space>. */
+/** Document path of a generator instance: spaces[i].generators[j] (instance.key is spaces.<id>.generators[j]). */
+export function docPath(rt, instance) {
+  const si = rt.doc.spaces.findIndex(s => s.id === instance.space), gj = /generators\[(\d+)\]$/.exec(instance.key || '')?.[1];
+  return si >= 0 && gj !== undefined ? `spaces[${si}].generators[${gj}]` : instance.key;
+}
+const WARNINGS = new Set(['exit_unmatched', 'chunk_impassable', 'chunk_tier_missing', 'role_shortfall', 'dungeon_cramped', 'start_crowded', 'warp_unpaired']);
+const INFO = new Set(['graph_fallback', 'board_fallback', 'dungeon_fallback', 'chunks_fallback']);
+
+/**
+ * Store the result, publish services and announce: generated + generated:<space>.
+ * Problems take verify()'s shape {code, path, message, hint?, severity}, with
+ * paths made absolute (spaces[i].generators[j].with.…); every generator's
+ * problems are also listed by the shared `generation` service.
+ */
 export function publish(rt, instance, space, id, result, services = {}) {
-  const st = rt.store(instance.key);
+  const st = rt.store(instance.key), base = `${docPath(rt, instance)}.with`;
+  result.problems = (result.problems || []).map(p => ({ ...p, path: p.path && !p.path.startsWith('spaces[') ? `${base}.${p.path}` : p.path || base, severity: p.severity || (WARNINGS.has(p.code) ? 'warning' : INFO.has(p.code) ? 'info' : 'error'), generator: id }));
   Object.assign(st, result);
+  const reg = (rt.caches.generation ??= []); if (!reg.includes(instance.key)) reg.push(instance.key);
+  rt.provide('generation', { instances: () => reg.slice(), problems: () => reg.flatMap(k => rt.store(k).problems || []) });
   for (const [name, api] of Object.entries(services)) { rt.provide(name, api); rt.provide(`${name}:${space.sid}`, api); }
   rt.emitTyped('generated', space.sid, { generator: id, key: instance.key, problems: (result.problems || []).length, attempts: result.attempts ?? 1, fallback: Boolean(result.fallback) });
-  for (const p of result.problems || []) rt.emit('generate_problem', { generator: id, ...p });
+  for (const p of result.problems) rt.emit('generate_problem', { ...p });
 }
 
 /**

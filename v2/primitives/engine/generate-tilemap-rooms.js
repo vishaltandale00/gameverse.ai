@@ -1,11 +1,12 @@
 // Authored-topology 2D rooms: the document fixes each room's rect, zone, style
 // and exits; this fills them in (walls, ground, platforms, pits, water,
-// hazards, ladders, features) from a seed and PROVES every room traversable for
+// hazards, one-way rungs, features) from a seed and PROVES every room traversable for
 // the stated movement abilities: every exit reaches every other exit and every
-// feature is reachable (side view: jump arcs, falls, ladders, climb, swim — see
+// feature is reachable (side view: jump arcs, falls, one-way rungs, climb, swim — see
 // generate2d-reach.js; top-down: 4-neighbour walking). Failed rooms retry with
 // sub-seeds, then fall back to a plain layout (flat floor, staircase platforms,
-// ladders under high exits) which is proven too. Styles and palettes are data.
+// rungs under high exits) which is proven too. Declare the rung block one_way in content.blocks for
+// real platformer spaces (testSpace treats every block as solid but only the proof walks it). Styles and palettes are data.
 // Coordinates are tiles, y up; rect = [x0, y0, x1, y1) as space zones.
 import { withDefaults, drawSeed, stream, Raster, clamp, spaceOf, zoneRect, cellWriter, publish, spawnAt, problem, rectsOverlap, inRect } from './generate2d-lib.js';
 import { ROLE, reachSide, reachTop, movementFor, ABILITY_EFFECTS } from './generate2d-reach.js';
@@ -23,7 +24,7 @@ export const ROOM_STYLES = {
   village: { ground: 2, platforms: 0, platformWidth: [3, 6] },
   flooded: { ground: 1, water: 0.35, platforms: 3, platformWidth: [3, 5] },
 };
-const DEFAULT_PALETTE = { wall: 'stone', ground: 'stone', platform: 'plank', hazard: 'spikes', water: 'water', ladder: 'ladder', door: 'door' };
+const DEFAULT_PALETTE = { wall: 'stone', ground: 'stone', platform: 'plank', rung: 'rung', hazard: 'spikes', water: 'water', door: 'door' };
 
 const feature = { type: 'object', open: true, fields: {
   kind: { type: 'string', required: true, effect: 'marker kind (bench, chest, npc, spawn, door, lever...)' },
@@ -72,9 +73,9 @@ export default {
       oneWayPlatforms: { type: 'boolean', default: false, effect: 'platforms can be jumped through from below (needs a one_way block)' },
       spawnFeatures: { type: 'boolean', default: true },
     },
-    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['rooms'] },
+    provides: { events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'rooms'] },
     requires: { capabilities: ['position', 'editCells'] },
-    problems: ['exit_unreachable', 'feature_unreachable', 'room_unreachable', 'room_isolated', 'exit_unmatched'],
+    problems: ['exit_unreachable', 'feature_unreachable', 'room_unreachable', 'room_isolated', 'exit_unmatched', 'start_blocked'],
     validates: ['room_rect_invalid', 'room_overlap', 'room_outside_zone', 'room_outside_space', 'room_style_unknown', 'ability_unknown', 'room_duplicate'],
   },
   validate(raw, doc, ctx, inst = {}) {
@@ -198,6 +199,7 @@ export function generateRooms(config, seed, start = null) {
   const startRoom = out.find(r => start && inRect(r.rect, Math.floor(start[0]), Math.floor(start[1]))) || out[0];
   let starts = start && startRoom === out.find(r => inRect(r.rect, Math.floor(start[0]), Math.floor(start[1]))) ? [{ x: Math.floor(start[0]) - bx0, y: Math.floor(start[1]) - by0 }] : portStarts.get(startRoom.id).slice(0, 1);
   const hit = new Set(), nodes = new Set(), entered = new Set([startRoom.id]);
+  if (start && reachG(big, all, starts).nodes.size === 0) problems.push(problem('start_blocked', 'rooms', `the player start ${JSON.stringify(start)} has no foothold`));
   for (let pass = 0; pass < rooms.length + 1 && starts.length; pass++) {
     const res = reachG(big, all, starts, goals);
     res.hit.forEach(h => hit.add(h)); res.nodes.forEach(n => nodes.add(n));
@@ -229,7 +231,8 @@ function buildRoom(r, style, openings, m, config, palette, rnd, { plain, ground:
   const hasTop = openings.some(o => o.side === 't');
   let top = H - 2; // highest interior row
   if (side && !plain && style.ceiling && !hasTop) { top = Math.min(H - 2, floor + style.ceiling + rnd.int(3)); box(1, top + 1, W - 2, H - 2 - top, SOLID, wall); }
-  const reserved = (x, y) => openings.some(o => o.span && ((o.side === 'l' && x <= 3 || o.side === 'r' && x >= W - 4) && y >= o.span[0] - r.rect[1] - 1 && y <= o.span[1] - r.rect[1] + 1 || (o.side === 't' || o.side === 'b') && x >= o.span[0] - r.rect[0] - 1 && x <= o.span[1] - r.rect[0]));
+  const near = start ? [Math.floor(start[0]) - r.rect[0], Math.floor(start[1]) - r.rect[1]] : null;
+  const reserved = (x, y) => (near && Math.abs(x - near[0]) <= 2 && Math.abs(y - near[1]) <= 3) || openings.some(o => o.span && ((o.side === 'l' && x <= 3 || o.side === 'r' && x >= W - 4) && y >= o.span[0] - r.rect[1] - 1 && y <= o.span[1] - r.rect[1] + 1 || (o.side === 't' || o.side === 'b') && x >= o.span[0] - r.rect[0] - 1 && x <= o.span[1] - r.rect[0]));
   if (!plain) {
     // Cave noise: blobs smoothed by a cellular automaton, kept off the floor line and the openings.
     if (style.noise) {
@@ -298,19 +301,25 @@ function buildRoom(r, style, openings, m, config, palette, rnd, { plain, ground:
     }
     o.cells = cellsOut;
   });
-  // Vertical links always get a ladder spanning the shared wall (lower room: floor up to the opening;
-  // upper room: through its floor hole), so a climb exists in both directions. The plain fallback
-  // also ladders mid-wall side exits and ceiling doors.
+  // Climb aids are one-way rungs (jump up through, stand on top), so they need no ability in any
+  // platformer space. Vertical links always get a rung stack spanning the shared wall: the lower room
+  // from the opening down to the floor, the upper room inside its floor hole; consecutive rungs rise
+  // at most jumpHeight − 1, across the wall too. The plain fallback also stacks rungs under mid-wall
+  // side exits and ceiling doors. Rungs cut through platforms and cave noise.
+  const step = Math.max(1, Math.floor(m.h) - 1);
+  const rungs = (x0, x1, yTop, yLow) => {
+    for (let y = yLow; y <= yTop; y++) for (let x = Math.max(1, x0); x < Math.min(W - 1, x1); x++) if (y >= floor && y < H - 1 && grid.get(x, y) !== EMPTY) put(x, y, EMPTY); // a clear shaft
+    for (let y = yTop; y >= yLow; y -= step) for (let x = x0; x < x1; x++) if (x > 0 && x < W - 1 || y >= H - 1 || y < g) put(x, y, ONEWAY, palette.rung);
+  };
   if (side) openings.forEach(o => {
-    const lad = (x, y0, y1) => { for (let y = y0; y < y1; y++) put(x, y, LADDER, palette.ladder); }; // ladders cut through platforms and noise
-    if (o.door) { if (plain && o.side === 't') lad(Math.floor(W / 2), floor, top + 1); return; }
-    if (o.side === 't') lad(o.span[0] - r.rect[0], floor, H);
-    else if (o.side === 'b') lad(o.span[0] - r.rect[0], 0, g);
-    else if (plain) lad(o.side === 'l' ? 1 : W - 2, floor, o.span[0] - r.rect[1]);
+    if (o.door) { if (plain && o.side === 't') rungs(Math.floor(W / 2) - 1, Math.floor(W / 2) + 2, top - 1, floor); return; }
+    if (o.side === 't') rungs(o.span[0] - r.rect[0], o.span[1] - r.rect[0], H - 2, floor);
+    else if (o.side === 'b') rungs(o.span[0] - r.rect[0], o.span[1] - r.rect[0], g - 1, 0);
+    else if (plain) { const x0 = o.side === 'l' ? 1 : W - 4; rungs(x0, x0 + 3, o.span[0] - r.rect[1] - 1, floor); }
   });
   // Proof: every port reaches every other port; features reachable from the first port.
   const reach = side ? reachSide : reachTop, problems = [];
-  const fromPort = starts.map(s => reach(grid, m, [s.launch && grid.get(s.x, s.y) === LADDER ? { x: s.x, y: s.y } : s], goals));
+  const fromPort = starts.map(s => reach(grid, m, [s.launch && grid.get(s.x, s.y) === ONEWAY ? { x: s.x, y: s.y + 1 } : s], goals));
   for (const [i, s] of starts.entries()) for (const t of starts) if (t.port !== s.port && !fromPort[i].hit.has(t.port))
     problems.push(problem('exit_unreachable', `exits[${openings[t.port].exit}]`, `room '${r.id}': exit '${openings[t.port].side}' unreachable from exit '${openings[s.port].side}'`, { room: r.id }));
   const reached = starts.length ? fromPort.reduce((acc, x) => (x.nodes.forEach(n => acc.add(n)), acc), new Set()) : null;

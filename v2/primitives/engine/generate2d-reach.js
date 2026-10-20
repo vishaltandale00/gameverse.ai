@@ -3,7 +3,7 @@
 // the bottom), cells hold ROLE values. Out of bounds is solid.
 //
 // Side view (platformer): a player stands on a passable cell over solid ground,
-// a ladder, one-way platform, wall (climb/wallJump) or in water (swim). It walks,
+// a ladder, one-way platform (and drops through it with dropThrough), wall (climb/wallJump) or in water (swim). It walks,
 // falls straight down, and jumps along parabolic arcs: with jump height h and
 // jump distance D (landing at the same height), at horizontal speed k·max the
 // arc is y(s) = 4h·(s/kD)·(1 − s/kD); k ∈ {1, ¾, ½, ¼, 0}. Every swept cell must
@@ -16,7 +16,7 @@ export const ROLE = { EMPTY: 0, SOLID: 1, HAZARD: 2, WATER: 3, LADDER: 4, ONEWAY
 const { EMPTY, SOLID, HAZARD, WATER, LADDER, ONEWAY } = ROLE;
 
 /** Movement tunables in tiles, matching the tilemap space's ability names. */
-export const BASE_MOVEMENT = { jumpHeight: 3, jumpDistance: 4, doubleJump: false, dash: 0, climb: false, wallJump: false, swim: false, fly: false };
+export const BASE_MOVEMENT = { jumpHeight: 3, jumpDistance: 4, doubleJump: false, dash: 0, climb: false, wallJump: false, swim: false, fly: false, dropThrough: true };
 /** Common ability names → movement deltas (numbers add, booleans OR). Documents may extend or override. */
 export const ABILITY_EFFECTS = {
   double_jump: { doubleJump: true }, doublejump: { doubleJump: true }, high_jump: { jumpHeight: 2 }, dash: { dash: 3 }, air_dash: { dash: 3 },
@@ -92,6 +92,7 @@ export function reachSide(grid, m, starts, goals = new Map()) {
     const vertical = m.fly || c === LADDER || (m.swim && c === WATER) || clingy(x, y);
     if (vertical) { if (passable(x, y + 1)) { if (standable(x, y + 1)) add(x, y + 1); else jump(x, y); } if (passable(x, y - 1)) { if (standable(x, y - 1)) add(x, y - 1); else fall(x, y - 1); } }
     jump(x, y); // from ground, ladder, wall or the water surface
+    if (m.dropThrough && at(x, y - 1) === ONEWAY) fall(x, y - 1); // drop through a one-way platform
   }
   return { nodes, hit };
 }
