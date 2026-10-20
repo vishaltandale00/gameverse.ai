@@ -4,5 +4,6 @@ import grid from './space-grid.js';
 import physics2d from './space-physics2d.js';
 import arena2d from './space-arena2d.js';
 import track from './space-track.js';
+import none from './space-none.js';
 
-export default [tilemap, grid, physics2d, arena2d, track];
+export default [tilemap, grid, physics2d, arena2d, track, none];
