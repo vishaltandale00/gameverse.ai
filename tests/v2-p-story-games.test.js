@@ -31,14 +31,17 @@ test('every story instance and every doc.plot section of the example games prefl
   }
 });
 
-// Test-only stand-ins for the foreign vocabulary, so full documents can run headless before those primitives land.
+// Test-only stand-ins for foreign vocabulary that no registered primitive provides yet, so full documents
+// can run headless before those primitives land. Kinds a real primitive owns are never stubbed
+// (the kernel allows one owner per kind).
+const owned = buildLogic(new Registry([...PRIMITIVES, testSpace]), Logic);
 const stubVocab = {
   id: 'gameplay.test.vocab',
   card: { intent: 'test stand-in for vocabulary owned by other workstreams', params: {} },
   logic(logic) {
     for (const k of FOREIGN) {
-      if (FOREIGN_PREDICATES.includes(k)) { if (!logic.predicates.has(k)) logic.predicate(k, { test: () => false }); }
-      else if (!logic.effects.has(k)) logic.effect(k, { run: (e, rt) => rt.emit(`stub:${k}`, {}) });
+      if (FOREIGN_PREDICATES.includes(k)) { if (!owned.predicates.has(k)) logic.predicate(k, { test: () => false }); }
+      else if (!owned.effects.has(k)) logic.effect(k, { run: (e, rt) => rt.emit(`stub:${k}`, {}) });
     }
   },
 };
