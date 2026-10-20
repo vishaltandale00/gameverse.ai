@@ -83,7 +83,8 @@ export default {
             if (p.at) { x = p.at[0]; z = p.at.length === 3 ? p.at[2] : p.at[1]; if (p.at.length === 3) y = p.at[1]; }
             else { x = rng.range(box[0] + w / 2, box[2] - w / 2); z = rng.range(box[1] + d / 2, box[3] - d / 2); if (!zoneHas(zone, x, undefined, z)) { why.outside++; continue; } }
             const g = ground(x, z);
-            const under = (y != null && y < g - 2) || (!p.at && Number.isFinite(zy1) && zy1 < g - 2);
+            // Underground when the zone lies below the surface, or a pinned y is well below it (a y near the ground is a ground hint).
+            const under = (Number.isFinite(zy1) && zy1 < g - 2) || (y != null && y < g - 8);
             if (under && y == null) y = Math.max(zy0 + 4, 4);
             // facing
             let rot = p.rot != null ? (p.rot * Math.PI) / 180 : rng.int(0, 3) * (Math.PI / 2);

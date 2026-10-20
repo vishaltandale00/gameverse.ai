@@ -189,10 +189,10 @@ export default {
       objTiles.set(k, t); return t;
     }
     /** Objects whose footprint may touch the rectangle [x0, z0, x1, z1] (eager, lazy tiles and runtime additions, minus removals). */
-    function objectsIn(x0, z0, x1, z1, { lazy = true } = {}) {
+    function objectsIn(x0, z0, x1, z1, { lazy = true, collidersOnly = false } = {}) {
       const grid = eagerIndex(), out = new Set(), removed = st().removed;
       for (let gx = Math.floor(x0 / OBJ_CELL); gx <= Math.floor(x1 / OBJ_CELL); gx++) for (let gz = Math.floor(z0 / OBJ_CELL); gz <= Math.floor(z1 / OBJ_CELL); gz++) for (const o of grid.get(gx * 65536 + gz) || []) out.add(o);
-      if (lazy && model.objectLayers.length) {
+      if (lazy && model.objectLayers.length && (!collidersOnly || model.objectLayers.some(l => l.colliders !== false))) {
         const T = config.objectTile;
         for (let tx = Math.floor(Math.max(0, x0) / T); tx <= Math.floor(Math.min(W, x1) / T); tx++) for (let tz = Math.floor(Math.max(0, z0) / T); tz <= Math.floor(Math.min(D, z1) / T); tz++) {
           const t = objTile(tx, tz);
@@ -202,7 +202,7 @@ export default {
       for (const o of Object.values(st().added)) { const r = objRadius(o); if (o.at[0] + r >= x0 && o.at[0] - r <= x1 && o.at[2] + r >= z0 && o.at[2] - r <= z1) out.add(o); }
       return [...out].filter(o => !removed[o.id]);
     }
-    const colliders = (x0, z0, x1, z1) => objectsIn(x0, z0, x1, z1).filter(o => o.shape === 'box' || o.shape === 'cylinder');
+    const colliders = (x0, z0, x1, z1) => objectsIn(x0, z0, x1, z1, { collidersOnly: true }).filter(o => o.shape === 'box' || o.shape === 'cylinder');
 
     // ----- bodies -----
     const radiusOf = e => { const s = bodySize(e); return Math.max(s[0], s[2]) / 2; };
@@ -231,26 +231,41 @@ export default {
     const target = at => { if (typeof at === 'string' && !at.includes(',')) { const z = zones().find(q => q.id === at); return z ? anchor(z) : null; } const p = atOf(at); return p.length === 2 ? [p[0], terrainY(p[0], p[1]), p[1]] : v3(p); };
     function walkableFn(p, cs) {
       const memo = new Map();
+      // Coarse cells sample the height field directly: building full-resolution tiles for a whole-world flood costs far more.
+      const coarse = cs > Math.max(4, 4 * config.navCell), off = cs * 0.3;
+      const groundY = coarse ? (x, z) => rawHeight(Math.max(0, Math.min(W, x)), Math.max(0, Math.min(D, z))) : terrainY;
+      const slope = coarse ? (x, z, g) => { const e = 2 * R, gx = groundY(x + e, z) - g, gz = groundY(x, z + e) - g; return (Math.atan(Math.hypot(gx, gz) / e) * 180) / Math.PI; } : (x, z) => slopeAt(x, z);
+      const point = (x, z) => {
+        if (!(x >= 0 && z >= 0 && x <= W && z <= D)) return false;
+        if (p.fly) return true;
+        let g = groundY(x, z);
+        const wl = waterLevelAt(x, z);
+        if (!p.swim && wl != null && wl - g > config.wade) {
+          // Deep water is walkable only on a deck (bridge, pier, raft) at or above the surface.
+          const deck = colliders(x - p.r, z - p.r, x + p.r, z + p.r).filter(o => circlePush(o, x, z, 0.01)).reduce((m, o) => Math.max(m, o.at[1] + objHeight(o)), -Infinity);
+          if (!(deck >= wl - 0.3)) return false;
+          g = deck;
+        } else if (!p.climb && slope(x, z, g) > p.slope) return false;
+        for (const o of colliders(x - p.r, z - p.r, x + p.r, z + p.r)) if (o.at[1] + objHeight(o) > g + p.step && o.at[1] < g + config.body[1] && circlePush(o, x, z, p.r)) return false;
+        return !p.avoid?.([x, g, z]);
+      };
+      // Coarse cells (much larger than a body) are walkable when any of five samples is: one house does not block 24 m.
       return (ix, iz) => {
         const k = ix * 1048576 + iz; let v = memo.get(k);
         if (v !== undefined) return v;
         const x = (ix + 0.5) * cs, z = (iz + 0.5) * cs;
-        v = x >= 0 && z >= 0 && x <= W && z <= D;
-        if (v && !p.fly) {
-          if (!p.climb && slopeAt(x, z) > p.slope) v = false;
-          else if (!p.swim && waterDepthAt(x, z) > config.wade) v = false;
-          else { const g = terrainY(x, z); for (const o of colliders(x - p.r, z - p.r, x + p.r, z + p.r)) if (o.at[1] + objHeight(o) > g + p.step && o.at[1] < g + config.body[1] && circlePush(o, x, z, p.r)) { v = false; break; } }
-        }
-        if (v && p.avoid?.([x, terrainY(x, z), z])) v = false;
+        v = point(x, z) || (coarse && (point(x - off, z - off) || point(x + off, z - off) || point(x - off, z + off) || point(x + off, z + off)));
         memo.set(k, v); return v;
       };
     }
+    /** Nearest walkable cell to c within a few rings (bodies stand next to, not inside, obstacles). */
+    const snapCell = (ok, c, rings = 3) => { for (let r = 0; r <= rings; r++) for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++) if (Math.max(Math.abs(dx), Math.abs(dz)) === r && ok(c[0] + dx, c[1] + dz)) return [c[0] + dx, c[1] + dz]; return null; };
     const navCellFor = (p, a, b) => p.cell ?? Math.max(config.navCell, Math.hypot(b[0] - a[0], b[2] - a[2]) / 160);
     function path(from, to, o) {
       const p = navOpts(o), a = target(from), b = target(to); if (!a || !b) return null;
       const cs = navCellFor(p, a, b), ok = walkableFn(p, cs);
-      const s = [Math.floor(a[0] / cs), Math.floor(a[2] / cs)], g = [Math.floor(b[0] / cs), Math.floor(b[2] / cs)];
-      if (!ok(...g) || !ok(...s)) return null;
+      const s = snapCell(ok, [Math.floor(a[0] / cs), Math.floor(a[2] / cs)]), g = snapCell(ok, [Math.floor(b[0] / cs), Math.floor(b[2] / cs)]);
+      if (!g || !s) return null;
       const r = astar({
         start: s, isGoal: c => c[0] === g[0] && c[1] === g[1], key: c => `${c[0]},${c[1]}`, maxNodes: p.maxNodes,
         h: c => Math.hypot(c[0] - g[0], c[1] - g[1]) * cs,
@@ -271,9 +286,9 @@ export default {
     function reachable(from, rtOrOpts, o) {
       const opts = rtOrOpts && !rtOrOpts.state ? rtOrOpts : o || {};
       const p = navOpts({ maxNodes: config.reachNodes, ...opts }), a = target(from), cs = p.cell ?? reachCell(), ok = walkableFn(p, cs), out = new Set();
-      const s = [Math.floor(a[0] / cs), Math.floor(a[2] / cs)];
+      const s = snapCell(ok, [Math.floor(a[0] / cs), Math.floor(a[2] / cs)], 1);
       out.cell = cs; out.truncated = false;
-      if (!ok(...s)) return out;
+      if (!s) return out;
       const seen = new Set([`${s[0]},${s[1]}`]), queue = [s];
       for (let i = 0; i < queue.length; i++) {
         if (seen.size >= p.maxNodes) { out.truncated = true; break; }

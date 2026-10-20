@@ -59,7 +59,7 @@ function perm(seed) {
 const fade = t => t * t * t * (t * (t * 6 - 15) + 10);
 const lerp = (a, b, t) => a + (b - a) * t;
 // 8 gradient directions in 2D, 12 edge directions in 3D (improved noise).
-const G2 = [[1, 0], [-1, 0], [0, 1], [0, -1], [0.7071, 0.7071], [-0.7071, 0.7071], [0.7071, -0.7071], [-0.7071, -0.7071]];
+const G2F = new Float64Array([1, 0, -1, 0, 0, 1, 0, -1, 0.7071, 0.7071, -0.7071, 0.7071, 0.7071, -0.7071, -0.7071, -0.7071]);
 function grad3(h, x, y, z) {
   switch (h & 15) {
     case 0: return x + y; case 1: return -x + y; case 2: return x - y; case 3: return -x - y;
@@ -69,20 +69,27 @@ function grad3(h, x, y, z) {
   }
 }
 
+/** Permutation tables for octaves seed, seed + stride, ... (cached: one lookup per fractal call). */
+const octaveCache = new Map();
+function octavePerms(seed, n, stride) {
+  const k = seed * 64 + n + (stride === 7919 ? 32 : 0); let t = octaveCache.get(k);
+  if (!t) { t = Array.from({ length: n }, (_, o) => perm(seed + o * stride)); if (octaveCache.size > 512) octaveCache.clear(); octaveCache.set(k, t); }
+  return t;
+}
 /** 2D gradient noise in about [-1, 1]. */
-export function perlin2(seed, x, y) {
-  const p = perm(seed);
+export const perlin2 = (seed, x, y) => perlin2p(perm(seed), x, y);
+function perlin2p(p, x, y) {
   const xf = Math.floor(x), yf = Math.floor(y);
   const X = xf & 255, Y = yf & 255, dx = x - xf, dy = y - yf;
   const u = fade(dx), v = fade(dy);
-  const g = (h, gx, gy) => { const d = G2[h & 7]; return d[0] * gx + d[1] * gy; };
+  const g = (h, gx, gy) => { const i = (h & 7) * 2; return G2F[i] * gx + G2F[i + 1] * gy; };
   const aa = p[p[X] + Y], ab = p[p[X] + Y + 1], ba = p[p[X + 1] + Y], bb = p[p[X + 1] + Y + 1];
   return 1.4142 * lerp(lerp(g(aa, dx, dy), g(ba, dx - 1, dy), u), lerp(g(ab, dx, dy - 1), g(bb, dx - 1, dy - 1), u), v);
 }
 
 /** 3D gradient noise in about [-1, 1]. */
-export function perlin3(seed, x, y, z) {
-  const p = perm(seed);
+export const perlin3 = (seed, x, y, z) => perlin3p(perm(seed), x, y, z);
+function perlin3p(p, x, y, z) {
   const xf = Math.floor(x), yf = Math.floor(y), zf = Math.floor(z);
   const X = xf & 255, Y = yf & 255, Z = zf & 255, dx = x - xf, dy = y - yf, dz = z - zf;
   const u = fade(dx), v = fade(dy), w = fade(dz);
@@ -94,20 +101,20 @@ export function perlin3(seed, x, y, z) {
 
 /** Fractal Brownian motion, normalised to about [-1, 1]. */
 export function fbm2(seed, x, y, octaves = 5, lacunarity = 2, gain = 0.5) {
-  let sum = 0, amp = 1, norm = 0, f = 1;
-  for (let o = 0; o < octaves; o++) { sum += amp * perlin2(seed + o * 1013, x * f, y * f); norm += amp; amp *= gain; f *= lacunarity; }
+  let sum = 0, amp = 1, norm = 0, f = 1; const ps = octavePerms(seed, octaves, 1013);
+  for (let o = 0; o < octaves; o++) { sum += amp * perlin2p(ps[o], x * f, y * f); norm += amp; amp *= gain; f *= lacunarity; }
   return sum / norm;
 }
 export function fbm3(seed, x, y, z, octaves = 3, lacunarity = 2, gain = 0.5) {
-  let sum = 0, amp = 1, norm = 0, f = 1;
-  for (let o = 0; o < octaves; o++) { sum += amp * perlin3(seed + o * 1013, x * f, y * f, z * f); norm += amp; amp *= gain; f *= lacunarity; }
+  let sum = 0, amp = 1, norm = 0, f = 1; const ps = octavePerms(seed, octaves, 1013);
+  for (let o = 0; o < octaves; o++) { sum += amp * perlin3p(ps[o], x * f, y * f, z * f); norm += amp; amp *= gain; f *= lacunarity; }
   return sum / norm;
 }
 /** Ridged multifractal in [0, 1]: sharp crests where noise crosses zero (mountain ridges). */
 export function ridged2(seed, x, y, octaves = 5, lacunarity = 2, gain = 0.5) {
-  let sum = 0, amp = 1, norm = 0, f = 1, weight = 1;
+  let sum = 0, amp = 1, norm = 0, f = 1, weight = 1; const ps = octavePerms(seed, octaves, 7919);
   for (let o = 0; o < octaves; o++) {
-    let n = 1 - Math.abs(perlin2(seed + o * 7919, x * f, y * f));
+    let n = 1 - Math.abs(perlin2p(ps[o], x * f, y * f));
     n *= n * weight; weight = Math.min(1, Math.max(0, n * 2));
     sum += amp * n; norm += amp; amp *= gain; f *= lacunarity;
   }

@@ -96,7 +96,7 @@ export default {
       // Model props are placed objects in both kinds of space (voxel spaces list them through api.objects).
       const objectSpecs = voxel ? specs.filter(s => s.model) : specs;
       if (objectSpecs.length) m.addObjectLayer({
-          id: `scatter#${instance.key}`,
+          id: `scatter#${instance.key}`, colliders: !voxel && objectSpecs.some(s => s.collide),
           objects([x0, z0, x1, z1]) {
             const out = [];
             for (const s of objectSpecs) for (const c of inRect(s, x0, z0, x1, z1)) out.push({ id: `sc${s.pi}_${c.gx}_${c.gz}`, kind: 'prop', ...(s.model ? { model: s.model } : { block: s.block }), at: [+c.x.toFixed(3), +ground(c.x, c.z).toFixed(3), +c.z.toFixed(3)], rot: c.rot, scale: c.scale, shape: s.collide ? 'cylinder' : 'none', r: +(0.4 * c.scale).toFixed(3), h: +(2 * c.scale).toFixed(3) });
