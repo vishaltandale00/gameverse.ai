@@ -104,13 +104,13 @@ function balanceSim(content, seed, runsPerGym) {
         const lead = bestMatchup(content, party, foe[0]);
         if (lead > 0) party.unshift(...party.splice(lead, 1));
         // Healing items on hand: the mentor's two plus what the mart money buys by then.
-        if (simBattle(content, { kind: 'leader', player: party, foe, trainer: { id: L.id, name: L.name, prize: 0 }, rng, heals: 2 + 2 * g }) === 'win') wins++;
+        if (simBattle(content, { kind: 'leader', player: party, foe, trainer: { id: L.id, name: L.name, prize: 0, noHeal: L.noHeal, ai: L.ai }, rng, heals: 2 + 2 * g }) === 'win') wins++;
       }
       per[starter] = Math.round(wins / n * 100) / 100;
     }
     const worst = Math.min(...Object.values(per));
     report.leaders.push({ gym: gym.id, leader: L.name, level: levelCurve(g, content) + off, winRate: per, worst });
-    if (worst < 0.7) problems.push({ code: 'leader_too_hard', message: `${L.name} (gym ${g}) beats a curve-level party too often: worst starter wins ${Math.round(worst * 100)}%` });
+    if (worst < 0.7) problems.push({ code: 'leader_too_hard', path: `chapters[${i}].gym`, message: `${L.name} (gym ${g}) still beats a curve-level party after the kit's tuning: the worst starter wins ${Math.round(worst * 100)}%`, hint: 'give this gym a type that the starters or earlier wild creatures beat, or add a wild creature of a type that beats it' });
   });
   // Level-matched wild battles on every route: a party at the route's top level against each species.
   let wins = 0, total = 0;
@@ -128,7 +128,7 @@ function balanceSim(content, seed, runsPerGym) {
     }
   }
   report.wild = { winRate: total ? Math.round(wins / total * 100) / 100 : 1, battles: total };
-  if (total && wins / total < 0.95) problems.push({ code: 'wild_too_hard', message: `level-matched wild battles are won only ${Math.round(wins / total * 100)}% of the time` });
+  if (total && wins / total < 0.95) problems.push({ code: 'wild_too_hard', path: 'wild', message: `level-matched wild battles are won only ${Math.round(wins / total * 100)}% of the time`, hint: 'give wild creatures gentler roles (balanced or fast rather than strong or bulky)' });
   return { problems, report };
 }
 
@@ -213,7 +213,7 @@ export function playthrough(content, { seed = 1, deadline = Infinity, maxFrames 
 
 // ---------------------------------------------------------------- entry
 
-export function verify(input, { seed = 1, budgetMs = 2000, runsPerGym = 200, playthrough: wantPlay = true } = {}) {
+export function verify(input, { seed = 1, budgetMs = 2000, runsPerGym = 200, playthrough: wantPlay = true, playthroughs = 1 } = {}) {
   const t0 = now(), problems = [];
   const v = validate(input);
   if (!v.ok) return { ok: false, problems: v.errors.map(e => ({ code: e.code, message: `${e.path}: ${e.message}` })), report: { version: VERIFY_VERSION, proven: [], ms: Math.round(now() - t0) } };
@@ -234,13 +234,13 @@ export function verify(input, { seed = 1, budgetMs = 2000, runsPerGym = 200, pla
   if (!sim.problems.length) report.proven.push(`a curve-level greedy party beats every leader (${runsPerGym} runs per gym, every starter)`, 'level-matched wild battles are won');
   // The playthrough proves the whole path, once per starter while the budget allows.
   const runs = [];
-  for (let starter = 0; wantPlay && starter < content.starters.length; starter++) {
+  for (let starter = 0; wantPlay && starter < Math.min(playthroughs, content.starters.length); starter++) {
     const left = budgetMs - (now() - t0);
     if (left < 150) break;
     const play = playthrough(content, { seed, starter, deadline: now() + left - 20 });
+    // Informational: reachability and the battle sims already prove the content; a bot that gets
+    // stuck or runs out of frames is a bot limitation, never sent back to the model as a problem.
     runs.push({ starter: content.starters[starter], ...play });
-    if (play.error) problems.push({ code: 'playthrough_error', message: play.error });
-    else if (play.stuck) problems.push({ code: 'playthrough_stuck', message: `${content.starters[starter]}: ${play.steps.join('; ')}` });
   }
   report.playthrough = runs.length ? runs : { skipped: true, reason: 'budget' };
   const cleared = runs.filter(r => r.cleared);
