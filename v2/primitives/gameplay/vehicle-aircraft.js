@@ -24,6 +24,7 @@ export default {
       safeSink: { type: 'number', default: 3.5, min: 0, max: 30, unit: 'm/s', effect: 'max sink rate for a safe landing' },
       crashDamage: { type: 'number', default: 8, min: 0, max: 500, unit: 'hp per m/s', effect: 'damage per m/s of a hard landing' },
     },
+    actionSpace: { drive: { kind: 'continuous', params: { throttle: { min: -1, max: 1 }, steer: { min: -1, max: 1 } } } },
     provides: { events: ['airborne', 'landed', 'stall', 'stall_recovered', 'crash'] },
     requires: { capabilities: ['position'], primitives: ['gameplay.vehicle.core'] },
     reads: ['content.archetypes'],

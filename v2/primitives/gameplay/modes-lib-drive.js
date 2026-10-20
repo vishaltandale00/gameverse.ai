@@ -8,7 +8,8 @@ import { has, planeFor, planeUW, fromPlane, r6, sign, footOffset } from './modes
 
 export function initDrive(v) {
   const d = (v.components.drive ??= {});
-  d.heading ??= typeof v.components.body?.facing === 'number' ? v.components.body.facing : 0;
+  const f = v.components.body?.facing; // frozen field: +1/-1 in 2D, a vector in 3D
+  d.heading ??= Array.isArray(f) ? Math.atan2(f.length === 3 ? f[2] : f[1], f[0]) : f === -1 ? Math.PI : 0;
   d.vf ??= 0; d.vl ??= 0; d.vy ??= 0; d.speed ??= 0; d.airborne ??= false;
   return d;
 }
@@ -110,6 +111,7 @@ export function publish(v, plane, d) {
   d.speed = r6(Math.hypot(d.vf, d.vl) * (sign(d.vf) || 1));
   const body = (v.components.body ??= {});
   body.vel = r6v3(fromPlane(plane, wu, ww, d.vy, Array.isArray(v.at) ? v.at.length : 3));
+  body.facing = plane === 'xz' ? r6v3([Math.cos(d.heading), 0, Math.sin(d.heading)]) : (Math.cos(d.heading) < 0 ? -1 : 1);
 }
 const r6v3 = a => a.map(r6);
 

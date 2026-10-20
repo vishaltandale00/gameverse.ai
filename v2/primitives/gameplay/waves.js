@@ -81,6 +81,8 @@ export default {
     if (ids.filter(i => i === config.id).length > 1) errors.push(err('waves_duplicate', 'with.id', `two wave instances share id '${config.id}'`));
     return errors;
   },
+  /** Solver progress: waves cleared. */
+  progress(rt, config) { const s = rt.state.prim[`${ID}:${config.id}`]; return s ? Object.keys(s.cleared || {}).length : 0; },
   install(rt, config, instance) {
     const key = `${ID}:${config.id}`, F = sec => Math.round(sec * 60);
     const LANE = new Map(config.lanes.map(l => [l.id, l])), ENTRY = new Map(config.entries.map(e => [e.id, e]));

@@ -24,6 +24,7 @@ export default {
       dockRange: { type: 'number', default: 3, min: 0, max: 50, unit: 'm', effect: 'range for dockArchetypes' },
       dockSpeed: { type: 'number', default: 0.6, min: 0, max: 10, unit: 'm/s', effect: 'speed below which a boat counts as stopped' },
     },
+    actionSpace: { drive: { kind: 'continuous', params: { throttle: { min: -1, max: 1 }, steer: { min: -1, max: 1 } } } },
     provides: { events: ['docked', 'undocked', 'beached', 'refloated', 'crash'] },
     requires: { capabilities: ['position', 'surface'], primitives: ['gameplay.vehicle.core'] },
     reads: ['content.archetypes'],

@@ -64,6 +64,8 @@ export default {
     if (config.fightCallSec > config.introSec) errors.push(err('rounds_timing', 'with.fightCallSec', 'the FIGHT call must come within the intro'));
     return errors;
   },
+  /** Solver progress: rounds (or opponent stocks) won by the first fighter. */
+  progress(rt, config) { const s = rt.state.prim[ID]; if (!s?.fighters) return 0; const [a, b] = s.fighters; return config.stocks ? config.stocks - (s.stocks?.[b] ?? config.stocks) : s.wins?.[a] ?? 0; },
   install(rt, config) {
     const F = sec => Math.round(sec * 60), toWin = Math.ceil(config.bestOf / 2), maxRounds = config.maxRounds || config.bestOf + 2;
     const st = () => { const s = rt.store(ID); s.phase ??= 'waiting'; s.pt ??= 0; return s; };

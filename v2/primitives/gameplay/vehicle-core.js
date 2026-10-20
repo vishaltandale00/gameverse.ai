@@ -27,7 +27,8 @@ function controlsFor(rt, v) {
   const zero = { throttle: 0, steer: 0, brake: false, handbrake: false, boost: false, jump: false, up: false, down: false, pitch: 0, roll: 0 };
   if (!driver || c.destroyed) return zero;
   if (driver === 'player') {
-    const inp = rt.input || {}, held = inp.held || {}, act = inp.actions || {}, mv = inp.axes?.move || [0, 0];
+    const inp = rt.input || {}, held = inp.held || {}, act = inp.actions || {}, dv = act.drive && typeof act.drive === 'object' ? act.drive : null;
+    const mv = dv ? [dv.steer ?? 0, dv.throttle ?? 0] : inp.axes?.move || [0, 0];
     const throttle = clamp((mv[1] ?? 0) + (held.accelerate ? 1 : 0) - (held.reverse ? 1 : 0), -1, 1);
     const steer = clamp((mv[0] ?? 0) + (held.right ? 1 : 0) - (held.left ? 1 : 0), -1, 1);
     return { throttle, steer, pitch: mv[1] ?? 0, roll: mv[0] ?? 0, brake: Boolean(held.brake), handbrake: Boolean(held.handbrake || held.drift),

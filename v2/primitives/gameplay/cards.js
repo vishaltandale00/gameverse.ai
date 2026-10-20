@@ -314,10 +314,10 @@ export default {
       for (const c of o.hand) {
         const d = D.get(c.card); if (!d || (d.cost === -1 ? 0 : d.cost ?? 0) > o.energy) continue;
         const kind = d.target ?? (d.type === 'attack' ? 'enemy' : 'none');
-        if (kind === 'enemy' || kind === 'any') for (const t of foes) out.push({ label: `play ${c.card} on ${t}`, actions: { play_card: { uid: c.uid, target: t } } });
-        else out.push({ label: `play ${c.card}`, actions: { play_card: { uid: c.uid } } });
+        if (kind === 'enemy' || kind === 'any') for (const t of foes) out.push({ label: `play ${c.card} ${c.uid} on ${t}`, actions: { play_card: { uid: c.uid, target: t } } });
+        else out.push({ label: `play ${c.card} ${c.uid}`, actions: { play_card: { uid: c.uid } } });
       }
-      for (const m of o.board) if (!m.sick && !m.attacked) out.push({ label: `attack with ${m.card}`, actions: { attack_with: { uid: m.uid, target: 'hero' } } });
+      for (const m of o.board) if (!m.sick && !m.attacked) out.push({ label: `attack with ${m.card} ${m.uid}`, actions: { attack_with: { uid: m.uid, target: 'hero' } } });
       return out;
     });
 

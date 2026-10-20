@@ -35,6 +35,7 @@ export default {
       railBlocks: { type: 'list', of: { type: 'string' }, default: ['rail'], effect: 'cell ids rail cars may run on (cell or the one below)' },
       minDriftSpeed: { type: 'number', default: 6, min: 0, max: 100, unit: 'm/s', effect: 'speed needed to start a drift' },
     },
+    actionSpace: { drive: { kind: 'continuous', params: { throttle: { min: -1, max: 1 }, steer: { min: -1, max: 1 } } } },
     provides: { events: ['crash', 'drift', 'drift_end', 'drift_boost', 'boost', 'landed', 'airborne', 'rail_end', 'stalled', 'gear'], vars: [] },
     requires: { capabilities: ['position'], primitives: ['gameplay.vehicle.core'] },
     reads: ['content.archetypes'],

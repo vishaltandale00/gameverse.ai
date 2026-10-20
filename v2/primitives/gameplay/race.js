@@ -75,6 +75,11 @@ export default {
     if (!config.includePlayer && !config.racers.length) errors.push(err('race_racers', 'with.racers', 'a race needs the player or racers'));
     return errors;
   },
+  /** Solver progress: the player's checkpoints passed over the whole race, 0..1. */
+  progress(rt, config) {
+    const r = rt.state.prim[`${ID}:${config.id}`]?.racers?.player; if (!r) return 0;
+    const N = config.checkpoints.length; return r.finished ? 1 : Math.min(1, (r.lap * N + ((r.next - 1 + N) % N)) / (config.laps * N));
+  },
   install(rt, config) {
     const key = `${ID}:${config.id}`, CP = config.checkpoints, N = CP.length;
     const st = () => { const s = rt.store(key); s.state ??= 'idle'; s.racers ??= {}; s.order ??= []; s.finishers ??= []; return s; };

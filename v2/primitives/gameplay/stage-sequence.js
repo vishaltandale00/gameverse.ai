@@ -12,7 +12,7 @@
 // writes in place into the n-th instance's `with` (primitives that read config
 // lazily see it). Config writes are re-applied after restore() and extend().
 import { compare } from '../../kernel/logic.js';
-import { alive, matchesAny, sortedEntities, has, err, runBound, r6, instancesOf } from './modes-lib-util.js';
+import { alive, matchesAny, sortedEntities, has, err, runBound, r6 } from './modes-lib-util.js';
 
 const ID = 'gameplay.stage.sequence';
 export const GOALS = ['lines', 'score', 'survive', 'chain', 'viruses', 'blockers', 'jelly', 'collect', 'tile', 'when', 'none'];
@@ -25,6 +25,17 @@ const MEASURE = {
 };
 const PHASES = ['waiting', 'intro', 'play', 'clear', 'fail', 'complete', 'over'];
 const TARGET = /^(var|flag):[A-Za-z0-9_.:*-]+$|^use:[a-z][a-z0-9.-]*(#\d+)?\.[A-Za-z0-9_.[\]-]+$/;
+const allInstances = doc => [...(doc.systems || []), ...(doc.spaces || []).flatMap(sp => [sp, ...(sp.generators || [])])];
+/** 'use:<id>[#n].<path>': the longest dotted prefix naming a primitive used in the document is the id. */
+function parseUse(target, instances) {
+  const body = target.slice(4), parts = body.split('.');
+  for (let k = parts.length - 1; k >= 1; k--) {
+    const head = parts.slice(0, k).join('.'), hash = head.match(/^(.*)#(\d+)$/), use = hash ? hash[1] : head;
+    const list = instances.filter(x => x.use === use);
+    if (list.length) return { use, n: Number(hash?.[2] ?? 0), list, path: parts.slice(k).join('.').replace(/\[(\d+)\]/g, '.$1').split('.') };
+  }
+  return null;
+}
 
 const GOAL_FIELDS = {
   kind: { type: 'string', options: GOALS, default: 'none' }, target: { type: 'number', default: 1, min: 0 },
@@ -104,12 +115,10 @@ export default {
     const checkTarget = (t, path) => {
       if (!TARGET.test(t)) { errors.push(err('stage_target', path, `bad target '${t}'`, "use 'var:<name>', 'flag:<name>' or 'use:<primitive>[#n].<path>'")); return; }
       if (t.startsWith('use:')) {
-        const m = t.slice(4).match(/^([a-z][a-z0-9.-]*?)(?:#(\d+))?\.([A-Za-z].*)$/);
-        const use = m?.[1], list = instancesOf(doc, use);
-        const known = list.length ? list : (doc.spaces || []).flatMap(sp => [sp, ...(sp.generators || [])]).filter(x => x.use === use).map(s => ({ s }));
-        if (!m || !known.length) errors.push(err('stage_target', path, `no '${use}' instance for target '${t}'`));
-        else if (m[2] !== undefined && Number(m[2]) >= known.length) errors.push(err('stage_target', path, `instance #${m[2]} of '${use}' does not exist`));
-        else { const p = ctx.registry.get(use); const first = m[3].split(/[.[]/)[0]; if (p && !(first in (p.card.params || {}))) errors.push(err('stage_target', path, `'${use}' has no param '${first}'`, `params: ${Object.keys(p.card.params || {}).join(', ')}`)); }
+        const m = parseUse(t, allInstances(doc));
+        if (!m) errors.push(err('stage_target', path, `no instance of the primitive named in '${t}'`, 'use:<primitive id>[#n].<param path>'));
+        else if (m.n >= m.list.length) errors.push(err('stage_target', path, `instance #${m.n} of '${m.use}' does not exist`));
+        else { const p = ctx.registry.get(m.use); const first = m.path[0]; if (p && !(first in (p.card.params || {}))) errors.push(err('stage_target', path, `'${m.use}' has no param '${first}'`, `params: ${Object.keys(p.card.params || {}).join(', ')}`)); }
       }
     };
     config.stages.forEach((st, i) => {
@@ -129,6 +138,8 @@ export default {
     if (config.startAt >= config.stages.length) errors.push(err('param_range', 'with.startAt', `startAt ${config.startAt} has no stage`));
     return errors;
   },
+  /** Solver progress: stages cleared plus the current stage's goal progress. */
+  progress(rt, config) { const s = rt.state.prim[`${ID}:${config.id}`]; if (!s) return 0; return (s.phase === 'complete' ? config.stages.length : (s.index ?? 0)) + (rt.state.vars['stage.progress'] ?? 0); },
   install(rt, config) { install(rt, config); },
   extend(rt, config) { rt.caches[`${ID}:${config.id}:reapply`]?.(); },
 };
@@ -141,11 +152,10 @@ function install(rt, config) {
 
   // ----- targets -----
   function locate(target) {
-    const m = target.slice(4).match(/^([a-z][a-z0-9.-]*?)(?:#(\d+))?\.([A-Za-z].*)$/);
-    const list = [...(rt.doc.systems || []), ...(rt.doc.spaces || []).flatMap(sp => [sp, ...(sp.generators || [])])].filter(x => x.use === m[1]);
-    const inst = list[Number(m[2] ?? 0)]; if (!inst) return null;
+    const m = parseUse(target, allInstances(rt.doc)); if (!m) return null;
+    const inst = m.list[m.n]; if (!inst) return null;
     inst.with ??= {};
-    const parts = m[3].replace(/\[(\d+)\]/g, '.$1').split('.');
+    const parts = m.path;
     let obj = inst.with; for (const p of parts.slice(0, -1)) obj = (obj[p] ??= {});
     return { obj, leaf: parts[parts.length - 1] };
   }
@@ -210,7 +220,7 @@ function install(rt, config) {
   function goalMet(s, g) {
     if (!g || g.kind === 'none') return null;
     if (g.m === 'pred') return rt.test(g.when);
-    if (g.m === 'remaining') { const r = remaining(g); return (s.seen ?? 0) > 0 && r === 0; }
+    if (g.m === 'remaining') { measure(s, g); return (s.seen ?? 0) > 0 && remaining(g) === 0; }
     if (g.m === 'time') return s.playT >= F(g.timeSec);
     return measure(s, g) >= g.target;
   }
