@@ -39,6 +39,7 @@ export const round6 = v => Math.round(v * 1e6) / 1e6;
 const AXES = ['x', 'y', 'z'];
 
 import { movementEnvelope } from './move-lib-envelope.js';
+import { intercept } from './combat-lib.js';
 
 // ---------------------------------------------------------------- vocabulary of other primitives
 
@@ -666,6 +667,16 @@ export function verbs(rt, names) { const have = new Set(rt.actions()); for (cons
 export function ensureShared(rt, macro = {}) {
   if (rt.caches.moveShared) { if (macro.speed) rt.caches.moveShared.speed = Math.max(rt.caches.moveShared.speed, macro.speed); return; }
   const S = rt.caches.moveShared = { speed: macro.speed || 3, seconds: macro.seconds ?? 60, teleport: macro.teleport ?? true, max: macro.max ?? 16 };
+  // Movement i-frames (dodge rolls, dashes, ledge grabs, hyperspace) cancel hits through combat's
+  // shared hit-interceptor chain, first in order. combat.health reads only its own health.invulnerable,
+  // so move never writes that field; hits marked ignoreIframes still land.
+  intercept(rt, 1, (target, hit, rt) => {
+    const m = target?.components?.move;
+    if (!m || m.invulnerableUntil == null || hit.ignoreIframes) return null;
+    const t = rt.state.time;
+    if (t >= (m.invulnerableFrom ?? -Infinity) && t < m.invulnerableUntil) { rt.emit('evaded', { who: target.id, by: hit.by ?? null, type: hit.type ?? null }); return { cancel: true, reason: 'iframes' }; }
+    return null;
+  }, 'gameplay.move');
   rt.system('late', rt => {
     for (const e of Object.values(rt.state.entities)) {
       const src = source(rt, e); if (!src) continue;
