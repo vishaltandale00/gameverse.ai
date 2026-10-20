@@ -186,6 +186,31 @@ export function stampBox(st) {
   return [st.at[0] - r, st.at[2] - r, st.at[0] + r, st.at[2] + r];
 }
 
+/** Separating-axis test for two footprints {at, rot, w, d} (oriented rectangles in x/z). */
+export function footprintsOverlap(a, b, pad = 0) {
+  const axes = r => [[Math.cos(r), -Math.sin(r)], [Math.sin(r), Math.cos(r)]];
+  const corners = f => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sz]) => toWorld(f.at, f.rot, (sx * (f.w + pad)) / 2, (sz * (f.d + pad)) / 2));
+  const ca = corners(a), cb = corners(b);
+  for (const [ax, az] of [...axes(a.rot), ...axes(b.rot)]) {
+    const pa = ca.map(([x, z]) => x * ax + z * az), pb = cb.map(([x, z]) => x * ax + z * az);
+    if (Math.max(...pa) < Math.min(...pb) || Math.max(...pb) < Math.min(...pa)) return false;
+  }
+  return true;
+}
+/** A pinned structure wins over procedural buildings and props: remove those its footprint overlaps; returns their ids. */
+export function clearFootprint(m, st, kinds = ['building', 'prop']) {
+  const hit = o => kinds.includes(o.kind) && o.id !== st.id && footprintsOverlap(st, o, 1);
+  const removed = [];
+  if (m.kind === 'voxel') { const keep = []; for (const o of m.data.stamps || []) (hit(o) ? removed : keep).push(o); if (removed.length) { m.data.stamps = keep; m.data.stampIndex = null; } }
+  else {
+    const groups = new Set(m.objects.filter(o => o.structure && kinds.includes(o.kind) && footprintsOverlap(st, { at: o.at, rot: o.rot, w: o.size[0], d: o.size[2] }, 1)).map(o => o.id));
+    if (groups.size) { m.objects = m.objects.filter(o => !groups.has(o.id) && !groups.has(o.group)); m.objectIndex = null; removed.push(...[...groups].map(id => ({ id }))); }
+  }
+  const ids = new Set(removed.map(o => o.id));
+  for (const l of m.data.lots || []) if (l.building && ids.has(l.building.id)) l.building = { id: st.id, structure: true };
+  return [...ids];
+}
+
 /** Register a placed structure: flattens its footprint and stamps voxel cells or adds mesh3d colliders. */
 export function addStamp(m, rt, st, problem) {
   st.bbox = stampBox(st);

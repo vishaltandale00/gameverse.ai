@@ -65,6 +65,13 @@ export function zoneArea(z) {
   const b = zoneBox(z);
   return b ? (b[2] - b[0]) * (b[3] - b[1]) : Infinity;
 }
+/** Horizontal distance from (x, z) inward to the zone's edge (0 outside). */
+export function zoneInnerDistance(z, x, zz) {
+  if (!zoneHas(z, x, undefined, zz)) return 0;
+  const c = z?.center || z?.bounds?.center;
+  if (c) return (z.r ?? z.bounds?.r ?? 0) - Math.hypot(x - c[0], zz - c[1]);
+  const b = zoneBox(z); return b ? Math.min(x - b[0], b[2] - x, zz - b[1], b[3] - zz) : 0;
+}
 /** Horizontal distance from (x, z) to the zone's shape: 0 inside. */
 export function zoneDistance(z, x, y, zz) {
   if (zoneHas(z, x, y, zz)) return 0;

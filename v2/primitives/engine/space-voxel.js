@@ -37,7 +37,7 @@ export default {
     },
     provides: {
       capabilities: ['position', 'distance', 'overlap', 'raycast', 'pathfind', 'reachable', 'editCells', 'gravity', 'surface', 'bounds', 'chunks', 'light', 'procedural'],
-      capabilityMethods: { chunks: ['chunkCells', 'chunkOf', 'chunksNear', 'blockDef', 'cellOf'], light: ['lightAt'], procedural: ['model', 'standAt'] },
+      capabilityMethods: { chunks: ['chunkCells', 'chunkOf', 'chunksNear', 'blockDef', 'cellOf'], light: ['lightAt'], procedural: ['model', 'standAt', 'objects'] },
       events: ['enter_zone', 'leave_zone', 'cell_changed', 'generated', 'fluid_flow'],
       services: ['surface'],
     },
@@ -430,6 +430,14 @@ export default {
       },
       blockDef,
       lightAt,
+      /** Placed (non-cell) objects in a region {min: [x, z], max: [x, z]}: street props and model props from object layers. */
+      objects(region) {
+        const m = model.ensure(), r = region || (() => { const [x0, z0, x1, z1] = m.extent(); return { min: [x0, z0], max: [x1, z1] }; })();
+        const inside = o => o.at[0] >= r.min[0] && o.at[0] <= r.max[0] && o.at[2] >= r.min[1] && o.at[2] <= r.max[1];
+        const out = (m.data.props || []).filter(inside);
+        if (region) for (const layer of m.objectLayers) out.push(...layer.objects([r.min[0], r.min[1], r.max[0], r.max[1]], { model: m }).filter(inside));
+        return out;
+      },
       columnTop: (x, z) => (columnTop(Math.floor(x / C), Math.floor(z / C)) + 1) * C,
       loadedChunks: () => chunks.size,
     };

@@ -5,7 +5,7 @@
 // also adds the cell layer that fills columns with bedrock/stone/sub/surface
 // blocks (biome-aware when engine.generate.biomes is present).
 import { fbm2, ridged2, warp2, smoothstep, clamp, subSeed, Rng } from './worlds3d-lib-noise.js';
-import { STAGES, withDefaults, generatorModel, chaikin, segDist2, checkBlocks } from './worlds3d-lib-world.js';
+import { STAGES, withDefaults, generatorModel, chaikin, segDist2, checkBlocks, zoneBox, zoneInnerDistance } from './worlds3d-lib-world.js';
 
 const card = {
   intent: 'Fractal terrain heightfield: rolling hills to ridged mountains, optional island or radial falloff, domain warp, hydraulic/thermal erosion and downhill rivers. Fills voxel columns with stone, subsoil and surface blocks.',
@@ -24,6 +24,8 @@ const card = {
     lacunarity: { type: 'number', min: 1.5, max: 3, default: 2, effect: 'frequency multiplier per octave' },
     gain: { type: 'number', min: 0.2, max: 0.8, default: 0.5, effect: 'amplitude multiplier per octave' },
     extent: { type: 'list', of: { type: 'number' }, min: 4, max: 4, effect: 'world box [x0, z0, x1, z1] for falloff and rivers (default: space size, or the union of zones)' },
+    land: { type: 'list', of: { type: 'ref', to: 'zone' }, default: [], effect: 'zones guaranteed to be dry land (raised above sea level, rising from the zone edge)' },
+    landHeight: { type: 'number', min: 0, max: 200, default: 2, unit: 'm', effect: 'minimum height above sea inside land zones' },
     grid: { type: 'integer', min: 32, max: 512, default: 160, effect: 'coarse grid resolution (per side) used for erosion and river tracing' },
     riverWidth: { type: 'number', min: 1, max: 200, default: 8, unit: 'm', effect: 'river width at the mouth (sources are narrower)' },
     riverDepth: { type: 'number', min: 0.5, max: 50, default: 3, unit: 'm', effect: 'channel depth below the water surface' },
@@ -119,6 +121,12 @@ export default {
       };
       const height = delta ? (x, z) => base(x, z) + (x >= x0 && x <= x1 && z >= z0 && z <= z1 ? bilinear(delta, x, z) : 0) : base;
       m.define('height', height);
+      // Land zones: raise the inside above the sea, ramping up from the zone edge over a fifth of its size.
+      for (const id of config.land) {
+        const z = m.zone(id); if (!z) { m.problem('zone_missing', `land zone '${id}' is not in space '${m.sid}'`, { generator: instance.use }); continue; }
+        const b = zoneBox(z), ramp = Math.max(8, Math.min(b[2] - b[0], b[3] - b[1]) / 5), floor = sea + config.landHeight;
+        m.modify('height', { bounds: b, priority: 1, apply(x, zz, h) { const d = zoneInnerDistance(z, x, zz); if (d <= 0 || h >= floor) return h; return Math.max(h, sea - 1 + (floor - sea + 1) * smoothstep(0, ramp, d)); } });
+      }
       m.info.sea = sea; m.info.terrain = { amplitude: amp, sea };
 
       // Rivers: from high, spaced sources follow steepest descent on the eroded grid to the sea or the edge.

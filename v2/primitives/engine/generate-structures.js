@@ -8,7 +8,7 @@
 // service lists ids, bounds, doors, rooms, loot tables and tags.
 import { Rng, subSeed } from './worlds3d-lib-noise.js';
 import { STAGES, withDefaults, generatorModel, sharedService, zoneBox, zoneHas, zoneYRange } from './worlds3d-lib-world.js';
-import { prefab, addStamp, KINDS, DEFAULT_SIZE, toWorld, toLocal } from './worlds3d-lib-prefab.js';
+import { prefab, addStamp, clearFootprint, footprintsOverlap, KINDS, DEFAULT_SIZE, toWorld, toLocal } from './worlds3d-lib-prefab.js';
 import { roadNet, nearestRoad } from './worlds3d-lib-roads.js';
 
 const card = {
@@ -93,8 +93,10 @@ export default {
             const corners = [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]].map(([lx, lz]) => toWorld([x, 0, z], rot, lx, lz));
             if (!p.at && !under) {
               const hs = corners.map(([cx, cz]) => ground(cx, cz)), slope = (Math.max(...hs, g) - Math.min(...hs, g)) / (Math.hypot(w, d) / 2);
-              if (p.kind !== 'mine' && slope > Math.tan((config.maxSlope * Math.PI) / 180)) { why.slope++; continue; }
-              if ([[x, z], ...corners].some(([cx, cz]) => water(cx, cz) > 0.3)) { why.water++; continue; }
+              // Later tries relax the slope limit (up to 3x): the footprint is levelled anyway, so steep zones still get their buildings.
+              const limit = Math.min(60, config.maxSlope * (1 + (2 * a) / config.attempts));
+              if (p.kind !== 'mine' && slope > Math.tan((limit * Math.PI) / 180)) { why.slope++; continue; }
+              if (water(x, z) > 0.3 || corners.filter(([cx, cz]) => water(cx, cz) > 0.3).length > 2) { why.water++; continue; } // a wet corner stands on its foundation
               if (config.avoidRoads && net?.edges.length) { const r = nearestRoad(net, x, z, Math.hypot(w, d) / 2 + 12); if (r && r.dist < Math.hypot(w, d) / 2 + 3) { why.road++; continue; } }
               if (config.avoidRoads && lots.some(l => l.building && x > l.rect[0] - w / 2 && x < l.rect[2] + w / 2 && z > l.rect[1] - d / 2 && z < l.rect[3] + d / 2)) { why.lot++; continue; }
             }
@@ -108,10 +110,15 @@ export default {
           if (site.under) pf.parts.unshift({ role: 'carve', c: [0, 0], y: [0, pf.height + 2 * C], size: [w + 2 * C, d + 2 * C] });
           const id = n > 1 || p.count ? `${p.id}_${k + 1}` : p.id, at = [+site.x.toFixed(3), +site.y.toFixed(3), +site.z.toFixed(3)];
           const st = { id, kind: p.kind, zone: p.zone, at, rot: +site.rot.toFixed(6), w, d, height: pf.height, parts: pf.parts, style: p.style, palette: p.palette, tags: p.tags, flatten: !site.under };
+          if (p.at) {
+            clearFootprint(m, st);
+            const clash = placed.find(o => o.pinned && footprintsOverlap(st, { at: o.at, rot: o.rot, w: o.size[0], d: o.size[1] }));
+            if (clash) problem('structure_overlap', `pinned structure '${id}' overlaps pinned '${clash.id}'`);
+          }
           addStamp(m, rt, st, problem);
           const W = (l) => { const [wx, wz] = toWorld(at, st.rot, l[0], l[2]); return [+wx.toFixed(3), +(at[1] + l[1]).toFixed(3), +wz.toFixed(3)]; };
           placed.push({
-            id, group: p.id, kind: p.kind, zone: p.zone, at, rot: st.rot, size: [w, d, +pf.height.toFixed(3)], style: p.style, interior: p.interior, underground: site.under,
+            id, group: p.id, kind: p.kind, zone: p.zone, at, rot: st.rot, pinned: Boolean(p.at), size: [w, d, +pf.height.toFixed(3)], style: p.style, interior: p.interior, underground: site.under,
             door: pf.door ? W(pf.door) : null, rooms: pf.rooms.map(r => { const a = W(r.min), b = W(r.max); return { min: a.map((v, i) => Math.min(v, b[i])), max: a.map((v, i) => Math.max(v, b[i])) }; }),
             loot: p.loot ?? null, spawns: p.spawns, tags: p.tags, footprint: site.corners.map(([cx, cz]) => [+cx.toFixed(3), +cz.toFixed(3)]),
           });

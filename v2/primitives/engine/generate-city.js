@@ -83,12 +83,13 @@ export default {
         const keep = (k, p) => { if (zoneHas(zone, p[0], undefined, p[1])) nodes.set(k, { p, id: addNode(net, { at: at3(p), kind: 'street', zone: dist.zone }) }); };
         const quads = [], edges = [];
         if (dist.grid === 'radial') {
-          const R = Math.min(box[2] - box[0], box[3] - box[1]) / 2, K = Math.max(1, Math.floor(R / px)), S = Math.max(6, Math.round((2 * Math.PI * R) / (2 * px)));
+          const R = Math.min(box[2] - box[0], box[3] - box[1]) / 2, K = Math.max(1, Math.floor(R / px) + 1), S = Math.max(6, Math.round((2 * Math.PI * R) / (2 * px)));
           keep('c', center);
           for (let k = 1; k <= K; k++) for (let s = 0; s < S; s++) { const a = (s / S) * Math.PI * 2, r = k * px; keep(`${k},${s}`, [center[0] + Math.sin(a) * r, center[1] + Math.cos(a) * r]); }
           for (let k = 1; k <= K; k++) for (let s = 0; s < S; s++) {
             edges.push([`${k},${s}`, `${k},${(s + 1) % S}`], [k === 1 ? 'c' : `${k - 1},${s}`, `${k},${s}`]);
             if (k < K) quads.push([`${k},${s}`, `${k + 1},${s}`, `${k + 1},${(s + 1) % S}`, `${k},${(s + 1) % S}`]);
+            if (k === 1) quads.push(['c', `1,${s}`, `1,${(s + 1) % S}`, 'c']); // inner sectors (triangles)
           }
         } else {
           const NX = Math.max(1, Math.floor((box[2] - box[0]) / px)), NZ = Math.max(1, Math.floor((box[3] - box[1]) / pz));
@@ -121,7 +122,9 @@ export default {
         }
         const R = Math.max(1, Math.hypot(box[2] - box[0], box[3] - box[1]) / 2), centrality = l => 1 - Math.min(1, Math.hypot(l.center[0] - center[0], l.center[1] - center[1]) / R);
         const byCentre = [...lotsHere].sort((a, b) => centrality(b) - centrality(a) || a.id.localeCompare(b.id));
-        const landmarkOf = new Map(); dist.landmarks.forEach((name, i) => { const lot = byCentre.find(l => !landmarkOf.has(l) && l.width >= 6 && l.depth >= 6); if (lot) landmarkOf.set(lot, name); else problem('landmark_unplaced', `no lot for landmark '${name}' in '${dist.zone}'`); });
+        // Landmarks that a pinned structure of this zone already provides are left to it.
+        const pinned = new Set((rt.doc.spaces.find(s => s.id === m.sid)?.generators || []).filter(g => g.use === 'engine.generate.structures').flatMap(g => (g.with?.place || []).filter(p => p.at && p.zone === dist.zone).map(p => p.id)));
+        const landmarkOf = new Map(); dist.landmarks.filter(name => !pinned.has(name)).forEach((name, i) => { const lot = byCentre.find(l => !landmarkOf.has(l) && l.width >= 6 && l.depth >= 6); if (lot) landmarkOf.set(lot, name); else problem('landmark_unplaced', `no lot for landmark '${name}' in '${dist.zone}'`); });
         const maxFloors = voxel ? Math.max(1, Math.floor(((m.opts.height ?? 128 * C) - plaza - 6 * C) / fh)) : 200;
         for (const lot of lotsHere) {
           const c = centrality(lot), landmark = landmarkOf.get(lot);

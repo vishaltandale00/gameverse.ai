@@ -54,7 +54,6 @@ export default {
       const specs = config.props.map((p, pi) => {
         const c0 = Math.sqrt(80 / Math.max(p.per100m2, 1e-6)), cellM = Math.max(p.minSpacing, Math.min(c0, 256), voxel ? C : 0.25), prob = Math.min(1, (p.per100m2 * cellM * cellM) / 100);
         if ((p.per100m2 * cellM * cellM) / 100 > 1.001) m.problem('scatter_density_capped', `prop ${p.model || p.block}: minSpacing ${p.minSpacing} m caps density below ${p.per100m2}/100 m²`, { generator: instance.use });
-        if (voxel && p.model && !p.block) m.problem('scatter_model_on_voxel', `prop model '${p.model}' is listed as a placed object only on voxel spaces`, { generator: instance.use });
         return { ...p, pi, cellM, prob, seed: subSeed(seed, `prop${pi}`), zoneDefs: p.zones?.map(z => m.zone(z)).filter(Boolean) };
       });
       const net = m.data.roads ? roadNet(m) : null, structures = m.data.structures || [], lots = m.data.lots || [];
@@ -94,17 +93,17 @@ export default {
         return out;
       };
       m.info.scatter = specs.map(s => ({ prop: s.model || s.block, cell: s.cellM, probability: s.prob }));
-      if (!voxel) {
-        m.addObjectLayer({
+      // Model props are placed objects in both kinds of space (voxel spaces list them through api.objects).
+      const objectSpecs = voxel ? specs.filter(s => s.model) : specs;
+      if (objectSpecs.length) m.addObjectLayer({
           id: `scatter#${instance.key}`,
           objects([x0, z0, x1, z1]) {
             const out = [];
-            for (const s of specs) for (const c of inRect(s, x0, z0, x1, z1)) out.push({ id: `sc${s.pi}_${c.gx}_${c.gz}`, kind: 'prop', ...(s.model ? { model: s.model } : { block: s.block }), at: [+c.x.toFixed(3), +ground(c.x, c.z).toFixed(3), +c.z.toFixed(3)], rot: c.rot, scale: c.scale, shape: s.collide ? 'cylinder' : 'none', r: +(0.4 * c.scale).toFixed(3), h: +(2 * c.scale).toFixed(3) });
+            for (const s of objectSpecs) for (const c of inRect(s, x0, z0, x1, z1)) out.push({ id: `sc${s.pi}_${c.gx}_${c.gz}`, kind: 'prop', ...(s.model ? { model: s.model } : { block: s.block }), at: [+c.x.toFixed(3), +ground(c.x, c.z).toFixed(3), +c.z.toFixed(3)], rot: c.rot, scale: c.scale, shape: s.collide ? 'cylinder' : 'none', r: +(0.4 * c.scale).toFixed(3), h: +(2 * c.scale).toFixed(3) });
             return out;
           },
         });
-        return;
-      }
+      if (!voxel) return;
       const known = new Set((rt.doc.content?.blocks || []).map(b => b.id));
       for (const s of specs) if (s.block && (s.shape === 'tree' || s.shape === 'bush') && known.size && !known.has(s.crown)) m.problem('block_unknown', `crown block '${s.crown}' is not in content.blocks`, { generator: instance.use });
       m.addLayer({
