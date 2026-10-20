@@ -7,5 +7,6 @@ import race from './race.js';
 import turns from './turns.js';
 import cards from './cards.js';
 import waves from './waves.js';
+import rounds from './rounds.js';
 
-export default [vehicleCore, vehicleCar, vehicleBoat, vehicleAircraft, race, turns, cards, waves];
+export default [vehicleCore, vehicleCar, vehicleBoat, vehicleAircraft, race, turns, cards, waves, rounds];
