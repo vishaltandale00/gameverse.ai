@@ -41,7 +41,11 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
     unsupported: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['request', 'why'], properties: { request: { type: 'string' }, why: { type: 'string' } } } },
   } };
   const system = `${kit.content.prompt}\n\nAll names, characters and levels must be original (inspired by the idea's mechanics, never copying another game's names or content).\nThis engine can do only what the content schema can express. If the idea or change request asks for anything the schema cannot express (a new button or action, a weapon, a mode, a mechanic, a rule), list each such request in "unsupported" with a short why, and do not mention it in the title or logline. If everything fits, "unsupported" is empty. Mixing in a mechanic a mod provides is supported: use the mod rather than listing it.${modsPrompt(kit)}\nReply with JSON matching the schema.`;
-  while (attempts < 2) {
+  // Generate, validate, verify. Validation errors and verification problems (a level the bot
+  // can't clear, a target nobody can reach) go back to the model for repair, up to three tries.
+  const seed = previous?.provenance?.seed ?? job.seed ?? seedFrom(job.prompt);
+  let verified = null, verifyMs = 0;
+  while (attempts < 3) {
     attempts++;
     if (client) {
       reply = await client.complete({ model, system, user, schema: { name: `${kit.id}_content`, schema } });
@@ -50,13 +54,21 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
       if (parsed.mods) mods = parsed.mods;
     } else content = previousContent || kit.content.sample;
     checked = kit.validate(content);
-    if (checked.ok || !client) break;
-    user = `${user}\n\nYour previous answer failed validation:\n${checked.errors.slice(0, 12).map(e => `- ${e.path}: ${e.message}`).join('\n')}\nReturn corrected content.`;
+    if (!checked.ok) {
+      if (!client) break;
+      user = `${user}\n\nYour previous answer failed validation:\n${checked.errors.slice(0, 12).map(e => `- ${e.path}: ${e.message}`).join('\n')}\nReturn corrected content.`;
+      continue;
+    }
+    const started = performance.now();
+    verified = kit.verify(checked.content, { seed, budgetMs: 2000 });
+    verifyMs += performance.now() - started;
+    if (verified.ok || !client) break;
+    const problems = (verified.problems || []).slice(0, 10).map(p => typeof p === 'string' ? p : `${p.path ? p.path + ': ' : ''}${p.message || p.code}`);
+    user = `${user}\n\nYour previous answer passed validation but failed play-testing (the kit's bot or solver):\n${problems.map(p => `- ${p}`).join('\n')}\nMake those parts achievable (easier targets, more time or moves, gentler difficulty) and return corrected content.`;
   }
   if (!checked.ok) throw Object.assign(Error(`The ${kit.name} content failed checks: ${checked.errors.slice(0, 4).map(e => e.code).join(', ')}`), { status: 422 });
   content = checked.content;
 
-  const seed = previous?.provenance?.seed ?? job.seed ?? seedFrom(job.prompt);
   // Keep only mods this kit can run, normalized, so hosts and saves see a stable shape.
   mods = Object.fromEntries(available.map(m => [m.id, m.normalize(mods?.[m.id])]).filter(([id, cfg]) => available.find(m => m.id === id).enabled(cfg)));
   // On revisions, check that the change really happened; if not, say so rather than claim it.
@@ -65,12 +77,10 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
     unsupported = [{ request: job.change, why: revisionCheck.why }];
   const doc = { schema: KIT_GAME_SCHEMA, kit: kit.id, kitVersion: kit.version, mods, id: previous?.doc?.id || slug(content.title, kit.id), title: content.title, logline: content.logline || '', seed, content };
   const inputs = artInputs(kit, content, doc);
-  // Art direction runs while the kit verifies the content.
+  // Art direction starts now; the content is already verified.
   const directing = art?.procedural ? art.direct({ design: inputs.design, previous: previous?.doc?.schema === KIT_GAME_SCHEMA ? { ...previous, report: { ...previous.report, design: previous.report?.artDesign } } : null, change: job.change || null }) : null;
   ctx.stage('building', { ms: reply?.ms ?? 0, kit: kit.id });
-  const verifyStarted = performance.now();
-  const verified = kit.verify(content, { seed, budgetMs: 2000 });
-  ctx.stage('playtested', { winnable: verified.ok, kit: kit.id, ms: Math.round(performance.now() - verifyStarted) });
+  ctx.stage('playtested', { winnable: verified.ok, kit: kit.id, ms: Math.round(verifyMs), attempts });
   if (!verified.ok) throw Object.assign(Error(`The game failed verification: ${verified.problems.slice(0, 4).map(p => p.code || p).join(', ')}`), { status: 422 });
 
   let painted = null;
