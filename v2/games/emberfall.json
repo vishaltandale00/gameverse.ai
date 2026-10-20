@@ -1,0 +1,4180 @@
+{
+ "schema": "gameverse.v2.game/0.2",
+ "id": "emberfall",
+ "title": "Emberfall",
+ "seed": 90211,
+ "logline": "The last Cinderwarden rides across a blighted continent to unmake a king's crown, and every road she takes decides who the realm will become.",
+ "views": {"primary":"3p","alternates":[]},
+ "plot": {
+  "premise": "The Fall began when the Crown of Embers slipped its lock. Husks of ember and ash walk the roads. Sael Ironbrook, last of the Cinderwardens and exiled for a killing she could not avoid, must choose between a Regent who wants the Crown as a weapon, an Order that would burn the infected with the cure, and an old archivist who believes the Crown can be unmade. Three seals, one king, and the question of what a warden is for.",
+  "factions": [
+   {"id":"hearth","name":"Hearth Vale"},
+   {
+    "id": "gildmere",
+    "name": "Gildmere Gilds",
+    "ranks": [{"at":0,"title":"Visitor"},{"at":20,"title":"Friend of the Gilds"},{"at":50,"title":"Honored Guest"}],
+    "hostileBelow": -50
+   },
+   {"id":"order_of_ash","name":"Order of Ash","hostileBelow":-50},
+   {"id":"saltmarch","name":"Saltmarch"},
+   {"id":"wardens","name":"Cinderwardens"},
+   {"id":"bandits","name":"Broken Bridge Bandits","hostileBelow":101},
+   {"id":"blight","name":"The Blight","hostileBelow":101},
+   {"id":"free","name":"Free Folk"},
+   {"id":"dead","name":"The Restless Dead","hostileBelow":101}
+  ],
+  "characters": [
+   {
+    "id": "sael",
+    "name": "Sael Ironbrook",
+    "role": "player; last of the Cinderwardens, exiled",
+    "archetype": "sael",
+    "model": "sael",
+    "bio": "Trained to hunt what the blight makes. Exiled after striking down a corrupted fellow warden."
+   },
+   {
+    "id": "ilse",
+    "name": "Mother Ilse",
+    "role": "healer of Hearth Vale",
+    "archetype": "npc_ilse",
+    "model": "ilse",
+    "home": "hearth_vale",
+    "faction": "hearth",
+    "dialogue": [{"when":{"quest":"m1_ashes","state":"active"},"id":"ilse_wounded"},{"id":"ilse_healer"}],
+    "schedule": [
+     {"from":6,"to":8,"zone":"hearth_vale","at":[3080,4830],"doing":"garden"},
+     {"from":8,"to":18,"zone":"hearth_vale","at":[3095,4810],"doing":"tend_patients"},
+     {"from":18,"to":21,"zone":"hearth_vale","at":[3040,4790],"doing":"tavern"},
+     {"from":21,"to":6,"zone":"hearth_vale","at":[3098,4830],"doing":"sleep"}
+    ]
+   },
+   {
+    "id": "edda",
+    "name": "Edda Brandt",
+    "role": "smith of Hearth Vale",
+    "archetype": "npc_edda",
+    "model": "edda",
+    "home": "hearth_vale",
+    "faction": "hearth",
+    "dialogue": [{"id":"edda_forge"}],
+    "schedule": [
+     {"from":6,"to":7,"zone":"hearth_vale","at":[3050,4850],"doing":"wake"},
+     {"from":7,"to":18,"zone":"hearth_vale","at":[3052,4838],"doing":"forge"},
+     {"from":18,"to":21,"zone":"hearth_vale","at":[3040,4790],"doing":"tavern"},
+     {"from":21,"to":6,"zone":"hearth_vale","at":[3050,4850],"doing":"sleep"}
+    ]
+   },
+   {
+    "id": "torv",
+    "name": "Torv Hale",
+    "role": "stablemaster and horse-breaker",
+    "archetype": "npc_torv",
+    "model": "torv",
+    "home": "hearth_vale",
+    "faction": "hearth",
+    "dialogue": [{"when":{"flag":"ash_owned"},"id":"torv_after"},{"id":"torv_stable"}],
+    "schedule": [
+     {"from":5,"to":19,"zone":"hearth_vale","at":[3130,4760],"doing":"stable"},
+     {"from":19,"to":22,"zone":"hearth_vale","at":[3040,4790],"doing":"tavern"},
+     {"from":22,"to":5,"zone":"hearth_vale","at":[3135,4770],"doing":"sleep"}
+    ]
+   },
+   {
+    "id": "wren",
+    "name": "Wren",
+    "role": "orphan carrying Lioren's letter",
+    "archetype": "npc_wren",
+    "model": "wren",
+    "home": "hearth_vale",
+    "faction": "hearth",
+    "dialogue": [{"when":{"quest":"s_wren_lantern","state":"complete"},"id":"wren_after"},{"id":"wren_letter"}],
+    "schedule": [
+     {"from":7,"to":17,"zone":"hearth_vale","at":[3070,4770],"doing":"play"},
+     {"from":17,"to":20,"zone":"hearth_vale","at":[3095,4810],"doing":"with_ilse"},
+     {"from":20,"to":7,"zone":"hearth_vale","at":[3098,4832],"doing":"sleep"}
+    ]
+   },
+   {
+    "id": "lioren",
+    "name": "Lioren Vask",
+    "role": "rival warden, later companion",
+    "archetype": "npc_lioren",
+    "model": "lioren",
+    "home": "saltmarch",
+    "faction": "wardens",
+    "dialogue": [{"when":{"flag":"lioren_companion"},"id":"lioren_camp"},{"id":"lioren_reunion"}]
+   },
+   {
+    "id": "maelis",
+    "name": "Maelis of the Mire",
+    "role": "bog alchemist",
+    "archetype": "npc_maelis",
+    "model": "maelis",
+    "home": "mirewood",
+    "faction": "free",
+    "dialogue": [{"id":"maelis_deal"}],
+    "schedule": [{"from":6,"to":20,"zone":"mirewood","at":[1480,4180],"doing":"brew"},{"from":20,"to":6,"zone":"mirewood","at":[1490,4190],"doing":"sleep"}]
+   },
+   {
+    "id": "tavian",
+    "name": "Regent Tavian Solm",
+    "role": "Regent of Gildmere",
+    "archetype": "npc_tavian",
+    "model": "tavian",
+    "home": "gildmere",
+    "faction": "gildmere",
+    "dialogue": [{"when":{"flag":"regent_audience_done"},"id":"tavian_after"},{"id":"tavian_audience"}],
+    "schedule": [
+     {"from":9,"to":17,"zone":"gildmere","at":[4620,3620],"doing":"court"},
+     {"from":17,"to":22,"zone":"gildmere","at":[4660,3640],"doing":"feast"},
+     {"from":22,"to":9,"zone":"gildmere","at":[4670,3660],"doing":"sleep"}
+    ]
+   },
+   {
+    "id": "halvard",
+    "name": "Captain Halvard Crane",
+    "role": "captain of the Gildguard",
+    "archetype": "npc_halvard",
+    "model": "halvard",
+    "home": "gildmere",
+    "faction": "gildmere",
+    "dialogue": [{"id":"halvard_orders"}],
+    "schedule": [{"from":6,"to":20,"zone":"gildmere","at":[4580,3560],"doing":"patrol"},{"from":20,"to":6,"zone":"gildmere","at":[4590,3570],"doing":"barracks"}]
+   },
+   {
+    "id": "neris",
+    "name": "Archivist Neris Thale",
+    "role": "keeper of the Gildmere archive",
+    "archetype": "npc_neris",
+    "model": "neris",
+    "home": "gildmere",
+    "faction": "gildmere",
+    "dialogue": [{"id":"neris_archive"}],
+    "schedule": [{"from":8,"to":20,"zone":"gildmere","at":[4630,3590],"doing":"archive"},{"from":20,"to":8,"zone":"gildmere","at":[4640,3600],"doing":"sleep"}]
+   },
+   {
+    "id": "cael",
+    "name": "Brother Cael",
+    "role": "prior of the Order of Ash",
+    "archetype": "npc_cael",
+    "model": "cael",
+    "home": "saltmarch",
+    "faction": "order_of_ash",
+    "dialogue": [{"when":{"flag":"saltmarch_resolved"},"id":"cael_after"},{"id":"cael_sermon"}]
+   },
+   {
+    "id": "seren",
+    "name": "Seren Marl",
+    "role": "ferrywoman of Saltmarch",
+    "archetype": "npc_seren",
+    "model": "seren",
+    "home": "saltmarch",
+    "faction": "saltmarch",
+    "dialogue": [{"id":"seren_ferry"}],
+    "schedule": [{"from":5,"to":19,"zone":"saltmarch","at":[5380,5190],"doing":"ferry"},{"from":19,"to":5,"zone":"saltmarch","at":[5400,5220],"doing":"sleep"}]
+   },
+   {
+    "id": "orsk",
+    "name": "Orsk",
+    "role": "mountain guide of the crag-kin",
+    "archetype": "npc_orsk",
+    "model": "orsk",
+    "home": "stonecrown",
+    "faction": "free",
+    "dialogue": [{"id":"orsk_climb"}]
+   },
+   {
+    "id": "cinder_king",
+    "name": "Auric Vael, the Cinder King",
+    "role": "final boss; the king who wore the Crown of Embers",
+    "archetype": "cinder_king",
+    "model": "auric",
+    "home": "the_veil",
+    "faction": "blight",
+    "dialogue": [{"id":"king_final"}]
+   },
+   {
+    "id": "ash",
+    "name": "Ash",
+    "role": "the grey mare",
+    "archetype": "horse_ash",
+    "model": "horse_ash",
+    "home": "hearth_vale",
+    "faction": "player",
+    "tags": ["mount"]
+   }
+  ],
+  "storyboard": {
+   "acts": [
+    {
+     "id": "act1",
+     "title": "Ashes at the Vale",
+     "summary": "Sael limps into Hearth Vale as husks pour out of the night. Defend the village, recover the warden cache, win a horse, and follow Lioren's letter.",
+     "beats": [
+      {
+       "id": "b_wake",
+       "title": "Ashfall wakes Sael",
+       "do": [{"do":"play_cutscene","cutscene":"cs_ashfall"},{"do":"set_time","hour":8},{"do":"change_weather","weather":"ashfall"}]
+      },
+      {
+       "id": "b_husks",
+       "title": "Husks in the east field",
+       "when": {"var":"time.hour","gte":9},
+       "do": [
+        {"do":"spawn","archetype":"cinder_husk","zone":"hearth_vale","count":6},
+        {"do":"start_quest","quest":"m1_ashes"},
+        {"do":"notify","text":"Quest: Ashes at the Vale","kind":"quest"}
+       ],
+       "after": ["b_wake"]
+      },
+      {
+       "id": "b_vale_defended",
+       "title": "The field is cleared",
+       "when": {"objective":"o_defend","quest":"m1_ashes","state":"done"},
+       "do": [{"do":"add_rep","faction":"hearth","delta":15},{"do":"change_weather","weather":"clear"}],
+       "after": ["b_husks"]
+      },
+      {
+       "id": "b_ilse_heals",
+       "title": "Ilse tends the wounded",
+       "when": {"quest":"m1_ashes","state":"complete"},
+       "do": [{"do":"learn_recipe","recipe":"r_ember_salve"},{"do":"start_quest","quest":"m2_warden_cache"},{"do":"start_quest","quest":"s_torv_mare"}],
+       "after": ["b_vale_defended"]
+      },
+      {
+       "id": "b_warden_cache",
+       "title": "Beneath the forge",
+       "when": {"item":"wardens_seal_ring"},
+       "do": [
+        {"do":"unlock_ability","ability":"warden_signs"},
+        {"do":"add_entry","entry":"e_wardens"},
+        {"do":"notify","text":"Warden Signs unlocked: Aard-like push, Fire sign and Ward.","kind":"quest"}
+       ],
+       "after": ["b_ilse_heals"]
+      },
+      {
+       "id": "b_mare",
+       "title": "The grey mare accepts",
+       "when": {"flag":"ash_owned"},
+       "do": [{"do":"unlock_ability","ability":"mounted_travel"},{"do":"notify","text":"Whistle for Ash with the call key.","kind":"info"}],
+       "after": ["b_ilse_heals"]
+      },
+      {
+       "id": "b_wren_letter",
+       "title": "Wren's letter",
+       "when": {"flag":"got_letter"},
+       "do": [{"do":"start_quest","quest":"m3_road"},{"do":"add_entry","entry":"e_lioren"}],
+       "after": ["b_warden_cache"]
+      },
+      {
+       "id": "b_ride_out",
+       "title": "Ride out of the vale",
+       "when": {"all":[{"flag":"got_letter"},{"not":{"zone":"hearth_vale"}}]},
+       "do": [{"do":"play_cutscene","cutscene":"cs_departure"},{"do":"set_checkpoint","zone":"hearth_vale"}],
+       "after": ["b_wren_letter"]
+      },
+      {
+       "id": "b_contracts",
+       "title": "Contracts board posted",
+       "when": {"quest":"m1_ashes","state":"complete"},
+       "do": [{"do":"notify","text":"Contracts are posted on notice boards. Each pays crowns and teaches a creature.","kind":"info"}],
+       "optional": true
+      }
+     ]
+    },
+    {
+     "id": "act2",
+     "title": "The Roads to Gildmere",
+     "summary": "The Mirewood, the trade city and its politics. The Regent wants a weapon; the archivist knows the Crown is a lock.",
+     "beats": [
+      {
+       "id": "b_mirewood",
+       "title": "Into the Mirewood",
+       "when": {"zone":"mirewood"},
+       "do": [{"do":"change_weather","weather":"fog"},{"do":"add_entry","entry":"e_mirewood"},{"do":"start_quest","quest":"m4_antidote"}]
+      },
+      {
+       "id": "b_maelis",
+       "title": "Maelis teaches the stir",
+       "when": {"flag":"maelis_taught"},
+       "do": [{"do":"add_affinity","character":"maelis","delta":10}],
+       "after": ["b_mirewood"]
+      },
+      {
+       "id": "b_antidote",
+       "title": "The bog antidote",
+       "when": {"quest":"m4_antidote","state":"complete"},
+       "do": [{"do":"add_entry","entry":"e_cinder_touch"}],
+       "after": ["b_maelis"]
+      },
+      {
+       "id": "b_gildmere",
+       "title": "Gildmere's gates",
+       "when": {"zone":"gildmere"},
+       "do": [{"do":"discover","zone":"gildmere"},{"do":"start_quest","quest":"m5_regent"},{"do":"play_cutscene","cutscene":"cs_gildmere"}],
+       "after": ["b_antidote"]
+      },
+      {
+       "id": "b_audience",
+       "title": "The Regent's offer",
+       "when": {"said":"tavian_audience","node":"n2"},
+       "do": [{"do":"add_entry","entry":"e_regent_offer"}],
+       "after": ["b_gildmere"]
+      },
+      {
+       "id": "b_neris",
+       "title": "Neris reveals the Crown's purpose",
+       "when": {"flag":"knows_crown_truth"},
+       "do": [{"do":"start_quest","quest":"m6_scrolls"},{"do":"start_quest","quest":"s_neris_scrolls"}],
+       "after": ["b_audience"]
+      },
+      {
+       "id": "b_halvard",
+       "title": "Halvard speaks of Saltmarch",
+       "when": {"flag":"knows_saltmarch"},
+       "do": [{"do":"start_quest","quest":"m7_saltmarch"}],
+       "after": ["b_gildmere"]
+      },
+      {
+       "id": "b_barrow",
+       "title": "The Hollow Barrow",
+       "when": {"zone":"hollow_barrow"},
+       "do": [{"do":"add_entry","entry":"e_barrow"},{"do":"start_quest","quest":"s_barrow_dead"}],
+       "after": ["b_neris"]
+      },
+      {
+       "id": "b_scrolls_returned",
+       "title": "Auric's scrolls",
+       "when": {"quest":"m6_scrolls","state":"complete"},
+       "do": [{"do":"give_item","item":"crown_fragment"},{"do":"set_flag","flag":"knows_seals"},{"do":"add_entry","entry":"e_seals"}],
+       "after": ["b_barrow"]
+      }
+     ]
+    },
+    {
+     "id": "act3",
+     "title": "The Fractured Alliance",
+     "summary": "Saltmarch burns or does not. Lioren stands or falls. Three seals wait on the Stonecrown, in the Barrens and in Frostreach.",
+     "beats": [
+      {
+       "id": "b_saltmarch",
+       "title": "Smoke over Saltmarch",
+       "when": {"zone":"saltmarch"},
+       "do": [{"do":"play_cutscene","cutscene":"cs_saltmarch"},{"do":"change_weather","weather":"rain"}]
+      },
+      {
+       "id": "b_cael",
+       "title": "Cael's sermon",
+       "when": {"said":"cael_sermon","node":"n2"},
+       "do": [{"do":"set_flag","flag":"met_cael"}],
+       "after": ["b_saltmarch"]
+      },
+      {
+       "id": "b_lioren_found",
+       "title": "Lioren among the quarantined",
+       "when": {"flag":"saltmarch_defended"},
+       "do": [{"do":"start_dialogue","dialogue":"lioren_reunion","with":"lioren"}],
+       "after": ["b_cael"]
+      },
+      {
+       "id": "b_saltmarch_burned",
+       "title": "The district burns",
+       "when": {"flag":"saltmarch_burned"},
+       "do": [
+        {"do":"play_cutscene","cutscene":"cs_burn"},
+        {"do":"set_alive","character":"lioren","alive":false},
+        {"do":"set_flag","flag":"lioren_dead"},
+        {"do":"add_entry","entry":"e_saltmarch_fire"}
+       ],
+       "after": ["b_cael"]
+      },
+      {
+       "id": "b_lioren_joins",
+       "title": "Lioren joins",
+       "when": {"flag":"lioren_companion"},
+       "do": [{"do":"command","who":"lioren","order":"follow"},{"do":"add_entry","entry":"e_lioren_cinder"},{"do":"start_quest","quest":"s_lioren_cure"}],
+       "after": ["b_lioren_found"]
+      },
+      {
+       "id": "b_stonecrown",
+       "title": "The Stonecrown",
+       "when": {"zone":"stonecrown"},
+       "do": [{"do":"start_quest","quest":"m8_seal_crag"},{"do":"add_entry","entry":"e_stonecrown"}],
+       "after": ["b_saltmarch"]
+      },
+      {
+       "id": "b_crag_seal",
+       "title": "The Crag Seal",
+       "when": {"item":"seal_stone_crag"},
+       "do": [{"do":"set_flag","flag":"seal_crag"},{"do":"start_quest","quest":"m9_seal_slag"},{"do":"start_quest","quest":"m10_seal_rime"}],
+       "after": ["b_stonecrown"]
+      },
+      {
+       "id": "b_lioren_fate",
+       "title": "Lioren's fever",
+       "when": {"all":[{"flag":"lioren_companion"},{"zone":"ashen_barrens"},{"not":{"flag":"lioren_cured"}}]},
+       "do": [
+        {"do":"play_cutscene","cutscene":"cs_lioren_fever"},
+        {"do":"set_alive","character":"lioren","alive":false},
+        {"do":"set_flag","flag":"lioren_dead"}
+       ],
+       "after": ["b_crag_seal"],
+       "optional": true
+      },
+      {
+       "id": "b_slag_seal",
+       "title": "The Slag Seal",
+       "when": {"item":"seal_stone_slag"},
+       "do": [{"do":"set_flag","flag":"seal_slag"}],
+       "after": ["b_crag_seal"]
+      },
+      {
+       "id": "b_rime_seal",
+       "title": "The Rime Seal",
+       "when": {"item":"seal_stone_rime"},
+       "do": [{"do":"set_flag","flag":"seal_rime"}],
+       "after": ["b_crag_seal"]
+      },
+      {
+       "id": "b_three_seals",
+       "title": "Three seals",
+       "when": {"all":[{"item":"seal_stone_crag"},{"item":"seal_stone_slag"},{"item":"seal_stone_rime"}]},
+       "do": [
+        {"do":"set_flag","flag":"three_seals"},
+        {"do":"unlock","gate":"veil_gate"},
+        {"do":"start_quest","quest":"m11_veil"},
+        {"do":"play_cutscene","cutscene":"cs_seals_hum"}
+       ],
+       "after": ["b_slag_seal","b_rime_seal"]
+      }
+     ]
+    },
+    {
+     "id": "act4",
+     "title": "The Crown of Embers",
+     "summary": "Ride to the Veil. The king waits; the Crown listens. Cure, seize, deliver or burn.",
+     "beats": [
+      {
+       "id": "b_veil",
+       "title": "The Veil",
+       "when": {"zone":"the_veil"},
+       "do": [{"do":"change_weather","weather":"ashfall"},{"do":"play_cutscene","cutscene":"cs_veil"}]
+      },
+      {"id":"b_spire","title":"Crown Spire","when":{"zone":"crown_spire"},"do":[{"do":"add_entry","entry":"e_spire"}],"after":["b_veil"]},
+      {
+       "id": "b_king_speaks",
+       "title": "The king speaks",
+       "when": {"all":[{"zone":"crown_spire"},{"not":{"flag":"final_resolved"}}]},
+       "do": [{"do":"start_dialogue","dialogue":"king_final","with":"cinder_king"}],
+       "after": ["b_spire"]
+      },
+      {
+       "id": "b_king_wakes",
+       "title": "The king rises",
+       "when": {"boss":"king","state":"active"},
+       "do": [{"do":"shake","amount":1},{"do":"play_sound","cue":"crown_roar"}],
+       "after": ["b_king_speaks"]
+      },
+      {
+       "id": "b_king_down",
+       "title": "The Crown falls",
+       "when": {"boss":"king","state":"defeated"},
+       "do": [{"do":"give_item","item":"crown_fragment","count":1},{"do":"set_flag","flag":"king_down"}],
+       "after": ["b_king_wakes"]
+      },
+      {
+       "id": "b_resolve",
+       "title": "The Crown's fate",
+       "when": {"flag":"king_down"},
+       "do": [{"do":"set_flag","flag":"final_resolved"},{"do":"play_cutscene","cutscene":"cs_aftermath"}],
+       "after": ["b_king_down"]
+      },
+      {
+       "id": "b_epilogue",
+       "title": "What the road remembers",
+       "when": {"flag":"final_resolved"},
+       "do": [{"do":"emit","event":"epilogue"}],
+       "after": ["b_resolve"]
+      }
+     ]
+    }
+   ]
+  },
+  "quests": [
+   {
+    "id": "m1_ashes",
+    "title": "Ashes at the Vale",
+    "kind": "main",
+    "giver": "ilse",
+    "zone": "hearth_vale",
+    "summary": "Husks are attacking the east field of Hearth Vale.",
+    "objectives": [
+     {"id":"o_talk","kind":"talk","character":"ilse","text":"Speak with Mother Ilse."},
+     {"id":"o_defend","kind":"defeat","archetype":"cinder_husk","count":6,"zone":"hearth_vale","text":"Defeat the husks in the east field."},
+     {"id":"o_return","kind":"talk","character":"ilse","text":"Report back to Ilse."}
+    ],
+    "autoStart": true,
+    "rewards": {"xp":300,"money":40,"items":[{"item":"ember_salve","count":2}],"rep":[{"faction":"hearth","delta":20}]}
+   },
+   {
+    "id": "m2_warden_cache",
+    "title": "The Warden Cache",
+    "kind": "main",
+    "giver": "edda",
+    "zone": "hearth_vale",
+    "summary": "A cache of the Cinderwardens lies beneath Edda's forge.",
+    "objectives": [
+     {"id":"o_talk","kind":"talk","character":"edda","text":"Ask Edda about the cellar."},
+     {"id":"o_ring","kind":"collect","item":"wardens_seal_ring","count":1,"text":"Find the Warden's Seal Ring."},
+     {"id":"o_coat","kind":"collect","item":"warden_coat","count":1,"text":"Recover the warden coat."}
+    ],
+    "prereq": ["m1_ashes"],
+    "rewards": {"xp":250,"items":[{"item":"warden_greaves","count":1}]}
+   },
+   {
+    "id": "m3_road",
+    "title": "The Road to Gildmere",
+    "kind": "main",
+    "giver": "wren",
+    "zone": "hearth_vale",
+    "summary": "Lioren's letter points toward Gildmere and Saltmarch. The Mirewood lies between.",
+    "objectives": [
+     {"id":"o_letter","kind":"collect","item":"lioren_letter","count":1,"text":"Take Lioren's letter from Wren."},
+     {"id":"o_mire","kind":"reach","zone":"mirewood","text":"Cross into the Mirewood."},
+     {"id":"o_gildmere","kind":"reach","zone":"gildmere","text":"Reach Gildmere."}
+    ],
+    "prereq": ["m1_ashes"],
+    "rewards": {"xp":400}
+   },
+   {
+    "id": "m4_antidote",
+    "title": "Bog Medicine",
+    "kind": "main",
+    "giver": "maelis",
+    "zone": "mirewood",
+    "summary": "A Gildguard scout is dying of cinder-touch. Maelis can teach the cure.",
+    "objectives": [
+     {"id":"o_talk","kind":"talk","character":"maelis","text":"Find Maelis in the Mirewood."},
+     {"id":"o_lily","kind":"collect","item":"bog_lily","count":4,"text":"Gather four bog lilies."},
+     {"id":"o_brew","kind":"craft","recipe":"r_antidote_bog","count":1,"text":"Brew the antidote."}
+    ],
+    "prereq": ["m3_road"],
+    "rewards": {"xp":450,"items":[{"item":"antidote_bog","count":1}]}
+   },
+   {
+    "id": "m5_regent",
+    "title": "Audience with the Regent",
+    "kind": "main",
+    "giver": "halvard",
+    "zone": "gildmere",
+    "summary": "The Regent wants the last warden in his hall.",
+    "objectives": [
+     {"id":"o_gate","kind":"reach","zone":"gildmere","text":"Enter Gildmere."},
+     {"id":"o_audience","kind":"talk","character":"tavian","text":"Speak with Regent Tavian."},
+     {"id":"o_halvard","kind":"talk","character":"halvard","text":"Speak with Captain Halvard."}
+    ],
+    "prereq": ["m3_road"],
+    "rewards": {"xp":500,"rep":[{"faction":"gildmere","delta":10}]},
+    "branches": [
+     {"id":"br_regent","label":"Accept the Regent's offer","when":{"flag":"sided_tavian"}},
+     {"id":"br_neutral","label":"Keep your own counsel","when":{"not":{"flag":"sided_tavian"}}}
+    ]
+   },
+   {
+    "id": "m6_scrolls",
+    "title": "What the King Wrote",
+    "kind": "main",
+    "giver": "neris",
+    "zone": "gildmere",
+    "summary": "Archivist Neris believes the Crown is a lock, not a weapon.",
+    "objectives": [
+     {"id":"o_neris","kind":"talk","character":"neris","text":"Ask Neris about the Crown."},
+     {"id":"o_scrolls","kind":"collect","item":"neris_scroll","count":3,"text":"Recover three scrolls of Auric from the Hollow Barrow."},
+     {"id":"o_return","kind":"deliver","item":"neris_scroll","count":3,"to":"neris","text":"Bring the scrolls to Neris."}
+    ],
+    "prereq": ["m5_regent"],
+    "rewards": {"xp":700,"items":[{"item":"crown_fragment","count":1}]}
+   },
+   {
+    "id": "m7_saltmarch",
+    "title": "Fire on the Coast",
+    "kind": "main",
+    "giver": "halvard",
+    "zone": "saltmarch",
+    "summary": "The Order of Ash has locked Saltmarch's quarantine. Decide the district's fate.",
+    "objectives": [
+     {"id":"o_reach","kind":"reach","zone":"saltmarch","text":"Reach Saltmarch."},
+     {"id":"o_cael","kind":"talk","character":"cael","text":"Face Brother Cael."},
+     {
+      "id": "o_resolve",
+      "kind": "until",
+      "when": {"any":[{"flag":"saltmarch_defended"},{"flag":"saltmarch_burned"},{"flag":"saltmarch_negotiated"}]},
+      "text": "Decide the fate of Saltmarch."
+     }
+    ],
+    "prereq": ["m5_regent"],
+    "rewards": {"xp":800},
+    "branches": [
+     {"id":"br_defend","label":"Defend the district","when":{"flag":"saltmarch_defended"}},
+     {"id":"br_burn","label":"Burn it with the Order","when":{"flag":"saltmarch_burned"}},
+     {"id":"br_negotiate","label":"Buy three days","when":{"flag":"saltmarch_negotiated"}}
+    ],
+    "onComplete": [{"do":"set_flag","flag":"saltmarch_resolved"}]
+   },
+   {
+    "id": "m8_seal_crag",
+    "title": "The Crag Seal",
+    "kind": "main",
+    "giver": "orsk",
+    "zone": "stonecrown",
+    "summary": "Climb the Stonecrown, defeat the Crag Titan and take the first seal stone.",
+    "objectives": [
+     {"id":"o_orsk","kind":"talk","character":"orsk","text":"Find Orsk at the foot of the Stonecrown."},
+     {"id":"o_climb","kind":"reach","at":[3250,2400],"radius":40,"text":"Climb to the Titan's ledge."},
+     {"id":"o_titan","kind":"defeat","archetype":"crag_titan","count":1,"text":"Defeat the Crag Titan."},
+     {"id":"o_seal","kind":"collect","item":"seal_stone_crag","count":1,"text":"Take the Crag Seal Stone."}
+    ],
+    "prereq": ["m7_saltmarch","m6_scrolls"],
+    "rewards": {"xp":1500}
+   },
+   {
+    "id": "m9_seal_slag",
+    "title": "The Slag Seal",
+    "kind": "main",
+    "zone": "ashen_barrens",
+    "summary": "Cross the Ashen Barrens and break the Slag Serpent.",
+    "objectives": [
+     {"id":"o_reach","kind":"reach","zone":"ashen_barrens","text":"Enter the Ashen Barrens."},
+     {"id":"o_serpent","kind":"defeat","archetype":"slag_serpent","count":1,"text":"Defeat the Slag Serpent."},
+     {"id":"o_seal","kind":"collect","item":"seal_stone_slag","count":1,"text":"Take the Slag Seal Stone."}
+    ],
+    "prereq": ["m8_seal_crag"],
+    "rewards": {"xp":1800},
+    "onComplete": [{"do":"set_flag","flag":"barrens_done"}]
+   },
+   {
+    "id": "m10_seal_rime",
+    "title": "The Rime Seal",
+    "kind": "main",
+    "zone": "frostreach",
+    "summary": "Brave Frostreach and best the Rime Warden.",
+    "objectives": [
+     {"id":"o_reach","kind":"reach","zone":"frostreach","text":"Enter Frostreach."},
+     {"id":"o_warden","kind":"defeat","archetype":"rime_warden","count":1,"text":"Defeat the Rime Warden."},
+     {"id":"o_seal","kind":"collect","item":"seal_stone_rime","count":1,"text":"Take the Rime Seal Stone."}
+    ],
+    "prereq": ["m8_seal_crag"],
+    "rewards": {"xp":1800}
+   },
+   {
+    "id": "m11_veil",
+    "title": "The Crown of Embers",
+    "kind": "main",
+    "zone": "the_veil",
+    "summary": "Three seals, one crown, one king.",
+    "objectives": [
+     {
+      "id": "o_seals",
+      "kind": "until",
+      "when": {"all":[{"item":"seal_stone_crag"},{"item":"seal_stone_slag"},{"item":"seal_stone_rime"}]},
+      "text": "Hold all three seal stones."
+     },
+     {"id":"o_veil","kind":"reach","zone":"the_veil","text":"Ride to the Veil."},
+     {"id":"o_spire","kind":"reach","zone":"crown_spire","text":"Enter the Crown Spire."},
+     {"id":"o_king","kind":"talk","character":"cinder_king","text":"Face the Cinder King."}
+    ],
+    "prereq": ["m9_seal_slag","m10_seal_rime"],
+    "rewards": {"xp":5000}
+   },
+   {
+    "id": "s_torv_mare",
+    "title": "The Grey Mare",
+    "kind": "side",
+    "giver": "torv",
+    "zone": "hearth_vale",
+    "summary": "Win Ash's trust: feed, groom and ride her.",
+    "objectives": [
+     {"id":"o_feed","kind":"use","interactable":"feed_trough","count":1,"text":"Offer Ash an apple."},
+     {"id":"o_ride","kind":"drive","vehicle":"horse_ash","distance":400,"text":"Ride Ash 400 meters."}
+    ],
+    "prereq": [],
+    "rewards": {"xp":200,"items":[]},
+    "onComplete": [{"do":"set_flag","flag":"ash_owned"},{"do":"call_mount"}]
+   },
+   {
+    "id": "s_wren_lantern",
+    "title": "A Lantern for Wren",
+    "kind": "side",
+    "giver": "wren",
+    "zone": "hearth_vale",
+    "summary": "Wren wants a lantern to carry on night walks.",
+    "objectives": [
+     {"id":"o_oil","kind":"collect","item":"ember_dust","count":2,"text":"Collect two ember dust."},
+     {"id":"o_lantern","kind":"craft","recipe":"r_silver_oil","count":1,"text":"Brew a silver oil."},
+     {"id":"o_give","kind":"talk","character":"wren","text":"Give Wren the lantern."}
+    ],
+    "rewards": {"xp":150,"rep":[{"faction":"hearth","delta":10}]}
+   },
+   {
+    "id": "c_drowner",
+    "title": "Drowners in the Ford",
+    "kind": "contract",
+    "giver": "torv",
+    "zone": "mirewood",
+    "summary": "Travelers vanish at the Mirewood ford.",
+    "objectives": [
+     {"id":"o_kill","kind":"defeat","archetype":"bog_drowner","count":4,"zone":"mirewood","text":"Defeat four bog drowners."},
+     {"id":"o_trophy","kind":"collect","item":"drowner_trophy","count":2,"text":"Bring two trophies."}
+    ],
+    "rewards": {"xp":350,"money":180}
+   },
+   {
+    "id": "c_marsh_hag",
+    "title": "The Hag of Gretch Hollow",
+    "kind": "contract",
+    "giver": "maelis",
+    "zone": "mirewood",
+    "summary": "An old marsh hag has taken the lower mire.",
+    "objectives": [
+     {"id":"o_find","kind":"reach","at":[1420,4300],"radius":50,"text":"Find Gretch Hollow."},
+     {"id":"o_kill","kind":"defeat","archetype":"marsh_hag","count":1,"text":"Defeat Old Gretch."},
+     {"id":"o_eye","kind":"collect","item":"hag_eye","count":1,"text":"Take the hag's eye."}
+    ],
+    "prereq": ["m4_antidote"],
+    "rewards": {"xp":700,"money":300,"items":[{"item":"cinder_core","count":2}]}
+   },
+   {
+    "id": "c_bandit_camp",
+    "title": "Toll of the Broken Bridge",
+    "kind": "contract",
+    "giver": "halvard",
+    "zone": "gildmere",
+    "summary": "Bandits block the trade road at the Broken Bridge.",
+    "objectives": [
+     {"id":"o_camp","kind":"reach","at":[4180,3980],"radius":60,"text":"Find the camp at Broken Bridge."},
+     {"id":"o_kill","kind":"defeat","archetype":"bandit","count":6,"text":"Defeat six bandits."},
+     {"id":"o_manifest","kind":"collect","item":"caravan_manifest","count":1,"text":"Recover the caravan manifest."},
+     {"id":"o_deliver","kind":"deliver","item":"caravan_manifest","count":1,"to":"halvard","text":"Deliver the manifest to Halvard."}
+    ],
+    "rewards": {"xp":600,"money":350,"rep":[{"faction":"gildmere","delta":10}]}
+   },
+   {
+    "id": "c_cinder_stag",
+    "title": "The Cinder Stag",
+    "kind": "contract",
+    "giver": "edda",
+    "zone": "hearth_vale",
+    "summary": "A stag wreathed in ember haunts the north woods; its antlers are valuable.",
+    "objectives": [
+     {"id":"o_hunt","kind":"defeat","archetype":"cinder_stag","count":1,"text":"Hunt the cinder stag."},
+     {"id":"o_antler","kind":"collect","item":"stag_antler","count":1,"text":"Take an antler."}
+    ],
+    "prereq": ["m1_ashes"],
+    "rewards": {"xp":500,"money":220,"items":[{"item":"cinder_core","count":1}]}
+   },
+   {
+    "id": "c_frost_wyrm",
+    "title": "Wyrm Over Frostreach",
+    "kind": "contract",
+    "zone": "frostreach",
+    "summary": "A frost wyrm circles the Frostreach pass.",
+    "objectives": [
+     {"id":"o_wyrm","kind":"defeat","archetype":"frost_wyrm","count":1,"text":"Bring down the frost wyrm."},
+     {"id":"o_shard","kind":"collect","item":"ice_shard","count":3,"text":"Collect three ice shards."}
+    ],
+    "prereq": ["m10_seal_rime"],
+    "rewards": {"xp":1200,"money":800,"items":[{"item":"frost_mantle","count":1}]}
+   },
+   {
+    "id": "s_neris_scrolls",
+    "title": "Scattered Scrolls",
+    "kind": "side",
+    "giver": "neris",
+    "zone": "gildmere",
+    "summary": "Neris is missing three of Auric's scrolls.",
+    "objectives": [
+     {"id":"o_find","kind":"discover","tag":"scroll_site","count":3,"text":"Locate three scroll sites."},
+     {"id":"o_collect","kind":"collect","item":"neris_scroll","count":3,"text":"Collect the scrolls."}
+    ],
+    "rewards": {"xp":400},
+    "fail": {"not":{"alive":"neris"}}
+   },
+   {
+    "id": "s_cook_off",
+    "title": "The Gildmere Cook-Off",
+    "kind": "side",
+    "zone": "gildmere",
+    "summary": "Cook a dish that lifts the market's spirits.",
+    "objectives": [
+     {"id":"o_stew","kind":"craft","recipe":"r_stew","count":1,"text":"Cook a hearty stew."},
+     {"id":"o_glaze","kind":"craft","recipe":"r_glazed_apple","count":1,"text":"Cook a glazed apple."},
+     {"id":"o_serve","kind":"use","interactable":"cook_off_table","text":"Serve your dishes at the cook-off table."}
+    ],
+    "rewards": {"xp":250,"money":150}
+   },
+   {
+    "id": "s_lioren_cure",
+    "title": "A Warden's Cure",
+    "kind": "side",
+    "giver": "lioren",
+    "zone": "saltmarch",
+    "summary": "Lioren carries cinder-touch. Brew the Warden's Cure before it takes him.",
+    "objectives": [
+     {"id":"o_core","kind":"collect","item":"cinder_core","count":1,"text":"Obtain a cinder core."},
+     {"id":"o_shard","kind":"collect","item":"ice_shard","count":1,"text":"Obtain an ice shard."},
+     {"id":"o_cure","kind":"craft","recipe":"r_wardens_cure","count":1,"text":"Brew the Warden's Cure."},
+     {"id":"o_give","kind":"deliver","item":"wardens_cure","count":1,"to":"lioren","text":"Give Lioren the cure."}
+    ],
+    "prereq": ["m7_saltmarch"],
+    "gate": {"flag":"lioren_companion"},
+    "rewards": {"xp":1000},
+    "onComplete": [{"do":"set_flag","flag":"lioren_cured"},{"do":"add_affinity","character":"lioren","delta":20}],
+    "fail": {"flag":"lioren_dead"}
+   },
+   {
+    "id": "s_barrow_dead",
+    "title": "Restless Dead",
+    "kind": "contract",
+    "giver": "neris",
+    "zone": "hollow_barrow",
+    "summary": "The Hollow Barrow stirs; wights guard the king's scrolls.",
+    "objectives": [{"id":"o_wights","kind":"defeat","archetype":"barrow_wight","count":5,"zone":"hollow_barrow","text":"Defeat five barrow wights."}],
+    "prereq": ["m5_regent"],
+    "rewards": {"xp":500,"money":250}
+   },
+   {
+    "id": "s_titan_climb",
+    "title": "Shrine of the Crag",
+    "kind": "side",
+    "giver": "orsk",
+    "zone": "stonecrown",
+    "summary": "Three meditation shrines are lost on the Stonecrown.",
+    "objectives": [{"id":"o_shrines","kind":"use","interactable":"meditation_shrine","count":3,"text":"Meditate at three shrines on the Stonecrown."}],
+    "prereq": ["m8_seal_crag"],
+    "rewards": {"xp":600,"items":[{"item":"warm_cloak","count":1}]}
+   }
+  ],
+  "gates": [
+   {
+    "id": "gildmere_gate",
+    "requires": {"any":[{"flag":"has_pass"},{"var":"rep.gildmere","gte":5},{"item":"regent_writ"}]},
+    "hint": "The Gildguard want a writ or a good word.",
+    "locks": ["portal:gildmere_south"]
+   },
+   {
+    "id": "quarantine_gate",
+    "requires": {"any":[{"flag":"saltmarch_defended"},{"flag":"saltmarch_negotiated"},{"item":"quarantine_key"}]},
+    "hint": "Brother Cael holds the key.",
+    "locks": ["portal:quarantine"]
+   },
+   {
+    "id": "titan_ledge",
+    "requires": {"ability":"glide"},
+    "hint": "The ledge is beyond a gap only a glider can cross.",
+    "locks": ["interactable:titan_ledge"]
+   },
+   {
+    "id": "heat_barrens",
+    "requires": {"any":[{"status":"fireproof"},{"equipped":"ember_plate"},{"var":"level","gte":14}]},
+    "hint": "The Barrens burn the unprepared. Firebane or Ember Plate.",
+    "locks": ["zone:ashen_barrens"]
+   },
+   {
+    "id": "cold_frostreach",
+    "requires": {"any":[{"status":"warmth"},{"equipped":"frost_mantle"},{"equipped":"warm_cloak"}]},
+    "hint": "Warm cloaks and hot food will keep Frostreach from freezing you.",
+    "locks": ["zone:frostreach"]
+   },
+   {"id":"veil_gate","requires":{"flag":"three_seals"},"hint":"Three seal stones open the Veil.","locks":["portal:veil_gate"]},
+   {"id":"wardens_cache","requires":{"item":"wardens_seal_ring"},"hint":"Only a warden's ring opens the cache.","locks":["interactable:chest_rare"]},
+   {
+    "id": "barrow_door",
+    "requires": {"any":[{"quest":"m5_regent","state":"complete"},{"item":"regent_writ"}]},
+    "hint": "The Gildmere archive holds the key to the Barrow.",
+    "locks": ["portal:hollow_barrow"]
+   }
+  ],
+  "dialogue": {
+   "ilse_wounded": {
+    "speaker": "ilse",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "ilse",
+      "say": "Warden! Gods, you are a sight. Husks in the east field. Three villagers cut, and I have no salve left.",
+      "choices": [{"text":"I will clear the field.","next":"n2"},{"text":"What are those things?","next":"n3"}]
+     },
+     "n2": {"who":"ilse","say":"Then take the east gate. Try to leave the barn standing.","do":[{"do":"set_flag","flag":"ilse_asked"}],"end":true},
+     "n3": {
+      "who": "ilse",
+      "say": "Husks. They were people. Something under the mountain wakes them with ember. You would know better than I.",
+      "do": [{"do":"add_entry","entry":"e_husks"}],
+      "next": "n2"
+     }
+    }
+   },
+   "ilse_healer": {
+    "speaker": "ilse",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "ilse",
+      "say": "You are not sleeping, Sael. Sit. Let me see that cinder-burn.",
+      "choices": [
+       {"text":"I need Ember Salve.","next":"n2","if":{"quest":"m1_ashes","state":"complete"}},
+       {"text":"Teach me to brew it.","next":"n3","if":{"not":{"knows":"r_ember_salve"}}},
+       {"text":"Never mind.","next":"n4"}
+      ]
+     },
+     "n2": {
+      "who": "ilse",
+      "say": "Herbs and ember dust, stirred anticlockwise. Be careful, it poisons if you drink too many.",
+      "do": [{"do":"give_item","item":"ember_salve","count":2}],
+      "end": true
+     },
+     "n3": {"who":"ilse","say":"Herbs, ember dust, a patient hand.","do":[{"do":"learn_recipe","recipe":"r_ember_salve"}],"end":true},
+     "n4": {"who":"ilse","say":"Rest when you can. Not like you will.","end":true}
+    }
+   },
+   "edda_forge": {
+    "speaker": "edda",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "edda",
+      "say": "Your blade, warden. I cleaned it when you were out cold. Silver does not forget, but it needs oil.",
+      "choices": [
+       {"text":"Can you repair this?","next":"n2"},
+       {"text":"Forge me something new.","next":"n3","if":{"item":"iron_ore","gte":4}},
+       {"text":"Tell me about the cellar.","next":"n4","if":{"not":{"flag":"edda_cellar"}}},
+       {"text":"Later.","next":"n5"}
+      ]
+     },
+     "n2": {"who":"edda","say":"Repairs are free for a warden. Hold still. There.","do":[{"do":"repair","item":"warden_blade"}],"end":true},
+     "n3": {
+      "who": "edda",
+      "say": "Four ore and a bit of hide. Steel will do till you can afford better.",
+      "do": [{"do":"learn_recipe","recipe":"r_steel_sword"}],
+      "end": true
+     },
+     "n4": {
+      "who": "edda",
+      "say": "Under the forge. Wardens kept a cache there before the fall. You will want the ring. I left it where I found it.",
+      "do": [{"do":"set_flag","flag":"edda_cellar"},{"do":"start_quest","quest":"m2_warden_cache"}],
+      "end": true
+     },
+     "n5": {"who":"edda","say":"Keep your edge dry.","end":true}
+    }
+   },
+   "torv_stable": {
+    "speaker": "torv",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "torv",
+      "say": "The grey mare was your warden-master's. She has not let a soul ride since he died. Maybe she will let you.",
+      "choices": [{"text":"Let me try.","next":"n2"},{"text":"I travel faster alone.","next":"n3"}]
+     },
+     "n2": {
+      "who": "torv",
+      "say": "Hold the bridle low. Do not look her in the eye until she looks at you.",
+      "do": [{"do":"start_quest","quest":"s_torv_mare"},{"do":"give_item","item":"mare_bridle"}],
+      "end": true
+     },
+     "n3": {"who":"torv","say":"Not on the Mirewood roads. Come back when you change your mind.","end":true}
+    }
+   },
+   "torv_after": {
+    "speaker": "torv",
+    "start": "n1",
+    "nodes": {"n1":{"who":"torv","say":"She trusts you. That is rarer than a clean boot in the Mirewood. Take care of her.","end":true}}
+   },
+   "wren_letter": {
+    "speaker": "wren",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "wren",
+      "say": "You're the warden! I have a letter from Lioren. He said to give it only to Sael or to no one.",
+      "choices": [{"text":"I am Sael.","next":"n2"},{"text":"Why did he leave it with a child?","next":"n3"}]
+     },
+     "n2": {
+      "who": "wren",
+      "say": "He went to Saltmarch. He said you would understand why. He said the Order was lying.",
+      "do": [{"do":"give_item","item":"lioren_letter"},{"do":"set_flag","flag":"got_letter"},{"do":"add_entry","entry":"e_order"}],
+      "end": true
+     },
+     "n3": {"who":"wren","say":"Nobody looks at me. I am good at keeping things.","next":"n1"}
+    }
+   },
+   "wren_after": {"speaker":"wren","start":"n1","nodes":{"n1":{"who":"wren","say":"When I grow up, I will carry a light like that for everybody.","end":true}}},
+   "lioren_reunion": {
+    "speaker": "lioren",
+    "start": "n1",
+    "nodes": {
+     "n1": {"who":"lioren","say":"Sael. They told me you were dead. They told me a great many things.","next":"n2"},
+     "n2": {
+      "who": "lioren",
+      "say": "The Order is burning the quarantine district. Cael says it is mercy. I say it is the first step to burning everything with a pulse.",
+      "choices": [
+       {"text":"Stand with me, Lioren.","next":"n3"},
+       {"text":"You left me to take the blame.","next":"n4"},
+       {"text":"Cael may be right.","next":"n5","if":{"flag":"met_cael"}}
+      ]
+     },
+     "n3": {
+      "who": "lioren",
+      "say": "Always. My blade is yours until the Crown breaks.",
+      "do": [{"do":"set_flag","flag":"lioren_companion"},{"do":"add_affinity","character":"lioren","delta":15},{"do":"set_flag","flag":"lioren_asked"}],
+      "end": true
+     },
+     "n4": {
+      "who": "lioren",
+      "say": "I know. I have said sorry in my head a thousand times. Hear it aloud: sorry.",
+      "do": [{"do":"add_affinity","character":"lioren","delta":5}],
+      "next": "n2"
+     },
+     "n5": {
+      "who": "lioren",
+      "say": "Then I follow no one. Find me when you have decided what kind of warden you are.",
+      "do": [{"do":"add_affinity","character":"lioren","delta":-20},{"do":"set_flag","flag":"lioren_estranged"}],
+      "end": true
+     }
+    }
+   },
+   "lioren_camp": {
+    "speaker": "lioren",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "lioren",
+      "say": "Quiet night. Too quiet. Do you remember the vows?",
+      "choices": [{"text":"Hunt what hunts the helpless.","next":"n2"},{"text":"I barely remember them.","next":"n3"}]
+     },
+     "n2": {
+      "who": "lioren",
+      "say": "Hunt what hunts the helpless. And spare what can be spared. Gods, you still have it.",
+      "do": [{"do":"add_affinity","character":"lioren","delta":5}],
+      "end": true
+     },
+     "n3": {"who":"lioren","say":"Then I will say them for both of us.","do":[{"do":"add_affinity","character":"lioren","delta":2}],"end":true}
+    }
+   },
+   "maelis_deal": {
+    "speaker": "maelis",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "maelis",
+      "say": "A warden in my fog. I expected nothing so shiny. What do you want, silver-edge?",
+      "choices": [
+       {"text":"Antidote for the cinder-touch. A friend is dying.","next":"n2","if":{"status":"cinder_touch"}},
+       {"text":"I hear you brew potions the Gilds cannot.","next":"n3"},
+       {"text":"There is a hag in your fog.","next":"n4","if":{"quest":"c_marsh_hag","state":"active"}}
+      ]
+     },
+     "n2": {
+      "who": "maelis",
+      "say": "Cinder-touch. A rotten way to go. Two bog lilies and a pinch of cinder salt, and I will teach you the stir. Free, because I loathe the Order.",
+      "do": [{"do":"learn_recipe","recipe":"r_antidote_bog"},{"do":"set_flag","flag":"maelis_taught"},{"do":"learn_recipe","recipe":"r_wardens_cure"}],
+      "end": true
+     },
+     "n3": {
+      "who": "maelis",
+      "say": "I trade in knowledge. Bring me a hag's eye, I teach you a hard recipe.",
+      "do": [{"do":"open_shop","shop":"shop_maelis"}],
+      "end": true
+     },
+     "n4": {
+      "who": "maelis",
+      "say": "Old Gretch. She was my teacher. Do not kill her unless you must. If you must, take the eye and give it to me.",
+      "do": [{"do":"set_flag","flag":"hag_mercy_option"}],
+      "end": true
+     }
+    }
+   },
+   "tavian_audience": {
+    "speaker": "tavian",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "tavian",
+      "say": "The last Cinderwarden, in my hall. I am told you once refused a king's writ. Refuse mine and you will find Gildmere less forgiving.",
+      "next": "n2"
+     },
+     "n2": {
+      "who": "tavian",
+      "say": "Here is my offer. The blight rises from the Crown of Embers beneath Mount Karth. Bring it to me, and I will build lances that burn the husks from the roads. Gildmere will feed and arm you.",
+      "choices": [
+       {"text":"You want a weapon. The Crown is no weapon.","next":"n3"},
+       {"text":"Why not send your guard?","next":"n4"},
+       {
+        "text": "I will consider it.",
+        "next": "n5",
+        "do": [{"do":"set_flag","flag":"regent_audience_done"},{"do":"give_item","item":"regent_writ"},{"do":"add_rep","faction":"gildmere","delta":5}]
+       },
+       {
+        "text": "I accept. For the vale.",
+        "next": "n6",
+        "do": [
+         {"do":"set_flag","flag":"regent_audience_done"},
+         {"do":"set_flag","flag":"sided_tavian"},
+         {"do":"give_item","item":"regent_writ"},
+         {"do":"add_rep","faction":"gildmere","delta":20}
+        ]
+       }
+      ]
+     },
+     "n3": {"who":"tavian","say":"Everything is a weapon, warden. The only question is whose.","next":"n2"},
+     "n4": {
+      "who": "tavian",
+      "say": "I have. Four patrols, none returned. The Crown reaches into men.",
+      "do": [{"do":"add_entry","entry":"e_crown_reach"}],
+      "next": "n2"
+     },
+     "n5": {"who":"tavian","say":"Consider quickly. My patience has a short fuse.","end":true},
+     "n6": {
+      "who": "tavian",
+      "say": "Wise. Captain Halvard will give you a writ to pass the guard lines. And Archivist Neris will tell you what the Crown cost the last king.",
+      "end": true
+     }
+    }
+   },
+   "tavian_after": {
+    "speaker": "tavian",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "tavian",
+      "say": "Well? Do you have what I asked for?",
+      "choices": [{"text":"Not yet.","next":"n2"},{"text":"The seals are mine. Soon the Crown.","next":"n3","if":{"flag":"three_seals"}}]
+     },
+     "n2": {"who":"tavian","say":"Hurry.","end":true},
+     "n3": {"who":"tavian","say":"Then the realm is nearly saved. Do not make me regret the trust.","end":true}
+    }
+   },
+   "halvard_orders": {
+    "speaker": "halvard",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "halvard",
+      "say": "State your business, warden. Make it short; the Regent has doubled the patrols since Saltmarch.",
+      "choices": [
+       {"text":"What happened at Saltmarch?","next":"n2"},
+       {"text":"I need a writ to pass your lines.","next":"n3","if":{"item":"regent_writ"}},
+       {"text":"Do you trust the Regent?","next":"n4"}
+      ]
+     },
+     "n2": {
+      "who": "halvard",
+      "say": "The Order locked the quarantine gate. Cael says to burn it. Seren's ferry still runs; half the district has fled by water.",
+      "do": [{"do":"set_flag","flag":"knows_saltmarch"},{"do":"start_quest","quest":"m7_saltmarch"}],
+      "next": "n1"
+     },
+     "n3": {
+      "who": "halvard",
+      "say": "Seal-stamped. Go with the shield, not the sword. Your road is the south gate.",
+      "do": [{"do":"set_flag","flag":"has_pass"}],
+      "end": true
+     },
+     "n4": {
+      "who": "halvard",
+      "say": "I trust my men. The Regent signs my pay and my orders; I will do the one and weigh the other.",
+      "do": [{"do":"add_affinity","character":"halvard","delta":3}],
+      "end": true
+     }
+    }
+   },
+   "neris_archive": {
+    "speaker": "neris",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "neris",
+      "say": "A warden in the archive. You have no idea how long it has been since a warden asked a question I could answer.",
+      "choices": [
+       {"text":"Tell me about the Crown.","next":"n2"},
+       {"text":"What was Auric Vael like?","next":"n3"},
+       {"text":"I found these scrolls.","next":"n4","if":{"item":"neris_scroll","gte":3}}
+      ]
+     },
+     "n2": {
+      "who": "neris",
+      "say": "The Crown of Embers is not a weapon. It is a lock. A king wore it to hold the cinder under Karth in sleep. When he died, the lock slipped.",
+      "do": [{"do":"add_entry","entry":"e_crown_truth"},{"do":"set_flag","flag":"knows_crown_truth"}],
+      "next": "n1"
+     },
+     "n3": {
+      "who": "neris",
+      "say": "A good king. He refused a hundred offers to use the Crown for war. He is still wearing it, I think, in a way.",
+      "do": [{"do":"add_entry","entry":"e_auric"}],
+      "next": "n1"
+     },
+     "n4": {
+      "who": "neris",
+      "say": "Three scrolls. Then you can break the lock rather than carry it. Three seal stones; the Stonecrown, the Barrens, Frostreach. Each guarded by what the king left behind.",
+      "do": [{"do":"set_flag","flag":"knows_seals"},{"do":"start_quest","quest":"m8_seal_crag"},{"do":"complete_quest","quest":"s_neris_scrolls"}],
+      "end": true
+     }
+    }
+   },
+   "cael_sermon": {
+    "speaker": "cael",
+    "start": "n1",
+    "nodes": {
+     "n1": {"who":"cael","say":"The last warden. You carry the sin of the Fall. But I do not hate you; hate is a fire that burns the holder.","next":"n2"},
+     "n2": {
+      "who": "cael",
+      "say": "The blight spreads by contact. Every infected village I burn saves ten. This is not cruelty, it is arithmetic.",
+      "choices": [
+       {"text":"Open the quarantine gate. Let them leave by water.","next":"n3"},
+       {"text":"You are right. Burn it.","next":"n4"},
+       {"text":"There is another way. Give me three days.","next":"n5","if":{"flag":"knows_crown_truth"}}
+      ]
+     },
+     "n3": {
+      "who": "cael",
+      "say": "Then the fire will find the water. You will answer for every husk that rises from your mercy.",
+      "do": [
+       {"do":"set_flag","flag":"saltmarch_defended"},
+       {"do":"add_rep","faction":"order_of_ash","delta":-25},
+       {"do":"add_rep","faction":"saltmarch","delta":25},
+       {"do":"start_dialogue","dialogue":"seren_ferry","with":"seren"}
+      ],
+      "end": true
+     },
+     "n4": {
+      "who": "cael",
+      "say": "Blessed be the hand that does hard work.",
+      "do": [
+       {"do":"set_flag","flag":"saltmarch_burned"},
+       {"do":"set_flag","flag":"sided_cael"},
+       {"do":"add_rep","faction":"order_of_ash","delta":30},
+       {"do":"add_rep","faction":"saltmarch","delta":-40},
+       {"do":"set_alive","character":"seren","alive":false}
+      ],
+      "end": true
+     },
+     "n5": {
+      "who": "cael",
+      "say": "Three days. Not one more. The Order can wait; the flame cannot.",
+      "do": [
+       {"do":"set_flag","flag":"saltmarch_negotiated"},
+       {"do":"add_rep","faction":"order_of_ash","delta":5},
+       {"do":"add_rep","faction":"saltmarch","delta":10}
+      ],
+      "end": true
+     }
+    }
+   },
+   "cael_after": {
+    "speaker": "cael",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "cael",
+      "say": "The Order's accounts remember. When the blight asks for a ledger, I will present yours.",
+      "if": {"flag":"saltmarch_defended"},
+      "end": true
+     }
+    }
+   },
+   "seren_ferry": {
+    "speaker": "seren",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "seren",
+      "say": "You are the warden who opened the gate. Half of Saltmarch is on my boat and the other half is praying. I owe you more than I can pay.",
+      "choices": [{"text":"Take them to Gildmere. Tell Halvard I sent you.","next":"n2"},{"text":"Tell me about the coast road.","next":"n3"}]
+     },
+     "n2": {
+      "who": "seren",
+      "say": "The captain will not welcome refugees. But I will make him.",
+      "do": [{"do":"set_flag","flag":"saltmarch_resolved"},{"do":"add_affinity","character":"seren","delta":10}],
+      "end": true
+     },
+     "n3": {
+      "who": "seren",
+      "say": "Bad weather, worse roads. If you ever need a boat, I know the shallows to the Barrens.",
+      "do": [{"do":"set_flag","flag":"seren_boat"}],
+      "end": true
+     }
+    }
+   },
+   "orsk_climb": {
+    "speaker": "orsk",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "orsk",
+      "say": "Little warden climb tall rock? Orsk show. Orsk good at rock. Orsk hate Crown, Crown make rock angry.",
+      "choices": [
+       {"text":"Teach me to climb the Stonecrown.","next":"n2"},
+       {"text":"How do I kill the stone giant?","next":"n3"},
+       {"text":"What is a crag-kin?","next":"n4"}
+      ]
+     },
+     "n2": {
+      "who": "orsk",
+      "say": "Orsk give cloth. Cloth catch wind, you fall slow. Rest on ledge, not on rock that moves.",
+      "do": [{"do":"give_item","item":"glider_cloth"},{"do":"unlock_ability","ability":"glide"},{"do":"set_flag","flag":"orsk_trained"}],
+      "end": true
+     },
+     "n3": {"who":"orsk","say":"Glowing eye in his back. Hit eye, he fall. Hit knee first.","do":[{"do":"add_entry","entry":"e_crag_titan"}],"end":true},
+     "n4": {"who":"orsk","say":"Orsk. Mountain is mother. Mountain sick now.","next":"n1"}
+    }
+   },
+   "king_final": {
+    "speaker": "cinder_king",
+    "start": "n1",
+    "nodes": {
+     "n1": {"who":"cinder_king","say":"I know your oath-words, warden. I wrote them.","next":"n2"},
+     "n2": {
+      "who": "cinder_king",
+      "say": "The Crown holds a hunger that outlasts kings. It chose me, and I was too proud to refuse. Now it wears me.",
+      "choices": [
+       {"text":"The seals are set. I can unmake the Crown.","next":"n_cure","if":{"flag":"three_seals"}},
+       {"text":"Give me the Crown. I will carry it.","next":"n_throne","if":{"flag":"three_seals"}},
+       {"text":"Regent Tavian sends his regards.","next":"n_dominion","if":{"flag":"sided_tavian"}},
+       {"text":"The Order will purify this land of you.","next":"n_purify","if":{"flag":"sided_cael"}},
+       {"text":"Then die, Auric.","next":"n_fight"}
+      ]
+     },
+     "n_cure": {
+      "who": "cinder_king",
+      "say": "Do it. Do it before I remember what I want.",
+      "do": [{"do":"set_flag","flag":"choice_cure"},{"do":"start_boss","boss":"king"}],
+      "end": true
+     },
+     "n_throne": {
+      "who": "cinder_king",
+      "say": "You would rule the ember? Be the lock I could not be. Then take it from me.",
+      "do": [{"do":"set_flag","flag":"choice_throne"},{"do":"start_boss","boss":"king"}],
+      "end": true
+     },
+     "n_dominion": {
+      "who": "cinder_king",
+      "say": "Another small king wanting a large crown. Come and take it.",
+      "do": [{"do":"set_flag","flag":"choice_dominion"},{"do":"start_boss","boss":"king"}],
+      "end": true
+     },
+     "n_purify": {
+      "who": "cinder_king",
+      "say": "Burn me and the hills and the fields. I will be a mercy to no one.",
+      "do": [{"do":"set_flag","flag":"choice_purify"},{"do":"start_boss","boss":"king"}],
+      "end": true
+     },
+     "n_fight": {"who":"cinder_king","say":"Yes.","do":[{"do":"set_flag","flag":"choice_fight"},{"do":"start_boss","boss":"king"}],"end":true}
+    }
+   }
+  },
+  "entries": [
+   {"id":"e_husks","title":"Cinder Husks","text":"People or beasts burned hollow by the blight. They crave warmth and take it.","tag":"bestiary"},
+   {
+    "id": "e_wardens",
+    "title": "The Cinderwardens",
+    "text": "An order of hunters that kept the blight to a handful of villages. Sael is the last.",
+    "tag": "lore"
+   },
+   {"id":"e_order","title":"The Order of Ash","text":"A faith that believes the blight must be burned out, with whatever it clings to.","tag":"lore"},
+   {"id":"e_lioren","title":"Lioren Vask","text":"Sael's rival and friend. Left a letter before disappearing to Saltmarch.","tag":"characters"},
+   {
+    "id": "e_mirewood",
+    "title": "The Mirewood",
+    "text": "A drowned forest where fog hides everything, including dangers older than the Fall.",
+    "tag": "world"
+   },
+   {
+    "id": "e_cinder_touch",
+    "title": "Cinder-touch",
+    "text": "A slow curse. The skin cracks with ember; the victim hungers. A cure exists, with the right salt.",
+    "tag": "lore"
+   },
+   {
+    "id": "e_regent_offer",
+    "title": "The Regent's Offer",
+    "text": "Tavian wants the Crown as a weapon. Halvard distrusts the order but obeys.",
+    "tag": "lore"
+   },
+   {"id":"e_crown_reach","title":"The Crown's Reach","text":"Four patrols entered the Barrow, none returned.","tag":"lore"},
+   {"id":"e_crown_truth","title":"The Crown Is a Lock","text":"King Auric wore the Crown to hold the cinder beneath Karth asleep.","tag":"lore"},
+   {"id":"e_auric","title":"Auric Vael","text":"A king who refused a hundred offers to arm the Crown.","tag":"characters"},
+   {"id":"e_barrow","title":"The Hollow Barrow","text":"A crypt of the old court. Wights guard Auric's scrolls.","tag":"world"},
+   {
+    "id": "e_seals",
+    "title": "The Three Seals",
+    "text": "Seal stones on the Stonecrown, in the Barrens and in Frostreach. Together they unmake the lock.",
+    "tag": "lore"
+   },
+   {
+    "id": "e_saltmarch_fire",
+    "title": "The Saltmarch Fire",
+    "text": "The Order burned a quarantine of two hundred souls. The Gildmere refugees say the smoke stood for three days.",
+    "tag": "lore"
+   },
+   {"id":"e_lioren_cinder","title":"Lioren's Fever","text":"Lioren has cinder-touch. He hid it from everyone, including himself.","tag":"characters"},
+   {
+    "id": "e_stonecrown",
+    "title": "The Stonecrown",
+    "text": "The mountain range where crag-kin still live. Some peaks are the sleeping Titans.",
+    "tag": "world"
+   },
+   {"id":"e_crag_titan","title":"The Crag Titan","text":"A stone giant grown over with ember crystals. The eye in its back glows.","tag":"bestiary"},
+   {"id":"e_spire","title":"The Crown Spire","text":"A tower built to hold a king who would not die.","tag":"world"},
+   {"id":"e_stag","title":"Cinder Stag","text":"Cursed deer whose antlers burn. Their antlers are useful for ember-forging.","tag":"bestiary"},
+   {"id":"e_hag","title":"Marsh Hag","text":"An alchemist who stayed in the Mirewood too long.","tag":"bestiary"}
+  ],
+  "cutscenes": {
+   "cs_ashfall": {
+    "skippable": true,
+    "steps": [
+     {"camera":{"pos":[3072,80,4790],"look":[3090,20,4800],"fov":50,"sec":5}},
+     {"say":{"character":"ilse","text":"You are alive. Do not move. Do not speak."}},
+     {"fx":[{"do":"notify","text":"Hearth Vale","kind":"info"}]}
+    ]
+   },
+   "cs_departure": {
+    "skippable": true,
+    "steps": [{"camera":{"pos":[3000,60,4700],"look":[2800,20,4500],"fov":45,"sec":5}},{"say":{"character":"wren","text":"Come back!"}}]
+   },
+   "cs_gildmere": {
+    "skippable": true,
+    "steps": [
+     {"camera":{"pos":[4400,140,3700],"look":[4600,20,3600],"fov":55,"sec":6}},
+     {"fx":[{"do":"notify","text":"Gildmere, jewel of the trade roads","kind":"info"}]}
+    ]
+   },
+   "cs_saltmarch": {
+    "skippable": true,
+    "steps": [
+     {"camera":{"pos":[5300,80,5100],"look":[5420,15,5200],"fov":45,"sec":5}},
+     {"fx":[{"do":"notify","text":"Smoke over the quarantine district","kind":"warn"}]}
+    ]
+   },
+   "cs_burn": {
+    "skippable": false,
+    "steps": [
+     {"camera":{"pos":[5380,40,5160],"look":[5420,10,5200],"sec":6}},
+     {"fx":[{"do":"shake","amount":0.5}]},
+     {"say":{"character":"cael","text":"It is done."}}
+    ]
+   },
+   "cs_lioren_fever": {
+    "skippable": false,
+    "steps": [{"camera":{"pos":[4200,20,1200],"look":[4210,18,1202],"sec":4}},{"say":{"character":"lioren","text":"Tell Wren I remembered the vow."}}]
+   },
+   "cs_seals_hum": {"skippable":true,"steps":[{"camera":{"pos":[3000,40,900],"look":[3000,20,620],"sec":5}},{"fx":[{"do":"play_sound","cue":"seal_hum"}]}]},
+   "cs_veil": {"skippable":true,"steps":[{"camera":{"pos":[3000,90,800],"look":[3000,60,620],"fov":60,"sec":6}}]},
+   "cs_aftermath": {"skippable":false,"steps":[{"camera":{"pos":[3000,100,600],"look":[3000,70,580],"sec":8}},{"wait":2}]}
+  },
+  "barks": [
+   {"channel":"ambient","when":{"zone":"hearth_vale"},"say":"A hammer rings from the smithy.","cooldown":90},
+   {"channel":"ambient","when":{"zone":"mirewood"},"say":"Something splashes in the black water.","cooldown":80},
+   {"channel":"ambient","when":{"zone":"frostreach"},"say":"Wind shrieks through the pass.","cooldown":80},
+   {"channel":"ambient","when":{"zone":"ashen_barrens"},"say":"The ground ticks like a cooling forge.","cooldown":80},
+   {"channel":"character","character":"halvard","when":{"zone":"gildmere"},"say":"Keep your blade sheathed inside the walls, warden.","cooldown":300},
+   {
+    "channel": "character",
+    "character": "lioren",
+    "when": {"all":[{"flag":"lioren_companion"},{"zone":"mirewood"}]},
+    "say": "I hate the fog. It never forgets a footstep.",
+    "once": true
+   },
+   {"channel":"tutorial","when":{"zone":"hearth_vale"},"say":"Hold lock-on to face a single enemy; dodge to avoid strong attacks.","once":true},
+   {"channel":"crowd","when":{"all":[{"zone":"gildmere"},{"daytime":"day"}]},"say":"Fresh bread, warm from the oven!","cooldown":60}
+  ],
+  "endings": [
+   {
+    "id": "cinder_cured",
+    "title": "The Lock Unmade",
+    "outcome": "won",
+    "when": {"all":[{"flag":"choice_cure"},{"flag":"king_down"},{"flag":"three_seals"}]},
+    "cutscene": "cs_aftermath",
+    "epilogue": "Sael sets the three seal stones around the Crown and speaks the unmaking. The cinder under Karth sleeps. Auric, free of the Crown, closes his eyes. Husks fall to ash that is only ash. Saltmarch remembers; Gildmere argues; the Order scatters. Lioren, if he lives, tends a vale-side forge with Edda. Wren carries a lantern at night."
+   },
+   {
+    "id": "ember_throne",
+    "title": "The Ember Throne",
+    "outcome": "neutral",
+    "when": {"all":[{"flag":"choice_throne"},{"flag":"king_down"}]},
+    "epilogue": "Sael takes up the Crown. The cinder obeys. The blight recedes into the mountain, and so does Sael: a warden no one visits, in a hall no one finds. Ash waits at the Veil's edge for a rider who does not come."
+   },
+   {
+    "id": "crown_of_gildmere",
+    "title": "A Realm of Lances",
+    "outcome": "lost",
+    "when": {"all":[{"flag":"choice_dominion"},{"flag":"king_down"}]},
+    "epilogue": "The Crown goes to Gildmere. Tavian's lances burn the husks from the roads, then the roads the husks came from, then the villages that disagreed. Halvard resigns. Neris keeps the true account where no one can find it."
+   },
+   {
+    "id": "purifying_fire",
+    "title": "Purifying Fire",
+    "outcome": "lost",
+    "when": {"all":[{"flag":"choice_purify"},{"flag":"king_down"}]},
+    "epilogue": "The Order sweeps the Veil with fire. The cinder dies in the burning and the burning keeps going. Cael writes a long ledger of the cost; Sael carries it north, alone."
+   },
+   {
+    "id": "hollow_victory",
+    "title": "Hollow Victory",
+    "outcome": "neutral",
+    "when": {"all":[{"flag":"choice_fight"},{"flag":"king_down"}]},
+    "epilogue": "The king falls and the Crown rolls from his brow, still hot. No one has decided what to do with it. The blight grows quiet and then restless, waiting for the next to wear it."
+   }
+  ]
+ },
+ "spaces": [
+  {
+   "id": "realm",
+   "use": "engine.space.mesh3d",
+   "with": {"size":[6144,6144],"heightRes":3,"gravity":-9.8,"navCell":1,"streamRadius":700},
+   "generators": [
+    {
+     "use": "engine.generate.terrain.noise",
+     "with": {"octaves":6,"scale":900,"amplitude":420,"ridged":0.35,"falloff":"island","seaLevel":0,"rivers":7,"erosion":3,"warp":0.25}
+    },
+    {
+     "use": "engine.generate.biomes",
+     "with": {
+      "biomes": [
+       {"id":"meadow","temp":[0.4,0.7],"moist":[0.4,0.7],"surface":"grass","sub":"soil","trees":0.15,"color":"#6a9a4a"},
+       {"id":"swamp","temp":[0.5,0.8],"moist":[0.8,1],"surface":"mud","sub":"peat","trees":0.5,"color":"#3a4a2a"},
+       {"id":"highland","temp":[0.2,0.5],"moist":[0.2,0.6],"surface":"stone","sub":"rock","trees":0.05,"color":"#7a7a74"},
+       {"id":"snow","temp":[0,0.2],"moist":[0,1],"surface":"snow","sub":"ice","trees":0.1,"color":"#e8f0f8"},
+       {"id":"ashland","temp":[0.8,1],"moist":[0,0.3],"surface":"ash","sub":"basalt","trees":0,"color":"#2a2220"},
+       {"id":"coast","temp":[0.4,0.8],"moist":[0.5,0.9],"surface":"sand","sub":"clay","trees":0.05,"color":"#b8a888"}
+      ],
+      "regions": [
+       {"zone":"hearth_vale","biome":"meadow","blend":160},
+       {"zone":"mirewood","biome":"swamp","blend":140},
+       {"zone":"gildmere","biome":"meadow","blend":80},
+       {"zone":"saltmarch","biome":"coast","blend":100},
+       {"zone":"stonecrown","biome":"highland","blend":200},
+       {"zone":"ashen_barrens","biome":"ashland","blend":180},
+       {"zone":"frostreach","biome":"snow","blend":200},
+       {"zone":"the_veil","biome":"ashland","blend":100}
+      ],
+      "blendWidth": 80
+     }
+    },
+    {"use":"engine.generate.water","with":{"level":0,"lakes":14,"flow":true}},
+    {
+     "use": "engine.generate.roads",
+     "with": {
+      "links": [
+       {"from":"hearth_vale","to":"mirewood","width":6,"surface":"cobble","curviness":0.45,"bridge":true},
+       {"from":"hearth_vale","to":"gildmere","width":6,"surface":"cobble","curviness":0.45,"bridge":true},
+       {"from":"mirewood","to":"gildmere","width":6,"surface":"cobble","curviness":0.45,"bridge":true},
+       {"from":"gildmere","to":"saltmarch","width":6,"surface":"cobble","curviness":0.45,"bridge":true},
+       {"from":"gildmere","to":"stonecrown","width":6,"surface":"cobble","curviness":0.45,"bridge":true},
+       {"from":"stonecrown","to":"ashen_barrens","width":6,"surface":"cobble","curviness":0.45,"bridge":true},
+       {"from":"stonecrown","to":"frostreach","width":6,"surface":"cobble","curviness":0.45,"bridge":true},
+       {"from":"ashen_barrens","to":"the_veil","width":6,"surface":"cobble","curviness":0.45,"bridge":true},
+       {"from":"frostreach","to":"the_veil","width":6,"surface":"cobble","curviness":0.45,"bridge":true}
+      ],
+      "snapToTerrain": true
+     }
+    },
+    {
+     "use": "engine.generate.structures",
+     "with": {
+      "place": [
+       {
+        "id": "ashgrove_village",
+        "kind": "house",
+        "zone": "hearth_vale",
+        "count": [14,18],
+        "style": "thatch",
+        "size": [10,10],
+        "tags": ["village","spawn"],
+        "interior": true
+       },
+       {"id":"vale_forge","kind":"house","zone":"hearth_vale","at":[3052,4838],"style":"stone","size":[12,10],"interior":true,"tags":["forge","edda"]},
+       {"id":"vale_stable","kind":"house","zone":"hearth_vale","at":[3130,4760],"style":"timber","size":[16,10],"tags":["stable","torv"]},
+       {"id":"vale_barn","kind":"house","zone":"hearth_vale","at":[3150,4820],"style":"timber","size":[14,10],"tags":["barn"]},
+       {
+        "id": "gretch_hollow",
+        "kind": "hut",
+        "zone": "mirewood",
+        "at": [1420,4300],
+        "style": "rotted",
+        "loot": "loot_chest_common",
+        "spawns": ["bog_drowner"],
+        "tags": ["hag"]
+       },
+       {"id":"mire_stilt_huts","kind":"hut","zone":"mirewood","count":[8,12],"style":"stilt","tags":["maelis"]},
+       {"id":"gildmere_city","kind":"house","zone":"gildmere","count":[60,90],"style":"stone","size":[14,12],"interior":true,"tags":["city"]},
+       {"id":"gildmere_walls","kind":"gate","zone":"gildmere","count":[4,4],"style":"stone","size":[30,6],"tags":["city_wall"]},
+       {"id":"broken_bridge","kind":"bridge","zone":"gildmere","at":[4180,3980],"style":"stone-broken","tags":["bandit_camp"]},
+       {"id":"saltmarch_harbor","kind":"house","zone":"saltmarch","count":[30,45],"style":"plank","interior":true,"tags":["port","quarantine"]},
+       {"id":"saltmarch_quarantine","kind":"camp","zone":"saltmarch","at":[5340,5150],"style":"palisade","size":[60,50],"tags":["quarantine"]},
+       {"id":"crag_shrines","kind":"shrine","zone":"stonecrown","count":[6,8],"style":"cairn","tags":["meditation_shrine"]},
+       {"id":"titan_ledge_site","kind":"ruin","zone":"stonecrown","at":[3250,2420],"style":"giant","tags":["seal_site"]},
+       {"id":"slag_ruins","kind":"ruin","zone":"ashen_barrens","count":[5,8],"style":"charred","loot":"loot_chest_rare","tags":["seal_site"]},
+       {"id":"frost_ruins","kind":"ruin","zone":"frostreach","count":[4,6],"style":"icebound","loot":"loot_chest_common","tags":["seal_site"]},
+       {"id":"frost_lodge","kind":"cabin","zone":"frostreach","count":[2,3],"style":"log","interior":true},
+       {"id":"warden_cache_site","kind":"ruin","zone":"hearth_vale","at":[3052,4838],"style":"warden","loot":"loot_chest_rare","tags":["cache"]},
+       {"id":"hollow_barrow_mouth","kind":"mine","zone":"gildmere","at":[4330,3320],"style":"crypt-entrance","tags":["portal"]},
+       {"id":"crown_spire_mouth","kind":"tower","zone":"the_veil","at":[3000,520],"style":"black-spire","size":[30,120],"tags":["finale"]},
+       {"id":"wayshrines","kind":"shrine","zone":"hearth_vale","count":[3,4],"style":"wayside","tags":["meditation_shrine","checkpoint"]},
+       {"id":"camps_all","kind":"camp","zone":"mirewood","count":[4,6],"style":"travelers","tags":["campfire"]}
+      ]
+     }
+    },
+    {
+     "use": "engine.generate.scatter",
+     "with": {
+      "props": [
+       {"model":"chest","per100m2":0.01,"biomes":["meadow","highland","ashland"],"slopeMax":20,"minSpacing":120,"scale":[0.9,1.1]},
+       {"model":"campfire","per100m2":0.005,"zones":["hearth_vale","mirewood","stonecrown"],"slopeMax":15,"minSpacing":300},
+       {"model":"alchemy_table","per100m2":0.002,"zones":["hearth_vale","gildmere"],"slopeMax":10,"minSpacing":500}
+      ]
+     }
+    }
+   ],
+   "zones": [
+    {
+     "id": "hearth_vale",
+     "name": "Hearth Vale",
+     "center": [3072,4800],
+     "r": 700,
+     "tags": ["farmland","start","safe-ish"],
+     "rules": {"level":[1,5],"music":"vale_day","cold":false,"weatherBias":"clear"},
+     "bounds": null
+    },
+    {
+     "id": "mirewood",
+     "name": "The Mirewood",
+     "center": [1500,4200],
+     "r": 800,
+     "tags": ["swamp","forest","fog"],
+     "rules": {"level":[4,9],"music":"mire","weatherBias":"fog","hazards":["poison_water"]},
+     "bounds": null
+    },
+    {
+     "id": "gildmere",
+     "name": "Gildmere",
+     "center": [4600,3600],
+     "r": 520,
+     "tags": ["city","trade","safe"],
+     "rules": {"level":[6,12],"music":"city","safe":true,"weapons_sheathed":true},
+     "bounds": null
+    },
+    {
+     "id": "saltmarch",
+     "name": "Saltmarch",
+     "center": [5400,5200],
+     "r": 600,
+     "tags": ["coast","port"],
+     "rules": {"level":[5,10],"music":"tide","weatherBias":"rain"},
+     "bounds": null
+    },
+    {
+     "id": "stonecrown",
+     "name": "The Stonecrown",
+     "center": [3200,2000],
+     "r": 900,
+     "tags": ["mountain","climb"],
+     "rules": {"level":[10,15],"music":"high_wind","cold":true},
+     "bounds": null
+    },
+    {
+     "id": "ashen_barrens",
+     "name": "The Ashen Barrens",
+     "center": [4300,1200],
+     "r": 800,
+     "tags": ["volcanic","wasteland"],
+     "rules": {"level":[12,18],"music":"cinder_drone","weatherBias":"ashfall","hazards":["lava","heat"],"heat":true},
+     "bounds": null
+    },
+    {
+     "id": "frostreach",
+     "name": "Frostreach",
+     "center": [1400,1300],
+     "r": 800,
+     "tags": ["snow","highland"],
+     "rules": {"level":[12,18],"music":"ice_choir","cold":true,"weatherBias":"snow"},
+     "bounds": null
+    },
+    {
+     "id": "the_veil",
+     "name": "The Veil",
+     "center": [3000,600],
+     "r": 420,
+     "tags": ["final","crown"],
+     "rules": {"level":[18,22],"music":"veil_theme","heat":true,"hazards":["ember_storm"]},
+     "bounds": null
+    }
+   ]
+  },
+  {
+   "id": "undercroft",
+   "use": "engine.space.mesh3d",
+   "with": {"size":[520,520],"heightRes":1,"gravity":-9.8,"navCell":0.5,"streamRadius":200},
+   "generators": [
+    {
+     "use": "engine.generate.dungeon.rooms",
+     "with": {"rooms":34,"branching":0.35,"keys":["karth_furnace_key"],"loot":"loot_chest_rare","boss":"barrow_wight"}
+    },
+    {
+     "use": "engine.generate.structures",
+     "with": {
+      "place": [
+       {
+        "id": "barrow_chambers",
+        "kind": "ruin",
+        "zone": "hollow_barrow",
+        "count": [8,10],
+        "style": "crypt",
+        "loot": "loot_chest_common",
+        "spawns": ["barrow_wight"]
+       },
+       {"id":"auric_scroll_niches","kind":"shrine","zone":"hollow_barrow","count":[3,3],"style":"niche","tags":["scroll_site"]},
+       {"id":"vault_hall","kind":"arena","zone":"sunken_vault","count":[1,1],"style":"flooded-vault","size":[60,40]},
+       {"id":"spire_atrium","kind":"arena","zone":"crown_spire","count":[1,1],"style":"black-spire","size":[80,80],"tags":["finale","boss"]}
+      ]
+     }
+    }
+   ],
+   "zones": [
+    {
+     "id": "hollow_barrow",
+     "name": "The Hollow Barrow",
+     "bounds": {"min":[0,0,0],"max":[260,40,260]},
+     "tags": ["crypt"],
+     "rules": {"level":[7,9],"music":"crypt"}
+    },
+    {
+     "id": "sunken_vault",
+     "name": "The Sunken Vault",
+     "bounds": {"min":[260,0,0],"max":[520,40,260]},
+     "tags": ["vault"],
+     "rules": {"level":[9,12],"music":"vault"}
+    },
+    {
+     "id": "crown_spire",
+     "name": "Crown Spire Heart",
+     "bounds": {"min":[0,0,260],"max":[260,120,520]},
+     "tags": ["final","interior"],
+     "rules": {"level":[20,22],"music":"spire"}
+    }
+   ]
+  }
+ ],
+ "systems": [
+  {"use":"engine.blocks","with":{}},
+  {
+   "use": "engine.time",
+   "with": {
+    "dayLength": 1800,
+    "startHour": 7,
+    "phases": {"dawn":5,"day":7,"dusk":18,"night":21},
+    "daysPerSeason": 7,
+    "seasons": ["spring","summer","autumn","winter"],
+    "scale": 1
+   }
+  },
+  {
+   "use": "engine.weather",
+   "with": {
+    "byBiome": true,
+    "states": [
+     {"id":"clear","weight":6,"minMin":8,"maxMin":20,"wind":0.2,"temp":14},
+     {"id":"cloudy","weight":3,"minMin":4,"maxMin":12,"wind":0.4,"temp":11},
+     {"id":"rain","weight":3,"minMin":3,"maxMin":10,"wind":0.5,"temp":9},
+     {"id":"storm","weight":1,"minMin":2,"maxMin":5,"wind":0.9,"temp":8},
+     {"id":"fog","weight":2,"minMin":4,"maxMin":12,"wind":0.05,"temp":8},
+     {"id":"ashfall","weight":2,"minMin":4,"maxMin":12,"wind":0.3,"temp":20},
+     {"id":"snow","weight":3,"minMin":5,"maxMin":14,"wind":0.6,"temp":-4},
+     {"id":"dripping","weight":1,"minMin":1,"maxMin":2,"wind":0,"temp":8}
+    ]
+   }
+  },
+  {"use":"engine.stream","with":{"budgetMs":6,"preloadRadius":500,"unloadRadius":900}},
+  {"use":"engine.zones","with":{"discoverRadius":160}},
+  {
+   "use": "engine.input.actions",
+   "with": {
+    "verbs": [
+     "move",
+     "look",
+     "jump",
+     "sprint",
+     "crouch",
+     "attack",
+     "alt_attack",
+     "block",
+     "dodge",
+     "aim",
+     "lockon",
+     "interact",
+     "cast",
+     "heal",
+     "inventory",
+     "map",
+     "menu",
+     "mount",
+     "call_mount",
+     "glide",
+     "sign_next",
+     "meditate"
+    ],
+    "bindings": {
+     "3p": {
+      "move": ["wasd","lstick"],
+      "look": ["mouse","rstick"],
+      "jump": ["space","a"],
+      "sprint": ["shift","lstick_press"],
+      "attack": ["lmb","x"],
+      "alt_attack": ["rmb","y"],
+      "block": ["q","lb"],
+      "dodge": ["ctrl","b"],
+      "aim": ["rmb","lt"],
+      "lockon": ["tab","rstick_press"],
+      "interact": ["e","a"],
+      "cast": ["f","rb"],
+      "heal": ["h","dpad_down"],
+      "mount": ["e","a"],
+      "call_mount": ["c","dpad_up"],
+      "glide": ["space","a"]
+     }
+    }
+   }
+  },
+  {"use":"engine.physics.character","with":{"radius":0.35,"height":1.8,"stepHeight":0.45,"slopeLimit":55}},
+  {
+   "use": "engine.physics.body",
+   "with": {
+    "layers": ["player","npc","enemy","mount","prop","projectile","terrain"],
+    "matrix": [{"a":"player","b":"enemy","collide":true},{"a":"npc","b":"npc","collide":false},{"a":"projectile","b":"projectile","collide":false}]
+   }
+  },
+  {"use":"engine.physics.rigid","with":{"substeps":2,"maxBodies":200,"sleepSec":1}},
+  {"use":"engine.save","with":{"auto":true,"intervalSec":120,"slots":5,"keepEditLog":false}},
+  {
+   "use": "engine.portal",
+   "with": {
+    "portals": [
+     {
+      "id": "gildmere_south",
+      "from": {"zone":"gildmere","at":[4600,3380],"size":[20,12]},
+      "to": {"zone":"gildmere","at":[4600,3370]},
+      "gate": "gildmere_gate",
+      "prompt": "South gate",
+      "transition": "cut"
+     },
+     {
+      "id": "quarantine",
+      "from": {"zone":"saltmarch","at":[5360,5140],"size":[10,8]},
+      "to": {"zone":"saltmarch","at":[5340,5150]},
+      "gate": "quarantine_gate",
+      "prompt": "Quarantine gate",
+      "transition": "cut"
+     },
+     {
+      "id": "hollow_barrow",
+      "from": {"space":"realm","zone":"gildmere","at":[4330,3320],"size":[4,3]},
+      "to": {"space":"undercroft","zone":"hollow_barrow","at":[20,5,20],"facing":90},
+      "gate": "barrow_door",
+      "prompt": "Enter the Barrow",
+      "transition": "fade"
+     },
+     {
+      "id": "barrow_exit",
+      "from": {"space":"undercroft","zone":"hollow_barrow","at":[18,5,18],"size":[3,3]},
+      "to": {"space":"realm","at":[4335,3322]},
+      "prompt": "Leave",
+      "transition": "fade"
+     },
+     {
+      "id": "sunken_vault",
+      "from": {"space":"undercroft","zone":"hollow_barrow","at":[240,5,240],"size":[4,3]},
+      "to": {"space":"undercroft","zone":"sunken_vault","at":[272,5,20]},
+      "prompt": "Descend",
+      "transition": "load"
+     },
+     {
+      "id": "veil_gate",
+      "from": {"space":"realm","zone":"the_veil","at":[3000,520],"size":[30,10]},
+      "to": {"space":"undercroft","zone":"crown_spire","at":[20,5,290]},
+      "gate": "veil_gate",
+      "prompt": "Enter the Crown Spire",
+      "transition": "fade"
+     },
+     {
+      "id": "spire_exit",
+      "from": {"space":"undercroft","zone":"crown_spire","at":[10,5,280],"size":[3,3]},
+      "to": {"space":"realm","at":[3000,540]},
+      "prompt": "Leave",
+      "transition": "fade"
+     }
+    ]
+   }
+  },
+  {
+   "use": "engine.spawner",
+   "with": {
+    "globalCap": 220,
+    "rules": [
+     {
+      "id": "sp_vale_deer",
+      "archetype": "deer",
+      "zone": "hearth_vale",
+      "count": [4,6],
+      "per1000m2": 0.02,
+      "despawnDist": 220,
+      "groupSize": [1,3],
+      "respawnSec": 300,
+      "when": {"daytime":"day"}
+     },
+     {"id":"sp_vale_crow","archetype":"crow","zone":"hearth_vale","count":[4,8],"despawnDist":120},
+     {
+      "id": "sp_vale_husk_night",
+      "archetype": "cinder_husk",
+      "zone": "hearth_vale",
+      "count": [1,3],
+      "despawnDist": 200,
+      "groupSize": [1,2],
+      "when": {"all":[{"daytime":"night"},{"not":{"quest":"m1_ashes","state":"active"}}]},
+      "respawnSec": 600
+     },
+     {"id":"sp_vale_boar","archetype":"boar","zone":"hearth_vale","count":[2,4],"despawnDist":200,"respawnSec":300},
+     {"id":"sp_mire_drowner","archetype":"bog_drowner","zone":"mirewood","count":[6,10],"surface":[],"despawnDist":180,"respawnSec":400},
+     {
+      "id": "sp_mire_wolf",
+      "archetype": "ember_wolf",
+      "zone": "mirewood",
+      "count": [2,4],
+      "groupSize": [3,5],
+      "despawnDist": 250,
+      "respawnSec": 600,
+      "when": {"daytime":"night"}
+     },
+     {"id":"sp_mire_hag","archetype":"marsh_hag","zone":"mirewood","count":[1,1],"maxAlive":1,"when":{"quest":"c_marsh_hag","state":"active"}},
+     {
+      "id": "sp_gild_bandit",
+      "archetype": "bandit",
+      "zone": "gildmere",
+      "near": "broken_bridge",
+      "count": [6,8],
+      "groupSize": [3,5],
+      "respawnSec": 900,
+      "when": {"quest":"c_bandit_camp","state":"active"}
+     },
+     {
+      "id": "sp_gild_archer",
+      "archetype": "bandit_archer",
+      "zone": "gildmere",
+      "near": "broken_bridge",
+      "count": [2,3],
+      "respawnSec": 900,
+      "when": {"quest":"c_bandit_camp","state":"active"}
+     },
+     {"id":"sp_gild_guard","archetype":"gildguard","zone":"gildmere","count":[10,14],"maxAlive":14},
+     {"id":"sp_salt_zealot","archetype":"zealot","zone":"saltmarch","count":[6,10],"groupSize":[2,4],"when":{"not":{"flag":"saltmarch_resolved"}}},
+     {"id":"sp_stone_stag","archetype":"cinder_stag","zone":"stonecrown","count":[1,2],"respawnSec":900,"when":{"daytime":"dusk"}},
+     {"id":"sp_stone_hawk","archetype":"cinder_hawk","zone":"stonecrown","count":[3,5],"despawnDist":300},
+     {"id":"sp_stone_titan","archetype":"crag_titan","zone":"stonecrown","count":[1,1],"maxAlive":1,"at":[3250,2420]},
+     {"id":"sp_barrens_husk","archetype":"cinder_husk","zone":"ashen_barrens","count":[12,20],"groupSize":[3,6],"respawnSec":600},
+     {"id":"sp_barrens_brute","archetype":"husk_brute","zone":"ashen_barrens","count":[2,4],"respawnSec":900},
+     {"id":"sp_barrens_serpent","archetype":"slag_serpent","zone":"ashen_barrens","count":[1,1],"maxAlive":1,"at":[4350,1300]},
+     {"id":"sp_frost_wolf","archetype":"wolf","zone":"frostreach","count":[4,8],"groupSize":[3,5],"respawnSec":600},
+     {"id":"sp_frost_wyrm","archetype":"frost_wyrm","zone":"frostreach","count":[1,1],"maxAlive":1,"when":{"quest":"c_frost_wyrm","state":"active"}},
+     {"id":"sp_frost_warden","archetype":"rime_warden","zone":"frostreach","count":[1,1],"maxAlive":1,"at":[1400,1400]},
+     {"id":"sp_veil_husk","archetype":"cinder_husk","zone":"the_veil","count":[10,16],"groupSize":[4,6],"respawnSec":400},
+     {"id":"sp_veil_brute","archetype":"husk_brute","zone":"the_veil","count":[3,5],"respawnSec":600},
+     {"id":"sp_barrow_wight","archetype":"barrow_wight","zone":"hollow_barrow","count":[8,12],"respawnSec":0},
+     {"id":"sp_wild_horse","archetype":"horse_wild","zone":"hearth_vale","count":[2,3],"despawnDist":260,"respawnSec":1200}
+    ]
+   }
+  },
+  {"use":"plot.character","with":{"spawnAtStart":true,"nameplates":true}},
+  {"use":"plot.storyboard","with":{"sequentialActs":false}},
+  {"use":"plot.dialogue","with":{"lineSpeed":45,"interruptible":true,"repeatSeen":false}},
+  {"use":"plot.quest","with":{"maxActive":24,"trackOne":true}},
+  {"use":"plot.gate"},
+  {"use":"plot.cutscene","with":{"letterbox":true,"skippable":true}},
+  {"use":"plot.relationship","with":{"repRange":[-100,100],"decayPerDay":0}},
+  {"use":"plot.journal"},
+  {"use":"plot.barks","with":{"channels":["ambient","character","tutorial","crowd"]}},
+  {"use":"plot.ending","with":{"epilogue":true}},
+  {
+   "use": "gameplay.inventory",
+   "with": {
+    "slots": 120,
+    "start": [
+     {"item":"warden_blade","count":1},
+     {"item":"hunting_bow","count":1},
+     {"item":"arrow","count":30},
+     {"item":"apple","count":3},
+     {"item":"crowns","count":60}
+    ]
+   }
+  },
+  {"use":"gameplay.item.use"},
+  {
+   "use": "gameplay.equipment",
+   "with": {
+    "slots": [
+     {"id":"weapon","accepts":["weapon"],"max":1},
+     {"id":"bow","accepts":["bow"],"max":1},
+     {"id":"head","accepts":["armor:head"],"max":1},
+     {"id":"chest","accepts":["armor:chest"],"max":1},
+     {"id":"legs","accepts":["armor:legs"],"max":1},
+     {"id":"back","accepts":["armor:back"],"max":1}
+    ],
+    "durability": true,
+    "statMods": true
+   }
+  },
+  {
+   "use": "gameplay.crafting",
+   "with": {
+    "stations": [
+     {"id":"campfire","name":"Campfire","tags":["cook"]},
+     {"id":"alchemy_table","name":"Alchemy Table","tags":["brew"]},
+     {"id":"anvil","name":"Anvil","tags":["forge"]}
+    ],
+    "handCraft": false,
+    "queue": false,
+    "merge": {"enabled":true,"stat":"effects"},
+    "discover": "learned"
+   }
+  },
+  {"use":"gameplay.container","with":{"slots":8,"lockable":true}},
+  {"use":"gameplay.loot"},
+  {
+   "use": "gameplay.economy",
+   "with": {
+    "currencies": [{"id":"crowns","name":"Crowns","var":"money.crowns"}],
+    "sellRatio": 0.4,
+    "haggle": false,
+    "shops": [
+     {
+      "id": "shop_edda",
+      "owner": "edda",
+      "stock": [
+       {"item":"iron_sword","count":2,"price":120},
+       {"item":"steel_sword","count":1,"price":320},
+       {"item":"arrow","count":80,"price":3},
+       {"item":"ranger_hood","count":1,"price":90},
+       {"item":"iron_ore","count":20,"price":8}
+      ],
+      "restock": "weekly",
+      "buys": ["weapon","armor","material"],
+      "markup": 1
+     },
+     {
+      "id": "shop_ilse",
+      "owner": "ilse",
+      "stock": [{"item":"herbs","count":20,"price":6},{"item":"ember_salve","count":3,"price":90},{"item":"honey","count":4,"price":20}],
+      "restock": "daily",
+      "buys": ["food","potion"],
+      "markup": 1
+     },
+     {
+      "id": "shop_maelis",
+      "owner": "maelis",
+      "stock": [
+       {"item":"bog_lily","count":12,"price":14},
+       {"item":"nightroot","count":10,"price":12},
+       {"item":"cinder_salt","count":5,"price":22},
+       {"item":"focus_tonic","count":2,"price":140}
+      ],
+      "restock": "weekly",
+      "buys": ["material","potion"],
+      "markup": 1.1
+     },
+     {
+      "id": "shop_gildmere_arms",
+      "owner": "halvard",
+      "stock": [
+       {"item":"great_cleaver","count":1,"price":720},
+       {"item":"warden_greaves","count":1,"price":380},
+       {"item":"fire_arrow","count":30,"price":10},
+       {"item":"cinder_bomb","count":5,"price":90},
+       {"item":"warm_cloak","count":2,"price":110}
+      ],
+      "restock": "weekly",
+      "buys": ["weapon","armor","material"],
+      "markup": 1.2
+     },
+     {
+      "id": "shop_gildmere_market",
+      "owner": "tavian",
+      "stock": [
+       {"item":"flour","count":20,"price":5},
+       {"item":"raw_meat","count":10,"price":9},
+       {"item":"pepper","count":6,"price":12},
+       {"item":"frost_berry","count":6,"price":14},
+       {"item":"hearty_radish","count":12,"price":6},
+       {"item":"raw_fish","count":8,"price":7}
+      ],
+      "restock": "daily",
+      "buys": ["food"],
+      "markup": 1
+     }
+    ]
+   }
+  },
+  {
+   "use": "gameplay.resource",
+   "with": {
+    "pools": [
+     {
+      "id": "stamina",
+      "max": 100,
+      "regen": 28,
+      "regenDelay": 0.8,
+      "startFull": true,
+      "exhaustLock": true,
+      "drainTags": ["sprint","climb","glide","dodge","attack","block"]
+     },
+     {"id":"focus","max":100,"regen":0.5,"startFull":true,"drainTags":["sign","heal"]},
+     {"id":"poise","max":30,"regen":8,"regenDelay":2,"startFull":true}
+    ]
+   }
+  },
+  {
+   "use": "gameplay.combat.health",
+   "with": {"types":["phys","fire","ice","void","poison"],"iframes":0.3,"regenDelay":0,"friendlyFire":false,"knockback":3,"corpse":true}
+  },
+  {
+   "use": "gameplay.combat.melee",
+   "with": {
+    "comboWindowMs": 450,
+    "parry": {"window":180,"stagger":1.4,"riposte":2.5},
+    "block": {"reduction":0.7,"staminaPerDmg":0.35},
+    "pogo": false,
+    "hitStopMs": 45,
+    "poise": true
+   }
+  },
+  {"use":"gameplay.combat.projectile","with":{"maxLive":48,"friendly":false}},
+  {"use":"gameplay.combat.target","with":{"range":28,"fov":100,"switchOnDeath":true,"breakDist":40}},
+  {"use":"gameplay.combat.status"},
+  {
+   "use": "gameplay.element",
+   "with": {
+    "reactions": [
+     {"a":"fire","b":"grass","result":[{"do":"ignite","at":"target","r":4}],"spread":0.6},
+     {"a":"fire","b":"ice","result":[{"do":"apply_status","who":"target","status":"burning","sec":0}],"spread":0},
+     {"a":"water","b":"fire","result":[{"do":"clear_status","who":"target","status":"burning"}],"spread":0}
+    ]
+   }
+  },
+  {"use":"gameplay.vision.mode","with":{"range":40,"tags":["trace","cinder","herb"],"cooldown":1}},
+  {"use":"gameplay.ai.brain","with":{"tick":0.2,"maxActive":90,"perception":{"sight":20,"fov":150,"hearing":14,"memory":10}}},
+  {"use":"gameplay.ai.attacks","with":{"telegraph":true,"globalCooldown":0.4}},
+  {"use":"gameplay.ai.schedule","with":{"travel":"walk","offscreenTeleport":true}},
+  {
+   "use": "gameplay.combat.boss",
+   "with": {
+    "retryReset": true,
+    "bosses": [
+     {
+      "id": "marsh_hag",
+      "archetype": "marsh_hag",
+      "arena": "mirewood",
+      "gate": false,
+      "phases": [{"at":1,"pattern":["hex_bolt","staff_sweep"],"speed":1},{"at":0.5,"pattern":["hex_bolt","mist_step","mud_swarm","staff_sweep"],"speed":1.2}],
+      "onStart": [{"do":"play_sound","cue":"hag_cackle"}],
+      "onDefeat": [{"do":"give_item","item":"hag_eye"}]
+     },
+     {
+      "id": "titan",
+      "archetype": "crag_titan",
+      "arena": "stonecrown",
+      "gate": false,
+      "phases": [
+       {"at":1,"pattern":["arm_sweep","boulder_throw"],"speed":1},
+       {"at":0.6,"pattern":["arm_sweep","ground_pound","boulder_throw","rock_skin"],"speed":1.15},
+       {"at":0.25,"pattern":["ground_pound","arm_sweep","boulder_throw"],"speed":1.3,"fx":[{"do":"shake","amount":0.8}]}
+      ],
+      "onStart": [{"do":"play_sound","cue":"titan_wake"}],
+      "onDefeat": [{"do":"give_item","item":"seal_stone_crag"},{"do":"add_entry","entry":"e_crag_titan"}]
+     },
+     {
+      "id": "serpent",
+      "archetype": "slag_serpent",
+      "arena": "ashen_barrens",
+      "gate": false,
+      "phases": [
+       {"at":1,"pattern":["slag_spit","burrow_strike"],"speed":1},
+       {"at":0.5,"pattern":["slag_spit","burrow_strike","coil_crush","magma_pools"],"speed":1.25}
+      ],
+      "onStart": [{"do":"change_weather","weather":"ashfall"}],
+      "onDefeat": [{"do":"give_item","item":"seal_stone_slag"}]
+     },
+     {
+      "id": "rime",
+      "archetype": "rime_warden",
+      "arena": "frostreach",
+      "gate": false,
+      "phases": [
+       {"at":1,"pattern":["ice_lance_thrust","shard_volley"],"speed":1},
+       {"at":0.55,"pattern":["ice_lance_thrust","blizzard","shard_volley","glacial_prison"],"speed":1.2}
+      ],
+      "onStart": [{"do":"change_weather","weather":"snow"}],
+      "onDefeat": [{"do":"give_item","item":"seal_stone_rime"}]
+     },
+     {
+      "id": "wyrm",
+      "archetype": "frost_wyrm",
+      "arena": "frostreach",
+      "gate": false,
+      "phases": [{"at":1,"pattern":["frost_breath","dive","tail_sweep"],"speed":1}],
+      "onStart": [],
+      "onDefeat": [{"do":"give_item","item":"ice_shard","count":3}]
+     },
+     {
+      "id": "king",
+      "archetype": "cinder_king",
+      "arena": "the_veil",
+      "gate": true,
+      "phases": [
+       {"at":1,"pattern":["crown_cleave","ember_lance"],"speed":1},
+       {"at":0.65,"pattern":["crown_cleave","ember_lance","echo_step","husk_call"],"speed":1.15},
+       {"at":0.3,"pattern":["crown_cleave","crownfall","ash_storm","echo_step","ember_lance"],"speed":1.35,"fx":[{"do":"shake","amount":0.7}]}
+      ],
+      "onStart": [{"do":"play_sound","cue":"crown_roar"}],
+      "onDefeat": [{"do":"drop_loot","table":"loot_boss"}]
+     }
+    ]
+   }
+  },
+  {
+   "use": "gameplay.move.walk",
+   "with": {"walk":2.2,"run":5,"sprint":7.5,"crouch":1.4,"jump":5.2,"airControl":0.35,"accel":38,"coyoteMs":100,"preset":"realistic","sprintCost":10}
+  },
+  {"use":"gameplay.move.climb","with":{"speed":1.5,"surfaces":"any","staminaCost":8,"slipMin":70,"ledgeGrab":true}},
+  {"use":"gameplay.move.swim","with":{"speed":2.5,"breath":25,"drownDps":15}},
+  {"use":"gameplay.move.glide","with":{"fallSpeed":2.8,"staminaCost":6}},
+  {"use":"gameplay.move.dodge","with":{"distance":3.2,"sec":0.5,"iframes":[0.05,0.3],"cost":15,"directions":"any"}},
+  {"use":"gameplay.mount","with":{"walk":3,"trot":7,"gallop":14,"staminaMax":100,"bondGain":3,"callRange":160,"jumpHeight":1.6,"fightMounted":false}},
+  {"use":"gameplay.interact","with":{"range":2.6,"facingOnly":false,"holdMs":0,"prompts":true}},
+  {"use":"gameplay.rest","with":{"healFull":true,"skipTo":"morning","safeRequired":true,"respawnsEnemies":true}},
+  {"use":"gameplay.checkpoint","with":{"restoreAll":true,"respawnEnemies":false,"fastTravelBetween":true}},
+  {"use":"gameplay.death","with":{"respawn":"checkpoint","penalty":{"dropCurrency":0.1,"corpse":false,"keepItems":true,"loseXp":0}}},
+  {"use":"gameplay.collectible","with":{"counters":[{"id":"scrolls","var":"scrolls","total":3},{"id":"shrines","var":"shrines","total":12}]}},
+  {
+   "use": "gameplay.mechanism",
+   "with": {
+    "mechanisms": [
+     {"id":"seal_stone","kind":"lever","at":[3200,2000],"size":[2,2],"signal":"seal","persist":true},
+     {"id":"feed_trough","kind":"lever","at":[3135,4765],"size":[2,1],"signal":"feed","persist":false},
+     {"id":"cook_off_table","kind":"lever","at":[4590,3580],"size":[3,1],"signal":"cook","persist":false},
+     {"id":"titan_ledge","kind":"door","at":[3250,2400],"size":[8,2],"gate":"titan_ledge"}
+    ]
+   }
+  },
+  {
+   "use": "gameplay.hazard",
+   "with": {
+    "types": [
+     {"id":"lava","damage":0,"dps":60,"status":"burning","respawn":"nearest-safe"},
+     {"id":"poison_water","damage":0,"dps":2,"status":"poison","respawn":"nearest-safe"},
+     {"id":"heat","damage":0,"dps":4,"status":"burning","respawn":"checkpoint"},
+     {"id":"cold","damage":0,"dps":2,"status":"cold","respawn":"checkpoint"},
+     {"id":"ember_storm","damage":0,"dps":8,"status":"burning","respawn":"checkpoint"}
+    ],
+    "fallDamage": {"minHeight":6,"perMeter":12}
+   }
+  },
+  {
+   "use": "gameplay.progression.level",
+   "with": {
+    "curve": {"base":220,"growth":1.28},
+    "maxLevel": 40,
+    "pointsPerLevel": 1,
+    "stats": [
+     {"id":"vigor","base":10,"perPoint":12},
+     {"id":"stamina","base":10,"perPoint":6},
+     {"id":"might","base":10,"perPoint":2},
+     {"id":"signs","base":10,"perPoint":4}
+    ],
+    "xpSources": [{"event":"defeated","xp":30},{"event":"quest_complete","xp":100},{"event":"discovered:*","xp":40}]
+   }
+  },
+  {
+   "use": "gameplay.progression.abilities",
+   "with": {
+    "abilities": [
+     {"id":"warden_signs","name":"Warden Signs","desc":"Push, ignite, ward: spend focus.","grants":["sign_push","sign_fire","sign_ward"]},
+     {"id":"mounted_travel","name":"Mounted Travel","desc":"Call and ride Ash.","grants":["call_mount"]},
+     {"id":"glide","name":"Glide","desc":"Slow your fall with the glider cloth.","grants":["glide"]},
+     {"id":"silver_sense","name":"Silver Sense","desc":"Highlights traces, herbs and cinder.","grants":["vision"]}
+    ],
+    "start": ["silver_sense"]
+   }
+  },
+  {
+   "use": "gameplay.progression.tree",
+   "with": {
+    "useBased": false,
+    "nodes": [
+     {"id":"p_blade_1","cost":1,"requires":[],"mods":{"stat.melee_damage":0.1}},
+     {"id":"p_blade_2","cost":2,"requires":["p_blade_1"],"mods":{"stat.melee_damage":0.15,"stat.combo_limit":1}},
+     {"id":"p_parry","cost":2,"requires":["p_blade_1"],"mods":{"stat.parry_window":60}},
+     {"id":"p_dodge","cost":1,"requires":[],"mods":{"stat.dodge_iframes":0.1}},
+     {"id":"p_stamina","cost":2,"requires":[],"mods":{"res.stamina.max":20}},
+     {"id":"p_sign_fire","cost":2,"requires":[],"mods":{"stat.fire_sign":0.3}},
+     {"id":"p_alch_1","cost":1,"requires":[],"mods":{"stat.potion_slots":1}},
+     {"id":"p_alch_2","cost":2,"requires":["p_alch_1"],"mods":{"stat.toxicity_cap":30}},
+     {"id":"p_climb","cost":2,"requires":["p_stamina"],"mods":{"stat.climb_cost":-0.3}},
+     {"id":"p_mount","cost":1,"requires":[],"mods":{"stat.mount_stamina":30}},
+     {"id":"p_bow","cost":2,"requires":[],"mods":{"stat.bow_damage":0.2}},
+     {"id":"p_cook","cost":1,"requires":[],"mods":{"stat.food_potency":0.25}}
+    ]
+   }
+  }
+ ],
+ "content": {
+  "items": [
+   {
+    "id": "warden_blade",
+    "name": "Warden's Blade",
+    "kind": "weapon",
+    "stack": 1,
+    "tags": ["blade","silver"],
+    "value": 100,
+    "weapon": {"damage":28,"reach":1.3,"arc":100,"speed":1,"stamina":8,"combo":3,"type":"phys","durability":400},
+    "desc": "Silvered edge, cinder-etched fuller. Does not break."
+   },
+   {
+    "id": "iron_sword",
+    "name": "Iron Sword",
+    "kind": "weapon",
+    "stack": 1,
+    "tags": ["blade"],
+    "value": 90,
+    "weapon": {"damage":18,"reach":1.2,"arc":100,"speed":1,"stamina":8,"combo":3,"type":"phys","durability":90},
+    "desc": ""
+   },
+   {
+    "id": "steel_sword",
+    "name": "Steel Sword",
+    "kind": "weapon",
+    "stack": 1,
+    "tags": ["blade"],
+    "value": 240,
+    "weapon": {"damage":24,"reach":1.25,"arc":100,"speed":1,"stamina":9,"combo":3,"type":"phys","durability":130},
+    "desc": ""
+   },
+   {
+    "id": "ember_edge",
+    "name": "Ember Edge",
+    "kind": "weapon",
+    "stack": 1,
+    "tags": ["blade","ember"],
+    "value": 800,
+    "weapon": {"damage":34,"reach":1.3,"arc":100,"speed":1.05,"stamina":10,"combo":3,"type":"fire","durability":140},
+    "desc": "Forged from a cinder fragment. Sets foes alight."
+   },
+   {
+    "id": "woodcutter_axe",
+    "name": "Woodcutter's Axe",
+    "kind": "weapon",
+    "stack": 1,
+    "tags": ["axe","tool"],
+    "value": 60,
+    "weapon": {"damage":20,"reach":1.1,"arc":100,"speed":0.85,"stamina":12,"combo":3,"type":"phys","durability":70},
+    "desc": ""
+   },
+   {
+    "id": "great_cleaver",
+    "name": "Great Cleaver",
+    "kind": "weapon",
+    "stack": 1,
+    "tags": ["two_hand"],
+    "value": 480,
+    "weapon": {"damage":44,"reach":1.8,"arc":140,"speed":0.65,"stamina":20,"combo":2,"type":"phys","durability":100},
+    "desc": ""
+   },
+   {
+    "id": "hunting_bow",
+    "name": "Hunting Bow",
+    "kind": "weapon",
+    "stack": 1,
+    "tags": ["bow"],
+    "value": 140,
+    "weapon": {"damage":10,"reach":0,"arc":0,"speed":1,"stamina":12,"combo":1,"type":"phys","durability":120},
+    "ranged": {"projectile":"arrow","speed":55,"gravity":9.8,"spread":1.5,"ammo":"arrow","draw":0.8}
+   },
+   {"id":"arrow","name":"Arrow","kind":"ammo","stack":99,"value":2,"desc":"Fletched ash."},
+   {"id":"fire_arrow","name":"Fire Arrow","kind":"ammo","stack":99,"value":8,"tags":["fire"]},
+   {
+    "id": "silver_oil",
+    "name": "Silver Oil",
+    "kind": "potion",
+    "stack": 5,
+    "tags": ["oil"],
+    "value": 55,
+    "use": {"fx":[{"do":"apply_status","who":"player","status":"silver_edge","sec":300}],"consume":true}
+   },
+   {
+    "id": "ranger_hood",
+    "name": "Ranger Hood",
+    "kind": "armor",
+    "stack": 1,
+    "value": 80,
+    "armor": {"slot":"head","def":{"phys":2},"durability":100},
+    "tags": [],
+    "desc": ""
+   },
+   {
+    "id": "warden_coat",
+    "name": "Warden Coat",
+    "kind": "armor",
+    "stack": 1,
+    "value": 340,
+    "armor": {"slot":"chest","def":{"phys":8,"fire":2},"durability":250},
+    "tags": ["warden"],
+    "desc": ""
+   },
+   {
+    "id": "warden_greaves",
+    "name": "Warden Greaves",
+    "kind": "armor",
+    "stack": 1,
+    "value": 200,
+    "armor": {"slot":"legs","def":{"phys":5,"fire":1},"durability":200},
+    "tags": [],
+    "desc": ""
+   },
+   {
+    "id": "ember_plate",
+    "name": "Ember Plate",
+    "kind": "armor",
+    "stack": 1,
+    "value": 1400,
+    "armor": {"slot":"chest","def":{"phys":14,"fire":12},"durability":300},
+    "tags": ["ember"],
+    "desc": ""
+   },
+   {
+    "id": "frost_mantle",
+    "name": "Frostreach Mantle",
+    "kind": "armor",
+    "stack": 1,
+    "value": 600,
+    "armor": {"slot":"chest","def":{"phys":6,"ice":14},"durability":100},
+    "tags": ["cold"],
+    "desc": ""
+   },
+   {"id":"warm_cloak","name":"Warm Cloak","kind":"armor","stack":1,"value":90,"armor":{"slot":"back","def":{"ice":6},"durability":100}},
+   {"id":"glider_cloth","name":"Glider Cloth","kind":"misc","stack":1,"tags":["tool"],"desc":"Waxed silk rolled on a frame. Unlocked by Orsk."},
+   {
+    "id": "apple",
+    "name": "Apple",
+    "kind": "food",
+    "stack": 20,
+    "tags": ["fruit","sweet"],
+    "value": 8,
+    "ingredient": {"tags":["fruit","sweet"],"effects":{"heal":1}},
+    "use": {"fx":[{"do":"heal","who":"player","amount":12}],"cooldown":1,"consume":true},
+    "desc": ""
+   },
+   {
+    "id": "mushroom",
+    "name": "Forest Mushroom",
+    "kind": "food",
+    "stack": 20,
+    "tags": ["mushroom","earthy"],
+    "value": 8,
+    "ingredient": {"tags":["mushroom","earthy"],"effects":{"heal":1}},
+    "desc": ""
+   },
+   {
+    "id": "hearty_radish",
+    "name": "Hearty Radish",
+    "kind": "food",
+    "stack": 20,
+    "tags": ["veg","hearty"],
+    "value": 8,
+    "ingredient": {"tags":["veg","hearty"],"effects":{"heal":2}},
+    "desc": ""
+   },
+   {
+    "id": "raw_meat",
+    "name": "Raw Meat",
+    "kind": "food",
+    "stack": 20,
+    "tags": ["meat"],
+    "value": 8,
+    "ingredient": {"tags":["meat"],"effects":{"heal":2}},
+    "desc": ""
+   },
+   {
+    "id": "raw_fish",
+    "name": "Raw Fish",
+    "kind": "food",
+    "stack": 20,
+    "tags": ["fish"],
+    "value": 8,
+    "ingredient": {"tags":["fish"],"effects":{"heal":1}},
+    "desc": ""
+   },
+   {
+    "id": "pepper",
+    "name": "Fire Pepper",
+    "kind": "food",
+    "stack": 20,
+    "tags": ["spice","hot"],
+    "value": 8,
+    "ingredient": {"tags":["spice","hot"],"effects":{"warm":1}},
+    "desc": ""
+   },
+   {
+    "id": "frost_berry",
+    "name": "Frost Berry",
+    "kind": "food",
+    "stack": 20,
+    "tags": ["fruit","cold"],
+    "value": 8,
+    "ingredient": {"tags":["fruit","cold"],"effects":{"resist_cold":1}},
+    "desc": ""
+   },
+   {
+    "id": "honey",
+    "name": "Honeycomb",
+    "kind": "food",
+    "stack": 20,
+    "tags": ["sweet","sugar"],
+    "value": 8,
+    "ingredient": {"tags":["sweet","sugar"],"effects":{"stamina_regen":1}},
+    "desc": ""
+   },
+   {"id":"flour","name":"Flour","kind":"food","stack":20,"tags":["grain"],"value":8,"ingredient":{"tags":["grain"],"effects":{}},"desc":""},
+   {
+    "id": "herbs",
+    "name": "Hearth Herbs",
+    "kind": "food",
+    "stack": 20,
+    "tags": ["herb"],
+    "value": 8,
+    "ingredient": {"tags":["herb"],"effects":{"heal":1}},
+    "desc": ""
+   },
+   {
+    "id": "stew",
+    "name": "Hearty Stew",
+    "kind": "food",
+    "stack": 20,
+    "tags": ["meal"],
+    "value": 25,
+    "ingredient": {"tags":["meal"],"effects":{}},
+    "use": {"fx":[{"do":"heal","who":"player","amount":60},{"do":"apply_status","who":"player","status":"well_fed","sec":300}],"cooldown":1,"consume":true},
+    "desc": "Merge result: hearty stew; boosts scale with ingredients."
+   },
+   {
+    "id": "roast_skewer",
+    "name": "Roast Skewer",
+    "kind": "food",
+    "stack": 20,
+    "tags": ["meal"],
+    "value": 18,
+    "ingredient": {"tags":["meal"],"effects":{}},
+    "use": {"fx":[{"do":"heal","who":"player","amount":40},{"do":"gain","resource":"stamina","amount":40}],"cooldown":1,"consume":true},
+    "desc": ""
+   },
+   {
+    "id": "warm_porridge",
+    "name": "Warm Porridge",
+    "kind": "food",
+    "stack": 20,
+    "tags": ["meal","warm"],
+    "value": 14,
+    "ingredient": {"tags":["meal","warm"],"effects":{}},
+    "use": {"fx":[{"do":"heal","who":"player","amount":25},{"do":"apply_status","who":"player","status":"warmth","sec":600}],"cooldown":1,"consume":true},
+    "desc": ""
+   },
+   {
+    "id": "glazed_apple",
+    "name": "Glazed Apple",
+    "kind": "food",
+    "stack": 20,
+    "tags": ["meal","sweet"],
+    "value": 12,
+    "ingredient": {"tags":["meal","sweet"],"effects":{}},
+    "use": {"fx":[{"do":"heal","who":"player","amount":30},{"do":"gain","resource":"stamina","amount":60}],"cooldown":1,"consume":true},
+    "desc": ""
+   },
+   {"id":"nightroot","name":"Nightroot","kind":"material","stack":40,"tags":["herb","alch"],"value":10},
+   {"id":"bog_lily","name":"Bog Lily","kind":"material","stack":40,"tags":["herb","alch"],"value":12},
+   {"id":"ember_dust","name":"Ember Dust","kind":"material","stack":40,"tags":["mineral","alch","fire"],"value":14},
+   {"id":"cinder_salt","name":"Cinder Salt","kind":"material","stack":40,"tags":["mineral","alch"],"value":18},
+   {"id":"iron_ore","name":"Iron Ore","kind":"material","stack":40,"tags":["ore"],"value":6},
+   {"id":"silver_ore","name":"Silver Ore","kind":"material","stack":40,"tags":["ore"],"value":30},
+   {"id":"hide","name":"Hide","kind":"material","stack":40,"tags":["hide"],"value":8},
+   {"id":"cinder_core","name":"Cinder Core","kind":"material","stack":10,"tags":["alch","fire"],"value":60},
+   {"id":"ice_shard","name":"Ice Shard","kind":"material","stack":20,"tags":["alch","cold"],"value":40},
+   {
+    "id": "ember_salve",
+    "name": "Ember Salve",
+    "kind": "potion",
+    "stack": 10,
+    "tags": ["potion"],
+    "value": 60,
+    "use": {"fx":[{"do":"heal","who":"player","amount":100},{"do":"add_var","var":"toxicity","value":20}],"cooldown":2,"consume":true},
+    "desc": ""
+   },
+   {
+    "id": "swiftdraught",
+    "name": "Swiftdraught",
+    "kind": "potion",
+    "stack": 10,
+    "tags": ["potion"],
+    "value": 60,
+    "use": {"fx":[{"do":"apply_status","who":"player","status":"hasted","sec":90},{"do":"add_var","var":"toxicity","value":20}],"cooldown":2,"consume":true},
+    "desc": ""
+   },
+   {
+    "id": "antidote_bog",
+    "name": "Bog Antidote",
+    "kind": "potion",
+    "stack": 10,
+    "tags": ["potion","quest"],
+    "value": 80,
+    "use": {
+     "fx": [{"do":"clear_status","who":"player","status":"cinder_touch"},{"do":"clear_status","who":"player","status":"poison"}],
+     "cooldown": 2,
+     "consume": true
+    },
+    "desc": ""
+   },
+   {
+    "id": "firebane",
+    "name": "Firebane Draught",
+    "kind": "potion",
+    "stack": 10,
+    "tags": ["potion"],
+    "value": 60,
+    "use": {
+     "fx": [{"do":"apply_status","who":"player","status":"fireproof","sec":180},{"do":"add_var","var":"toxicity","value":25}],
+     "cooldown": 2,
+     "consume": true
+    },
+    "desc": ""
+   },
+   {
+    "id": "focus_tonic",
+    "name": "Focus Tonic",
+    "kind": "potion",
+    "stack": 10,
+    "tags": ["potion"],
+    "value": 60,
+    "use": {"fx":[{"do":"gain","resource":"focus","amount":100},{"do":"add_var","var":"toxicity","value":15}],"cooldown":2,"consume":true},
+    "desc": ""
+   },
+   {
+    "id": "wardens_cure",
+    "name": "Warden's Cure",
+    "kind": "potion",
+    "stack": 10,
+    "tags": ["potion","quest","cure"],
+    "value": 400,
+    "use": {"fx":[{"do":"clear_status","who":"player","status":"cinder_touch"}],"cooldown":2,"consume":true},
+    "desc": ""
+   },
+   {
+    "id": "cinder_bomb",
+    "name": "Cinder Bomb",
+    "kind": "weapon",
+    "stack": 10,
+    "tags": ["bomb","thrown"],
+    "value": 70,
+    "weapon": {"damage":40,"reach":0,"arc":0,"speed":1,"stamina":10,"combo":1,"type":"fire"},
+    "ranged": {"projectile":"bomb","speed":14,"gravity":9.8,"spread":0,"ammo":null,"draw":0.3}
+   },
+   {"id":"wardens_seal_ring","name":"Warden's Seal Ring","kind":"key","stack":1,"desc":"Marks you as a Cinderwarden. Opens warden caches."},
+   {"id":"lioren_letter","name":"Lioren's Letter","kind":"quest","stack":1},
+   {"id":"edda_commission","name":"Edda's Commission","kind":"quest","stack":1},
+   {"id":"mare_bridle","name":"Ash's Old Bridle","kind":"quest","stack":1},
+   {"id":"seal_stone_crag","name":"Crag Seal Stone","kind":"quest","stack":1,"tags":["seal"]},
+   {"id":"seal_stone_slag","name":"Slag Seal Stone","kind":"quest","stack":1,"tags":["seal"]},
+   {"id":"seal_stone_rime","name":"Rime Seal Stone","kind":"quest","stack":1,"tags":["seal"]},
+   {"id":"neris_scroll","name":"Scroll of Auric","kind":"quest","stack":5,"tags":["scroll"]},
+   {"id":"regent_writ","name":"Regent's Writ","kind":"key","stack":1},
+   {"id":"quarantine_key","name":"Quarantine Key","kind":"key","stack":1},
+   {"id":"crown_fragment","name":"Crown Fragment","kind":"quest","stack":3,"tags":["ember"]},
+   {"id":"karth_furnace_key","name":"Furnace Key","kind":"key","stack":1},
+   {"id":"drowner_trophy","name":"Drowner Trophy","kind":"quest","stack":5},
+   {"id":"hag_eye","name":"Hag's Eye","kind":"quest","stack":1},
+   {"id":"stag_antler","name":"Cinder Antler","kind":"quest","stack":2},
+   {"id":"caravan_manifest","name":"Caravan Manifest","kind":"quest","stack":1},
+   {"id":"wren_lantern","name":"Wren's Lantern","kind":"quest","stack":1},
+   {"id":"crowns","name":"Crowns","kind":"currency","stack":99999,"value":1}
+  ],
+  "recipes": [
+   {
+    "id": "r_stew",
+    "station": "campfire",
+    "inputs": [{"tag":"meat","count":1},{"tag":"veg","count":1},{"tag":"herb","count":1}],
+    "output": {"item":"stew","count":1},
+    "time": 4,
+    "learned": true,
+    "merge": true
+   },
+   {
+    "id": "r_skewer",
+    "station": "campfire",
+    "inputs": [{"tag":"meat","count":1},{"tag":"spice","count":1}],
+    "output": {"item":"roast_skewer","count":1},
+    "time": 3,
+    "learned": true,
+    "merge": true
+   },
+   {
+    "id": "r_porridge",
+    "station": "campfire",
+    "inputs": [{"tag":"grain","count":1},{"tag":"sweet","count":1}],
+    "output": {"item":"warm_porridge","count":1},
+    "time": 3,
+    "learned": true,
+    "merge": true
+   },
+   {
+    "id": "r_glazed_apple",
+    "station": "campfire",
+    "inputs": [{"item":"apple","count":2},{"item":"honey","count":1}],
+    "output": {"item":"glazed_apple","count":1},
+    "time": 3,
+    "learned": true,
+    "merge": true
+   },
+   {
+    "id": "r_ember_salve",
+    "station": "alchemy_table",
+    "inputs": [{"item":"herbs","count":2},{"item":"ember_dust","count":1}],
+    "output": {"item":"ember_salve","count":1},
+    "time": 6,
+    "learned": true
+   },
+   {
+    "id": "r_swiftdraught",
+    "station": "alchemy_table",
+    "inputs": [{"item":"nightroot","count":1},{"item":"honey","count":1}],
+    "output": {"item":"swiftdraught","count":1},
+    "time": 6,
+    "learned": false
+   },
+   {
+    "id": "r_antidote_bog",
+    "station": "alchemy_table",
+    "inputs": [{"item":"bog_lily","count":2},{"item":"cinder_salt","count":1}],
+    "output": {"item":"antidote_bog","count":1},
+    "time": 8,
+    "learned": false
+   },
+   {
+    "id": "r_firebane",
+    "station": "alchemy_table",
+    "inputs": [{"item":"frost_berry","count":2},{"item":"cinder_salt","count":1}],
+    "output": {"item":"firebane","count":1},
+    "time": 7,
+    "learned": false
+   },
+   {
+    "id": "r_focus_tonic",
+    "station": "alchemy_table",
+    "inputs": [{"item":"nightroot","count":2},{"item":"cinder_salt","count":1}],
+    "output": {"item":"focus_tonic","count":1},
+    "time": 7,
+    "learned": false
+   },
+   {
+    "id": "r_wardens_cure",
+    "station": "alchemy_table",
+    "inputs": [{"item":"cinder_core","count":1},{"item":"bog_lily","count":2},{"item":"ice_shard","count":1},{"item":"silver_ore","count":1}],
+    "output": {"item":"wardens_cure","count":1},
+    "time": 14,
+    "learned": false
+   },
+   {
+    "id": "r_silver_oil",
+    "station": "alchemy_table",
+    "inputs": [{"item":"silver_ore","count":1},{"item":"herbs","count":1}],
+    "output": {"item":"silver_oil","count":2},
+    "time": 6,
+    "learned": true
+   },
+   {
+    "id": "r_cinder_bomb",
+    "station": "alchemy_table",
+    "inputs": [{"item":"ember_dust","count":2},{"item":"iron_ore","count":1}],
+    "output": {"item":"cinder_bomb","count":2},
+    "time": 8,
+    "learned": false
+   },
+   {
+    "id": "r_fire_arrow",
+    "station": "anvil",
+    "inputs": [{"item":"arrow","count":5},{"item":"ember_dust","count":1}],
+    "output": {"item":"fire_arrow","count":5},
+    "time": 4,
+    "learned": true
+   },
+   {
+    "id": "r_steel_sword",
+    "station": "anvil",
+    "inputs": [{"item":"iron_ore","count":4},{"item":"hide","count":1}],
+    "output": {"item":"steel_sword","count":1},
+    "time": 12,
+    "learned": true
+   },
+   {
+    "id": "r_ember_edge",
+    "station": "anvil",
+    "inputs": [{"item":"steel_sword","count":1},{"item":"crown_fragment","count":1},{"item":"cinder_core","count":2}],
+    "output": {"item":"ember_edge","count":1},
+    "time": 20,
+    "learned": false
+   },
+   {
+    "id": "r_ember_plate",
+    "station": "anvil",
+    "inputs": [{"item":"iron_ore","count":8},{"item":"cinder_core","count":3},{"item":"hide","count":4}],
+    "output": {"item":"ember_plate","count":1},
+    "time": 30,
+    "learned": false
+   },
+   {
+    "id": "r_frost_mantle",
+    "station": "anvil",
+    "inputs": [{"item":"hide","count":6},{"item":"ice_shard","count":3}],
+    "output": {"item":"frost_mantle","count":1},
+    "time": 18,
+    "learned": false
+   }
+  ],
+  "tables": [
+   {
+    "id": "loot_husk",
+    "rolls": [1,2],
+    "entries": [
+     {"item":"ember_dust","weight":5,"count":[1,2]},
+     {"item":"crowns","weight":8,"count":[3,12]},
+     {"item":"cinder_salt","weight":2},
+     {"item":"cinder_core","weight":1,"when":{"var":"level","gte":8}}
+    ]
+   },
+   {
+    "id": "loot_brute",
+    "rolls": [2,3],
+    "entries": [{"item":"cinder_core","weight":3},{"item":"ember_dust","weight":5,"count":[2,4]},{"item":"crowns","weight":6,"count":[20,50]}]
+   },
+   {
+    "id": "loot_bandit",
+    "rolls": [1,3],
+    "entries": [
+     {"item":"crowns","weight":10,"count":[8,30]},
+     {"item":"arrow","weight":6,"count":[3,10]},
+     {"item":"iron_sword","weight":1},
+     {"item":"hearty_radish","weight":3}
+    ]
+   },
+   {"id":"loot_beast","rolls":[1,2],"entries":[{"item":"hide","weight":8,"count":[1,2]},{"item":"raw_meat","weight":10,"count":[1,3]}]},
+   {
+    "id": "loot_chest_common",
+    "rolls": [2,3],
+    "entries": [
+     {"item":"crowns","weight":10,"count":[20,90]},
+     {"item":"herbs","weight":5,"count":[1,4]},
+     {"item":"arrow","weight":4,"count":[5,15]},
+     {"item":"iron_ore","weight":3,"count":[1,3]},
+     {"item":"silver_oil","weight":2}
+    ]
+   },
+   {
+    "id": "loot_chest_rare",
+    "rolls": [2,4],
+    "entries": [
+     {"item":"crowns","weight":6,"count":[150,400]},
+     {"item":"silver_ore","weight":4,"count":[1,3]},
+     {"item":"cinder_core","weight":3},
+     {"item":"ember_salve","weight":3},
+     {"item":"warden_greaves","weight":1}
+    ]
+   },
+   {
+    "id": "loot_forage",
+    "rolls": [1,2],
+    "entries": [
+     {"item":"apple","weight":5},
+     {"item":"mushroom","weight":5},
+     {"item":"herbs","weight":5},
+     {"item":"nightroot","weight":2},
+     {"item":"honey","weight":1}
+    ]
+   },
+   {
+    "id": "loot_boss",
+    "rolls": [3,4],
+    "entries": [{"item":"crowns","weight":10,"count":[400,900]},{"item":"cinder_core","weight":6,"count":[2,4]},{"item":"silver_ore","weight":5,"count":[2,4]}]
+   }
+  ],
+  "statuses": [
+   {"id":"burning","duration":5,"tick":{"dps":6,"type":"fire"},"stacks":1,"tags":["fire"]},
+   {"id":"bleeding","duration":8,"tick":{"dps":3,"type":"phys"},"stacks":3},
+   {"id":"poison","duration":20,"tick":{"dps":1,"type":"poison"},"stacks":1},
+   {"id":"frozen","duration":3,"mods":{"stat.move":-1},"stacks":1},
+   {"id":"cold","duration":600,"mods":{"res.stamina.max":-30},"tags":["environment"]},
+   {"id":"cinder_touch","duration":9999,"tick":{"dps":0.5,"type":"fire"},"mods":{"hp.max":-20},"tags":["curse","curable"]},
+   {"id":"hasted","duration":90,"mods":{"stat.move":0.25}},
+   {"id":"well_fed","duration":300,"mods":{"hp.max":20,"res.stamina.regen":6}},
+   {"id":"warmth","duration":600,"mods":{"stat.cold_resist":1}},
+   {"id":"fireproof","duration":180,"mods":{"stat.fire_resist":0.7}},
+   {"id":"silver_edge","duration":300,"mods":{"stat.silver_damage":0.5}},
+   {"id":"stunned","duration":2,"mods":{"stat.stun":1}},
+   {"id":"poise_broken","duration":2.5,"mods":{"stat.vulnerable":1}},
+   {"id":"toxic","duration":120,"tick":{"dps":2,"type":"poison"},"tags":["overdose"]}
+  ],
+  "archetypes": [
+   {
+    "id": "sael",
+    "kind": "player",
+    "components": {
+     "model": "sael",
+     "health": {"max":200,"regen":0},
+     "level": 1,
+     "resources": {"stamina":{"max":100,"regen":28,"regenDelay":0.8},"focus":{"max":100,"regen":0}},
+     "melee": {"weapon":"warden_blade"},
+     "equipment": {"slots":["weapon","bow","head","chest","legs","back"]},
+     "faction": "player",
+     "mountable": false
+    }
+   },
+   {
+    "id": "horse_ash",
+    "kind": "mount",
+    "components": {
+     "model": "horse_ash",
+     "health": {"max":300},
+     "mount": {"speed":{"walk":3,"trot":7,"gallop":14},"stamina":{"max":100},"bond":0},
+     "ai": {
+      "brain": [{"do":"follow","target":"player","when":{"flag":"ash_owned"}},{"do":"wander","range":10}],
+      "perception": {"sight":25,"fov":220,"hearing":20,"memory":20}
+     },
+     "faction": "player"
+    }
+   },
+   {
+    "id": "horse_wild",
+    "kind": "mount",
+    "components": {
+     "model": "horse_wild",
+     "health": {"max":220},
+     "mount": {"speed":{"walk":3,"trot":7,"gallop":12},"stamina":{"max":60},"bond":0,"tameable":true},
+     "ai": {
+      "brain": [{"do":"flee","when":{"near":"player","within":12}},{"do":"wander","range":40}],
+      "perception": {"sight":30,"fov":240,"hearing":25,"memory":5}
+     }
+    }
+   },
+   {
+    "id": "cinder_husk",
+    "kind": "enemy",
+    "components": {
+     "model": "cinder_husk",
+     "health": {"max":70,"regen":0},
+     "level": 2,
+     "resources": {"stamina":{"max":80},"poise":{"max":30}},
+     "ai": {
+      "brain": [{"do":"flee","when":{"health":"self","lt":0.15,"frac":true}},{"do":"chase","when":{"aware":"player"}},{"do":"wander","range":25}],
+      "perception": {"sight":16,"fov":150,"hearing":14,"memory":8}
+     },
+     "attacks": [
+      {"id":"claw","range":2,"windup":0.5,"active":0.2,"recover":0.7,"damage":12,"type":"phys","shape":"arc","weight":3},
+      {"id":"ember_lunge","range":6,"windup":0.8,"active":0.3,"recover":1.2,"damage":18,"type":"fire","move":"lunge","status":"burning","weight":1}
+     ],
+     "faction": "blight",
+     "loot": "loot_husk",
+     "resist": {"fire":0.5},
+     "cinder": true
+    }
+   },
+   {
+    "id": "husk_brute",
+    "kind": "enemy",
+    "components": {
+     "model": "husk_brute",
+     "health": {"max":420,"regen":0},
+     "level": 9,
+     "resources": {"stamina":{"max":80},"poise":{"max":90}},
+     "ai": {
+      "brain": [{"do":"flee","when":{"health":"self","lt":0.15,"frac":true}},{"do":"chase","when":{"aware":"player"}},{"do":"wander","range":25}],
+      "perception": {"sight":20,"fov":150,"hearing":14,"memory":8}
+     },
+     "attacks": [
+      {"id":"overhead_smash","range":3.5,"windup":1.1,"active":0.3,"recover":1.5,"damage":60,"shape":"slam","weight":3},
+      {"id":"ember_stomp","range":8,"windup":1.3,"active":0.4,"recover":1.8,"damage":30,"type":"fire","shape":"ring","status":"burning","weight":2},
+      {"id":"charge","range":14,"windup":1,"active":1.2,"recover":2,"damage":45,"move":"charge","weight":1}
+     ],
+     "faction": "blight",
+     "loot": "loot_brute",
+     "resist": {"fire":0.7},
+     "cinder": true
+    }
+   },
+   {
+    "id": "ember_wolf",
+    "kind": "enemy",
+    "components": {
+     "model": "ember_wolf",
+     "health": {"max":90,"regen":0},
+     "level": 4,
+     "resources": {"stamina":{"max":80},"poise":{"max":30}},
+     "ai": {
+      "brain": [{"do":"chase","when":{"aware":"player"}},{"do":"patrol","range":40}],
+      "perception": {"sight":25,"fov":180,"hearing":25,"memory":12},
+      "pack": {"size":[3,5],"alert":40}
+     },
+     "attacks": [
+      {"id":"bite","range":1.8,"windup":0.4,"active":0.2,"recover":0.6,"damage":14,"shape":"arc","status":"bleeding","weight":3},
+      {"id":"pounce","range":7,"windup":0.6,"active":0.3,"recover":1,"damage":18,"move":"leap","weight":1}
+     ],
+     "faction": "blight",
+     "loot": "loot_beast",
+     "resist": {},
+     "cinder": true
+    }
+   },
+   {
+    "id": "cinder_stag",
+    "kind": "enemy",
+    "components": {
+     "model": "cinder_stag",
+     "health": {"max":260,"regen":0},
+     "level": 6,
+     "resources": {"stamina":{"max":80},"poise":{"max":30}},
+     "ai": {
+      "brain": [{"do":"flee","when":{"health":"self","lt":0.15,"frac":true}},{"do":"chase","when":{"aware":"player"}},{"do":"wander","range":25}],
+      "perception": {"sight":24,"fov":150,"hearing":14,"memory":8}
+     },
+     "attacks": [
+      {"id":"gore","range":3,"windup":0.8,"active":0.3,"recover":1,"damage":35,"move":"charge","shape":"arc","weight":2},
+      {"id":"ember_roar","range":12,"windup":1,"active":0.5,"recover":1.5,"damage":10,"type":"fire","shape":"ring","weight":1}
+     ],
+     "faction": "blight",
+     "loot": "loot_beast",
+     "resist": {},
+     "cinder": true,
+     "hunt": true
+    }
+   },
+   {
+    "id": "cinder_hawk",
+    "kind": "enemy",
+    "components": {
+     "model": "cinder_hawk",
+     "health": {"max":55,"regen":0},
+     "level": 5,
+     "resources": {"stamina":{"max":80},"poise":{"max":30}},
+     "ai": {"brain":[{"do":"flyer","when":{"aware":"player"}},{"do":"circle","range":60}],"perception":{"sight":50,"fov":360,"hearing":10,"memory":4}},
+     "attacks": [{"id":"stoop","range":20,"windup":1,"active":0.6,"recover":1.5,"damage":16,"type":"fire","move":"dive","weight":1}],
+     "faction": "blight",
+     "loot": "loot_beast",
+     "resist": {},
+     "cinder": true,
+     "gravity": 0
+    }
+   },
+   {
+    "id": "bog_drowner",
+    "kind": "enemy",
+    "components": {
+     "model": "bog_drowner",
+     "health": {"max":110,"regen":0},
+     "level": 5,
+     "resources": {"stamina":{"max":80},"poise":{"max":30}},
+     "ai": {
+      "brain": [{"do":"ambush","when":{"near":"player","within":8}},{"do":"sit"}],
+      "perception": {"sight":10,"fov":120,"hearing":10,"memory":5},
+      "medium": "water"
+     },
+     "attacks": [
+      {"id":"grab","range":2.2,"windup":0.5,"active":0.2,"recover":1,"damage":16,"status":"poison","weight":2},
+      {"id":"mire_pull","range":5,"windup":0.8,"active":0.5,"recover":1.5,"damage":8,"shape":"pull","weight":1}
+     ],
+     "faction": "blight",
+     "loot": "loot_beast",
+     "resist": {}
+    }
+   },
+   {
+    "id": "marsh_hag",
+    "kind": "boss",
+    "components": {
+     "model": "marsh_hag",
+     "health": {"max":780,"regen":0},
+     "level": 9,
+     "resources": {"stamina":{"max":80},"poise":{"max":120}},
+     "ai": {"brain":[{"do":"circle","when":{"aware":"player"}},{"do":"guard"}],"perception":{"sight":25,"fov":220,"hearing":25,"memory":20}},
+     "attacks": [
+      {
+       "id": "hex_bolt",
+       "range": 18,
+       "windup": 0.9,
+       "active": 0.2,
+       "recover": 1,
+       "damage": 28,
+       "type": "poison",
+       "shape": "projectile",
+       "projectile": {"speed":20,"gravity":0},
+       "weight": 3
+      },
+      {"id":"mud_swarm","range":10,"windup":1.2,"active":1,"recover":1.6,"damage":12,"shape":"summon","summon":"bog_drowner","phase":2,"weight":1},
+      {"id":"staff_sweep","range":3.5,"windup":0.6,"active":0.3,"recover":0.9,"damage":34,"shape":"arc","weight":2},
+      {"id":"mist_step","range":12,"windup":0.4,"active":0.1,"recover":0.5,"damage":0,"move":"teleport_behind","weight":1}
+     ],
+     "faction": "blight",
+     "loot": "loot_boss",
+     "resist": {}
+    }
+   },
+   {
+    "id": "bandit",
+    "kind": "enemy",
+    "components": {
+     "model": "bandit",
+     "health": {"max":120,"regen":0},
+     "level": 4,
+     "resources": {"stamina":{"max":80},"poise":{"max":30}},
+     "ai": {
+      "brain": [
+       {"do":"flee","when":{"health":"self","lt":0.15,"frac":true}},
+       {"do":"chase","when":{"aware":"player"}},
+       {"do":"flee","when":{"health":"self","lt":0.2,"frac":true}},
+       {"do":"wander","range":25}
+      ],
+      "perception": {"sight":18,"fov":150,"hearing":14,"memory":8}
+     },
+     "attacks": [
+      {"id":"slash","range":2,"windup":0.5,"active":0.2,"recover":0.8,"damage":18,"shape":"arc","weight":3},
+      {"id":"shove","range":1.8,"windup":0.4,"active":0.1,"recover":0.8,"damage":4,"status":"stunned","weight":1}
+     ],
+     "faction": "bandits",
+     "loot": "loot_bandit",
+     "resist": {}
+    }
+   },
+   {
+    "id": "bandit_archer",
+    "kind": "enemy",
+    "components": {
+     "model": "bandit",
+     "health": {"max":85,"regen":0},
+     "level": 4,
+     "resources": {"stamina":{"max":80},"poise":{"max":30}},
+     "ai": {"brain":[{"do":"circle","when":{"aware":"player"},"range":18},{"do":"guard"}],"perception":{"sight":40,"fov":150,"hearing":14,"memory":10}},
+     "attacks": [
+      {
+       "id": "shoot",
+       "range": 35,
+       "windup": 0.9,
+       "active": 0.1,
+       "recover": 1.3,
+       "damage": 14,
+       "shape": "projectile",
+       "projectile": {"speed":40,"gravity":9.8},
+       "weight": 3
+      }
+     ],
+     "faction": "bandits",
+     "loot": "loot_bandit",
+     "resist": {}
+    }
+   },
+   {
+    "id": "zealot",
+    "kind": "enemy",
+    "components": {
+     "model": "zealot",
+     "health": {"max":160,"regen":0},
+     "level": 8,
+     "resources": {"stamina":{"max":80},"poise":{"max":30}},
+     "ai": {
+      "brain": [{"do":"flee","when":{"health":"self","lt":0.15,"frac":true}},{"do":"chase","when":{"aware":"player"}},{"do":"wander","range":25}],
+      "perception": {"sight":20,"fov":150,"hearing":14,"memory":8}
+     },
+     "attacks": [
+      {"id":"torch_swing","range":2.2,"windup":0.6,"active":0.3,"recover":0.9,"damage":22,"type":"fire","status":"burning","shape":"arc","weight":3},
+      {
+       "id": "fire_bomb",
+       "range": 16,
+       "windup": 1,
+       "active": 0.1,
+       "recover": 1.5,
+       "damage": 24,
+       "type": "fire",
+       "shape": "projectile",
+       "projectile": {"speed":14,"gravity":9.8},
+       "weight": 1
+      }
+     ],
+     "faction": "order_of_ash",
+     "loot": "loot_bandit",
+     "resist": {}
+    }
+   },
+   {
+    "id": "gildguard",
+    "kind": "npc",
+    "components": {
+     "model": "gildguard",
+     "health": {"max":220,"regen":0},
+     "level": 8,
+     "resources": {"stamina":{"max":80},"poise":{"max":30}},
+     "ai": {"brain":[{"do":"chase","when":{"aware":"hostile"}},{"do":"patrol","range":30}],"perception":{"sight":25,"fov":150,"hearing":14,"memory":15}},
+     "attacks": [
+      {"id":"spear_thrust","range":3.2,"windup":0.5,"active":0.2,"recover":0.8,"damage":24,"shape":"line","weight":3},
+      {"id":"shield_bash","range":2,"windup":0.6,"active":0.2,"recover":1,"damage":8,"status":"stunned","weight":1}
+     ],
+     "faction": "gildmere",
+     "loot": "loot_bandit",
+     "resist": {}
+    }
+   },
+   {
+    "id": "crag_titan",
+    "kind": "boss",
+    "components": {
+     "model": "crag_titan",
+     "health": {"max":2400,"regen":0},
+     "level": 12,
+     "resources": {"stamina":{"max":80},"poise":{"max":400}},
+     "ai": {"brain":[{"do":"chase","when":{"aware":"player"}},{"do":"sit"}],"perception":{"sight":60,"fov":200,"hearing":40,"memory":30}},
+     "attacks": [
+      {
+       "id": "boulder_throw",
+       "range": 45,
+       "windup": 1.4,
+       "active": 0.3,
+       "recover": 2,
+       "damage": 55,
+       "shape": "projectile",
+       "projectile": {"speed":28,"gravity":14},
+       "weight": 2
+      },
+      {"id":"ground_pound","range":14,"windup":1.6,"active":0.4,"recover":2.4,"damage":70,"shape":"ring","weight":2},
+      {"id":"arm_sweep","range":8,"windup":1.2,"active":0.5,"recover":1.6,"damage":80,"shape":"arc","weight":3},
+      {"id":"rock_skin","range":0,"windup":1,"active":4,"recover":1,"damage":0,"shape":"buff","phase":2,"weight":1}
+     ],
+     "faction": "blight",
+     "loot": "loot_boss",
+     "resist": {"phys":0.3},
+     "climbable": true,
+     "weakpoints": ["eye_crystal"]
+    }
+   },
+   {
+    "id": "slag_serpent",
+    "kind": "boss",
+    "components": {
+     "model": "slag_serpent",
+     "health": {"max":3000,"regen":0},
+     "level": 14,
+     "resources": {"stamina":{"max":80},"poise":{"max":300}},
+     "ai": {
+      "brain": [{"do":"ambush","when":{"near":"player","within":30}},{"do":"circle"}],
+      "perception": {"sight":50,"fov":360,"hearing":40,"memory":30},
+      "medium": "ash"
+     },
+     "attacks": [
+      {
+       "id": "slag_spit",
+       "range": 40,
+       "windup": 1,
+       "active": 0.2,
+       "recover": 1.5,
+       "damage": 45,
+       "type": "fire",
+       "shape": "projectile",
+       "projectile": {"speed":24,"gravity":6},
+       "status": "burning",
+       "weight": 3
+      },
+      {"id":"burrow_strike","range":25,"windup":1.4,"active":0.5,"recover":2,"damage":80,"shape":"emerge","weight":2},
+      {"id":"coil_crush","range":10,"windup":1.2,"active":1,"recover":2,"damage":60,"shape":"ring","weight":1},
+      {"id":"magma_pools","range":30,"windup":1.6,"active":6,"recover":1.5,"damage":20,"type":"fire","shape":"pools","phase":2,"weight":1}
+     ],
+     "faction": "blight",
+     "loot": "loot_boss",
+     "resist": {"fire":1}
+    }
+   },
+   {
+    "id": "rime_warden",
+    "kind": "boss",
+    "components": {
+     "model": "rime_warden",
+     "health": {"max":2800,"regen":0},
+     "level": 15,
+     "resources": {"stamina":{"max":80},"poise":{"max":350}},
+     "ai": {"brain":[{"do":"chase","when":{"aware":"player"}},{"do":"guard"}],"perception":{"sight":45,"fov":200,"hearing":30,"memory":40}},
+     "attacks": [
+      {"id":"ice_lance_thrust","range":8,"windup":0.9,"active":0.3,"recover":1.1,"damage":65,"type":"ice","shape":"line","status":"frozen","weight":3},
+      {"id":"blizzard","range":40,"windup":1.8,"active":6,"recover":2,"damage":8,"type":"ice","shape":"storm","status":"cold","weight":1},
+      {"id":"shard_volley","range":30,"windup":1,"active":0.6,"recover":1.5,"damage":25,"type":"ice","shape":"projectile_fan","weight":2},
+      {"id":"glacial_prison","range":20,"windup":1.5,"active":0.3,"recover":2,"damage":15,"status":"frozen","phase":2,"weight":1}
+     ],
+     "faction": "blight",
+     "loot": "loot_boss",
+     "resist": {"ice":1,"fire":-0.5}
+    }
+   },
+   {
+    "id": "frost_wyrm",
+    "kind": "boss",
+    "components": {
+     "model": "frost_wyrm",
+     "health": {"max":1200,"regen":0},
+     "level": 12,
+     "resources": {"stamina":{"max":80},"poise":{"max":180}},
+     "ai": {"brain":[{"do":"flyer","when":{"aware":"player"}},{"do":"circle","range":80}],"perception":{"sight":70,"fov":360,"hearing":30,"memory":20}},
+     "attacks": [
+      {"id":"frost_breath","range":30,"windup":1.2,"active":2,"recover":2,"damage":18,"type":"ice","shape":"cone","status":"cold","weight":3},
+      {"id":"dive","range":45,"windup":1.5,"active":1,"recover":2,"damage":60,"move":"dive","weight":2},
+      {"id":"tail_sweep","range":6,"windup":0.8,"active":0.4,"recover":1,"damage":40,"shape":"arc","weight":2}
+     ],
+     "faction": "blight",
+     "loot": "loot_boss",
+     "resist": {"ice":1}
+    }
+   },
+   {
+    "id": "barrow_wight",
+    "kind": "enemy",
+    "components": {
+     "model": "barrow_wight",
+     "health": {"max":190,"regen":0},
+     "level": 7,
+     "resources": {"stamina":{"max":80},"poise":{"max":30}},
+     "ai": {"brain":[{"do":"chase","when":{"aware":"player"}},{"do":"patrol","range":15}],"perception":{"sight":14,"fov":360,"hearing":20,"memory":10}},
+     "attacks": [
+      {"id":"wail_touch","range":2.4,"windup":0.6,"active":0.3,"recover":0.9,"damage":20,"type":"void","shape":"arc","weight":3},
+      {"id":"soul_drain","range":10,"windup":1,"active":1.5,"recover":1.6,"damage":6,"type":"void","shape":"beam","weight":1}
+     ],
+     "faction": "dead",
+     "loot": "loot_husk",
+     "resist": {"phys":0.5}
+    }
+   },
+   {
+    "id": "cinder_king",
+    "kind": "boss",
+    "components": {
+     "model": "auric",
+     "health": {"max":6000},
+     "level": 20,
+     "resources": {"stamina":{"max":100},"poise":{"max":600}},
+     "ai": {"brain":[{"do":"chase","when":{"aware":"player"}},{"do":"guard"}],"perception":{"sight":60,"fov":360,"hearing":40,"memory":60}},
+     "attacks": [
+      {"id":"crown_cleave","range":4,"windup":0.9,"active":0.3,"recover":1.2,"damage":90,"type":"fire","shape":"arc","weight":3},
+      {
+       "id": "ember_lance",
+       "range": 40,
+       "windup": 1.2,
+       "active": 0.2,
+       "recover": 1.5,
+       "damage": 70,
+       "type": "fire",
+       "shape": "projectile",
+       "projectile": {"speed":36,"gravity":0},
+       "weight": 2
+      },
+      {"id":"ash_storm","range":30,"windup":2,"active":5,"recover":2,"damage":12,"type":"fire","shape":"storm","status":"burning","weight":1},
+      {"id":"husk_call","range":0,"windup":1.5,"active":0.1,"recover":2,"damage":0,"summon":"cinder_husk","phase":2,"weight":1},
+      {"id":"crownfall","range":20,"windup":2.4,"active":0.6,"recover":3,"damage":160,"type":"fire","shape":"ring","phase":3,"weight":1},
+      {"id":"echo_step","range":15,"windup":0.5,"active":0.1,"recover":0.6,"damage":0,"move":"teleport_behind","phase":2,"weight":2}
+     ],
+     "faction": "blight",
+     "loot": "loot_boss",
+     "resist": {"fire":1}
+    }
+   },
+   {
+    "id": "deer",
+    "kind": "creature",
+    "components": {
+     "model": "deer",
+     "health": {"max":60},
+     "ai": {
+      "brain": [{"do":"flee","when":{"near":"player","within":15}},{"do":"wander","range":30}],
+      "perception": {"sight":30,"fov":270,"hearing":30,"memory":4}
+     },
+     "loot": "loot_beast",
+     "huntable": true
+    }
+   },
+   {
+    "id": "boar",
+    "kind": "creature",
+    "components": {
+     "model": "boar",
+     "health": {"max":90},
+     "ai": {"brain":[{"do":"chase","when":{"aware":"player"}},{"do":"wander","range":20}],"perception":{"sight":15,"fov":180,"hearing":20,"memory":8}},
+     "attacks": [{"id":"tusk","range":1.8,"windup":0.5,"active":0.2,"recover":0.8,"damage":14,"weight":1}],
+     "loot": "loot_beast",
+     "huntable": true
+    }
+   },
+   {
+    "id": "wolf",
+    "kind": "creature",
+    "components": {
+     "model": "wolf",
+     "health": {"max":80},
+     "ai": {
+      "brain": [{"do":"chase","when":{"aware":"player"}},{"do":"patrol","range":40}],
+      "perception": {"sight":25,"fov":180,"hearing":25,"memory":10},
+      "pack": {"size":[2,4]}
+     },
+     "attacks": [{"id":"bite","range":1.8,"windup":0.4,"active":0.2,"recover":0.6,"damage":12,"status":"bleeding","weight":1}],
+     "loot": "loot_beast",
+     "huntable": true
+    }
+   },
+   {
+    "id": "crow",
+    "kind": "creature",
+    "components": {"model":"crow","health":{"max":5},"ai":{"brain":[{"do":"flee","when":{"near":"player","within":6}},{"do":"wander","range":15}]},"ambient":true}
+   },
+   {
+    "id": "npc_ilse",
+    "kind": "npc",
+    "components": {
+     "model": "ilse",
+     "health": {"max":160},
+     "level": 1,
+     "faction": "hearth",
+     "interact": {"prompt":"Talk","range":2.8},
+     "ai": {"brain":[{"do":"work"}],"perception":{"sight":15,"fov":180,"hearing":10,"memory":5},"speed":2.4}
+    }
+   },
+   {
+    "id": "npc_edda",
+    "kind": "npc",
+    "components": {
+     "model": "edda",
+     "health": {"max":160},
+     "level": 1,
+     "faction": "hearth",
+     "interact": {"prompt":"Talk","range":2.8},
+     "ai": {"brain":[{"do":"work"}],"perception":{"sight":15,"fov":180,"hearing":10,"memory":5},"speed":2.4}
+    }
+   },
+   {
+    "id": "npc_torv",
+    "kind": "npc",
+    "components": {
+     "model": "torv",
+     "health": {"max":160},
+     "level": 1,
+     "faction": "hearth",
+     "interact": {"prompt":"Talk","range":2.8},
+     "ai": {"brain":[{"do":"work"}],"perception":{"sight":15,"fov":180,"hearing":10,"memory":5},"speed":2.4}
+    }
+   },
+   {
+    "id": "npc_wren",
+    "kind": "npc",
+    "components": {
+     "model": "wren",
+     "health": {"max":40},
+     "level": 1,
+     "faction": "hearth",
+     "interact": {"prompt":"Talk","range":2.8},
+     "ai": {"brain":[{"do":"work"}],"perception":{"sight":15,"fov":180,"hearing":10,"memory":5},"speed":2.4}
+    }
+   },
+   {
+    "id": "npc_lioren",
+    "kind": "npc",
+    "components": {
+     "model": "lioren",
+     "health": {"max":160},
+     "level": 1,
+     "faction": "wardens",
+     "interact": {"prompt":"Talk","range":2.8},
+     "ai": {"brain":[{"do":"work"}],"perception":{"sight":15,"fov":180,"hearing":10,"memory":5},"speed":2.4},
+     "companion": {
+      "follow": true,
+      "fights": true,
+      "attacks": [{"id":"twin_cut","range":2,"windup":0.4,"active":0.2,"recover":0.6,"damage":22,"shape":"arc","weight":3}]
+     }
+    }
+   },
+   {
+    "id": "npc_maelis",
+    "kind": "npc",
+    "components": {
+     "model": "maelis",
+     "health": {"max":160},
+     "level": 1,
+     "faction": "free",
+     "interact": {"prompt":"Talk","range":2.8},
+     "ai": {"brain":[{"do":"work"}],"perception":{"sight":15,"fov":180,"hearing":10,"memory":5},"speed":2.4}
+    }
+   },
+   {
+    "id": "npc_tavian",
+    "kind": "npc",
+    "components": {
+     "model": "tavian",
+     "health": {"max":160},
+     "level": 1,
+     "faction": "gildmere",
+     "interact": {"prompt":"Talk","range":2.8},
+     "ai": {"brain":[{"do":"work"}],"perception":{"sight":15,"fov":180,"hearing":10,"memory":5},"speed":2.4}
+    }
+   },
+   {
+    "id": "npc_halvard",
+    "kind": "npc",
+    "components": {
+     "model": "halvard",
+     "health": {"max":160},
+     "level": 1,
+     "faction": "gildmere",
+     "interact": {"prompt":"Talk","range":2.8},
+     "ai": {"brain":[{"do":"work"}],"perception":{"sight":15,"fov":180,"hearing":10,"memory":5},"speed":2.4}
+    }
+   },
+   {
+    "id": "npc_neris",
+    "kind": "npc",
+    "components": {
+     "model": "neris",
+     "health": {"max":160},
+     "level": 1,
+     "faction": "gildmere",
+     "interact": {"prompt":"Talk","range":2.8},
+     "ai": {"brain":[{"do":"work"}],"perception":{"sight":15,"fov":180,"hearing":10,"memory":5},"speed":2.4}
+    }
+   },
+   {
+    "id": "npc_cael",
+    "kind": "npc",
+    "components": {
+     "model": "cael",
+     "health": {"max":160},
+     "level": 1,
+     "faction": "order_of_ash",
+     "interact": {"prompt":"Talk","range":2.8},
+     "ai": {"brain":[{"do":"work"}],"perception":{"sight":15,"fov":180,"hearing":10,"memory":5},"speed":2.4}
+    }
+   },
+   {
+    "id": "npc_seren",
+    "kind": "npc",
+    "components": {
+     "model": "seren",
+     "health": {"max":160},
+     "level": 1,
+     "faction": "saltmarch",
+     "interact": {"prompt":"Talk","range":2.8},
+     "ai": {"brain":[{"do":"work"}],"perception":{"sight":15,"fov":180,"hearing":10,"memory":5},"speed":2.4}
+    }
+   },
+   {
+    "id": "npc_orsk",
+    "kind": "npc",
+    "components": {
+     "model": "orsk",
+     "health": {"max":160},
+     "level": 1,
+     "faction": "free",
+     "interact": {"prompt":"Talk","range":2.8},
+     "ai": {"brain":[{"do":"work"}],"perception":{"sight":15,"fov":180,"hearing":10,"memory":5},"speed":2.4}
+    }
+   },
+   {"id":"campfire","kind":"prop","components":{"model":"campfire","station":"campfire","interact":{"prompt":"Cook","range":2.4},"rest":true}},
+   {"id":"alchemy_table","kind":"prop","components":{"model":"alchemy_table","station":"alchemy_table","interact":{"prompt":"Brew","range":2.4}}},
+   {"id":"anvil","kind":"prop","components":{"model":"anvil","station":"anvil","interact":{"prompt":"Forge","range":2.4}}},
+   {
+    "id": "meditation_shrine",
+    "kind": "prop",
+    "components": {"model":"meditation_shrine","interact":{"prompt":"Meditate","range":2.6},"checkpoint":true,"rest":true}
+   },
+   {"id":"seal_stone","kind":"prop","components":{"model":"seal_stone","interact":{"prompt":"Study","range":3},"mechanism":"seal_stone"}},
+   {
+    "id": "chest_common",
+    "kind": "prop",
+    "components": {"model":"chest","container":{"slots":8,"table":"loot_chest_common"},"interact":{"prompt":"Open","range":2.2}}
+   },
+   {
+    "id": "chest_rare",
+    "kind": "prop",
+    "components": {"model":"chest","container":{"slots":8,"table":"loot_chest_rare"},"interact":{"prompt":"Open","range":2.2},"lock":"wardens_seal_ring"}
+   },
+   {
+    "id": "forage_plant",
+    "kind": "prop",
+    "components": {"model":"chest","container":{"slots":2,"table":"loot_forage"},"interact":{"prompt":"Gather","range":1.8},"respawnDays":3}
+   },
+   {"id":"crown_of_embers","kind":"prop","components":{"model":"crown_of_embers","interact":{"prompt":"Take","range":2.6}}}
+  ],
+  "models": {
+   "sael": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.8,
+    "build": {"width":1,"shoulders":1,"head":1},
+    "palette": {"skin":"#c89a78","hair":"#2a2420","cloth":"#3a3f46","trim":"#b8862a","boots":"#2a2018","cape":"#5a2a24"},
+    "hair": "short-tied",
+    "parts": [
+     {"shape":"box","at":[0,1.5,-0.2],"size":[0.5,0.9,0.05],"c":"cape","bone":"spine","secondary":true},
+     {"shape":"box","at":[0.25,1.4,0.1],"size":[0.12,0.7,0.12],"c":"trim","bone":"chest","name":"sheath"}
+    ]
+   },
+   "ilse": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.65,
+    "build": {"width":1,"shoulders":1,"head":1},
+    "palette": {"skin":"#d8b090","hair":"#b0a090","cloth":"#6a8a6a","trim":"#e8e0c8","boots":"#4a3a2a"},
+    "hair": "bun",
+    "parts": [{"shape":"box","at":[0,0.8,0],"size":[0.7,0.9,0.5],"c":"cloth","bone":"hips","name":"apron"}]
+   },
+   "edda": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.7,
+    "build": {"width":1.25,"shoulders":1.2,"head":1},
+    "palette": {"skin":"#b07a58","hair":"#5a2a1a","cloth":"#4a3028","trim":"#9a9a9a","boots":"#1e1814"},
+    "hair": "braid",
+    "parts": [{"shape":"box","at":[0,0.9,0.15],"size":[0.55,0.9,0.1],"c":"trim","bone":"chest","name":"leather_apron"}]
+   },
+   "torv": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.85,
+    "build": {"width":1.1,"shoulders":1,"head":1},
+    "palette": {"skin":"#c8987a","hair":"#8a7a5a","cloth":"#7a6a3a","trim":"#4a3a2a","boots":"#3a2a1a"},
+    "hair": "bald-beard",
+    "parts": [{"shape":"cone","at":[0,1.9,0],"size":[0.5,0.2,0.5],"c":"trim","bone":"head","name":"hat"}]
+   },
+   "wren": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.15,
+    "build": {"width":1,"shoulders":1,"head":1.25},
+    "palette": {"skin":"#e8c8a8","hair":"#3a2a1a","cloth":"#9a4a3a","trim":"#e8d8a8","boots":"#4a3a2a"},
+    "hair": "messy",
+    "parts": []
+   },
+   "lioren": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.82,
+    "build": {"width":1,"shoulders":1,"head":1},
+    "palette": {"skin":"#d8b898","hair":"#e8e0d0","cloth":"#2a3a4a","trim":"#7ac0d8","boots":"#1a2028","cape":"#2a5a7a"},
+    "hair": "long",
+    "parts": [
+     {"shape":"box","at":[0,1.5,-0.2],"size":[0.5,1,0.05],"c":"cape","bone":"spine","secondary":true},
+     {"shape":"box","at":[-0.28,1.45,0.1],"size":[0.1,0.9,0.1],"c":"trim","bone":"chest","name":"sword"}
+    ]
+   },
+   "maelis": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.6,
+    "build": {"width":1,"shoulders":1,"head":1},
+    "palette": {"skin":"#9ab08a","hair":"#2a3a2a","cloth":"#3a4a30","trim":"#c8a838","boots":"#2a2a18"},
+    "hair": "wild",
+    "parts": [
+     {"shape":"cyl","at":[0.3,1.1,0.1],"size":[0.12,0.2,0.12],"c":"trim","bone":"handR","name":"vial"},
+     {"shape":"box","at":[0,1.4,-0.25],"size":[0.5,0.5,0.3],"c":"cloth","bone":"spine","name":"satchel"}
+    ]
+   },
+   "tavian": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.78,
+    "build": {"width":1,"shoulders":1,"head":1},
+    "palette": {"skin":"#d8b090","hair":"#1a1a1a","cloth":"#7a1a2a","trim":"#e8c868","boots":"#2a1a14"},
+    "hair": "slick",
+    "parts": [
+     {"shape":"box","at":[0,1.45,-0.2],"size":[0.8,1.3,0.06],"c":"cloth","bone":"spine","secondary":true,"name":"mantle"},
+     {"shape":"cyl","at":[0,1.95,0],"size":[0.22,0.1,0.22],"c":"trim","bone":"head","name":"circlet"}
+    ]
+   },
+   "halvard": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.88,
+    "build": {"width":1.2,"shoulders":1.25,"head":1},
+    "palette": {"skin":"#c89878","hair":"#6a4a2a","cloth":"#4a5a7a","trim":"#c0c8d0","boots":"#2a2018"},
+    "hair": "short",
+    "parts": [
+     {"shape":"box","at":[0,1.4,0],"size":[0.62,0.7,0.4],"c":"trim","bone":"chest","name":"cuirass"},
+     {"shape":"sphere","at":[0,1.85,0],"size":[0.3,0.2,0.3],"c":"trim","bone":"head","name":"helm"}
+    ]
+   },
+   "neris": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.62,
+    "build": {"width":1,"shoulders":1,"head":1},
+    "palette": {"skin":"#c8a888","hair":"#c8c8d0","cloth":"#4a3a5a","trim":"#e8d8a8","boots":"#2a2030"},
+    "hair": "bun",
+    "parts": [
+     {"shape":"box","at":[0.3,1.1,0.2],"size":[0.25,0.18,0.05],"c":"trim","bone":"handL","name":"book"},
+     {"shape":"cyl","at":[0.12,1.75,0.1],"size":[0.14,0.02,0.14],"c":"trim","bone":"head","name":"spectacles"}
+    ]
+   },
+   "cael": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.8,
+    "build": {"width":1,"shoulders":1,"head":1},
+    "palette": {"skin":"#d0b098","hair":"#ffffff","cloth":"#4a2018","trim":"#e84a1a","boots":"#2a1810"},
+    "hair": "shaved",
+    "parts": [
+     {"shape":"cone","at":[0,1.95,0],"size":[0.45,0.4,0.45],"c":"cloth","bone":"head","name":"cowl"},
+     {"shape":"cyl","at":[0.32,1.1,0.12],"size":[0.06,1.3,0.06],"c":"trim","bone":"handR","name":"censer_staff"}
+    ]
+   },
+   "seren": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.66,
+    "build": {"width":1,"shoulders":1,"head":1},
+    "palette": {"skin":"#a8785a","hair":"#1a2a3a","cloth":"#2a4a6a","trim":"#e8e0c8","boots":"#1a2028"},
+    "hair": "long-tied",
+    "parts": [{"shape":"cyl","at":[0.4,0.9,0.1],"size":[0.04,1.8,0.04],"c":"trim","bone":"handR","name":"pole"}]
+   },
+   "orsk": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 2.6,
+    "build": {"width":1.6,"shoulders":1.5,"head":0.8},
+    "palette": {"skin":"#8a8a82","hair":"#4a4a44","cloth":"#5a4a3a","trim":"#aaa49a","boots":"#3a342c"},
+    "hair": "bald",
+    "parts": [{"shape":"box","at":[0,2.1,-0.3],"size":[0.9,0.7,0.4],"c":"trim","bone":"spine","name":"rope_coil"}]
+   },
+   "auric": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 2,
+    "build": {"width":1.2,"shoulders":1.3,"head":1},
+    "palette": {"skin":"#6a5a58","hair":"#1a1210","cloth":"#2a1a1a","trim":"#ff6a1a","boots":"#1a1210"},
+    "hair": "crown-fused",
+    "parts": [
+     {"shape":"cone","at":[0,2.2,0],"size":[0.5,0.5,0.5],"c":"trim","bone":"head","name":"crown_of_embers","glow":true},
+     {"shape":"box","at":[0,1.6,-0.3],"size":[1.4,1.8,0.1],"c":"cloth","bone":"spine","secondary":true,"name":"ember_mantle"}
+    ]
+   },
+   "horse_ash": {
+    "kind": "lowpoly",
+    "rig": "quadruped",
+    "length": 2.4,
+    "height": 1.6,
+    "palette": {"coat":"#6a6a70","mane":"#2a2a30","hooves":"#1a1a1a","saddle":"#5a3a24","tack":"#c8a038"},
+    "parts": [],
+    "saddle": true
+   },
+   "horse_wild": {"kind":"lowpoly","rig":"quadruped","length":2.3,"height":1.55,"palette":{"coat":"#8a6a4a","mane":"#3a2a1a","hooves":"#1a1a1a"},"parts":[]},
+   "deer": {"kind":"lowpoly","rig":"quadruped","length":1.5,"height":1.2,"palette":{"coat":"#9a7a52","mane":"#cfc0a0","hooves":"#2a2018"},"parts":[]},
+   "boar": {"kind":"lowpoly","rig":"quadruped","length":1.3,"height":0.8,"palette":{"coat":"#4a3a30","mane":"#2a2018","hooves":"#1a1410"},"parts":[]},
+   "wolf": {"kind":"lowpoly","rig":"quadruped","length":1.3,"height":0.9,"palette":{"coat":"#6a6a6e","mane":"#aaaab0","hooves":"#2a2a2a"},"parts":[]},
+   "ember_wolf": {
+    "kind": "lowpoly",
+    "rig": "quadruped",
+    "length": 1.4,
+    "height": 1,
+    "palette": {"coat":"#2a1c1a","mane":"#ff6a2a","hooves":"#ff9a3a","glow":"#ff6a2a"},
+    "parts": []
+   },
+   "cinder_stag": {
+    "kind": "lowpoly",
+    "rig": "quadruped",
+    "length": 2,
+    "height": 1.8,
+    "palette": {"coat":"#3a2a26","mane":"#ff7a2a","hooves":"#ff9a3a","antlers":"#ff4a1a"},
+    "parts": []
+   },
+   "crow": {
+    "kind": "lowpoly",
+    "palette": {"b":"#1a1a22","e":"#e8d878"},
+    "parts": [{"shape":"sphere","at":[0,0,0],"size":[0.18,0.14,0.3],"c":"b"},{"shape":"box","at":[0,0,0],"size":[0.7,0.03,0.2],"c":"b","name":"wings"}]
+   },
+   "cinder_husk": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.75,
+    "build": {"width":0.9,"shoulders":1,"head":1},
+    "palette": {"skin":"#2a1e1c","hair":"#2a1e1c","cloth":"#3a2a22","trim":"#ff6a1a","boots":"#1a1210"},
+    "hair": "none",
+    "parts": [{"shape":"box","at":[0,1.3,0.1],"size":[0.4,0.5,0.05],"c":"trim","bone":"chest","name":"ember_cracks","glow":true}]
+   },
+   "husk_brute": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 2.5,
+    "build": {"width":1.6,"shoulders":1.7,"head":0.7},
+    "palette": {"skin":"#2a1e1c","cloth":"#3a2a22","trim":"#ff6a1a","boots":"#1a1210"},
+    "hair": "none",
+    "parts": [{"shape":"sphere","at":[0,1.7,0.2],"size":[0.8,0.8,0.7],"c":"trim","bone":"chest","name":"ember_core","glow":true}]
+   },
+   "bog_drowner": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.6,
+    "build": {"width":0.95,"shoulders":1,"head":1},
+    "palette": {"skin":"#5a7a60","cloth":"#2a3a2a","trim":"#8aaa7a","boots":"#2a3a2a"},
+    "hair": "weed",
+    "parts": [{"shape":"box","at":[0,0.2,0],"size":[0.8,0.2,0.8],"c":"trim","bone":"hips","name":"pondweed"}]
+   },
+   "marsh_hag": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 2.1,
+    "build": {"width":1.1,"shoulders":1,"head":1},
+    "palette": {"skin":"#7a9a7a","hair":"#1a1a1a","cloth":"#2a2a1a","trim":"#c8e86a","boots":"#2a2a18"},
+    "hair": "wild",
+    "parts": [{"shape":"cyl","at":[0.5,1.3,0.2],"size":[0.05,2.2,0.05],"c":"trim","bone":"handR","name":"crooked_staff"}]
+   },
+   "bandit": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.78,
+    "build": {"width":1,"shoulders":1,"head":1},
+    "palette": {"skin":"#c89a78","hair":"#3a2a20","cloth":"#5a4a3a","trim":"#8a7a6a","boots":"#2a2018"},
+    "hair": "cap",
+    "parts": [{"shape":"cyl","at":[0.3,1.1,0.12],"size":[0.05,0.9,0.05],"c":"trim","bone":"handR","name":"cudgel"}]
+   },
+   "zealot": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.8,
+    "build": {"width":1,"shoulders":1,"head":1},
+    "palette": {"skin":"#d0b098","cloth":"#6a2418","trim":"#ff5a1a","boots":"#1a1210"},
+    "hair": "cowl",
+    "parts": [{"shape":"cyl","at":[0.3,1.2,0.12],"size":[0.08,1.3,0.08],"c":"trim","bone":"handR","name":"torch_staff","glow":true}]
+   },
+   "gildguard": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.85,
+    "build": {"width":1.15,"shoulders":1,"head":1},
+    "palette": {"skin":"#c8a888","cloth":"#3a4a6a","trim":"#e8c868","boots":"#2a2018"},
+    "hair": "helm",
+    "parts": [
+     {"shape":"box","at":[0,1.4,0],"size":[0.6,0.7,0.4],"c":"trim","bone":"chest","name":"cuirass"},
+     {"shape":"box","at":[-0.35,1.2,0.1],"size":[0.5,0.8,0.06],"c":"cloth","bone":"handL","name":"shield"}
+    ]
+   },
+   "crag_titan": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 5.5,
+    "build": {"width":2.2,"shoulders":2,"head":0.7},
+    "palette": {"skin":"#7a7a74","cloth":"#5a5a54","trim":"#cfc8b4","boots":"#4a4a44"},
+    "hair": "moss",
+    "parts": [{"shape":"box","at":[0,3.5,0],"size":[2.2,1.8,1.2],"c":"cloth","bone":"chest","name":"stone_plates"}]
+   },
+   "slag_serpent": {
+    "kind": "lowpoly",
+    "palette": {"s":"#2a1a14","m":"#ff6a1a","e":"#ffd24a"},
+    "parts": [
+     {"shape":"cyl","at":[0,0,0],"size":[0.9,9,0.9],"c":"s","name":"coils","bones":8},
+     {"shape":"sphere","at":[0,0,5],"size":[1.2,1,1.6],"c":"s","name":"head"},
+     {"shape":"box","at":[0,0.2,5.4],"size":[0.2,0.15,0.3],"c":"e","name":"eyes","glow":true},
+     {"shape":"box","at":[0,0,0],"size":[0.8,8.8,0.8],"c":"m","name":"ember_seams","glow":true}
+    ],
+    "rig": "custom",
+    "bones": 9
+   },
+   "rime_warden": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 3.2,
+    "build": {"width":1.4,"shoulders":1,"head":0.8},
+    "palette": {"skin":"#a8c8e0","cloth":"#7aa8d0","trim":"#e8f4ff","boots":"#5a88b0"},
+    "hair": "ice-spikes",
+    "parts": [{"shape":"cone","at":[0.6,2.4,0],"size":[0.4,2.2,0.4],"c":"trim","bone":"handR","name":"ice_lance","glow":true}]
+   },
+   "frost_wyrm": {
+    "kind": "lowpoly",
+    "palette": {"s":"#8ab0d0","b":"#e8f4ff","e":"#c8f0ff"},
+    "parts": [
+     {"shape":"box","at":[0,0,0],"size":[2,1.6,6],"c":"s","name":"body"},
+     {"shape":"box","at":[0,1,3.5],"size":[0.8,0.8,1.6],"c":"s","name":"head"},
+     {"shape":"box","at":[3,1.2,0],"size":[4,0.1,2.4],"c":"b","name":"wingR"},
+     {"shape":"box","at":[-3,1.2,0],"size":[4,0.1,2.4],"c":"b","name":"wingL"}
+    ],
+    "rig": "custom",
+    "bones": 12
+   },
+   "barrow_wight": {
+    "kind": "lowpoly",
+    "rig": "humanoid",
+    "height": 1.9,
+    "build": {"width":0.9,"shoulders":1,"head":1},
+    "palette": {"skin":"#8a9a9a","cloth":"#3a4a4a","trim":"#6af0d0","boots":"#2a3a3a"},
+    "hair": "wisps",
+    "parts": [{"shape":"sphere","at":[0,1.4,0.15],"size":[0.3,0.3,0.3],"c":"trim","bone":"chest","name":"soul_light","glow":true}]
+   },
+   "cinder_hawk": {
+    "kind": "lowpoly",
+    "palette": {"b":"#2a1c18","w":"#ff6a2a","e":"#ffd24a"},
+    "parts": [
+     {"shape":"sphere","at":[0,0,0],"size":[0.4,0.35,0.9],"c":"b"},
+     {"shape":"box","at":[0,0,0],"size":[2.4,0.06,0.6],"c":"w","name":"wings","glow":true}
+    ]
+   },
+   "campfire": {
+    "kind": "lowpoly",
+    "palette": {"w":"#5a3a24","f":"#ff8a2a","s":"#7a7a74"},
+    "parts": [
+     {"shape":"cyl","at":[0,0.05,0],"size":[0.7,0.1,0.7],"c":"s"},
+     {"shape":"cyl","at":[0,0.2,0],"size":[0.12,0.5,0.12],"c":"w"},
+     {"shape":"cone","at":[0,0.45,0],"size":[0.3,0.5,0.3],"c":"f","glow":true}
+    ]
+   },
+   "alchemy_table": {
+    "kind": "lowpoly",
+    "palette": {"w":"#5a3a24","g":"#9ad8c8","p":"#c8a838"},
+    "parts": [
+     {"shape":"box","at":[0,0.8,0],"size":[1.6,0.1,0.8],"c":"w"},
+     {"shape":"cyl","at":[-0.4,1,0],"size":[0.12,0.4,0.12],"c":"g","glow":true},
+     {"shape":"cyl","at":[0.3,0.98,0.1],"size":[0.1,0.3,0.1],"c":"p"}
+    ]
+   },
+   "meditation_shrine": {
+    "kind": "lowpoly",
+    "palette": {"s":"#8a8a82","f":"#7ac0e8"},
+    "parts": [{"shape":"box","at":[0,0.6,0],"size":[0.9,1.2,0.5],"c":"s"},{"shape":"cone","at":[0,1.5,0],"size":[0.4,0.5,0.4],"c":"f","glow":true}]
+   },
+   "seal_stone": {
+    "kind": "lowpoly",
+    "palette": {"s":"#6a6a72","r":"#ff6a1a"},
+    "parts": [
+     {"shape":"box","at":[0,1.2,0],"size":[1,2.4,0.6],"c":"s"},
+     {"shape":"box","at":[0,1.4,0.31],"size":[0.6,1.2,0.02],"c":"r","glow":true,"name":"rune"}
+    ]
+   },
+   "chest": {
+    "kind": "lowpoly",
+    "palette": {"w":"#6a4a2a","i":"#8a8a8a"},
+    "parts": [{"shape":"box","at":[0,0.3,0],"size":[0.9,0.6,0.6],"c":"w"},{"shape":"box","at":[0,0.62,0],"size":[0.92,0.1,0.62],"c":"i"}]
+   },
+   "anvil": {
+    "kind": "lowpoly",
+    "palette": {"i":"#4a4a52","w":"#5a3a24"},
+    "parts": [{"shape":"box","at":[0,0.4,0],"size":[0.3,0.8,0.3],"c":"w"},{"shape":"box","at":[0,0.85,0],"size":[0.9,0.2,0.35],"c":"i"}]
+   },
+   "house_stone": {
+    "kind": "lowpoly",
+    "palette": {"s":"#8a8478","r":"#7a4a38","w":"#5a4a38"},
+    "parts": [
+     {"shape":"box","at":[0,1.5,0],"size":[6,3,5],"c":"s"},
+     {"shape":"cone","at":[0,3.6,0],"size":[4.8,1.8,4],"c":"r"},
+     {"shape":"box","at":[0,1,2.5],"size":[1,2,0.1],"c":"w"}
+    ]
+   },
+   "crown_of_embers": {
+    "kind": "lowpoly",
+    "palette": {"c":"#3a2420","e":"#ff6a1a"},
+    "parts": [{"shape":"cyl","at":[0,0,0],"size":[0.5,0.15,0.5],"c":"c"},{"shape":"cone","at":[0,0.2,0],"size":[0.4,0.4,0.4],"c":"e","glow":true}],
+    "scale": 1
+   }
+  }
+ },
+ "graphics": [
+  {"use":"graphics.render.mesh3d","with":{"shadows":"cascade","drawDistance":1600,"instancing":true}},
+  {
+   "use": "graphics.terrain.procedural",
+   "with": {
+    "lodLevels": 5,
+    "patch": 64,
+    "splat": [
+     {"biome":"hearth_vale","color":"#6a9a4a","roughness":0.95},
+     {"biome":"mirewood","color":"#3a4a2a","roughness":1},
+     {"biome":"gildmere","color":"#8a8470","roughness":0.9},
+     {"biome":"saltmarch","color":"#b8a888","roughness":0.85},
+     {"biome":"stonecrown","color":"#7a7a74","roughness":0.9},
+     {"biome":"ashen_barrens","color":"#2a2220","roughness":1},
+     {"biome":"frostreach","color":"#e8f0f8","roughness":0.7},
+     {"biome":"the_veil","color":"#1a1210","roughness":1},
+     {"slope":[48,90],"color":"#6a6a66","roughness":0.95},
+     {"height":[520,900],"color":"#f0f4fa","roughness":0.6}
+    ],
+    "grass": {"density":0.8,"height":0.4,"windSway":0.3},
+    "water": {"level":0,"color":"#2a5a7a","foam":true,"reflect":true},
+    "fog": {"near":300,"far":1800,"color":"#a8b8c8"}
+   }
+  },
+  {"use":"graphics.foliage.scatter","with":{"windSway":0.3,"lodDistance":400,"cull":900}},
+  {
+   "use": "graphics.sky",
+   "with": {"palette":{"dawn":"#f0b880","day":"#78a8d8","dusk":"#d86a50","night":"#0a1020"},"fogDensity":0.003,"clouds":0.5,"sunTilt":28,"stars":true}
+  },
+  {"use":"graphics.camera.third-person","with":{"distance":4.2,"height":1.7,"fov":65,"lockOnBlend":0.8,"shoulder":"right","collide":true}},
+  {"use":"graphics.model.lowpoly","with":{"segments":12,"flatShade":true}},
+  {
+   "use": "graphics.rig.humanoid",
+   "with": {
+    "scale": 1,
+    "proportions": {"legs":0.5,"arms":0.4,"torso":0.3,"head":0.13},
+    "attach": [{"bone":"back","slot":"weapon","model":"sword"},{"bone":"handR","slot":"weapon"},{"bone":"handL","slot":"torch"}]
+   }
+  },
+  {"use":"graphics.rig.quadruped","with":{"legLength":0.9,"bodyLength":1.6,"saddle":true}},
+  {
+   "use": "graphics.anim.clips",
+   "with": {
+    "presets": [
+     "idle",
+     "walk",
+     "run",
+     "sprint",
+     "jump",
+     "land",
+     "light_attack_1",
+     "light_attack_2",
+     "light_attack_3",
+     "heavy_attack",
+     "dodge_roll",
+     "block_idle",
+     "parry",
+     "hurt",
+     "die",
+     "climb_up",
+     "climb_idle",
+     "glide_pose",
+     "ride_walk",
+     "ride_gallop",
+     "drink",
+     "cook",
+     "meditate",
+     "bow_draw",
+     "bow_release",
+     "sign_cast",
+     "talk_gesture",
+     "mount",
+     "dismount"
+    ]
+   }
+  },
+  {
+   "use": "graphics.anim.locomotion",
+   "with": {"idleWalkRun":[0.2,2.2,5],"turnLean":0.4,"strafe":true,"states":["grounded","airborne","climb","swim","glide","ride","lockon"]}
+  },
+  {
+   "use": "graphics.anim.ik",
+   "with": {"foot":true,"hand":true,"lookAt":{"maxYaw":70,"maxPitch":35,"targets":["npc","lockon","interactable"]},"pelvisAdjust":true,"iterations":8}
+  },
+  {
+   "use": "graphics.anim.secondary",
+   "with": {
+    "chains": [
+     {"bones":["cape_1","cape_2","cape_3"],"stiffness":0.3,"damping":0.7},
+     {"bones":["hair_1","hair_2"],"stiffness":0.5,"damping":0.6},
+     {"bones":["mane_1","mane_2","mane_3"],"stiffness":0.4,"damping":0.6},
+     {"bones":["tail_1","tail_2","tail_3"],"stiffness":0.35,"damping":0.65}
+    ]
+   }
+  },
+  {"use":"graphics.anim.ragdoll","with":{"onDeath":true,"maxActive":8,"fadeSec":12}},
+  {
+   "use": "graphics.material.palette",
+   "with": {"colors":{"skin":"#c89a78","cloth":"#3a3f46"},"faceShade":[1,0.7,0.85],"style":"toon","emissive":["ember","glow"]}
+  },
+  {
+   "use": "graphics.particles",
+   "with": {
+    "budget": 8000,
+    "presets": [
+     {"id":"ash","shape":"ember","color":"#ff7a2a","count":40,"life":3,"speed":1,"gravity":-0.2},
+     {"id":"ashfall","shape":"dust","color":"#4a4440","count":200,"life":6,"speed":0.6,"gravity":0.8},
+     {"id":"rain","shape":"rain","color":"#a8c0d8","count":400,"life":1,"speed":18,"gravity":12},
+     {"id":"snow","shape":"snow","color":"#ffffff","count":300,"life":8,"speed":2,"gravity":0.6},
+     {"id":"hit_spark","shape":"spark","color":"#fff0c0","count":14,"life":0.3,"speed":9,"gravity":4},
+     {"id":"blood","shape":"splash","color":"#6a1a1a","count":12,"life":0.5,"speed":5,"gravity":10},
+     {"id":"cook_smoke","shape":"smoke","color":"#c8c0b0","count":12,"life":2,"speed":1.2,"gravity":-0.5},
+     {"id":"sign_fire","shape":"glow","color":"#ff6a1a","count":60,"life":0.6,"speed":7,"gravity":0}
+    ],
+    "bind": [
+     {"event":"hit","preset":"hit_spark","at":"target"},
+     {"event":"damaged","preset":"blood","at":"target"},
+     {"event":"crafted:*","preset":"cook_smoke","at":"self"}
+    ]
+   }
+  },
+  {"use":"graphics.post","with":{"bloom":0.9,"tonemap":"aces","outline":0,"vignette":0.25,"grain":0.04,"ssao":true}},
+  {"use":"graphics.fx.feedback","with":{"hitStop":45,"shake":0.5,"damageFlash":true,"slowmoOn":["boss_defeated:*","parried"]}},
+  {
+   "use": "graphics.audio.synth",
+   "with": {
+    "cues": [
+     {"event":"hit","voice":"noise","pitch":200,"gain":0.5},
+     {"event":"parried","voice":"blip","pitch":880,"gain":0.6},
+     {"event":"item_gained","voice":"chord","pitch":523,"gain":0.3},
+     {"event":"quest_complete","voice":"chord","pitch":392,"gain":0.5},
+     {"event":"mounted","voice":"pad","pitch":196,"gain":0.3}
+    ],
+    "music": [
+     {"zone":"hearth_vale","mode":"dorian","bpm":78,"layers":["strings","whistle"]},
+     {"zone":"mirewood","mode":"aeolian","bpm":56,"layers":["drone","pluck"]},
+     {"zone":"gildmere","mode":"mixolydian","bpm":100,"layers":["lute","drum"]},
+     {"zone":"saltmarch","mode":"dorian","bpm":70,"layers":["accordion","surf"]},
+     {"zone":"stonecrown","mode":"lydian","bpm":60,"layers":["horn","wind"]},
+     {"zone":"ashen_barrens","mode":"phrygian","bpm":90,"layers":["perc","drone"]},
+     {"zone":"frostreach","mode":"aeolian","bpm":64,"layers":["choir","bell"]},
+     {"zone":"the_veil","mode":"locrian","bpm":50,"layers":["choir","drone","perc"]},
+     {"when":{"var":"in_combat","gte":1},"mode":"aeolian","bpm":130,"layers":["perc","strings"]}
+    ]
+   }
+  },
+  {
+   "use": "graphics.ui.hud",
+   "with": {
+    "meters": [{"pool":"stamina","color":"#7ac060","pos":"bottom-center"},{"pool":"focus","color":"#5a9ae0","pos":"bottom-left"}],
+    "counters": [{"var":"hp","icon":"heart","pos":"bottom-left"},{"var":"money.crowns","icon":"crown","pos":"top-right"}],
+    "prompt": true,
+    "compass": true,
+    "clock": true,
+    "status": true,
+    "bossBar": true,
+    "crosshair": "dot"
+   }
+  },
+  {"use":"graphics.ui.dialogue","with":{"portrait":true,"style":"ink"}},
+  {"use":"graphics.ui.journal","with":{"tabs":["quests","lore","bestiary","characters"]}},
+  {
+   "use": "graphics.ui.minimap",
+   "with": {
+    "radius": 150,
+    "rotate": true,
+    "shape": "circle",
+    "markers": [
+     {"tag":"quest","icon":"!","color":"#e8c030"},
+     {"tag":"shrine","icon":"S","color":"#7ac0e8"},
+     {"tag":"enemy","icon":"x","color":"#d84040"},
+     {"tag":"shop","icon":"$","color":"#c8a040"}
+    ]
+   }
+  },
+  {"use":"graphics.ui.map","with":{"fog":true,"fastTravel":true,"layers":["regions","roads","shrines","quests","contracts"]}},
+  {"use":"graphics.ui.inventory","with":{"panels":["items","equipment","crafting","container","shop","skills"],"sort":true}},
+  {"use":"graphics.ui.menu","with":{"slots":5}}
+ ],
+ "player": {
+  "archetype": "sael",
+  "space": "realm",
+  "at": [3072,4800],
+  "abilities": ["silver_sense"],
+  "inventory": [
+   {"item":"warden_blade","count":1},
+   {"item":"hunting_bow","count":1},
+   {"item":"arrow","count":30},
+   {"item":"apple","count":3},
+   {"item":"crowns","count":60}
+  ]
+ }
+}

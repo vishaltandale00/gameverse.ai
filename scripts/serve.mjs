@@ -8,6 +8,7 @@ import { gameCatalog, customArtifacts } from './catalog.mjs';
 import { createVoiceApi } from './voice-api.mjs';
 import { createAgentApi, qualificationCaps } from './agent-api.mjs';
 import { attachVoiceStream, realtimeTranscriptionProviders } from './voice-stream.mjs';
+import { handleV2 } from '../v2/server/index.mjs';
 
 const appRoot = fileURLToPath(root);
 try { loadEnvFile(fileURLToPath(new URL('.env', root))); } catch (error) { if (error.code !== 'ENOENT') throw error; }
@@ -43,6 +44,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (await handleVoice(req, res, path)) return;
     if (await handleAgent(req, res, path)) return;
+    if (await handleV2(req, res, path)) return;
     if (path.startsWith('/api/')) {
       res.writeHead(404, { 'Content-Type': mime['.json'] }).end(JSON.stringify({ error: `No API route '${path}'. Start the dev server with node scripts/serve.mjs.` }));
       return;

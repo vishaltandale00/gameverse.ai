@@ -1,0 +1,106 @@
+{
+  "schema": "gameverse.v2.game-spec/0.1",
+  "id": "blaster-run",
+  "title": "Blaster Run",
+  "pitch": "Blast through a robot patrol and reach the exit portal.",
+  "seed": 11,
+  "background": "#1a1430",
+  "level": {
+    "rows": [
+      "########################################",
+      "#......................................#",
+      "#..........R.............R.............#",
+      "#.......#######.......#######......O...#",
+      "#..................................###.#",
+      "#...P.......R.........R.........R......#",
+      "#########...####^^^#######..############",
+      "########################################"
+    ],
+    "legend": {
+      "#": "metal",
+      "P": "pilot",
+      "R": "robot",
+      "O": "portal",
+      "^": "laser"
+    }
+  },
+  "entities": {
+    "metal": {
+      "solid": true,
+      "color": "#4a4470"
+    },
+    "pilot": {
+      "tags": [
+        "player"
+      ],
+      "glyph": "🧑‍🚀",
+      "w": 0.8,
+      "h": 0.9
+    },
+    "robot": {
+      "tags": [
+        "enemy"
+      ],
+      "glyph": "🤖",
+      "w": 0.9,
+      "h": 0.9
+    },
+    "portal": {
+      "tags": [
+        "goal"
+      ],
+      "glyph": "🌀",
+      "w": 1,
+      "h": 1
+    },
+    "laser": {
+      "tags": [
+        "hazard"
+      ],
+      "glyph": "⚡",
+      "w": 1,
+      "h": 0.5
+    }
+  },
+  "modules": [
+    {
+      "use": "platformer",
+      "with": {
+        "jumpSpeed": 17
+      }
+    },
+    {
+      "use": "patrol",
+      "with": {
+        "speed": 2.5,
+        "stomp": false
+      }
+    },
+    {
+      "use": "shooter",
+      "with": {
+        "target": "enemy"
+      }
+    },
+    {
+      "use": "hazard"
+    },
+    {
+      "use": "health",
+      "with": {
+        "hp": 3
+      }
+    },
+    {
+      "use": "goal"
+    }
+  ],
+  "win": {
+    "count": "reach_goal",
+    "gte": 1
+  },
+  "lose": {
+    "var": "hp",
+    "lte": 0
+  }
+}

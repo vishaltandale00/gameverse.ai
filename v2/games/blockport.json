@@ -1,0 +1,4207 @@
+{
+ "schema": "gameverse.v2.game/0.2",
+ "id": "blockport",
+ "title": "Blockport",
+ "seed": 31415,
+ "logline": "Mine it, build it, drive it, steal it: a block-built harbor city where every lot is a fight over who owns the ground.",
+ "views": {"primary":"3p","alternates":["1p"]},
+ "plot": {
+  "premise": "Blockport is a Tidewrights' charter town where every citizen is entitled to a lot. Someone is selling forged deeds and the Charter's original register is buried in a vault beneath the quarry. Kit Alder, a builder with a hand axe and a charter pass, can mine and build a life, drive and fight a city, or take the Ironmonger's deal and find out what the ground is really worth.",
+  "factions": [
+   {"id":"harbor","name":"Harbor Row"},
+   {"id":"city","name":"City of Blockport","ranks":[{"at":0,"title":"Citizen"},{"at":30,"title":"Friend of the City"}]},
+   {"id":"police","name":"Blockport PD","hostileBelow":-50},
+   {"id":"underworld","name":"The Syndicate","ranks":[{"at":0,"title":"Stranger"},{"at":25,"title":"Associate"},{"at":60,"title":"Made"}]},
+   {"id":"miners","name":"Miners' Guild","ranks":[{"at":0,"title":"Visitor"},{"at":20,"title":"Guild Friend"}]},
+   {"id":"farmers","name":"Greenmeadow Farmers"},
+   {"id":"citizen","name":"Citizens"},
+   {"id":"syndicate","name":"Syndicate Muscle","hostileBelow":101},
+   {"id":"night","name":"Night Mobs","hostileBelow":101},
+   {"id":"free","name":"Free Folk"}
+  ],
+  "characters": [
+   {"id":"kit","name":"Kit Alder","role":"player; newly arrived builder with a Tidewrights' charter pass","archetype":"kit","model":"kit"},
+   {
+    "id": "odalys",
+    "name": "Odalys Penn",
+    "role": "harbormaster, deed registrar",
+    "archetype": "npc_odalys",
+    "model": "odalys",
+    "home": "harbor_row",
+    "faction": "harbor",
+    "dialogue": [{"when":{"quest":"m1_landfall","state":"complete"},"id":"odalys_registry"},{"id":"odalys_welcome"}],
+    "schedule": [
+     {"from":6,"to":19,"zone":"harbor_row","at":[-300,62,220],"doing":"office"},
+     {"from":19,"to":22,"zone":"harbor_row","at":[-330,62,260],"doing":"diner"},
+     {"from":22,"to":6,"zone":"harbor_row","at":[-310,62,190],"doing":"sleep"}
+    ]
+   },
+   {
+    "id": "tobi",
+    "name": "Tobi Fenwick",
+    "role": "teenage mechanic, car dealer",
+    "archetype": "npc_tobi",
+    "model": "tobi",
+    "home": "harbor_row",
+    "faction": "harbor",
+    "dialogue": [{"when":{"flag":"sedan_fixed"},"id":"tobi_after"},{"id":"tobi_garage"}],
+    "schedule": [
+     {"from":7,"to":20,"zone":"harbor_row","at":[-270,62,240],"doing":"garage"},
+     {"from":20,"to":7,"zone":"harbor_row","at":[-268,62,250],"doing":"sleep"}
+    ]
+   },
+   {
+    "id": "renna",
+    "name": "Inspector Renna Calloway",
+    "role": "Blockport PD inspector",
+    "archetype": "npc_renna",
+    "model": "renna",
+    "home": "old_quarter",
+    "faction": "police",
+    "dialogue": [{"when":{"flag":"syndicate_job_done"},"id":"renna_bust_warning"},{"id":"renna_warning"}],
+    "schedule": [
+     {"from":8,"to":20,"zone":"old_quarter","at":[0,62,200],"doing":"precinct"},
+     {"from":20,"to":8,"zone":"old_quarter","at":[20,62,260],"doing":"sleep"}
+    ]
+   },
+   {
+    "id": "cassian",
+    "name": "Cassian Mire",
+    "role": "the Ironmonger, Syndicate boss",
+    "archetype": "cassian_mire",
+    "model": "cassian",
+    "home": "foundry_flats",
+    "faction": "underworld",
+    "dialogue": [{"when":{"flag":"syndicate_betrayed"},"id":"cassian_final"},{"id":"cassian_offer"}],
+    "schedule": [
+     {"from":10,"to":22,"zone":"foundry_flats","at":[300,62,100],"doing":"office"},
+     {"from":22,"to":10,"zone":"foundry_flats","at":[320,90,120],"doing":"penthouse"}
+    ]
+   },
+   {
+    "id": "imelda",
+    "name": "Dr. Imelda Ashgrove",
+    "role": "city geologist",
+    "archetype": "npc_imelda",
+    "model": "imelda",
+    "home": "quarry_hills",
+    "faction": "city",
+    "dialogue": [{"id":"imelda_survey"}],
+    "schedule": [
+     {"from":7,"to":19,"zone":"quarry_hills","at":[-100,98,-400],"doing":"survey"},
+     {"from":19,"to":7,"zone":"greenmeadow","at":[-200,62,-100],"doing":"sleep"}
+    ]
+   },
+   {
+    "id": "bram",
+    "name": "Bram Oakhart",
+    "role": "quarry foreman, Miners' Guild",
+    "archetype": "npc_bram",
+    "model": "bram",
+    "home": "quarry_hills",
+    "faction": "miners",
+    "dialogue": [{"when":{"quest":"m3_quarry_run","state":"complete"},"id":"bram_after"},{"id":"bram_contract"}],
+    "schedule": [
+     {"from":6,"to":18,"zone":"quarry_hills","at":[-60,96,-360],"doing":"foreman"},
+     {"from":18,"to":22,"zone":"greenmeadow","at":[-220,62,-50],"doing":"tavern"},
+     {"from":22,"to":6,"zone":"quarry_hills","at":[-55,96,-355],"doing":"sleep"}
+    ]
+   },
+   {
+    "id": "vesper",
+    "name": "Vesper Lang",
+    "role": "getaway driver and fixer",
+    "archetype": "npc_vesper",
+    "model": "vesper",
+    "home": "foundry_flats",
+    "faction": "underworld",
+    "dialogue": [{"when":{"flag":"syndicate_betrayed"},"id":"vesper_ally"},{"id":"vesper_wheel"}],
+    "schedule": [
+     {"from":14,"to":24,"zone":"foundry_flats","at":[250,62,60],"doing":"garage"},
+     {"from":0,"to":14,"zone":"foundry_flats","at":[255,62,70],"doing":"sleep"}
+    ]
+   },
+   {
+    "id": "leopold",
+    "name": "Mayor Leopold Stray",
+    "role": "mayor of Blockport",
+    "archetype": "npc_leopold",
+    "model": "leopold",
+    "home": "glass_heights",
+    "faction": "city",
+    "dialogue": [{"id":"leopold_reveal"}],
+    "schedule": [
+     {"from":9,"to":18,"zone":"glass_heights","at":[0,160,-40],"doing":"city_hall"},
+     {"from":18,"to":23,"zone":"glass_heights","at":[40,62,-20],"doing":"gala"},
+     {"from":23,"to":9,"zone":"glass_heights","at":[10,190,-60],"doing":"penthouse"}
+    ]
+   },
+   {
+    "id": "ysolde",
+    "name": "Ysolde Kade",
+    "role": "architect of the Glass Heights towers",
+    "archetype": "npc_ysolde",
+    "model": "ysolde",
+    "home": "glass_heights",
+    "faction": "city",
+    "dialogue": [{"id":"ysolde_plan"}],
+    "schedule": [
+     {"from":8,"to":20,"zone":"glass_heights","at":[-60,150,-70],"doing":"studio"},
+     {"from":20,"to":8,"zone":"glass_heights","at":[-70,62,-90],"doing":"sleep"}
+    ]
+   },
+   {
+    "id": "gus",
+    "name": "Old Gus Tarn",
+    "role": "hermit of the Deep Works",
+    "archetype": "npc_gus",
+    "model": "gus",
+    "home": "the_deep_works",
+    "faction": "free",
+    "dialogue": [{"id":"gus_depths"}]
+   },
+   {
+    "id": "fenn",
+    "name": "Fenn Aldous",
+    "role": "pawnbroker and fence",
+    "archetype": "npc_fenn",
+    "model": "fenn",
+    "home": "old_quarter",
+    "faction": "underworld",
+    "dialogue": [{"id":"fenn_pawn"}],
+    "schedule": [
+     {"from":10,"to":22,"zone":"old_quarter","at":[-40,62,280],"doing":"shop"},
+     {"from":22,"to":10,"zone":"old_quarter","at":[-42,62,290],"doing":"sleep"}
+    ]
+   },
+   {
+    "id": "nell",
+    "name": "Nell Tamsin",
+    "role": "radio DJ, Radio Blockport 88.3",
+    "archetype": "npc_nell",
+    "model": "nell",
+    "home": "glass_heights",
+    "faction": "city",
+    "dialogue": [{"id":"nell_request"}],
+    "schedule": [
+     {"from":6,"to":18,"zone":"glass_heights","at":[90,150,30],"doing":"studio"},
+     {"from":18,"to":6,"zone":"glass_heights","at":[95,62,40],"doing":"sleep"}
+    ]
+   },
+   {
+    "id": "maude",
+    "name": "Sister Maude Pell",
+    "role": "Greenmeadow farmer and grocer",
+    "archetype": "npc_maude",
+    "model": "maude",
+    "home": "greenmeadow",
+    "faction": "farmers",
+    "dialogue": [{"id":"maude_farm"}],
+    "schedule": [
+     {"from":5,"to":17,"zone":"greenmeadow","at":[-300,62,-100],"doing":"farm"},
+     {"from":17,"to":20,"zone":"greenmeadow","at":[-310,62,-90],"doing":"market"},
+     {"from":20,"to":5,"zone":"greenmeadow","at":[-305,62,-110],"doing":"sleep"}
+    ]
+   },
+   {
+    "id": "billie",
+    "name": "Billie Cross",
+    "role": "airmail pilot",
+    "archetype": "npc_billie",
+    "model": "billie",
+    "home": "airfield",
+    "faction": "city",
+    "dialogue": [{"id":"billie_airmail"}],
+    "schedule": [{"from":7,"to":19,"zone":"airfield","at":[560,62,-50],"doing":"hangar"},{"from":19,"to":7,"zone":"airfield","at":[565,62,-45],"doing":"sleep"}]
+   },
+   {
+    "id": "dex",
+    "name": "Dex Harrow",
+    "role": "Syndicate enforcer",
+    "archetype": "dex_harrow",
+    "model": "dex",
+    "home": "foundry_flats",
+    "faction": "underworld",
+    "dialogue": [{"id":"dex_taunt"}]
+   },
+   {
+    "id": "pruitt",
+    "name": "Pruitt",
+    "role": "the mayor's aide",
+    "archetype": "npc_pruitt",
+    "model": "pruitt",
+    "home": "glass_heights",
+    "faction": "city",
+    "dialogue": [{"id":"pruitt_invite"}]
+   }
+  ],
+  "storyboard": {
+   "acts": [
+    {
+     "id": "act1",
+     "title": "Landfall",
+     "summary": "Kit arrives at Harbor Row with a charter pass and a hand axe. Learn to mine, craft and build; get wheels; see the first signs of the forged-deed racket.",
+     "beats": [
+      {"id":"b_arrive","title":"Ferry arrival","do":[{"do":"play_cutscene","cutscene":"cs_arrive"},{"do":"set_time","hour":8}]},
+      {
+       "id": "b_odalys",
+       "title": "Meet the Harbormaster",
+       "when": {"flag":"met_odalys"},
+       "do": [
+        {"do":"start_quest","quest":"m1_landfall"},
+        {"do":"bark","channel":"radio","line":"Radio Blockport: welcome to the best-built bad idea on the coast."}
+       ],
+       "after": ["b_arrive"]
+      },
+      {
+       "id": "b_first_tree",
+       "title": "First tree",
+       "when": {"item":"b_log","gte":1},
+       "do": [{"do":"notify","text":"Break blocks with the hand axe. Craft planks in your inventory.","kind":"info"}],
+       "after": ["b_odalys"]
+      },
+      {
+       "id": "b_workbench",
+       "title": "Workbench",
+       "when": {"item":"workbench"},
+       "do": [{"do":"notify","text":"Place a workbench for tools.","kind":"info"}],
+       "after": ["b_first_tree"]
+      },
+      {
+       "id": "b_shelter",
+       "title": "First shelter",
+       "when": {"objective":"o_build","quest":"m1_landfall","state":"done"},
+       "do": [{"do":"add_entry","entry":"e_building"},{"do":"give_item","item":"b_lamp","count":4}],
+       "after": ["b_workbench"]
+      },
+      {
+       "id": "b_first_night",
+       "title": "First night",
+       "when": {"daytime":"night"},
+       "do": [
+        {"do":"spawn","archetype":"gloomer","zone":"greenmeadow","count":3},
+        {"do":"notify","text":"Mobs spawn in the dark outside the city. Sleep or light your lot.","kind":"warn"},
+        {"do":"add_entry","entry":"e_night"}
+       ],
+       "after": ["b_shelter"]
+      },
+      {
+       "id": "b_tobi",
+       "title": "Meet Tobi",
+       "when": {"near":"tobi","within":12},
+       "do": [{"do":"add_entry","entry":"e_tobi"}],
+       "after": ["b_odalys"],
+       "optional": true
+      },
+      {
+       "id": "b_wheels",
+       "title": "Sedan running",
+       "when": {"flag":"sedan_fixed"},
+       "do": [
+        {"do":"spawn","archetype":"sedan","zone":"harbor_row"},
+        {"do":"add_entry","entry":"e_cars"},
+        {"do":"notify","text":"Press E near a car to enter. Cops notice stolen cars.","kind":"info"}
+       ],
+       "after": ["b_odalys"]
+      },
+      {
+       "id": "b_first_ride",
+       "title": "First drive",
+       "when": {"quest":"m2_first_wheels","state":"complete"},
+       "do": [
+        {"do":"unlock_ability","ability":"driving_license"},
+        {"do":"bark","channel":"radio","line":"And on 88.3, a new driver on Harbor Row. Please drive like you mean it."}
+       ],
+       "after": ["b_wheels"]
+      },
+      {
+       "id": "b_witness",
+       "title": "Witnessed a crime",
+       "when": {"count":"crime","gte":1},
+       "do": [
+        {"do":"add_entry","entry":"e_wanted"},
+        {"do":"notify","text":"Police stars rise with crimes. Break line of sight and hide to cool off.","kind":"warn"}
+       ],
+       "after": ["b_first_ride"],
+       "optional": true
+      }
+     ]
+    },
+    {
+     "id": "act2",
+     "title": "Foundations",
+     "summary": "Mining, a quarry contract, forged deeds, and an offer from the Ironmonger that is hard to refuse.",
+     "beats": [
+      {
+       "id": "b_quarry",
+       "title": "Quarry Hills",
+       "when": {"zone":"quarry_hills"},
+       "do": [{"do":"add_entry","entry":"e_quarry"},{"do":"start_quest","quest":"m3_quarry_run"}]
+      },
+      {
+       "id": "b_ore",
+       "title": "Iron in the seam",
+       "when": {"item":"iron_raw","gte":6},
+       "do": [{"do":"learn_recipe","recipe":"r_iron_ingot"},{"do":"give_item","item":"coal","count":6}],
+       "after": ["b_quarry"]
+      },
+      {
+       "id": "b_smelt",
+       "title": "First ingot",
+       "when": {"item":"iron_ingot","gte":1},
+       "do": [{"do":"learn_recipe","recipe":"r_steel_ingot"}],
+       "after": ["b_ore"]
+      },
+      {
+       "id": "b_old_quarter",
+       "title": "Old Quarter",
+       "when": {"zone":"old_quarter"},
+       "do": [{"do":"start_quest","quest":"m4_deed_trouble"},{"do":"add_entry","entry":"e_old_quarter"}],
+       "after": ["b_odalys"]
+      },
+      {"id":"b_blue_ink","title":"The blue ink","when":{"flag":"fenn_clue"},"do":[{"do":"add_entry","entry":"e_blue_ink"}],"after":["b_old_quarter"]},
+      {
+       "id": "b_foundry",
+       "title": "Foundry Flats",
+       "when": {"zone":"foundry_flats"},
+       "do": [{"do":"play_cutscene","cutscene":"cs_foundry"},{"do":"add_entry","entry":"e_foundry"}],
+       "after": ["b_quarry"]
+      },
+      {
+       "id": "b_cassian",
+       "title": "The Ironmonger",
+       "when": {"flag":"cassian_offered"},
+       "do": [{"do":"start_quest","quest":"m5_the_offer"},{"do":"add_rep","faction":"underworld","delta":5}],
+       "after": ["b_foundry"]
+      },
+      {
+       "id": "b_wanted3",
+       "title": "Heat",
+       "when": {"var":"wanted","gte":3},
+       "do": [{"do":"bark","channel":"radio","line":"Police report: all units, a stolen van in Foundry Flats."}],
+       "after": ["b_cassian"],
+       "optional": true
+      },
+      {
+       "id": "b_job_done",
+       "title": "Job done",
+       "when": {"flag":"syndicate_job_done"},
+       "do": [
+        {"do":"give_money","amount":2000,"currency":"bucks"},
+        {"do":"add_entry","entry":"e_syndicate"},
+        {"do":"start_dialogue","dialogue":"renna_bust_warning","with":"renna"}
+       ],
+       "after": ["b_cassian"]
+      }
+     ]
+    },
+    {
+     "id": "act3",
+     "title": "Glass Heights",
+     "summary": "A gala, a keycard, a vault, three stars of heat and a betrayal. The third act tests how much of the city you have learned.",
+     "beats": [
+      {
+       "id": "b_heights",
+       "title": "Glass Heights",
+       "when": {"zone":"glass_heights"},
+       "do": [{"do":"play_cutscene","cutscene":"cs_heights"},{"do":"add_entry","entry":"e_heights"}]
+      },
+      {
+       "id": "b_ysolde",
+       "title": "Ysolde's plan",
+       "when": {"said":"ysolde_plan","node":"n4"},
+       "do": [{"do":"start_quest","quest":"m6_heights_plan"}],
+       "after": ["b_heights"]
+      },
+      {
+       "id": "b_gala",
+       "title": "The gala",
+       "when": {"flag":"gala_invited"},
+       "do": [{"do":"give_item","item":"keycard_heights"},{"do":"add_entry","entry":"e_gala"}],
+       "after": ["b_ysolde"]
+      },
+      {
+       "id": "b_mayor_pass",
+       "title": "The mayor shows his hand",
+       "when": {"flag":"mayor_revealed"},
+       "do": [{"do":"add_entry","entry":"e_mayor_secret"},{"do":"add_rep","faction":"city","delta":5}],
+       "after": ["b_gala"],
+       "optional": true
+      },
+      {
+       "id": "b_prep",
+       "title": "Ready for the vault",
+       "when": {"quest":"m6_heights_plan","state":"complete"},
+       "do": [{"do":"start_quest","quest":"m7_the_heist"},{"do":"set_checkpoint","zone":"glass_heights"}],
+       "after": ["b_gala"]
+      },
+      {
+       "id": "b_vault",
+       "title": "Thermite lit",
+       "when": {"used":"heights_vault","gte":1},
+       "do": [
+        {"do":"set_wanted","level":3},
+        {"do":"shake","amount":0.6},
+        {"do":"bark","channel":"radio","line":"Breaking: explosion reported at Glass Heights Tower Three."}
+       ],
+       "after": ["b_prep"]
+      },
+      {
+       "id": "b_bit",
+       "title": "The drill bit",
+       "when": {"item":"drill_bit"},
+       "do": [{"do":"set_wanted","level":4},{"do":"add_entry","entry":"e_foundation_vault"}],
+       "after": ["b_vault"]
+      },
+      {
+       "id": "b_escape",
+       "title": "Escape",
+       "when": {"all":[{"item":"drill_bit"},{"var":"wanted","lte":0}]},
+       "do": [{"do":"complete_quest","quest":"m7_the_heist"},{"do":"give_money","amount":3000,"currency":"bucks"}],
+       "after": ["b_bit"]
+      },
+      {
+       "id": "b_betrayal",
+       "title": "Mire's betrayal",
+       "when": {"zone":"foundry_flats"},
+       "do": [
+        {"do":"start_quest","quest":"m8_betrayal"},
+        {"do":"spawn","archetype":"thug","zone":"foundry_flats","count":8},
+        {"do":"spawn","archetype":"dex_harrow","zone":"foundry_flats"},
+        {"do":"set_flag","flag":"syndicate_betrayed"}
+       ],
+       "after": ["b_escape"]
+      },
+      {
+       "id": "b_dex_down",
+       "title": "Dex down",
+       "when": {"boss":"dex","state":"defeated"},
+       "do": [{"do":"add_entry","entry":"e_dex"},{"do":"start_quest","quest":"m9_deep_works"}],
+       "after": ["b_betrayal"]
+      }
+     ]
+    },
+    {
+     "id": "act4",
+     "title": "Bedrock",
+     "summary": "Beneath the Quarry Hills, the old rail line and the vault of the first Tidewrights. Whoever holds the First Ledger holds the city.",
+     "beats": [
+      {
+       "id": "b_descend",
+       "title": "Into the Deep Works",
+       "when": {"zone":"the_deep_works"},
+       "do": [{"do":"play_cutscene","cutscene":"cs_deep_works"},{"do":"add_entry","entry":"e_deep_works"}]
+      },
+      {
+       "id": "b_gus",
+       "title": "Old Gus",
+       "when": {"flag":"gus_helped"},
+       "do": [{"do":"give_item","item":"rail_fuse","count":3},{"do":"add_entry","entry":"e_first_ledger"}],
+       "after": ["b_descend"]
+      },
+      {
+       "id": "b_fuses",
+       "title": "Power restored",
+       "when": {"used":"rail_fuse_box","gte":3},
+       "do": [{"do":"unlock","gate":"deep_rail"},{"do":"set_flag","flag":"rail_powered"}],
+       "after": ["b_gus"]
+      },
+      {
+       "id": "b_rail",
+       "title": "Foundation Station",
+       "when": {"all":[{"flag":"rail_powered"},{"zone":"the_deep_works"},{"in_vehicle":"minecart"}]},
+       "do": [{"do":"add_entry","entry":"e_foundation_station"}],
+       "after": ["b_fuses"]
+      },
+      {
+       "id": "b_vault_open",
+       "title": "The Foundation vault",
+       "when": {"used":"foundation_vault","gte":1},
+       "do": [{"do":"shake","amount":0.8},{"do":"spawn","archetype":"first_ledger","zone":"the_deep_works"}],
+       "after": ["b_rail"]
+      },
+      {
+       "id": "b_ledger",
+       "title": "The First Ledger",
+       "when": {"item":"first_ledger"},
+       "do": [{"do":"add_entry","entry":"e_first_ledger_read"},{"do":"start_quest","quest":"m10_first_ledger"}],
+       "after": ["b_vault_open"]
+      },
+      {
+       "id": "b_cassian_arrives",
+       "title": "Cassian arrives",
+       "when": {"all":[{"item":"first_ledger"},{"zone":"the_deep_works"}]},
+       "do": [{"do":"start_dialogue","dialogue":"cassian_final","with":"cassian"}],
+       "after": ["b_ledger"]
+      },
+      {
+       "id": "b_cassian_down",
+       "title": "The Ironmonger falls",
+       "when": {"boss":"cassian","state":"defeated"},
+       "do": [{"do":"set_flag","flag":"final_resolved"}],
+       "after": ["b_cassian_arrives"],
+       "optional": true
+      },
+      {
+       "id": "b_epilogue",
+       "title": "What the city remembers",
+       "when": {"flag":"final_resolved"},
+       "do": [{"do":"play_cutscene","cutscene":"cs_epilogue"}],
+       "after": ["b_cassian_arrives"]
+      }
+     ]
+    }
+   ]
+  },
+  "quests": [
+   {
+    "id": "m1_landfall",
+    "title": "Landfall",
+    "kind": "main",
+    "giver": "odalys",
+    "zone": "harbor_row",
+    "summary": "Claim your lot above the breakwater and build a first shelter.",
+    "objectives": [
+     {"id":"o_talk","kind":"talk","character":"odalys","text":"Speak to Harbormaster Odalys."},
+     {"id":"o_wood","kind":"collect","item":"b_log","count":8,"text":"Chop 8 logs."},
+     {"id":"o_craft","kind":"craft","recipe":"r_workbench","count":1,"text":"Craft a workbench."},
+     {"id":"o_build","kind":"build","block":"planks","count":30,"zone":"harbor_row","text":"Place 30 planks to frame your shelter."},
+     {"id":"o_sleep","kind":"use","interactable":"bed","text":"Place a bed and sleep through the night."}
+    ],
+    "autoStart": true,
+    "rewards": {"xp":200,"money":100}
+   },
+   {
+    "id": "m2_first_wheels",
+    "title": "First Wheels",
+    "kind": "main",
+    "giver": "tobi",
+    "zone": "harbor_row",
+    "summary": "Collect a battery, spark plugs and an engine block to get Tobi's sedan running.",
+    "objectives": [
+     {"id":"o_battery","kind":"collect","item":"car_battery","count":1,"text":"Find a car battery."},
+     {"id":"o_plugs","kind":"collect","item":"spark_plugs","count":4,"text":"Buy spark plugs from Fenn."},
+     {"id":"o_engine","kind":"collect","item":"engine_block","count":1,"text":"Retrieve the engine block from Foundry Flats."},
+     {"id":"o_craft","kind":"craft","recipe":"r_sedan_part_set","count":1,"text":"Assemble the parts at the garage bench."},
+     {"id":"o_drive","kind":"drive","vehicle":"sedan","distance":600,"text":"Drive 600 m in the sedan."}
+    ],
+    "prereq": [],
+    "rewards": {"xp":250,"money":150},
+    "onComplete": [{"do":"set_flag","flag":"sedan_fixed"}]
+   },
+   {
+    "id": "m3_quarry_run",
+    "title": "Quarry Run",
+    "kind": "main",
+    "giver": "bram",
+    "zone": "quarry_hills",
+    "summary": "Mine 40 stone and 6 iron for Bram, then deliver to the Foundry crates.",
+    "objectives": [
+     {"id":"o_reach","kind":"reach","zone":"quarry_hills","text":"Climb to the Quarry Hills."},
+     {"id":"o_stone","kind":"collect","item":"b_cobblestone","count":40,"text":"Mine 40 cobblestone."},
+     {"id":"o_iron","kind":"collect","item":"iron_raw","count":6,"text":"Mine 6 iron."},
+     {"id":"o_deliver","kind":"deliver","item":"b_cobblestone","count":40,"to":"foundry_flats","text":"Deliver the stone to the Foundry."}
+    ],
+    "prereq": ["m1_landfall"],
+    "rewards": {"xp":400,"money":400,"rep":[{"faction":"miners","delta":20}]}
+   },
+   {
+    "id": "m4_deed_trouble",
+    "title": "Paper Tigers",
+    "kind": "main",
+    "giver": "odalys",
+    "zone": "old_quarter",
+    "summary": "Forged deeds are costing citizens their homes. Find the source.",
+    "objectives": [
+     {"id":"o_quarter","kind":"reach","zone":"old_quarter","text":"Visit the Old Quarter registry."},
+     {"id":"o_fenn","kind":"talk","character":"fenn","text":"Ask Fenn about the ink."},
+     {"id":"o_deeds","kind":"collect","item":"forged_deed","count":3,"text":"Collect three forged deeds from thugs."},
+     {"id":"o_renna","kind":"talk","character":"renna","text":"Take the deeds to Inspector Calloway."}
+    ],
+    "prereq": ["m1_landfall"],
+    "rewards": {"xp":500,"rep":[{"faction":"city","delta":5}]}
+   },
+   {
+    "id": "m5_the_offer",
+    "title": "The Ironmonger's Errand",
+    "kind": "main",
+    "giver": "cassian",
+    "zone": "foundry_flats",
+    "summary": "Hijack a Syndicate-bound shipment and decide whose side you are on.",
+    "objectives": [
+     {"id":"o_reach","kind":"reach","zone":"foundry_flats","text":"Meet Cassian at the Foundry."},
+     {
+      "id": "o_van",
+      "kind": "drive",
+      "vehicle": "delivery_van",
+      "to": "foundry_flats",
+      "maxSeconds": 300,
+      "text": "Steal the delivery van and bring it back within five minutes."
+     },
+     {"id":"o_lose","kind":"until","when":{"var":"wanted","lte":0},"text":"Lose the police."}
+    ],
+    "prereq": ["m3_quarry_run"],
+    "rewards": {"xp":700,"money":2000,"rep":[{"faction":"underworld","delta":25}]},
+    "onStart": [{"do":"spawn","archetype":"delivery_van","zone":"foundry_flats"}],
+    "onComplete": [{"do":"set_flag","flag":"syndicate_job_done"}],
+    "branches": [{"id":"br_syndicate","label":"Take Mire's money","when":{"flag":"syndicate_job_done"}}]
+   },
+   {
+    "id": "m6_heights_plan",
+    "title": "Glass Ceiling",
+    "kind": "main",
+    "giver": "ysolde",
+    "zone": "glass_heights",
+    "summary": "Prepare the Heights job: a keycard, thermite and the blueprint.",
+    "objectives": [
+     {"id":"o_gala","kind":"talk","character":"pruitt","text":"Attend the gala invitation."},
+     {"id":"o_keycard","kind":"collect","item":"keycard_heights","count":1,"text":"Get the Heights keycard."},
+     {"id":"o_thermite","kind":"craft","recipe":"r_thermite","count":1,"text":"Craft thermite at a chem table."},
+     {"id":"o_crystal","kind":"collect","item":"crystal","count":1,"text":"Mine a Blockport crystal."}
+    ],
+    "prereq": ["m5_the_offer"],
+    "rewards": {"xp":800}
+   },
+   {
+    "id": "m7_the_heist",
+    "title": "The Heights Job",
+    "kind": "main",
+    "giver": "ysolde",
+    "zone": "glass_heights",
+    "summary": "Break into Tower Three, take the drill bit and escape three wanted stars.",
+    "objectives": [
+     {"id":"o_enter","kind":"reach","at":[10,62,-20],"radius":6,"text":"Enter Glass Heights Tower Three."},
+     {"id":"o_vault","kind":"use","interactable":"heights_vault","text":"Burn through the vault door with thermite."},
+     {"id":"o_bit","kind":"collect","item":"drill_bit","count":1,"text":"Take the drill bit."},
+     {"id":"o_escape","kind":"until","when":{"all":[{"var":"wanted","lte":0},{"item":"drill_bit"}]},"text":"Escape the police with the bit."}
+    ],
+    "prereq": ["m6_heights_plan"],
+    "rewards": {"xp":1200,"money":3000},
+    "fail": {"not":{"alive":"ysolde"}}
+   },
+   {
+    "id": "m8_betrayal",
+    "title": "Ledger Lines",
+    "kind": "main",
+    "giver": "vesper",
+    "zone": "foundry_flats",
+    "summary": "Cassian wants the bit alone. Survive his men and decide who to trust.",
+    "objectives": [
+     {"id":"o_deliver","kind":"reach","zone":"foundry_flats","text":"Bring the drill bit to the Foundry."},
+     {"id":"o_survive","kind":"survive","seconds":90,"text":"Survive the ambush."},
+     {"id":"o_dex","kind":"defeat","archetype":"dex_harrow","count":1,"text":"Defeat Dex Harrow."}
+    ],
+    "prereq": ["m7_the_heist"],
+    "rewards": {"xp":1400},
+    "onStart": [{"do":"set_flag","flag":"syndicate_betrayed"}],
+    "branches": [{"id":"br_vesper","label":"Vesper joins you","when":{"flag":"vesper_ally"}}]
+   },
+   {
+    "id": "m9_deep_works",
+    "title": "The Deep Works",
+    "kind": "main",
+    "giver": "gus",
+    "zone": "the_deep_works",
+    "summary": "Restore the old rail power and reach the Foundation Station.",
+    "objectives": [
+     {"id":"o_reach","kind":"reach","zone":"the_deep_works","text":"Descend into the Deep Works."},
+     {"id":"o_fuses","kind":"use","interactable":"rail_fuse_box","count":3,"text":"Light the three fuse boxes."},
+     {"id":"o_ride","kind":"drive","to":"the_deep_works","distance":900,"text":"Ride the restored rail to the Foundation Station."}
+    ],
+    "prereq": ["m8_betrayal"],
+    "rewards": {"xp":1600}
+   },
+   {
+    "id": "m10_first_ledger",
+    "title": "The First Ledger",
+    "kind": "main",
+    "giver": "gus",
+    "zone": "the_deep_works",
+    "summary": "Drill through the Foundation vault door and recover the register of plots.",
+    "objectives": [
+     {"id":"o_door","kind":"use","interactable":"foundation_vault","text":"Drill through the vault door."},
+     {"id":"o_ledger","kind":"collect","item":"first_ledger","count":1,"text":"Take the First Ledger."},
+     {"id":"o_cassian","kind":"talk","character":"cassian","text":"Face Cassian Mire."}
+    ],
+    "prereq": ["m9_deep_works"],
+    "rewards": {"xp":2200}
+   },
+   {
+    "id": "m11_charter",
+    "title": "The Charter",
+    "kind": "main",
+    "zone": "old_quarter",
+    "summary": "Decide the fate of the First Ledger and of Blockport.",
+    "objectives": [{"id":"o_decide","kind":"until","when":{"flag":"final_resolved"},"text":"Resolve the Ledger."}],
+    "prereq": ["m10_first_ledger"],
+    "rewards": {"xp":4000}
+   },
+   {
+    "id": "s_survey",
+    "title": "Ore Survey",
+    "kind": "side",
+    "giver": "imelda",
+    "zone": "quarry_hills",
+    "summary": "Mark twelve ore deposits for Dr. Ashgrove.",
+    "objectives": [{"id":"o_mark","kind":"discover","tag":"ore_deposit","count":12,"text":"Mark twelve ore deposits."}],
+    "rewards": {"xp":300,"money":360}
+   },
+   {
+    "id": "s_taxi",
+    "title": "Radio Fares",
+    "kind": "side",
+    "giver": "nell",
+    "zone": "glass_heights",
+    "summary": "Take five radio-call fares around the city.",
+    "objectives": [{"id":"o_fares","kind":"use","interactable":"taxi_fare","count":5,"text":"Complete five taxi fares."}],
+    "rewards": {"xp":300,"money":450}
+   },
+   {
+    "id": "s_street_race",
+    "title": "Lakeshore Loop",
+    "kind": "side",
+    "giver": "vesper",
+    "zone": "lakeshore",
+    "summary": "Beat Vesper's time on the lakeshore loop.",
+    "objectives": [{"id":"o_race","kind":"drive","to":"lakeshore","maxSeconds":150,"distance":3000,"text":"Finish three laps under 150 seconds."}],
+    "rewards": {"xp":400,"money":300},
+    "onComplete": [{"do":"spawn","archetype":"coupe","zone":"harbor_row"}]
+   },
+   {
+    "id": "s_harvest",
+    "title": "Harvest Festival",
+    "kind": "side",
+    "giver": "maude",
+    "zone": "greenmeadow",
+    "summary": "Grow twenty wheat for Maude's festival.",
+    "objectives": [
+     {"id":"o_plant","kind":"use","interactable":"farmland_plot","count":5,"text":"Plant five plots."},
+     {"id":"o_wheat","kind":"deliver","item":"wheat","count":20,"to":"maude","text":"Deliver 20 wheat."}
+    ],
+    "rewards": {"xp":200,"money":200,"items":[{"item":"bread","count":5}]}
+   },
+   {
+    "id": "s_lighthouse",
+    "title": "A Light on the Breakwater",
+    "kind": "side",
+    "giver": "odalys",
+    "zone": "harbor_row",
+    "summary": "Build a lighthouse of 120 blocks for the harbor.",
+    "objectives": [
+     {"id":"o_build","kind":"build","block":"brick","count":100,"zone":"harbor_row","text":"Place 100 bricks."},
+     {"id":"o_lamp","kind":"build","block":"lamp","count":4,"zone":"harbor_row","text":"Place 4 lamps at the top."}
+    ],
+    "prereq": ["m1_landfall"],
+    "rewards": {"xp":500,"money":600}
+   },
+   {
+    "id": "s_airmail",
+    "title": "Airmail",
+    "kind": "side",
+    "giver": "billie",
+    "zone": "airfield",
+    "summary": "Drop three airmail sacks across the Quarry Hills.",
+    "objectives": [
+     {"id":"o_fly","kind":"drive","vehicle":"biplane","distance":2500,"text":"Fly 2,500 m in the biplane."},
+     {"id":"o_drop","kind":"deliver","item":"airmail_sack","count":3,"to":"quarry_hills","text":"Drop the sacks in the Quarry Hills."}
+    ],
+    "rewards": {"xp":450,"money":500}
+   },
+   {
+    "id": "s_fence",
+    "title": "Hot Goods",
+    "kind": "side",
+    "giver": "fenn",
+    "zone": "old_quarter",
+    "summary": "Pick up three stolen crates and bring them to Fenn.",
+    "objectives": [
+     {"id":"o_crates","kind":"collect","item":"fence_goods","count":3,"text":"Collect three crates of hot goods."},
+     {"id":"o_deliver","kind":"deliver","item":"fence_goods","count":3,"to":"fenn","text":"Deliver to Fenn."}
+    ],
+    "rewards": {"xp":250,"money":300,"rep":[{"faction":"underworld","delta":10}]},
+    "onComplete": [{"do":"add_wanted","delta":1}]
+   },
+   {
+    "id": "s_cop_bounty",
+    "title": "Most Wanted",
+    "kind": "bounty",
+    "giver": "renna",
+    "zone": "old_quarter",
+    "summary": "Arrest three Syndicate thugs for Inspector Calloway.",
+    "objectives": [{"id":"o_thugs","kind":"defeat","archetype":"thug","count":3,"text":"Defeat three Syndicate thugs."}],
+    "rewards": {"xp":350,"money":400,"rep":[{"faction":"city","delta":10}]}
+   },
+   {
+    "id": "s_night_watch",
+    "title": "Night Watch",
+    "kind": "challenge",
+    "giver": "bram",
+    "zone": "quarry_hills",
+    "summary": "Hold a lantern-lit wall against the Quarry Hills night.",
+    "objectives": [
+     {"id":"o_wall","kind":"build","block":"cobblestone","count":60,"zone":"quarry_hills","text":"Build a stone wall."},
+     {"id":"o_survive","kind":"survive","until":{"daytime":"dawn"},"text":"Survive until dawn."}
+    ],
+    "rewards": {"xp":500,"money":350}
+   },
+   {
+    "id": "s_deep_dive",
+    "title": "Crystal Gallery",
+    "kind": "side",
+    "giver": "gus",
+    "zone": "the_deep_works",
+    "summary": "Mine crystal ore from the Deep Works' Crystal Gallery.",
+    "objectives": [{"id":"o_crystal","kind":"collect","item":"crystal","count":5,"text":"Mine five Blockport crystals."}],
+    "prereq": [],
+    "rewards": {"xp":400,"items":[{"item":"steel_pick","count":1}]}
+   },
+   {
+    "id": "s_tower_blueprints",
+    "title": "Blueprints Scattered",
+    "kind": "side",
+    "giver": "ysolde",
+    "zone": "glass_heights",
+    "summary": "Recover Ysolde's four lost tower blueprints.",
+    "objectives": [{"id":"o_find","kind":"collect","item":"blueprint","count":4,"text":"Recover four blueprints."}],
+    "rewards": {"xp":350,"money":350}
+   },
+   {
+    "id": "s_tobi_upgrade",
+    "title": "Tuned",
+    "kind": "side",
+    "giver": "tobi",
+    "zone": "harbor_row",
+    "summary": "Build a tuned engine at the garage bench for Tobi.",
+    "objectives": [
+     {"id":"o_gold","kind":"collect","item":"gold_ingot","count":3,"text":"Smelt three gold ingots."},
+     {"id":"o_circuit","kind":"craft","recipe":"r_circuit","count":1,"text":"Craft a circuit board."}
+    ],
+    "prereq": ["m2_first_wheels"],
+    "rewards": {"xp":300,"money":400}
+   }
+  ],
+  "gates": [
+   {"id":"deep_rail","requires":{"flag":"rail_powered"},"hint":"The Deep Works rail is dead without fuses.","locks":["portal:deep_works_lift"]},
+   {
+    "id": "heights_lift",
+    "requires": {"any":[{"item":"keycard_heights"},{"flag":"mayor_pass"}]},
+    "hint": "The Heights lift needs a keycard or the mayor's pass.",
+    "locks": ["portal:heights_lift"]
+   },
+   {
+    "id": "foundation_vault_gate",
+    "requires": {"item":"drill_bit"},
+    "hint": "The Foundation vault door needs the diamond-cut drill bit from Tower Three. The mayor's Foundation key shortens the drilling.",
+    "locks": ["interactable:foundation_vault"]
+   },
+   {
+    "id": "syndicate_hq",
+    "requires": {"any":[{"flag":"cassian_offered"},{"var":"rep.underworld","gte":10}]},
+    "hint": "Cassian only sees people he has asked for.",
+    "locks": ["portal:foundry_penthouse"]
+   },
+   {"id":"night_curfew","requires":{"daytime":"day"},"hint":"Greenmeadow gates are shut at night.","locks":["zone:greenmeadow"]},
+   {
+    "id": "plot_rights",
+    "requires": {"item":"plot_deed"},
+    "hint": "Buy a deed from Odalys to build in protected lots.",
+    "locks": ["interactable:lot_marker"]
+   },
+   {"id":"airfield_access","requires":{"var":"level","gte":4},"hint":"Billie flies only with licensed drivers.","locks":["portal:airfield_gate"]},
+   {
+    "id": "quarry_permit",
+    "requires": {"any":[{"quest":"m3_quarry_run","state":"active"},{"quest":"m3_quarry_run","state":"complete"},{"var":"rep.miners","gte":10}]},
+    "hint": "Guild-claimed seams are off limits.",
+    "locks": ["zone:quarry_hills"]
+   }
+  ],
+  "dialogue": {
+   "odalys_welcome": {
+    "speaker": "odalys",
+    "start": "n1",
+    "nodes": {
+     "n1": {"who":"odalys","say":"Charter pass? Let me see. Kit Alder. A builder. The city needs builders; it needs fewer of everything else.","next":"n2"},
+     "n2": {
+      "who": "odalys",
+      "say": "Blockport is a Tidewrights' charter town. Every citizen gets a lot, a pickaxe and a fair chance. In practice you get a lot if you can find one. Mine yours, build it, hold it.",
+      "choices": [{"text":"Where do I start?","next":"n3"},{"text":"What do you mean, if I can find one?","next":"n4"},{"text":"Is the city safe?","next":"n5"}]
+     },
+     "n3": {
+      "who": "odalys",
+      "say": "There is an empty lot above the breakwater. Stone is in the quarry hills, wood is in the Greenmeadow; start with a hand axe, I'll lend you one. Tobi in the garage will lend you wheels if you ask nicely.",
+      "do": [
+       {"do":"give_item","item":"hand_axe","count":1},
+       {"do":"give_item","item":"plot_deed","count":1},
+       {"do":"start_quest","quest":"m1_landfall"},
+       {"do":"set_flag","flag":"met_odalys"},
+       {"do":"add_entry","entry":"e_charter"}
+      ],
+      "end": true
+     },
+     "n4": {
+      "who": "odalys",
+      "say": "Somebody is selling deeds to lots that were never theirs. I have six claims this month where the ink does not match the Charter seal. The Syndicate is my guess; no one will say it.",
+      "do": [{"do":"add_entry","entry":"e_forged_deeds"},{"do":"set_flag","flag":"heard_forgeries"}],
+      "next": "n2"
+     },
+     "n5": {
+      "who": "odalys",
+      "say": "By day. At night the hills and the meadows grow teeth. Keep a torch and a wall.",
+      "do": [{"do":"add_entry","entry":"e_night"}],
+      "next": "n2"
+     }
+    }
+   },
+   "odalys_registry": {
+    "speaker": "odalys",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "odalys",
+      "say": "You held your lot. That puts you ahead of half the city.",
+      "choices": [
+       {"text":"I need to buy another deed.","next":"n2","if":{"var":"money.bucks","gte":500}},
+       {"text":"Tell me about the forged deeds again.","next":"n3"},
+       {"text":"Nothing right now.","next":"n4"}
+      ]
+     },
+     "n2": {
+      "who": "odalys",
+      "say": "Five hundred bucks; honest price, honest stamp. Don't build on anything you did not buy.",
+      "do": [{"do":"take_money","amount":500,"currency":"bucks"},{"do":"give_item","item":"plot_deed","count":1}],
+      "end": true
+     },
+     "n3": {
+      "who": "odalys",
+      "say": "Whoever forges them has a Charter seal stamp. A real one. That means someone inside the registry or someone who took it from the Foundation vault.",
+      "do": [{"do":"set_flag","flag":"knows_stamp"}],
+      "end": true
+     },
+     "n4": {"who":"odalys","say":"Lights out by dusk, builder.","end":true}
+    }
+   },
+   "tobi_garage": {
+    "speaker": "tobi",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "tobi",
+      "say": "You're the new builder! I'm Tobi. That sedan in the back is my dad's, but it needs a battery, plugs and an engine block. Find me those and I'll give you the keys.",
+      "choices": [
+       {"text":"Where do I find those?","next":"n2"},
+       {"text":"I can pay.","next":"n3","if":{"var":"money.bucks","gte":250}},
+       {"text":"Later.","next":"n4"}
+      ]
+     },
+     "n2": {
+      "who": "tobi",
+      "say": "A battery from any chest in town. Plugs from Fenn's pawn shop. The engine block, I have a lead on a wreck in Foundry Flats.",
+      "do": [{"do":"start_quest","quest":"m2_first_wheels"},{"do":"learn_recipe","recipe":"r_sedan_part_set"}],
+      "end": true
+     },
+     "n3": {
+      "who": "tobi",
+      "say": "Two-fifty and a favor. Don't scratch it.",
+      "do": [{"do":"take_money","amount":250,"currency":"bucks"},{"do":"give_item","item":"sedan_keys","count":1},{"do":"set_flag","flag":"sedan_fixed"}],
+      "end": true
+     },
+     "n4": {"who":"tobi","say":"My dad says the best engine is a patient one.","end":true}
+    }
+   },
+   "tobi_after": {
+    "speaker": "tobi",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "tobi",
+      "say": "How's she running? Come back if you want upgrades. I know a guy with a coupe.",
+      "choices": [{"text":"Show me the garage.","next":"n2"},{"text":"Bye.","next":"n3"}]
+     },
+     "n2": {"who":"tobi","say":"Take a look.","do":[{"do":"open_shop","shop":"shop_garage"}],"end":true},
+     "n3": {"who":"tobi","say":"Drive safe!","end":true}
+    }
+   },
+   "renna_warning": {
+    "speaker": "renna",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "renna",
+      "say": "You're the one with the charter pass. I'll give you the speech once: Blockport is a good place that people keep trying to make into a bad one.",
+      "next": "n2"
+     },
+     "n2": {
+      "who": "renna",
+      "say": "If you see something, say something. If you do something, expect me to see it.",
+      "choices": [{"text":"Do you know about the forged deeds?","next":"n3","if":{"flag":"heard_forgeries"}},{"text":"I'll behave.","next":"n4"}]
+     },
+     "n3": {
+      "who": "renna",
+      "say": "I know a ledger on my desk with 40 names and no suspects. The mayor says it is a paperwork matter. I say it is a war.",
+      "do": [{"do":"set_flag","flag":"renna_ally_open"},{"do":"add_affinity","character":"renna","delta":5}],
+      "end": true
+     },
+     "n4": {"who":"renna","say":"We'll see.","end":true}
+    }
+   },
+   "renna_bust_warning": {
+    "speaker": "renna",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "renna",
+      "say": "You did a job for Mire. Do not tell me you did not. I have photographs of a van, and I have a long memory.",
+      "choices": [
+       {"text":"Then arrest me.","next":"n2"},
+       {"text":"Help me bring Mire down.","next":"n3","if":{"flag":"knows_stamp"}},
+       {"text":"You don't have proof.","next":"n4"}
+      ]
+     },
+     "n2": {
+      "who": "renna",
+      "say": "I will, in my own time. Right now I'd rather watch you.",
+      "do": [{"do":"notify","text":"Calloway is watching you.","kind":"warn"}],
+      "end": true
+     },
+     "n3": {
+      "who": "renna",
+      "say": "The Foundation vault, under the Deep Works. If the First Ledger exists, it's there. Mire wants it more than you do.",
+      "do": [{"do":"set_flag","flag":"renna_deal"},{"do":"add_affinity","character":"renna","delta":15},{"do":"start_quest","quest":"m9_deep_works"}],
+      "end": true
+     },
+     "n4": {"who":"renna","say":"Yet.","end":true}
+    }
+   },
+   "cassian_offer": {
+    "speaker": "cassian",
+    "start": "n1",
+    "nodes": {
+     "n1": {"who":"cassian","say":"The new builder. Sit. I don't offer much, so enjoy the chair.","next":"n2"},
+     "n2": {
+      "who": "cassian",
+      "say": "Blockport is not run by the mayor. It's run by whoever owns the ground. I'd like that to be me. I need a pair of hands that nobody looks at twice.",
+      "choices": [{"text":"What job?","next":"n3"},{"text":"What do I get?","next":"n4"},{"text":"I'm not working for you.","next":"n5"}]
+     },
+     "n3": {
+      "who": "cassian",
+      "say": "A shipment of Charter stamps is in a van that will cross Foundry Flats at noon. Take it. Leave the driver alive if you can.",
+      "do": [{"do":"start_quest","quest":"m5_the_offer"},{"do":"set_flag","flag":"cassian_offered"}],
+      "next": "n4"
+     },
+     "n4": {"who":"cassian","say":"Two thousand bucks, and a lot in Old Quarter with a view. Better, I stop being your problem.","next":"n2"},
+     "n5": {
+      "who": "cassian",
+      "say": "Then keep building. I'll buy your lot when you tire of it.",
+      "do": [{"do":"set_flag","flag":"refused_cassian"},{"do":"add_rep","faction":"underworld","delta":-15}],
+      "end": true
+     }
+    }
+   },
+   "cassian_final": {
+    "speaker": "cassian",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "cassian",
+      "say": "You found the vault before I did. That was always going to happen. Let us talk about what the Ledger is worth.",
+      "next": "n2"
+     },
+     "n2": {
+      "who": "cassian",
+      "say": "Burn it, and the city runs on my paper forever. Publish it, and everyone gets a lot and nobody has anything. Or sit beside me. I am old, builder, and tired.",
+      "choices": [
+       {"text":"Publish the Ledger. Every plot returns to its owner.","next":"n_open","do":[{"do":"set_flag","flag":"choice_open"}]},
+       {"text":"I'll sit at your table.","next":"n_seat","do":[{"do":"set_flag","flag":"choice_seat"}]},
+       {"text":"Give me the Ledger. I'll leave the city.","next":"n_leave","do":[{"do":"set_flag","flag":"choice_leave"}]},
+       {"text":"Let the mayor decide.","next":"n_truce","if":{"flag":"mayor_revealed"},"do":[{"do":"set_flag","flag":"choice_truce"}]}
+      ]
+     },
+     "n_open": {"who":"cassian","say":"Fool. Fine. Show me the quality of your faith.","do":[{"do":"start_boss","boss":"cassian"}],"end":true},
+     "n_seat": {"who":"cassian","say":"Pour yourself something.","do":[{"do":"set_flag","flag":"final_resolved"}],"end":true},
+     "n_leave": {"who":"cassian","say":"The city will be glad to see you go. I will not be.","do":[{"do":"set_flag","flag":"final_resolved"}],"end":true},
+     "n_truce": {"who":"cassian","say":"Leopold? He's been signing my paper for twenty years.","do":[{"do":"set_flag","flag":"final_resolved"}],"end":true}
+    }
+   },
+   "imelda_survey": {
+    "speaker": "imelda",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "imelda",
+      "say": "Careful with that pick, builder! You're standing on the oldest seam in the city. The Tidewrights dug the first tunnels here before there was a harbor.",
+      "choices": [
+       {"text":"Tell me about the Deep Works.","next":"n2"},
+       {"text":"What's the blue ore?","next":"n3"},
+       {"text":"Can I help with the survey?","next":"n4","if":{"quest":"s_survey","state":"available"}}
+      ]
+     },
+     "n2": {
+      "who": "imelda",
+      "say": "A cavern network under the quarry hills. Rails, power, a vault. The Syndicate wants it; so does the Miners' Guild; so does the mayor, I'm told.",
+      "do": [{"do":"set_flag","flag":"knows_deep_works"},{"do":"add_entry","entry":"e_deep_works"}],
+      "next": "n1"
+     },
+     "n3": {
+      "who": "imelda",
+      "say": "Blockport crystal. Burns hot, glows, excellent for thermite. Lethal in the wrong hands. Mine it carefully.",
+      "do": [{"do":"add_entry","entry":"e_crystal"}],
+      "next": "n1"
+     },
+     "n4": {
+      "who": "imelda",
+      "say": "Mark twelve ore deposits across the hills. I'll pay you per marker.",
+      "do": [{"do":"start_quest","quest":"s_survey"}],
+      "end": true
+     }
+    }
+   },
+   "bram_contract": {
+    "speaker": "bram",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "bram",
+      "say": "Charter builder? Good. I've got contracts and no hands. Forty stone and six iron, and I'll talk to you like an equal.",
+      "choices": [{"text":"I'm in.","next":"n2"},{"text":"What is the stone for?","next":"n3"}]
+     },
+     "n2": {
+      "who": "bram",
+      "say": "Deliver to the foundry crates at Foundry Flats. Don't let the Syndicate \"inspect\" it.",
+      "do": [{"do":"start_quest","quest":"m3_quarry_run"},{"do":"give_item","item":"iron_pick","count":1}],
+      "end": true
+     },
+     "n3": {"who":"bram","say":"New seawall. And, between us, a hush-hush quarry road to the Deep Works. The Guild has a claim down there.","next":"n1"}
+    }
+   },
+   "bram_after": {
+    "speaker": "bram",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "bram",
+      "say": "You delivered. The Guild won't forget. Need ore? Need a fight? I've got both.",
+      "choices": [{"text":"Shop.","next":"n2"},{"text":"Later.","next":"n3"}]
+     },
+     "n2": {"who":"bram","say":"Take a look.","do":[{"do":"open_shop","shop":"shop_hardware"}],"end":true},
+     "n3": {"who":"bram","say":"Mind the night.","end":true}
+    }
+   },
+   "vesper_wheel": {
+    "speaker": "vesper",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "vesper",
+      "say": "Fast car, quiet mouth. That's the whole résumé.",
+      "choices": [
+       {"text":"Can you teach me to drive?","next":"n2"},
+       {"text":"Race?","next":"n3","if":{"quest":"s_street_race","state":"available"}},
+       {"text":"Who do you work for?","next":"n4"}
+      ]
+     },
+     "n2": {
+      "who": "vesper",
+      "say": "Handbrake, countersteer, lift. Do it on the lakeshore loop; nobody cares what you dent.",
+      "do": [{"do":"learn_recipe","recipe":"r_rail"},{"do":"unlock_perk","perk":"drift_control"}],
+      "end": true
+     },
+     "n3": {
+      "who": "vesper",
+      "say": "Lakeshore loop, three laps. Beat my time and I owe you a coupe.",
+      "do": [{"do":"start_quest","quest":"s_street_race"}],
+      "end": true
+     },
+     "n4": {"who":"vesper","say":"Whoever pays on Friday. This week it's Mire.","do":[{"do":"set_flag","flag":"vesper_with_mire"}],"end":true}
+    }
+   },
+   "vesper_ally": {
+    "speaker": "vesper",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "vesper",
+      "say": "Mire sold us both. I know the old rail line into the Deep Works. Get in.",
+      "do": [{"do":"set_flag","flag":"vesper_ally"},{"do":"add_affinity","character":"vesper","delta":20}],
+      "end": true
+     }
+    }
+   },
+   "leopold_reveal": {
+    "speaker": "leopold",
+    "start": "n1",
+    "nodes": {
+     "n1": {"who":"leopold","say":"Builder. Welcome to the top of the city. I hope you like the view; it's mostly paid for.","next":"n2"},
+     "n2": {
+      "who": "leopold",
+      "say": "I've been signing Mire's paper for twenty years. Charter registry fees, quarry rights, Foundry leases. The Ledger would hang me and a hundred other men.",
+      "choices": [
+       {"text":"Then help me end it.","next":"n3"},
+       {"text":"You can pay for my silence.","next":"n4"},
+       {"text":"I'll take this to Inspector Calloway.","next":"n5"}
+      ]
+     },
+     "n3": {
+      "who": "leopold",
+      "say": "I'll forge you a pass into the Foundation vault. After that, I never met you.",
+      "do": [
+       {"do":"give_item","item":"vault_key","count":1},
+       {"do":"set_flag","flag":"mayor_revealed"},
+       {"do":"set_flag","flag":"mayor_pass"},
+       {"do":"add_entry","entry":"e_mayor_secret"}
+      ],
+      "end": true
+     },
+     "n4": {
+      "who": "leopold",
+      "say": "Five thousand. Quietly.",
+      "do": [
+       {"do":"give_money","amount":5000,"currency":"bucks"},
+       {"do":"set_flag","flag":"mayor_revealed"},
+       {"do":"set_flag","flag":"mayor_bribed"},
+       {"do":"add_rep","faction":"city","delta":-30}
+      ],
+      "end": true
+     },
+     "n5": {
+      "who": "leopold",
+      "say": "Then I'll deny every word. Pruitt, show the builder out.",
+      "do": [{"do":"set_flag","flag":"mayor_revealed"},{"do":"set_flag","flag":"mayor_hostile"},{"do":"add_wanted","delta":1}],
+      "end": true
+     }
+    }
+   },
+   "ysolde_plan": {
+    "speaker": "ysolde",
+    "start": "n1",
+    "nodes": {
+     "n1": {"who":"ysolde","say":"Don't touch the model. It took six months. Oh, you're the builder? Sit, we need to talk about a vault.","next":"n2"},
+     "n2": {
+      "who": "ysolde",
+      "say": "Glass Heights Tower Three. Sub-basement vault, keycard, thermite door, laser grid. I know every beam because I drew them. Cassian paid for the building; he wants what's inside.",
+      "choices": [{"text":"What's inside?","next":"n3"},{"text":"How do we get in?","next":"n4"},{"text":"Why help him?","next":"n5"}]
+     },
+     "n3": {
+      "who": "ysolde",
+      "say": "A drill bit that cuts the Foundation vault door. Cassian has been looking for the vault for ten years.",
+      "do": [{"do":"add_entry","entry":"e_foundation_vault"}],
+      "next": "n2"
+     },
+     "n4": {
+      "who": "ysolde",
+      "say": "Keycard from the gala. Thermite from a chem table. Then you walk in, take the bit and run before the grid resets.",
+      "do": [{"do":"start_quest","quest":"m6_heights_plan"},{"do":"give_item","item":"blueprint","count":1}],
+      "end": true
+     },
+     "n5": {
+      "who": "ysolde",
+      "say": "Because he owns my mortgage and my building. It's not a noble reason.",
+      "do": [{"do":"add_affinity","character":"ysolde","delta":3}],
+      "next": "n2"
+     }
+    }
+   },
+   "gus_depths": {
+    "speaker": "gus",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "gus",
+      "say": "Quiet, quiet. The rails remember footsteps.",
+      "choices": [{"text":"Show me the old rail line.","next":"n2"},{"text":"What is the vault?","next":"n3"},{"text":"Who are you?","next":"n4"}]
+     },
+     "n2": {
+      "who": "gus",
+      "say": "Three fuses to light, three stations. Start at Pump Hall, then Crystal Gallery, then Foundation Station. The fuses are in my chests.",
+      "do": [{"do":"start_quest","quest":"m9_deep_works"},{"do":"give_item","item":"rail_fuse","count":3},{"do":"set_flag","flag":"gus_helped"}],
+      "end": true
+     },
+     "n3": {
+      "who": "gus",
+      "say": "The first Tidewrights buried their register of plots there. Every lot, every name. Whoever holds it can say who owns Blockport.",
+      "do": [{"do":"add_entry","entry":"e_first_ledger"}],
+      "next": "n1"
+     },
+     "n4": {"who":"gus","say":"Gus Tarn. I carried the lamp for the Tidewrights' last foreman. I'm the last one who knows where the door is.","next":"n1"}
+    }
+   },
+   "fenn_pawn": {
+    "speaker": "fenn",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "fenn",
+      "say": "Everything has a price, builder. Even the things people say do not.",
+      "choices": [
+       {"text":"Sell hot goods.","next":"n2","if":{"item":"fence_goods"}},
+       {"text":"Spark plugs?","next":"n3"},
+       {"text":"Shop.","next":"n4"},
+       {"text":"Tell me about the forged deeds.","next":"n5","if":{"flag":"heard_forgeries"}}
+      ]
+     },
+     "n2": {"who":"fenn","say":"Mm. Quality merchandise. Eighty each, and I forget your face.","do":[{"do":"open_shop","shop":"shop_pawn"}],"end":true},
+     "n3": {
+      "who": "fenn",
+      "say": "Four plugs, fifty bucks. Tobi is a good kid.",
+      "do": [{"do":"take_money","amount":50,"currency":"bucks"},{"do":"give_item","item":"spark_plugs","count":4}],
+      "end": true
+     },
+     "n4": {"who":"fenn","say":"Of course.","do":[{"do":"open_shop","shop":"shop_pawn"}],"end":true},
+     "n5": {
+      "who": "fenn",
+      "say": "The ink came from a blue pen. I sold one, last week, to a man in a tailored coat. That is all you are getting for free.",
+      "do": [{"do":"set_flag","flag":"fenn_clue"},{"do":"add_entry","entry":"e_blue_ink"}],
+      "end": true
+     }
+    }
+   },
+   "nell_request": {
+    "speaker": "nell",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "nell",
+      "say": "Radio Blockport, on air! Hey, new face. I take requests, deliver mixtapes and gossip. In that order of importance.",
+      "choices": [{"text":"Any jobs?","next":"n2"},{"text":"What's the gossip?","next":"n3"}]
+     },
+     "n2": {
+      "who": "nell",
+      "say": "Taxi fares! Anyone who calls the station needs a ride. You drive, I pay, we both look good.",
+      "do": [{"do":"start_quest","quest":"s_taxi"},{"do":"give_item","item":"radio_tape","count":3}],
+      "end": true
+     },
+     "n3": {
+      "who": "nell",
+      "say": "Mire's men have been spending in Old Quarter. Someone bought a new Charter seal press. And the mayor hasn't been to the Quarter in a year.",
+      "do": [{"do":"add_entry","entry":"e_gossip"}],
+      "end": true
+     }
+    }
+   },
+   "maude_farm": {
+    "speaker": "maude",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "maude",
+      "say": "City folk! Seeds, hoe, and a bit of patience. The meadow forgives more than the city does.",
+      "choices": [
+       {"text":"Teach me to farm.","next":"n2"},
+       {"text":"Buy supplies.","next":"n3"},
+       {"text":"Any work?","next":"n4","if":{"quest":"s_harvest","state":"available"}}
+      ]
+     },
+     "n2": {
+      "who": "maude",
+      "say": "Till the dirt, plant seeds, water it with rain or a bucket. Three days in spring, five in autumn.",
+      "do": [{"do":"give_item","item":"hoe","count":1},{"do":"give_item","item":"seeds","count":8},{"do":"learn_recipe","recipe":"r_bread"}],
+      "end": true
+     },
+     "n3": {"who":"maude","say":"Prices are fair.","do":[{"do":"open_shop","shop":"shop_farm"}],"end":true},
+     "n4": {"who":"maude","say":"Bring me twenty wheat for the harvest festival.","do":[{"do":"start_quest","quest":"s_harvest"}],"end":true}
+    }
+   },
+   "billie_airmail": {
+    "speaker": "billie",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "billie",
+      "say": "Stray Field! Mail, medicine, mischief. The city's towers never see the roofs of the Quarry Hills like I do.",
+      "choices": [{"text":"Can I fly?","next":"n2"},{"text":"Airmail job?","next":"n3","if":{"quest":"s_airmail","state":"available"}}]
+     },
+     "n2": {
+      "who": "billie",
+      "say": "Hop in the biplane, mind the stall. Flaps are on Q and E. The mountains are older than they look.",
+      "do": [{"do":"spawn","archetype":"biplane","zone":"airfield"},{"do":"set_flag","flag":"flight_ok"}],
+      "end": true
+     },
+     "n3": {
+      "who": "billie",
+      "say": "Three sacks, three drop zones. Land on the road, not the church.",
+      "do": [{"do":"start_quest","quest":"s_airmail"},{"do":"give_item","item":"airmail_sack","count":3}],
+      "end": true
+     }
+    }
+   },
+   "dex_taunt": {
+    "speaker": "dex",
+    "start": "n1",
+    "nodes": {"n1":{"who":"dex","say":"Mire says be nice. I never listen.","do":[{"do":"start_boss","boss":"dex"}],"end":true}}
+   },
+   "pruitt_invite": {
+    "speaker": "pruitt",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "pruitt",
+      "say": "Mr. Alder? The Mayor requests a word. At the gala tonight, if you can wear something other than overalls.",
+      "choices": [{"text":"I'll be there.","next":"n2"},{"text":"No.","next":"n3"}]
+     },
+     "n2": {
+      "who": "pruitt",
+      "say": "The keycard to the Heights lift is at the front desk. Don't ask why.",
+      "do": [{"do":"give_item","item":"keycard_heights","count":1},{"do":"set_flag","flag":"gala_invited"}],
+      "end": true
+     },
+     "n3": {"who":"pruitt","say":"Then the Mayor will be disappointed.","end":true}
+    }
+   }
+  },
+  "entries": [
+   {
+    "id": "e_charter",
+    "title": "The Tidewrights' Charter",
+    "text": "Blockport was founded on a charter: every citizen holds a lot, the register stored in a vault no one remembers.",
+    "tag": "lore"
+   },
+   {
+    "id": "e_forged_deeds",
+    "title": "Forged Deeds",
+    "text": "Someone with a real Charter seal stamp sells deeds to lots that already belong to others.",
+    "tag": "lore"
+   },
+   {
+    "id": "e_night",
+    "title": "The Night Mobs",
+    "text": "Outside the lit city, gloomers and boomlings roam after dusk. Light your lot or sleep.",
+    "tag": "bestiary"
+   },
+   {"id":"e_building","title":"Building","text":"Any block can be placed. Protected lots need a deed.","tag":"world"},
+   {"id":"e_tobi","title":"Tobi Fenwick","text":"A teenage mechanic with a long list of repairs and a longer list of questions.","tag":"characters"},
+   {"id":"e_cars","title":"Driving","text":"Press E near a car to enter it. Police notice stolen cars.","tag":"world"},
+   {"id":"e_wanted","title":"The Wanted Level","text":"Crimes add heat; witnesses add more. Cool off out of sight.","tag":"world"},
+   {"id":"e_quarry","title":"Quarry Hills","text":"Mountains of ore and mobs. The Miners' Guild claims every seam.","tag":"world"},
+   {"id":"e_old_quarter","title":"Old Quarter","text":"The oldest district: narrow streets and wide secrets.","tag":"world"},
+   {"id":"e_blue_ink","title":"The Blue Ink","text":"The forged deeds use ink from a pen Fenn sold last week.","tag":"lore"},
+   {"id":"e_foundry","title":"Foundry Flats","text":"Steel, smoke and the Syndicate's home turf.","tag":"world"},
+   {"id":"e_syndicate","title":"The Syndicate","text":"Cassian Mire's empire of paper: forged deeds, protection and quarry leases.","tag":"lore"},
+   {"id":"e_heights","title":"Glass Heights","text":"Towers built on borrowed money.","tag":"world"},
+   {"id":"e_gala","title":"The Gala","text":"The mayor's annual party; the best place to steal a keycard.","tag":"world"},
+   {"id":"e_mayor_secret","title":"The Mayor's Secret","text":"Leopold Stray has been signing Mire's paper for twenty years.","tag":"lore"},
+   {
+    "id": "e_foundation_vault",
+    "title": "The Foundation Vault",
+    "text": "The first Tidewrights' vault under the Deep Works. Needs a diamond-cut drill bit; the mayor's Foundation key shortens the drilling.",
+    "tag": "lore"
+   },
+   {"id":"e_dex","title":"Dex Harrow","text":"Mire's enforcer, loyal until he is not.","tag":"characters"},
+   {"id":"e_deep_works","title":"The Deep Works","text":"Cavern network, rails and power long forgotten.","tag":"world"},
+   {"id":"e_crystal","title":"Blockport Crystal","text":"A glowing ore that burns hot. Useful for thermite and lamps.","tag":"bestiary"},
+   {
+    "id": "e_first_ledger",
+    "title": "The First Ledger",
+    "text": "The Tidewrights' register of every plot. Whoever holds it can say who owns Blockport.",
+    "tag": "lore"
+   },
+   {
+    "id": "e_first_ledger_read",
+    "title": "What the Ledger Says",
+    "text": "Every lot belonged to a citizen, not a company. Mire's deeds are fraud; the mayor's leases are fraud; the Charter was always meant to be common property.",
+    "tag": "lore"
+   },
+   {
+    "id": "e_foundation_station",
+    "title": "Foundation Station",
+    "text": "The terminus of the old rail. A platform nobody has stood on in sixty years.",
+    "tag": "world"
+   },
+   {"id":"e_gossip","title":"Radio Gossip","text":"Nell hears everything and broadcasts half of it.","tag":"world"}
+  ],
+  "cutscenes": {
+   "cs_arrive": {
+    "skippable": true,
+    "steps": [
+     {"camera":{"pos":[-380,80,330],"look":[-300,62,220],"fov":70,"sec":6}},
+     {"say":{"character":"odalys","text":"Another ferry, another pair of hands. Welcome to Blockport."}},
+     {"fx":[{"do":"notify","text":"Harbor Row","kind":"info"}]}
+    ]
+   },
+   "cs_foundry": {
+    "skippable": true,
+    "steps": [{"camera":{"pos":[200,120,0],"look":[320,62,100],"fov":60,"sec":5}},{"fx":[{"do":"notify","text":"Foundry Flats","kind":"info"}]}]
+   },
+   "cs_heights": {
+    "skippable": true,
+    "steps": [{"camera":{"pos":[-100,200,-100],"look":[0,150,-40],"fov":55,"sec":6}},{"fx":[{"do":"notify","text":"Glass Heights","kind":"info"}]}]
+   },
+   "cs_deep_works": {
+    "skippable": true,
+    "steps": [{"camera":{"pos":[0,40,-300],"look":[0,20,-280],"fov":70,"sec":5}},{"fx":[{"do":"notify","text":"The Deep Works","kind":"info"}]}]
+   },
+   "cs_epilogue": {"skippable":false,"steps":[{"camera":{"pos":[0,180,100],"look":[0,62,150],"fov":55,"sec":10}},{"wait":2}]}
+  },
+  "barks": [
+   {"channel":"radio","when":{"daytime":"dawn"},"say":"Radio Blockport: sunrise on the harbor. Mind the gulls.","cooldown":600,"character":"nell"},
+   {"channel":"radio","when":{"var":"wanted","gte":1},"say":"Police scanner: units responding to a disturbance.","cooldown":90},
+   {"channel":"radio","when":{"var":"wanted","gte":4},"say":"Breaking: citywide search under way. Drivers are advised to stay clear.","cooldown":120},
+   {
+    "channel": "radio",
+    "when": {"flag":"syndicate_job_done"},
+    "say": "Nell: a delivery van went missing in Foundry Flats. The Syndicate denies everything, very loudly.",
+    "once": true,
+    "character": "nell"
+   },
+   {"channel":"radio","when":{"zone":"glass_heights"},"say":"Mayor Stray reassures citizens that all is well. Stocks hold steady.","cooldown":300},
+   {"channel":"ambient","when":{"all":[{"daytime":"night"},{"zone":"greenmeadow"}]},"say":"Something shuffles beyond the fence.","cooldown":120},
+   {"channel":"ambient","when":{"zone":"the_deep_works"},"say":"Dripping. Far-off rattle of an old rail.","cooldown":90},
+   {"channel":"character","character":"odalys","when":{"zone":"harbor_row"},"say":"Lights out by dusk, builder.","cooldown":600},
+   {"channel":"tutorial","when":{"zone":"harbor_row"},"say":"Hold left mouse to mine; right mouse to place. E to enter a car.","once":true}
+  ],
+  "endings": [
+   {
+    "id": "open_charter",
+    "title": "The Open Charter",
+    "outcome": "won",
+    "when": {"all":[{"flag":"choice_open"},{"boss":"cassian","state":"defeated"}]},
+    "epilogue": "Kit climbs the Foundry stacks with the First Ledger and reads it aloud over Radio Blockport. Every lot returns to the citizens; the Syndicate unravels; the mayor resigns. Odalys pins the Charter to the harbor wall. Kit builds a lighthouse."
+   },
+   {
+    "id": "ironmonger_seat",
+    "title": "The Ironmonger's Seat",
+    "outcome": "lost",
+    "when": {"flag":"choice_seat"},
+    "epilogue": "Kit takes the chair at Cassian's table. The city runs on a quiet ledger and a pleasant smile. The harbor lights stay on. Renna files her notes where no one will read them."
+   },
+   {
+    "id": "quiet_foundation",
+    "title": "A Quiet Foundation",
+    "outcome": "neutral",
+    "when": {"flag":"choice_leave"},
+    "epilogue": "Kit takes the Ledger and a boat and builds elsewhere: a small town on a coast with no charter, no deeds and no one asking. Odalys writes once a year."
+   },
+   {
+    "id": "concrete_truce",
+    "title": "Concrete Truce",
+    "outcome": "neutral",
+    "when": {"flag":"choice_truce"},
+    "epilogue": "The mayor trades Mire's ledger for his own silence. The Syndicate is dissolved quietly, the forged deeds are honored with apologies, and nobody goes to trial. Blockport is better and no more honest."
+   }
+  ]
+ },
+ "spaces": [
+  {
+   "id": "blockport",
+   "use": "engine.space.voxel",
+   "with": {"chunk":[16,64,16],"height":192,"seaLevel":56,"cell":1,"viewDistance":10,"lightModel":"full","fluid":false},
+   "generators": [
+    {
+     "use": "engine.generate.terrain.noise",
+     "with": {"octaves":5,"scale":160,"amplitude":36,"ridged":0.3,"falloff":"island","seaLevel":56,"rivers":3,"erosion":1,"warp":0.2}
+    },
+    {
+     "use": "engine.generate.biomes",
+     "with": {
+      "biomes": [
+       {"id":"plains","temp":[0.4,0.7],"moist":[0.3,0.6],"surface":"grass","sub":"dirt","trees":0.12,"color":"#5a9a3a"},
+       {"id":"forest","temp":[0.4,0.7],"moist":[0.6,1],"surface":"grass","sub":"dirt","trees":0.55,"color":"#3a7a2a"},
+       {"id":"desert","temp":[0.8,1],"moist":[0,0.3],"surface":"sand","sub":"sand","trees":0.01,"color":"#e0d090"},
+       {"id":"hills","temp":[0.2,0.5],"moist":[0.2,0.6],"surface":"stone","sub":"stone","trees":0.05,"color":"#8a8a8a"},
+       {"id":"beach","temp":[0.5,0.9],"moist":[0.5,1],"surface":"sand","sub":"sand","trees":0.02,"color":"#e8d8a0"}
+      ],
+      "regions": [
+       {"zone":"greenmeadow","biome":"plains","blend":16},
+       {"zone":"quarry_hills","biome":"hills","blend":40},
+       {"zone":"lakeshore","biome":"beach","blend":12},
+       {"zone":"outskirts","biome":"forest","blend":60}
+      ],
+      "blendWidth": 24
+     }
+    },
+    {
+     "use": "engine.generate.caves",
+     "with": {"density":0.35,"minY":4,"maxY":54,"worms":220,"caverns":40,"lavaLevel":12,"rooms":[{"zone":"the_deep_works","at":[0,24,-420],"size":[40,20]}]}
+    },
+    {
+     "use": "engine.generate.ores",
+     "with": {
+      "veins": [
+       {"block":"coal_ore","minY":8,"maxY":80,"size":12,"perChunk":8},
+       {"block":"iron_ore","minY":8,"maxY":64,"size":8,"perChunk":5},
+       {"block":"copper_ore","minY":8,"maxY":60,"size":8,"perChunk":4},
+       {"block":"gold_ore","minY":4,"maxY":30,"size":6,"perChunk":1.5},
+       {"block":"crystal_ore","minY":4,"maxY":24,"size":4,"perChunk":0.7}
+      ]
+     }
+    },
+    {"use":"engine.generate.water","with":{"level":56,"lakes":3,"flow":true}},
+    {
+     "use": "engine.generate.city",
+     "with": {
+      "districts": [
+       {
+        "zone": "harbor_row",
+        "density": 0.7,
+        "floors": [1,5],
+        "style": "timber-wharf",
+        "grid": "organic",
+        "landmarks": ["lighthouse_site","ferry_pier","garage","diner"]
+       },
+       {
+        "zone": "old_quarter",
+        "density": 0.95,
+        "floors": [2,8],
+        "style": "brick-historic",
+        "grid": "organic",
+        "landmarks": ["registry","precinct","pawn_shop","clocktower"]
+       },
+       {
+        "zone": "glass_heights",
+        "density": 1,
+        "floors": [20,70],
+        "style": "glass-tower",
+        "grid": "regular",
+        "landmarks": ["tower_three","city_hall","radio_studio"]
+       },
+       {
+        "zone": "foundry_flats",
+        "density": 0.7,
+        "floors": [2,14],
+        "style": "industrial",
+        "grid": "regular",
+        "landmarks": ["foundry","syndicate_penthouse","scrapyard"]
+       },
+       {"zone":"greenmeadow","density":0.25,"floors":[1,3],"style":"farmhouse","grid":"organic","landmarks":["farm","market","barn"]},
+       {"zone":"lakeshore","density":0.4,"floors":[1,4],"style":"marina","grid":"radial","landmarks":["marina","race_loop"]},
+       {"zone":"airfield","density":0.15,"floors":[1,3],"style":"hangar","grid":"regular","landmarks":["hangar","runway"]}
+      ],
+      "block": [48,48],
+      "roadWidth": 9,
+      "sidewalk": 2,
+      "interiors": true,
+      "streetProps": ["lamp","bench","hydrant","mailbox","bin","bus_stop"]
+     }
+    },
+    {
+     "use": "engine.generate.roads",
+     "with": {
+      "links": [
+       {"from":"harbor_row","to":"old_quarter","width":9,"surface":"asphalt","curviness":0.1,"bridge":false},
+       {"from":"old_quarter","to":"glass_heights","width":11,"surface":"asphalt","curviness":0.05,"bridge":false},
+       {"from":"old_quarter","to":"foundry_flats","width":9,"surface":"asphalt","curviness":0.1,"bridge":true},
+       {"from":"harbor_row","to":"greenmeadow","width":7,"surface":"gravel","curviness":0.3,"bridge":false},
+       {"from":"foundry_flats","to":"airfield","width":9,"surface":"asphalt","curviness":0.1,"bridge":false},
+       {"from":"foundry_flats","to":"lakeshore","width":9,"surface":"asphalt","curviness":0.2,"bridge":true},
+       {"from":"greenmeadow","to":"quarry_hills","width":6,"surface":"gravel","curviness":0.45,"bridge":false},
+       {"from":"quarry_hills","to":"the_deep_works","width":5,"surface":"rail","curviness":0.5,"bridge":false}
+      ],
+      "snapToTerrain": true
+     }
+    },
+    {
+     "use": "engine.generate.structures",
+     "with": {
+      "place": [
+       {"id":"lot_breakwater","kind":"cabin","zone":"harbor_row","at":[-310,62,190],"style":"lot","size":[24,24],"tags":["starting_lot"]},
+       {"id":"harbor_office","kind":"house","zone":"harbor_row","at":[-300,62,220],"style":"timber","size":[20,16],"interior":true,"tags":["odalys"]},
+       {
+        "id": "tobi_garage_site",
+        "kind": "house",
+        "zone": "harbor_row",
+        "at": [-270,62,240],
+        "style": "garage",
+        "size": [24,18],
+        "interior": true,
+        "tags": ["tobi","garage_bench"]
+       },
+       {"id":"precinct","kind":"house","zone":"old_quarter","at":[0,62,200],"style":"brick","size":[30,20],"interior":true,"tags":["renna","police"]},
+       {"id":"registry","kind":"house","zone":"old_quarter","at":[-40,62,160],"style":"brick","size":[26,18],"interior":true,"tags":["registry"]},
+       {"id":"pawn_shop","kind":"house","zone":"old_quarter","at":[-40,62,280],"style":"brick","size":[16,14],"interior":true,"tags":["fenn"]},
+       {
+        "id": "tower_three",
+        "kind": "tower",
+        "zone": "glass_heights",
+        "at": [10,62,-20],
+        "style": "glass",
+        "size": [28,90],
+        "interior": true,
+        "loot": "loot_heights_vault",
+        "tags": ["heist","vault"]
+       },
+       {"id":"city_hall","kind":"tower","zone":"glass_heights","at":[0,62,-40],"style":"stone-dome","size":[40,60],"interior":true,"tags":["leopold"]},
+       {"id":"radio_studio","kind":"house","zone":"glass_heights","at":[90,62,30],"style":"glass","size":[20,20],"interior":true,"tags":["nell"]},
+       {"id":"foundry","kind":"house","zone":"foundry_flats","at":[300,62,100],"style":"industrial","size":[60,40],"interior":true,"tags":["cassian"]},
+       {
+        "id": "scrapyard",
+        "kind": "camp",
+        "zone": "foundry_flats",
+        "at": [340,62,160],
+        "style": "scrap",
+        "size": [50,40],
+        "loot": "loot_scrap",
+        "spawns": ["thug"],
+        "tags": ["engine_block","chem_table"]
+       },
+       {"id":"farm_houses","kind":"house","zone":"greenmeadow","count":[6,10],"style":"farmhouse","size":[14,12],"interior":true},
+       {
+        "id": "maude_farm_site",
+        "kind": "house",
+        "zone": "greenmeadow",
+        "at": [-300,62,-100],
+        "style": "farmhouse",
+        "size": [18,14],
+        "interior": true,
+        "tags": ["maude","farmland"]
+       },
+       {"id":"quarry_foremans_hut","kind":"hut","zone":"quarry_hills","at":[-60,96,-360],"style":"plank","size":[12,10],"tags":["bram"]},
+       {"id":"survey_station","kind":"hut","zone":"quarry_hills","at":[-100,98,-400],"style":"plank","size":[10,8],"tags":["imelda"]},
+       {"id":"mine_entrances","kind":"mine","zone":"quarry_hills","count":[3,4],"style":"timber-arch","tags":["portal"]},
+       {
+        "id": "deep_works_core",
+        "kind": "arena",
+        "zone": "the_deep_works",
+        "at": [0,12,-420],
+        "style": "vault-hall",
+        "size": [60,40],
+        "interior": true,
+        "tags": ["foundation_vault"]
+       },
+       {"id":"gus_camp","kind":"camp","zone":"the_deep_works","at":[-80,24,-400],"style":"cave-camp","size":[20,16],"tags":["gus"]},
+       {"id":"hangar","kind":"house","zone":"airfield","at":[560,62,-50],"style":"hangar","size":[40,30],"interior":true,"tags":["billie"]},
+       {"id":"marina","kind":"house","zone":"lakeshore","count":[4,6],"style":"marina","size":[20,14]},
+       {"id":"watchtowers","kind":"tower","zone":"outskirts","count":[8,12],"style":"ruin","loot":"loot_chest_town","spawns":["gloomer"]},
+       {"id":"ruined_villages","kind":"ruin","zone":"outskirts","count":[6,10],"style":"overgrown","loot":"loot_chest_town"}
+      ]
+     }
+    },
+    {
+     "use": "engine.generate.scatter",
+     "with": {
+      "props": [
+       {"block":"log","per100m2":3,"zones":["outskirts","greenmeadow"],"biomes":["forest","plains"],"clump":0.7,"minSpacing":3,"scale":[1,1]},
+       {"block":"leaves","per100m2":3,"zones":["outskirts","greenmeadow"],"biomes":["forest","plains"],"clump":0.7,"minSpacing":3,"scale":[1,1]},
+       {"block":"gravel","per100m2":1,"zones":["quarry_hills"],"clump":0.5,"minSpacing":4},
+       {"block":"crop_wheat","per100m2":4,"zones":["greenmeadow"],"clump":0.9,"minSpacing":1},
+       {"model":"barricade","per100m2":0.02,"zones":["old_quarter","foundry_flats"],"slopeMax":5,"minSpacing":60}
+      ]
+     }
+    }
+   ],
+   "zones": [
+    {
+     "id": "harbor_row",
+     "name": "Harbor Row",
+     "bounds": {"min":[-450,0,100],"max":[-150,192,350]},
+     "tags": ["district","docks","start"],
+     "rules": {"police":true,"music":"harbor_day","pedestrians":0.8,"traffic":0.5}
+    },
+    {
+     "id": "old_quarter",
+     "name": "Old Quarter",
+     "bounds": {"min":[-150,0,100],"max":[150,192,350]},
+     "tags": ["district","historic","dense"],
+     "rules": {"police":true,"music":"quarter","pedestrians":1,"traffic":0.7}
+    },
+    {
+     "id": "glass_heights",
+     "name": "Glass Heights",
+     "bounds": {"min":[-150,0,-150],"max":[150,192,100]},
+     "tags": ["district","downtown","towers"],
+     "rules": {"police":true,"music":"heights","pedestrians":1,"traffic":1,"safe":false,"weapons_drawn_crime":true}
+    },
+    {
+     "id": "foundry_flats",
+     "name": "Foundry Flats",
+     "bounds": {"min":[150,0,-50],"max":[450,192,250]},
+     "tags": ["district","industrial"],
+     "rules": {"police":true,"music":"foundry","pedestrians":0.3,"traffic":0.6}
+    },
+    {
+     "id": "greenmeadow",
+     "name": "Greenmeadow",
+     "bounds": {"min":[-450,0,-300],"max":[-150,192,100]},
+     "tags": ["district","farmland","suburb"],
+     "rules": {"police":true,"music":"meadow","pedestrians":0.4,"traffic":0.3}
+    },
+    {
+     "id": "lakeshore",
+     "name": "Lakeshore",
+     "bounds": {"min":[150,0,250],"max":[450,192,450]},
+     "tags": ["district","waterfront","park"],
+     "rules": {"police":true,"music":"lakeshore","pedestrians":0.7,"traffic":0.4}
+    },
+    {
+     "id": "airfield",
+     "name": "Stray Field Airfield",
+     "bounds": {"min":[450,0,-200],"max":[750,192,100]},
+     "tags": ["district","airfield"],
+     "rules": {"police":true,"music":"airfield","pedestrians":0.1,"traffic":0.1}
+    },
+    {
+     "id": "quarry_hills",
+     "name": "Quarry Hills",
+     "bounds": {"min":[-450,0,-700],"max":[450,192,-300]},
+     "tags": ["wilds","mountain","mining"],
+     "rules": {"police":false,"music":"hills","spawns":"night_mobs"}
+    },
+    {
+     "id": "the_deep_works",
+     "name": "The Deep Works",
+     "bounds": {"min":[-300,0,-600],"max":[300,40,-100]},
+     "tags": ["underground","tunnels","cavern"],
+     "rules": {"police":false,"music":"deep","spawns":"cave_mobs","dark":true}
+    },
+    {
+     "id": "outskirts",
+     "name": "The Outskirts",
+     "bounds": {"min":[-900,0,-900],"max":[900,192,700]},
+     "tags": ["wilds","biomes"],
+     "rules": {"police":false,"music":"wilds","spawns":"night_mobs"}
+    }
+   ]
+  }
+ ],
+ "systems": [
+  {"use":"engine.blocks","with":{"tiers":["hand","wood","stone","iron","steel"],"lightLevels":15}},
+  {
+   "use": "engine.time",
+   "with": {
+    "dayLength": 1200,
+    "startHour": 8,
+    "phases": {"dawn":5,"day":7,"dusk":18,"night":20},
+    "daysPerSeason": 6,
+    "seasons": ["spring","summer","autumn","winter"],
+    "scale": 1
+   }
+  },
+  {
+   "use": "engine.weather",
+   "with": {
+    "byBiome": false,
+    "states": [
+     {"id":"clear","weight":6,"minMin":4,"maxMin":12,"wind":0.2,"temp":18},
+     {"id":"rain","weight":3,"minMin":2,"maxMin":6,"wind":0.5,"temp":12},
+     {"id":"fog","weight":1,"minMin":2,"maxMin":5,"wind":0.05,"temp":10},
+     {"id":"storm","weight":1,"minMin":1,"maxMin":3,"wind":0.9,"temp":9}
+    ]
+   }
+  },
+  {"use":"engine.stream","with":{"budgetMs":6,"preloadRadius":128,"unloadRadius":256}},
+  {"use":"engine.zones","with":{"discoverRadius":24}},
+  {
+   "use": "engine.input.actions",
+   "with": {
+    "verbs": [
+     "move",
+     "look",
+     "jump",
+     "sprint",
+     "crouch",
+     "attack",
+     "aim",
+     "mine",
+     "place",
+     "use",
+     "interact",
+     "drive",
+     "brake",
+     "handbrake",
+     "horn",
+     "inventory",
+     "map",
+     "menu",
+     "hotbar",
+     "swap_camera"
+    ],
+    "bindings": {
+     "1p": {
+      "move": ["wasd"],
+      "look": ["mouse"],
+      "jump": ["space"],
+      "sprint": ["shift"],
+      "crouch": ["ctrl"],
+      "mine": ["lmb"],
+      "place": ["rmb"],
+      "interact": ["e"],
+      "inventory": ["tab"],
+      "hotbar": ["1-9","wheel"],
+      "swap_camera": ["f5"]
+     },
+     "3p": {
+      "move": ["wasd"],
+      "look": ["mouse"],
+      "jump": ["space"],
+      "sprint": ["shift"],
+      "mine": ["lmb"],
+      "place": ["rmb"],
+      "interact": ["e"],
+      "drive": ["wasd"],
+      "handbrake": ["space"],
+      "horn": ["h"],
+      "swap_camera": ["f5"]
+     }
+    }
+   }
+  },
+  {"use":"engine.physics.character","with":{"radius":0.3,"height":1.8,"stepHeight":0.6,"slopeLimit":45}},
+  {
+   "use": "engine.physics.body",
+   "with": {
+    "layers": ["player","npc","enemy","vehicle","prop","projectile"],
+    "matrix": [{"a":"npc","b":"npc","collide":false},{"a":"player","b":"npc","collide":true},{"a":"vehicle","b":"vehicle","collide":true}]
+   }
+  },
+  {"use":"engine.save","with":{"auto":true,"intervalSec":120,"slots":5,"keepEditLog":true}},
+  {
+   "use": "engine.portal",
+   "with": {
+    "portals": [
+     {
+      "id": "heights_lift",
+      "from": {"zone":"glass_heights","at":[10,62,-20],"size":[3,4,3]},
+      "to": {"zone":"glass_heights","at":[10,150,-20]},
+      "gate": "heights_lift",
+      "prompt": "Tower Three lift",
+      "transition": "elevator"
+     },
+     {
+      "id": "heights_lift_down",
+      "from": {"zone":"glass_heights","at":[10,150,-20],"size":[3,4,3]},
+      "to": {"zone":"glass_heights","at":[10,62,-20]},
+      "prompt": "Lobby",
+      "transition": "elevator"
+     },
+     {
+      "id": "heights_vault_lift",
+      "from": {"zone":"glass_heights","at":[10,150,-25],"size":[3,4,3]},
+      "to": {"zone":"glass_heights","at":[10,20,-25]},
+      "gate": "heights_lift",
+      "prompt": "Sub-basement",
+      "transition": "elevator"
+     },
+     {
+      "id": "deep_works_lift",
+      "from": {"zone":"quarry_hills","at":[-100,98,-480],"size":[4,4,4]},
+      "to": {"zone":"the_deep_works","at":[-100,24,-480]},
+      "prompt": "Mine lift",
+      "transition": "elevator"
+     },
+     {
+      "id": "foundry_penthouse",
+      "from": {"zone":"foundry_flats","at":[320,62,120],"size":[3,4,3]},
+      "to": {"zone":"foundry_flats","at":[320,90,120]},
+      "gate": "syndicate_hq",
+      "prompt": "Penthouse",
+      "transition": "elevator"
+     },
+     {
+      "id": "airfield_gate",
+      "from": {"zone":"airfield","at":[450,62,-50],"size":[6,4,6]},
+      "to": {"zone":"airfield","at":[455,62,-50]},
+      "gate": "airfield_access",
+      "prompt": "Airfield",
+      "transition": "cut"
+     }
+    ]
+   }
+  },
+  {
+   "use": "engine.spawner",
+   "with": {
+    "globalCap": 260,
+    "rules": [
+     {
+      "id": "sp_night_gloomer",
+      "archetype": "gloomer",
+      "zone": "outskirts",
+      "count": [6,12],
+      "per1000m2": 0.02,
+      "when": {"daytime":"night"},
+      "despawnDist": 96,
+      "groupSize": [1,3],
+      "respawnSec": 60,
+      "surface": ["b_grass","b_dirt"]
+     },
+     {
+      "id": "sp_night_gloomer_meadow",
+      "archetype": "gloomer",
+      "zone": "greenmeadow",
+      "count": [4,8],
+      "when": {"daytime":"night"},
+      "despawnDist": 96,
+      "respawnSec": 90
+     },
+     {
+      "id": "sp_night_hills",
+      "archetype": "gloomer",
+      "zone": "quarry_hills",
+      "count": [8,14],
+      "when": {"daytime":"night"},
+      "despawnDist": 110,
+      "groupSize": [2,4],
+      "respawnSec": 60
+     },
+     {"id":"sp_boomling","archetype":"boomling","zone":"outskirts","count":[3,6],"when":{"daytime":"night"},"despawnDist":96,"respawnSec":120},
+     {"id":"sp_boomling_hills","archetype":"boomling","zone":"quarry_hills","count":[3,6],"despawnDist":96,"respawnSec":120},
+     {"id":"sp_skitter","archetype":"cave_skitter","zone":"the_deep_works","count":[10,18],"despawnDist":80,"groupSize":[2,4],"respawnSec":45},
+     {"id":"sp_cows","archetype":"cow","zone":"greenmeadow","count":[8,12],"when":{"daytime":"day"},"despawnDist":140,"respawnSec":300},
+     {"id":"sp_chickens","archetype":"chicken","zone":"greenmeadow","count":[6,10],"despawnDist":100,"respawnSec":300},
+     {"id":"sp_thugs_flats","archetype":"thug","zone":"foundry_flats","count":[8,12],"groupSize":[2,4],"despawnDist":120,"respawnSec":300},
+     {"id":"sp_thugs_quarter","archetype":"thug","zone":"old_quarter","count":[2,4],"when":{"daytime":"night"},"despawnDist":120,"respawnSec":240},
+     {"id":"sp_patrol","archetype":"patrol_officer","zone":"old_quarter","count":[4,6],"despawnDist":120,"respawnSec":120},
+     {"id":"sp_patrol_heights","archetype":"patrol_officer","zone":"glass_heights","count":[6,10],"despawnDist":120,"respawnSec":120},
+     {"id":"sp_patrol_harbor","archetype":"patrol_officer","zone":"harbor_row","count":[2,4],"despawnDist":120,"respawnSec":120},
+     {"id":"sp_chests","archetype":"town_chest","zone":"old_quarter","count":[12,18],"despawnDist":400,"respawnSec":3600},
+     {"id":"sp_mine_chests","archetype":"mine_chest","zone":"the_deep_works","count":[8,12],"despawnDist":400,"respawnSec":3600},
+     {"id":"sp_vending","archetype":"vending","zone":"glass_heights","count":[6,10],"despawnDist":400}
+    ]
+   }
+  },
+  {"use":"plot.character","with":{"spawnAtStart":true,"nameplates":true}},
+  {"use":"plot.storyboard","with":{"sequentialActs":false}},
+  {"use":"plot.dialogue","with":{"lineSpeed":50,"interruptible":true,"repeatSeen":true}},
+  {"use":"plot.quest","with":{"maxActive":22,"trackOne":true}},
+  {"use":"plot.gate"},
+  {"use":"plot.cutscene","with":{"letterbox":true,"skippable":true}},
+  {"use":"plot.relationship","with":{"repRange":[-100,100],"decayPerDay":0}},
+  {"use":"plot.journal"},
+  {"use":"plot.barks","with":{"channels":["radio","ambient","character","tutorial"]}},
+  {"use":"plot.ending","with":{"epilogue":true}},
+  {"use":"gameplay.inventory","with":{"slots":100,"start":[{"item":"hand_axe","count":1},{"item":"bread","count":4},{"item":"bucks","count":150}]}},
+  {"use":"gameplay.item.use"},
+  {
+   "use": "gameplay.equipment",
+   "with": {
+    "slots": [
+     {"id":"weapon","accepts":["weapon","tool"],"max":1},
+     {"id":"gun","accepts":["gun"],"max":1},
+     {"id":"head","accepts":["armor:head"],"max":1},
+     {"id":"chest","accepts":["armor:chest"],"max":1},
+     {"id":"feet","accepts":["armor:feet"],"max":1}
+    ],
+    "durability": true,
+    "statMods": true
+   }
+  },
+  {
+   "use": "gameplay.crafting",
+   "with": {
+    "stations": [
+     {"id":"workbench","name":"Workbench","tags":["craft"]},
+     {"id":"furnace","name":"Furnace","tags":["smelt"]},
+     {"id":"garage_bench","name":"Garage Bench","tags":["tune"],"zone":"harbor_row"},
+     {"id":"chem_table","name":"Chem Table","tags":["mix"]}
+    ],
+    "handCraft": true,
+    "queue": true,
+    "discover": "known"
+   }
+  },
+  {"use":"gameplay.container","with":{"slots":27,"lockable":true}},
+  {"use":"gameplay.loot"},
+  {
+   "use": "gameplay.economy",
+   "with": {
+    "currencies": [{"id":"bucks","name":"Bucks","var":"money.bucks"}],
+    "sellRatio": 0.45,
+    "haggle": false,
+    "shops": [
+     {
+      "id": "shop_garage",
+      "owner": "tobi",
+      "stock": [{"item":"jerry_can","count":6,"price":20},{"item":"sedan_keys","count":1,"price":450},{"item":"iron_axe","count":1,"price":120}],
+      "restock": "weekly",
+      "buys": ["tool","material"],
+      "markup": 1
+     },
+     {
+      "id": "shop_hardware",
+      "owner": "bram",
+      "stock": [
+       {"item":"wood_pick","count":3,"price":30},
+       {"item":"stone_pick","count":3,"price":70},
+       {"item":"shovel","count":3,"price":40},
+       {"item":"b_lamp","count":40,"price":6},
+       {"item":"b_ladder","count":20,"price":3},
+       {"item":"hardhat","count":2,"price":55},
+       {"item":"b_concrete","count":200,"price":3},
+       {"item":"b_glass","count":200,"price":3}
+      ],
+      "restock": "weekly",
+      "buys": ["material","tool","block"],
+      "markup": 1
+     },
+     {
+      "id": "shop_pawn",
+      "owner": "fenn",
+      "stock": [
+       {"item":"pistol","count":1,"price":350},
+       {"item":"ammo_9mm","count":120,"price":2},
+       {"item":"bat","count":2,"price":55},
+       {"item":"vest","count":1,"price":480},
+       {"item":"smg","count":1,"price":1100},
+       {"item":"shotgun","count":1,"price":1300},
+       {"item":"sneakers","count":2,"price":40}
+      ],
+      "restock": "weekly",
+      "buys": ["*"],
+      "markup": 1.1
+     },
+     {
+      "id": "shop_farm",
+      "owner": "maude",
+      "stock": [
+       {"item":"seeds","count":100,"price":2},
+       {"item":"bread","count":20,"price":5},
+       {"item":"raw_beef","count":10,"price":6},
+       {"item":"apple","count":30,"price":4},
+       {"item":"hoe","count":2,"price":25}
+      ],
+      "restock": "daily",
+      "buys": ["food","material"],
+      "markup": 1
+     },
+     {
+      "id": "vending",
+      "owner": "nell",
+      "stock": [{"item":"burger","count":10,"price":14},{"item":"apple","count":10,"price":5},{"item":"medkit","count":3,"price":80}],
+      "restock": "daily",
+      "buys": [],
+      "markup": 1
+     }
+    ]
+   }
+  },
+  {
+   "use": "gameplay.farming",
+   "with": {
+    "crops": [{"item":"wheat","days":4,"seasons":["spring","summer","autumn"],"yield":[2,4]},{"item":"pumpkin","days":6,"seasons":["autumn"],"yield":[1,2]}]
+   }
+  },
+  {"use":"gameplay.build.structure","with":{"pieces":["wall","floor","roof","door","stairs","lamp"],"ownership":true}},
+  {
+   "use": "gameplay.resource",
+   "with": {
+    "pools": [
+     {"id":"stamina","max":100,"regen":20,"regenDelay":1,"startFull":true,"drainTags":["sprint","swim"]},
+     {"id":"hunger","max":100,"regen":-0.02,"startFull":true,"drainTags":["sprint","mine"]},
+     {"id":"fuel","max":100,"regen":0,"startFull":true,"drainTags":["drive"]}
+    ]
+   }
+  },
+  {
+   "use": "gameplay.combat.health",
+   "with": {"types":["phys","fire","blast","fall","void"],"iframes":0.4,"regenDelay":8,"friendlyFire":false,"knockback":2,"corpse":true}
+  },
+  {
+   "use": "gameplay.combat.melee",
+   "with": {
+    "comboWindowMs": 350,
+    "parry": {"window":0,"stagger":0,"riposte":1},
+    "block": {"reduction":0.5,"staminaPerDmg":0.5},
+    "pogo": false,
+    "hitStopMs": 30,
+    "poise": false
+   }
+  },
+  {"use":"gameplay.combat.projectile","with":{"maxLive":80,"friendly":false}},
+  {"use":"gameplay.combat.status"},
+  {"use":"gameplay.combat.stealth","with":{"sightRange":30,"crouchFactor":0.5,"takedown":true}},
+  {
+   "use": "gameplay.combat.boss",
+   "with": {
+    "retryReset": true,
+    "bosses": [
+     {
+      "id": "dex",
+      "archetype": "dex_harrow",
+      "arena": "foundry_flats",
+      "gate": false,
+      "phases": [{"at":1,"pattern":["brass_knuckles","smg_burst"],"speed":1},{"at":0.5,"pattern":["brass_knuckles","shoulder_charge","smg_burst"],"speed":1.2}],
+      "onStart": [],
+      "onDefeat": [{"do":"drop_loot","table":"loot_thug"},{"do":"set_flag","flag":"dex_down"}]
+     },
+     {
+      "id": "cassian",
+      "archetype": "cassian_mire",
+      "arena": "the_deep_works",
+      "gate": true,
+      "phases": [
+       {"at":1,"pattern":["cane_strike","revolver"],"speed":1},
+       {"at":0.6,"pattern":["cane_strike","revolver","call_thugs"],"speed":1.1},
+       {"at":0.25,"pattern":["cane_strike","flip_table","revolver","call_thugs"],"speed":1.3}
+      ],
+      "onStart": [{"do":"play_sound","cue":"boss_theme"}],
+      "onDefeat": [{"do":"drop_loot","table":"loot_vault"},{"do":"set_flag","flag":"final_resolved"}]
+     }
+    ]
+   }
+  },
+  {"use":"gameplay.ai.brain","with":{"tick":0.2,"maxActive":100,"perception":{"sight":30,"fov":160,"hearing":25,"memory":15}}},
+  {"use":"gameplay.ai.attacks","with":{"telegraph":true,"globalCooldown":0.4}},
+  {"use":"gameplay.ai.schedule","with":{"travel":"walk","offscreenTeleport":true}},
+  {
+   "use": "gameplay.ai.traffic",
+   "with": {
+    "density": 0.55,
+    "maxCars": 40,
+    "speed": 50,
+    "lanes": true,
+    "lights": true,
+    "panic": true,
+    "archetypes": [
+     {"archetype":"sedan","weight":5},
+     {"archetype":"taxi","weight":3},
+     {"archetype":"pickup_truck","weight":2},
+     {"archetype":"delivery_van","weight":2},
+     {"archetype":"coupe","weight":1},
+     {"archetype":"motorbike","weight":1}
+    ]
+   }
+  },
+  {
+   "use": "gameplay.ai.crowd",
+   "with": {
+    "density": 0.6,
+    "panic": true,
+    "archetypes": [{"archetype":"pedestrian_a","weight":3},{"archetype":"pedestrian_b","weight":3},{"archetype":"pedestrian_c","weight":3}]
+   }
+  },
+  {"use":"gameplay.vehicle.core","with":{"enterRange":3,"theftDifficulty":0.3,"damage":true}},
+  {"use":"gameplay.vehicle.car","with":{"preset":"arcade"}},
+  {"use":"gameplay.vehicle.boat"},
+  {"use":"gameplay.vehicle.aircraft"},
+  {"use":"gameplay.race","with":{"laps":3,"checkpoints":["lakeshore"]}},
+  {
+   "use": "gameplay.wanted",
+   "with": {
+    "levels": 5,
+    "crimes": {"assault":0.4,"murder":1,"theft":0.3,"vehicle_theft":0.5,"shots_fired":0.5,"cop_assault":1,"trespass":0.2,"explosives":1.5,"speeding":0.05},
+    "witnessRange": 30,
+    "decayPerSec": 0.02,
+    "hideSec": 25,
+    "response": [
+     {"level":1,"archetype":"patrol_officer","count":2},
+     {"level":2,"archetype":"patrol_officer","count":4,"vehicle":"police_cruiser"},
+     {"level":3,"archetype":"patrol_officer","count":6,"vehicle":"police_cruiser","roadblock":true},
+     {"level":4,"archetype":"swat_officer","count":4,"vehicle":"armored_van","roadblock":true},
+     {"level":5,"archetype":"swat_officer","count":8,"vehicle":"armored_van","roadblock":true}
+    ],
+    "safeZones": ["the_deep_works"],
+    "bribe": {"cost":400}
+   }
+  },
+  {"use":"gameplay.death","with":{"respawn":"hospital","penalty":{"dropCurrency":0.15,"corpse":false,"keepItems":true,"loseXp":0}}},
+  {
+   "use": "gameplay.move.walk",
+   "with": {"walk":3,"run":5,"sprint":7.5,"crouch":1.5,"jump":6.5,"airControl":0.45,"accel":40,"coyoteMs":80,"preset":"arcade","sprintCost":8}
+  },
+  {"use":"gameplay.move.swim","with":{"speed":3,"breath":20,"drownDps":1}},
+  {"use":"gameplay.move.climb","with":{"speed":2,"surfaces":"tagged","staminaCost":0,"slipMin":90,"ledgeGrab":false}},
+  {"use":"gameplay.blocks.mine","with":{"reach":5,"hardnessScale":1,"drops":true,"autoCollect":true,"fx":true}},
+  {"use":"gameplay.blocks.place","with":{"reach":5,"protect":["old_quarter","glass_heights"],"snap":false,"forbidNear":["npc"]}},
+  {"use":"gameplay.interact","with":{"range":3,"facingOnly":false,"holdMs":0,"prompts":true}},
+  {"use":"gameplay.rest","with":{"healFull":true,"skipTo":"dawn","safeRequired":true,"respawnsEnemies":false}},
+  {"use":"gameplay.checkpoint","with":{"restoreAll":false,"respawnEnemies":false,"fastTravelBetween":false}},
+  {
+   "use": "gameplay.collectible",
+   "with": {"magnet":2,"counters":[{"id":"ore_deposits","var":"ore_marked","total":12},{"id":"blueprints","var":"blueprints_found","total":4}]}
+  },
+  {
+   "use": "gameplay.mechanism",
+   "with": {
+    "mechanisms": [
+     {"id":"heights_vault","kind":"door","at":[10,20,-30],"size":[6,6],"hits":1,"persist":true,"gate":{"item":"thermite"}},
+     {
+      "id": "foundation_vault",
+      "kind": "door",
+      "at": [0,12,-420],
+      "size": [8,8],
+      "hits": 5,
+      "persist": true,
+      "gate": "foundation_vault_gate",
+      "hitsWith": {"vault_key":1}
+     },
+     {"id":"rail_fuse_box","kind":"lever","at":[-80,24,-400],"size":[1,2],"signal":"fuse","persist":true},
+     {"id":"taxi_fare","kind":"plate","at":[0,62,0],"size":[4,4],"signal":"fare","persist":false},
+     {"id":"farmland_plot","kind":"plate","at":[-300,62,-100],"size":[30,30],"signal":"farm","persist":true},
+     {"id":"tobi_door","kind":"door","at":[-270,62,240],"size":[4,4],"persist":false}
+    ]
+   }
+  },
+  {
+   "use": "gameplay.hazard",
+   "with": {
+    "types": [
+     {"id":"lava","damage":0,"dps":8,"status":"burning","respawn":"nearest-safe"},
+     {"id":"void","damage":99,"respawn":"nearest-safe"},
+     {"id":"drown","damage":0,"dps":1,"respawn":"checkpoint"}
+    ],
+    "fallDamage": {"minHeight":4,"perMeter":1}
+   }
+  },
+  {
+   "use": "gameplay.progression.level",
+   "with": {
+    "curve": {"base":100,"growth":1.25},
+    "maxLevel": 30,
+    "pointsPerLevel": 1,
+    "stats": [
+     {"id":"health","base":20,"perPoint":2},
+     {"id":"driving","base":0,"perPoint":1},
+     {"id":"mining","base":0,"perPoint":1},
+     {"id":"gunplay","base":0,"perPoint":1}
+    ],
+    "xpSources": [{"event":"quest_complete","xp":100},{"event":"defeated","xp":8},{"event":"block_mined:*","xp":1},{"event":"discovered:*","xp":40}]
+   }
+  },
+  {
+   "use": "gameplay.progression.abilities",
+   "with": {
+    "abilities": [
+     {"id":"driving_license","name":"Driving License","desc":"Opens the airfield and the sports cars.","grants":["drive","airfield"]},
+     {"id":"night_vision","name":"Night Eyes","desc":"Dark areas brighten.","grants":["night_vision"]}
+    ],
+    "start": []
+   }
+  },
+  {
+   "use": "gameplay.progression.tree",
+   "with": {
+    "useBased": true,
+    "nodes": [
+     {"id":"drift_control","cost":1,"requires":[],"mods":{"stat.drift_grip":0.2}},
+     {"id":"engine_tune","cost":2,"requires":["drift_control"],"mods":{"stat.car_accel":0.15}},
+     {"id":"mining_fortune","cost":1,"requires":[],"mods":{"stat.ore_drop":0.25}},
+     {"id":"mining_speed","cost":2,"requires":["mining_fortune"],"mods":{"stat.mine_speed":0.3}},
+     {"id":"quiet_step","cost":1,"requires":[],"mods":{"stat.noise":-0.3}},
+     {"id":"quick_hands","cost":2,"requires":[],"mods":{"stat.reload":-0.3}},
+     {"id":"builder_blueprint","cost":2,"requires":[],"mods":{"stat.build_reach":2}},
+     {"id":"thick_skin","cost":2,"requires":[],"mods":{"hp.max":8}}
+    ]
+   }
+  }
+ ],
+ "content": {
+  "items": [
+   {"id":"b_stone","name":"stone","kind":"block","block":"stone","stack":64,"value":2},
+   {"id":"b_cobblestone","name":"cobblestone","kind":"block","block":"cobblestone","stack":64,"value":2},
+   {"id":"b_dirt","name":"dirt","kind":"block","block":"dirt","stack":64,"value":2},
+   {"id":"b_grass","name":"grass","kind":"block","block":"grass","stack":64,"value":2},
+   {"id":"b_sand","name":"sand","kind":"block","block":"sand","stack":64,"value":2},
+   {"id":"b_gravel","name":"gravel","kind":"block","block":"gravel","stack":64,"value":2},
+   {"id":"b_log","name":"log","kind":"block","block":"log","stack":64,"value":2},
+   {"id":"b_planks","name":"planks","kind":"block","block":"planks","stack":64,"value":2},
+   {"id":"b_glass","name":"glass","kind":"block","block":"glass","stack":64,"value":2},
+   {"id":"b_brick","name":"brick","kind":"block","block":"brick","stack":64,"value":2},
+   {"id":"b_concrete","name":"concrete","kind":"block","block":"concrete","stack":64,"value":2},
+   {"id":"b_asphalt","name":"asphalt","kind":"block","block":"asphalt","stack":64,"value":2},
+   {"id":"b_steel_beam","name":"steel beam","kind":"block","block":"steel_beam","stack":64,"value":2},
+   {"id":"b_neon","name":"neon","kind":"block","block":"neon","stack":64,"value":2},
+   {"id":"b_lamp","name":"lamp","kind":"block","block":"lamp","stack":64,"value":2},
+   {"id":"b_wool_red","name":"wool red","kind":"block","block":"wool_red","stack":64,"value":2},
+   {"id":"b_wool_white","name":"wool white","kind":"block","block":"wool_white","stack":64,"value":2},
+   {"id":"b_ladder","name":"ladder","kind":"block","block":"ladder","stack":64,"value":2},
+   {"id":"b_rail","name":"rail","kind":"block","block":"rail","stack":64,"value":2},
+   {"id":"b_door","name":"door","kind":"block","block":"door","stack":64,"value":2},
+   {"id":"b_farmland","name":"farmland","kind":"block","block":"farmland","stack":64,"value":2},
+   {"id":"workbench","name":"Workbench","kind":"prop","place":"workbench","stack":8,"value":10},
+   {"id":"furnace","name":"Furnace","kind":"prop","place":"furnace","stack":8,"value":20},
+   {"id":"bed","name":"Bed","kind":"prop","place":"bed","stack":4,"value":30},
+   {"id":"chest","name":"Chest","kind":"prop","place":"chest","stack":8,"value":15},
+   {"id":"garage_bench","name":"Garage bench","kind":"prop","place":"garage_bench","stack":2,"value":120},
+   {"id":"chem_table","name":"Chem table","kind":"prop","place":"chem_table","stack":2,"value":150},
+   {"id":"minecart_item","name":"Mine cart","kind":"prop","place":"minecart","stack":2,"value":90},
+   {"id":"stick","name":"Stick","kind":"material","stack":64,"value":1},
+   {"id":"coal","name":"Coal","kind":"material","stack":64,"value":3,"tags":["fuel"]},
+   {"id":"iron_raw","name":"Raw iron","kind":"material","stack":64,"value":4},
+   {"id":"copper_raw","name":"Raw copper","kind":"material","stack":64,"value":5},
+   {"id":"gold_raw","name":"Raw gold","kind":"material","stack":64,"value":12},
+   {"id":"crystal","name":"Blockport crystal","kind":"material","stack":16,"value":40},
+   {"id":"iron_ingot","name":"Iron ingot","kind":"material","stack":64,"value":8},
+   {"id":"copper_ingot","name":"Copper ingot","kind":"material","stack":64,"value":9},
+   {"id":"gold_ingot","name":"Gold ingot","kind":"material","stack":64,"value":30},
+   {"id":"steel_ingot","name":"Steel ingot","kind":"material","stack":64,"value":20},
+   {"id":"circuit","name":"Circuit board","kind":"material","stack":32,"value":25},
+   {
+    "id": "hand_axe",
+    "name": "Stone hand axe",
+    "kind": "tool",
+    "stack": 1,
+    "value": 20,
+    "tool": {"kind":"axe","tier":0},
+    "weapon": {"damage":3,"reach":2.4,"arc":90,"speed":1,"stamina":0,"combo":1,"type":"phys","durability":60}
+   },
+   {
+    "id": "wood_pick",
+    "name": "Wood pickaxe",
+    "kind": "tool",
+    "stack": 1,
+    "value": 20,
+    "tool": {"kind":"pick","tier":0},
+    "weapon": {"damage":2,"reach":2.4,"arc":90,"speed":1,"stamina":0,"combo":1,"type":"phys","durability":60}
+   },
+   {
+    "id": "stone_pick",
+    "name": "Stone pickaxe",
+    "kind": "tool",
+    "stack": 1,
+    "value": 20,
+    "tool": {"kind":"pick","tier":1},
+    "weapon": {"damage":3,"reach":2.4,"arc":90,"speed":1,"stamina":0,"combo":1,"type":"phys","durability":120}
+   },
+   {
+    "id": "iron_pick",
+    "name": "Iron pickaxe",
+    "kind": "tool",
+    "stack": 1,
+    "value": 80,
+    "tool": {"kind":"pick","tier":2},
+    "weapon": {"damage":4,"reach":2.4,"arc":90,"speed":1,"stamina":0,"combo":1,"type":"phys","durability":180}
+   },
+   {
+    "id": "steel_pick",
+    "name": "Steel pickaxe",
+    "kind": "tool",
+    "stack": 1,
+    "value": 200,
+    "tool": {"kind":"pick","tier":3},
+    "weapon": {"damage":5,"reach":2.4,"arc":90,"speed":1,"stamina":0,"combo":1,"type":"phys","durability":240}
+   },
+   {
+    "id": "shovel",
+    "name": "Shovel",
+    "kind": "tool",
+    "stack": 1,
+    "value": 20,
+    "tool": {"kind":"shovel","tier":0},
+    "weapon": {"damage":2,"reach":2.4,"arc":90,"speed":1,"stamina":0,"combo":1,"type":"phys","durability":60}
+   },
+   {
+    "id": "iron_axe",
+    "name": "Iron axe",
+    "kind": "tool",
+    "stack": 1,
+    "value": 80,
+    "tool": {"kind":"axe","tier":2},
+    "weapon": {"damage":5,"reach":2.4,"arc":90,"speed":1,"stamina":0,"combo":1,"type":"phys","durability":180}
+   },
+   {
+    "id": "hoe",
+    "name": "Hoe",
+    "kind": "tool",
+    "stack": 1,
+    "value": 20,
+    "tool": {"kind":"hoe","tier":0},
+    "weapon": {"damage":1,"reach":2.4,"arc":90,"speed":1,"stamina":0,"combo":1,"type":"phys","durability":60}
+   },
+   {
+    "id": "bat",
+    "name": "Aluminum bat",
+    "kind": "weapon",
+    "stack": 1,
+    "value": 40,
+    "weapon": {"damage":8,"reach":2.2,"arc":110,"speed":0.9,"stamina":0,"combo":1,"type":"phys","durability":200}
+   },
+   {
+    "id": "pistol",
+    "name": "Pistol",
+    "kind": "weapon",
+    "stack": 1,
+    "value": 220,
+    "tags": ["gun"],
+    "ranged": {"projectile":"bullet","speed":120,"gravity":0,"spread":1.5,"ammo":"ammo_9mm","draw":0,"rate":4,"mag":12,"hitscan":true},
+    "weapon": {"damage":14,"reach":0,"arc":0,"speed":1,"stamina":0,"combo":1,"type":"phys","durability":400}
+   },
+   {
+    "id": "smg",
+    "name": "SMG",
+    "kind": "weapon",
+    "stack": 1,
+    "value": 650,
+    "tags": ["gun"],
+    "ranged": {"projectile":"bullet","speed":120,"gravity":0,"spread":3,"ammo":"ammo_9mm","draw":0,"rate":12,"mag":30,"hitscan":true},
+    "weapon": {"damage":9,"reach":0,"arc":0,"speed":1,"stamina":0,"combo":1,"type":"phys","durability":400}
+   },
+   {
+    "id": "shotgun",
+    "name": "Pump shotgun",
+    "kind": "weapon",
+    "stack": 1,
+    "value": 800,
+    "tags": ["gun"],
+    "ranged": {"projectile":"bullet","speed":120,"gravity":0,"spread":8,"ammo":"ammo_shell","draw":0,"rate":1,"mag":6,"hitscan":true},
+    "weapon": {"damage":40,"reach":0,"arc":0,"speed":1,"stamina":0,"combo":1,"type":"phys","durability":400}
+   },
+   {"id":"ammo_9mm","name":"9mm rounds","kind":"ammo","stack":99,"value":1},
+   {"id":"ammo_shell","name":"Shotgun shells","kind":"ammo","stack":40,"value":2},
+   {"id":"vest","name":"Kevlar vest","kind":"armor","stack":1,"value":300,"armor":{"slot":"chest","def":{"phys":8},"durability":150}},
+   {"id":"hardhat","name":"Hard hat","kind":"armor","stack":1,"value":40,"armor":{"slot":"head","def":{"phys":2},"durability":100}},
+   {"id":"overalls","name":"Overalls","kind":"armor","stack":1,"value":30,"armor":{"slot":"chest","def":{"phys":1},"durability":100}},
+   {"id":"sneakers","name":"Sneakers","kind":"armor","stack":1,"value":25,"armor":{"slot":"feet","def":{"phys":0},"durability":100},"tags":["quiet"]},
+   {
+    "id": "apple",
+    "name": "Apple",
+    "kind": "food",
+    "stack": 32,
+    "value": 3,
+    "use": {"fx":[{"do":"heal","who":"player","amount":4},{"do":"gain","resource":"hunger","amount":15}],"consume":true}
+   },
+   {
+    "id": "bread",
+    "name": "Bread",
+    "kind": "food",
+    "stack": 32,
+    "value": 4,
+    "use": {"fx":[{"do":"heal","who":"player","amount":3},{"do":"gain","resource":"hunger","amount":30}],"consume":true}
+   },
+   {
+    "id": "burger",
+    "name": "Harbor burger",
+    "kind": "food",
+    "stack": 16,
+    "value": 12,
+    "use": {"fx":[{"do":"heal","who":"player","amount":8},{"do":"gain","resource":"hunger","amount":60}],"consume":true}
+   },
+   {"id":"wheat","name":"Wheat","kind":"material","stack":64,"value":2},
+   {"id":"seeds","name":"Seeds","kind":"material","stack":64,"value":1},
+   {"id":"pumpkin","name":"Pumpkin","kind":"food","stack":16,"value":6,"use":{"fx":[{"do":"gain","resource":"hunger","amount":25}],"consume":true}},
+   {"id":"raw_beef","name":"Raw beef","kind":"food","stack":16,"value":4},
+   {
+    "id": "steak",
+    "name": "Steak",
+    "kind": "food",
+    "stack": 16,
+    "value": 10,
+    "use": {"fx":[{"do":"heal","who":"player","amount":8},{"do":"gain","resource":"hunger","amount":70}],"consume":true}
+   },
+   {
+    "id": "medkit",
+    "name": "Medkit",
+    "kind": "potion",
+    "stack": 8,
+    "value": 60,
+    "use": {"fx":[{"do":"heal","who":"player","amount":20}],"consume":true,"cooldown":3}
+   },
+   {"id":"car_battery","name":"Car battery","kind":"quest","stack":1,"value":40},
+   {"id":"spark_plugs","name":"Spark plugs","kind":"quest","stack":4,"value":12},
+   {"id":"engine_block","name":"Engine block","kind":"quest","stack":1,"value":120},
+   {"id":"jerry_can","name":"Fuel can","kind":"misc","stack":4,"value":15,"use":{"fx":[{"do":"gain","resource":"fuel","amount":40}],"consume":true}},
+   {"id":"sedan_keys","name":"Tobi's sedan keys","kind":"key","stack":1},
+   {"id":"garage_key","name":"Harbor garage key","kind":"key","stack":1},
+   {"id":"plot_deed","name":"Plot deed","kind":"key","stack":5,"desc":"Charter deed to one lot."},
+   {"id":"forged_deed","name":"Forged deed","kind":"quest","stack":8,"value":0,"desc":"Ink does not match the Charter seal."},
+   {"id":"charter_seal","name":"Charter seal stamp","kind":"quest","stack":1},
+   {"id":"delivery_crate","name":"Delivery crate","kind":"quest","stack":4,"value":0},
+   {"id":"ore_crate","name":"Ore crate","kind":"quest","stack":4,"value":0},
+   {"id":"blueprint","name":"Tower blueprint","kind":"quest","stack":4,"value":0},
+   {
+    "id": "thermite",
+    "name": "Thermite charge",
+    "kind": "weapon",
+    "stack": 4,
+    "value": 150,
+    "tags": ["explosive","tool"],
+    "weapon": {"damage":0,"reach":0,"arc":0,"speed":1,"stamina":0,"combo":1,"type":"fire"}
+   },
+   {"id":"keycard_heights","name":"Heights keycard","kind":"key","stack":1},
+   {"id":"drill_bit","name":"Diamond-cut drill bit","kind":"quest","stack":1,"value":60},
+   {"id":"rail_fuse","name":"Rail fuse","kind":"quest","stack":3,"value":20},
+   {"id":"vault_key","name":"Foundation vault key","kind":"key","stack":1},
+   {"id":"first_ledger","name":"The First Ledger","kind":"quest","stack":1,"value":0,"desc":"The original Tidewrights' register of plots."},
+   {"id":"airmail_sack","name":"Airmail sack","kind":"quest","stack":4,"value":0},
+   {"id":"fence_goods","name":"Hot goods","kind":"quest","stack":16,"value":80,"tags":["stolen"]},
+   {"id":"radio_tape","name":"Radio mix tape","kind":"misc","stack":8,"value":10},
+   {"id":"bucks","name":"Bucks","kind":"currency","stack":99999,"value":1}
+  ],
+  "recipes": [
+   {"id":"r_planks","inputs":[{"item":"b_log","count":1}],"output":{"item":"b_planks","count":4},"learned":true},
+   {"id":"r_stick","inputs":[{"item":"b_planks","count":2}],"output":{"item":"stick","count":4},"learned":true},
+   {"id":"r_workbench","inputs":[{"item":"b_planks","count":4}],"output":{"item":"workbench","count":1},"learned":true},
+   {
+    "id": "r_wood_pick",
+    "station": "workbench",
+    "inputs": [{"item":"b_planks","count":3},{"item":"stick","count":2}],
+    "output": {"item":"wood_pick","count":1},
+    "learned": true
+   },
+   {
+    "id": "r_stone_pick",
+    "station": "workbench",
+    "inputs": [{"item":"b_cobblestone","count":3},{"item":"stick","count":2}],
+    "output": {"item":"stone_pick","count":1},
+    "learned": true
+   },
+   {
+    "id": "r_iron_pick",
+    "station": "workbench",
+    "inputs": [{"item":"iron_ingot","count":3},{"item":"stick","count":2}],
+    "output": {"item":"iron_pick","count":1},
+    "learned": true
+   },
+   {
+    "id": "r_steel_pick",
+    "station": "workbench",
+    "inputs": [{"item":"steel_ingot","count":3},{"item":"stick","count":2}],
+    "output": {"item":"steel_pick","count":1},
+    "learned": false
+   },
+   {"id":"r_furnace","station":"workbench","inputs":[{"item":"b_cobblestone","count":8}],"output":{"item":"furnace","count":1},"learned":true},
+   {
+    "id": "r_iron_ingot",
+    "station": "furnace",
+    "inputs": [{"item":"iron_raw","count":1},{"item":"coal","count":1}],
+    "output": {"item":"iron_ingot","count":1},
+    "time": 6,
+    "learned": true
+   },
+   {
+    "id": "r_copper_ingot",
+    "station": "furnace",
+    "inputs": [{"item":"copper_raw","count":1},{"item":"coal","count":1}],
+    "output": {"item":"copper_ingot","count":1},
+    "time": 6,
+    "learned": true
+   },
+   {
+    "id": "r_gold_ingot",
+    "station": "furnace",
+    "inputs": [{"item":"gold_raw","count":1},{"item":"coal","count":1}],
+    "output": {"item":"gold_ingot","count":1},
+    "time": 8,
+    "learned": true
+   },
+   {
+    "id": "r_steel_ingot",
+    "station": "furnace",
+    "inputs": [{"item":"iron_ingot","count":2},{"item":"coal","count":2}],
+    "output": {"item":"steel_ingot","count":1},
+    "time": 10,
+    "learned": false
+   },
+   {
+    "id": "r_glass",
+    "station": "furnace",
+    "inputs": [{"item":"b_sand","count":2},{"item":"coal","count":1}],
+    "output": {"item":"b_glass","count":2},
+    "time": 4,
+    "learned": true
+   },
+   {
+    "id": "r_brick",
+    "station": "furnace",
+    "inputs": [{"item":"b_dirt","count":2},{"item":"coal","count":1}],
+    "output": {"item":"b_brick","count":2},
+    "time": 4,
+    "learned": true
+   },
+   {
+    "id": "r_concrete",
+    "station": "furnace",
+    "inputs": [{"item":"b_gravel","count":2},{"item":"b_sand","count":2},{"item":"coal","count":1}],
+    "output": {"item":"b_concrete","count":4},
+    "time": 5,
+    "learned": true
+   },
+   {
+    "id": "r_steel_beam",
+    "station": "garage_bench",
+    "inputs": [{"item":"steel_ingot","count":1}],
+    "output": {"item":"b_steel_beam","count":2},
+    "learned": false
+   },
+   {
+    "id": "r_circuit",
+    "station": "garage_bench",
+    "inputs": [{"item":"copper_ingot","count":2},{"item":"gold_ingot","count":1}],
+    "output": {"item":"circuit","count":1},
+    "learned": false
+   },
+   {
+    "id": "r_pistol_ammo",
+    "station": "garage_bench",
+    "inputs": [{"item":"iron_ingot","count":1},{"item":"coal","count":1}],
+    "output": {"item":"ammo_9mm","count":12},
+    "learned": true
+   },
+   {
+    "id": "r_thermite",
+    "station": "chem_table",
+    "inputs": [{"item":"iron_ingot","count":2},{"item":"coal","count":3},{"item":"crystal","count":1}],
+    "output": {"item":"thermite","count":1},
+    "time": 12,
+    "learned": false
+   },
+   {
+    "id": "r_medkit",
+    "station": "workbench",
+    "inputs": [{"item":"b_wool_white","count":2},{"item":"apple","count":2}],
+    "output": {"item":"medkit","count":1},
+    "learned": false
+   },
+   {
+    "id": "r_bed",
+    "station": "workbench",
+    "inputs": [{"item":"b_planks","count":3},{"item":"b_wool_white","count":3}],
+    "output": {"item":"bed","count":1},
+    "learned": true
+   },
+   {
+    "id": "r_garage_bench",
+    "station": "workbench",
+    "inputs": [{"item":"iron_ingot","count":6},{"item":"b_planks","count":4}],
+    "output": {"item":"garage_bench","count":1},
+    "learned": true
+   },
+   {
+    "id": "r_chem_table",
+    "station": "workbench",
+    "inputs": [{"item":"iron_ingot","count":3},{"item":"b_glass","count":2},{"item":"copper_ingot","count":1}],
+    "output": {"item":"chem_table","count":1},
+    "learned": true
+   },
+   {"id":"r_chest","inputs":[{"item":"b_planks","count":8}],"output":{"item":"chest","count":1},"learned":true},
+   {"id":"r_bread","station":"furnace","inputs":[{"item":"wheat","count":3}],"output":{"item":"bread","count":1},"time":3,"learned":true},
+   {
+    "id": "r_steak",
+    "station": "furnace",
+    "inputs": [{"item":"raw_beef","count":1},{"item":"coal","count":1}],
+    "output": {"item":"steak","count":1},
+    "time": 5,
+    "learned": true
+   },
+   {"id":"r_ladder","inputs":[{"item":"stick","count":5}],"output":{"item":"b_ladder","count":3},"learned":true},
+   {
+    "id": "r_rail",
+    "station": "garage_bench",
+    "inputs": [{"item":"iron_ingot","count":1},{"item":"stick","count":1}],
+    "output": {"item":"b_rail","count":8},
+    "learned": true
+   },
+   {"id":"r_door","inputs":[{"item":"b_planks","count":4}],"output":{"item":"b_door","count":1},"learned":true},
+   {
+    "id": "r_sedan_part_set",
+    "station": "garage_bench",
+    "inputs": [{"item":"car_battery","count":1},{"item":"spark_plugs","count":4},{"item":"engine_block","count":1}],
+    "output": {"item":"sedan_keys","count":1},
+    "time": 20,
+    "learned": false
+   }
+  ],
+  "blocks": [
+   {"id":"bedrock","name":"Bedrock","color":"#1a1a1a","solid":true,"hardness":9999,"tags":["unbreakable"]},
+   {"id":"stone","name":"Stone","color":"#7a7a7a","solid":true,"hardness":2,"tool":"pick","tier":1,"drops":[{"item":"b_cobblestone"}]},
+   {"id":"cobblestone","name":"Cobblestone","color":"#6a6a6a","solid":true,"hardness":2,"tool":"pick","tier":1},
+   {"id":"dirt","name":"Dirt","color":"#7a5a3a","solid":true,"hardness":0.5,"tool":"shovel","tier":0},
+   {"id":"grass","name":"Grass","color":"#5a9a3a","solid":true,"hardness":0.6,"tool":"shovel","tier":0,"drops":[{"item":"b_dirt"}]},
+   {"id":"sand","name":"Sand","color":"#e0d090","solid":true,"hardness":0.5,"tool":"shovel","tier":0},
+   {"id":"gravel","name":"Gravel","color":"#8a8a8a","solid":true,"hardness":0.6,"tool":"shovel","tier":0},
+   {"id":"log","name":"Log","color":"#6a4a2a","solid":true,"hardness":2,"tool":"axe","tier":0,"drops":[{"item":"b_log"}]},
+   {"id":"planks","name":"Planks","color":"#b88a4a","solid":true,"hardness":2,"tool":"axe","tier":0},
+   {
+    "id": "leaves",
+    "name": "Leaves",
+    "color": "#3a7a2a",
+    "solid": true,
+    "hardness": 0.2,
+    "drops": [{"item":"stick","p":0.2},{"item":"apple","p":0.05}],
+    "transparent": true
+   },
+   {"id":"glass","name":"Glass","color":"#c8e8f0","solid":true,"hardness":0.3,"drops":[],"transparent":true},
+   {"id":"brick","name":"Brick","color":"#a8503a","solid":true,"hardness":2,"tool":"pick","tier":1},
+   {"id":"concrete","name":"Concrete","color":"#9a9aa0","solid":true,"hardness":3,"tool":"pick","tier":1},
+   {"id":"asphalt","name":"Asphalt","color":"#2e2e34","solid":true,"hardness":3,"tool":"pick","tier":1,"tags":["road"]},
+   {"id":"road_line","name":"Road line","color":"#e8e0a0","solid":true,"hardness":3,"tool":"pick","tier":1,"tags":["road"]},
+   {"id":"steel_beam","name":"Steel beam","color":"#6a707a","solid":true,"hardness":5,"tool":"pick","tier":3},
+   {"id":"neon","name":"Neon panel","color":"#ff4ad8","solid":true,"hardness":1,"light":14,"tags":["emissive"]},
+   {"id":"lamp","name":"Street lamp","color":"#ffe8a0","solid":true,"hardness":0.5,"light":15,"tags":["emissive"]},
+   {"id":"iron_ore","name":"Iron ore","color":"#a89080","solid":true,"hardness":3,"tool":"pick","tier":2,"drops":[{"item":"iron_raw"}]},
+   {"id":"coal_ore","name":"Coal ore","color":"#3a3a3a","solid":true,"hardness":3,"tool":"pick","tier":1,"drops":[{"item":"coal"}]},
+   {"id":"copper_ore","name":"Copper ore","color":"#c87a4a","solid":true,"hardness":3,"tool":"pick","tier":2,"drops":[{"item":"copper_raw"}]},
+   {"id":"gold_ore","name":"Gold ore","color":"#e8c030","solid":true,"hardness":3.5,"tool":"pick","tier":3,"drops":[{"item":"gold_raw"}]},
+   {
+    "id": "crystal_ore",
+    "name": "Blockport crystal",
+    "color": "#4ae8e8",
+    "solid": true,
+    "hardness": 4,
+    "tool": "pick",
+    "tier": 3,
+    "drops": [{"item":"crystal"}],
+    "light": 8
+   },
+   {"id":"water","name":"Water","color":"#2a5ad8","solid":false,"hardness":100,"transparent":true,"tags":["liquid"]},
+   {"id":"lava","name":"Lava","color":"#ff6a1a","solid":false,"hardness":100,"light":15,"tags":["liquid","hazard"]},
+   {"id":"crop_wheat","name":"Wheat","color":"#d8c050","solid":false,"hardness":0,"drops":[{"item":"wheat"}],"transparent":true,"tags":["crop"]},
+   {"id":"farmland","name":"Farmland","color":"#5a3a1a","solid":true,"hardness":0.6,"tool":"shovel","tier":0,"drops":[{"item":"b_dirt"}]},
+   {"id":"wool_red","name":"Red wool","color":"#d84a4a","solid":true,"hardness":0.8},
+   {"id":"wool_white","name":"White wool","color":"#f0f0f0","solid":true,"hardness":0.8},
+   {"id":"ladder","name":"Ladder","color":"#8a6a3a","solid":false,"hardness":0.4,"transparent":true,"tags":["climbable"]},
+   {"id":"rail","name":"Mine rail","color":"#8a8a8a","solid":false,"hardness":0.7,"transparent":true,"tags":["rail"]},
+   {"id":"door","name":"Door","color":"#8a5a2a","solid":false,"hardness":1,"transparent":true,"tags":["door"]}
+  ],
+  "tables": [
+   {
+    "id": "loot_thug",
+    "rolls": [1,2],
+    "entries": [
+     {"item":"bucks","weight":10,"count":[10,60]},
+     {"item":"ammo_9mm","weight":6,"count":[6,18]},
+     {"item":"medkit","weight":1},
+     {"item":"bat","weight":1}
+    ]
+   },
+   {
+    "id": "loot_officer",
+    "rolls": [1,2],
+    "entries": [{"item":"bucks","weight":8,"count":[5,30]},{"item":"ammo_9mm","weight":8,"count":[8,24]},{"item":"pistol","weight":1}]
+   },
+   {
+    "id": "loot_swat",
+    "rolls": [2,3],
+    "entries": [{"item":"ammo_9mm","weight":8,"count":[15,40]},{"item":"smg","weight":1},{"item":"vest","weight":1},{"item":"medkit","weight":2}]
+   },
+   {
+    "id": "loot_chest_town",
+    "rolls": [2,4],
+    "entries": [
+     {"item":"bucks","weight":10,"count":[20,120]},
+     {"item":"bread","weight":6,"count":[1,4]},
+     {"item":"iron_ingot","weight":3,"count":[1,4]},
+     {"item":"coal","weight":5,"count":[2,8]},
+     {"item":"car_battery","weight":1}
+    ]
+   },
+   {
+    "id": "loot_chest_mine",
+    "rolls": [2,4],
+    "entries": [
+     {"item":"iron_raw","weight":8,"count":[2,8]},
+     {"item":"coal","weight":8,"count":[4,12]},
+     {"item":"gold_raw","weight":2,"count":[1,3]},
+     {"item":"crystal","weight":1},
+     {"item":"rail_fuse","weight":1}
+    ]
+   },
+   {
+    "id": "loot_mob",
+    "rolls": [1,1],
+    "entries": [{"item":"stick","weight":3,"count":[1,3]},{"item":"coal","weight":2},{"item":"bucks","weight":2,"count":[1,5]}]
+   },
+   {"id":"loot_animal","rolls":[1,2],"entries":[{"item":"raw_beef","weight":8,"count":[1,3]},{"item":"wheat","weight":1}]},
+   {
+    "id": "loot_scrap",
+    "rolls": [2,3],
+    "entries": [
+     {"item":"engine_block","weight":4},
+     {"item":"iron_raw","weight":6,"count":[2,6]},
+     {"item":"coal","weight":4,"count":[2,6]},
+     {"item":"car_battery","weight":2}
+    ]
+   },
+   {
+    "id": "loot_heights_vault",
+    "rolls": [2,3],
+    "entries": [{"item":"drill_bit","weight":10},{"item":"bucks","weight":6,"count":[200,600]},{"item":"gold_ingot","weight":3,"count":[1,3]}]
+   },
+   {
+    "id": "loot_vault",
+    "rolls": [3,5],
+    "entries": [{"item":"bucks","weight":10,"count":[800,2400]},{"item":"gold_ingot","weight":6,"count":[3,8]},{"item":"crystal","weight":3,"count":[1,3]}]
+   }
+  ],
+  "statuses": [
+   {"id":"burning","duration":5,"tick":{"dps":2,"type":"fire"}},
+   {"id":"stunned","duration":1.5,"mods":{"stat.move":-1}},
+   {"id":"well_fed","duration":300,"mods":{"res.stamina.regen":4}},
+   {"id":"caffeinated","duration":120,"mods":{"stat.move":0.15}},
+   {"id":"starving","duration":9999,"tick":{"dps":0.5,"type":"void"}}
+  ],
+  "archetypes": [
+   {
+    "id": "kit",
+    "kind": "player",
+    "components": {
+     "model": "kit",
+     "health": {"max":20,"regen":0.05},
+     "level": 1,
+     "resources": {"stamina":{"max":100,"regen":20,"regenDelay":1},"hunger":{"max":100,"regen":-0.02},"fuel":{"max":100}},
+     "melee": {"weapon":"hand_axe"},
+     "equipment": {"slots":["weapon","gun","head","chest","feet"]},
+     "faction": "player",
+     "witness": false
+    }
+   },
+   {
+    "id": "pedestrian_a",
+    "kind": "npc",
+    "components": {
+     "model": "pedestrian_a",
+     "health": {"max":20},
+     "ai": {
+      "brain": [{"do":"flee","when":{"aware":"hostile"}},{"do":"wander","range":40}],
+      "perception": {"sight":25,"fov":160,"hearing":30,"memory":10},
+      "speed": 1.6,
+      "crowd": true
+     },
+     "faction": "citizen",
+     "witness": true
+    }
+   },
+   {
+    "id": "pedestrian_b",
+    "kind": "npc",
+    "components": {
+     "model": "pedestrian_b",
+     "health": {"max":20},
+     "ai": {
+      "brain": [{"do":"flee","when":{"aware":"hostile"}},{"do":"wander","range":40}],
+      "perception": {"sight":25,"fov":160,"hearing":30,"memory":10},
+      "speed": 1.6,
+      "crowd": true
+     },
+     "faction": "citizen",
+     "witness": true
+    }
+   },
+   {
+    "id": "pedestrian_c",
+    "kind": "npc",
+    "components": {
+     "model": "pedestrian_c",
+     "health": {"max":20},
+     "ai": {
+      "brain": [{"do":"flee","when":{"aware":"hostile"}},{"do":"wander","range":40}],
+      "perception": {"sight":25,"fov":160,"hearing":30,"memory":10},
+      "speed": 1.6,
+      "crowd": true
+     },
+     "faction": "citizen",
+     "witness": true
+    }
+   },
+   {
+    "id": "patrol_officer",
+    "kind": "enemy",
+    "components": {
+     "model": "officer",
+     "health": {"max":30},
+     "level": 3,
+     "ai": {
+      "brain": [{"do":"chase","when":{"aware":"hostile"}},{"do":"patrol","range":30}],
+      "perception": {"sight":40,"fov":150,"hearing":30,"memory":25},
+      "speed": 3.2
+     },
+     "attacks": [
+      {"id":"baton","range":2,"windup":0.4,"active":0.2,"recover":0.8,"damage":4,"shape":"arc","weight":2},
+      {"id":"pistol_shot","range":30,"windup":0.4,"active":0.05,"recover":1.1,"damage":4,"shape":"hitscan","weight":3,"when":{"var":"wanted","gte":2}}
+     ],
+     "faction": "police",
+     "loot": "loot_officer"
+    }
+   },
+   {
+    "id": "swat_officer",
+    "kind": "enemy",
+    "components": {
+     "model": "swat",
+     "health": {"max":60},
+     "level": 6,
+     "ai": {
+      "brain": [{"do":"chase","when":{"aware":"hostile"}},{"do":"patrol","range":20}],
+      "perception": {"sight":50,"fov":180,"hearing":35,"memory":40},
+      "speed": 3.6
+     },
+     "attacks": [
+      {"id":"rifle_burst","range":40,"windup":0.4,"active":0.6,"recover":1.2,"damage":3,"shape":"hitscan_burst","weight":4},
+      {"id":"flashbang","range":14,"windup":0.8,"active":0.2,"recover":2.5,"damage":0,"status":"stunned","shape":"projectile","weight":1}
+     ],
+     "faction": "police",
+     "loot": "loot_swat"
+    }
+   },
+   {
+    "id": "thug",
+    "kind": "enemy",
+    "components": {
+     "model": "thug",
+     "health": {"max":28},
+     "level": 3,
+     "ai": {"brain":[{"do":"chase","when":{"aware":"hostile"}},{"do":"guard"}],"perception":{"sight":25,"fov":140,"hearing":20,"memory":15},"speed":3},
+     "attacks": [
+      {"id":"bat_swing","range":2.2,"windup":0.5,"active":0.2,"recover":0.9,"damage":5,"shape":"arc","weight":3},
+      {"id":"pistol_shot","range":25,"windup":0.5,"active":0.05,"recover":1.3,"damage":4,"shape":"hitscan","weight":2}
+     ],
+     "faction": "syndicate",
+     "loot": "loot_thug"
+    }
+   },
+   {
+    "id": "dex_harrow",
+    "kind": "boss",
+    "components": {
+     "model": "dex",
+     "health": {"max":160},
+     "level": 8,
+     "resources": {"poise":{"max":80}},
+     "ai": {"brain":[{"do":"chase","when":{"aware":"hostile"}},{"do":"guard"}],"perception":{"sight":40,"fov":180,"hearing":25,"memory":40},"speed":3.8},
+     "attacks": [
+      {"id":"brass_knuckles","range":2.2,"windup":0.4,"active":0.2,"recover":0.7,"damage":6,"shape":"arc","weight":3},
+      {"id":"smg_burst","range":30,"windup":0.5,"active":0.8,"recover":1.5,"damage":2,"shape":"hitscan_burst","weight":2},
+      {"id":"shoulder_charge","range":10,"windup":0.6,"active":0.6,"recover":1.6,"damage":8,"move":"charge","weight":1}
+     ],
+     "faction": "syndicate",
+     "loot": "loot_thug"
+    }
+   },
+   {
+    "id": "cassian_mire",
+    "kind": "boss",
+    "components": {
+     "model": "cassian",
+     "health": {"max":300},
+     "level": 12,
+     "resources": {"poise":{"max":150}},
+     "ai": {"brain":[{"do":"chase","when":{"aware":"hostile"}},{"do":"guard"}],"perception":{"sight":40,"fov":180,"hearing":30,"memory":60},"speed":3.4},
+     "attacks": [
+      {"id":"cane_strike","range":2.6,"windup":0.5,"active":0.2,"recover":0.8,"damage":8,"shape":"arc","weight":3},
+      {"id":"revolver","range":35,"windup":0.5,"active":0.05,"recover":1,"damage":10,"shape":"hitscan","weight":3},
+      {"id":"call_thugs","range":0,"windup":1.2,"active":0.1,"recover":2,"damage":0,"summon":"thug","phase":2,"weight":1},
+      {"id":"flip_table","range":6,"windup":0.8,"active":0.3,"recover":1.5,"damage":10,"shape":"cone","phase":3,"weight":1}
+     ],
+     "faction": "syndicate",
+     "loot": "loot_vault"
+    }
+   },
+   {
+    "id": "gloomer",
+    "kind": "enemy",
+    "components": {
+     "model": "gloomer",
+     "health": {"max":20},
+     "level": 2,
+     "ai": {
+      "brain": [{"do":"chase","when":{"aware":"player"}},{"do":"wander","range":30}],
+      "perception": {"sight":22,"fov":360,"hearing":24,"memory":10},
+      "speed": 2.6,
+      "burnsInSun": true
+     },
+     "attacks": [{"id":"claw","range":1.8,"windup":0.5,"active":0.2,"recover":0.8,"damage":3,"shape":"arc","weight":1}],
+     "faction": "night",
+     "loot": "loot_mob"
+    }
+   },
+   {
+    "id": "boomling",
+    "kind": "enemy",
+    "components": {
+     "model": "boomling",
+     "health": {"max":14},
+     "level": 3,
+     "ai": {
+      "brain": [{"do":"chase","when":{"aware":"player"}},{"do":"wander","range":25}],
+      "perception": {"sight":18,"fov":360,"hearing":18,"memory":6},
+      "speed": 2.8,
+      "burnsInSun": false
+     },
+     "attacks": [{"id":"fuse","range":3,"windup":1.5,"active":0.3,"recover":0,"damage":14,"shape":"blast","blastBlocks":3,"selfDestruct":true,"weight":1}],
+     "faction": "night",
+     "loot": "loot_mob"
+    }
+   },
+   {
+    "id": "cave_skitter",
+    "kind": "enemy",
+    "components": {
+     "model": "skitter",
+     "health": {"max":12},
+     "level": 2,
+     "ai": {
+      "brain": [{"do":"ambush","when":{"near":"player","within":8}},{"do":"wander","range":20}],
+      "perception": {"sight":10,"fov":360,"hearing":20,"memory":5},
+      "speed": 3.4,
+      "climbs": true
+     },
+     "attacks": [{"id":"bite","range":1.4,"windup":0.3,"active":0.1,"recover":0.6,"damage":2,"status":"burning","weight":1}],
+     "faction": "night",
+     "loot": "loot_mob"
+    }
+   },
+   {
+    "id": "cow",
+    "kind": "creature",
+    "components": {
+     "model": "cow",
+     "health": {"max":10},
+     "ai": {"brain":[{"do":"wander","range":25}],"perception":{"sight":12,"fov":270,"hearing":14,"memory":2}},
+     "loot": "loot_animal",
+     "huntable": true
+    }
+   },
+   {
+    "id": "chicken",
+    "kind": "creature",
+    "components": {"model":"chicken","health":{"max":4},"ai":{"brain":[{"do":"wander","range":10}]},"loot":"loot_animal","huntable":true}
+   },
+   {
+    "id": "sedan",
+    "kind": "vehicle",
+    "components": {
+     "model": "sedan",
+     "health": {"max":120},
+     "vehicle": {"seats":4,"health":120,"fuel":100},
+     "car": {"maxSpeed":120,"accel":14,"grip":1,"mass":1200,"steer":32,"brake":1,"drift":false}
+    }
+   },
+   {
+    "id": "taxi",
+    "kind": "vehicle",
+    "components": {
+     "model": "taxi",
+     "health": {"max":120},
+     "vehicle": {"seats":4,"health":120,"fuel":100},
+     "car": {"maxSpeed":115,"accel":13,"grip":1,"mass":1200,"steer":32,"brake":1,"drift":false},
+     "fare": true
+    }
+   },
+   {
+    "id": "pickup_truck",
+    "kind": "vehicle",
+    "components": {
+     "model": "pickup_truck",
+     "health": {"max":180},
+     "vehicle": {"seats":4,"health":180,"fuel":100},
+     "car": {"maxSpeed":100,"accel":11,"grip":0.9,"mass":1900,"steer":32,"brake":1,"drift":false}
+    }
+   },
+   {
+    "id": "coupe",
+    "kind": "vehicle",
+    "components": {
+     "model": "coupe",
+     "health": {"max":90},
+     "vehicle": {"seats":2,"health":90,"fuel":100},
+     "car": {"maxSpeed":170,"accel":20,"grip":1.15,"mass":1100,"steer":32,"brake":1,"drift":true,"boost":{"sec":2,"mult":1.35,"cooldown":12}}
+    }
+   },
+   {
+    "id": "delivery_van",
+    "kind": "vehicle",
+    "components": {
+     "model": "delivery_van",
+     "health": {"max":220},
+     "vehicle": {"seats":2,"health":220,"fuel":100},
+     "car": {"maxSpeed":90,"accel":9,"grip":0.85,"mass":2500,"steer":32,"brake":1,"drift":false}
+    }
+   },
+   {
+    "id": "police_cruiser",
+    "kind": "vehicle",
+    "components": {
+     "model": "police_cruiser",
+     "health": {"max":140},
+     "vehicle": {"seats":4,"health":140,"fuel":100},
+     "car": {"maxSpeed":150,"accel":18,"grip":1.1,"mass":1200,"steer":32,"brake":1,"drift":false},
+     "siren": true,
+     "faction": "police"
+    }
+   },
+   {
+    "id": "armored_van",
+    "kind": "vehicle",
+    "components": {
+     "model": "armored_van",
+     "health": {"max":600},
+     "vehicle": {"seats":4,"health":600,"fuel":100},
+     "car": {"maxSpeed":100,"accel":10,"grip":0.9,"mass":3500,"steer":32,"brake":1,"drift":false},
+     "faction": "police",
+     "armored": true
+    }
+   },
+   {
+    "id": "motorbike",
+    "kind": "vehicle",
+    "components": {
+     "model": "motorbike",
+     "health": {"max":60},
+     "vehicle": {"seats":2,"health":60,"fuel":100,"open":true},
+     "car": {"maxSpeed":160,"accel":24,"grip":1.2,"mass":220,"steer":40,"brake":1,"drift":true,"lean":true}
+    }
+   },
+   {
+    "id": "minecart",
+    "kind": "vehicle",
+    "components": {
+     "model": "minecart",
+     "health": {"max":80},
+     "vehicle": {"seats":2,"health":80,"fuel":0},
+     "car": {"maxSpeed":40,"accel":8,"grip":2,"mass":300,"steer":0,"brake":1,"rail":true}
+    }
+   },
+   {
+    "id": "speedboat",
+    "kind": "vehicle",
+    "components": {"model":"speedboat","health":{"max":100},"vehicle":{"seats":3,"health":100,"fuel":100},"boat":{"maxSpeed":90,"accel":12,"turn":38,"drag":0.7}}
+   },
+   {
+    "id": "biplane",
+    "kind": "vehicle",
+    "components": {
+     "model": "biplane",
+     "health": {"max":120},
+     "vehicle": {"seats":2,"health":120,"fuel":100},
+     "aircraft": {"stall":40,"maxSpeed":180,"climb":6,"turn":28,"takeoffSpeed":55}
+    }
+   },
+   {
+    "id": "npc_odalys",
+    "kind": "npc",
+    "components": {
+     "model": "odalys",
+     "health": {"max":40},
+     "ai": {"brain":[{"do":"work"},{"do":"flee","when":{"aware":"hostile"}}],"perception":{"sight":25,"fov":160,"hearing":25,"memory":15},"speed":2},
+     "interact": {"prompt":"Talk","range":2.8},
+     "faction": "harbor"
+    }
+   },
+   {
+    "id": "npc_tobi",
+    "kind": "npc",
+    "components": {
+     "model": "tobi",
+     "health": {"max":40},
+     "ai": {"brain":[{"do":"work"},{"do":"flee","when":{"aware":"hostile"}}],"perception":{"sight":25,"fov":160,"hearing":25,"memory":15},"speed":2},
+     "interact": {"prompt":"Talk","range":2.8},
+     "faction": "harbor"
+    }
+   },
+   {
+    "id": "npc_renna",
+    "kind": "npc",
+    "components": {
+     "model": "renna",
+     "health": {"max":40},
+     "ai": {"brain":[{"do":"work"},{"do":"flee","when":{"aware":"hostile"}}],"perception":{"sight":25,"fov":160,"hearing":25,"memory":15},"speed":2},
+     "interact": {"prompt":"Talk","range":2.8},
+     "faction": "police"
+    }
+   },
+   {
+    "id": "npc_imelda",
+    "kind": "npc",
+    "components": {
+     "model": "imelda",
+     "health": {"max":40},
+     "ai": {"brain":[{"do":"work"},{"do":"flee","when":{"aware":"hostile"}}],"perception":{"sight":25,"fov":160,"hearing":25,"memory":15},"speed":2},
+     "interact": {"prompt":"Talk","range":2.8},
+     "faction": "city"
+    }
+   },
+   {
+    "id": "npc_bram",
+    "kind": "npc",
+    "components": {
+     "model": "bram",
+     "health": {"max":40},
+     "ai": {"brain":[{"do":"work"},{"do":"flee","when":{"aware":"hostile"}}],"perception":{"sight":25,"fov":160,"hearing":25,"memory":15},"speed":2},
+     "interact": {"prompt":"Talk","range":2.8},
+     "faction": "miners"
+    }
+   },
+   {
+    "id": "npc_vesper",
+    "kind": "npc",
+    "components": {
+     "model": "vesper",
+     "health": {"max":40},
+     "ai": {"brain":[{"do":"work"},{"do":"flee","when":{"aware":"hostile"}}],"perception":{"sight":25,"fov":160,"hearing":25,"memory":15},"speed":2},
+     "interact": {"prompt":"Talk","range":2.8},
+     "faction": "underworld"
+    }
+   },
+   {
+    "id": "npc_leopold",
+    "kind": "npc",
+    "components": {
+     "model": "leopold",
+     "health": {"max":40},
+     "ai": {"brain":[{"do":"work"},{"do":"flee","when":{"aware":"hostile"}}],"perception":{"sight":25,"fov":160,"hearing":25,"memory":15},"speed":2},
+     "interact": {"prompt":"Talk","range":2.8},
+     "faction": "city"
+    }
+   },
+   {
+    "id": "npc_ysolde",
+    "kind": "npc",
+    "components": {
+     "model": "ysolde",
+     "health": {"max":40},
+     "ai": {"brain":[{"do":"work"},{"do":"flee","when":{"aware":"hostile"}}],"perception":{"sight":25,"fov":160,"hearing":25,"memory":15},"speed":2},
+     "interact": {"prompt":"Talk","range":2.8},
+     "faction": "city"
+    }
+   },
+   {
+    "id": "npc_gus",
+    "kind": "npc",
+    "components": {
+     "model": "gus",
+     "health": {"max":40},
+     "ai": {"brain":[{"do":"work"},{"do":"flee","when":{"aware":"hostile"}}],"perception":{"sight":25,"fov":160,"hearing":25,"memory":15},"speed":2},
+     "interact": {"prompt":"Talk","range":2.8},
+     "faction": "free"
+    }
+   },
+   {
+    "id": "npc_fenn",
+    "kind": "npc",
+    "components": {
+     "model": "fenn",
+     "health": {"max":40},
+     "ai": {"brain":[{"do":"work"},{"do":"flee","when":{"aware":"hostile"}}],"perception":{"sight":25,"fov":160,"hearing":25,"memory":15},"speed":2},
+     "interact": {"prompt":"Talk","range":2.8},
+     "faction": "underworld"
+    }
+   },
+   {
+    "id": "npc_nell",
+    "kind": "npc",
+    "components": {
+     "model": "nell",
+     "health": {"max":40},
+     "ai": {"brain":[{"do":"work"},{"do":"flee","when":{"aware":"hostile"}}],"perception":{"sight":25,"fov":160,"hearing":25,"memory":15},"speed":2},
+     "interact": {"prompt":"Talk","range":2.8},
+     "faction": "city"
+    }
+   },
+   {
+    "id": "npc_maude",
+    "kind": "npc",
+    "components": {
+     "model": "maude",
+     "health": {"max":40},
+     "ai": {"brain":[{"do":"work"},{"do":"flee","when":{"aware":"hostile"}}],"perception":{"sight":25,"fov":160,"hearing":25,"memory":15},"speed":2},
+     "interact": {"prompt":"Talk","range":2.8},
+     "faction": "farmers"
+    }
+   },
+   {
+    "id": "npc_billie",
+    "kind": "npc",
+    "components": {
+     "model": "billie",
+     "health": {"max":40},
+     "ai": {"brain":[{"do":"work"},{"do":"flee","when":{"aware":"hostile"}}],"perception":{"sight":25,"fov":160,"hearing":25,"memory":15},"speed":2},
+     "interact": {"prompt":"Talk","range":2.8},
+     "faction": "city"
+    }
+   },
+   {
+    "id": "npc_pruitt",
+    "kind": "npc",
+    "components": {
+     "model": "pruitt",
+     "health": {"max":40},
+     "ai": {"brain":[{"do":"work"},{"do":"flee","when":{"aware":"hostile"}}],"perception":{"sight":25,"fov":160,"hearing":25,"memory":15},"speed":2},
+     "interact": {"prompt":"Talk","range":2.8},
+     "faction": "city"
+    }
+   },
+   {"id":"workbench","kind":"prop","components":{"model":"workbench","station":"workbench","interact":{"prompt":"Craft","range":3}}},
+   {"id":"furnace","kind":"prop","components":{"model":"furnace","station":"furnace","interact":{"prompt":"Smelt","range":3}}},
+   {"id":"garage_bench","kind":"prop","components":{"model":"workbench","station":"garage_bench","interact":{"prompt":"Tune","range":3}}},
+   {"id":"chem_table","kind":"prop","components":{"model":"workbench","station":"chem_table","interact":{"prompt":"Mix","range":3}}},
+   {"id":"chest","kind":"prop","components":{"model":"chest","container":{"slots":27},"interact":{"prompt":"Open","range":2.6}}},
+   {
+    "id": "town_chest",
+    "kind": "prop",
+    "components": {"model":"chest","container":{"slots":12,"table":"loot_chest_town"},"interact":{"prompt":"Open","range":2.6}}
+   },
+   {
+    "id": "mine_chest",
+    "kind": "prop",
+    "components": {"model":"chest","container":{"slots":12,"table":"loot_chest_mine"},"interact":{"prompt":"Open","range":2.6}}
+   },
+   {"id":"vending","kind":"prop","components":{"model":"vending","interact":{"prompt":"Buy","range":2.4},"shop":"vending"}},
+   {"id":"bed","kind":"prop","components":{"model":"bed","interact":{"prompt":"Sleep","range":2.6},"rest":true,"checkpoint":true}},
+   {"id":"barricade","kind":"prop","components":{"model":"barricade","obstacle":true}},
+   {"id":"vault_door","kind":"prop","components":{"model":"vault_door","interact":{"prompt":"Open","range":3},"mechanism":"vault_door"}},
+   {"id":"first_ledger","kind":"prop","components":{"model":"ledger","interact":{"prompt":"Take","range":2.4}}},
+   {"id":"hideout_marker","kind":"prop","components":{"model":"chest","hideout":true}}
+  ],
+  "models": {
+   "kit": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#e0b48c","h":"#4a3020","t":"#2e6ba8","p":"#3a3a4a","b":"#2a1e14"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"backpack","box":[4,14,6,8,10,3],"c":"b"},
+     {"name":"cap","box":[3,30,0,10,2,9],"c":"t"}
+    ]
+   },
+   "odalys": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#c89a78","h":"#c0c0c8","t":"#2a4a6a","p":"#2a2a32","b":"#1a1a1a"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"hat","box":[3,31,0,10,2,9],"c":"t"},
+     {"name":"ledger","box":[12,12,1,4,5,2],"c":"h"}
+    ]
+   },
+   "tobi": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#d8a880","h":"#d89a30","t":"#c8c8c0","p":"#4a5a7a","b":"#3a2a1a"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"overalls","box":[4,12,1,8,6,1],"c":"p"},
+     {"name":"wrench","box":[14,10,3,2,8,2],"c":"b"}
+    ]
+   },
+   "renna": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#c8987a","h":"#1a1a22","t":"#1e2a5a","p":"#1a1e3a","b":"#0e0e12"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"badge","box":[10,20,1,2,2,1],"c":"h"},
+     {"name":"cap","box":[3,30,0,10,2,9],"c":"t"}
+    ]
+   },
+   "cassian": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#d8b898","h":"#e8e8f0","t":"#1a1a1a","p":"#1a1a1a","b":"#2a1a14"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"coat","box":[3,6,1,10,16,6],"c":"t"},
+     {"name":"scarf","box":[4,22,1,8,2,6],"c":"h"},
+     {"name":"cane","box":[14,0,3,2,22,2],"c":"h"}
+    ]
+   },
+   "imelda": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#c8a090","h":"#8a4a2a","t":"#e8e0d0","p":"#4a3a2a","b":"#3a2a1a"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"goggles","box":[4,28,0,8,2,8],"c":"b"},
+     {"name":"satchel","box":[3,12,1,3,8,6],"c":"p"}
+    ]
+   },
+   "bram": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#b88868","h":"#3a2a20","t":"#c86a2a","p":"#3a3a3a","b":"#2a2018"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"hardhat","box":[3,30,0,10,3,9],"c":"h"},
+     {"name":"pickaxe","box":[14,8,3,2,14,2],"c":"b"}
+    ]
+   },
+   "vesper": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#a87858","h":"#1a1a22","t":"#7a1a3a","p":"#1a1a22","b":"#e8e8e8"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"jacket","box":[3,12,1,10,12,6],"c":"t"},
+     {"name":"shades","box":[4,27,0,8,2,1],"c":"h"}
+    ]
+   },
+   "leopold": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#e0c0a0","h":"#8a8a90","t":"#3a3a4a","p":"#3a3a4a","b":"#1a1a1a"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"sash","box":[4,14,1,8,2,5],"c":"b"},
+     {"name":"pin","box":[10,20,1,1,1,1],"c":"h"}
+    ]
+   },
+   "ysolde": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#c8a888","h":"#e8d8a0","t":"#f0f0f0","p":"#2a2a3a","b":"#c8c8d0"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"blueprints","box":[13,10,1,3,10,2],"c":"b"},
+     {"name":"glasses","box":[4,27,0,8,2,1],"c":"p"}
+    ]
+   },
+   "gus": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#c0a080","h":"#d8d8d8","t":"#5a4a30","p":"#4a3a28","b":"#2a1e14"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"beard","box":[4,22,0,8,4,2],"c":"h"},
+     {"name":"lantern","box":[14,6,3,2,4,2],"c":"h"}
+    ]
+   },
+   "fenn": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#d0a078","h":"#2a2a2a","t":"#5a3a1a","p":"#3a3a2a","b":"#1a1a1a"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"monocle","box":[9,27,0,2,2,1],"c":"b"},
+     {"name":"tray","box":[0,16,0,4,1,6],"c":"h"}
+    ]
+   },
+   "nell": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#8a5a3a","h":"#a82a6a","t":"#2a8a8a","p":"#2a2a3a","b":"#e8e8e8"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"headset","box":[3,26,0,10,2,8],"c":"h"}
+    ]
+   },
+   "dex": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#d0a888","h":"#1a1a1a","t":"#2a2a2a","p":"#2a2a2a","b":"#3a3a3a"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"vest","box":[3,12,1,10,10,6],"c":"b"},
+     {"name":"shades","box":[4,27,0,8,2,1],"c":"h"}
+    ]
+   },
+   "maude": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#d8b090","h":"#e8e0c8","t":"#6a8a4a","p":"#5a4a2a","b":"#3a2a14"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"hat","box":[2,30,0,12,1,10],"c":"h"},
+     {"name":"basket","box":[13,8,1,3,4,4],"c":"p"}
+    ]
+   },
+   "billie": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#c89a70","h":"#6a3a1a","t":"#7a5a2a","p":"#4a3a1a","b":"#2a1e0e"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"scarf","box":[4,22,1,8,2,6],"c":"h"},
+     {"name":"goggles","box":[3,30,0,10,2,8],"c":"b"}
+    ]
+   },
+   "pruitt": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#e0c8a8","h":"#4a3a2a","t":"#8a8a9a","p":"#2a2a3a","b":"#111"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"tie","box":[7,14,1,2,8,1],"c":"p"}
+    ]
+   },
+   "pedestrian_a": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#d8b090","h":"#5a3a20","t":"#c04a4a","p":"#3a4a6a","b":"#2a2a2a"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"}
+    ]
+   },
+   "pedestrian_b": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#a07050","h":"#1a1a1a","t":"#4a9a6a","p":"#5a5a6a","b":"#e8e8e8"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"}
+    ]
+   },
+   "pedestrian_c": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#f0d0b0","h":"#c8a040","t":"#e8c030","p":"#2a2a4a","b":"#3a2a1a"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"}
+    ]
+   },
+   "officer": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#d0a888","h":"#2a2a2a","t":"#1e2a5a","p":"#1a1e3a","b":"#0e0e12"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"cap","box":[3,30,0,10,2,9],"c":"t"},
+     {"name":"baton","box":[14,8,3,2,8,2],"c":"b"}
+    ]
+   },
+   "swat": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#c8987a","h":"#1a1a1a","t":"#2a2e32","p":"#2a2e32","b":"#0e0e0e"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"helmet","box":[3,24,0,10,8,9],"c":"t"},
+     {"name":"vest","box":[3,12,1,10,10,6],"c":"b"},
+     {"name":"rifle","box":[13,10,0,2,3,12],"c":"b"}
+    ]
+   },
+   "thug": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#c89a78","h":"#1a1a1a","t":"#2a2a2a","p":"#4a3a2a","b":"#1a1a1a"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"t"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"t"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"bat","box":[14,8,3,2,14,2],"c":"p"}
+    ]
+   },
+   "gloomer": {
+    "kind": "voxel",
+    "rig": "humanoid",
+    "size": [16,32,8],
+    "palette": {"s":"#3a5a3a","h":"#2a3a2a","t":"#2a4a5a","p":"#2a3a4a","b":"#1a2a1a"},
+    "parts": [
+     {"name":"head","box":[4,24,0,8,8,8],"c":"s"},
+     {"name":"hair","box":[4,30,0,8,2,8],"c":"h"},
+     {"name":"torso","box":[4,12,2,8,12,4],"c":"t"},
+     {"name":"armL","box":[0,12,2,4,12,4],"c":"s"},
+     {"name":"armR","box":[12,12,2,4,12,4],"c":"s"},
+     {"name":"legL","box":[4,0,2,4,12,4],"c":"p"},
+     {"name":"legR","box":[8,0,2,4,12,4],"c":"p"},
+     {"name":"boots","box":[4,0,2,8,2,4],"c":"b"},
+     {"name":"eyes","box":[5,27,0,6,1,1],"c":"h"}
+    ]
+   },
+   "boomling": {
+    "kind": "voxel",
+    "size": [12,24,8],
+    "palette": {"g":"#4aaa3a","d":"#2a6a2a","f":"#1a1a1a"},
+    "parts": [
+     {"name":"body","box":[2,6,2,8,14,4],"c":"g"},
+     {"name":"head","box":[2,18,1,8,6,6],"c":"g"},
+     {"name":"face","box":[4,20,0,4,3,1],"c":"f"},
+     {"name":"feet","box":[1,0,1,10,6,6],"c":"d"}
+    ]
+   },
+   "skitter": {
+    "kind": "voxel",
+    "size": [16,8,16],
+    "palette": {"b":"#3a2a3a","e":"#e84a4a"},
+    "parts": [{"name":"body","box":[4,2,4,8,4,8],"c":"b"},{"name":"legs","box":[0,0,2,16,2,12],"c":"b"},{"name":"eyes","box":[6,5,3,4,1,1],"c":"e"}]
+   },
+   "cow": {
+    "kind": "voxel",
+    "size": [12,16,24],
+    "palette": {"w":"#f0f0f0","k":"#2a2a2a","p":"#e8a0a0"},
+    "parts": [
+     {"name":"body","box":[2,6,4,8,8,16],"c":"w"},
+     {"name":"spots","box":[3,8,6,3,3,4],"c":"k"},
+     {"name":"head","box":[3,10,0,6,6,5],"c":"w"},
+     {"name":"legs","box":[2,0,4,8,6,14],"c":"k"},
+     {"name":"nose","box":[4,10,0,4,2,1],"c":"p"}
+    ]
+   },
+   "chicken": {
+    "kind": "voxel",
+    "size": [8,10,10],
+    "palette": {"w":"#f8f8f0","r":"#d84a3a","y":"#e8b030"},
+    "parts": [
+     {"name":"body","box":[1,3,2,6,5,6],"c":"w"},
+     {"name":"head","box":[2,7,0,4,3,3],"c":"w"},
+     {"name":"comb","box":[3,10,1,2,1,2],"c":"r"},
+     {"name":"legs","box":[2,0,3,4,3,2],"c":"y"}
+    ]
+   },
+   "sedan": {
+    "kind": "voxel",
+    "size": [20,12,40],
+    "palette": {"b":"#3a6ab8","g":"#9ad0e8","k":"#1a1a1a","w":"#e8e8e8","l":"#e8e060"},
+    "parts": [
+     {"name":"body","box":[0,2,2,20,6,36],"c":"b"},
+     {"name":"cabin","box":[2,8,10,16,4,16],"c":"g"},
+     {"name":"wheelFL","box":[-1,0,6,2,4,4],"c":"k"},
+     {"name":"wheelFR","box":[19,0,6,2,4,4],"c":"k"},
+     {"name":"wheelBL","box":[-1,0,30,2,4,4],"c":"k"},
+     {"name":"wheelBR","box":[19,0,30,2,4,4],"c":"k"},
+     {"name":"lights","box":[2,4,0,16,1,1],"c":"l"}
+    ],
+    "pivots": {"wheelFL":[0,0,0]}
+   },
+   "taxi": {
+    "kind": "voxel",
+    "size": [20,12,40],
+    "palette": {"b":"#e8c030","g":"#9ad0e8","k":"#1a1a1a","s":"#f0f0f0"},
+    "parts": [
+     {"name":"body","box":[0,2,2,20,6,36],"c":"b"},
+     {"name":"cabin","box":[2,8,10,16,4,16],"c":"g"},
+     {"name":"sign","box":[7,12,16,6,2,4],"c":"s"},
+     {"name":"wheelFL","box":[-1,0,6,2,4,4],"c":"k"},
+     {"name":"wheelFR","box":[19,0,6,2,4,4],"c":"k"},
+     {"name":"wheelBL","box":[-1,0,30,2,4,4],"c":"k"},
+     {"name":"wheelBR","box":[19,0,30,2,4,4],"c":"k"}
+    ],
+    "pivots": {"wheelFL":[0,0,0]}
+   },
+   "pickup_truck": {
+    "kind": "voxel",
+    "size": [22,14,46],
+    "palette": {"b":"#8a4a2a","g":"#9ad0e8","k":"#1a1a1a","w":"#d8d8d8"},
+    "parts": [
+     {"name":"body","box":[0,3,2,22,6,42],"c":"b"},
+     {"name":"cabin","box":[3,9,10,16,5,14],"c":"g"},
+     {"name":"bed","box":[2,9,26,18,2,16],"c":"w"},
+     {"name":"wheelFL","box":[-1,0,8,2,5,5],"c":"k"},
+     {"name":"wheelFR","box":[21,0,8,2,5,5],"c":"k"},
+     {"name":"wheelBL","box":[-1,0,34,2,5,5],"c":"k"},
+     {"name":"wheelBR","box":[21,0,34,2,5,5],"c":"k"}
+    ],
+    "pivots": {"wheelFL":[0,0,0]}
+   },
+   "coupe": {
+    "kind": "voxel",
+    "size": [20,10,38],
+    "palette": {"b":"#d82a2a","g":"#9ad0e8","k":"#1a1a1a"},
+    "parts": [
+     {"name":"body","box":[0,2,2,20,5,34],"c":"b"},
+     {"name":"cabin","box":[3,7,12,14,3,12],"c":"g"},
+     {"name":"wheelFL","box":[-1,0,6,2,4,4],"c":"k"},
+     {"name":"wheelFR","box":[19,0,6,2,4,4],"c":"k"},
+     {"name":"wheelBL","box":[-1,0,28,2,4,4],"c":"k"},
+     {"name":"wheelBR","box":[19,0,28,2,4,4],"c":"k"}
+    ],
+    "pivots": {"wheelFL":[0,0,0]}
+   },
+   "police_cruiser": {
+    "kind": "voxel",
+    "size": [20,13,40],
+    "palette": {"b":"#f0f0f0","d":"#1e2a5a","g":"#9ad0e8","k":"#1a1a1a","r":"#e82a2a","u":"#2a5ae8"},
+    "parts": [
+     {"name":"body","box":[0,2,2,20,6,36],"c":"b"},
+     {"name":"stripe","box":[0,4,2,20,2,36],"c":"d"},
+     {"name":"cabin","box":[2,8,10,16,4,16],"c":"g"},
+     {"name":"lightbarL","box":[4,12,16,6,1,3],"c":"r"},
+     {"name":"lightbarR","box":[10,12,16,6,1,3],"c":"u"},
+     {"name":"wheelFL","box":[-1,0,6,2,4,4],"c":"k"},
+     {"name":"wheelFR","box":[19,0,6,2,4,4],"c":"k"},
+     {"name":"wheelBL","box":[-1,0,30,2,4,4],"c":"k"},
+     {"name":"wheelBR","box":[19,0,30,2,4,4],"c":"k"}
+    ],
+    "pivots": {"wheelFL":[0,0,0]}
+   },
+   "armored_van": {
+    "kind": "voxel",
+    "size": [24,18,50],
+    "palette": {"b":"#2a2e32","g":"#4a5a6a","k":"#0e0e0e","r":"#e82a2a"},
+    "parts": [
+     {"name":"body","box":[0,3,2,24,12,46],"c":"b"},
+     {"name":"windshield","box":[3,12,4,18,3,6],"c":"g"},
+     {"name":"wheelFL","box":[-1,0,8,2,6,6],"c":"k"},
+     {"name":"wheelFR","box":[23,0,8,2,6,6],"c":"k"},
+     {"name":"wheelBL","box":[-1,0,36,2,6,6],"c":"k"},
+     {"name":"wheelBR","box":[23,0,36,2,6,6],"c":"k"}
+    ],
+    "pivots": {"wheelFL":[0,0,0]}
+   },
+   "delivery_van": {
+    "kind": "voxel",
+    "size": [22,18,46],
+    "palette": {"b":"#e8e8e8","s":"#e8803a","g":"#9ad0e8","k":"#1a1a1a"},
+    "parts": [
+     {"name":"body","box":[0,3,2,22,12,42],"c":"b"},
+     {"name":"stripe","box":[0,8,2,22,2,42],"c":"s"},
+     {"name":"windshield","box":[3,12,4,16,3,6],"c":"g"},
+     {"name":"wheelFL","box":[-1,0,8,2,5,5],"c":"k"},
+     {"name":"wheelFR","box":[21,0,8,2,5,5],"c":"k"},
+     {"name":"wheelBL","box":[-1,0,34,2,5,5],"c":"k"},
+     {"name":"wheelBR","box":[21,0,34,2,5,5],"c":"k"}
+    ],
+    "pivots": {"wheelFL":[0,0,0]}
+   },
+   "motorbike": {
+    "kind": "voxel",
+    "size": [8,12,24],
+    "palette": {"b":"#1a1a1a","r":"#d82a2a","k":"#2a2a2a","g":"#9ad0e8"},
+    "parts": [
+     {"name":"frame","box":[3,3,6,2,4,12],"c":"r"},
+     {"name":"tank","box":[2,6,8,4,3,5],"c":"r"},
+     {"name":"seat","box":[2,6,14,4,2,6],"c":"b"},
+     {"name":"wheelF","box":[3,0,2,2,6,6],"c":"k"},
+     {"name":"wheelB","box":[3,0,18,2,6,6],"c":"k"},
+     {"name":"bars","box":[0,8,4,8,1,1],"c":"k"}
+    ],
+    "pivots": {"wheelFL":[0,0,0]}
+   },
+   "speedboat": {
+    "kind": "voxel",
+    "size": [16,10,40],
+    "palette": {"h":"#e8e8e8","s":"#2a8ad8","g":"#9ad0e8","k":"#2a2a2a"},
+    "parts": [
+     {"name":"hull","box":[0,0,2,16,4,36],"c":"h"},
+     {"name":"stripe","box":[0,3,2,16,1,36],"c":"s"},
+     {"name":"windshield","box":[3,4,12,10,3,3],"c":"g"},
+     {"name":"motor","box":[6,0,38,4,5,2],"c":"k"}
+    ],
+    "pivots": {"wheelFL":[0,0,0]}
+   },
+   "biplane": {
+    "kind": "voxel",
+    "size": [48,18,36],
+    "palette": {"b":"#e8d080","r":"#c82a2a","k":"#2a2a2a","g":"#9ad0e8"},
+    "parts": [
+     {"name":"fuselage","box":[18,4,4,12,8,28],"c":"b"},
+     {"name":"wingTop","box":[0,13,8,48,1,8],"c":"r"},
+     {"name":"wingBottom","box":[2,6,8,44,1,8],"c":"r"},
+     {"name":"tail","box":[22,4,30,4,10,4],"c":"b"},
+     {"name":"prop","box":[20,5,2,8,2,1],"c":"k"},
+     {"name":"cockpit","box":[20,10,12,8,2,6],"c":"g"},
+     {"name":"wheelL","box":[14,0,10,2,4,4],"c":"k"},
+     {"name":"wheelR","box":[32,0,10,2,4,4],"c":"k"}
+    ],
+    "pivots": {"wheelFL":[0,0,0]}
+   },
+   "minecart": {
+    "kind": "voxel",
+    "size": [14,10,20],
+    "palette": {"m":"#6a6a72","r":"#8a5a2a","k":"#2a2a2a"},
+    "parts": [
+     {"name":"tub","box":[0,2,0,14,7,20],"c":"m"},
+     {"name":"rim","box":[0,8,0,14,1,20],"c":"r"},
+     {"name":"wheelFL","box":[-1,0,3,2,3,3],"c":"k"},
+     {"name":"wheelFR","box":[13,0,3,2,3,3],"c":"k"},
+     {"name":"wheelBL","box":[-1,0,14,2,3,3],"c":"k"},
+     {"name":"wheelBR","box":[13,0,14,2,3,3],"c":"k"}
+    ],
+    "pivots": {"wheelFL":[0,0,0]}
+   },
+   "workbench": {
+    "kind": "voxel",
+    "size": [16,12,10],
+    "palette": {"w":"#8a6a3a","i":"#6a6a6a"},
+    "parts": [{"name":"top","box":[0,8,0,16,2,10],"c":"w"},{"name":"legs","box":[1,0,1,14,8,8],"c":"w"},{"name":"vise","box":[11,10,2,3,2,3],"c":"i"}]
+   },
+   "furnace": {
+    "kind": "voxel",
+    "size": [16,16,16],
+    "palette": {"s":"#7a7a7a","f":"#ff8a2a","d":"#3a3a3a"},
+    "parts": [{"name":"body","box":[0,0,0,16,16,16],"c":"s"},{"name":"mouth","box":[4,2,0,8,6,1],"c":"f"},{"name":"top","box":[4,14,4,8,2,8],"c":"d"}]
+   },
+   "chest": {
+    "kind": "voxel",
+    "size": [16,12,12],
+    "palette": {"w":"#8a5a2a","i":"#bfbfbf"},
+    "parts": [{"name":"body","box":[0,0,0,16,10,12],"c":"w"},{"name":"band","box":[0,6,0,16,1,12],"c":"i"},{"name":"lock","box":[7,5,0,2,3,1],"c":"i"}]
+   },
+   "vending": {
+    "kind": "voxel",
+    "size": [12,28,10],
+    "palette": {"r":"#d82a2a","g":"#9ad0e8","k":"#2a2a2a"},
+    "parts": [{"name":"body","box":[0,0,0,12,28,10],"c":"r"},{"name":"window","box":[2,10,0,8,14,1],"c":"g"},{"name":"slot","box":[4,4,0,4,2,1],"c":"k"}]
+   },
+   "bed": {
+    "kind": "voxel",
+    "size": [16,8,28],
+    "palette": {"w":"#f0f0f0","r":"#d84a4a","f":"#8a6a3a"},
+    "parts": [
+     {"name":"frame","box":[0,0,0,16,3,28],"c":"f"},
+     {"name":"mattress","box":[0,3,6,16,3,22],"c":"w"},
+     {"name":"blanket","box":[0,6,12,16,1,16],"c":"r"}
+    ]
+   },
+   "barricade": {
+    "kind": "voxel",
+    "size": [24,10,4],
+    "palette": {"w":"#e8e8e8","r":"#d82a2a"},
+    "parts": [{"name":"bar","box":[0,5,0,24,3,2],"c":"w"},{"name":"stripe","box":[4,5,0,4,3,3],"c":"r"},{"name":"legs","box":[2,0,0,2,5,3],"c":"w"}]
+   },
+   "vault_door": {
+    "kind": "voxel",
+    "size": [32,32,6],
+    "palette": {"s":"#8a8a94","d":"#3a3a44","y":"#e8c030"},
+    "parts": [{"name":"door","box":[0,0,0,32,32,4],"c":"s"},{"name":"wheel","box":[12,12,4,8,8,2],"c":"d"},{"name":"hazard","box":[0,0,4,32,2,1],"c":"y"}]
+   },
+   "ledger": {
+    "kind": "voxel",
+    "size": [10,3,14],
+    "palette": {"b":"#6a2a1a","p":"#e8e0c0","g":"#c8a030"},
+    "parts": [{"name":"cover","box":[0,0,0,10,3,14],"c":"b"},{"name":"pages","box":[1,1,1,8,1,12],"c":"p"},{"name":"clasp","box":[4,1,0,2,1,1],"c":"g"}]
+   }
+  }
+ },
+ "graphics": [
+  {"use":"graphics.render.voxel","with":{"meshBudgetMs":4,"ao":true,"lodRings":2,"shadows":"sun"}},
+  {"use":"graphics.camera.first-person","with":{"fov":80,"bob":0.3,"sensitivity":1,"eyeHeight":1.6}},
+  {"use":"graphics.camera.third-person","with":{"distance":5,"height":1.8,"fov":70,"shoulder":"right","collide":true}},
+  {
+   "use": "graphics.material.palette",
+   "with": {"colors":{"stone":"#7a7a7a","grass":"#5a9a3a"},"faceShade":[1,0.6,0.8],"style":"noise","emissive":["neon","lamp","lava","crystal_ore"]}
+  },
+  {
+   "use": "graphics.sky",
+   "with": {"palette":{"dawn":"#f0b890","day":"#78b0f0","dusk":"#e07050","night":"#0a1024"},"fogDensity":0.002,"clouds":0.6,"sunTilt":20,"stars":true}
+  },
+  {"use":"graphics.model.voxel","with":{"voxelSize":0.0625,"bake":true}},
+  {
+   "use": "graphics.rig.humanoid",
+   "with": {
+    "scale": 1,
+    "proportions": {"legs":0.4,"arms":0.4,"torso":0.4,"head":0.25},
+    "attach": [{"bone":"handR","slot":"weapon"},{"bone":"back","slot":"backpack"}]
+   }
+  },
+  {"use":"graphics.anim.clips","with":{"presets":["idle","walk","run","jump","swing","mine","place","drive","hurt","die","talk","sit","aim","shoot"]}},
+  {"use":"graphics.anim.locomotion","with":{"idleWalkRun":[0.2,3,6],"turnLean":0.2,"strafe":true,"states":["grounded","airborne","swim","drive"]}},
+  {
+   "use": "graphics.particles",
+   "with": {
+    "budget": 5000,
+    "presets": [
+     {"id":"break","shape":"debris","color":"#9a9a9a","count":16,"life":0.6,"speed":4,"gravity":12},
+     {"id":"smoke","shape":"smoke","color":"#bfbfbf","count":10,"life":1.4,"speed":1.2,"gravity":-0.4},
+     {"id":"spark","shape":"spark","color":"#ffd878","count":12,"life":0.3,"speed":8,"gravity":5},
+     {"id":"rain","shape":"rain","color":"#a8c0e0","count":600,"life":1,"speed":18,"gravity":12},
+     {"id":"skid","shape":"smoke","color":"#555555","count":6,"life":0.8,"speed":0.5,"gravity":0},
+     {"id":"explosion","shape":"debris","color":"#ff8a2a","count":80,"life":1,"speed":12,"gravity":8}
+    ],
+    "bind": [
+     {"event":"block_mined","preset":"break","at":"target"},
+     {"event":"crash","preset":"spark","at":"self"},
+     {"event":"drift","preset":"skid","at":"wheels"},
+     {"event":"vehicle_destroyed","preset":"explosion","at":"self"}
+    ]
+   }
+  },
+  {"use":"graphics.post","with":{"bloom":0.4,"tonemap":"filmic","outline":0,"vignette":0.15,"grain":0.02,"ssao":false}},
+  {"use":"graphics.fx.feedback","with":{"hitStop":30,"shake":0.4,"damageFlash":true,"slowmoOn":["busted"]}},
+  {
+   "use": "graphics.audio.synth",
+   "with": {
+    "cues": [
+     {"event":"block_mined","voice":"noise","pitch":180,"gain":0.35},
+     {"event":"block_placed","voice":"blip","pitch":300,"gain":0.3},
+     {"event":"crash","voice":"noise","pitch":90,"gain":0.7},
+     {"event":"wanted_changed","voice":"sweep","pitch":520,"gain":0.5},
+     {"event":"quest_complete","voice":"chord","pitch":392,"gain":0.5}
+    ],
+    "music": [
+     {"zone":"harbor_row","mode":"mixolydian","bpm":96,"layers":["bass","perc"]},
+     {"zone":"glass_heights","mode":"lydian","bpm":118,"layers":["synth","perc"]},
+     {"zone":"foundry_flats","mode":"phrygian","bpm":110,"layers":["bass","perc"]},
+     {"zone":"the_deep_works","mode":"locrian","bpm":50,"layers":["drone"]},
+     {"when":{"var":"wanted","gte":2},"mode":"aeolian","bpm":140,"layers":["bass","perc","strings"]},
+     {"when":{"in_vehicle":"any"},"mode":"dorian","bpm":120,"layers":["radio"]}
+    ]
+   }
+  },
+  {
+   "use": "graphics.ui.hud",
+   "with": {
+    "meters": [{"pool":"stamina","color":"#7ac060","pos":"bottom-center"},{"pool":"hunger","color":"#d8a030","pos":"bottom-left"}],
+    "counters": [{"var":"hp","icon":"heart","pos":"bottom-left"},{"var":"money.bucks","icon":"buck","pos":"top-right"}],
+    "stars": {"var":"wanted","max":5},
+    "prompt": true,
+    "compass": true,
+    "clock": true,
+    "status": true,
+    "bossBar": true,
+    "crosshair": "cross"
+   }
+  },
+  {"use":"graphics.ui.dialogue","with":{"portrait":true,"style":"pixel"}},
+  {"use":"graphics.ui.journal","with":{"tabs":["quests","lore","characters","notes"]}},
+  {
+   "use": "graphics.ui.minimap",
+   "with": {
+    "radius": 90,
+    "rotate": true,
+    "shape": "circle",
+    "markers": [
+     {"tag":"quest","icon":"!","color":"#e8c030"},
+     {"tag":"shop","icon":"$","color":"#6ac860"},
+     {"tag":"police","icon":"p","color":"#4a6aff"},
+     {"tag":"garage","icon":"g","color":"#c8c8c8"}
+    ]
+   }
+  },
+  {"use":"graphics.ui.map","with":{"fog":true,"fastTravel":false,"layers":["districts","roads","quests","shops","plots"]}},
+  {"use":"graphics.ui.inventory","with":{"panels":["items","equipment","crafting","container","shop","skills"],"sort":true}},
+  {"use":"graphics.ui.menu","with":{"slots":5}}
+ ],
+ "player": {
+  "archetype": "kit",
+  "space": "blockport",
+  "at": [-320,62,200],
+  "abilities": [],
+  "inventory": [{"item":"hand_axe","count":1},{"item":"bread","count":4},{"item":"bucks","count":150}]
+ }
+}
