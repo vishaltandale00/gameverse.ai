@@ -58,7 +58,7 @@ export const testSpace = {
     };
     const track = (e, rt) => { const z = zoneOf(e.at); if (z !== e.zone) { if (e.zone) rt.emit('leave_zone', { who: e.id, zone: e.zone }); e.zone = z; if (z) rt.emitTyped('enter_zone', z, { who: e.id, zone: z }); } };
     const api = {
-      kind: 'test', size: [W, H, D],
+      kind: 'test', size: [W, H, D], anchor: 'min',
       place(e, rt) { if (e.at == null) e.at = [0, 0, 0]; e.at = v3(e.at); e.zone = null; track(e, rt); },
       remove() {},
       pos: e => e.at,
@@ -86,8 +86,8 @@ export const testSpace = {
         return { hit: 'none', at: null, normal: null, dist: maxDist };
       },
       path(from, to) { const g = key(cellOf(to)); return bfs(from, c => key(c) === g).path; },
-      reachable(from) { return new Set([...bfs(from).prev.keys()]); },
-      canReach: (a, b) => api.path(a, b) !== null,
+      reachable(from, rt, opts = {}) { return new Set([...bfs(from).prev.keys()]); },
+      canReach: (a, b, rt, opts = {}) => api.path(a, b) !== null,
       getCell: at => st().cells[key(cellOf(at))] ?? null,
       setCell(at, block, rt, by = null) {
         const c = cellOf(at); if (!inBounds(c)) return false;
@@ -136,7 +136,18 @@ export const CAPABILITY_METHODS = {
   reachable: ['reachable', 'canReach'], editCells: ['getCell', 'setCell', 'fill', 'cellsIn', 'editLog'],
   gravity: ['gravityAt', 'slide', 'grounded'], navigate: ['neighbors', 'canMove', 'move'],
   surface: ['groundAt', 'slopeAt', 'waterDepthAt'], occupancy: ['occupant', 'cellsInRange', 'moveCost', 'coverAt'], los: ['los', 'visibleFrom'],
+  bounds: ['bounds', 'inBounds'], wrap: ['wrapPos', 'delta'], dynamics: ['impulse', 'velocity', 'setVelocity'],
 };
+
+/** Methods a space's capability needs: kernel list, else the card's provides.capabilityMethods. */
+export function capabilityMethods(card, cap) { return CAPABILITY_METHODS[cap] || card?.provides?.capabilityMethods?.[cap] || []; }
+
+/** Axis-aligned box of an entity's body in its space, honoring api.anchor ('center' | 'min' | 'cell' | 'slot'). */
+export function bodyBox(entity, api) {
+  const at = Array.isArray(entity.at) ? entity.at : [0, 0, 0], size = entity.components?.body?.size || at.map(() => 1);
+  const min = api.anchor === 'center' ? at.map((v, i) => v - (size[i] ?? 1) / 2) : at.slice();
+  return { min, max: min.map((v, i) => v + (size[i] ?? 1)) };
+}
 
 /**
  * Register the conformance tests for a space primitive.
@@ -149,7 +160,13 @@ export function spaceConformance(test, assert, opts) {
   test(`${opts.name}: implements every reported capability`, () => {
     const { rt, checked } = make();
     const sid = checked.doc.spaces[0].id, api = rt.space(sid);
-    for (const cap of checked.capabilities[sid]) for (const m of CAPABILITY_METHODS[cap] || []) assert.equal(typeof api[m], 'function', `${cap}.${m}`);
+    const card = make().registry.get(checked.doc.spaces[0].use).card;
+    for (const cap of checked.capabilities[sid]) {
+      const methods = capabilityMethods(card, cap);
+      assert.ok(methods.length || ['none'].includes(cap), `capability '${cap}' has no method list: add it to card.provides.capabilityMethods`);
+      for (const m of methods) assert.equal(typeof api[m], 'function', `${cap}.${m}`);
+    }
+    assert.ok(['center', 'min', 'cell', 'slot', undefined].includes(api.anchor), 'api.anchor');
   });
   test(`${opts.name}: positions round-trip and survive snapshot/restore`, () => {
     const { rt, checked } = make();
