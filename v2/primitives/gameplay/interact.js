@@ -122,6 +122,7 @@ export function install(rt, config) {
 
   rt.provide('interact', { focus: (who = 'player') => st().focus[who] ?? null, use: (who, id, opts) => use(who, rt.entity(id), opts), inReach: (who, id) => inReach(rt.entity(who), rt.entity(id)), seated: who => st().seated[who] ?? null, aliases: id => aliases(rt.entity(id)) });
   rt.caches.interactUse = use;
+  rt.onRestore(rt => { delete rt.caches.interactReach; }); // a restored state may differ at the same frame and cell
 
   // Solver options: every usable interactable in reach, plus the nearest reachable ones
   // (macro travel through the pathfind capability, then interact).
@@ -135,16 +136,39 @@ export function install(rt, config) {
       else if (isVec(p.at) && isVec(e.at)) far.push({ e, d: dist(rt, p, e), steps });
     }
     const sp = p.space && rt.space(p.space);
-    if (sp && typeof sp.path === 'function') {
+    if (far.length && config.macroOptions && sp && typeof sp.path === 'function' && typeof sp.reachable === 'function') {
+      // Listing is cheap: one reachable() set per frame and player cell, membership per target.
+      // path() runs only when an option is applied.
+      const reach = reachableSet(rt, sp, p);
       far.sort((a, b) => a.d - b.d || (a.e.id < b.e.id ? -1 : 1));
-      for (const { e, steps } of far.slice(0, config.macroOptions)) {
-        const path = sp.path(sp.pos(p), sp.pos(e)); if (!path) continue;
-        const stand = path.length > 1 ? path[path.length - 2] : path[0];
-        out.push({ label: `go to and interact ${aliases(e)[0]}${e.id !== aliases(e)[0] ? ` (${e.id})` : ''}`, actions: { interact: e.id }, steps, apply(rt) { const q = rt.player(); rt.space(q.space).setPos(q, stand, rt); } });
+      let macros = 0;
+      for (const { e, steps } of far) {
+        if (!reachedBy(reach, sp, e)) continue;
+        out.push({ label: `go to and interact ${aliases(e)[0]}${e.id !== aliases(e)[0] ? ` (${e.id})` : ''}`, actions: { interact: e.id }, steps,
+          apply(rt) { const q = rt.player(), s = rt.space(q.space), t = rt.entity(e.id); if (!t) return; const path = s.path(s.pos(q), s.pos(t), { who: q }); if (path?.length) s.setPos(q, path.length > 1 ? path[path.length - 2] : path[0], rt); } });
+        if (++macros >= config.macroOptions) break;
       }
     }
     return out;
   });
+}
+
+/** Membership key of an entity's cell: the space's cellOf when it has one, else its floored position joined by commas. */
+const keyOf = (sp, e) => (typeof sp.cellOf === 'function' ? sp.cellOf(e) : sp.pos(e).map(Math.floor).join(','));
+/** The reachable set from the player's cell, cached in rt.caches by frame, space and cell. */
+function reachableSet(rt, sp, p) {
+  const k = `${rt.state.frame}|${p.space}|${keyOf(sp, p)}|${rt.state.spaces[p.space]?.log?.length ?? 0}`, c = rt.caches.interactReach;
+  if (c?.key === k) return c.set;
+  const set = sp.reachable(sp.pos(p), rt, { who: p });
+  rt.caches.interactReach = { key: k, set };
+  return set;
+}
+/** Reached when the target's cell, or a face neighbour of it (interactables often sit against walls), is in the set. */
+function reachedBy(set, sp, e) {
+  const k = keyOf(sp, e); if (set.has(k)) return true;
+  const n = String(k).split(',').map(Number); if (!n.length || n.some(x => !Number.isFinite(x))) return false;
+  for (let i = 0; i < n.length; i++) for (const d of [-1, 1]) { const m = n.slice(); m[i] += d; if (set.has(m.join(','))) return true; }
+  return false;
 }
 
 export default {
