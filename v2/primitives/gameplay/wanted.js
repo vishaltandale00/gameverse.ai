@@ -7,6 +7,7 @@
 // hostile to the player through the brain's faction service.
 import { objectParam, v3, add, sub, mul, len, norm, r6, round6, spaceOf, can, continuous, distBetween, sees, randomPoint, onEvents, dead, upAt, planar } from './ai-lib.js';
 import { hostile } from './ai-brain.js';
+import { roadGraph } from './ai-lib-roads.js';
 
 const ID = 'gameplay.wanted';
 const st = rt => rt.store(ID);
@@ -183,7 +184,7 @@ function spawnUnit(rt, cfg, p, want) {
     rt.emit('law_spawned', { who: v.id, archetype: want.vehicle, level: want.level, vehicle: true });
   }
   if (want.roadblock && want.vehicle && rt.hasService('roadgraph') && continuous(p)) {
-    const g = rt.service('roadgraph'), nodes = typeof g.nodes === 'function' ? g.nodes() : [];
+    const G = roadGraph(rt, { spaceId: p.space }), nodes = G ? [...G.nodes.values()] : [];
     const ahead = nodes.map(nd => [nd, len(sub(nd.at, p.at))]).filter(([, d]) => d >= cfg.spawnDistance[0] && d <= cfg.spawnDistance[1]).sort((a, b) => a[1] - b[1] || (a[0].id < b[0].id ? -1 : 1))[0];
     if (ahead && !(st(rt).roadblocks ?? {})[ahead[0].id]) {
       (st(rt).roadblocks ??= {})[ahead[0].id] = true;
