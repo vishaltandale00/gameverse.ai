@@ -51,11 +51,12 @@ export default {
     logic.effect('open_shop', { refs: e => [['shop', e.shop]], run: (e, rt, c) => rt.caches.shopOpen?.(whoKey(e.who, c), e.shop) });
     logic.effect('close_shop', { run: (e, rt, c) => rt.caches.shopClose?.(whoKey(e.who, c)) });
   },
-  validate(config) {
+  validate(config, doc, ctx, inst = {}) {
+    const P = inst.path ? `${inst.path}.with` : undefined; // errors about this instance point at its `with`
     const errors = [], cur = new Set(config.currencies.map(c => c.id));
     const seen = new Set();
-    for (const c of config.currencies) { if (seen.has(c.id)) errors.push({ code: 'id_duplicate', message: `duplicate currency '${c.id}'` }); seen.add(c.id); }
-    for (const s of config.shops) if (s.currency && !cur.has(s.currency)) errors.push({ code: 'shop_invalid', message: `shop '${s.id}' uses unknown currency '${s.currency}'`, hint: [...cur].join(', ') });
+    for (const c of config.currencies) { if (seen.has(c.id)) errors.push({ code: 'id_duplicate', path: P, message: `duplicate currency '${c.id}'` }); seen.add(c.id); }
+    for (const s of config.shops) if (s.currency && !cur.has(s.currency)) errors.push({ code: 'shop_invalid', path: P, message: `shop '${s.id}' uses unknown currency '${s.currency}'`, hint: [...cur].join(', ') });
     return errors;
   },
   install(rt, config) {

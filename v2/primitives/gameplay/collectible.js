@@ -58,11 +58,12 @@ export default {
       else if (e.counter) rt.caches.collectCount?.(e.counter, whoKey(e.who, c), e.value ?? 1, null, null);
     } });
   },
-  validate(config, doc) {
+  validate(config, doc, ctx, inst = {}) {
+    const P = inst.path ? `${inst.path}.with` : undefined; // errors about this instance point at its `with`
     const errors = [], ids = new Set(config.counters.map(c => c.id));
     config.counters.forEach(c => {
-      for (const inc of c.includes) if (!ids.has(inc) || inc === c.id) errors.push({ code: 'counter_invalid', message: `counter '${c.id}' includes unknown or itself: '${inc}'` });
-      for (const s of c.spawnAtCount) if (s.count == null && s.fraction == null) errors.push({ code: 'counter_invalid', message: `counter '${c.id}' spawnAtCount entry needs count or fraction` });
+      for (const inc of c.includes) if (!ids.has(inc) || inc === c.id) errors.push({ code: 'counter_invalid', path: P, message: `counter '${c.id}' includes unknown or itself: '${inc}'` });
+      for (const s of c.spawnAtCount) if (s.count == null && s.fraction == null) errors.push({ code: 'counter_invalid', path: P, message: `counter '${c.id}' spawnAtCount entry needs count or fraction` });
     });
     (doc.content?.archetypes || []).forEach((a, i) => {
       const k = a.components?.collectible; if (k == null) return;
@@ -91,7 +92,8 @@ export default {
         own[k.counter] += k.value ?? c.value;
       }
       for (const c of config.counters) if (c.block) {
-        for (const sid of rt.spaces()) { const api = rt.space(sid); if (typeof api.cellsIn !== 'function' || !api.size) continue; own[c.id] += api.cellsIn([[0, 0, 0], api.size.map(n => n - 1)]).filter(x => x.block === c.block).length * c.value; }
+        // Count pre-placed cell pickups in the counter's space (only spaces that report a finite size).
+        for (const sid of rt.spaces()) { const api = rt.space(sid); if (typeof api.cellsIn !== 'function' || !Array.isArray(api.size)) continue; own[c.id] += api.cellsIn([api.size.map(() => 0), api.size.map(n => n - 1)]).filter(x => x.block === c.block).length * c.value; }
       }
       const totals = {};
       for (const c of config.counters) totals[c.id] = c.total ?? own[c.id] + c.includes.reduce((s, i) => s + (defs.get(i).total ?? own[i]), 0);

@@ -47,12 +47,13 @@ export default {
       return compare(plots.filter(x => p.crops === 'ripe' ? x.ripe : p.crops === 'growing' ? !x.ripe : true).length, p);
     } });
   },
-  validate(config, doc) {
+  validate(config, doc, ctx, inst = {}) {
+    const P = inst.path ? `${inst.path}.with` : undefined; // errors about this instance point at its `with`
     const errors = [], bl = new Set((doc.content?.blocks || []).map(b => b.id));
-    if (bl.size && !bl.has(config.farmland)) errors.push({ code: 'farming_invalid', message: `farmland block '${config.farmland}' is not in content.blocks` });
-    for (const t of config.tillable) if (bl.size && !bl.has(t)) errors.push({ code: 'farming_invalid', message: `tillable block '${t}' is not in content.blocks` });
-    const y = c => c.yield; for (const c of config.crops) { const v = y(c); if (!(Number.isInteger(v) && v >= 0) && !(Array.isArray(v) && v.length === 2 && v.every(Number.isInteger) && v[0] <= v[1])) errors.push({ code: 'farming_invalid', message: `crop '${c.item}' yield must be n or [a, b]` }); }
-    const seeds = config.crops.map(c => c.seed ?? c.item); if (new Set(seeds).size !== seeds.length) errors.push({ code: 'farming_invalid', message: 'two crops share a seed item' });
+    if (bl.size && !bl.has(config.farmland)) errors.push({ code: 'farming_invalid', path: P, message: `farmland block '${config.farmland}' is not in content.blocks` });
+    for (const t of config.tillable) if (bl.size && !bl.has(t)) errors.push({ code: 'farming_invalid', path: P, message: `tillable block '${t}' is not in content.blocks` });
+    const y = c => c.yield; for (const c of config.crops) { const v = y(c); if (!(Number.isInteger(v) && v >= 0) && !(Array.isArray(v) && v.length === 2 && v.every(Number.isInteger) && v[0] <= v[1])) errors.push({ code: 'farming_invalid', path: P, message: `crop '${c.item}' yield must be n or [a, b]` }); }
+    const seeds = config.crops.map(c => c.seed ?? c.item); if (new Set(seeds).size !== seeds.length) errors.push({ code: 'farming_invalid', path: P, message: 'two crops share a seed item' });
     return errors;
   },
   install(rt, config) {

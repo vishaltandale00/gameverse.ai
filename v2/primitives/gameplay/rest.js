@@ -27,10 +27,11 @@ export default {
     requires: { capabilities: ['position'] },
     reads: ['content.archetypes'],
   },
-  validate(config) {
+  validate(config, doc, ctx, inst = {}) {
+    const P = inst.path ? `${inst.path}.with` : undefined; // errors about this instance point at its `with`
     const errors = [];
-    if (config.skipTo && !(config.skipTo in config.times)) errors.push({ code: 'rest_invalid', message: `with.skipTo '${config.skipTo}' is not a key of times`, hint: Object.keys(config.times).join(', ') });
-    for (const [k, h] of Object.entries(config.times)) if (!(Number.isFinite(h) && h >= 0 && h < 24)) errors.push({ code: 'rest_invalid', message: `with.times.${k}: hours must be in [0, 24)` });
+    if (config.skipTo && !(config.skipTo in config.times)) errors.push({ code: 'rest_invalid', path: P, message: `with.skipTo '${config.skipTo}' is not a key of times`, hint: Object.keys(config.times).join(', ') });
+    for (const [k, h] of Object.entries(config.times)) if (!(Number.isFinite(h) && h >= 0 && h < 24)) errors.push({ code: 'rest_invalid', path: P, message: `with.times.${k}: hours must be in [0, 24)` });
     return errors;
   },
   logic(logic) {

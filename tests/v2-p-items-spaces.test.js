@@ -8,8 +8,8 @@ const base = (space, extra = {}) => ({ schema: 'gameverse.v2.game/0.2', id: 'spa
 test('grid maze: cell pellets, entity power pellets, a prize at a count, level clear', () => {
   const d = base({ id: 'board', use: 'engine.space.grid', with: { size: [9, 5], wrap: 'x' }, zones: [{ id: 'all', rect: [0, 0, 9, 5] }] }, {
     systems: [{ use: 'gameplay.collectible', with: { counters: [
-      { id: 'dots', block: 'pellet', total: 7, points: 10, includes: ['power'], clearsLevel: true, spawnAtCount: [{ count: 3, archetype: 'fruit', at: [8, 3], sec: 2 }] },
-      { id: 'power', total: 1, points: 50, onCollect: [{ do: 'set_flag', flag: 'fright' }] }, { id: 'fruit', total: 9, points: 100 }] } }],
+      { id: 'dots', block: 'pellet', points: 10, includes: ['power'], clearsLevel: true, spawnAtCount: [{ count: 3, archetype: 'fruit', at: [8, 3], sec: 2 }] },
+      { id: 'power', points: 50, onCollect: [{ do: 'set_flag', flag: 'fright' }] }, { id: 'fruit', total: 9, points: 100 }] } }],
     content: { blocks: [{ id: 'wall', solid: true }, { id: 'pellet', solid: false }], archetypes: [{ id: 'pac', components: {} }, { id: 'energizer', components: { collectible: { counter: 'power', value: 1 } } }, { id: 'fruit', components: { collectible: 'fruit' } }] },
     player: { archetype: 'pac', at: [0, 1] },
   });

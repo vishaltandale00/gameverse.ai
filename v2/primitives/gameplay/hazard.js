@@ -49,11 +49,12 @@ export default {
     requires: { capabilities: ['position'] },
     reads: ['content.blocks', 'content.archetypes'],
   },
-  validate(config, doc, ctx) {
+  validate(config, doc, ctx, inst = {}) {
+    const P = inst.path ? `${inst.path}.with` : undefined; // errors about this instance point at its `with`
     const errors = [], ids = new Set(config.types.map(t => t.id));
     const known = t => !t || ids.has(t);
-    for (const v of config.volumes) if (!known(v.type)) errors.push({ code: 'hazard_unknown', message: `volume uses unknown hazard type '${v.type}'` });
-    if (config.killType && !known(config.killType)) errors.push({ code: 'hazard_unknown', message: `killType '${config.killType}' is not a hazard type` });
+    for (const v of config.volumes) if (!known(v.type)) errors.push({ code: 'hazard_unknown', path: P, message: `volume uses unknown hazard type '${v.type}'` });
+    if (config.killType && !known(config.killType)) errors.push({ code: 'hazard_unknown', path: P, message: `killType '${config.killType}' is not a hazard type` });
     (doc.content?.archetypes || []).forEach((a, i) => { const h = a.components?.hazard; const t = typeof h === 'string' ? h : h?.type; if (h != null && !known(t)) errors.push({ code: 'hazard_unknown', path: `content.archetypes[${i}].components.hazard`, message: `unknown hazard type '${t}'` }); });
     (doc.content?.blocks || []).forEach((b, i) => { if (b.hazard != null && !known(b.hazard)) errors.push({ code: 'hazard_unknown', path: `content.blocks[${i}].hazard`, message: `unknown hazard type '${b.hazard}'` }); });
     return errors;

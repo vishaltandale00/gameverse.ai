@@ -40,19 +40,20 @@ export default {
     logic.predicate('structures', { test: (p, rt, c) => compare(Object.values(rt.store(KEY).built || {}).filter(s => (p.structures === '*' || s.piece === p.structures) && (!p.who || s.owner === whoKey(p.who, c))).length, p) });
     logic.predicate('slot_filled', { test: (p, rt) => Boolean(rt.store(KEY).slots?.[p.slot_filled]) });
   },
-  validate(config, doc) {
+  validate(config, doc, ctx, inst = {}) {
+    const P = inst.path ? `${inst.path}.with` : undefined; // errors about this instance point at its `with`
     const errors = [], blocksIn = new Set((doc.content?.blocks || []).map(b => b.id)), items = new Set((doc.content?.items || []).map(i => i.id)), ids = new Set();
     config.pieces.forEach((p, i) => {
       const id = typeof p === 'string' ? p : p?.id;
-      if (typeof p === 'string' && !LIBRARY[p]) errors.push({ code: 'piece_unknown', message: `pieces[${i}]: '${p}' is not a library piece`, hint: Object.keys(LIBRARY).join(', ') });
-      if (typeof p === 'object' && (!p?.id || (!Array.isArray(p.cells) && !Array.isArray(p.size)))) errors.push({ code: 'piece_invalid', message: `pieces[${i}] needs an id and cells or size` });
-      if (ids.has(id)) errors.push({ code: 'id_duplicate', message: `duplicate piece '${id}'` }); ids.add(id);
+      if (typeof p === 'string' && !LIBRARY[p]) errors.push({ code: 'piece_unknown', path: P, message: `pieces[${i}]: '${p}' is not a library piece`, hint: Object.keys(LIBRARY).join(', ') });
+      if (typeof p === 'object' && (!p?.id || (!Array.isArray(p.cells) && !Array.isArray(p.size)))) errors.push({ code: 'piece_invalid', path: P, message: `pieces[${i}] needs an id and cells or size` });
+      if (ids.has(id)) errors.push({ code: 'id_duplicate', path: P, message: `duplicate piece '${id}'` }); ids.add(id);
       const blk = (typeof p === 'object' && p?.block) || LIBRARY[id]?.block || config.block;
-      if (!blk) errors.push({ code: 'piece_invalid', message: `piece '${id}' has no block (set with.block)` });
-      else if (blocksIn.size && !blocksIn.has(blk)) errors.push({ code: 'ref_unknown', message: `piece '${id}' uses unknown block '${blk}'` });
-      for (const c of (typeof p === 'object' && p?.cost) || []) if (!items.has(c.item)) errors.push({ code: 'ref_unknown', message: `piece '${id}' costs unknown item '${c.item}'` });
+      if (!blk) errors.push({ code: 'piece_invalid', path: P, message: `piece '${id}' has no block (set with.block)` });
+      else if (blocksIn.size && !blocksIn.has(blk)) errors.push({ code: 'ref_unknown', path: P, message: `piece '${id}' uses unknown block '${blk}'` });
+      for (const c of (typeof p === 'object' && p?.cost) || []) if (!items.has(c.item)) errors.push({ code: 'ref_unknown', path: P, message: `piece '${id}' costs unknown item '${c.item}'` });
     });
-    for (const s of config.slots) if (s.piece && !ids.has(s.piece)) errors.push({ code: 'piece_unknown', message: `slot '${s.id}' wants unknown piece '${s.piece}'` });
+    for (const s of config.slots) if (s.piece && !ids.has(s.piece)) errors.push({ code: 'piece_unknown', path: P, message: `slot '${s.id}' wants unknown piece '${s.piece}'` });
     return errors;
   },
   install(rt, config) {

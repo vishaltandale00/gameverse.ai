@@ -59,10 +59,11 @@ export default {
     logic.effect('repair', { refs: e => (e.item ? [['item', e.item]] : []), run: (e, rt, c) => api(rt)?.repair(whoKey(e.who, c), e.item, e.amount) });
     logic.effect('wear', { refs: e => (e.item ? [['item', e.item]] : []), run: (e, rt, c) => api(rt)?.wear(whoKey(e.who, c), e.item, e.amount ?? 1) });
   },
-  validate(config, doc) {
+  validate(config, doc, ctx, inst = {}) {
+    const P = inst.path ? `${inst.path}.with` : undefined; // errors about this instance point at its `with`
     const errors = [], ids = new Set();
-    for (const s of config.slots) { if (ids.has(s.id)) errors.push({ code: 'id_duplicate', message: `duplicate slot '${s.id}'` }); ids.add(s.id); }
-    for (const s of config.budget?.slots || []) if (!ids.has(s)) errors.push({ code: 'equipment_invalid', message: `budget slot '${s}' is not a slot` });
+    for (const s of config.slots) { if (ids.has(s.id)) errors.push({ code: 'id_duplicate', path: P, message: `duplicate slot '${s.id}'` }); ids.add(s.id); }
+    for (const s of config.budget?.slots || []) if (!ids.has(s)) errors.push({ code: 'equipment_invalid', path: P, message: `budget slot '${s}' is not a slot` });
     (doc.content?.archetypes || []).forEach((a, i) => {
       const eq = a.components?.equipment; if (!eq) return;
       for (const s of eq.slots || []) if (!ids.has(s)) errors.push({ code: 'equipment_invalid', path: `content.archetypes[${i}].components.equipment.slots`, message: `unknown slot '${s}'`, hint: [...ids].join(', ') });
