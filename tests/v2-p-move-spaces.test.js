@@ -118,6 +118,20 @@ test('arena2d: platformer on solid rects with arena gravity; ship controllers cl
   assert.ok(at[0] >= 30 && at[0] <= 450 && at[1] >= 30 && at[1] <= 330);
 });
 
+test('verifier travel macro drives the real platformer along the tilemap path (steer mode uses travel())', async () => {
+  const { travel } = await import('../v2/verify/macros.js');
+  const d = side(SIDE, [plat()], { at: [1.5, 1.5], zones: [{ id: 'block', rect: [13, 4, 17, 7] }, { id: 'plank', rect: [4, 4, 7, 6] }] });
+  const { rt, registry } = makeReal(d);
+  run(rt, 5, {});
+  assert.equal(travel(rt, registry, 'block', { mode: 'steer' }), true, `steered onto the block (${rt.player().at})`);
+  assert.ok(rt.test({ zone: 'block' }));
+  // The primitive's own export, given a path straight from the space.
+  const prim = registry.get('gameplay.move.platformer');
+  const api = rt.space('map'), path = api.path(api.cellOf(rt.player()), 'plank', { envelope: prim.card.envelope({}, new Set()), width: 0.8, height: 0.9 });
+  assert.ok(path && path.length > 1);
+  assert.equal(prim.travel(rt, path, {}, {}), true, `travelled to the plank (${rt.player().at})`);
+});
+
 test('real spaces: deterministic replay (tilemap side platformer)', () => {
   const mk = () => makeReal(side(SIDE, [plat({ abilities: { doubleJump: true, dash: true } })], { at: [2.5, 1.5] })).rt;
   const a = mk(), b = mk();
