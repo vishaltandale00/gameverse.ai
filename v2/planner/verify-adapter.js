@@ -5,6 +5,14 @@
 // Problems from v2/verify carry { code, path, message, hint, severity, stage } (PROBLEM_CODES).
 import { preflight } from '../kernel/document.js';
 import { solve } from '../verify/solve.js';
+import { createWorld } from '../kernel/world.js';
+import { worldProblems } from './world.js';
+
+/** world_empty problems (v2/planner/world.js) for a preflighted document; a world that won't boot is reported elsewhere. */
+function worldCheck(doc, registry, logic) {
+  try { const rt = createWorld(doc, registry, logic, { seed: doc.seed }); for (let i = 0; i < 3 && rt.state.status === 'playing'; i++) rt.step(); return worldProblems(rt, doc, registry); }
+  catch { return []; }
+}
 
 let loaded = null;
 async function verifyModule() {
@@ -19,15 +27,18 @@ export async function verifyDocument(doc, registry, logic, { budgetMs = 1500, ma
   const pre = preflight(doc, registry, logic);
   const out = { ok: pre.ok, completable: null, exhaustive: false, source: 'preflight', preflight: { ok: pre.ok, errors: pre.errors, warnings: pre.warnings, ms: pre.ms }, problems: [], doc: pre.doc };
   if (!pre.ok) return { ...out, ms: Math.round(performance.now() - started) };
+  // An empty world can be "completable" (zones are rects, the solver walks the map's solid edges): flag it.
+  const world = worldCheck(pre.doc, registry, logic);
+  out.problems.push(...world);
   const m = await verifyModule();
   if (typeof m.verify === 'function') {
     try {
       const r = await m.verify(pre.doc, registry, logic, { budgetMs, seed: pre.doc.seed, plot: { maxStates } });
       const solved = r?.plot || r?.solve || r;
       // ok stays "the document is valid and runs"; verified is the layer's own verdict (no error-severity problem).
-      return { ...out, ok: !(r?.problems || []).some(p => p.stage === 'preflight' && p.severity === 'error'), verified: r?.ok ?? null, completable: solved?.completable ?? null, exhaustive: Boolean(solved?.exhaustive), source: 'verify',
+      return { ...out, ok: !(r?.problems || []).some(p => p.stage === 'preflight' && p.severity === 'error'), verified: world.length ? false : r?.ok ?? null, completable: solved?.completable ?? null, exhaustive: Boolean(solved?.exhaustive), source: 'verify',
         solve: solved ? { completable: solved.completable, exhaustive: solved.exhaustive, endings: solved.endings || {}, beatsNeverFired: solved.beatsNeverFired || [], states: solved.states ?? null } : null,
-        problems: r?.problems || [], timings: r?.timings || null, ms: Math.round(performance.now() - started) };
+        problems: [...world, ...(r?.problems || [])], timings: r?.timings || null, ms: Math.round(performance.now() - started) };
     } catch (error) { out.problems.push({ code: 'verify_threw', message: String(error?.message || error).slice(0, 200) }); }
   }
   try {

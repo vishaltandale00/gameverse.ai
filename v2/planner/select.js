@@ -7,6 +7,7 @@
 import { Logic } from '../kernel/logic.js';
 import { isSpace, isGenerator, isGraphics, spaceVariants, requirementsOf, satisfying } from './catalog.js';
 import { parseReply } from './writer.js';
+import { generatorsFor, needsWorld, isMovement } from './world.js';
 
 export const SELECT_VERSION = 'select/0.1';
 export const LEXICAL_ACCEPT = 0.75;    // calibrated in tests/v2-p-pipeline-select.test.js
@@ -280,6 +281,16 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
   }
   const generators = [...chosen].filter(isGenerator).map(id => ({ id, space: (spaces.find(s => requirementsOf(registry, id).capabilities.every(c => s.caps.includes(c))) || spaces[0])?.id }));
   const systems = [...chosen].filter(id => !isGenerator(id) && !isSpace(id)).sort((a, b) => order(a) - order(b) || a.localeCompare(b));
+  // A cell space something moves through gets a world even when no mechanic mapped to a generator (the mapping
+  // rarely names one): the best-fitting generator from the cards (required capabilities, views, a scaffold hook
+  // that configures it from the zones and the movement envelope). The outline fills its params.
+  const movers = systems.filter(id => isMovement(registry, id));
+  for (const s of spaces) {
+    if (generators.some(g => g.space === s.id) || !needsWorld(registry, s)) continue;
+    if (!movers.some(id => (bind[id] ?? spaces[0].id) === s.id)) continue;
+    const best = generatorsFor(registry, s, decomposition.views?.[0])[0];
+    if (best) generators.push({ id: best.id, space: s.id, auto: true });
+  }
   return {
     version: SELECT_VERSION, mechanics: mechanics.map(({ candidates, ...m }) => ({ ...m, candidates: candidates.slice(0, 3) })),
     // Renderers, UI and audio are chosen by the host from the document's systems and spaces

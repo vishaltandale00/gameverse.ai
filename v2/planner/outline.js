@@ -13,6 +13,7 @@ import { vocabIndex, selectPrimitives } from './select.js';
 import { firstPlayable } from './first-playable.js';
 import { repairDocument, describeErrors } from './repair.js';
 import { parseReply } from './writer.js';
+import { configureGenerators, furnishWorld, worldProblems } from './world.js';
 import { verifyDocument, newErrors, newErrorCodes, newProblems, staticPlot } from './verify-adapter.js';
 
 export const OUTLINE_VERSION = 'outline/0.1';
@@ -126,9 +127,13 @@ export function proceduralOutline({ decomposition, selection, registry, logic, s
     player: { archetype: 'hero', space: primary.id, at: primaryShape.exits ? primary.zones[0].id : zoneStart(primary.zones[0]) },
   };
   if (!doc.graphics.length) delete doc.graphics;
+  // Generators the selection chose carry no params yet: each one's scaffold configures it from the zones and movement.
+  const scaffolded = configureGenerators(doc, registry);
   const fallbackSpace = { id: primary.id, use: primary.use, with: primary.with || {} };
   const repaired = repairDocument(doc, { registry, logic, fallbackSpace, isolate: true });
-  return { doc: repaired.doc, ok: repaired.ok, errors: repaired.errors, fixes: repaired.fixes, removed: repaired.removed };
+  // A space still empty after repair (no generator selected, or it was isolated) gets one that fits.
+  const world = repaired.ok ? furnishWorld(repaired.doc, registry, logic, { seed }) : null;
+  return { doc: world?.doc ?? repaired.doc, ok: repaired.ok, errors: repaired.errors, fixes: [...scaffolded, ...repaired.fixes, ...(world?.fixes || [])], removed: repaired.removed, world: world && { added: world.added, problems: world.problems } };
 }
 const zoneStart = z => z.bounds ? [z.bounds.min[0] + 1, z.bounds.min[1] + 1, z.bounds.min[2] + 1] : z.rect ? [z.rect[0] + Math.min(1, (z.rect[2] - z.rect[0]) / 2), z.rect[1] + Math.min(1, (z.rect[3] - z.rect[1]) / 2)] : z.range ? [z.range[0] + 0.5, 0, 0] : null;
 
@@ -254,13 +259,35 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
       continue;
     }
     draft.schema = DOC_SCHEMA; draft.seed = seed;
+    // A draft that drops the player (models do) would publish a world nobody plays: keep the skeleton's player,
+    // placed at the start of the draft's first zone in its own space.
+    if (!draft.player && skeleton.doc.player && Array.isArray(draft.spaces) && draft.spaces.length) {
+      const sp = draft.spaces.find(s => s?.id === skeleton.doc.player.space) || draft.spaces[0], z = (Array.isArray(sp.zones) ? sp.zones : [])[0];
+      const at = typeof skeleton.doc.player.at === 'string' ? z?.id ?? skeleton.doc.player.at : (z && zoneStart(z)) || skeleton.doc.player.at;
+      draft.player = { ...structuredClone(skeleton.doc.player), space: sp.id, at };
+      if (!(draft.content?.archetypes || []).some(a => a?.id === draft.player.archetype)) {
+        const arch = (skeleton.doc.content?.archetypes || []).find(a => a.id === draft.player.archetype);
+        if (arch && draft.content && typeof draft.content === 'object' && (draft.content.archetypes === undefined || Array.isArray(draft.content.archetypes))) (draft.content.archetypes ??= []).push(structuredClone(arch));
+        else if (arch && !draft.content) draft.content = { archetypes: [structuredClone(arch)] };
+      }
+    }
+    if (draft.spaces && Array.isArray(draft.spaces)) try { configureGenerators(draft, registry); } catch { /* malformed spaces: repair reports them */ }
     const repaired = repairDocument(draft, { registry, logic, fallbackSpace });
+    // The world must not be empty: a draft whose cell space has no generator gets the best-fitting one (deterministic);
+    // what no generator can fill goes back to the model as world_empty, unless the skeleton has the same limit.
+    let worldLeft = [], worldAdded = [];
+    if (repaired.ok) {
+      const w = furnishWorld(repaired.doc, registry, logic, { seed });
+      if (w.added.length) { repaired.doc = w.doc; worldAdded = w.added.map(a => a.use); }
+      if (!skeleton.world?.problems?.length) worldLeft = w.problems;
+    }
     const before = repaired.fixes.length ? repaired.fixes.length : 0;
     if (firstPassOk === null) firstPassOk = repaired.ok && before === 0;
-    rounds.push({ kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes: before, ms: Math.round(performance.now() - t) });
+    rounds.push({ kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, codes: [...new Set(repaired.errors.map(e => e.code))].slice(0, 8), fixes: before, ...(worldAdded.length ? { worldAdded } : {}), ms: Math.round(performance.now() - t) });
     last = repaired;
     let problems = [];
-    if (repaired.ok) {
+    if (repaired.ok && worldLeft.length && round < maxRounds) { problems = worldLeft; last = { ...repaired, verified: repaired.doc }; }
+    else if (repaired.ok) {
       // Verification problems (v2/verify: softlocks, unreachable targets, uncompletable plot...) drive the next round too,
       // except those the valid skeleton has as well (limits of the catalogue, not of this draft).
       if (verify && round < maxRounds) {
