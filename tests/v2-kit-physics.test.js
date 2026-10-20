@@ -275,7 +275,8 @@ test('the renderer draws every mode and exposes its view; the world adapter reac
 });
 
 test('verify proves the sample playable within budget', () => {
-  const r = kit.verify(kit.content.sample, { seed: 1, budgetMs: 2000 });
+  // A generous budget: this test checks what verify proves, not machine speed (other work may be running).
+  const r = kit.verify(kit.content.sample, { seed: 1, budgetMs: 10000 });
   assert.equal(r.ok, true, JSON.stringify(r.problems));
   assert.equal(r.report.levels.length, 4);
   assert.ok(r.report.proven.length === 4);

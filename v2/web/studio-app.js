@@ -118,7 +118,7 @@ function playView(meta, record) {
   $('#stage').innerHTML = `<header class="game-head"><h1>${esc(meta.title)}</h1><p>${esc(record?.report?.summary || meta.prompt)}</p></header>
     ${meta.sample ? `<p class="notice">${esc(meta.notice)}</p>` : ''}
     ${(record?.report?.gaps || []).filter(g => / kit$/.test(g.capability)).map(g => `<p class="notice">Needs the ${esc(g.capability)}, which isn't built yet. ${esc(g.why)}</p>`).join('')}
-    ${record?.report?.change && record.report.changes?.length ? `<p class="changed">Changed for “${esc(record.report.change)}”: ${record.report.changes.map(esc).join(' · ')}${record.report.revisionCheck?.notApplied ? ' — not quite it? Try asking more specifically.' : ''}</p>` : ''}
+    ${record?.report?.change && record.report.changes?.length ? `<p class="changed">Changed for “${esc(record.report.change)}”: ${record.report.changes.map(esc).join(' · ')}</p>` : ''}
     ${(record?.report?.gaps || []).filter(g => g.kind === 'renamed').map(g => `<p class="changed">${esc(g.why)}</p>`).join('')}
     ${(record?.report?.gaps || []).filter(g => g.kind === 'unsupported').length ? `<p class="notice">Not in this game yet: ${(record.report.gaps.filter(g => g.kind === 'unsupported')).map(g => esc(g.capability)).join('; ')}. ${esc(record.report.gaps.find(g => g.kind === 'unsupported').why || '')}</p>` : ''}
     <div class="board" id="game"></div>

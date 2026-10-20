@@ -28,8 +28,8 @@ export const PARTS = {
 // turn a plumber into a bear (round ears + muzzle); a preset gets the silhouette right every time,
 // and the director only recolors it. Drawn in our own style: no logos, emblems or copied art.
 export const PRESETS = {
-  'plumber-hero': { body: 'biped', build: 'stocky', colors: { primary: '#e0302a', secondary: '#f5c99b', accent: '#7a4a2a', outfit: '#2a52be', hair: '#3a2418', eye: '#2a5ad8' }, headwear: 'cap', snout: 'big-nose', facial: 'mustache', outfit: 'overalls', feet: 'boots', hands: 'gloves', ears: 'none', top: 'none', eyes: 'cartoon', tail: 'none' },
-  'plumber-brother': { body: 'biped', build: 'tall', colors: { primary: '#2ea84a', secondary: '#f5c99b', accent: '#7a4a2a', outfit: '#2a52be', hair: '#3a2418', eye: '#2a5ad8' }, headwear: 'cap', snout: 'big-nose', facial: 'mustache', outfit: 'overalls', feet: 'boots', hands: 'gloves', ears: 'none', top: 'none', eyes: 'cartoon', tail: 'none' },
+  'plumber-hero': { body: 'biped', build: 'stocky', colors: { primary: '#e0302a', secondary: '#f5c99b', accent: '#7a4a2a', outfit: '#2a52be', hair: '#3a2418', eye: '#2a5ad8' , hat: '#e0302a' }, headwear: 'cap', snout: 'big-nose', facial: 'mustache', outfit: 'overalls', feet: 'boots', hands: 'gloves', ears: 'none', top: 'none', eyes: 'cartoon', tail: 'none' },
+  'plumber-brother': { body: 'biped', build: 'tall', colors: { primary: '#2ea84a', secondary: '#f5c99b', accent: '#7a4a2a', outfit: '#2a52be', hair: '#3a2418', eye: '#2a5ad8' , hat: '#2ea84a' }, headwear: 'cap', snout: 'big-nose', facial: 'mustache', outfit: 'overalls', feet: 'boots', hands: 'gloves', ears: 'none', top: 'none', eyes: 'cartoon', tail: 'none' },
   'blue-hedgehog': { body: 'biped', build: 'chibi', colors: { primary: '#1f5fd6', secondary: '#f2c79a', accent: '#e0302f', eye: '#1f9a4c' }, ears: 'pointed', top: 'quills', snout: 'muzzle', arms: 'skin', tail: 'spiky', feet: 'shoes', hands: 'gloves', eyes: 'cartoon', headwear: 'none' },
   'fox-sidekick': { body: 'biped', build: 'chibi', colors: { primary: '#f0a030', secondary: '#fff4e0', accent: '#e0302f', eye: '#2a6ad8' }, ears: 'pointed', snout: 'muzzle', tail: 'fluffy', feet: 'shoes', hands: 'gloves', eyes: 'cartoon' },
   'spiky-martial-artist': { body: 'biped', build: 'normal', colors: { primary: '#f07a1a', secondary: '#f5c99b', accent: '#2a52be', outfit: '#2a52be', hair: '#1a1a22', eye: '#1a1a22' }, top: 'spikes', outfit: 'gi', feet: 'boots', hands: 'none', eyes: 'cartoon', ears: 'none', snout: 'none' },
@@ -56,7 +56,7 @@ export function normalizeLook(input = {}) {
   const primary = hex(c.primary, '#3a7bd5');
   return {
     body: pick(look.body, BODIES, 'biped'),
-    colors: { primary, secondary: hex(c.secondary, '#f2d2a9'), accent: hex(c.accent, '#d63c3c'), eye: hex(c.eye, '#1f8a4c'), detail: hex(c.detail, '#ffffff'), outfit: hex(c.outfit, hex(c.accent, '#2a52be')), hair: hex(c.hair, '#3a2418') },
+    colors: { primary, secondary: hex(c.secondary, '#f2d2a9'), accent: hex(c.accent, '#d63c3c'), eye: hex(c.eye, '#1f8a4c'), detail: hex(c.detail, '#ffffff'), outfit: hex(c.outfit, hex(c.accent, '#2a52be')), hair: hex(c.hair, '#3a2418'), hat: hex(c.hat, hex(c.accent, '#d63c3c')) },
     ears: pick(look.ears, PARTS.ears, 'none'), top: pick(look.top, PARTS.top, 'none'), headwear: pick(look.headwear, PARTS.headwear, 'none'),
     snout: pick(look.snout, PARTS.snout, 'none'), eyes: pick(look.eyes, PARTS.eyes, 'cartoon'), tail: pick(look.tail, PARTS.tail, 'none'),
     feet: pick(look.feet, PARTS.feet, 'shoes'), hands: pick(look.hands, PARTS.hands, 'gloves'), accessory: pick(look.accessory, PARTS.accessory, 'none'),
@@ -199,7 +199,7 @@ function headBack(P, look, hx, hy, R, wind) {
   if (look.ears === 'long') earPair(s => P.ellipse(hx + s * R * 0.32 - R * 0.15, hy - R * 1.45, R * 0.2, R * 0.65, c.primary, ` transform="rotate(${f(s * 10 - 12 - wind * 4)} ${f(hx)} ${f(hy - R * 0.8)})"`));
   if (look.ears === 'floppy') out.push(P.ellipse(hx - R * 0.62, hy + R * 0.15, R * 0.24, R * 0.62, c.secondary, ` transform="rotate(${f(18 + wind * 6)} ${f(hx - R * 0.62)} ${f(hy - R * 0.4)})"`));
   if (look.ears === 'fins') out.push(P.shape(`M${pt(hx - R * 0.7, hy - R * 0.3)}L${pt(hx - R * 1.5, hy - R * 0.75)}L${pt(hx - R * 1.25, hy + R * 0.05)}L${pt(hx - R * 1.6, hy + R * 0.4)}L${pt(hx - R * 0.75, hy + R * 0.3)}Z`, c.accent));
-  if (look.headwear === 'hood') out.push(P.shape(smoothPath([[hx - R * 1.25, hy + R * 0.9], [hx - R * 1.3, hy - R * 0.4], [hx - R * 0.4, hy - R * 1.3], [hx + R * 0.7, hy - R * 1.1], [hx + R * 1.2, hy - R * 0.2], [hx + R * 0.9, hy + R * 0.7]]), c.accent));
+  if (look.headwear === 'hood') out.push(P.shape(smoothPath([[hx - R * 1.25, hy + R * 0.9], [hx - R * 1.3, hy - R * 0.4], [hx - R * 0.4, hy - R * 1.3], [hx + R * 0.7, hy - R * 1.1], [hx + R * 1.2, hy - R * 0.2], [hx + R * 0.9, hy + R * 0.7]]), c.hat));
   return out.join('');
 }
 
@@ -207,24 +207,24 @@ function headFront(P, look, hx, hy, R, wind) {
   const c = look.colors, out = [];
   if (look.top === 'tuft') out.push(P.shape(`M${pt(hx - R * 0.2, hy - R * 0.92)}Q${pt(hx - R * 0.1, hy - R * 1.6)} ${pt(hx + R * 0.5, hy - R * 1.45)}Q${pt(hx + R * 0.1, hy - R * 1.25)} ${pt(hx + R * 0.25, hy - R * 0.9)}Z`, c.primary));
   if (look.top === 'leaf') out.push(P.shape(`M${pt(hx, hy - R * 0.95)}Q${pt(hx + R * 0.2, hy - R * 1.9)} ${pt(hx + R * 1.0, hy - R * 1.7)}Q${pt(hx + R * 0.7, hy - R * 1.05)} ${pt(hx, hy - R * 0.95)}Z`, '#5fbf4a'));
-  if (look.top === 'antenna') out.push(`<path d="M${pt(hx, hy - R)}L${pt(hx - R * 0.1 - wind, hy - R * 1.6)}" stroke="${P.O}" stroke-width="${f(P.W * 1.1)}" stroke-linecap="round"/>` + P.circle(hx - R * 0.1 - wind, hy - R * 1.65, R * 0.16, c.accent));
+  if (look.top === 'antenna') out.push(`<path d="M${pt(hx, hy - R)}L${pt(hx - R * 0.1 - wind, hy - R * 1.6)}" stroke="${P.O}" stroke-width="${f(P.W * 1.1)}" stroke-linecap="round"/>` + P.circle(hx - R * 0.1 - wind, hy - R * 1.65, R * 0.16, c.hat));
   if (look.headwear === 'cap') {
-    out.push(P.shape(`M${pt(hx - R * 0.98, hy - R * 0.12)}C${pt(hx - R * 1.0, hy - R * 1.25)} ${pt(hx + R * 0.95, hy - R * 1.3)} ${pt(hx + R * 0.95, hy - R * 0.25)}Z`, c.accent));
-    out.push(P.shape(`M${pt(hx + R * 0.55, hy - R * 0.3)}Q${pt(hx + R * 1.55, hy - R * 0.38)} ${pt(hx + R * 1.5, hy - R * 0.12)}Q${pt(hx + R * 1.0, hy - R * 0.02)} ${pt(hx + R * 0.45, hy - R * 0.08)}Z`, shade(c.accent, 0.12)));
+    out.push(P.shape(`M${pt(hx - R * 0.98, hy - R * 0.12)}C${pt(hx - R * 1.0, hy - R * 1.25)} ${pt(hx + R * 0.95, hy - R * 1.3)} ${pt(hx + R * 0.95, hy - R * 0.25)}Z`, c.hat));
+    out.push(P.shape(`M${pt(hx + R * 0.55, hy - R * 0.3)}Q${pt(hx + R * 1.55, hy - R * 0.38)} ${pt(hx + R * 1.5, hy - R * 0.12)}Q${pt(hx + R * 1.0, hy - R * 0.02)} ${pt(hx + R * 0.45, hy - R * 0.08)}Z`, shade(c.hat, 0.12)));
     out.push(`<circle cx="${f(hx + R * 0.1)}" cy="${f(hy - R * 0.72)}" r="${f(R * 0.22)}" fill="#ffffff" stroke="${P.O}" stroke-width="${f(P.W * 0.6)}"/>`);
   }
   if (look.headwear === 'helmet') {
-    out.push(P.shape(`M${pt(hx - R * 1.05, hy + R * 0.1)}C${pt(hx - R * 1.1, hy - R * 1.35)} ${pt(hx + R * 1.1, hy - R * 1.35)} ${pt(hx + R * 1.05, hy - R * 0.05)}L${pt(hx + R * 0.95, hy + R * 0.15)}L${pt(hx - R * 0.95, hy + R * 0.25)}Z`, c.accent));
-    out.push(`<path d="M${pt(hx - R * 0.2, hy - R * 1.05)}Q${pt(hx + R * 0.1, hy - R * 0.4)} ${pt(hx - R * 0.05, hy + R * 0.15)}" fill="none" stroke="${light(c.accent, 0.35)}" stroke-width="${f(R * 0.12)}" stroke-linecap="round" opacity=".8"/>`);
+    out.push(P.shape(`M${pt(hx - R * 1.05, hy + R * 0.1)}C${pt(hx - R * 1.1, hy - R * 1.35)} ${pt(hx + R * 1.1, hy - R * 1.35)} ${pt(hx + R * 1.05, hy - R * 0.05)}L${pt(hx + R * 0.95, hy + R * 0.15)}L${pt(hx - R * 0.95, hy + R * 0.25)}Z`, c.hat));
+    out.push(`<path d="M${pt(hx - R * 0.2, hy - R * 1.05)}Q${pt(hx + R * 0.1, hy - R * 0.4)} ${pt(hx - R * 0.05, hy + R * 0.15)}" fill="none" stroke="${light(c.hat, 0.35)}" stroke-width="${f(R * 0.12)}" stroke-linecap="round" opacity=".8"/>`);
   }
   if (look.headwear === 'crown') out.push(P.shape(`M${pt(hx - R * 0.55, hy - R * 0.78)}L${pt(hx - R * 0.65, hy - R * 1.5)}L${pt(hx - R * 0.25, hy - R * 1.1)}L${pt(hx + R * 0.05, hy - R * 1.65)}L${pt(hx + R * 0.35, hy - R * 1.1)}L${pt(hx + R * 0.75, hy - R * 1.5)}L${pt(hx + R * 0.65, hy - R * 0.8)}Z`, '#f5c542')
-    + `<circle cx="${f(hx + R * 0.05)}" cy="${f(hy - R * 1.0)}" r="${f(R * 0.12)}" fill="${c.accent}"/>`);
-  if (look.headwear === 'wizard-hat') out.push(P.shape(`M${pt(hx - R * 1.2, hy - R * 0.5)}Q${pt(hx, hy - R * 0.85)} ${pt(hx + R * 1.2, hy - R * 0.55)}L${pt(hx + R * 0.6, hy - R * 0.85)}Q${pt(hx - R * 0.2, hy - R * 2.6)} ${pt(hx - R * 1.3 - wind * 2, hy - R * 2.2)}Q${pt(hx - R * 0.4, hy - R * 1.6)} ${pt(hx - R * 0.6, hy - R * 0.8)}Z`, c.accent)
+    + `<circle cx="${f(hx + R * 0.05)}" cy="${f(hy - R * 1.0)}" r="${f(R * 0.12)}" fill="${c.hat}"/>`);
+  if (look.headwear === 'wizard-hat') out.push(P.shape(`M${pt(hx - R * 1.2, hy - R * 0.5)}Q${pt(hx, hy - R * 0.85)} ${pt(hx + R * 1.2, hy - R * 0.55)}L${pt(hx + R * 0.6, hy - R * 0.85)}Q${pt(hx - R * 0.2, hy - R * 2.6)} ${pt(hx - R * 1.3 - wind * 2, hy - R * 2.2)}Q${pt(hx - R * 0.4, hy - R * 1.6)} ${pt(hx - R * 0.6, hy - R * 0.8)}Z`, c.hat)
     + `<path d="M${pt(hx - R * 0.62, hy - R * 0.82)}Q${pt(hx, hy - R * 1.0)} ${pt(hx + R * 0.62, hy - R * 0.86)}" fill="none" stroke="#f5c542" stroke-width="${f(R * 0.16)}"/>`);
   if (look.headwear === 'horns') for (const s of [-1, 1]) out.push(P.shape(`M${pt(hx + s * R * 0.4 - R * 0.05, hy - R * 0.75)}Q${pt(hx + s * R * 0.9, hy - R * 1.2)} ${pt(hx + s * R * 0.75, hy - R * 1.7)}Q${pt(hx + s * R * 0.55, hy - R * 1.15)} ${pt(hx + s * R * 0.1, hy - R * 0.9)}Z`, '#f1e6cf'));
   if (look.headwear === 'bandana') {
-    out.push(P.shape(`M${pt(hx - R * 0.98, hy - R * 0.35)}Q${pt(hx, hy - R * 0.75)} ${pt(hx + R * 0.98, hy - R * 0.4)}L${pt(hx + R * 0.98, hy - R * 0.12)}Q${pt(hx, hy - R * 0.45)} ${pt(hx - R * 0.98, hy - R * 0.05)}Z`, c.accent));
-    out.push(P.shape(`M${pt(hx - R * 0.9, hy - R * 0.25)}L${pt(hx - R * 1.7, hy - R * 0.1 + wind * 3)}L${pt(hx - R * 1.55, hy + R * 0.25 + wind * 3)}Z`, c.accent));
+    out.push(P.shape(`M${pt(hx - R * 0.98, hy - R * 0.35)}Q${pt(hx, hy - R * 0.75)} ${pt(hx + R * 0.98, hy - R * 0.4)}L${pt(hx + R * 0.98, hy - R * 0.12)}Q${pt(hx, hy - R * 0.45)} ${pt(hx - R * 0.98, hy - R * 0.05)}Z`, c.hat));
+    out.push(P.shape(`M${pt(hx - R * 0.9, hy - R * 0.25)}L${pt(hx - R * 1.7, hy - R * 0.1 + wind * 3)}L${pt(hx - R * 1.55, hy + R * 0.25 + wind * 3)}Z`, c.hat));
   }
   if (look.headwear === 'goggles') out.push(`<path d="M${pt(hx - R * 0.98, hy - R * 0.55)}Q${pt(hx, hy - R * 0.9)} ${pt(hx + R * 0.98, hy - R * 0.55)}" fill="none" stroke="${P.O}" stroke-width="${f(R * 0.2)}"/>` + P.circle(hx + R * 0.15, hy - R * 0.72, R * 0.24, '#7fd3ff') + P.circle(hx + R * 0.62, hy - R * 0.62, R * 0.22, '#7fd3ff'));
   return out.join('');

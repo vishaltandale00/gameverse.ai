@@ -39,6 +39,8 @@ export function changeSummary(diff, limit = 4) {
   for (const line of diff) {
     const m = line.match(/^(?:content\.)?([^:]+): (added|removed) (.+)$/);
     if (m) { const where = m[1].replace(/\[([^\]]+)\]/g, ' $1').replace(/^(stages|levels|fighters|chapters)\b/, '$1').trim(); groups.set(`${m[2]} ${m[3]}${/\s/.test(where) ? ` (${where.split(' ').slice(1).join(' ')})` : ''}`, 1); continue; }
+    const art = line.match(/^art\.(player|enemy|scenery|tiles|pickup|hazard|goal)\b/);
+    if (art) { groups.set({ player: 'hero look', enemy: 'enemy look', scenery: 'scenery', tiles: 'tiles' }[art[1]] || `${art[1]} look`, 1); continue; }
     const field = line.split(':')[0].replace(/\[[^\]]+\]/g, '').replace(/^content\./, '').replace(/^mods\./, 'mods: ').replace(/^art\./, 'art: ');
     const words = field.split('.').slice(-2).join(' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
     groups.set(words, (groups.get(words) || 0) + 1);

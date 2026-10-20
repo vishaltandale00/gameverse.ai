@@ -20,7 +20,7 @@ const look = obj({
   preset: { type: 'string', enum: PRESET_NAMES, description: 'A curated look for a well-known character archetype; "none" to build from parts. When set, the parts below are ignored.' },
   recolor: { type: 'boolean', description: 'true only when the player asked to change this preset character\'s colors; then colors below apply.' },
   body: en(BODIES), build: en(['chibi', 'normal', 'stocky', 'tall']),
-  colors: obj({ primary: color, secondary: color, accent: color, eye: color, outfit: color, hair: color }),
+  colors: obj({ primary: color, secondary: color, accent: color, eye: color, outfit: color, hair: color, hat: color }),
   ears: en(PARTS.ears), top: en(PARTS.top), headwear: en(PARTS.headwear), snout: en(PARTS.snout), eyes: en(PARTS.eyes),
   tail: en(PARTS.tail), feet: en(PARTS.feet), hands: en(PARTS.hands), accessory: en(PARTS.accessory), held: en(PARTS.held),
   facial: en(PARTS.facial), outfit: en(PARTS.outfit), arms: en(PARTS.arms),
