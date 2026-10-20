@@ -108,3 +108,44 @@ export function preflight(doc, registry, logic) {
     graphics: (doc.graphics || []).map((g, i) => ({ ...g, with: normalized.find(n => n._path === `graphics[${i}]`).with })) } : null;
   return { ok, errors, warnings, doc: out, capabilities: Object.fromEntries([...spaceCaps].map(([k, v]) => [k, [...v]])), ms: +(performance.now() - started).toFixed(2) };
 }
+
+// Collections a progressive-generation patch may append to (by id where present).
+const APPEND = ['spaces', 'systems', 'graphics', 'plot.characters', 'plot.quests', 'plot.endings', 'content.items', 'content.recipes', 'content.archetypes', 'content.blocks'];
+
+/**
+ * Merge an additive patch into a document without mutating either.
+ * - spaces: an entry with an existing id merges its zones/generators; new ids append.
+ * - plot.storyboard.acts: an act with an existing id appends beats; new acts append.
+ * - plot.dialogue, content.models: new keys are added.
+ * - other APPEND collections: entries are appended.
+ * Returns { doc, added } where added lists what was new, for extend hooks.
+ */
+export function mergePatch(base, patch) {
+  const doc = structuredClone(base), added = { spaces: [], zones: [], systems: [], graphics: [], beats: [], acts: [], keys: [] };
+  const at = (obj, path, make) => path.split('.').reduce((o, k, i, a) => (o[k] ??= (i === a.length - 1 ? make() : {})), obj);
+  for (const s of patch.spaces || []) {
+    const existing = doc.spaces.find(x => x.id === s.id);
+    if (!existing) { doc.spaces.push(structuredClone(s)); added.spaces.push(s.id); continue; }
+    for (const z of s.zones || []) { (existing.zones ??= []).push(structuredClone(z)); added.zones.push({ space: s.id, zone: z.id }); }
+    for (const g of s.generators || []) (existing.generators ??= []).push(structuredClone(g));
+  }
+  for (const path of APPEND.filter(p => p !== 'spaces')) {
+    const list = path.split('.').reduce((o, k) => o?.[k], patch);
+    if (!Array.isArray(list) || !list.length) continue;
+    at(doc, path, () => []).push(...structuredClone(list));
+    if (path === 'systems' || path === 'graphics') added[path].push(...list.map((_, i) => at(doc, path, () => []).length - list.length + i));
+    else added.keys.push(path);
+  }
+  for (const act of patch.plot?.storyboard?.acts || []) {
+    const acts = at(doc, 'plot.storyboard.acts', () => []);
+    const existing = acts.find(a => a.id === act.id);
+    if (existing) { (existing.beats ??= []).push(...structuredClone(act.beats || [])); added.beats.push(...(act.beats || []).map(b => b.id)); }
+    else { acts.push(structuredClone(act)); added.acts.push(act.id); added.beats.push(...(act.beats || []).map(b => b.id)); }
+  }
+  for (const path of ['plot.dialogue', 'content.models']) {
+    const obj = path.split('.').reduce((o, k) => o?.[k], patch);
+    if (obj) { Object.assign(at(doc, path, () => ({})), structuredClone(obj)); added.keys.push(path); }
+  }
+  for (const key of ['title', 'logline']) if (patch[key] !== undefined) doc[key] = patch[key];
+  return { doc, added };
+}

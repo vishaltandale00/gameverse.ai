@@ -6,7 +6,7 @@
 import { random, seedFrom } from './rng.js';
 
 export const PHASES = ['input', 'ai', 'movement', 'physics', 'interaction', 'rules', 'plot', 'late'];
-export const KERNEL_EVENTS = ['game_start', 'game_end', 'spawn', 'despawn', 'action'];
+export const KERNEL_EVENTS = ['game_start', 'game_end', 'spawn', 'despawn', 'action', 'content_added'];
 export const DT = 1 / 60;
 
 export function buildLogic(registry, Logic) {
@@ -81,6 +81,24 @@ export function createWorld(doc, registry, logic, { seed, headless = true } = {}
       for (const s of systems) { s.fn(rt); if (state.status !== 'playing') break; }
       state.frame++; state.time = +(state.frame * DT).toFixed(6);
       return state;
+    },
+    /**
+     * Hot-load generated content into the running game. `normalizedDoc` is the
+     * preflighted merge (document.js mergePatch + preflight); `added` comes from
+     * mergePatch. New primitive instances are installed. Existing primitives
+     * should read document data lazily from rt.doc (re-index when rt.doc
+     * changes); those that keep derived caches implement extend(rt, cfg, added).
+     */
+    extend(normalizedDoc, added) {
+      const before = { systems: (rt.doc.systems || []).length, graphics: (rt.doc.graphics || []).length, spaces: new Set((rt.doc.spaces || []).map(s => s.id)) };
+      rt.doc = normalizedDoc;
+      for (const s of normalizedDoc.spaces) if (!before.spaces.has(s.id)) { install(s, `spaces.${s.id}`); (s.generators || []).forEach((g, j) => install({ ...g, space: s.id }, `spaces.${s.id}.generators[${j}]`)); }
+      for (const instance of [...normalizedDoc.spaces, ...(normalizedDoc.systems || []).slice(0, before.systems), ...(headless ? [] : (normalizedDoc.graphics || []).slice(0, before.graphics))]) {
+        registry.get(instance.use)?.extend?.(rt, instance.with || {}, added, instance);
+      }
+      (normalizedDoc.systems || []).slice(before.systems).forEach((s, i) => install(s, `systems[${before.systems + i}]`));
+      (normalizedDoc.graphics || []).slice(before.graphics).forEach((g, i) => install(g, `graphics[${before.graphics + i}]`));
+      rt.emit('content_added', { zones: added.zones.length, beats: added.beats.length, systems: added.systems.length });
     },
     snapshot: () => structuredClone(state),
     restore(snapshot) {

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { catalogue } from '../v2/primitives/index.js';
-import { preflight } from '../v2/kernel/document.js';
+import { preflight, mergePatch } from '../v2/kernel/document.js';
 import { createWorld } from '../v2/kernel/world.js';
 
 // A tiny mystery on a graph space: find the key in the garden, open the
@@ -87,4 +87,24 @@ test('warnings flag flags nobody sets and data no primitive reads', () => {
   assert.ok(r.ok);
   assert.ok(r.warnings.some(w => w.code === 'flag_never_set'));
   assert.ok(r.warnings.some(w => w.code === 'data_unused' && w.path === 'content.recipes'));
+});
+
+test('generated content hot-loads into a running game', () => {
+  const rt = createWorld(preflight(mystery(), registry, logic).doc, registry, logic);
+  rt.step(); rt.step({ actions: { go: 'garden' } });
+  // Background generation adds a cellar off the garden, a new beat and an item.
+  const { doc, added } = mergePatch(rt.doc, {
+    spaces: [{ id: 'manor', zones: [{ id: 'cellar', name: 'Cellar', exits: [{ to: 'garden' }] }] }],
+    plot: { storyboard: { acts: [{ id: 'search', beats: [{ id: 'find_wine', when: { zone: 'cellar' }, do: [{ do: 'give_item', item: 'wine' }] }] }] } },
+    content: { items: [{ id: 'wine', name: 'Dusty wine' }] },
+  });
+  doc.spaces[0].zones.find(z => z.id === 'garden').exits.push({ to: 'cellar' });
+  const checked = preflight(doc, registry, logic);
+  assert.ok(checked.ok, JSON.stringify(checked.errors));
+  rt.extend(checked.doc, added);
+  assert.equal(rt.state.counts.content_added, 1);
+  rt.step({ actions: { go: 'cellar' } });
+  assert.equal(rt.player().at, 'cellar');
+  assert.equal(rt.state.prim['gameplay.inventory'].player.wine, 1);
+  assert.equal(rt.state.prim['gameplay.inventory'].player.brass_key, 1, 'existing progress kept');
 });

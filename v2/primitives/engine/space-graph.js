@@ -30,16 +30,21 @@ export default {
     return errors;
   },
   install(rt, config, instance) {
-    const zones = new Map((instance.zones || []).map(z => [z.id, z]));
-    const exitsFrom = id => zones.get(id)?.exits || [];
+    // Index zones lazily per document version so hot-loaded zones and exits appear.
+    let indexed = null, zonesMap = new Map();
+    const zones = () => {
+      if (indexed !== rt.doc) { indexed = rt.doc; zonesMap = new Map((rt.doc.spaces.find(s => s.id === instance.id)?.zones || []).map(z => [z.id, z])); }
+      return zonesMap;
+    };
+    const exitsFrom = id => zones().get(id)?.exits || [];
     const api = {
-      kind: 'graph', zones,
-      place(entity) { if (entity.at == null) entity.at = instance.zones?.[0]?.id ?? null; },
+      kind: 'graph', get zones() { return zones(); },
+      place(entity) { if (entity.at == null) entity.at = [...zones().keys()][0] ?? null; },
       remove() {},
       neighbors: id => exitsFrom(id).map(x => x.to),
       canMove(entity, to, rt) { const x = exitsFrom(entity.at).find(e => e.to === to); return Boolean(x) && (!x.gate || rt.test(x.gate)); },
       move(entity, to, rt, { force = false } = {}) {
-        if (!zones.has(to)) return false;
+        if (!zones().has(to)) return false;
         if (!force && !api.canMove(entity, to, rt)) { rt.emit('blocked', { who: entity.id, from: entity.at, to }); return false; }
         const from = entity.at; entity.at = to;
         rt.emit('leave_zone', { who: entity.id, zone: from }); rt.emit('enter_zone', { who: entity.id, zone: to });

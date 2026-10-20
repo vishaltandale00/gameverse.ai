@@ -30,8 +30,8 @@ export default {
     return errors;
   },
   install(rt, config) {
-    const acts = rt.doc.plot.storyboard.acts;
     rt.system('plot', rt => {
+      const acts = rt.doc.plot.storyboard.acts; // read per step: hot-loaded beats appear here
       // Fetch state every step: restore() replaces it.
       const s = rt.store('plot.storyboard');
       s.fired ??= {}; s.act ??= 0; s.done ??= {};
