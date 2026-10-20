@@ -118,7 +118,8 @@ function playView(meta, record) {
   $('#stage').innerHTML = `<header class="game-head"><h1>${esc(meta.title)}</h1><p>${esc(record?.report?.summary || meta.prompt)}</p></header>
     ${meta.sample ? `<p class="notice">${esc(meta.notice)}</p>` : ''}
     ${(record?.report?.gaps || []).filter(g => / kit$/.test(g.capability)).map(g => `<p class="notice">Needs the ${esc(g.capability)}, which isn't built yet. ${esc(g.why)}</p>`).join('')}
-    ${(record?.report?.gaps || []).filter(g => g.kind === 'unsupported').length ? `<p class="notice">Not in this game yet: ${(record.report.gaps.filter(g => g.kind === 'unsupported')).map(g => esc(g.capability)).join('; ')}. This genre's engine can't do ${record.report.gaps.filter(g => g.kind === 'unsupported').length > 1 ? 'these' : 'this'} yet.</p>` : ''}
+    ${record?.report?.change && record.report.changes?.length ? `<p class="changed">Changed for “${esc(record.report.change)}”: ${record.report.changes.map(esc).join(' · ')}</p>` : ''}
+    ${(record?.report?.gaps || []).filter(g => g.kind === 'unsupported').length ? `<p class="notice">Not in this game yet: ${(record.report.gaps.filter(g => g.kind === 'unsupported')).map(g => esc(g.capability)).join('; ')}. ${esc(record.report.gaps.find(g => g.kind === 'unsupported').why || '')}</p>` : ''}
     <div class="board" id="game"></div>
     <form class="change" id="change"><input type="text" id="change-text" placeholder="Change this game, e.g. “add more platforms and make the guards faster”" aria-label="Change this game"><button class="primary" type="submit">Change it</button></form>
     <div class="quick">${(record?.doc?.schema === 'gameverse.v2.kit-game/0.1' ? record.report?.quick || KIT_QUICK : QUICK).map(q => `<button type="button" data-quick="${esc(q)}">${esc(q)}</button>`).join('')}</div>`;

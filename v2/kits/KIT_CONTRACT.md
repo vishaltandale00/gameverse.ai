@@ -69,6 +69,25 @@ any kit.
   - screen shake (off with `reducedMotion`);
   - a readable HUD.
 
+## Common change requests are real options
+
+Players ask every game for the same kinds of changes. Each kit's content must be able to express the
+ones that apply to its genre, as real parameters the rules honor:
+- **Size and scale:** map or arena size, up to an open-world or very large option where the genre
+  allows it. When the world outgrows the screen, the renderer gets a following camera, and a
+  minimap where it helps.
+- **Amount:** number of levels, stages, enemies, opponents and items.
+- **Pace and difficulty:** speeds, timers, enemy skill, lives, health.
+- **Theme and cast:** names, looks and setting. Art is handled by the locked art direction.
+
+The content prompt must map a request to the parameter that really does it, and must never fake it
+with a stand-in. Switching a corridor style is not "bigger". A revision keeps everything the request
+doesn't mention, including counts.
+
+Every revision is checked (`v2/planner/revision-check.js`): a decision model reads the request and
+the content diff. If the change didn't really happen, the player is told it may not be possible yet,
+and sees a summary of what did change.
+
 ## World adapter and mods
 
 Concepts mix across genres through **mods** (`v2/kits/mods/`): mechanics written once and switched

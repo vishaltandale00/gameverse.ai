@@ -4,6 +4,7 @@
 // against the current content; the art stays locked (see art-procedural.js).
 import { loadKit } from '../kits/registry.js';
 import { modsFor, modsSchema, modsPrompt } from '../kits/mods/compose.js';
+import { checkRevision, changeSummary, NOT_APPLIED } from './revision-check.js';
 import { hashOf } from '../server/store.js';
 import { seedFrom } from '../engine/rng.js';
 
@@ -24,7 +25,7 @@ function contentRequest({ prompt, answers, previous, change }) {
   return `Game idea: ${prompt}${answers?.length ? `\n\nPlayer preferences:\n${answers.map(a => `- ${a.question}: ${a.answer}`).join('\n')}` : ''}`;
 }
 
-export async function runKitPipeline(job, ctx, { client, model, kitId, previous, art, route }) {
+export async function runKitPipeline(job, ctx, { client, model, kitId, previous, art, route, decisions = null }) {
   const kit = await loadKit(kitId);
   const previousContent = previous?.doc?.schema === KIT_GAME_SCHEMA ? previous.doc.content : null;
   const available = modsFor(kit);
@@ -58,6 +59,10 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
   const seed = previous?.provenance?.seed ?? job.seed ?? seedFrom(job.prompt);
   // Keep only mods this kit can run, normalized, so hosts and saves see a stable shape.
   mods = Object.fromEntries(available.map(m => [m.id, m.normalize(mods?.[m.id])]).filter(([id, cfg]) => available.find(m => m.id === id).enabled(cfg)));
+  // On revisions, check that the change really happened; if not, say so rather than claim it.
+  const revisionCheck = previousContent ? await checkRevision(decisions, { change: job.change, engine: kit.name, before: { content: previousContent, mods: previous.doc.mods || {} }, after: { content, mods }, unsupported: unsupported || [] }) : null;
+  if (revisionCheck?.applied != null && revisionCheck.applied < NOT_APPLIED && !(unsupported || []).length)
+    unsupported = [{ request: job.change, why: revisionCheck.why }];
   const doc = { schema: KIT_GAME_SCHEMA, kit: kit.id, kitVersion: kit.version, mods, id: previous?.doc?.id || slug(content.title, kit.id), title: content.title, logline: content.logline || '', seed, content };
   const inputs = artInputs(kit, content, doc);
   // Art direction runs while the kit verifies the content.
@@ -78,7 +83,7 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
   return ctx.publish({
     doc: painted ? { ...doc, art: painted.art } : doc,
     stage: previousContent ? `revision: ${job.change}` : 'playable',
-    report: { kind: `kit:${kit.id}`, kit: kit.id, verified: true, verification: verified.report, summary: content.logline, gaps: (unsupported || []).slice(0, 8).map(u => ({ capability: String(u.request).slice(0, 120), why: String(u.why).slice(0, 240), kind: 'unsupported' })), route: route || null, artDesign: inputs.design, ...(painted ? { art: painted.report } : {}), modelMs: reply?.ms ?? 0, contentAttempts: attempts, change: job.change || null },
+    report: { kind: `kit:${kit.id}`, kit: kit.id, verified: true, verification: verified.report, summary: content.logline, gaps: (unsupported || []).slice(0, 8).map(u => ({ capability: String(u.request).slice(0, 120), why: String(u.why).slice(0, 240), kind: 'unsupported' })), route: route || null, revisionCheck, changes: revisionCheck?.summary || [], artDesign: inputs.design, ...(painted ? { art: painted.report } : {}), modelMs: reply?.ms ?? 0, contentAttempts: attempts, change: job.change || null },
     provenance: { pipeline: KIT_PIPELINE_VERSION, kit: kit.id, kitVersion: kit.version, model: reply?.model || 'offline', seed, prompt: job.prompt, answers: job.answers || [], change: job.change || null, base: job.base || null, contentHash: hashOf(content) },
   });
 }

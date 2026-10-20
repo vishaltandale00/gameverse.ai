@@ -87,3 +87,4 @@ body.theater .game-head h1 { font-size: 20px; padding-right: 130px; }
 body.theater .game-head p { display: none; }
 body.theater .board { max-width: min(100%, calc((100vh - 110px) * 16 / 9)); margin: 0 auto; }
 @media (prefers-reduced-motion: no-preference) { body .rail, body .sheet, body .stage { transition: padding .2s ease; } }
+.changed { margin: 0 0 10px; color: var(--muted); font-size: 14px; }
