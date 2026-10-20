@@ -189,6 +189,7 @@ export default {
       for (const e of agents) {
         if (!active.has(e.id)) { if (!moverOwned(e)) { delete e.components.steer; if (e.components.moveTo?.by === 'ai') delete e.components.moveTo; } continue; }
         if (e.components.mount?.rider || e.components.mount?.called) continue; // gameplay.mount drives ridden/called mounts
+        if (e.components.crowdAgent || e.components.traffic || e.components.boid) continue; // ambient agents owned by crowd/traffic/flock
         const a = ensureAgent(rt, e);
         if (now >= (a.next ?? 0)) { think(rt, e, a, config); a.next = round6(now + config.tick); }
         act(rt, e, a, config);

@@ -9,5 +9,7 @@ import motion from './ai-motion.js';
 import formation from './ai-formation.js';
 import schedule from './ai-schedule.js';
 import versus from './ai-versus.js';
+import traffic from './ai-traffic.js';
+import crowd from './ai-crowd.js';
 
-export default [brain, attacks, schedule, motion, formation, versus, level, abilities, tree, wanted];
+export default [brain, attacks, schedule, motion, formation, versus, traffic, crowd, level, abilities, tree, wanted];
