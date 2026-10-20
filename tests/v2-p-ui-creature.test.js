@@ -37,7 +37,7 @@ test('creature battle: view from the real primitive, menu from its options', () 
   assert.equal(v.source, 'battle', 'the battle.view() service of the primitive is preferred over reading its store');
   assert.deepEqual(v.sides.map(s => s.units.map(u => u.name)), [['Sprout'], ['Mote']]);
   assert.ok(v.sides[0].units[0].hpMax >= v.sides[0].units[0].hp && v.sides[0].units[0].hp > 0);
-  assert.deepEqual(v.menu.filter(m => m.kind === 'move').map(m => [m.label, m.pp]), [['Tackle', 35], ['Vine', 25]]);
+  assert.deepEqual(v.menu.filter(m => m.kind === 'move').map(m => [m.name ?? m.label, m.pp]), [['Tackle', 35], ['Vine', 25]]);
   assert.ok(v.menu.some(m => m.kind === 'run'));
 });
 
