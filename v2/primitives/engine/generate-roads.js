@@ -53,7 +53,8 @@ export default {
       const ground = (x, z) => (m.surfaceY ? m.surfaceY(x, z) : m.at('height', x, z, 0));
       const H = (i, j) => { const k = i + NX * j; if (Number.isNaN(hgrid[k])) { const x = x0 + i * cs, z = z0 + j * cs, h = ground(x, z), w = m.at('water', x, z, null); hgrid[k] = h; wgrid[k] = w == null ? 0 : Math.max(0, w - h); } return hgrid[k]; };
       const Wd = (i, j) => { H(i, j); return wgrid[i + NX * j]; };
-      const sMeander = subSeed(seed, 'meander');
+      const sMeander = subSeed(seed, 'meander'), mgrid = new Float32Array(NX * NZ).fill(NaN);
+      const meander = (i, j) => { const k = i + NX * j; let v = mgrid[k]; if (Number.isNaN(v)) { v = mgrid[k] = 0.5 + 0.5 * fbm2(sMeander, (x0 + i * cs) / 160, (z0 + j * cs) / 160, 2); } return v; };
       const zoneNode = new Map();
       const endpoint = (zoneId, towards) => {
         // Prefer the street node of a city district in that zone nearest the other end.
@@ -75,7 +76,7 @@ export default {
         const s = cell(A), g = cell(B), maxG = config.maxGrade;
         const r = astar({
           start: s, isGoal: c => c[0] === g[0] && c[1] === g[1], key: c => c[0] * 100003 + c[1], maxNodes: NX * NZ,
-          h: c => Math.hypot(c[0] - g[0], c[1] - g[1]) * cs,
+          h: c => Math.hypot(c[0] - g[0], c[1] - g[1]) * cs * 1.3, // mildly greedy: roads need not be optimal
           neighbors(c, push) {
             for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
               const i = c[0] + di, j = c[1] + dj; if (i < 0 || j < 0 || i >= NX || j >= NZ) continue;
@@ -83,7 +84,7 @@ export default {
               if (wet && !link.bridge) continue;
               let cost = d * (1 + 4 * (grade / maxG) ** 2) * (grade > maxG * 3 ? 20 : 1);
               if (wet) cost *= 6;
-              cost *= 1 + link.curviness * 1.5 * (0.5 + 0.5 * fbm2(sMeander + li, (x0 + i * cs) / 160, (z0 + j * cs) / 160, 2));
+              cost *= 1 + link.curviness * 1.5 * meander(i, j);
               push([i, j], cost);
             }
           },
