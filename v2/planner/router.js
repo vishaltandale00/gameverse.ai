@@ -7,6 +7,7 @@ import { availableKits } from '../kits/registry.js';
 export const ARCADE = { id: 'arcade', summary: 'Side-scrolling platformer or top-down action: run, jump, stomp, shoot, collect, reach the goal.', examples: ['Super Mario Bros', 'Sonic', 'Celeste', 'Mega Man', 'Zelda-like top-down action'] };
 // Kits on the roadmap but not built yet, so the router can name the gap precisely.
 export const PLANNED = {
+  maze: 'Maze and grid arcade: move through a grid maze eating pellets while ghosts chase you, or drop bombs on a grid (Pac-Man, Ms. Pac-Man, Bomberman, Dig Dug, Frogger).',
   shmup: 'Shoot \'em up: pilot a ship and shoot waves of enemies and bullet patterns (Space Invaders, Galaga, Asteroids, Geometry Wars).',
   puzzle: 'Block and match puzzle: falling blocks, line clears, match-3 swaps, sliding tiles (Tetris, Bejeweled, Candy Crush, 2048).',
   physics: 'Physics toy: launch, bounce or fling things with real physics; slingshot projectiles into toppling structures, paddles and balls, pegs, pinball (Angry Birds, Breakout, Peggle, Pinball).',
@@ -62,32 +63,33 @@ export function routeOffline(prompt, options) {
   return { engine: 'arcade', needs: 'none', why: 'default engine' };
 }
 
-/** The genres d1 chooses between: every engine, built or planned, described by its mechanics. */
-async function d1Criteria() {
+/** The genres the decision model chooses between: every engine, built or planned, described by its mechanics. */
+async function routeCriteria() {
   const options = await routeOptions();
   const built = Object.fromEntries(options.map(o => [o.id, o.id === 'arcade'
     ? 'Linear level-based action: a side-scrolling platformer (run, jump, stomp enemies, reach the flag) or simple top-down action, with no fighting-game duels, no turn-based battles, no creature catching and no open map exploration.'
     : `${o.summary} Reference games: ${o.examples.join(', ')}.`]));
   return { options, criteria: { ...PLANNED, ...built } };
 }
-const D1_INSTRUCTIONS = "Which genre engine plays the core gameplay loop this idea asks for? Judge by the mechanics of the game being referenced, never by the characters named: characters from one franchise dropped into another game keep that other game's genre (Mario in Mortal Kombat is a fighting game; Mario in Pokémon is a creature collector).";
-export const D1_CONFIDENT = 0.5;
+const ROUTE_INSTRUCTIONS = "Which genre engine plays the core gameplay loop this idea asks for? Judge by the mechanics of the game being referenced, never by the characters named: characters from one franchise dropped into another game keep that other game's genre (Mario in Mortal Kombat is a fighting game; Mario in Pokémon is a creature collector).";
+export const DECISION_CONFIDENT = 0.5;
 
 /**
- * Route an idea. d1 decides in ~0.1 s; below D1_CONFIDENT the OpenAI router decides (a cascade).
+ * Route an idea. A decision model (d1 or OpenAI Decisions) decides in ~0.1 s; below DECISION_CONFIDENT
+ * the generative model router decides (a cascade).
  * Returns { engine, needs, why, ms, source, probability? }.
  */
-export async function routeIdea({ client, model, d1 = null, prompt, answers }) {
+export async function routeIdea({ client, model, decisions = null, prompt, answers }) {
   const started = performance.now();
-  if (d1) {
+  if (decisions) {
     try {
-      const { options, criteria } = await d1Criteria();
-      const { answers: a } = await d1.decide({ state: `A player asked for this game: "${prompt}"${answers?.length ? ` (preferences: ${answers.map(x => `${x.question} ${x.answer}`).join('; ')})` : ''}`, questions: { engine: { type: 'choice', instructions: D1_INSTRUCTIONS, criteria } } });
+      const { options, criteria } = await routeCriteria();
+      const { answers: a, provider } = await decisions.decide({ state: `A player asked for this game: "${prompt}"${answers?.length ? ` (preferences: ${answers.map(x => `${x.question} ${x.answer}`).join('; ')})` : ''}`, questions: { engine: { type: 'choice', instructions: ROUTE_INSTRUCTIONS, criteria } } });
       const choice = a.engine.choice, probability = a.engine.probabilities?.[choice] ?? 0;
-      if (probability >= D1_CONFIDENT) {
+      if (probability >= DECISION_CONFIDENT) {
         const built = options.some(o => o.id === choice);
         const top = Object.entries(a.engine.probabilities).sort((x, y) => y[1] - x[1]).slice(0, 3).map(([k, p]) => `${k} ${p.toFixed(2)}`).join(', ');
-        return { engine: built ? choice : 'none', needs: built ? 'none' : choice, why: `d1: ${top}`, probability, ms: Math.round(performance.now() - started), source: 'd1' };
+        return { engine: built ? choice : 'none', needs: built ? 'none' : choice, why: `${provider}: ${top}`, probability, ms: Math.round(performance.now() - started), source: provider };
       }
     } catch { /* fall through to the model router */ }
   }
