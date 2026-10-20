@@ -13,8 +13,61 @@ const actionsProvided = (doc, registry) => new Set((doc.systems || []).flatMap(s
 /** True when the document is a text/menu game (graph or none spaces and no world renderer). */
 export function isTextual(doc) {
   const spatial = (doc.spaces || []).some(s => !/space\.(graph|none)$/.test(s.use || ''));
-  const renderer = (doc.graphics || []).some(g => /graphics\.(render|camera)\./.test(g.use));
+  // graphics.render.dom is the scene card above the story text, not a world renderer.
+  const renderer = (doc.graphics || []).some(g => /graphics\.(render|camera)\./.test(g.use) && g.use !== DOM_RENDERER);
   return !spatial && !renderer;
+}
+
+// ---- World presentation: one renderer per space, the camera the view asks for, juice and post.
+// Renderers follow the catalogue's naming: engine.space.<kind> is drawn by graphics.render.<kind>.
+// Graph and none spaces (locations, cards, dialogue) are drawn by the DOM scene renderer.
+const DOM_RENDERER = 'graphics.render.dom';
+const DOM_SPACES = new Set(['engine.space.graph', 'engine.space.none']);
+/** The renderer primitive id that draws a space, or null when the catalogue has none. */
+export function rendererFor(space, registry) {
+  const use = space?.use || '';
+  const id = DOM_SPACES.has(use) ? DOM_RENDERER : use.startsWith('engine.space.') ? `graphics.render.${use.slice('engine.space.'.length)}` : null;
+  return id && has(registry, id) ? id : null;
+}
+// three.js renderers host the 3D camera rig (their cards provide the `camera` service); canvas
+// renderers carry a camera fitted to their space (board fit, fighter framing, follow with room lock),
+// so a 2D camera primitive is added only for a projection they don't do by themselves.
+const is3dRenderer = (registry, id) => (registry?.get(id)?.card?.provides?.services || []).includes('camera');
+const CAMERA_VIEWS = { '3d': new Set(['1p', '3p', 'iso']), '2d': new Set(['iso']) };
+const cardViews = (registry, id) => registry?.get(id)?.card?.views || [];
+/** Camera primitive id for a renderer and view: a registered graphics.camera.* whose card lists the view and whose validator accepts the space. */
+export function cameraFor(doc, space, renderer, view, registry) {
+  if (!registry || !view || renderer === DOM_RENDERER) return null;
+  if (!CAMERA_VIEWS[is3dRenderer(registry, renderer) ? '3d' : '2d'].has(view)) return null;
+  if (!cardViews(registry, renderer).includes(view)) return null;
+  for (const id of registry.ids('graphics').filter(i => i.startsWith('graphics.camera.'))) {
+    if (!cardViews(registry, id).includes(view)) continue;
+    const p = registry.get(id);
+    let errs = [];
+    try { errs = p.validate?.({}, doc, { warn() {} }, { space: space.id, path: 'graphics' }) || []; } catch { errs = [{ code: 'camera_check' }]; }
+    if (!errs.length) return id;
+  }
+  return null;
+}
+/** Renderer, camera, particles, hit feedback and post for spaces the document's graphics leave undrawn. */
+export function defaultWorldGraphics(doc, registry) {
+  const listed = doc.graphics || [], spaces = doc.spaces || [], out = [];
+  const listedUse = new Set(listed.map(g => g.use));
+  const drawn = s => listed.some(g => /^graphics\.render\./.test(g.use) && (g.space ? g.space === s.id : g.use === rendererFor(s, registry)));
+  const view = doc.views?.primary;
+  let world = false;
+  for (const s of spaces) {
+    const r = rendererFor(s, registry);
+    if (!r || drawn(s)) continue;
+    out.push({ use: r, space: s.id, with: {} });
+    if (r === DOM_RENDERER) continue;
+    world = true;
+    const cam = !listed.some(g => /^graphics\.camera\./.test(g.use)) && cameraFor(doc, s, r, view, registry);
+    if (cam && !out.some(g => g.use === cam && g.space === s.id)) out.push({ use: cam, space: s.id, with: {} });
+  }
+  if (world) for (const id of ['graphics.particles', 'graphics.fx.feedback', 'graphics.post'])
+    if (has(registry, id) && !listedUse.has(id)) out.push({ use: id, with: {} });
+  return out;
 }
 
 /** HUD configuration derived from the document's systems and player archetype. */
@@ -47,7 +100,7 @@ export function defaultHud(doc) {
 /** Graphics instances to add for a document (empty when it already lists UI and audio). */
 export function defaultGraphics(doc, registry) {
   const listed = new Set((doc.graphics || []).map(g => g.use));
-  const out = [];
+  const out = defaultWorldGraphics(doc, registry); // drawn beneath the UI, so mounted first
   const add = (use, w) => { if (has(registry, use) && !listed.has(use)) out.push({ use, with: w }); };
   const anyUi = [...listed].some(u => u.startsWith('graphics.ui.'));
   if (!anyUi) {

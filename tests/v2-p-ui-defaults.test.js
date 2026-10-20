@@ -26,7 +26,7 @@ test('defaults: picked from the systems each document uses', () => {
   assert.ok(hl['graphics.ui.inventory'].panels.includes('loadout'), 'charm notches -> loadout');
   assert.equal(hl['graphics.ui.minimap'], undefined, 'side view: no minimap');
   const qm = pick('quiet-manor.json');
-  assert.deepEqual(Object.keys(qm).sort(), ['graphics.audio.synth', 'graphics.ui.menu', 'graphics.ui.story']);
+  assert.deepEqual(Object.keys(qm).sort(), ['graphics.audio.synth', 'graphics.render.dom', 'graphics.ui.menu', 'graphics.ui.story']);
   assert.equal(isTextual(game('quiet-manor.json')), true);
   assert.deepEqual(defaultGraphics(game('blockport.json'), registry), [], 'a document that lists UI and audio keeps its own');
   assert.equal(defaultHud({ systems: [], content: {} }).meters.length, 0);
