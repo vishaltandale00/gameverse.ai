@@ -114,6 +114,7 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
     entity: id => state.entities[id],
     /** who: undefined|'player' -> player; 'self' -> context.self; else an entity id (characters spawn with their id). */
     resolve(who, context = {}) {
+      if ((who === undefined || who === null) && context.defaultWho) who = context.defaultWho; // e.g. AI rules: subject is the agent
       if (who === undefined || who === null || who === 'player') return state.entities.player || null;
       if (who === 'self') return state.entities[context.self] || null;
       return state.entities[who] || null;

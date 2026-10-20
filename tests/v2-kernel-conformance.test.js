@@ -79,3 +79,14 @@ test('preflight fills generator defaults, and hot-loaded generators run on exist
   rt.extend(c2.doc, added);
   assert.deepEqual(ran, [['world', 'x'], ['world', 'y']]);
 });
+
+test('omitted object params get field defaults; context.defaultWho sets the subject', async () => {
+  const { checkFields } = await import('../v2/kernel/params.js');
+  const out = checkFields({ dash: { type: 'object', default: {}, fields: { speed: { type: 'number', default: 12 }, sec: { type: 'number', default: 0.2 } } } }, {}, 'with', []);
+  assert.deepEqual(out.dash, { speed: 12, sec: 0.2 });
+  const doc = base('engine.space.graph', [{ id: 'hall', exits: [{ to: 'yard' }] }, { id: 'yard', exits: [{ to: 'hall' }] }]);
+  const { rt } = compile(doc, { primitives: PRIMITIVES });
+  const guard = rt.spawn('hero', { id: 'guard', space: 'world', at: 'yard' });
+  assert.equal(rt.test({ zone: 'yard' }, { self: guard.id, defaultWho: 'self' }), true);
+  assert.equal(rt.test({ zone: 'yard' }), false, 'without it the subject is the player');
+});

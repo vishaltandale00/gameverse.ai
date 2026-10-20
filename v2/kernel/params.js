@@ -13,7 +13,11 @@ export function checkParam(schema, value, path, errors, ctx) {
   const fail = (code, message, hint) => errors.push({ code, path, message, ...(hint ? { hint } : {}) });
   if (value === undefined) {
     if (schema.required) fail('param_missing', `required ${schema.type}`, schema.effect);
-    return schema.default === undefined ? undefined : structuredClone(schema.default);
+    if (schema.default === undefined) return undefined;
+    // An omitted object with a default still gets its fields' defaults (default: {} means "all field defaults").
+    if (schema.type === 'object' && schema.fields && schema.default && typeof schema.default === 'object' && !Array.isArray(schema.default))
+      return checkFields(schema.fields, structuredClone(schema.default), path, [], ctx, schema.open);
+    return structuredClone(schema.default);
   }
   switch (schema.type) {
     case 'number': case 'integer':
