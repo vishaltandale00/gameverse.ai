@@ -1,6 +1,8 @@
 // Aim/power search for launchers (ported from the physics kit's slingshot
-// and peggle checks). A primitive declares a continuous verb on its card:
+// and peggle checks). A primitive declares an impulse verb on its card:
 //   card.actionSpace = { launch: { angle: { min, max }, power: { min, max } } }
+// or { verb: { kind: 'impulse'|'continuous', params: {...} } }; continuous
+// controls (driving, steering) are skipped.
 // The search sweeps the first parameter finely and the others at a few
 // levels, simulates each shot on a snapshot until every moving body settles,
 // and plays the best shot (defeats first, then damage, then the objective)
@@ -18,7 +20,13 @@ export function actionSpaces(ctx) {
     const p = ctx.registry.get(x.inst?.use), as = p?.card?.actionSpace;
     if (!as) continue;
     const spec = typeof as === 'function' ? as(x.inst.with || {}) : as;
-    for (const [verb, params] of Object.entries(spec || {})) out.push({ verb, params, path: x.path });
+    for (const [verb, entry] of Object.entries(spec || {})) {
+      // Shapes: { param: {min,max} } (an impulse verb) or { kind: 'impulse'|'continuous', params: {...} }.
+      const kind = entry?.params ? entry.kind ?? 'impulse' : 'impulse', params = entry?.params ?? entry;
+      if (kind !== 'impulse') continue; // continuous controls (driving, steering) are not launches
+      const ranges = Object.fromEntries(Object.entries(params || {}).filter(([, r]) => r && typeof r === 'object' && Number.isFinite(r.min) && Number.isFinite(r.max)));
+      if (Object.keys(ranges).length) out.push({ verb, params: ranges, path: x.path });
+    }
   }
   return out;
 }
