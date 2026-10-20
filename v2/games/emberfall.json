@@ -1531,7 +1531,7 @@
    "generators": [
     {
      "use": "engine.generate.terrain.noise",
-     "with": {"octaves":6,"scale":900,"amplitude":420,"ridged":0.35,"falloff":"island","seaLevel":0,"rivers":7,"erosion":3,"warp":0.25}
+     "with": {"octaves":6,"scale":900,"amplitude":420,"ridged":0.35,"falloff":"island","seaLevel":0,"rivers":7,"erosion":3,"warp":0.25,"land":["hearth_vale","mirewood","gildmere","saltmarch","stonecrown","ashen_barrens","frostreach","the_veil"]}
     },
     {
      "use": "engine.generate.biomes",
@@ -1613,9 +1613,9 @@
        {"id":"slag_ruins","kind":"ruin","zone":"ashen_barrens","count":[5,8],"style":"charred","loot":"loot_chest_rare","tags":["seal_site"]},
        {"id":"frost_ruins","kind":"ruin","zone":"frostreach","count":[4,6],"style":"icebound","loot":"loot_chest_common","tags":["seal_site"]},
        {"id":"frost_lodge","kind":"cabin","zone":"frostreach","count":[2,3],"style":"log","interior":true},
-       {"id":"warden_cache_site","kind":"ruin","zone":"hearth_vale","at":[3052,4838],"style":"warden","loot":"loot_chest_rare","tags":["cache"]},
+       {"id":"warden_cache_site","kind":"ruin","zone":"hearth_vale","at":[3030,4862],"style":"warden","loot":"loot_chest_rare","tags":["cache"]},
        {"id":"hollow_barrow_mouth","kind":"mine","zone":"gildmere","at":[4330,3320],"style":"crypt-entrance","tags":["portal"]},
-       {"id":"crown_spire_mouth","kind":"tower","zone":"the_veil","at":[3000,520],"style":"black-spire","size":[30,120],"tags":["finale"]},
+       {"id":"crown_spire_mouth","kind":"tower","zone":"the_veil","at":[3000,520],"style":"black-spire","size":[30,30,120],"tags":["finale"]},
        {"id":"wayshrines","kind":"shrine","zone":"hearth_vale","count":[3,4],"style":"wayside","tags":["meditation_shrine","checkpoint"]},
        {"id":"camps_all","kind":"camp","zone":"mirewood","count":[4,6],"style":"travelers","tags":["campfire"]}
       ]

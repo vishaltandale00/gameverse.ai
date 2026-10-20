@@ -1691,7 +1691,7 @@
      "use": "engine.generate.structures",
      "with": {
       "place": [
-       {"id":"lot_breakwater","kind":"cabin","zone":"harbor_row","at":[-310,62,190],"style":"lot","size":[24,24],"tags":["starting_lot"]},
+       {"id":"lot_breakwater","kind":"lot","zone":"harbor_row","at":[-310,62,190],"style":"lot","size":[24,24],"tags":["starting_lot"]},
        {"id":"harbor_office","kind":"house","zone":"harbor_row","at":[-300,62,220],"style":"timber","size":[20,16],"interior":true,"tags":["odalys"]},
        {
         "id": "tobi_garage_site",
@@ -1712,12 +1712,12 @@
         "zone": "glass_heights",
         "at": [10,62,-20],
         "style": "glass",
-        "size": [28,90],
+        "size": [28,28,90],
         "interior": true,
         "loot": "loot_heights_vault",
         "tags": ["heist","vault"]
        },
-       {"id":"city_hall","kind":"tower","zone":"glass_heights","at":[0,62,-40],"style":"stone-dome","size":[40,60],"interior":true,"tags":["leopold"]},
+       {"id":"city_hall","kind":"tower","zone":"glass_heights","at":[-60,62,-70],"style":"stone-dome","size":[40,40,60],"interior":true,"tags":["leopold"]},
        {"id":"radio_studio","kind":"house","zone":"glass_heights","at":[90,62,30],"style":"glass","size":[20,20],"interior":true,"tags":["nell"]},
        {"id":"foundry","kind":"house","zone":"foundry_flats","at":[300,62,100],"style":"industrial","size":[60,40],"interior":true,"tags":["cassian"]},
        {
@@ -1767,8 +1767,7 @@
      "use": "engine.generate.scatter",
      "with": {
       "props": [
-       {"block":"log","per100m2":3,"zones":["outskirts","greenmeadow"],"biomes":["forest","plains"],"clump":0.7,"minSpacing":3,"scale":[1,1]},
-       {"block":"leaves","per100m2":3,"zones":["outskirts","greenmeadow"],"biomes":["forest","plains"],"clump":0.7,"minSpacing":3,"scale":[1,1]},
+       {"block":"log","shape":"tree","crown":"leaves","per100m2":3,"zones":["outskirts","greenmeadow"],"biomes":["forest","plains"],"clump":0.7,"minSpacing":3,"scale":[0.8,1.3]},
        {"block":"gravel","per100m2":1,"zones":["quarry_hills"],"clump":0.5,"minSpacing":4},
        {"block":"crop_wheat","per100m2":4,"zones":["greenmeadow"],"clump":0.9,"minSpacing":1},
        {"model":"barricade","per100m2":0.02,"zones":["old_quarter","foundry_flats"],"slopeMax":5,"minSpacing":60}
