@@ -5,8 +5,20 @@
 // player sees a plain summary of what did change.
 
 /** Paths whose values differ between two JSON values, e.g. "levels[2].maze.style: classic → sprawling". */
+const keyOf = x => x && typeof x === 'object' && !Array.isArray(x) ? (typeof x.id === 'string' && x.id) || (typeof x.name === 'string' && x.name) || null : null;
+/** Lists of named things (fighters, levels with ids) are compared by identity, not position. */
+const identityList = (a, b) => Array.isArray(a) && Array.isArray(b) && a.length && b.length && a.every(keyOf) && b.every(keyOf);
+
 export function contentDiff(a, b, path = '', out = []) {
   if (out.length >= 40 || JSON.stringify(a) === JSON.stringify(b)) return out;
+  if (identityList(a, b)) {
+    const before = new Map(a.map(x => [keyOf(x), x])), after = new Map(b.map(x => [keyOf(x), x]));
+    const added = [...after.keys()].filter(k => !before.has(k)), removed = [...before.keys()].filter(k => !after.has(k));
+    if (added.length) out.push(`${path}: added ${added.join(', ')}`);
+    if (removed.length) out.push(`${path}: removed ${removed.join(', ')}`);
+    for (const [k, x] of after) if (before.has(k)) contentDiff(before.get(k), x, `${path}[${k}]`, out);
+    return out;
+  }
   if (a && b && typeof a === 'object' && typeof b === 'object' && Array.isArray(a) === Array.isArray(b)) {
     if (Array.isArray(a) && a.length !== b.length) out.push(`${path || '$'}: ${a.length} items → ${b.length} items`);
     for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) contentDiff(a[k], b[k], Array.isArray(a) ? `${path}[${k}]` : path ? `${path}.${k}` : k, out);
@@ -21,7 +33,9 @@ export function contentDiff(a, b, path = '', out = []) {
 export function changeSummary(diff, limit = 4) {
   const groups = new Map();
   for (const line of diff) {
-    const field = line.split(':')[0].replace(/\[\d+\]/g, '').replace(/^content\./, '').replace(/^mods\./, 'mods: ');
+    const m = line.match(/^(?:content\.)?([^:]+): (added|removed) (.+)$/);
+    if (m) { groups.set(`${m[2]} ${m[3]}`, 1); continue; }
+    const field = line.split(':')[0].replace(/\[[^\]]+\]/g, '').replace(/^content\./, '').replace(/^mods\./, 'mods: ');
     const words = field.split('.').slice(-2).join(' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
     groups.set(words, (groups.get(words) || 0) + 1);
   }
@@ -54,7 +68,9 @@ export function shrunkLists(before, after, path = '', depth = 0, out = []) {
   if (!before || !after || typeof before !== 'object' || typeof after !== 'object') return out;
   for (const [k, a] of Object.entries(before)) {
     const b = after[k], p = path ? `${path}.${k}` : k;
-    if (Array.isArray(a) && Array.isArray(b) && b.length < a.length) out.push({ path: p, before: a.length, after: b.length });
+    // Named items that disappeared count even when the list kept its length (renamed or replaced).
+    const removed = identityList(a, b) ? a.map(keyOf).filter(id => !b.some(x => keyOf(x) === id)) : [];
+    if (Array.isArray(a) && Array.isArray(b) && (b.length < a.length || removed.length)) out.push({ path: p, before: a.length, after: b.length, ...(removed.length ? { removed } : {}) });
     else if (depth < 1 && a && typeof a === 'object' && !Array.isArray(a)) shrunkLists(a, b, p, depth + 1, out);
   }
   return out;
@@ -67,7 +83,7 @@ export async function asksToRemove(decisions, change, shrunk) {
   if (!change) return false;
   if (decisions) {
     try {
-      const { answers, provider } = await decisions.decide({ state: { request: change, shrank: shrunk.map(s => `${s.path}: ${s.before} → ${s.after}`) }, questions: { remove: { type: 'noul', instructions: REMOVE_QUESTION } } });
+      const { answers, provider } = await decisions.decide({ state: { request: change, shrank: shrunk.map(s => `${s.path}: ${s.before} → ${s.after}${s.removed ? ` (removed ${s.removed.join(', ')})` : ''}`) }, questions: { remove: { type: 'noul', instructions: REMOVE_QUESTION } } });
       // Providers are calibrated differently: on 6 clear cases d1 needed 0.9 to get all right ("make it
       // faster" scored 0.88), OpenAI Decisions separated them at 0.5 (0.04 vs 0.98+).
       if (answers.remove?.noul != null) return answers.remove.noul >= (provider === 'd1' ? 0.9 : 0.5);

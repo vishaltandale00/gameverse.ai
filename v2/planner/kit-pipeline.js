@@ -57,7 +57,7 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
     if (previousContent && client && attempts < 3) {
       const shrunk = shrunkLists(previousContent, content);
       if (shrunk.length && !(await asksToRemove(decisions, job.change, shrunk))) {
-        user = `${user}\n\nYour previous answer dropped content the request did not ask to remove: ${shrunk.map(s => `${s.path} went from ${s.before} to ${s.after} items`).join('; ')}. Keep every existing item and change only what the request asks.`;
+        user = `${user}\n\nYour previous answer dropped content the request did not ask to remove: ${shrunk.map(s => `${s.path} went from ${s.before} to ${s.after} items${s.removed ? ` and lost ${s.removed.join(', ')}` : ''}`).join('; ')}. Keep every existing item exactly as it was (same ids and names) and add or change only what the request asks.`;
         continue;
       }
     }
