@@ -12,7 +12,7 @@ export const ALL = [...PRIMITIVES, testSpace];
 /** Stub owners for vocabulary other workstreams register (damage, heal, gain, add_score...), recording calls in vars. */
 export const stubs = {
   id: 'gameplay.stub.vocab',
-  card: { intent: 'test stubs for other workstreams', provides: { events: ['damaged', 'defeated', 'defeated:*'] } },
+  card: { ambient: true, intent: 'test stubs for other workstreams', provides: { events: ['damaged', 'defeated', 'defeated:*'] } },
   logic(logic) {
     logic.effect('damage', { run: (e, rt) => { rt.state.vars[`dmg.${e.who ?? 'player'}`] = (rt.state.vars[`dmg.${e.who ?? 'player'}`] ?? 0) + e.amount; if ((e.who ?? 'player') === 'player') rt.state.vars.hp = (rt.state.vars.hp ?? 0) - e.amount; rt.emit('damaged', { who: e.who ?? 'player', amount: e.amount, type: e.type }); } });
     logic.effect('heal', { run: (e, rt) => { rt.state.vars.hp = Math.min(rt.state.vars['hp.max'] ?? Infinity, (rt.state.vars.hp ?? 0) + e.amount); rt.emit('healed', { who: e.who, amount: e.amount }); } });

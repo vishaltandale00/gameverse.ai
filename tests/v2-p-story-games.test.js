@@ -15,7 +15,7 @@ const GAMES = ['hollow-lantern', 'emberfall', 'blockport', 'quiet-manor'];
 const load = g => JSON.parse(readFileSync(new URL(`../v2/games/${g}.json`, import.meta.url)));
 const STORY = ['plot.character', 'plot.storyboard', 'plot.dialogue', 'plot.quest', 'plot.gate', 'plot.ending', 'plot.cutscene', 'plot.relationship', 'plot.journal', 'plot.barks', 'plot.events.random', 'plot.investigation'];
 // Vocabulary catalog §7 assigns to non-plot primitives (built by other workstreams).
-const FOREIGN = new Set(['used', 'boss', 'ability', 'status', 'equipped', 'daytime', 'in_vehicle', 'knows', 'notify', 'unlock_ability', 'set_checkpoint', 'shake', 'play_sound', 'open_shop', 'craft', 'start_boss', 'give_money', 'take_money', 'give_xp', 'set_time', 'change_weather', 'spawn', 'learn_recipe', 'discover', 'command', 'repair', 'call_mount', 'set_wanted', 'add_wanted', 'unlock_perk']);
+const FOREIGN = new Set(['used', 'boss', 'ability', 'status', 'equipped', 'daytime', 'in_vehicle', 'knows', 'notify', 'unlock_ability', 'set_checkpoint', 'shake', 'play_sound', 'open_shop', 'craft', 'start_boss', 'give_money', 'take_money', 'give_xp', 'set_time', 'change_weather', 'spawn', 'learn_recipe', 'discover', 'command', 'repair', 'call_mount', 'set_wanted', 'add_wanted', 'unlock_perk', 'spend', 'heal', 'add_stat', 'gain', 'set_max', 'apply_status', 'clear_status', 'damage', 'kill', 'revive']);
 const FOREIGN_PREDICATES = ['used', 'boss', 'ability', 'status', 'equipped', 'daytime', 'in_vehicle', 'knows'];
 const kindIn = e => e.message.match(/\{"([a-z_]+)"/)?.[1] ?? e.message.match(/'([a-z_]+)'/)?.[1];
 
@@ -37,7 +37,7 @@ test('every story instance and every doc.plot section of the example games prefl
 const owned = buildLogic(new Registry([...PRIMITIVES, testSpace]), Logic);
 const stubVocab = {
   id: 'gameplay.test.vocab',
-  card: { intent: 'test stand-in for vocabulary owned by other workstreams', params: {} },
+  card: { ambient: true, intent: 'test stand-in for vocabulary owned by other workstreams', params: {} },
   logic(logic) {
     for (const k of FOREIGN) {
       if (FOREIGN_PREDICATES.includes(k)) { if (!owned.predicates.has(k)) logic.predicate(k, { test: () => false }); }

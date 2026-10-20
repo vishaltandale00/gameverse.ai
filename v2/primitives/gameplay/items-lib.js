@@ -47,10 +47,10 @@ export const whoKey = (who, context = {}) => (who == null || who === 'player' ? 
 
 /** Run `effect` only if its kind is registered; returns whether it ran. */
 export function runIf(rt, effect, context) {
-  if (!rt.logic.effects.has(effect.do)) return false;
+  if (!(rt.canRun ? rt.canRun(effect.do) : rt.logic.effects.has(effect.do))) return false;
   rt.run([effect], context); return true;
 }
-export const hasEffect = (rt, kind) => rt.logic.effects.has(kind);
+export const hasEffect = (rt, kind) => (rt.canRun ? rt.canRun(kind) : rt.logic.effects.has(kind));
 
 /** Add score through gameplay.score's add_score when present, else the `score` var. */
 export function addScore(rt, points, context) {

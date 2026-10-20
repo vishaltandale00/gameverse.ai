@@ -101,7 +101,7 @@ test('engine.spawner: spawn/despawn effects place through zones, near targets an
 });
 
 test('engine.portal: gates, keys, two-way, single use, touch, locks and transit delay', () => {
-  const gate = { id: 'gameplay.testgate', card: { intent: 'gate predicate stand-in for plot.gate', provides: {} }, logic(l) { l.predicate('gate', { test: (p, rt) => Boolean(rt.state.flags[`gate.${p.gate}`]) }); } };
+  const gate = { id: 'gameplay.testgate', card: { intent: 'gate predicate stand-in for plot.gate', provides: {}, ambient: true }, logic(l) { l.predicate('gate', { test: (p, rt) => Boolean(rt.state.flags[`gate.${p.gate}`]) }); } };
   const portals = [
     { id: 'door', from: { at: [4, 4, 0], size: [1, 1, 1] }, to: { zone: 'field', at: [20, 4, 0] }, gate: 'cellar', oneWay: false },
     { id: 'vault', from: { at: [6, 6, 0], r: 1 }, to: { at: [40, 20, 0] }, key: 'vault_key', consumeKey: true, once: true },

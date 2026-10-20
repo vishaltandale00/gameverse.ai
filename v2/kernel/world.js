@@ -31,7 +31,8 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
     rng: seedFrom(seed ?? doc.seed ?? doc.id), modal: null, vars: {}, flags: {}, counts: {}, events: [],
     entities: {}, nextId: 1, spaces: {}, prim: {},
   };
-  const deferred = [];
+  const deferred = [], installed = new Set();
+  const ownerInstalled = owner => !owner || owner === 'kernel' || installed.has(owner) || Boolean(registry.get(owner)?.card.ambient);
   const systems = [], handlers = new Map(), actions = new Map(), spaces = new Map(), services = new Map(), restorers = [], optionProviders = [];
   let order = 0;
 
@@ -66,6 +67,11 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
     closeModal(owner) { if (state.modal && (!owner || state.modal.owner === owner)) { const m = state.modal; state.modal = null; rt.emit('modal_close', { owner: m.owner, kind: m.kind }); } },
     get modal() { return state.modal || null; },
     /** Capabilities a space instance reports (same as preflight's). */
+    /** True when the document installed this primitive (directly, as a space/generator, or as graphics). */
+    has: id => installed.has(id),
+    /** Whether an effect/predicate kind can run in THIS world: registered, and its owner is installed (or the kernel). */
+    canRun: kind => logic.effects.has(kind) && ownerInstalled(logic.owners.effect.get(kind)),
+    canTest: kind => logic.predicates.has(kind) && ownerInstalled(logic.owners.predicate.get(kind)),
     capabilities(spaceId = doc.spaces?.[0]?.id) {
       const s = rt.doc.spaces.find(x => x.id === spaceId); const p = s && registry.get(s.use);
       return p ? (p.capabilities ? p.capabilities(s.with || {}) : p.card.provides.capabilities || []) : [];
@@ -167,6 +173,7 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
 
   const install = (instance, key) => {
     const p = registry.get(instance.use);
+    if (p && !(p.family === 'graphics' && headless)) installed.add(p.id);
     if (!p?.install || (p.family === 'graphics' && headless)) return;
     p.install(rt, instance.with || {}, { key, ...instance });
   };
