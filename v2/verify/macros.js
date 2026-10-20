@@ -107,7 +107,9 @@ export function travelOptions(registry, { mode = 'auto' } = {}) {
       if (resolved === 'steer') jump = jumpVerb(rt);
     }
     const zones = rt.doc.spaces.find(s => s.id === p.space)?.zones || [];
-    return zones.filter(z => !api.inZone(p, z.id, rt)).map(z => ({ label: `travel ${z.id}`, macro: resolved, apply: r => travel(r, registry, z.id, { mode: resolved, jump }) }));
+    // A zone the game's own primitives already offer travel to (their real controllers) gets no second, generic macro.
+    const offered = new Set(rt.optionsExcept(provider).filter(o => o.macro && o.actions?.travel).map(o => o.actions.travel));
+    return zones.filter(z => !api.inZone(p, z.id, rt) && !offered.has(z.id)).map(z => ({ label: `travel ${z.id}`, macro: resolved, apply: r => travel(r, registry, z.id, { mode: resolved, jump }) }));
   };
   provider.resolved = () => resolved;
   return provider;
