@@ -6,6 +6,12 @@ import { availableKits } from '../kits/registry.js';
 import { runKitPipeline } from '../planner/kit-pipeline.js';
 import { createOpenAIClient, loadOpenAIKey } from '../planner/openai.js';
 
+const KNOWN = new Set(['--kit', '--n', '--concurrency']);
+const unknown = process.argv.slice(2).filter((a, i, all) => a.startsWith('--') && !KNOWN.has(a));
+if (unknown.length || process.argv.includes('-h')) {
+  console.log('usage: node v2/tools/kit-qualify.mjs [--kit maze,puzzle] [--n 3] [--concurrency 4]\nRuns real model generations (costs API calls); nothing runs without valid flags.');
+  process.exit(unknown.length ? 1 : 0);
+}
 const arg = (name, d) => { const i = process.argv.indexOf(`--${name}`); return i > 0 ? process.argv[i + 1] : d; };
 const IDEAS = {
   maze: ['pac-man in a haunted library', 'bomberman-style maze in a candy factory', 'pac-man with a huge open world map'],
