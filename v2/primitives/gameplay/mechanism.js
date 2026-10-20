@@ -130,6 +130,8 @@ export default {
     (doc.content?.archetypes || []).forEach((a, i) => { const id = a.components?.mechanism; if (typeof id === 'string' && !ids.has(id)) errors.push({ code: 'ref_unknown', path: `content.archetypes[${i}].components.mechanism`, message: `unknown mechanism '${id}'`, hint: [...ids].slice(0, 20).join(', ') }); });
     return errors;
   },
+  /** Solver key: discrete mechanism state and signals, not contact/previous-position bookkeeping. */
+  solverKey(rt) { const s = rt.state.prim[KEY] || {}; return [Object.entries(s.m || {}).sort().map(([id, m]) => [id, m.state, m.active, m.hits ?? 0, m.target ?? 0, (m.pos || []).map(v => Math.round(v * 4) / 4), m.cells ? m.cells.join('') : null]), s.sig || {}, s.forced || {}]; },
   install(rt, config, instance) {
     const defs = new Map(config.mechanisms.map(m => [m.id, m])), groups = new Map(config.groups.map(g => [g.id, g]));
     const spaceOf = m => m.space ?? instance.space ?? rt.doc.spaces[0].id;

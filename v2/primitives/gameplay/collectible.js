@@ -71,6 +71,8 @@ export default {
     });
     return errors;
   },
+  /** Solver progress: fraction collected of every counter with a total. */
+  progress(rt, config) { const s = rt.state.prim[KEY] || {}; return config.counters.reduce((v, c) => { const t = s.totals?.[c.id] ?? c.total ?? 0; return v + (t > 0 ? Math.min(1, (s.count?.[c.id] || 0) / t) : 0); }, 0); },
   install(rt, config) {
     const defs = new Map(config.counters.map(c => [c.id, c]));
     const st = () => { const s = rt.store(KEY); s.count ??= {}; s.byZone ??= {}; s.totals ??= null; s.done ??= {}; s.prizes ??= {}; s.spawned ??= {}; return s; };

@@ -66,6 +66,8 @@ export default {
     });
     return errors;
   },
+  /** Solver key: which cell is being mined (progress is replayed by the option's steps). */
+  solverKey(rt) { return Object.entries(rt.state.prim[KEY]?.work || {}).map(([w, j]) => [w, j.cell]); },
   install(rt, config) {
     const st = () => { const s = rt.store(KEY); s.work ??= {}; return s; };
     st(); // created at install, so reads later never add state

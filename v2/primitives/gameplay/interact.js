@@ -191,5 +191,11 @@ export default {
     });
     return errors;
   },
+  /** Solver key: uses only where they are limited (once / uses), switches and seats; cooldowns as booleans, not frame numbers. */
+  solverKey(rt) {
+    const s = rt.state.prim[KEY] || {}, uses = {};
+    for (const [id, n] of Object.entries(s.uses || {}).sort()) { const c = rt.entity(id)?.components.interact; const cap = c?.uses ?? (c?.once ? 1 : 0); if (cap) uses[id] = Math.min(n, cap); }
+    return [uses, s.disabled || {}, s.on || {}, s.seated || {}, Object.keys(s.ready || {}).filter(id => s.ready[id] > rt.state.frame).sort(), Object.keys(s.hold || {})];
+  },
   install,
 };

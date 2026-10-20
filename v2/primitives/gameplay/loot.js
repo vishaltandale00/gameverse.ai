@@ -78,6 +78,8 @@ export default {
     (doc.content?.archetypes || []).forEach((a, i) => { const l = a.components?.loot; if (typeof l === 'string' && !ids.has(l)) errors.push({ code: 'ref_unknown', path: `content.archetypes[${i}].components.loot`, message: `unknown table '${l}'` }); });
     return errors;
   },
+  /** Solver key: pity meters only (drop bookkeeping and expiry frames always grow). */
+  solverKey(rt) { return rt.state.prim[KEY]?.meter || {}; },
   install(rt, config) {
     const st = () => { const s = rt.store(KEY); s.dropped ??= {}; s.expire ??= {}; return s; };
     st(); // created at install, so reads later never add state

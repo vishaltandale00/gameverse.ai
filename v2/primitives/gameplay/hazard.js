@@ -58,6 +58,8 @@ export default {
     (doc.content?.blocks || []).forEach((b, i) => { if (b.hazard != null && !known(b.hazard)) errors.push({ code: 'hazard_unknown', path: `content.blocks[${i}].hazard`, message: `unknown hazard type '${b.hazard}'` }); });
     return errors;
   },
+  /** Solver key: which hazards entities are inside, not tick counters or remembered footing. */
+  solverKey(rt) { return rt.state.prim[KEY]?.in || {}; },
   install(rt, config, instance) {
     const types = new Map(config.types.map(t => [t.id, t]));
     const KILL = '$kill';

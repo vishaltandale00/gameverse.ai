@@ -82,3 +82,24 @@ test('graph space: interact at the same node, owner shops, containers', () => {
   rt.step({ actions: { take_all: true } });
   assert.equal(rt.state.prim['gameplay.inventory'].player.ale, 4);
 });
+
+test('the plot solver finishes an interactable puzzle through interact, container and mechanism options', async () => {
+  const { solve } = await import('../v2/verify/solve.js');
+  // Entities normally come from engine.spawner; a tiny test primitive places them here.
+  const placer = { id: 'gameplay.test.place', card: { intent: 'test placement' }, install(rt) { rt.spawn('urn', { id: 'urn1', space: 'crypt', at: 'hall' }); rt.spawn('seal_stone', { id: 'stone1', space: 'crypt', at: 'vault' }); } };
+  const d = base({ id: 'crypt', use: 'engine.space.graph', zones: [{ id: 'hall', exits: [{ to: 'vault' }] }, { id: 'vault', exits: [{ to: 'hall' }] }] }, {
+    systems: [{ use: 'gameplay.inventory' }, { use: 'gameplay.interact' }, { use: 'gameplay.container' },
+      { use: 'gameplay.mechanism', with: { mechanisms: [{ id: 'seal', kind: 'lever', at: [0, 0], signal: 'open' }, { id: 'crypt_door', kind: 'door', at: [0, 0], opens: ['open'], do: [{ do: 'end_game', ending: 'free' }] }] } },
+      { use: 'gameplay.test.place' }],
+    plot: { endings: [{ id: 'free' }] },
+    content: { items: [{ id: 'key', name: 'Key' }],
+      archetypes: [{ id: 'ghost', components: {} }, { id: 'urn', components: { interact: { prompt: 'Search' }, container: { items: [{ item: 'key' }], autoTake: true } } },
+        { id: 'seal_stone', components: { interact: { prompt: 'Turn', when: { item: 'key' } }, mechanism: 'seal' } }] },
+    player: { archetype: 'ghost', at: 'hall' },
+  });
+  const c = make(d, [placer]);
+  const r = solve(c.checked.doc, c.registry, c.logic);
+  assert.equal(r.completable, true, JSON.stringify(r).slice(0, 600));
+  assert.deepEqual(r.endings.free, ['interact urn1', 'go vault', 'interact seal (stone1)']);
+  assert.equal(r.exhaustive, true, 'solver keys keep the state space finite');
+});
