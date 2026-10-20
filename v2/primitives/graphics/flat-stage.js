@@ -33,6 +33,17 @@ export function stageProjection(H, S, kind, extra = {}) {
   if (S.projKey !== key) { S.proj = projection(k, o); S.projKey = key; }
   return S.proj;
 }
+/** Preflight for renderers: the bound space (explicit or the first of a matching kind) must be one they draw. */
+export function checkBinding(doc, info, id, uses) {
+  const spaces = doc.spaces || [];
+  const explicit = info?.space && spaces.find(s => s.id === info.space);
+  const declared = (doc.graphics || []).some(g => g.use === id && g.space);
+  if (declared && explicit && !uses.includes(explicit.use)) return [{ code: 'flat_space_kind', path: info.path ? `${info.path}.space` : 'space', message: `${id} draws ${uses.join(' or ')} spaces, not '${explicit.use}'` }];
+  if (!spaces.some(s => uses.includes(s.use))) return [{ code: 'flat_no_space', path: info?.path, message: `${id} needs a ${uses.join(' or ')} space`, hint: 'add the space, or use the renderer for your space kind' }];
+  return [];
+}
+/** Prefix relative validator paths with the instance path. */
+export const withPath = (errs, info) => errs.map(e => ({ ...e, path: info?.path && e.path && !e.path.startsWith(info.path) ? `${info.path}.with.${e.path}` : e.path || info?.path }));
 /** Normalize space bounds: {min,max,wrap} or [x0,y0,x1,y1] → {min,max,wrap}. */
 export function boundsOf(api) {
   const b = typeof api?.bounds === 'function' ? api.bounds() : null;

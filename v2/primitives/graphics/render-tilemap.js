@@ -4,7 +4,7 @@
 // rasterized once and cached (LRU, rebuilt on cell_changed), with blob47/wang16
 // autotiling, overhang shadows, live liquids, haze and hazards. Entities draw
 // through flat-models (sprites, rigs, generated art) with interpolation.
-import { hubOf, bindSpace, ORDER, stageProjection } from './flat-stage.js';
+import { hubOf, bindSpace, ORDER, stageProjection, checkBinding } from './flat-stage.js';
 import { buildChunk, chunkCache, drawHazard, drawLiquid, MARGIN } from './flat-chunks.js';
 import { normalizeTheme, themeFromBlock, patternFor } from './flat-tiles.js';
 import { drawEntity, lookOf } from './flat-models.js';
@@ -65,10 +65,7 @@ export default {
     provides: {},
     reads: ['content.blocks', 'content.models', 'content.archetypes'],
   },
-  validate(config, doc) {
-    if (!(doc.spaces || []).some(s => s.use === 'engine.space.tilemap')) return [{ code: 'flat_no_space', message: 'graphics.render.tilemap needs an engine.space.tilemap space', hint: 'add a tilemap space or use the renderer for your space kind' }];
-    return [];
-  },
+  validate(config, doc, ctx, info) { return checkBinding(doc, info, 'graphics.render.tilemap', ['engine.space.tilemap']); },
   install(rt, config, instance) {
     if (rt.headless || !rt.view) return;
     const H = hubOf(rt), space = bindSpace(rt, instance, ['tilemap']), S = H.stage(space, 'tilemap');
@@ -101,7 +98,7 @@ export default {
       const g = F.ctx, C = config.chunk, artT = artTile(api), unit = F.unit;
       const mode = api.config?.mode || 'side';
       const layers = (config.layerOrder.length ? config.layerOrder.filter(l => !api.layers || api.layers.includes(l)) : api.layers) || [undefined];
-      const collision = api.config?.collisionLayer || (layers.includes('solid') ? 'solid' : layers[Math.min(layers.length - 1, 1)] ?? layers[0]);
+      const collision = api.config?.collisionLayers?.find(l => layers.includes(l)) || (layers.includes('solid') ? 'solid' : layers[Math.min(layers.length - 1, 1)] ?? layers[0]);
       const cIdx = Math.max(0, layers.indexOf(collision));
       const corners = [[0, 0], [F.w, 0], [0, F.h], [F.w, F.h]].map(F.toWorld), xs = corners.map(p => p[0]), ys = corners.map(p => p[1]);
       const vx0 = Math.floor(Math.min(...xs)) - 1, vx1 = Math.ceil(Math.max(...xs)) + 1, vy0 = Math.floor(Math.min(...ys)) - 1, vy1 = Math.ceil(Math.max(...ys)) + 1;
