@@ -35,7 +35,7 @@ test('portal: fire onto walls, pass through with momentum rotated, cooldown prev
   assert.ok(rt.entity('b').at[1] < 15 && rt.entity('b').at[1] > 12);
   rt.space('world').setPos(ball, [2, 14, 0], rt); rt.entity('b').components.body.vel = [0, 5, 0]; rt.step();
   assert.equal(rt.state.counts.portal_entered, 1, 'cooldown');
-  drive(rt, 20); rt.space('world').setPos(rt.entity('b'), [2, 14, 0], rt); rt.entity('b').components.body.vel = [0, 5, 0]; rt.step();
+  rt.space('world').setPos(rt.entity('b'), [2, 8, 0], rt); drive(rt, 20); rt.space('world').setPos(rt.entity('b'), [2, 14, 0], rt); rt.entity('b').components.body.vel = [0, 5, 0]; rt.step();
   assert.equal(rt.state.counts.portal_entered, 2, 'back through after the cooldown');
   assert.deepEqual(rt.entity('b').components.body.vel, [-5, 0, 0]);
 });
