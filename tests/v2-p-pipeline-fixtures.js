@@ -50,7 +50,12 @@ export const picky = {
   validate(config, doc) { return /^The /.test(doc.title || '') ? [] : [{ code: 'picky_title', path: 'title', message: 'the title must start with "The"', hint: 'rename the game' }]; },
   install() {},
 };
-export const extras = [flatSpace, dash, warp];
+export const tunnels = {
+  id: 'gameplay.test.tunnels',
+  card: { intent: 'Tunnels: leaving the board on one edge comes back on the other, with units occupying cells.', params: {}, requires: { capabilities: ['occupancy', 'wrap'] } },
+  install() {},
+};
+export const extras = [flatSpace, dash, warp, tunnels];
 export const testCatalogue = (more = []) => buildCatalogue([...extras, ...more]);
 
 /** A writer that replays scripted replies (strings or functions of the request) and records every call. */

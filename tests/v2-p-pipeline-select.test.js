@@ -46,9 +46,14 @@ test('spaces are chosen to provide what the chosen primitives require, including
   const variants = spaceVariants(registry, 'engine.space.flatx');
   assert.ok(variants.some(v => v.with.mode === 'side' && v.caps.has('gravity')), 'the side variant adds gravity');
   const { spaces, unmet } = chooseSpaces(registry, ['gameplay.test.dash', 'plot.storyboard'], decomposition([]));
-  assert.equal(spaces[0].use, 'engine.space.flatx');
-  assert.deepEqual(spaces[0].with, { mode: 'side' }, 'configured so it provides gravity');
+  assert.ok(['overlap', 'gravity'].every(c => spaces[0].caps.includes(c)), `${spaces[0].use} provides what the dash needs`);
   assert.deepEqual(unmet, []);
+  // The real grid provides wrap only when configured for it: the choice includes that configuration.
+  const board = chooseSpaces(registry, ['gameplay.test.tunnels'], decomposition([]));
+  assert.equal(board.spaces[0].use, 'engine.space.grid');
+  assert.ok(['x', 'y', 'both'].includes(board.spaces[0].with.wrap), JSON.stringify(board.spaces[0].with));
+  // Excluded spaces are never chosen (agency re-selection uses this).
+  assert.notEqual(chooseSpaces(registry, ['gameplay.test.dash'], decomposition([]), [], [spaces[0].use]).spaces[0].use, spaces[0].use);
   const none = chooseSpaces(registry, ['gameplay.test.warp'], decomposition([]));
   assert.deepEqual(none.unmet.map(u => u.id), ['gameplay.test.warp']);
   // Without capability needs, structure hints and views pick the space: locations -> graph.
@@ -62,7 +67,7 @@ test('selection maps mechanics to primitives, adds foundations, and reports unco
   const sel = await selectPrimitives({ decomposition: d, registry });
   assert.deepEqual(sel.mechanics.map(m => m.primitives[0] || null), ['gameplay.test.dash', 'gameplay.inventory', null, null]);
   assert.ok(sel.systems.includes('plot.storyboard'), 'the story runner is a foundation');
-  assert.equal(sel.spaces[0].use, 'engine.space.flatx');
+  assert.ok(sel.spaces[0].caps.includes('gravity'), 'a space with what the dash needs');
   const kinds = Object.fromEntries(sel.gaps.map(g => [g.mechanic, g.kind]));
   assert.equal(kinds.m2, 'capability', 'warp: chosen, but no space provides wormholes, so it is dropped as a capability gap');
   assert.equal(kinds.m3, 'no_primitive');

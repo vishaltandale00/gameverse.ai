@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { createWorld } from '../v2/kernel/world.js';
 import { preflight, mergePatch } from '../v2/kernel/document.js';
 import { selectPrimitives } from '../v2/planner/select.js';
-import { proceduralOutline, writeOutline, fewShot } from '../v2/planner/outline.js';
+import { proceduralOutline, writeOutline, fewShot, ensureAgency } from '../v2/planner/outline.js';
 import { firstPlayable, replayCheck } from '../v2/planner/first-playable.js';
 import { detailTasks, proceduralDetail, acceptPatch, sanitizePatch } from '../v2/planner/detail.js';
 import { verifyDocument, regressed } from '../v2/planner/verify-adapter.js';
@@ -13,7 +13,7 @@ import { solve } from '../v2/verify/solve.js';
 import { testCatalogue, fakeWriter, decomposition, broken, picky } from './v2-p-pipeline-fixtures.js';
 
 const { registry, logic } = testCatalogue();
-const plan = async mechanics => { const d = decomposition(mechanics); return { d, sel: await selectPrimitives({ decomposition: d, registry }) }; };
+const plan = async mechanics => { const d = decomposition(mechanics); const a = await ensureAgency({ decomposition: d, selection: await selectPrimitives({ decomposition: d, registry }), registry, logic, seed: 1 }); return { d, sel: a.selection, agency: a }; };
 
 test('the procedural outline is valid, playable and completable on whichever space the selection chose', async () => {
   for (const mechanics of [['find and collect items', 'follow a story told in acts'], ['dash through enemies with a burst of speed']]) {
@@ -28,8 +28,19 @@ test('the procedural outline is valid, playable and completable on whichever spa
       const s = solve(pre.doc, registry, logic, { budgetMs: 1000 });
       assert.ok(s.completable, 'the graph skeleton is solvable end to end');
       assert.ok(o.doc.spaces[0].zones.some(z => z.exits.some(x => x.gate)), 'key items gate progress');
-    } else assert.deepEqual(o.doc.spaces[0].with, { mode: 'side' }, 'the dash needs gravity: side mode');
+    } else assert.ok(sel.spaces[0].caps.includes('gravity'), 'the dash needs gravity');
   }
+});
+
+test('agency: a skeleton whose player has no options re-selects the space; if none offers any, it is a reported gap', async () => {
+  const items = await plan(['find and collect items']);
+  assert.ok(items.agency.agency);
+  assert.equal(items.sel.spaces[0].use, 'engine.space.graph', 'the space whose player can act');
+  assert.ok(items.agency.attempts.length >= 1 && items.agency.attempts.at(-1).options > 0);
+  const dash = await plan(['dash through enemies with a burst of speed']);
+  assert.equal(dash.agency.agency, false, 'no movement primitive is registered for continuous spaces in this catalogue');
+  assert.ok(dash.sel.systems.includes('gameplay.test.dash'), 'the chosen mechanic is never dropped for agency');
+  assert.ok(dash.sel.gaps.some(g => g.mechanic === 'player_agency' && g.kind === 'capability'));
 });
 
 test('few-shot material only teaches registered primitives', () => {

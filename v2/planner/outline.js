@@ -8,19 +8,34 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { DOC_SCHEMA } from '../kernel/document.js';
 import { random, seedFrom } from '../kernel/rng.js';
-import { cardText, vocabulary, isSpace } from './catalog.js';
-import { vocabIndex } from './select.js';
+import { cardText, vocabulary, isSpace, defaultsOf } from './catalog.js';
+import { vocabIndex, selectPrimitives } from './select.js';
+import { firstPlayable } from './first-playable.js';
 import { repairDocument, describeErrors } from './repair.js';
 import { parseReply } from './writer.js';
+import { verifyDocument, newErrors } from './verify-adapter.js';
 
 export const OUTLINE_VERSION = 'outline/0.1';
 const slug = (s, sep = '_') => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || ['x']).join(sep).slice(0, 40);
 const STOP = new Set('a an the of in on with and or to for from by as at is are be it its into that this where who you your player game games like style meets world'.split(' '));
 const PLACES = ['Gate', 'Hollow', 'Market', 'Spire', 'Vault', 'Ruins', 'Harbor', 'Grove', 'Keep', 'Crossing', 'Depths', 'Summit', 'Archive', 'Yard', 'Sanctum', 'Wilds'];
 
-/** Zone fields a space understands, from its capabilities (graph-like spaces link zones by exits; positional ones bound them). */
-function zoneShape(caps, views) {
-  return { exits: caps.includes('navigate') && !caps.includes('overlap'), rect: !caps.includes('navigate') || caps.includes('overlap'), bounds: (views || []).some(v => v === '1p' || v === '3p') };
+/**
+ * Zone fields a space understands. Cards describe their zone shape in `card.zones` (e.g. "Zone = {id, rect:[x0,y0,x1,y1)...}");
+ * without one, capabilities decide (graph-like spaces link zones by exits; positional ones bound them).
+ */
+function zoneShape(card, caps, config) {
+  const text = typeof card.zones === 'string' ? card.zones : '';
+  const extent = [config.size, config.bounds].find(v => Array.isArray(v) && v.length >= 2 && v.every(Number.isFinite)) || null;
+  if (text) return { exits: /exits/.test(text), rect: /rect/.test(text), range: /range/.test(text), bounds: /bounds/.test(text), slot: /slot/.test(text), extent, length: config.length || 0 };
+  return { exits: caps.includes('navigate') && !caps.includes('overlap'), rect: !caps.includes('navigate') || caps.includes('overlap'), bounds: (card.views || []).some(v => v === '1p' || v === '3p'), extent };
+}
+/** Lay n zones side by side across the space's extent (or 16-unit cells when it has none). */
+function placeZone(z, i, n, shape) {
+  const [W, H] = shape.extent || [16 * n, 16];
+  if (shape.rect) { const w = Math.max(1, Math.floor(W / n)); z.rect = [i * w, 0, i === n - 1 ? W : (i + 1) * w, H]; }
+  if (shape.range) { const L = shape.length || 40 * n, w = L / n; z.range = [+(i * w).toFixed(2), +((i + 1) * w).toFixed(2)]; }
+  if (shape.bounds) z.bounds = { min: [i * 64, 0, 0], max: [i * 64 + 64, 64, 64] };
 }
 
 /**
@@ -46,15 +61,14 @@ export function proceduralOutline({ decomposition, selection, registry, logic, s
   };
   const spaces = selection.spaces.map((s, si) => {
     const card = registry.get(s.use)?.card || {};
-    const shape = zoneShape(s.caps, card.views);
+    const shape = zoneShape(card, s.caps, { ...defaultsOf(card), ...(s.with || {}) });
     const n = si === 0 ? decomposition.zones : 2;
     const ids = [];
     const zones = Array.from({ length: n }, (_, i) => {
       const name = placeName(i + si * 10);
       let id = slug(name); while (ids.includes(id)) id += '_b'; ids.push(id);
       const z = { id, name, description: `${name}${decomposition.tone ? `, ${decomposition.tone}` : ''}.` };
-      if (shape.rect) z.rect = [i * 16, 0, i * 16 + 16, 16];
-      if (shape.bounds) z.bounds = { min: [i * 64, 0, 0], max: [i * 64 + 64, 64, 64] };
+      placeZone(z, i, n, shape);
       return z;
     });
     if (shape.exits) zones.forEach((z, i) => {
@@ -116,7 +130,32 @@ export function proceduralOutline({ decomposition, selection, registry, logic, s
   const repaired = repairDocument(doc, { registry, logic, fallbackSpace });
   return { doc: repaired.doc, ok: repaired.ok, errors: repaired.errors, fixes: repaired.fixes, removed: repaired.removed };
 }
-const zoneStart = z => z.bounds ? [z.bounds.min[0] + 1, z.bounds.min[1] + 1, z.bounds.min[2] + 1] : z.rect ? [z.rect[0] + 1, z.rect[1] + 1] : null;
+const zoneStart = z => z.bounds ? [z.bounds.min[0] + 1, z.bounds.min[1] + 1, z.bounds.min[2] + 1] : z.rect ? [z.rect[0] + Math.min(1, (z.rect[2] - z.rect[0]) / 2), z.rect[1] + Math.min(1, (z.rect[3] - z.rect[1]) / 2)] : z.range ? [z.range[0] + 0.5, 0, 0] : null;
+
+/**
+ * Player agency, checked empirically: the skeleton is booted headless and must offer the player
+ * at least one option (a way to act that solvers and playtesters can take). A space that offers none
+ * with the chosen primitives (e.g. a continuous space and no movement primitive yet) is excluded and
+ * the selection re-run, as long as no chosen primitive is lost. If nothing offers agency, the best
+ * selection is kept and the lack is reported as a gap. Zero model calls; milliseconds.
+ */
+export async function ensureAgency({ decomposition, selection, registry, logic, seed, prompt = '', decisions = null, tries = 4 }) {
+  const attempts = [];
+  let current = selection, excluded = [];
+  const kept = sel => new Set([...sel.systems, ...sel.generators.map(g => g.id)]);
+  for (let i = 0; i < tries; i++) {
+    const o = proceduralOutline({ decomposition, selection: current, registry, logic, seed, prompt });
+    const fp = o.ok ? firstPlayable(o.doc, registry, logic, { seed }) : null;
+    attempts.push({ spaces: current.spaces.map(s => s.use), options: fp?.options ?? null, ok: Boolean(fp?.ok) });
+    if (fp?.ok && fp.options > 0) return { selection: current, attempts, agency: true };
+    excluded = [...excluded, current.spaces[0].use];
+    const next = await selectPrimitives({ decomposition, registry, decisions: null, excludeSpaces: excluded });
+    if (!next.spaces.length || [...kept(selection)].some(id => !kept(next).has(id))) break;
+    current = { ...next, mechanics: selection.mechanics, provider: selection.provider };
+  }
+  const gap = { mechanic: 'player_agency', description: `move the player between places in ${selection.spaces[0]?.use || 'the world'}`, importance: 'core', kind: 'capability', why: 'no registered primitive gives the player a way to act or travel in a space that the chosen mechanics can use' };
+  return { selection: { ...selection, gaps: [...selection.gaps, gap] }, attempts, agency: false };
+}
 
 // ---------- few-shot material from v2/games, filtered to what is registered ----------
 let library = null;
@@ -158,7 +197,7 @@ Rules:
 - Every id is a lowercase slug and unique in its kind; every reference (zone, item, character, archetype, beat, ending, space...) must exist in the document.
 - Predicates: objects whose first key names the kind (${v.predicates.join(', ')}); numbers take comparators gte lte gt lt eq ne, e.g. {"item":"key"}, {"zone":"hall"}, {"all":[...]}.
 - Effects: {"do": kind, ...} with kind one of ${v.effects.join(', ')}.
-- Zones: keep the zone shape the skeleton uses for its space (fields like exits/gate, rect or bounds).
+- Zones: use the zone shape the space card describes ("zones" on space cards) and the skeleton uses (exits/gate, rect, range or bounds), inside the space's size. Generators that create zones list those zone ids in their own config, so references to them preflight.
 - The story must be completable: every beat's trigger reachable, gated exits opened by items or flags the story grants, and a beat that ends the game with an ending.
 - Do not pretend a mechanic exists: the request lists mechanics no primitive covers; leave them out of the document (they are built separately).
 
@@ -189,7 +228,8 @@ Write the outline document for this idea from the skeleton: an evocative title a
  * writeOutline({ writer?, prompt, answers, decomposition, selection, registry, logic, seed, maxRounds })
  *   -> { doc, ok, source, rounds: [{ kind, ok, errors, fixes, ms }], firstPassOk, modelMs, removed }
  */
-export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2 }) {
+export async function writeOutline({ writer = null, prompt, answers = [], decomposition, selection, registry, logic, seed, maxRounds = 2, verify = true, verifyBudgetMs = 1200 }) {
+  let skeletonVerify = null;
   const started = performance.now();
   const skeleton = proceduralOutline({ decomposition, selection, registry, logic, seed, prompt });
   const rounds = [{ kind: 'procedural', ok: skeleton.ok, errors: skeleton.errors.length, fixes: skeleton.fixes.length, ms: Math.round(performance.now() - started) }];
@@ -216,15 +256,29 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
     if (firstPassOk === null) firstPassOk = repaired.ok && before === 0;
     rounds.push({ kind: round ? 'model_repair' : 'model', ok: repaired.ok, errors: repaired.errors.length, fixes: before, ms: Math.round(performance.now() - t) });
     last = repaired;
-    if (repaired.ok) return { doc: repaired.doc, ok: true, source: model, rounds, firstPassOk, modelMs, removed: repaired.removed, errors: [] };
+    let problems = [];
+    if (repaired.ok) {
+      // Verification problems (v2/verify: softlocks, unreachable targets, uncompletable plot...) drive the next round too,
+      // except those the valid skeleton has as well (limits of the catalogue, not of this draft).
+      if (verify && round < maxRounds) {
+        skeletonVerify ??= await verifyDocument(skeleton.doc, registry, logic, { budgetMs: verifyBudgetMs });
+        const v = await verifyDocument(repaired.doc, registry, logic, { budgetMs: verifyBudgetMs });
+        problems = newErrors(skeletonVerify, v).filter(p => p.stage !== 'preflight');
+        rounds.at(-1).verifyErrors = problems.length;
+      }
+      if (!problems.length) return { doc: repaired.doc, ok: true, source: model, rounds, firstPassOk, modelMs, removed: repaired.removed, errors: [] };
+      last = { ...repaired, verified: repaired.doc };
+    }
     user = `${outlineUser({ prompt, answers, decomposition, selection, skeleton: skeleton.doc })}
 
-Your previous document failed preflight with these errors (stable codes; fix each at its path):
-${describeErrors(repaired.errors)}
+Your previous document failed ${problems.length ? 'verification' : 'preflight'} with these problems (stable codes; fix each at its path):
+${describeErrors(problems.length ? problems : repaired.errors)}
 Previous document:
 ${JSON.stringify(repaired.doc).slice(0, 30000)}
 Return the corrected complete document.`;
   }
+  // A valid draft that still has verification problems beats the skeleton: keep it, the report shows them.
+  if (last?.verified) return { doc: last.verified, ok: true, source: model, rounds, firstPassOk, modelMs, removed: last.removed, errors: [] };
   // The model never produced a valid outline: the skeleton is valid and playable; say so in the report.
   return { doc: skeleton.doc, ok: skeleton.ok, source: 'procedural', fellBack: true, rounds, firstPassOk: firstPassOk ?? false, modelMs, removed: skeleton.removed, errors: last?.errors || [] };
 }

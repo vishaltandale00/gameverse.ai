@@ -103,8 +103,8 @@ const spaceSlug = (role, i) => ((String(role || 'world').toLowerCase().match(/[a
  * space satisfies the most primitives; primitives it can't host are bound to a second space
  * (a variant of any space primitive) that can, and only then reported as unmet.
  */
-export function chooseSpaces(registry, primitiveIds, decomposition = {}, prefer = []) {
-  const spaceIds = registry.ids('engine').filter(isSpace);
+export function chooseSpaces(registry, primitiveIds, decomposition = {}, prefer = [], exclude = []) {
+  const spaceIds = registry.ids('engine').filter(id => isSpace(id) && !exclude.includes(id));
   const variants = spaceIds.flatMap(id => spaceVariants(registry, id).map(v => ({ use: id, ...v, card: registry.get(id).card })));
   const needers = primitiveIds.filter(id => !isSpace(id)).map(id => ({ id, caps: requirementsOf(registry, id).capabilities }));
   const wantViews = new Set([...(decomposition.views || []), ...(decomposition.spaces || []).flatMap(s => KIND_HINTS[s.kind]?.views || [])]);
@@ -165,7 +165,7 @@ const DECIDE = 'Which listed primitive implements this mechanic as the game need
  *   systems: [id], generators: [{ id, space }], graphics: [{ id, space }], spaces: [{ id, use, with, role, caps }],
  *   bind: { primitiveId: spaceId }, gaps: [{ mechanic, description, importance, kind, why }], ms }
  */
-export async function selectPrimitives({ decomposition, registry, decisions = null, log = () => {} }) {
+export async function selectPrimitives({ decomposition, registry, decisions = null, log = () => {}, excludeSpaces = [] }) {
   const started = performance.now();
   // Spaces compete too: a mechanic a space provides (travelling between places) prefers that space.
   const cards = registry.cards().filter(c => !isGraphics(c.id));
@@ -216,7 +216,7 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
 
   const prefer = [...chosen].filter(isSpace);
   for (const id of prefer) chosen.delete(id);
-  const { spaces, bind, unmet } = chooseSpaces(registry, [...chosen], decomposition, prefer);
+  const { spaces, bind, unmet } = chooseSpaces(registry, [...chosen], decomposition, prefer, excludeSpaces);
   for (const u of unmet) {
     chosen.delete(u.id);
     for (const m of mechanics) if (m.primitives.includes(u.id)) {

@@ -9,7 +9,7 @@ import { mergePatch } from '../kernel/document.js';
 import { cardText, vocabulary } from './catalog.js';
 import { vocabIndex } from './select.js';
 import { repairDocument, describeErrors, idsOf } from './repair.js';
-import { verifyDocument, regressed } from './verify-adapter.js';
+import { verifyDocument, regressed, newErrors } from './verify-adapter.js';
 import { shrunkLists } from './revision-check.js';
 import { parseReply } from './writer.js';
 
@@ -120,7 +120,7 @@ export async function acceptPatch({ current, patch, task, registry, logic, baseV
   if (!Object.values(added).some(a => a.length) && !repaired.fixes.length) return { ok: false, reason: 'empty', errors: [{ code: 'empty_patch', path: '$', message: 'the patch added nothing' }], patch: clean };
   const v = await verifyDocument(repaired.doc, registry, logic, { budgetMs });
   if (!v.ok) return { ok: false, reason: 'verify', errors: v.problems, patch: clean };
-  if (regressed(baseVerify, v)) return { ok: false, reason: 'plot_regressed', errors: [{ code: 'plot_regressed', path: '$', message: 'the patch makes the game impossible to finish' }], patch: clean };
+  if (regressed(baseVerify, v)) return { ok: false, reason: 'verify_regressed', errors: [...newErrors(baseVerify, v), ...(v.completable === false && baseVerify?.completable ? [{ code: 'plot_regressed', path: '$', message: 'the patch makes the game impossible to finish' }] : [])], patch: clean };
   return { ok: true, doc: v.doc, added, verify: v, fixes: repaired.fixes, patch: clean };
 }
 
