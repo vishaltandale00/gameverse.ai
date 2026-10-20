@@ -1,0 +1,211 @@
+// Branching dialogue as data (plot.dialogue): id -> { speaker, start, nodes }.
+// Entering a node tests its `if` (false: jump to `else`, or end), runs its `do`
+// (once per game when `once`), records it as said, and emits `dialogue_line`
+// with the choices currently open. A line with choices waits for
+// `choose: {index} | <choice id> | <index >= 1>`; a line without waits for `choose: 'next'`
+// (or advances itself with autoAdvance). Choices may be `once`, conditional
+// (`if`), run effects (`do`) and carry a skill check
+// `check: {stat|var, gte, roll?: 'none'|'d6'|'2d6'|'d20'|'d100', bonus?, fail?, failDo?}`.
+// Every open choice is a solver option.
+import { err, checkPred, checkEffects, checkRef, checkKeys, readSeconds, ticks } from './story-lib.js';
+
+const ID = 'plot.dialogue';
+const NODE_FIELDS = ['who', 'say', 'if', 'else', 'do', 'next', 'end', 'choices', 'once', 'sec'];
+const CHOICE_FIELDS = ['id', 'text', 'if', 'do', 'next', 'once', 'check', 'end'];
+const CHECK_FIELDS = ['stat', 'var', 'gte', 'roll', 'bonus', 'fail', 'failDo'];
+const ROLLS = { none: [0, 0], d6: [1, 6], '2d6': [2, 6], d20: [1, 20], d100: [1, 100] };
+const MAX_HOPS = 64; // node-to-node jumps per step (guards authoring loops of non-waiting nodes)
+
+const st = rt => { const s = rt.store(ID); s.said ??= {}; s.chosen ??= {}; s.onceNodes ??= {}; s.queue ??= []; s.active ??= null; return s; };
+const dialogues = rt => rt.doc.plot?.dialogue || {};
+export const choiceKey = (node, i, c) => c?.id ?? `${node}.${i}`;
+
+function statValue(rt, check) {
+  const name = check.var ?? (String(check.stat).includes('.') ? check.stat : `stat.${check.stat}`);
+  return rt.state.vars[name] ?? 0;
+}
+
+export default {
+  id: ID,
+  solverKey,
+  card: {
+    intent: 'Branching conversations from plot.dialogue: node graphs of lines with conditions, effects, once-only nodes and choices (conditional, once-only, skill-checked). The player picks with `choose`; every open choice is a solver option.',
+    views: ['any'],
+    params: {
+      lineSpeed: { type: 'number', default: 40, min: 0, max: 100, unit: 'chars/s', effect: 'reveal speed; a line is readable after len/lineSpeed seconds (0 = instant)' },
+      interruptible: { type: 'boolean', default: true, effect: 'choose may skip a line before it is fully revealed' },
+      repeatSeen: { type: 'boolean', default: false, effect: 'when false, replaying a dialogue skips linear lines already seen and jumps to the next choice or unseen line' },
+      autoAdvance: { type: 'boolean', default: false, effect: 'lines without choices advance by themselves once read (cinematic/headless)' },
+      queue: { type: 'boolean', default: true, effect: 'start_dialogue while another dialogue is open waits for it to end (false: replaces it)' },
+    },
+    provides: { events: ['dialogue_start', 'dialogue_end', 'dialogue_line', 'choice_made', 'skill_check', 'said:*'], services: ['dialogue'], actions: ['choose'] },
+    reads: ['plot.dialogue'],
+  },
+  logic(logic) {
+    logic.predicate('said', { refs: p => [['dialogue', p.said]], test: (p, rt) => { const s = st(rt).said[p.said]; return Boolean(s && (p.node === undefined ? Object.keys(s).length : s[p.node])); } });
+    logic.predicate('chose', { refs: p => [['dialogue', p.chose]], test: (p, rt) => Object.values(st(rt).chosen[p.chose] || {}).some(r => (p.node === undefined || r.node === p.node) && (p.choice === undefined || r.key === p.choice || r.next === p.choice || `${r.node}.${r.index}` === p.choice)) });
+    logic.predicate('in_dialogue', { refs: p => (typeof p.in_dialogue === 'string' ? [['dialogue', p.in_dialogue]] : []), test: (p, rt) => { const a = st(rt).active; return typeof p.in_dialogue === 'string' ? a?.dialogue === p.in_dialogue : Boolean(a) === (p.in_dialogue !== false); } });
+    logic.effect('start_dialogue', { refs: e => [['dialogue', e.dialogue], ...(e.with && e.with !== 'player' ? [['character', e.with]] : [])], run: (e, rt) => rt.service('dialogue').start(e.dialogue, { with: e.with }) });
+    logic.effect('end_dialogue', { run: (e, rt) => rt.service('dialogue').end() });
+  },
+  validate(config, doc, ctx) {
+    const errors = [], all = doc.plot?.dialogue;
+    if (all === undefined) return errors;
+    if (!all || typeof all !== 'object' || Array.isArray(all)) return [err('param_type', 'plot.dialogue', 'must be an object of id -> dialogue')];
+    const speaker = (who, path) => { if (who !== undefined && who !== 'player') checkRef(ctx, 'character', who, path, errors); };
+    const target = (id, nodes, path) => { if (id !== undefined && !(id in nodes)) errors.push(err('dialogue_node_unknown', path, `unknown node '${id}'`, `nodes: ${Object.keys(nodes).join(', ')}`)); };
+    for (const [id, d] of Object.entries(all)) {
+      const path = `plot.dialogue.${id}`;
+      checkKeys(d, ['speaker', 'start', 'nodes', 'title'], path, errors);
+      const nodes = d?.nodes;
+      if (!nodes || typeof nodes !== 'object' || !Object.keys(nodes).length) { errors.push(err('dialogue_invalid', `${path}.nodes`, 'dialogue needs at least one node')); continue; }
+      speaker(d.speaker, `${path}.speaker`);
+      if (d.start === undefined) errors.push(err('dialogue_invalid', `${path}.start`, 'dialogue needs a start node'));
+      target(d.start, nodes, `${path}.start`);
+      for (const [nid, n] of Object.entries(nodes)) {
+        const np = `${path}.nodes.${nid}`;
+        checkKeys(n, NODE_FIELDS, np, errors);
+        if (typeof n?.say !== 'string') errors.push(err('dialogue_invalid', `${np}.say`, 'node needs a say line'));
+        speaker(n.who, `${np}.who`);
+        checkPred(n.if, `${np}.if`, errors, ctx);
+        checkEffects(n.do, `${np}.do`, errors, ctx);
+        target(n.next, nodes, `${np}.next`); target(n.else, nodes, `${np}.else`);
+        if (n.next !== undefined && n.choices?.length) errors.push(err('dialogue_invalid', np, 'a node has either next or choices, not both'));
+        if (n.choices !== undefined && !Array.isArray(n.choices)) { errors.push(err('param_type', `${np}.choices`, 'must be a list')); continue; }
+        (n.choices || []).forEach((c, i) => {
+          const cp = `${np}.choices[${i}]`;
+          checkKeys(c, CHOICE_FIELDS, cp, errors);
+          if (typeof c?.text !== 'string' || !c.text) errors.push(err('dialogue_invalid', `${cp}.text`, 'choice needs text'));
+          checkPred(c.if, `${cp}.if`, errors, ctx);
+          checkEffects(c.do, `${cp}.do`, errors, ctx);
+          target(c.next, nodes, `${cp}.next`);
+          if (c.check !== undefined) {
+            checkKeys(c.check, CHECK_FIELDS, `${cp}.check`, errors);
+            if (typeof c.check.stat !== 'string' && typeof c.check.var !== 'string') errors.push(err('check_invalid', `${cp}.check`, 'skill check needs stat or var'));
+            if (typeof c.check.gte !== 'number') errors.push(err('check_invalid', `${cp}.check.gte`, 'skill check needs a numeric gte'));
+            if (c.check.roll !== undefined && !(c.check.roll in ROLLS)) errors.push(err('check_invalid', `${cp}.check.roll`, `roll must be one of ${Object.keys(ROLLS).join('|')}`));
+            if (c.check.var) ctx.noteRef('var', c.check.var, `${cp}.check.var`, 'read');
+            target(c.check.fail, nodes, `${cp}.check.fail`);
+            checkEffects(c.check.failDo, `${cp}.check.failDo`, errors, ctx);
+          }
+        });
+      }
+    }
+    return errors;
+  },
+  install(rt, config) {
+    st(rt); // create the store at install: UI reads (view/list/known) must never write state
+    const node = (a = st(rt).active) => a && dialogues(rt)[a.dialogue]?.nodes?.[a.node];
+    const openChoices = (a = st(rt).active) => {
+      const n = node(a); if (!n?.choices) return [];
+      const chosen = st(rt).chosen[a.dialogue] || {};
+      return n.choices.map((c, index) => ({ c, index, key: choiceKey(a.node, index, c) }))
+        .filter(({ c, key }) => !(c.once && chosen[key]) && (!c.if || rt.test(c.if, { self: a.with })));
+    };
+    const finish = () => {
+      const s = st(rt), a = s.active; if (!a) return;
+      s.active = null;
+      rt.emit('dialogue_end', { dialogue: a.dialogue, with: a.with ?? null });
+      if (s.queue.length && rt.state.status === 'playing') { const next = s.queue.shift(); begin(next.dialogue, next.with); }
+    };
+    // Enter node `id`, following non-waiting jumps (failed `if`, repeat-skips) up to MAX_HOPS.
+    const enter = id => {
+      const s = st(rt);
+      for (let hop = 0; hop < MAX_HOPS; hop++) {
+        const a = s.active; if (!a) return;
+        const n = dialogues(rt)[a.dialogue]?.nodes?.[id];
+        if (!n) { finish(); return; }
+        if (n.if && !rt.test(n.if, { self: a.with })) { if (n.else !== undefined) { id = n.else; continue; } finish(); return; }
+        const seen = s.said[a.dialogue]?.[id];
+        a.node = id; a.wait = 0;
+        if (seen && !config.repeatSeen && !n.choices?.length && n.next !== undefined && !n.end) { id = n.next; continue; } // already-heard linear line
+        (s.said[a.dialogue] ??= {})[id] = true;
+        const onceKey = `${a.dialogue}.${id}`;
+        if (n.do?.length && !(n.once && s.onceNodes[onceKey])) { if (n.once) s.onceNodes[onceKey] = true; rt.run(n.do, { self: a.with, dialogue: a.dialogue }); }
+        if (rt.state.status !== 'playing' || s.active !== a) return; // the node ended the game or the dialogue
+        a.wait = ticks(rt, n.sec ?? readSeconds(n.say, config.lineSpeed));
+        rt.emitTyped('said', `${a.dialogue}.${id}`, { dialogue: a.dialogue, node: id });
+        rt.emit('dialogue_line', { dialogue: a.dialogue, node: id, who: n.who ?? dialogues(rt)[a.dialogue].speaker ?? a.with ?? null, text: n.say, choices: openChoices(a).map(({ c, index, key }) => ({ index, id: key, text: c.text, enabled: true, check: c.check ? { stat: c.check.stat ?? c.check.var, gte: c.check.gte } : undefined })) });
+        // A choice node whose every choice is closed would trap the player: end instead.
+        if (n.choices?.length && !openChoices(a).length) { finish(); }
+        return;
+      }
+      rt.emit('dialogue_error', { dialogue: s.active?.dialogue, node: id, reason: 'too many jumps' }); finish();
+    };
+    const begin = (id, withWho) => {
+      const d = dialogues(rt)[id]; if (!d) return false;
+      st(rt).active = { dialogue: id, with: withWho ?? (d.speaker !== 'player' ? d.speaker : null) ?? null, node: null, wait: 0 };
+      rt.emit('dialogue_start', { dialogue: id, with: st(rt).active.with });
+      enter(d.start);
+      return true;
+    };
+    const advance = () => { // 'next' on a line without choices
+      const a = st(rt).active, n = node(a); if (!a || !n || n.choices?.length) return false;
+      if (a.wait > 0 && !config.interruptible) return false;
+      if (n.end || n.next === undefined) finish(); else enter(n.next);
+      return true;
+    };
+    const choose = value => {
+      const s = st(rt), a = s.active, n = node(a); if (!a || !n?.choices?.length) return false;
+      if (a.wait > 0 && !config.interruptible) return false;
+      const open = openChoices(a);
+      const pick = typeof value === 'number' ? open.find(o => o.index === value) : open.find(o => o.key === value);
+      if (!pick) return false;
+      const { c, index, key } = pick;
+      (s.chosen[a.dialogue] ??= {})[key] = { node: a.node, index, key, next: c.next ?? null }; // a set: replays never grow state
+      rt.emit('choice_made', { dialogue: a.dialogue, node: a.node, choice: key, index, next: c.next ?? null });
+      let next = c.next, fx = c.do;
+      if (c.check) {
+        const [dice, sides] = ROLLS[c.check.roll || 'none'];
+        let roll = 0; for (let i = 0; i < dice; i++) roll += 1 + Math.floor(rt.random() * sides);
+        const total = statValue(rt, c.check) + roll + (c.check.bonus ?? 0), success = total >= c.check.gte;
+        rt.emit('skill_check', { dialogue: a.dialogue, node: a.node, choice: key, stat: c.check.stat ?? c.check.var, roll, total, gte: c.check.gte, success });
+        if (!success) { next = c.check.fail; fx = c.check.failDo; }
+      }
+      if (fx?.length) rt.run(fx, { self: a.with, dialogue: a.dialogue });
+      if (rt.state.status !== 'playing' || s.active !== a) return true;
+      if (c.end || next === undefined) finish(); else enter(next);
+      return true;
+    };
+    const api = {
+      start(id, { with: withWho } = {}) {
+        const s = st(rt);
+        if (s.active) { if (config.queue) { s.queue.push({ dialogue: id, with: withWho ?? null }); return 'queued'; } finish(); }
+        return begin(id, withWho);
+      },
+      end: finish,
+      active: () => Boolean(st(rt).active),
+      choose, advance,
+      /** UI read model: rebuildable after restore. */
+      view() {
+        const a = st(rt).active, n = node(a);
+        if (!a || !n) return { active: false };
+        return { active: true, dialogue: a.dialogue, node: a.node, with: a.with, who: n.who ?? dialogues(rt)[a.dialogue].speaker ?? null, text: n.say, ready: a.wait <= 0,
+          choices: openChoices(a).map(({ c, index, key }) => ({ index, id: key, text: c.text, enabled: true })) };
+      },
+    };
+    rt.provide('dialogue', api);
+    // rt.step drops falsy action values, so index 0 arrives as {index: 0}; ids and numbers >= 1 also work.
+    rt.action('choose', value => {
+      if (value === 'next' || value === true || value?.next) { advance(); return; }
+      if (value && typeof value === 'object') choose(value.index ?? value.id); else choose(value);
+    });
+    rt.system('plot', rt => {
+      const a = st(rt).active; if (!a) return;
+      if (a.wait > 0) a.wait--;
+      if (a.wait <= 0 && config.autoAdvance && !node(a)?.choices?.length) advance();
+    }, ID);
+    rt.options(rt => {
+      const a = st(rt).active, n = node(a); if (!a || !n) return [];
+      const steps = !config.interruptible && a.wait > 0 ? a.wait + 1 : 1;
+      if (!n.choices?.length) return config.autoAdvance ? [{ label: `listen ${a.dialogue}`, actions: {}, steps: Math.max(1, a.wait + 1) }] : [{ label: `continue ${a.dialogue}.${a.node}`, actions: { choose: 'next' }, steps }];
+      return openChoices(a).map(({ c, key }) => ({ label: `choose ${a.dialogue}.${key}: ${c.text}`, actions: { choose: key }, steps }));
+    });
+  },
+};
+
+/** Solver key: what the player has said, chosen and where any open conversation stands (no line timers). */
+export function solverKey(rt) {
+  const s = rt.store(ID);
+  return { active: s.active ? [s.active.dialogue, s.active.node] : null, said: Object.fromEntries(Object.entries(s.said || {}).map(([d, n]) => [d, Object.keys(n).sort()])), chosen: Object.fromEntries(Object.entries(s.chosen || {}).map(([d, m]) => [d, Object.keys(m).sort()])), queue: (s.queue || []).map(q => q.dialogue) };
+}
