@@ -10,7 +10,7 @@ import { hashOf } from '../server/store.js';
 import { seedFrom } from '../engine/rng.js';
 import { routeIdea, routeOptions, PLANNED } from './router.js';
 import { runKitPipeline, KIT_GAME_SCHEMA } from './kit-pipeline.js';
-import { checkRevision, NOT_APPLIED } from './revision-check.js';
+import { checkRevision, NOT_APPLIED, usesFranchiseNames } from './revision-check.js';
 
 export const DESIGN_PIPELINE_VERSION = 'v2-design/0.1';
 
@@ -55,7 +55,13 @@ export function createDesignPipeline({ client, model, effort, registry = default
     let lastDraft = 0;
     const onDelta = text => { const now = performance.now(); if (now - lastDraft < 150) return; lastDraft = now; ctx.draft({ partial: partialSpec(text) }); };
     const reply = await client.complete({ model, effort, system: DESIGN_PROMPT, user: designRequest({ prompt: job.prompt, answers: job.answers, previousDesign: previous?.report?.design, change: job.change }), schema: { name: 'game_design', schema: DESIGN_SCHEMA }, onDelta });
-    const design = JSON.parse(reply.text);
+    let design = JSON.parse(reply.text);
+    // Original names only (one renaming retry when the title or cast reuses franchise names).
+    const castNames = d => [d.title, ...Object.values(d.cast || {}).map(c => c?.name)].filter(Boolean);
+    if ((await usesFranchiseNames(decisions, castNames(design)))?.flagged) {
+      const renamed = await client.complete({ model, effort, system: DESIGN_PROMPT, user: `${designRequest({ prompt: job.prompt, answers: job.answers, previousDesign: previous?.report?.design, change: job.change })}\n\nUse original names only: rename the title and every cast member so they evoke the idea without using any existing game, company or character name (your first answer used ${castNames(design).join(', ')}).`, schema: { name: 'game_design', schema: DESIGN_SCHEMA } });
+      design = JSON.parse(renamed.text);
+    }
     // On revisions, check the change really happened (same check every game type uses).
     const revisionCheck = previous && job.change ? await checkRevision(decisions, { change: job.change, engine: 'side-scrolling or top-down 2D action', before: previous.report?.design, after: design, unsupported: (design.gaps || []).map(g => ({ request: g.capability })) }) : null;
     if (revisionCheck?.applied != null && revisionCheck.applied < NOT_APPLIED && !(design.gaps || []).length) design.gaps = [{ capability: job.change, why: revisionCheck.why }];
