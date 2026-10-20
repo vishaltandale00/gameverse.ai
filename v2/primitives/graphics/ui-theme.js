@@ -237,7 +237,7 @@ export const THEME_CSS = `
 .gv-dlg-next.is-on{opacity:1}
 .gv-choices{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
 .gv-choice{animation:gv-in-up .28s var(--gv-ease) both}
-.gv-choice .gv-num{display:inline-grid;place-items:center;width:1.6em;height:1.6em;border-radius:50%;font-size:.78em;font-weight:800;background:rgba(0,0,0,.35);flex:none}
+.gv-num{display:inline-grid;place-items:center;width:1.6em;height:1.6em;border-radius:50%;font-size:.78em;font-weight:800;background:rgba(0,0,0,.35);flex:none}
 .gv-choice.is-seen{color:var(--gv-ink-dim)}
 .gv-subtitles{position:absolute;left:50%;bottom:clamp(70px,14vh,150px);transform:translateX(-50%);width:min(760px,90vw);display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
 .gv-sub{padding:.35em .85em;border-radius:8px;background:rgba(0,0,0,.62);color:#fff;font-weight:600;text-shadow:0 1px 2px #000;animation:gv-in-up .25s var(--gv-ease) both;max-width:100%}

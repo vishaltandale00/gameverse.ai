@@ -106,14 +106,12 @@ export function createUiInput(host) {
     if (e.target?.tagName === 'INPUT' && e.target.type === 'text') return;
     device = 'keyboard';
     const k = keyName(e);
+    const open = Object.keys(keys).find(v => keys[v].includes(k) && hotkeys.has(v)) || null;
+    const uiKey = () => (/^[1-9]$/.test(k) ? `digit${k}` : k === 'tab' ? (e.shiftKey ? 'prev' : 'next') : Object.keys(MODAL_KEYS).find(v => MODAL_KEYS[v].includes(k)) || null);
     let verb = null;
-    if (modal() || layers.some(l => l.takesInput)) {
-      if (/^[1-9]$/.test(k)) verb = `digit${k}`;
-      else if (k === 'tab') verb = e.shiftKey ? 'prev' : 'next';
-      else verb = Object.keys(MODAL_KEYS).find(v => MODAL_KEYS[v].includes(k)) || Object.keys(keys).find(v => keys[v].includes(k)) || null;
-    } else {
-      verb = Object.keys(keys).find(v => keys[v].includes(k) && hotkeys.has(v)) || null;
-    }
+    if (modal()) verb = uiKey() || Object.keys(keys).find(v => keys[v].includes(k)) || null;
+    else if (layers.some(l => l.takesInput)) verb = open || uiKey(); // open hotkeys (pause, inventory...) win over a non-modal input layer
+    else verb = open;
     if (!verb) return;
     if (dispatch(verb, { source: 'key', repeat: e.repeat, key: k })) { e.preventDefault?.(); e.stopPropagation?.(); }
   }
