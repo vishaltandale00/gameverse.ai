@@ -127,6 +127,11 @@ it or a solver checks it. The `report` records:
 
 Keep it under `budgetMs`, by default 2000 ms.
 
+Validation repairs what it can: it pads or trims rows to the right width, clamps numbers, fixes
+ids with `v2/kits/ids.js` and fills defaults, each with a warning. It rejects only content that
+can't be fixed. It is idempotent: `validate(validate(x).content)` passes and gives the same content
+(`tests/v2-kits-contract.test.js` checks this for every kit).
+
 Verification must fail only on content that is actually at fault. Each problem names that content
 with a `path` (like `levels[3]`), a `message` and a `hint` (like "lower speed"), because the pipeline
 sends problems back to the model for repair, up to three tries. A bot too weak for fair content is a
