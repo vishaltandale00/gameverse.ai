@@ -384,7 +384,7 @@ export default {
         b.vel = [b.vel[0] + g[0] * gs * dt, b.vel[1] + g[1] * gs * dt];
         const vy = b.vel[1], r = slide(e, [b.vel[0] * dt, b.vel[1] * dt], rt), bounce = b.bounce ?? 0;
         if (r.blocked.x) b.vel[0] = -b.vel[0] * bounce;
-        if (r.blocked.y) b.vel[1] = Math.abs(vy * bounce) > 1 ? -vy * bounce : 0;
+        if (r.blocked.y) b.vel[1] = Math.abs(vy * bounce) > Math.max(0.01, 2 * Math.abs(g[1] * gs) * dt) ? -vy * bounce : 0; // rest instead of micro-bouncing
         if (r.grounded) b.vel[0] *= 1 - clamp(b.friction ?? 0.2, 0, 1);
         if (r.grounded && !was) rt.emit('landed', { who: e.id, speed: -vy });
       }
