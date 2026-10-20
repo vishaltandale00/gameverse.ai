@@ -8,7 +8,7 @@ const cell = (rt, at) => rt.space('world').getCell(at);
 const goTo = (rt, at) => rt.space('world').setPos(rt.player(), at, rt);
 const ms = (rt, id) => rt.state.prim['gameplay.mechanism'].m[id];
 
-const castle = () => doc({
+const castle = () => doc({ combat: true,
   systems: [{ use: 'gameplay.inventory' }, { use: 'gameplay.interact', with: { range: 2 } }, { use: 'gameplay.loot' }, { use: 'gameplay.mechanism', with: { mechanisms: [
     { id: 'lever', kind: 'lever', at: [2, 1, 0], signal: 'bridge', prompt: 'Pull', entity: true },
     { id: 'door', kind: 'door', at: [5, 1, 0], size: [1, 2, 1], cells: true, block: 'stone', opens: ['bridge'] },
@@ -25,7 +25,7 @@ const castle = () => doc({
     items: [{ id: 'gem', name: 'Gem' }, { id: 'bomb', name: 'Bomb' }],
     blocks: [{ id: 'stone', name: 'Stone' }],
     tables: [{ id: 'crate_loot', rolls: 1, entries: [{ item: 'gem', weight: 1 }] }],
-    archetypes: [{ id: 'hero', kind: 'player', components: { body: { size: [1, 1, 1] } } }],
+    archetypes: [{ id: 'hero', kind: 'player', components: { body: { size: [1, 1, 1] }, health: { max: 50 } } }],
   },
 });
 
@@ -88,7 +88,7 @@ test('mechanism: breakables, item breach, erodible bunker, trap, timer and lift'
   // Trap fires on entry, then re-arms after its cooldown.
   goTo(rt, [3, 8, 0]); rt.step();
   assert.equal(rt.state.counts['trap_fired:spikes'], 1);
-  assert.equal(rt.state.vars['dmg.player'], 2);
+  assert.equal(rt.player().components.health.hp, 48, 'trap damage through gameplay.combat.health');
   steps(rt, 50);
   assert.equal(rt.state.counts['trap_fired:spikes'], 2, 'still standing on it after re-arm');
   // Timer → tick → the lift rises 4 cells at 4/s and carries its rider.
