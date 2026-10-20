@@ -9,7 +9,8 @@ const DIRS = { up: [0, 1], down: [0, -1], left: [-1, 0], right: [1, 0] };
 
 function compile(content, chars) {
   return content.chunks.map(k => {
-    const rows = k.rows.map((row, r) => {
+    // Rows are a picture: the bottom row is the nearest.
+    const rows = k.rows.slice().reverse().map((row, r) => {
       const cells = [...row];
       const lane = cells.map(ch => chars.get(ch)).find(Boolean);
       const coins = cells.map((ch, i) => ch === 'o' ? i : -1).filter(i => i >= 0);
@@ -164,6 +165,7 @@ export default {
   solver: {
     every: 8,
     actions: [{}, { y: -1, tap: true }, { x: -1, tap: true }, { x: 1, tap: true }, { y: 1, tap: true }],
+    bucket: s => `${Math.round(s.p.x)}|${s.p.r}`,
     key: s => `${Math.round(s.p.x * 4)}|${s.p.r}|${s.p.hopping ? Math.round(s.p.tx * 4) : 'g'}|${s.p.maxRow}|${s.invuln > 0 ? 1 : 0}`,
     score: s => s.p.maxRow * 3 + s.p.r - Math.abs(s.p.x - (s.game.content.rules.width - 1) / 2) * 0.1 + s.coins * 0.05 - (s.p.idleT > 5 ? 3 : 0),
     entries: () => [0],

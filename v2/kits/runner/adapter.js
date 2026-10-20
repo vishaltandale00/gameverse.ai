@@ -46,7 +46,7 @@ export function worldAdapter(game) {
     blocked: (s, x, y) => {
       const X = s.p.x + x;
       if (y < 0 || y > FLAP.height) return true;
-      return s.objs.some(o => o.t === 'gate' && Math.abs(o.x - X) < FLAP.pipeHalf && o.pipes.some(pp => { const off = offsetOf(pp, s.p.x, game.content.speed.start); return y >= pp.y0 + off && y <= pp.y1 + off; }));
+      return s.objs.some(o => o.t === 'gate' && Math.abs(o.x - X) < FLAP.pipeHalf && o.pipes.some(pp => { const off = offsetOf(pp, s.p.x, game.content.speed.start, o.x); return y >= pp.y0 + off && y <= pp.y1 + off; }));
     },
   };
   if (mode === 'climb') return {

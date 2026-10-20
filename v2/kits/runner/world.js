@@ -95,11 +95,12 @@ export const G = {
     if (s.game.impl.slowmo !== false && s.slowCD <= 0) { s.slowT = 0.28; s.slowCD = 1.6; }
     G.emit(s, 'near_miss', { id: o.id });
   },
-  /** Append placed objects keeping state.objs sorted by p. */
+  /** Append placed objects keeping state.objs sorted by p. The list is copy-on-write, so search clones share it. */
   add(s, list) {
+    const objs = s.objs.slice();
+    s.objs = objs;
     for (const o of list) {
       o.id = s.nextId++;
-      const objs = s.objs;
       if (!objs.length || objs[objs.length - 1].p <= o.p) { objs.push(o); continue; }
       let lo = 0, hi = objs.length;
       while (lo < hi) { const mid = (lo + hi) >> 1; if (objs[mid].p <= o.p) lo = mid + 1; else hi = mid; }
@@ -219,7 +220,9 @@ export function createGame(content, { seed = 1 } = {}) {
     // Chunks ahead, objects behind.
     if (!s.trial && !game.level) while (s.nextAt < after + impl.ahead) spawnChunk(s);
     const behind = after - impl.behind;
-    while (s.objs.length && s.objs[0].e < behind) { const o = s.objs.shift(); delete s.gone[o.id]; }
+    let k = 0;
+    while (k < s.objs.length && s.objs[k].e < behind) delete s.gone[s.objs[k++].id];
+    if (k) s.objs = s.objs.slice(k);
     // Score: distance points plus bonuses.
     const gained = Math.max(0, after - before);
     s.distance += gained;
@@ -241,7 +244,7 @@ export function createGame(content, { seed = 1 } = {}) {
 
   /** A fast copy for search: shares immutable placed objects, copies everything that mutates. */
   game.clone = s => {
-    const c = { ...s, p: impl.clonePlayer ? impl.clonePlayer(s.p) : { ...s.p }, objs: s.objs.slice(), gone: { ...s.gone }, flag: { ...s.flag }, powers: { ...s.powers }, stats: { ...s.stats }, missions: s.missions.map(m => ({ ...m })), prev: s.prev, events: [], chunkLog: s.chunkLog.slice() };
+    const c = { ...s, p: impl.clonePlayer ? impl.clonePlayer(s.p) : { ...s.p }, objs: s.objs, gone: { ...s.gone }, flag: { ...s.flag }, powers: { ...s.powers }, stats: { ...s.stats }, missions: s.missions.map(m => ({ ...m })), prev: s.prev, events: [], chunkLog: s.chunkLog.slice() };
     Object.defineProperty(c, 'game', { value: game, enumerable: false, writable: true });
     return c;
   };

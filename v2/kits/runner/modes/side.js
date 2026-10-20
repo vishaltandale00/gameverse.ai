@@ -18,7 +18,9 @@ function compile(content, chars) {
   return content.chunks.map(k => {
     const sp = k.spacing, objs = [];
     let prevRuns = [];
-    k.rows.forEach((row, j) => {
+    // Rows are a side-view picture; read it as vertical slices listed bottom to top.
+    const H = k.rows.length, slices = [...k.rows[0]].map((_, x) => k.rows.map((_, y) => [...k.rows[H - 1 - y]][x] ?? '.').join(''));
+    slices.forEach((row, j) => {
       const x0 = j * sp, x1 = x0 + sp, xc = x0 + sp / 2, cells = [...row];
       // Solid runs, merged with the same run in the previous slice.
       const runs = [];
@@ -46,14 +48,14 @@ function compile(content, chars) {
         else if (o?.kind === 'missile') objs.push({ t: 'missile', x: xc, y: i + 0.5, k: o.speed, warn: o.period, name: o.name });
       }
     });
-    return { id: k.id, tier: k.tier, objs, length: k.rows.length * sp };
+    return { id: k.id, tier: k.tier, objs, length: slices.length * sp };
   });
 }
 
-const join = s => s.game.content.control === 'fly' ? joinGap(s, Math.max(5, s.game.content.speed.max * 0.4), 3) : joinGap(s, Math.max(3, s.game.content.speed.max * 0.22), 2);
+const join = s => s.game.content.control === 'fly' ? joinGap(s, Math.max(5, s.game.content.speed.max * 0.6), 3) : joinGap(s, Math.max(3, s.game.content.speed.max * 0.22), 2);
 // Where moving things are, as a function of the hero's x (so geometry is speed-independent).
 export const birdX = (o, px) => o.x - o.k * Math.max(0, px - (o.x - 30));
-export const birdY = (o, px, vRef) => o.y + 0.25 * Math.sin((2 * Math.PI * px) / Math.max(1, o.period * vRef));
+export const birdY = (o, px, vRef) => o.y + 0.25 * Math.sin((2 * Math.PI * (px - o.x)) / Math.max(1, o.period * vRef));
 export const missileX = (o, px) => o.x + o.k * (o.x - px);
 
 function place(s, chunk, at, G) {
@@ -181,6 +183,7 @@ export default {
   solver: {
     every: 4,
     actions: [{}, { a: true }],
+    bucket: s => Math.round(s.p.y * 1.5),
     key: s => `${Math.round(s.p.y * 6)}|${Math.round(s.p.vy * 1.5)}|${s.p.ground ? 1 : 0}|${s.p.cut ? 1 : 0}|${Math.round(s.p.slow * 10)}|${s.invuln > 0 ? 1 : 0}|${Math.round(s.p.buffer * 30)}`,
     score: s => (s.game.content.control === 'fly' ? -Math.abs(s.p.y - 3.4) * 0.05 : 0) - s.p.slow * 2 + s.coins * 0.05,
     entries: s => s.game.content.control === 'fly' ? [0, 1, 2] : [0],
