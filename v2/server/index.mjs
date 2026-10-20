@@ -3,10 +3,13 @@
 import { readFile } from 'node:fs/promises';
 import { defaultRegistry } from '../modules/index.js';
 import { preflight } from '../engine/spec.js';
+import { createGameService } from './api.mjs';
 
 const V2 = new URL('../', import.meta.url);
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
-const STATIC = /^\/v2\/(engine|modules|web|presets|examples)\/[a-z0-9-]+\.(js|css|json)$/;
+const STATIC = /^\/v2\/(engine|modules|web|presets|examples|kernel|verify|games|primitives\/(engine|plot|graphics|gameplay)|primitives)\/[a-z0-9-]+\.(js|css|json)$/;
+let service = null;
+export const gameService = () => (service ??= createGameService());
 const registry = defaultRegistry();
 
 // Additional API routes register here: { 'POST /api/v2/create': async (body, req) => result }.
@@ -23,6 +26,8 @@ async function readJson(req, limit = 256 * 1024) {
 
 export async function handleV2(req, res, path) {
   if (path.startsWith('/api/v2/')) {
+    try { if (await gameService().handle(req, res, path, readJson)) return true; }
+    catch (error) { res.writeHead(error.status || 500, { 'Content-Type': MIME['.json'] }).end(JSON.stringify({ error: error.status ? error.message : 'The v2 service failed.' })); return true; }
     const route = apiRoutes.get(`${req.method} ${path}`);
     if (!route) { res.writeHead(404, { 'Content-Type': MIME['.json'] }).end(JSON.stringify({ error: `No v2 API route ${req.method} ${path}.` })); return true; }
     try {
