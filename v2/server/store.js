@@ -1,7 +1,7 @@
 // Versioned game storage. Every published version is an immutable JSON file
 // with the document, its verification report and provenance (content hash,
 // seed, planner and catalogue versions), so any game can be replayed exactly.
-import { mkdir, readFile, readdir, writeFile, rename } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile, rename, appendFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 
@@ -36,6 +36,22 @@ export function createStore(root) {
       await writeJson(join(gameDir(id), `v${version}.json`), { ...record, doc });
       await this.updateMeta(id, { versions: version, latest: version, title: meta.sample ? meta.title : (doc.title || meta.title), logline: doc.logline || meta.logline || '' });
       return record;
+    },
+    /** Keep a failed job's record (error, stage reached, intermediate results) as failed-<n>.json; returns n. */
+    async recordFailure(id, record) {
+      const meta = await readJson(join(gameDir(id), 'meta.json'));
+      if (!meta) return null;
+      const n = (meta.failures || 0) + 1;
+      await writeJson(join(gameDir(id), `failed-${n}.json`), { failure: n, ...record });
+      await this.updateMeta(id, { failures: n });
+      return n;
+    },
+    async failure(id, n) { return Number.isInteger(n) && n > 0 ? readJson(join(gameDir(id), `failed-${n}.json`)) : null; },
+    /** One line per finished job (done or failed) with its outcome and timings. */
+    async appendRun(id, record) { await appendFile(join(gameDir(id), 'runs.jsonl'), `${JSON.stringify(record)}\n`); },
+    async runs(id) {
+      try { return (await readFile(join(gameDir(id), 'runs.jsonl'), 'utf8')).split('\n').filter(Boolean).map(line => JSON.parse(line)); }
+      catch (error) { if (error.code === 'ENOENT') return []; throw error; }
     },
     /** Save a binary asset for a game; returns its URL path. */
     async saveAsset(id, name, bytes) {

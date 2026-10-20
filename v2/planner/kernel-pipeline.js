@@ -39,21 +39,27 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     const t0 = performance.now(), timings = { queueMs: job.queuedMs ?? null };
     const { registry, logic } = await catalogue(null);
     const seed = job.seed ?? seedFrom(job.prompt);
+    // Checkpoints are what a failure record keeps to reproduce the run (server/jobs.js); hosts without them ignore them.
+    const checkpoint = (name, value) => ctx.checkpoint?.(name, value);
+    checkpoint('provenance', { pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), models: { spec: spec?.model || null, specProvider: spec?.provider || null, decisions: decisions?.provider || null }, seed, prompt: job.prompt, answers: job.answers || [] });
     ctx.stage('decomposing', { model: spec?.model || 'offline' });
     let t = performance.now();
     const decomposition = await decomposeIdea({ writer: spec, prompt: job.prompt, answers: job.answers || [] });
     timings.decomposeMs = ms(t);
+    checkpoint('decomposition', decomposition);
     ctx.stage('decomposed', { ms: timings.decomposeMs, source: decomposition.source, references: decomposition.references.map(r => r.name), mechanics: decomposition.mechanics.map(m => m.description), ...(decomposition.error ? { error: decomposition.error } : {}) });
     t = performance.now();
     const chosen = await selectPrimitives({ decomposition, registry, decisions, writer: spec });
     const agency = await ensureAgency({ decomposition, selection: chosen, registry, logic, seed, prompt: job.prompt });
     const selection = agency.selection;
     timings.selectMs = ms(t);
+    checkpoint('selection', { mechanics: selection.mechanics, spaces: selection.spaces, systems: selection.systems, graphics: selection.graphics, gaps: selection.gaps, provider: selection.provider, agency: agency.agency, agencyAttempts: agency.attempts });
     ctx.stage('selected', { ms: timings.selectMs, provider: selection.provider || 'lexical', spaces: selection.spaces.map(s => s.use), systems: selection.systems, gaps: selection.gaps.map(g => g.description), agency: agency.agency, agencyAttempts: agency.attempts });
     ctx.stage('outlining', { model: spec?.model || 'procedural' });
     t = performance.now();
     const outline = await writeOutline({ writer: spec, prompt: job.prompt, answers: job.answers || [], decomposition, selection, registry, logic, seed, maxRounds: cfg.outlineRepairRounds });
     timings.outlineMs = ms(t); timings.outlineModelMs = spec ? outline.modelMs : null;
+    checkpoint('outline', { ok: outline.ok, source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack), isolated: Boolean(outline.isolated), errors: (outline.errors || []).slice(0, 20), removed: outline.removed || [], doc: outline.doc });
     ctx.stage('outlined', { ms: timings.outlineMs, source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, fellBack: Boolean(outline.fellBack) });
     if (!outline.ok) throw Object.assign(Error(`The outline failed checks: ${outline.errors.slice(0, 3).map(e => `${e.code} ${e.path}`).join('; ')}`), { status: 422 });
 
@@ -61,6 +67,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     t = performance.now();
     const fp = firstPlayable(outline.doc, registry, logic, { seed });
     timings.firstPlayableBuildMs = ms(t);
+    if (!fp.ok) checkpoint('firstPlayable', { ok: false, ms: fp.ms, errors: (fp.errors || []).slice(0, 20), problems: (fp.problems || []).slice(0, 20), removed: fp.removed || [] });
     if (!fp.ok) throw Object.assign(Error(`The first playable would not start: ${[...fp.errors, ...fp.problems].slice(0, 3).map(e => e.message || e.code).join('; ')}`), { status: 422 });
     let current = fp.doc;
     const gaps = [...selection.gaps.map(gapNote), ...[...(outline.removed || []), ...fp.removed].map(r => ({ capability: r.use, why: r.why, kind: r.kind === 'capability' ? 'capability' : 'removed' }))];
@@ -152,6 +159,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
         applied = applyOps(before, r.ops); repaired = repairDocument(applied.doc, { registry, logic, rounds: 4 });
       }
       timings.reviseMs = ms(t); timings.reviseModelMs = modelMs;
+      if (!repaired.ok) ctx.checkpoint?.('revision', { base: job.base, change: job.change, path: 'model', ops: (r.ops || []).slice(0, 50), unsupported, errors: repaired.errors.slice(0, 20), timings: { ...timings }, doc: repaired.doc });
       if (!repaired.ok) throw Object.assign(Error(`The change failed checks: ${repaired.errors.slice(0, 3).map(e => `${e.code} ${e.path}`).join('; ')}`), { status: 422 });
       after = repaired.doc; path = 'model'; opsApplied = applied.applied;
       ctx.stage('revised', { ms: timings.reviseMs, ops: applied.applied.length, failed: applied.failed.length });
@@ -162,6 +170,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       unsupported = [{ request: job.change, why: 'No parameter of this game matches that change, and no model is connected to write it.' }];
     }
     t = performance.now();
+    ctx.checkpoint?.('revision', { base: job.base, change: job.change, path, ops: opsApplied.slice(0, 50), unsupported, timings: { ...timings }, doc: after });
     const guard = await guardRevision({ before, after, change: job.change, decisions, unsupported });
     timings.guardMs = ms(t);
     if (!guard.ok) throw Object.assign(Error(guard.reason === 'dropped_content' ? `That change would remove ${guard.dropped.map(d => d.path).join(', ')}, which the request didn't ask for.` : 'That change would repaint the game, which the request didn\'t ask for.'), { status: 422, code: guard.reason });
