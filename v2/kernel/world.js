@@ -6,7 +6,7 @@
 import { random, seedFrom } from './rng.js';
 
 export const PHASES = ['input', 'ai', 'movement', 'physics', 'interaction', 'rules', 'plot', 'late'];
-export const KERNEL_EVENTS = ['game_start', 'game_end', 'spawn', 'despawn', 'action', 'content_added'];
+export const KERNEL_EVENTS = ['game_start', 'game_end', 'spawn', 'despawn', 'action', 'content_added', 'space_changed'];
 export const DT = 1 / 60;
 
 export function buildLogic(registry, Logic) {
@@ -28,7 +28,7 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
     rng: seedFrom(seed ?? doc.seed ?? doc.id), vars: {}, flags: {}, counts: {}, events: [],
     entities: {}, nextId: 1, spaces: {}, prim: {},
   };
-  const systems = [], handlers = new Map(), actions = new Map(), spaces = new Map(), restorers = [], optionProviders = [];
+  const systems = [], handlers = new Map(), actions = new Map(), spaces = new Map(), services = new Map(), restorers = [], optionProviders = [];
   let order = 0;
 
   const rt = {
@@ -41,6 +41,8 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
       for (const h of handlers.get(name) || []) h(data, rt);
       for (const h of handlers.get('*') || []) h({ name, ...data }, rt);
     },
+    /** Emit `name` with subject, then the qualified `name:<subject>` (counts and objectives address it). */
+    emitTyped(name, subject, data = {}) { rt.emit(name, { ...data, subject }); if (subject != null) rt.emit(`${name}:${subject}`, data); },
     on(name, fn) { if (!handlers.has(name)) handlers.set(name, []); handlers.get(name).push(fn); },
     system(phase, fn, owner = '') {
       const p = PHASES.indexOf(phase);
@@ -54,6 +56,11 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
     options(fn) { optionProviders.push(fn); },
     availableOptions() { return optionProviders.flatMap(fn => fn(rt) || []); },
     actions: () => [...actions.keys()],
+    /** Named services shared between primitives (roadgraph, surface, biomeAt...). Declared in card.provides.services. */
+    provide(name, api) { services.set(name, api); },
+    service(name) { const s = services.get(name); if (!s) throw Error(`no service '${name}'`); return s; },
+    hasService: name => services.has(name),
+    spaces: () => [...spaces.keys()],
     defineSpace(id, api) { spaces.set(id, api); state.spaces[id] ??= {}; },
     space(id = doc.spaces?.[0]?.id) { const s = spaces.get(id); if (!s) throw Error(`no space '${id}'`); return s; },
     onRestore(fn) { restorers.push(fn); },
@@ -75,9 +82,25 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
       delete state.entities[id]; rt.emit('despawn', { id, archetype: e.archetype });
     },
     entity: id => state.entities[id],
+    /** who: undefined|'player' -> player; 'self' -> context.self; else an entity id (characters spawn with their id). */
+    resolve(who, context = {}) {
+      if (who === undefined || who === null || who === 'player') return state.entities.player || null;
+      if (who === 'self') return state.entities[context.self] || null;
+      return state.entities[who] || null;
+    },
+    /** Move an entity into another space (portals, interiors, battle screens). */
+    moveToSpace(entity, spaceId, at = null, zone = undefined) {
+      const from = entity.space;
+      if (from && spaces.get(from)?.remove) spaces.get(from).remove(entity, rt);
+      entity.space = spaceId; entity.at = at;
+      const api = rt.space(spaceId);
+      api.place(entity, rt);
+      if (zone || at) api.teleport(entity, { zone, at }, rt);
+      rt.emit('space_changed', { who: entity.id, from, to: spaceId });
+    },
     player: () => state.entities.player || null,
     query: (...components) => Object.values(state.entities).filter(e => components.every(c => c in e.components)),
-    test: predicate => logic.test(predicate, rt),
+    test: (predicate, context) => logic.test(predicate, rt, context),
     run: (effects, context) => logic.run(effects, rt, context),
     /** Advance one fixed step. input = { actions: { name: value }, axes: {...} }. */
     step(input = {}) {

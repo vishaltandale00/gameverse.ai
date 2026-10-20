@@ -1,0 +1,141 @@
+# Kernel API v1 (frozen for the primitive build-out)
+
+This is the contract every primitive is written against. `ARCHITECTURE.md` gives the design and `PRIMITIVE_CATALOG.md` the primitive specs. A primitive's **card is the source of truth** for its params: where a card extends the catalog, the card wins and the catalog is regenerated from cards.
+
+**There are no genre engines.** A game is a document of primitives. A mechanic exists once, as a primitive that any document can combine with any other. When something is missing, add or extend a primitive; never add a special case for one game.
+
+## 1. Primitive shape
+
+```js
+export default {
+  id: 'gameplay.combat.melee',              // family.domain[.name]; file named after it, e.g. gameplay/combat-melee.js
+  card: {
+    intent: 'one or two sentences the planner model reads',
+    views: ['3p', 'side', 'td'],            // or ['any']
+    params: { name: { type, default, min, max, unit, options, of, fields, open, required, effect } },
+    provides: { capabilities?, events: ['hit', 'defeated:*'], vars: ['hp'], services: ['roadgraph'], actions: ['attack'] },
+    requires: { capabilities: ['overlap'], primitives: ['gameplay.combat.health'], services: [] },
+    conflicts: [],
+    reads: ['content.items'],               // document sections it consumes (preflight warns on unread data)
+    defines: [{ kind: 'gate', at: 'plot.gates' }, { kind: 'portal', in: 'portals' }],  // new reference kinds
+  },
+  logic(logic) {},                          // register predicates/effects (once per catalogue)
+  validate(config, doc, ctx) { return [] }, // extra preflight: [{code, path, message, hint}]
+  install(rt, config, instance) {},         // runtime hooks; instance = { key, use, with, space?, id? }
+  extend(rt, config, added, instance) {},   // only if it caches derived data and must see hot-loaded content
+  capabilities(config) { return [...] },    // spaces only, when capabilities depend on params
+};
+```
+
+Param types: `number integer boolean string ref list object predicate effects json`. `ref` takes `to: <kind>`. `object` takes `fields` and `open`. `list` takes `of`, `min` and `max`. Defaults are applied by preflight, so `install` receives a complete config.
+
+**Reference kinds** come from `card.defines`:
+- `{kind, at}` indexes a document path: a list of `{id}` or an id-keyed object.
+- `{kind, in}` indexes a list of `{id}` inside each instance's `with`.
+
+Base kinds (`character item zone quest model archetype space beat ending recipe block dialogue`) are built in. Never edit `REF_KINDS`.
+
+## 2. Runtime (`rt`)
+
+| Member | Use |
+| --- | --- |
+| `rt.state` | The JSON game state: `frame time status ending rng vars flags counts events entities spaces prim`. Everything that must survive a snapshot lives here. |
+| `rt.store(key)` | Per-primitive JSON state at `state.prim[key]`. Fetch it inside each call; never hold it across calls, because `restore()` replaces it. Key it by primitive id, or by `instance.key` when several instances are allowed. |
+| `rt.caches` | Non-JSON derived data (indexes, meshes). Rebuild it in `rt.onRestore(fn)` and when `rt.doc` changes. |
+| `rt.system(phase, fn, owner)` | Per-step system. Phases run in this order: `input ai movement physics interaction rules plot late`. |
+| `rt.on(name, fn)` | Event handler. `'*'` receives every event. |
+| `rt.emit(name, data)` | Emit an event and increment `counts[name]`. |
+| `rt.emitTyped(name, subject, data)` | Emits both `name` (with `subject`) and `name:<subject>`. Use it for every typed event (`defeated:goblin`, `item_gained:key`). |
+| `rt.action(name, fn(value, rt))` | Player verb. Input reaches it through `step({actions})`. |
+| `rt.options(fn(rt) → [{label, actions, steps?, apply?(rt)}])` | Meaningful player choices for solvers and playtesters. Continuous spaces offer macro options such as "travel to zone X" via `apply`. |
+| `rt.provide(name, api)` / `rt.service(name)` | Shared services (`roadgraph`, `surface`, `biomeAt`...). Declare them in `card.provides.services` / `requires.services`. |
+| `rt.defineSpace(id, api)` / `rt.space(id)` / `rt.spaces()` | Spaces (§3). |
+| `rt.spawn(archetype, {space, at, components, id})` / `rt.despawn(id)` | Entities. Characters spawn with `id = character id`. |
+| `rt.entity(id)`, `rt.player()`, `rt.query(...components)`, `rt.resolve(who, context)` | Lookups. `resolve` maps `'player'` or undefined to the player, `'self'` to `context.self`, and anything else to an entity id. |
+| `rt.moveToSpace(entity, spaceId, at?, zone?)` | Cross-space travel (portals, interiors, battle screens). |
+| `rt.test(pred, context)` / `rt.run(effects, context)` | Evaluate predicates and run effects. `context.self` is the acting entity. |
+| `rt.random()` | The only randomness allowed. It is seeded and stored in state. Never use `Math.random`, `Date` or `performance` in simulation. |
+| `rt.input` | This step's input: `{actions:{verb:value}, axes:{move:[x,y], look:[x,y]}, held:{verb:true}}`. |
+| `rt.headless` / `rt.view` | `view` exists only in the browser (§6). Simulation must never depend on it. |
+| `rt.step(input)`, `rt.snapshot()`, `rt.restore(s)`, `rt.extend(doc, added)` | Driven by hosts, solvers and the planner. |
+
+**Entities** are plain JSON: `{id, archetype, space, at, zone?, components:{...}}`. Components are keyed by the owning primitive (catalog §0): `health melee ranged ai attacks schedule vehicle mount interact shop container equipment loot level resources status model body`. Continuous spaces keep kinematics in `components.body` = `{size, vel, grounded, facing, layer}`. A primitive owns only its own component and reads others' through their documented fields.
+
+**Determinism rule:** the same document, seed and inputs must give the same `snapshot()`. Tests must assert this.
+
+## 3. Space API
+
+A space's `install()` calls `rt.defineSpace(instance.id, api)`. Its card's `provides.capabilities` (or `capabilities(config)`) lists exactly the capability interfaces it implements, as defined in catalog §1:
+
+| Capability | Methods |
+| --- | --- |
+| `position` | `place remove setPos pos entitiesAt inZone zoneAt teleport nearest` |
+| `distance` | `distance` |
+| `overlap` | `overlap contacts` |
+| `raycast` | `raycast` |
+| `pathfind` | `path` |
+| `reachable` | `reachable canReach` |
+| `editCells` | `getCell setCell fill cellsIn editLog` |
+| `gravity` | `gravityAt slide grounded` |
+| `navigate` | `neighbors canMove move` |
+| `surface` | `groundAt slopeAt waterDepthAt` |
+| `occupancy` | `occupant cellsInRange moveCost coverAt` |
+| `los` | `los visibleFrom` |
+
+- **Kernel-owned spatial vocabulary.** The predicates `zone`, `near` and `cell` and the effects `teleport` and `move_to` are registered by the kernel and dispatch through the subject's space. Spaces must not register them. `move_to` only records intent in `components.moveTo`; movement and AI primitives carry it out.
+- **Zone events.** Spaces emit `enter_zone` / `leave_zone` (typed: `enter_zone:<zone>`) as entities move, and keep `entity.zone` current.
+- **State.** Space state lives in `rt.state.spaces[id]`; cell spaces store generator params plus an edit log.
+- **Adding capabilities.** New capability interfaces (`wrap`, `bounds`, `settle`, `joints`...) may be added. Document their methods in the space's card under `provides.capabilityMethods: {cap: [methods]}` and add a conformance test. Shared names must mean the same thing in every space.
+- **Conformance.** Every space must pass `spaceConformance` from `kernel/testing.js`.
+
+## 4. Generators
+
+`engine.generate.*` instances sit in `spaces[].generators[]` and install after their space, in document order. They write through the space API (`setCell`, `rt.spawn`, zones) or into `rt.state.spaces[id]`, deterministically from `rt.random()` / the doc seed. When a generator guarantees something ("traversable with abilities X", "no dead ends", "every pellet reachable"), it must prove it at generation time and emit a problem list. Services it computes (`roadgraph`, `lotAt`...) go through `rt.provide`.
+
+## 5. Logic vocabulary
+
+- **Predicates** are objects whose first registered key names the kind. Comparators `gte lte gt lt eq ne` apply to numbers.
+- **Effects** are `{do: kind, ...}`.
+- **Kernel built-ins:** `all any not var count flag time zone near cell` and `set_flag clear_flag set_var add_var emit end_game teleport move_to`. Everything else is registered by its owning primitive in `logic()`, as listed in catalog §7.
+- **Scalar state uses vars** (`hp`, `res.stamina`, `money.gold`, `score`...); don't add a predicate for a number.
+- **New vocabulary.** If your primitive needs a kind that's missing, register it in your own `logic()`, add `refs()` for reference checking, and add `check()` for field validation.
+
+## 6. Graphics and hosts
+
+Graphics primitives install only when `!rt.headless`. The browser host (`v2/web/player.js`) passes `view = {container, THREE, act(actions), onFrame(fn(alpha)), input()}`. A renderer:
+- draws entities of the space it is bound to (`instance.space`, default first space), and only while the player is in that space;
+- interpolates with `alpha`;
+- never writes `rt.state`.
+
+UI primitives layer DOM in `.gv-overlay` and send choices through `view.act`. `engine.input.actions` owns the device → verb mapping and sets `view.input`. Renderers read model specs from `content.models` (catalog §5.2) and draw everything procedurally, with no external assets; reuse `v2/art/*`.
+
+## 7. Workstreams and file ownership
+
+Each workstream owns:
+- one registration index, `v2/primitives/<family>/<area>.index.js` (only it edits that file);
+- files named after the primitives it owns, plus helpers prefixed with its area (`gameplay/combat-lib-*.js`);
+- tests named `tests/v2-p-<area>-*.test.js`.
+
+**Shared files.**
+- **Kernel files are frozen.** Do not edit `v2/kernel/*`. Write kernel requests to `v2/kernel/requests/<area>.md`, with a workaround inside your own files.
+- **Example documents.** `v2/games/*.json` may be edited only within the instances (`with`) and data sections your primitives own.
+- **Catalog.** Don't edit `PRIMITIVE_CATALOG.md`. Your cards are regenerated into it.
+
+**Porting kits.** `v2/kits/*` hold mechanics to port, not to call: move their depth (constants, frame data, bots, generators) into primitives. Never import from `v2/kits` or `v2/engine`.
+
+## 8. Testing contract
+
+`kernel/testing.js` provides:
+- `compile(doc, {primitives})` → `{rt, registry, logic, checked}`;
+- `run(rt, n, input)`;
+- `testSpace` (`engine.space.test`), a reference space implementing every capability, so non-space primitives can be tested before real spaces land;
+- `spaceConformance(test, assert, opts)`.
+
+Every primitive needs a test that does all of the following:
+1. preflights a document using it;
+2. exercises its behavior through `rt.step` / effects / events (not internal functions only);
+3. checks deterministic replay;
+4. checks that preflight rejects a bad config with the stable codes it documents;
+5. preflights each of its instances in `v2/games/*.json` with zero param errors.
+
+Keep tests fast (milliseconds; no wall-clock assertions).

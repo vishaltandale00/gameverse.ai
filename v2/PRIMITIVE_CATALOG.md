@@ -24,14 +24,14 @@ A space's `install()` calls `rt.defineSpace(id, api)`; `api` implements exactly 
 
 | Capability | Methods (signature → result) |
 | --- | --- |
-| `position` | `place(e)`; `remove(e)`; `setPos(e, at, rt)`; `pos(e) → At`; `entitiesAt(at) → id[]` |
+| `position` | `place(e, rt)`; `remove(e, rt)`; `setPos(e, at, rt)`; `pos(e) → At`; `entitiesAt(at) → id[]`; `inZone(e, zone, rt) → b`; `zoneAt(at) → zone\|null`; `teleport(e, {zone?, at?}, rt)`; `nearest(e, target, rt) → n\|null` (target = entity id, archetype or zone). The kernel's `zone`/`near`/`cell` predicates and `teleport`/`move_to` effects dispatch through these; spaces never register them |
 | `distance` | `distance(a: At, b: At, metric?: 'euclid'\|'manhattan'\|'path') → n` (graph: hops; units: m for 3D, tiles for 2D) |
 | `overlap` | `overlap(shape, filter?) → id[]`; `contacts(e) → [{id?, cell?, normal}]`. `shape` = `{kind:'aabb'\|'sphere'\|'circle'\|'cone', at, size?, r?, dir?, angle?}` |
 | `raycast` | `raycast(from, dir, maxDist, mask?) → {hit:'cell'\|'entity'\|'none', at, normal, dist, id?, cell?}` |
 | `pathfind` | `path(from, to, {radius?, height?, step?, abilities?, avoid?}) → At[] \| null` (A* over the space's nav representation) |
 | `reachable` | `reachable(from, rt, {abilities?}) → Set<Cell\|ZoneId>`; `canReach(a, b, abilities?) → b` (used by the spatial verifier) |
 | `editCells` | `getCell(at) → blockId`; `setCell(at, blockId, rt, by?) → b` (appends to the edit log `{t,at,from,to,by}`); `fill(box, blockId, rt)`; `cellsIn(box) → [{at,block}]`; `editLog(sinceT?) → entry[]` |
-| `gravity` | `gravityAt(at) → v3`; `move(e, delta, rt) → {moved, blocked:{x,y,z}, grounded, normal?}` (collide-and-slide); `grounded(e) → b` |
+| `gravity` | `gravityAt(at) → v3`; `slide(e, delta, rt) → {moved, blocked:{x,y,z}, grounded, normal?}` (collide-and-slide); `grounded(e) → b` |
 | `navigate` | `neighbors(id) → id[]`; `canMove(e, to, rt) → b`; `move(e, to, rt, {force?}) → b` (discrete, gate-aware) |
 | `surface` | `groundAt(x, z) → {y, normal, material, biome?}`; `slopeAt(x, z) → deg`; `waterDepthAt(x, z) → m` |
 | `occupancy` | `occupant(cell) → id\|null`; `cellsInRange(cell, n, metric, {passable?}) → cell[]`; `moveCost(from, to, e) → n`; `coverAt(cell, dir) → 0\|1\|2` |

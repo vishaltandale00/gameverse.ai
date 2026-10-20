@@ -8,29 +8,45 @@ import { KERNEL_EVENTS } from './world.js';
 export const DOC_SCHEMA = 'gameverse.v2.game/0.2';
 const SLUG = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 
-function buildIndexes(doc, errors) {
+const BASE_DEFINES = [
+  { kind: 'character', at: 'plot.characters' }, { kind: 'quest', at: 'plot.quests' }, { kind: 'ending', at: 'plot.endings' },
+  { kind: 'dialogue', at: 'plot.dialogue' }, { kind: 'item', at: 'content.items' }, { kind: 'recipe', at: 'content.recipes' },
+  { kind: 'archetype', at: 'content.archetypes' }, { kind: 'block', at: 'content.blocks' }, { kind: 'model', at: 'content.models' },
+];
+const get = (obj, path) => path.split('.').reduce((o, k) => o?.[k], obj);
+
+/**
+ * Id indexes for every reference kind. Base kinds are listed above; a primitive
+ * adds its own with card.defines: [{ kind, at: 'doc.path' }] (a list of {id}
+ * or an id-keyed object) or [{ kind, in: 'configKey' }] (a list of {id} in each
+ * of its instances' `with`). Nothing here is specific to any primitive.
+ */
+function buildIndexes(doc, errors, registry, instances) {
   const indexes = Object.fromEntries(REF_KINDS.map(k => [k, new Set()]));
   const add = (kind, id, path) => {
+    indexes[kind] ??= new Set();
     if (typeof id !== 'string' || !SLUG.test(id)) { errors.push({ code: 'id_invalid', path, message: `${kind} id must be a lowercase slug` }); return; }
     if (indexes[kind].has(id)) errors.push({ code: 'id_duplicate', path, message: `duplicate ${kind} id '${id}'` });
     indexes[kind].add(id);
+  };
+  const addAll = (kind, value, path) => {
+    if (Array.isArray(value)) value.forEach((v, i) => add(kind, v?.id, `${path}[${i}].id`));
+    else if (value && typeof value === 'object') Object.keys(value).forEach(id => add(kind, id, `${path}.${id}`));
   };
   (doc.spaces || []).forEach((s, i) => {
     add('space', s.id, `spaces[${i}].id`);
     (s.zones || []).forEach((z, j) => add('zone', z.id, `spaces[${i}].zones[${j}].id`));
   });
-  (doc.plot?.characters || []).forEach((c, i) => add('character', c.id, `plot.characters[${i}].id`));
-  (doc.plot?.quests || []).forEach((q, i) => add('quest', q.id, `plot.quests[${i}].id`));
-  (doc.plot?.endings || []).forEach((e, i) => add('ending', e.id, `plot.endings[${i}].id`));
   (doc.plot?.storyboard?.acts || []).forEach((a, i) => (a.beats || []).forEach((b, j) => add('beat', b.id, `plot.storyboard.acts[${i}].beats[${j}].id`)));
-  Object.keys(doc.plot?.dialogue || {}).forEach(id => add('dialogue', id, `plot.dialogue.${id}`));
-  (doc.content?.items || []).forEach((it, i) => add('item', it.id, `content.items[${i}].id`));
-  (doc.content?.recipes || []).forEach((r, i) => add('recipe', r.id, `content.recipes[${i}].id`));
-  (doc.content?.archetypes || []).forEach((a, i) => add('archetype', a.id, `content.archetypes[${i}].id`));
-  (doc.content?.blocks || []).forEach((b, i) => add('block', b.id, `content.blocks[${i}].id`));
-  Object.keys(doc.content?.models || {}).forEach(id => add('model', id, `content.models.${id}`));
+  const docDefines = [...BASE_DEFINES];
+  for (const id of registry.ids()) for (const d of registry.get(id).card.defines || []) if (d.at && !docDefines.some(x => x.kind === d.kind && x.at === d.at)) docDefines.push(d);
+  for (const d of docDefines) addAll(d.kind, get(doc, d.at), d.at);
+  for (const { inst, path } of instances) for (const d of registry.get(inst?.use)?.card.defines || []) if (d.in) addAll(d.kind, inst.with?.[d.in], `${path}.with.${d.in}`);
   return indexes;
 }
+
+/** True when `name` is provided directly or by a `prefix:*` wildcard. */
+export function provided(set, name) { return set.has(name) || (name.includes(':') && set.has(name.slice(0, name.indexOf(':')) + ':*')); }
 
 export function preflight(doc, registry, logic) {
   const started = performance.now();
@@ -41,7 +57,14 @@ export function preflight(doc, registry, logic) {
   if (typeof doc.title !== 'string' || !doc.title) errors.push({ code: 'schema', path: 'title', message: 'title is required' });
   if (!Array.isArray(doc.spaces) || !doc.spaces.length) errors.push({ code: 'schema', path: 'spaces', message: 'at least one space is required', hint: `space primitives: ${registry.ids('engine').filter(id => id.startsWith('engine.space.')).join(', ') || 'none registered'}` });
 
-  const indexes = buildIndexes(doc, errors);
+  const instances = [];
+  (doc.spaces || []).forEach((s, i) => {
+    instances.push({ inst: s, path: `spaces[${i}]`, family: 'engine.space', space: s.id });
+    (s.generators || []).forEach((g, j) => instances.push({ inst: g, path: `spaces[${i}].generators[${j}]`, family: 'engine.generate', space: s.id }));
+  });
+  (doc.systems || []).forEach((s, i) => instances.push({ inst: s, path: `systems[${i}]`, family: null, space: s.space }));
+  (doc.graphics || []).forEach((g, i) => instances.push({ inst: g, path: `graphics[${i}]`, family: 'graphics', space: g.space }));
+  const indexes = buildIndexes(doc, errors, registry, instances);
   const refs = { flag: { read: new Map(), write: new Map() }, var: { read: new Map(), write: new Map() }, event: { read: new Map(), write: new Map() } };
   const ctx = {
     doc, registry, indexes,
@@ -51,18 +74,11 @@ export function preflight(doc, registry, logic) {
       if (refs[kind]) { const m = refs[kind][mode]; if (!m.has(id)) m.set(id, path); return; }
       if (indexes[kind] && !indexes[kind].has(id)) errors.push({ code: 'ref_unknown', path, message: `unknown ${kind} '${id}'` });
     },
-    provides: { events: new Set(KERNEL_EVENTS), vars: new Set() },
+    provides: { events: new Set(KERNEL_EVENTS), vars: new Set(), services: new Set() },
   };
 
   // Which capabilities each space provides.
   const spaceCaps = new Map();
-  const instances = [];
-  (doc.spaces || []).forEach((s, i) => {
-    instances.push({ inst: s, path: `spaces[${i}]`, family: 'engine.space', space: s.id });
-    (s.generators || []).forEach((g, j) => instances.push({ inst: g, path: `spaces[${i}].generators[${j}]`, family: 'engine.generate', space: s.id }));
-  });
-  (doc.systems || []).forEach((s, i) => instances.push({ inst: s, path: `systems[${i}]`, family: null, space: s.space }));
-  (doc.graphics || []).forEach((g, i) => instances.push({ inst: g, path: `graphics[${i}]`, family: 'graphics', space: g.space }));
 
   const used = new Set();
   const normalized = [];
@@ -76,6 +92,7 @@ export function preflight(doc, registry, logic) {
     if (p.id.startsWith('engine.space.')) spaceCaps.set(inst.id, new Set(p.capabilities ? p.capabilities(config) : p.card.provides.capabilities || []));
     for (const e of p.card.provides.events || []) ctx.provides.events.add(e);
     for (const v of p.card.provides.vars || []) ctx.provides.vars.add(v);
+    for (const v of p.card.provides.services || []) ctx.provides.services.add(v);
     used.add(p.id);
     normalized.push({ ...inst, with: config, _p: p, _path: path, _space: space });
   }
@@ -86,6 +103,7 @@ export function preflight(doc, registry, logic) {
     const missing = (p.card.requires.capabilities || []).filter(c => !caps.has(c));
     if (missing.length) errors.push({ code: 'capability_missing', path: n._path, message: `'${p.id}' needs ${missing.join(', ')} from space '${bound}'`, hint: `space '${bound}' provides: ${[...caps].join(', ') || 'nothing'}` });
     for (const req of p.card.requires.primitives || []) if (![...used].some(id => id === req || id.startsWith(req + '.'))) errors.push({ code: 'requires_unmet', path: n._path, message: `'${p.id}' requires a '${req}' primitive` });
+    for (const sv of p.card.requires.services || []) if (!ctx.provides.services.has(sv)) errors.push({ code: 'service_missing', path: n._path, message: `'${p.id}' needs service '${sv}'`, hint: 'add a primitive whose card provides it' });
     for (const c of p.card.conflicts || []) if (used.has(c)) errors.push({ code: 'primitive_conflict', path: n._path, message: `'${p.id}' conflicts with '${c}'` });
     for (const err of p.validate?.(n.with, doc, ctx) || []) errors.push({ ...err, path: err.path || n._path });
   }
@@ -100,7 +118,7 @@ export function preflight(doc, registry, logic) {
     if (doc.player.space && !indexes.space.has(doc.player.space)) errors.push({ code: 'ref_unknown', path: 'player.space', message: `unknown space '${doc.player.space}'` });
   }
   for (const [id, path] of refs.flag.read) if (!refs.flag.write.has(id)) warnings.push({ code: 'flag_never_set', path, message: `flag '${id}' is read but nothing sets it` });
-  for (const [id, path] of refs.event.read) if (!ctx.provides.events.has(id)) warnings.push({ code: 'event_never_emitted', path, message: `no primitive emits '${id}'` });
+  for (const [id, path] of refs.event.read) if (!provided(ctx.provides.events, id)) warnings.push({ code: 'event_never_emitted', path, message: `no primitive emits '${id}'` });
 
   const ok = !errors.length;
   const out = ok ? { ...doc, spaces: doc.spaces.map((s, i) => ({ ...s, with: normalized.find(n => n._path === `spaces[${i}]`)?.with ?? s.with })),

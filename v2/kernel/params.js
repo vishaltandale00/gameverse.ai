@@ -3,7 +3,10 @@
 // effects, json. Refs are checked against document indexes (character, item,
 // zone, quest, model, archetype, space, beat, ending, recipe).
 
+// Base kinds indexed by the kernel. Primitives add kinds with card.defines
+// (see KERNEL_API.md), so this list never needs editing for a new primitive.
 export const REF_KINDS = ['character', 'item', 'zone', 'quest', 'model', 'archetype', 'space', 'beat', 'ending', 'recipe', 'block', 'dialogue'];
+const NONE = new Set();
 
 /** Validate value against schema; push errors; return the value with defaults applied. */
 export function checkParam(schema, value, path, errors, ctx) {
@@ -27,7 +30,7 @@ export function checkParam(schema, value, path, errors, ctx) {
       return value;
     case 'ref':
       if (typeof value !== 'string') fail('param_type', `must be a ${schema.to} id`);
-      else if (ctx?.indexes && !ctx.indexes[schema.to]?.has(value)) fail('ref_unknown', `unknown ${schema.to} '${value}'`, `defined: ${[...(ctx.indexes[schema.to] || [])].slice(0, 20).join(', ') || 'none'}`);
+      else if (ctx?.indexes && !(ctx.indexes[schema.to] || NONE).has(value)) fail('ref_unknown', `unknown ${schema.to} '${value}'`, `defined: ${[...(ctx.indexes[schema.to] || [])].slice(0, 20).join(', ') || 'none'}`);
       return value;
     case 'list': {
       if (!Array.isArray(value)) { fail('param_type', 'must be a list'); return value; }

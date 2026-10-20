@@ -10,16 +10,6 @@ export default {
     provides: { capabilities: ['position', 'distance', 'navigate', 'reachable'], events: ['enter_zone', 'leave_zone', 'blocked'] },
     reads: [],
   },
-  logic(logic) {
-    logic.predicate('zone', {
-      refs: p => [['zone', p.zone]],
-      test: (p, rt) => (rt.entity(p.who || 'player')?.at) === p.zone,
-    });
-    logic.effect('teleport', {
-      refs: e => [['zone', e.zone]],
-      run: (e, rt) => { const ent = rt.entity(e.who || 'player'); if (ent) rt.space(ent.space).move(ent, e.zone, rt, { force: true }); },
-    });
-  },
   validate(config, doc, ctx) {
     const errors = [];
     doc.spaces.filter(s => s.use === 'engine.space.graph').forEach((s, i) => (s.zones || []).forEach((z, j) => (z.exits || []).forEach((x, k) => {
@@ -41,6 +31,19 @@ export default {
       kind: 'graph', get zones() { return zones(); },
       place(entity) { if (entity.at == null) entity.at = [...zones().keys()][0] ?? null; },
       remove() {},
+      pos: entity => entity.at,
+      setPos(entity, at, rt) { api.move(entity, at, rt, { force: true }); },
+      entitiesAt: at => Object.values(rt.state.entities).filter(e => e.space === instance.id && e.at === at).map(e => e.id),
+      inZone: (entity, zone) => entity.at === zone,
+      zoneAt: at => (zones().has(at) ? at : null),
+      teleport(entity, { zone, at }, rt) { const to = zone ?? at; if (to != null) api.move(entity, to, rt, { force: true }); },
+      /** Hop distance from entity to the nearest matching entity id, archetype or zone; null if none. */
+      nearest(entity, target, rt) {
+        if (zones().has(target)) { const d = api.distance(entity.at, target); return Number.isFinite(d) ? d : null; }
+        let best = null;
+        for (const e of Object.values(rt.state.entities)) if (e !== entity && e.space === instance.id && (e.id === target || e.archetype === target)) { const d = api.distance(entity.at, e.at); if (Number.isFinite(d) && (best === null || d < best)) best = d; }
+        return best;
+      },
       neighbors: id => exitsFrom(id).map(x => x.to),
       canMove(entity, to, rt) { const x = exitsFrom(entity.at).find(e => e.to === to); return Boolean(x) && (!x.gate || rt.test(x.gate)); },
       move(entity, to, rt, { force = false } = {}) {
@@ -61,6 +64,7 @@ export default {
         while (queue.length) for (const x of exitsFrom(queue.shift())) if (!seen.has(x.to) && (!x.gate || rt.test(x.gate))) { seen.add(x.to); queue.push(x.to); }
         return seen;
       },
+      canReach: (a, b, rt) => api.reachable(a, rt).has(b),
     };
     rt.defineSpace(instance.id, api);
     rt.action('go', (to, rt) => { const p = rt.player(); if (p?.space === instance.id) api.move(p, to, rt); });
