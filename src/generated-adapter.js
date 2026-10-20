@@ -1,4 +1,5 @@
-// Hosts a Gameverse v2 generated game (gameverse.v2.game-spec/0.1) in the v1
+// Hosts a Gameverse v2 generated game (gameverse.v2.game-spec/0.1, or a genre-kit
+// game, gameverse.v2.kit-game/0.1) in the v1
 // shell with the same surface as CustomSportsAdapter: load/resume/pause,
 // checkpoint, health, dispose and a control handle. New versions published by
 // the server hot-load in place; state carries over when the level and rules
@@ -7,10 +8,20 @@ import { defaultRegistry } from '/v2/modules/index.js';
 import { preflight } from '/v2/engine/spec.js';
 import { compose, DT, NEUTRAL_INPUT } from '/v2/engine/compose.js';
 import { createRenderer } from '/v2/engine/render2d.js';
+import { loadKit } from '/v2/kits/registry.js';
 import { StandardGamepadInput } from './gamepad.js';
 import { GENERATED_KEYS, generatedInput, encodeCheckpoint, decodeCheckpoint, canCarryState } from './generated-games.js';
 
 const registry = defaultRegistry();
+const KIT_GAME_SCHEMA = 'gameverse.v2.kit-game/0.1';
+const STATUSES = new Set(['playing', 'won', 'lost']);
+/** Kit states are plain JSON with a status and score; anything else can't be saved or carried. */
+function kitCheck(state) {
+  if (!state || !STATUSES.has(state.status)) return ['the game state has no valid status'];
+  if (!Number.isFinite(state.score ?? 0)) return ['the score is not a number'];
+  try { JSON.stringify(state); } catch { return ['the game state is not serializable']; }
+  return [];
+}
 
 export class GeneratedGameAdapter {
   constructor(container, game, onFailure, { onPause, ownsB = () => false, preferredPadIndex = null, onUpdate = () => {}, onEvent = () => {} } = {}) {
@@ -25,20 +36,28 @@ export class GeneratedGameAdapter {
     return data;
   }
   async fetchVersion(version) { return this.fetchJson(`/api/v2/games/${encodeURIComponent(this.game.v2Id)}/v/${version}`); }
-  build(record) {
+  async build(record) {
+    if (record.doc?.schema === KIT_GAME_SCHEMA) {
+      const kit = await loadKit(record.doc.kit);
+      const checked = kit.validate(record.doc.content);
+      if (!checked.ok) throw Error(`Version ${record.version} of this game failed its checks (${checked.errors[0]?.message || 'invalid content'}).`);
+      const made = kit.createGame(checked.content, { seed: record.doc.seed ?? 1 });
+      const game = { createState: () => made.createState(), step: (state, input) => made.step(state, input), check: kitCheck };
+      return { version: record.version, kit, spec: { id: record.doc.id, title: record.doc.title, kit: kit.id, content: record.doc.content }, game, render: kit.createRenderer(made, { art: record.doc.art || {} }) };
+    }
     const checked = preflight(record.doc, registry);
     if (!checked.ok) throw Error(`Version ${record.version} of this game failed its checks (${checked.errors[0]?.message || 'invalid spec'}).`);
     const game = compose(checked.spec, registry);
     return { version: record.version, spec: checked.spec, game, render: createRenderer(game) };
   }
   async load(bytes) {
-    this.current = this.build(await this.fetchVersion(this.game.version));
+    this.current = await this.build(await this.fetchVersion(this.game.version));
     let restarted = false, note = '';
     if (bytes) {
       const saved = decodeCheckpoint(bytes, { gameId: this.game.id, version: this.current.version });
       if (saved.restored) {
         const issues = this.current.game.check(saved.state);
-        if (saved.state.specId !== this.current.spec.id || issues.length) throw Error('This saved moment does not fit its game version. Your earlier progress is retained.');
+        if ((!this.current.kit && saved.state.specId !== this.current.spec.id) || issues.length) throw Error('This saved moment does not fit its game version. Your earlier progress is retained.');
         this.state = saved.state; this.frame = saved.frame;
       } else { restarted = true; note = saved.reason; this.state = this.current.game.createState(); }
     } else this.state = this.current.game.createState();
@@ -70,8 +89,8 @@ export class GeneratedGameAdapter {
         this.previousA = input.a;
         if (restart) { this.keys.delete('KeyR'); this.state = this.current.game.createState(); }
         this.accumulator += elapsed;
-        while (this.accumulator >= DT) { this.current.game.step(this.state, input); this.frame++; this.accumulator -= DT; }
-        this.paint();
+        while (this.accumulator >= DT) { this.current.game.step(this.state, input); this.frame++; this.accumulator -= DT; if (this.current.kit && this.state.events?.length) (this.pending ??= []).push(...this.state.events); }
+        this.paint(elapsed);
       } catch (error) { this.fail(error); }
     };
     this.raf = requestAnimationFrame(animate);
@@ -79,14 +98,17 @@ export class GeneratedGameAdapter {
     this.paint();
     return { frame: this.frame, restarted, note };
   }
-  paint() {
+  paint(dt = 0) {
     if (!this.canvas || this.disposed) return;
     const rect = this.canvas.getBoundingClientRect(), dpr = devicePixelRatio || 1;
     if (!rect.width || !rect.height) return;
     const width = Math.round(rect.width * dpr), height = Math.round(rect.height * dpr);
     if (this.canvas.width !== width || this.canvas.height !== height) { this.canvas.width = width; this.canvas.height = height; }
     this.context.setTransform(dpr, 0, 0, dpr, 0, 0);
-    this.current.render(this.context, this.state, { cssWidth: rect.width, cssHeight: rect.height });
+    // Kit renderers animate from frame time and this frame's events (KIT_CONTRACT.md).
+    const frame = this.current.kit ? { cssWidth: rect.width, cssHeight: rect.height, dt, events: this.pending || [], reducedMotion: !!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches, paused: this.paused, attract: false } : { cssWidth: rect.width, cssHeight: rect.height };
+    this.pending = [];
+    this.current.render(this.context, this.state, frame);
   }
   updateHud() {
     this.canvas.setAttribute('aria-label', `${this.current.spec.title} — generated game, version ${this.current.version}`);
@@ -120,9 +142,10 @@ export class GeneratedGameAdapter {
     if (this.disposed || !(version > (this.loadingVersion || this.current.version))) return;
     this.loadingVersion = version;
     try {
-      const next = this.build(await this.fetchVersion(version));
+      const next = await this.build(await this.fetchVersion(version));
       if (this.disposed || next.version <= this.current.version) return;
-      let carried = canCarryState(this.current.spec, next.spec);
+      // Kit games carry state across versions whose content is unchanged (new art, same rules).
+      let carried = next.kit || this.current.kit ? next.kit === this.current.kit && JSON.stringify(next.spec.content) === JSON.stringify(this.current.spec.content) : canCarryState(this.current.spec, next.spec);
       if (carried) {
         try {
           const probe = structuredClone(this.state);

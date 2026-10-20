@@ -21,7 +21,7 @@ export const isHostedRuntime = game => game?.kind === 'custom-sports' || isGener
 export function generatedCatalogEntries(rows) {
   if (!Array.isArray(rows)) return [];
   return rows
-    .filter(row => row && V2_ID.test(String(row.id)) && Number.isInteger(row.latest) && row.latest >= 1 && row.kind === 'arcade2d')
+    .filter(row => row && V2_ID.test(String(row.id)) && Number.isInteger(row.latest) && row.latest >= 1 && (row.kind === 'arcade2d' || /^kit:[a-z0-9-]+$/.test(String(row.kind))))
     .sort((a, b) => String(a.created || '').localeCompare(String(b.created || '')) || String(a.id).localeCompare(String(b.id)))
     .map(row => ({
       kind: GENERATED_KIND, id: GENERATED_PREFIX + row.id, v2Id: row.id,
