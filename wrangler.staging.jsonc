@@ -4,36 +4,159 @@
   "main": "infra/cloudflare/worker.js",
   "compatibility_date": "2026-10-17",
   "workers_dev": true,
-  "routes": [{ "pattern": "gameverse.build", "custom_domain": true }],
+  "routes": [
+    {
+      "pattern": "gameverse.build",
+      "custom_domain": true
+    }
+  ],
   "preview_urls": false,
   "send_metrics": false,
-  "limits": { "cpu_ms": 100 },
-  "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": true },
+  "limits": {
+    "cpu_ms": 100
+  },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
   "vars": {
     "APP_ENV": "staging",
     "HOST_RECONCILE_MS": "5000",
     "MAX_OBJECT_BYTES": "1048576"
   },
-  "secrets": { "required": ["STAGING_API_TOKEN", "DAYTONA_API_KEY", "ACCOUNT_ID_KEY", "AGENT_CREDENTIAL_KEY", "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_VERIFY_SERVICE_SID", "GAMEVERSE_PILOT_PHONES", "GAMEVERSE_DEVELOPER_PHONES"] },
+  "secrets": {
+    "required": [
+      "STAGING_API_TOKEN",
+      "DAYTONA_API_KEY",
+      "ACCOUNT_ID_KEY",
+      "AGENT_CREDENTIAL_KEY",
+      "TWILIO_ACCOUNT_SID",
+      "TWILIO_AUTH_TOKEN",
+      "TWILIO_VERIFY_SERVICE_SID",
+      "GAMEVERSE_PILOT_PHONES",
+      "GAMEVERSE_DEVELOPER_PHONES"
+    ]
+  },
   "durable_objects": {
     "bindings": [
-      { "name": "PROJECTS", "class_name": "ProjectState" },
-      { "name": "AGENT_CONNECTIONS", "class_name": "AgentConnections" },
-      { "name": "IDENTITY", "class_name": "IdentityState" },
-      { "name": "ACCOUNT_JOBS", "class_name": "AccountJobs" },
-      { "name": "SANDBOX_ADMISSION", "class_name": "SandboxAdmission" },
-      { "name": "DEV_MANAGERS", "class_name": "DevManagerState" },
-      { "name": "HOSTED_VOICE", "class_name": "HostedVoiceState" }
+      {
+        "name": "PROJECTS",
+        "class_name": "ProjectState"
+      },
+      {
+        "name": "AGENT_CONNECTIONS",
+        "class_name": "AgentConnections"
+      },
+      {
+        "name": "IDENTITY",
+        "class_name": "IdentityState"
+      },
+      {
+        "name": "ACCOUNT_JOBS",
+        "class_name": "AccountJobs"
+      },
+      {
+        "name": "SANDBOX_ADMISSION",
+        "class_name": "SandboxAdmission"
+      },
+      {
+        "name": "DEV_MANAGERS",
+        "class_name": "DevManagerState"
+      },
+      {
+        "name": "HOSTED_VOICE",
+        "class_name": "HostedVoiceState"
+      }
     ]
   },
   "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["ProjectState"] },
-    { "tag": "v2", "new_sqlite_classes": ["AgentConnections"] },
-    { "tag": "v3", "new_sqlite_classes": ["IdentityState", "AccountJobs", "SandboxAdmission"] },
-    { "tag": "v4", "new_sqlite_classes": ["DevManagerState"] },
-    { "tag": "v5", "new_sqlite_classes": ["HostedVoiceState"] }
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "ProjectState"
+      ]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": [
+        "AgentConnections"
+      ]
+    },
+    {
+      "tag": "v3",
+      "new_sqlite_classes": [
+        "IdentityState",
+        "AccountJobs",
+        "SandboxAdmission"
+      ]
+    },
+    {
+      "tag": "v4",
+      "new_sqlite_classes": [
+        "DevManagerState"
+      ]
+    },
+    {
+      "tag": "v5",
+      "new_sqlite_classes": [
+        "HostedVoiceState"
+      ]
+    }
   ],
   "r2_buckets": [
-    { "binding": "ARTIFACTS", "bucket_name": "gameverse-artifacts-staging", "remote": false }
-  ]
+    {
+      "binding": "ARTIFACTS",
+      "bucket_name": "gameverse-artifacts-staging",
+      "remote": false
+    }
+  ],
+  "previews": {
+    "vars": {
+      "APP_ENV": "preview",
+      "HOST_RECONCILE_MS": "5000",
+      "MAX_OBJECT_BYTES": "1048576",
+      "HOSTED_VOICE_ENABLED": "1",
+      "HOSTED_VOICE_BROKER_URL": "https://pr27-gameverse-host-staging.gameverse-environment.workers.dev",
+      "HOSTED_VOICE_POLICY": "{\"wall_ms\":120000,\"model_calls\":30,\"account_active\":1,\"platform_active\":2,\"daily_jobs\":3}"
+    },
+    "durable_objects": {
+      "bindings": [
+        {
+          "name": "PROJECTS",
+          "class_name": "ProjectState"
+        },
+        {
+          "name": "AGENT_CONNECTIONS",
+          "class_name": "AgentConnections"
+        },
+        {
+          "name": "IDENTITY",
+          "class_name": "IdentityState"
+        },
+        {
+          "name": "ACCOUNT_JOBS",
+          "class_name": "AccountJobs"
+        },
+        {
+          "name": "SANDBOX_ADMISSION",
+          "class_name": "SandboxAdmission"
+        },
+        {
+          "name": "DEV_MANAGERS",
+          "class_name": "DevManagerState"
+        },
+        {
+          "name": "HOSTED_VOICE",
+          "class_name": "HostedVoiceState"
+        }
+      ]
+    },
+    "r2_buckets": [
+      {
+        "binding": "ARTIFACTS",
+        "bucket_name": "gameverse-artifacts-pr27"
+      }
+    ]
+  }
 }

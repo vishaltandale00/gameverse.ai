@@ -1,3 +1,4 @@
+import {trustedGameverseOrigin} from '../../src/hosted-origins.js';
 import {DurableObject} from 'cloudflare:workers';
 import {HostedVoiceHistory} from './hosted-voice-history.js';
 import {HostedVoiceCore} from '../../scripts/dev-manager/hosted-voice-core.js';
@@ -36,5 +37,5 @@ export class HostedVoiceState extends DurableObject {
       await dispatcher.advance();
     }catch(error){this.core.state.recovery_reason=/^[a-z0-9_]{1,80}$/.test(error.message)?error.message:'voice_recovery_unavailable';this.core.commit();}
   }
-  broker(t){const base=this.env.HOSTED_VOICE_BROKER_URL||'https://gameverse.build',url=new URL(base);assert(url.origin==='https://gameverse.build'||this.env.APP_ENV==='test'&&url.protocol==='http:'&&url.hostname==='127.0.0.1','untrusted_voice_broker');return new URL(`/api/browser-voice/worker/${t.id}?executor=hosted-api-key&account=${encodeURIComponent(t.owner)}`,base).href;}
+  broker(t){const base=this.env.HOSTED_VOICE_BROKER_URL||'https://gameverse.build',url=new URL(base);assert(trustedGameverseOrigin(url,{allowLoopback:this.env.APP_ENV==='test'}),'untrusted_voice_broker');return new URL(`/api/browser-voice/worker/${t.id}?executor=hosted-api-key&account=${encodeURIComponent(t.owner)}`,base).href;}
 }
