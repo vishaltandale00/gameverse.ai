@@ -158,3 +158,14 @@ test('match: preflight rejects bad configs with stable codes', () => {
   assert.ok(codes({ rule: 'diagonal' }).includes('param_option'));
   assert.ok(codes({ board: { size: [5, 5], fall: 0 } }).includes('board_fall'));
 });
+
+test('match: an L-shaped group makes an area bomb; items are collected at the bottom', () => {
+  const layout = ['23423', '42342', '34124', '23142', '11314'];
+  const { rt } = compile(swapDoc({ layout, clearFrames: 0, settleFrames: 0, swapFrames: 0, items: { token: 'item', target: 1, chance: 0 } }), { primitives: PRIMS });
+  rt.space('b').setCell([4, 0, 0], 'item', rt);
+  rt.step({ actions: { swap: { a: [3, 4], b: [2, 4] } } });
+  settleAll(rt);
+  assert.equal(rt.state.counts['special_created:area'], 1, 'L/T groups make an area bomb');
+  assert.equal(rt.state.counts.collected, 1, 'the item at the bottom was collected');
+  assert.equal(rt.state.vars['match.items'], 1);
+});

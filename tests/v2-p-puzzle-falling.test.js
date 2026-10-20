@@ -200,3 +200,12 @@ test('falling: preflight rejects bad configs with stable codes', () => {
   const r = preflight({ ...doc(), spaces: [{ id: 'well', use: 'engine.space.flat' }] }, reg2, buildLogic(reg2, Logic));
   assert.ok(r.errors.some(e => e.code === 'capability_missing'));
 });
+
+test('falling: fall = +1 makes pieces rise into the top of a y-up space (breakout walls)', () => {
+  const { rt } = compile(doc({ board: { name: 'board', at: [0, 0, 0], size: [3, 4], axes: [0, 1], fall: 1 }, hidden: 0, sets: ['small'], clearRows: 'none', scoring: 'none', onTopOut: [] }, { size: [3, 4, 1] }), { primitives: PRIMS });
+  rt.step();
+  st(rt).piece = { t: 0, r: 0, x: 1, y: -1, id: 7 };
+  rt.step({ actions: { place: { r: 0, x: 1 } } });
+  assert.ok(cell(rt, 1, 3), 'landed against the top edge');
+  assert.equal(cell(rt, 1, 0), null);
+});

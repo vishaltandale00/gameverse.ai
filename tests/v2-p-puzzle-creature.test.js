@@ -211,3 +211,16 @@ test('creature: preflight rejects bad data and configs with stable codes', () =>
   const noParty = doc(); noParty.systems.splice(1, 1);
   assert.ok(codes(noParty).includes('requires_unmet'));
 });
+
+test('creature battle: stat-stage moves change stages; switching resets them', () => {
+  const { rt } = compile(doc({ start: [{ species: 'sprout', level: 8 }, { species: 'ember_pup', level: 8 }] }), { primitives: PRIMS });
+  rt.run([{ do: 'start_battle', foe: [{ species: 'mote', level: 30 }] }]);
+  rt.step({ actions: { battle: { kind: 'move', index: 1 } } }); // growl
+  const b = BT(rt).battle;
+  assert.equal(b.foe.stages.atk, -1, 'growl lowered the foe attack');
+  assert.equal(b.player.stages.atk, -1, 'the foe growled back');
+  rt.step({ actions: { battle: { kind: 'switch', index: 1 } } });
+  assert.equal(BT(rt).battle.player.active, 1);
+  assert.ok(BT(rt).battle.player.stages.atk >= -1, 'fresh stages after the switch');
+  assert.ok(rt.state.events.some(e => e.name === 'battle_log' && e.type === 'switch'));
+});
