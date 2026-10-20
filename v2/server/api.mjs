@@ -7,6 +7,8 @@ import { createStore, hashOf } from './store.js';
 import { createJobs, streamEvents } from './jobs.js';
 import { createPipeline, verify } from '../planner/pipeline.js';
 import { createOfflinePlanner } from '../planner/offline-planner.js';
+import { createArcadePipeline } from '../planner/arcade-pipeline.js';
+import { createOpenAIClient, loadOpenAIKey } from '../planner/openai.js';
 
 const slug = text => (text.toLowerCase().match(/[a-z0-9]+/g) || ['game']).slice(0, 5).join('-').slice(0, 40);
 
@@ -17,10 +19,15 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
   const active = planner || offline;
   if (active !== offline && !active.fallback) active.fallback = offline;
   const store = createStore(root);
-  const jobs = createJobs({ store, pipeline: createPipeline({ registry, logic, planner: active, catalogHash }) });
+  // With an OpenAI key, ideas become model-generated, playtested 2D games.
+  const openaiKey = loadOpenAIKey(env, fileURLToPath(new URL('../../', import.meta.url)));
+  const specModel = env.V2_OPENAI_SPEC_MODEL || 'gpt-6-luna';
+  const pipeline = openaiKey ? createArcadePipeline({ client: createOpenAIClient({ apiKey: openaiKey }), model: specModel }) : createPipeline({ registry, logic, planner: active, catalogHash });
+  const plannerName = openaiKey ? `openai:${specModel}` : active.version;
+  const jobs = createJobs({ store, pipeline });
 
   const routes = [
-    ['GET', /^\/api\/v2\/catalog$/, async () => ({ catalogHash, primitives: registry.cards(), planner: active.version })],
+    ['GET', /^\/api\/v2\/catalog$/, async () => ({ catalogHash, primitives: registry.cards(), planner: plannerName })],
     ['GET', /^\/api\/v2\/games$/, async () => ({ games: await store.list(), running: jobs.running() })],
     ['POST', /^\/api\/v2\/games$/, async body => {
       const prompt = String(body?.prompt || '').trim();

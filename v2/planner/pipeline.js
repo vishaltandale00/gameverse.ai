@@ -50,7 +50,8 @@ export function createPipeline({ registry, logic, planner, catalogHash, detailCo
     if (!checked.ok) throw Object.assign(Error('could not produce a valid game'), { report: checked.report });
     ctx.stage('verified', { completable: checked.report.solve?.completable ?? null, ms: checked.report.ms });
     let current = checked.doc;
-    await ctx.publish({ doc: current, report: checked.report, stage: 'first_playable', provenance: provenance(job, { outlineHash: hashOf(current) }, current) });
+    if (outline.sample) await ctx.store.updateMeta(job.gameId, { sample: true, notice: outline.notice, title: current.title });
+    await ctx.publish({ doc: current, report: { ...checked.report, ...(outline.sample ? { sample: true, notice: outline.notice } : {}) }, stage: 'first_playable', provenance: provenance(job, { outlineHash: hashOf(current) }, current) });
 
     // Stage 2: detail tasks in parallel; patches merge and publish in completion order.
     const tasks = [...(outline.details || [])];

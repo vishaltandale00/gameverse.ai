@@ -2,6 +2,8 @@
 // watch it build. Subscribes to /api/v2/events; new versions hot-load into
 // the running game and the library/timeline update without a reload.
 import { mountGame } from '/v2/web/player.js';
+import { mountArcade } from '/v2/web/arcade-player.js';
+const mount = (el, record) => record.doc?.schema === 'gameverse.v2.game-spec/0.1' ? mountArcade(el, record) : mountGame(el, record);
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -16,7 +18,7 @@ function toast(text) { const t = document.createElement('div'); t.className = 't
 
 async function refreshLibrary() {
   ({ games } = await api('/api/v2/games'));
-  $('#games').innerHTML = games.map(g => `<li><a href="#${g.id}" ${g.id === selected ? 'aria-current="page"' : ''}><span class="dot ${g.status}"></span>${esc(g.title)}<small>${g.versions} version${g.versions === 1 ? '' : 's'} · ${esc(g.status)}</small></a></li>`).join('') || '<li class="muted">No games yet.</li>';
+  $('#games').innerHTML = games.map(g => `<li><a href="#${g.id}" ${g.id === selected ? 'aria-current="page"' : ''}><span class="dot ${g.status}"></span>${esc(g.title)}<small>${g.sample ? 'sample · ' : ''}${g.versions} version${g.versions === 1 ? '' : 's'} · ${esc(g.status)}</small></a></li>`).join('') || '<li class="muted">No games yet.</li>';
 }
 
 function renderInspector(record) {
@@ -24,7 +26,19 @@ function renderInspector(record) {
   const steps = timeline.get(selected) || [];
   $('#timeline').innerHTML = steps.map(s => `<li><b>${esc(s.label)}</b><span>${s.ms != null ? (s.ms / 1000).toFixed(1) + ' s' : ''}</span></li>`).join('') || '<li>Waiting for events…</li>';
   if (!record) { $('#checks').innerHTML = ''; return; }
-  const r = record.report || {}, solve = r.solve || {};
+  const r = record.report || {}, solve = r.solve || {}, pt = r.playtest;
+  if (pt) {
+    $('#checks').innerHTML = [
+      `<div class="${r.verified ? 'ok' : 'warn'}">${r.verified ? 'Playtested and winnable' : 'Playable, not proven winnable'}${pt.win ? ` — the test player won in ${pt.win.seconds} s of play` : ''}</div>`,
+      `<div class="muted">Explored ${pt.explored} places, ${Math.round(pt.simulatedSeconds)} s of play in ${pt.wallMs} ms</div>`,
+      ...(pt.issues || []).map(i => `<div class="${i.severity === 'error' ? 'bad' : 'warn'}">${esc(i.message)}</div>`),
+      r.repairs ? `<div class="muted">Fixed automatically after ${r.repairs} check${r.repairs === 1 ? '' : 's'}</div>` : '',
+      r.summary ? `<div>${esc(r.summary)}</div>` : '',
+      ...(r.gaps || []).map(g => `<div class="warn">Not yet possible: ${esc(g.capability)}</div>`),
+      `<div class="muted">v${record.version} · ${esc(record.provenance?.model || '')} · seed ${esc(record.provenance?.seed ?? '')} · ${record.docHash?.slice(0, 10)} · model ${((r.modelMs || 0) / 1000).toFixed(1)} s</div>`,
+    ].join('');
+    return;
+  }
   $('#checks').innerHTML = [
     `<div class="${r.preflight?.ok ? 'ok' : 'bad'}">Preflight ${r.preflight?.ok ? 'passed' : 'failed'} in ${r.preflight?.ms ?? '?'} ms</div>`,
     solve.completable != null ? `<div class="${solve.completable ? 'ok' : 'bad'}">${solve.completable ? `Completable: ${Object.keys(solve.endings || {}).length} ending(s) reachable` : 'Not completable yet'} (${solve.states} states)</div>` : '',
@@ -42,8 +56,8 @@ async function select(id) {
   if (!selected) { $('#stage').innerHTML = '<section class="empty"><h1>Describe a game.</h1><p>It\'s playable in seconds, and keeps growing while you play.</p></section>'; renderInspector(null); return; }
   const { meta, latest } = await api(`/api/v2/games/${selected}`);
   if (token !== selecting) return;
-  $('#stage').innerHTML = `<header class="game-head"><h1>${esc(meta.title)}</h1><span>${esc(meta.prompt)}</span></header><div class="game" id="game"></div>`;
-  if (latest) { player = mountGame($('#game'), latest); }
+  $('#stage').innerHTML = `<header class="game-head"><h1>${esc(meta.title)}</h1><span>${esc(meta.prompt)}</span></header>${meta.sample ? `<p class="notice">${esc(meta.notice)}</p>` : ''}<div class="game" id="game"></div>`;
+  if (latest) { player = mount($('#game'), latest); }
   else $('#game').innerHTML = '<section class="empty"><h1>Building…</h1><p>The first playable version appears here automatically.</p></section>';
   renderInspector(latest);
 }
@@ -56,7 +70,7 @@ events.addEventListener('version', async ev => {
   refreshLibrary();
   if (e.gameId !== selected) { toast(`A game you made has a new version (v${e.version}).`); return; }
   const record = await api(`/api/v2/games/${e.gameId}/v/${e.version}`);
-  if (!player) { if (!$('#game')) return select(e.gameId); $('#game').innerHTML = ''; player = mountGame($('#game'), record); toast('Your game is playable.'); }
+  if (!player) { if (!$('#game')) return select(e.gameId); $('#game').innerHTML = ''; player = mount($('#game'), record); toast('Your game is playable.'); }
   else if (player.update(record)) toast(`New content loaded (v${e.version}).`);
   renderInspector(record);
 });

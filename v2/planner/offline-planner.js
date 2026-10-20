@@ -19,16 +19,16 @@ function relevance(prompt, doc) {
 
 export function createOfflinePlanner({ library = loadLibrary(), usable = () => true } = {}) {
   return {
-    version: 'offline/0.1', repairs: 0,
+    version: 'offline/0.2', repairs: 0,
     async outline(job) {
       const candidates = library.filter(usable);
       if (!candidates.length) throw Error('no usable example games in the library');
       const base = [...candidates].sort((a, b) => relevance(job.prompt, b) - relevance(job.prompt, a) || a.id.localeCompare(b.id))[0];
+      // Offline mode does not generate: it serves the closest sample game,
+      // unrenamed, and says so. Only the seed varies, for procedural spaces.
       const doc = structuredClone(base);
-      const title = words(job.prompt).slice(0, 4).join(' ');
-      if (title) doc.title = title.replace(/\b[a-z]/g, c => c.toUpperCase());
       doc.seed = job.seed ?? seedFrom(job.prompt);
-      return { doc, details: [], basedOn: base.id };
+      return { doc, details: [], basedOn: base.id, sample: true, notice: `No model is connected, so this is the sample game “${base.title}”, not a generated one. Set ANTHROPIC_API_KEY to generate games.` };
     },
     async repair(result) { return result; },
     async detail() { return {}; },
