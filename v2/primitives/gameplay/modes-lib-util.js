@@ -125,3 +125,20 @@ export function withDefaults(fields, value = {}) { return checkFields(fields, va
 export const footOffset = (api, e) => (api?.anchor === 'center' ? (e.components?.body?.size?.[1] ?? 1) / 2 : 0);
 /** Position that puts an entity in a cell, honoring the space anchor ('center' -> cell centre). */
 export const cellPos = (api, cell) => (api?.anchor === 'center' ? cell.map(c => c + 0.5) : cell.slice());
+
+/**
+ * The kernel keeps one modal. Modes nest (a turn battle inside a minigame), so a mode opening a modal
+ * over another one merges the outer actions in and restores the outer modal when it closes.
+ * `slot` is the mode's own JSON store.
+ */
+export function pushModal(rt, slot, owner, actions, kind = owner) {
+  const outer = rt.modal && rt.modal.owner !== owner ? structuredClone(rt.modal) : null;
+  slot.outerModal = outer;
+  rt.openModal(owner, { actions: [...new Set([...actions, ...(outer?.actions || [])])], kind });
+}
+export function popModal(rt, slot, owner) {
+  if (rt.modal?.owner !== owner) return;
+  const outer = slot.outerModal; slot.outerModal = null;
+  rt.closeModal(owner);
+  if (outer) rt.openModal(outer.owner, { actions: outer.actions, kind: outer.kind });
+}

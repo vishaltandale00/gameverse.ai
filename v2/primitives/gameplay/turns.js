@@ -15,7 +15,7 @@
 // unit's space offers them, so the same primitive runs on a grid, a mesh or
 // engine.space.none.
 import { compare } from '../../kernel/logic.js';
-import { withDefaults, alive, hpOf, matchesAny, sortedEntities, has, spaceOf, dist, clamp, err, runBound, cellKey, bindRoles } from './modes-lib-util.js';
+import { pushModal, popModal, withDefaults, alive, hpOf, matchesAny, sortedEntities, has, spaceOf, dist, clamp, err, runBound, cellKey, bindRoles } from './modes-lib-util.js';
 
 const ID = 'gameplay.turns';
 const DEFAULT_SIDES = [{ id: 'player', control: 'player', members: ['player'] }, { id: 'enemy', control: 'ai', members: [] }];
@@ -81,8 +81,12 @@ export default {
   },
   logic(logic) {
     logic.predicate('turn', {
+      check: (p, path, errors) => { if (p.state !== undefined && !['active', 'over'].includes(p.state)) errors.push(err('turn_state', `${path}.state`, 'state must be active|over')); },
       test: (p, rt) => {
-        const s = rt.state.prim[ID]; if (!s?.active) return false;
+        const s = rt.state.prim[ID];
+        if (p.state === 'over') return Boolean(s) && !s.active && (s.round ?? 0) > 0 && (p.winner === undefined || s.winner === p.winner);
+        if (p.state === 'active') return Boolean(s?.active);
+        if (!s?.active) return false;
         if (p.round !== undefined) return compare(s.round, p.round);
         const who = p.turn === true ? 'player' : p.turn;
         const side = s.units[who]?.side;
@@ -159,7 +163,7 @@ export default {
     function stop(s, winner) {
       if (!s.active) return;
       s.active = false; s.winner = winner; s.current = null;
-      if (config.modal) rt.closeModal(ID);
+      if (config.modal) popModal(rt, s, ID);
       rt.emit('turns_over', { winner });
       const playerSides = config.sides.filter(x => x.control === 'player').map(x => x.id);
       if (winner && playerSides.includes(winner)) rt.run(config.onVictory);
@@ -170,7 +174,7 @@ export default {
     function start(s) {
       if (s.active) return;
       s.active = true; s.round = 0; s.defeated = {}; s.winner = null; s.ptr = {}; s.decisions = 0;
-      if (config.modal) rt.openModal(ID, { actions: [...TURN_VERBS, ...modalExtra(rt)], kind: 'battle' });
+      if (config.modal) pushModal(rt, s, ID, [...TURN_VERBS, ...modalExtra(rt)], 'battle');
       gather(s);
       rt.emit('turns_start', { sides: config.sides.map(x => x.id), order: config.order });
       roundStart(s);

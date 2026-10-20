@@ -11,7 +11,7 @@
 // stay with gameplay.combat.health: unblocked damage runs its `damage` effect.
 import { compare } from '../../kernel/logic.js';
 import { allowInTurnModal } from './turns.js';
-import { alive, sortedEntities, err, runBound, bindRoles, matchesAny } from './modes-lib-util.js';
+import { pushModal, popModal, alive, sortedEntities, err, runBound, bindRoles, matchesAny } from './modes-lib-util.js';
 
 const ID = 'gameplay.cards';
 const TYPES = ['attack', 'skill', 'power', 'minion', 'spell', 'curse', 'status'];
@@ -285,7 +285,7 @@ export default {
         const pool = config.rewards.pool.slice(); s.reward = [];
         while (s.reward.length < config.rewards.choices && pool.length) s.reward.push(pool.splice(Math.floor(rt.random() * pool.length), 1)[0]);
         rt.emit('card_reward', { choices: s.reward.slice() });
-        rt.openModal(ID, { actions: ['pick_card'], kind: 'card_reward' });
+        pushModal(rt, s, ID, ['pick_card'], 'card_reward');
       }
     });
 
@@ -296,7 +296,7 @@ export default {
       const s = st(); if (!s.reward) return;
       const card = typeof v === 'number' ? s.reward[v - 1] : s.reward.includes(v) ? v : null; // ids, or 1-based index ('skip' takes nothing)
       if (card) { s.deck.push({ card }); rt.emit('card_picked', { card }); }
-      s.reward = null; rt.closeModal(ID);
+      s.reward = null; popModal(rt, s, ID);
     });
 
     rt.system('rules', rt => {

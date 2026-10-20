@@ -84,7 +84,20 @@ export function moveVehicle(rt, v, api, plane, d, dt, { stepUp = 1.05, gravity =
     const res = api.slide(v, flat, rt);
     out.blockedU = Boolean(res.blocked?.x);
     out.blockedW = Boolean(plane === 'xz' ? res.blocked?.z : res.blocked?.y);
-  } else api.setPos(v, at.map((x, i) => r6(x + (delta[i] ?? 0))), rt);
+  } else {
+    // No collide-and-slide: probe each horizontal axis with a ray so walls still stop the vehicle.
+    const d = delta.slice();
+    if (has(api, 'raycast')) {
+      const size = v.components.body?.size || at.map(() => 1), c = api.anchor === 'min' ? at.map((x, i) => x + (size[i] ?? 1) / 2) : at;
+      for (const [i, key] of plane === 'xz' ? [[0, 'blockedU'], [2, 'blockedW']] : [[0, 'blockedU'], [1, 'blockedW']]) {
+        if (!d[i]) continue;
+        const dir = at.map((_, j) => (j === i ? Math.sign(d[i]) : 0)), reach = Math.abs(d[i]) + (size[i] ?? 1) / 2;
+        const hit = api.raycast(c, dir, reach);
+        if (hit && hit.hit === 'cell' && hit.dist < reach) { d[i] = 0; out[key] = true; }
+      }
+    }
+    api.setPos(v, at.map((x, i) => r6(x + (d[i] ?? 0))), rt);
+  }
   if (Array.isArray(v.at)) v.at = v.at.map(r6);
   return out;
 }

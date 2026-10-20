@@ -11,7 +11,7 @@
 //  - custom: other primitives play it; win/lose predicates decide.
 // The kernel has no system-level pause (requested in v2/kernel/requests/modes.md).
 import { compare } from '../../kernel/logic.js';
-import { err, runBound, r6, sortedEntities } from './modes-lib-util.js';
+import { pushModal, popModal, err, runBound, r6, sortedEntities } from './modes-lib-util.js';
 
 const ID = 'gameplay.minigame';
 const KINDS = ['custom', 'timing', 'sequence', 'mash'];
@@ -91,7 +91,7 @@ export default {
       if (g.kind === 'mash') a.meter = 0;
       s.plays[id] = (s.plays[id] ?? 0) + 1;
       rt.state.flags.paused = Boolean(g.freeze);
-      rt.openModal(ID, { actions: ['mg_press', 'mg_input', 'mg_quit'], kind: 'minigame' });
+      pushModal(rt, s, ID, ['mg_press', 'mg_input', 'mg_quit'], 'minigame');
       rt.emitTyped('minigame_start', id, { game: id, kind: g.kind, keys: a.keys ?? null });
       runBound(rt, g.onStart, { actor: 'player' });
     }
@@ -101,7 +101,7 @@ export default {
       s.active = null; s.results[a.game] = result; s.last = result;
       if (a.frozen) thaw(a);
       if (p && g.returnPlayer && a.ret) { if (p.space !== a.ret.space) rt.moveToSpace(p, a.ret.space, a.ret.at); else rt.space(p.space).setPos(p, a.ret.at, rt); }
-      delete rt.state.flags.paused; rt.closeModal(ID);
+      delete rt.state.flags.paused; popModal(rt, s, ID);
       rt.emitTyped('minigame_end', a.game, { game: a.game, result, hits: a.hits, misses: a.misses });
       runBound(rt, result === 'won' ? g.onWin : result === 'lost' ? g.onLose : [], { actor: 'player' });
       runBound(rt, g.onEnd, { actor: 'player' });
