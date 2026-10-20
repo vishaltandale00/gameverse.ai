@@ -4,6 +4,7 @@
 import { catalogue } from '/v2/primitives/index.js';
 import { preflight, mergePatch } from '/v2/kernel/document.js';
 import { createWorld, DT } from '/v2/kernel/world.js';
+import * as THREE from '/runtime/three/three.module.js';
 
 const DEFAULT_GRAPHICS = { 'engine.space.graph': [{ use: 'graphics.ui.story' }] };
 
@@ -15,16 +16,21 @@ export function mountGame(container, record, { onState } = {}) {
   const checked = preflight(doc, registry, logic);
   if (!checked.ok) throw Object.assign(Error('This version failed checks in the browser.'), { errors: checked.errors });
   container.replaceChildren();
+  container.classList.add('gv-view'); // position: relative; renderers layer children, UI uses .gv-overlay
   const frames = [], pending = [];
   // Input is applied on the next step even if the display loop is throttled.
-  const view = { container, act: actions => { pending.push(actions); queueMicrotask(() => tick(performance.now(), true)); }, onFrame: fn => frames.push(fn) };
+  // input(): set by engine.input.actions -> { actions, axes: { move: [x, y], look: [x, y] }, held }.
+  const view = { container, THREE, act: actions => { pending.push(actions); queueMicrotask(() => tick(performance.now(), true)); }, onFrame: fn => frames.push(fn), input: null };
   const rt = createWorld(checked.doc, registry, logic, { headless: false, view });
   let last = performance.now(), acc = 0, raf = 0, version = record.version, disposed = false;
   function tick(now, force = false) {
     if (disposed) return;
     acc = Math.min(acc + (now - last) / 1000, 0.25); last = now;
     if (force && acc < DT) acc = DT;
-    while (acc >= DT) { rt.step({ actions: pending.shift() || {}, ...(view.input?.() || {}) }); acc -= DT; }
+    while (acc >= DT) {
+      const live = view.input?.() || {};
+      rt.step({ ...live, actions: { ...(live.actions || {}), ...(pending.shift() || {}) } }); acc -= DT;
+    }
     for (const fn of frames) fn(acc / DT);
     onState?.(rt.state);
   }
