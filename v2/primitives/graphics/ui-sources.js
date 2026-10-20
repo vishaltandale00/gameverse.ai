@@ -17,7 +17,7 @@
 //   journal    service journal.known(id) | predicate known{entry} over plot.entries (story)
 //   turns      service turns.view(); verbs turn_act/end_turn                       (modes)
 //   cards      service cards.view(owner); verbs play_card/end_turn                 (modes)
-//   battle     service battle.view(); verb battle                                  (creature battle)
+//   battle     service battle.view() | gameplay.creature.battle store + battle options (puzzle)
 //   input      service input.glyph(verb) / device()                                (runtime)
 //   save       service save.slots(); actions save_game/load_game                  (runtime)
 import { docSystem } from './ui-lib.js';
@@ -34,10 +34,10 @@ export function svc(rt, name, method, ...args) {
 }
 /** Predicate test that is false (not a crash) when the vocabulary is not registered. */
 export function safeTest(rt, pred) {
-  const kind = rt.logic?.kindOf?.(pred); if (!kind) return false;
+  const kind = rt.logic?.kindOf?.(pred); if (!kind || (rt.canTest && !rt.canTest(kind))) return false; // owner must be installed (KERNEL_API vocabulary rules)
   try { return Boolean(rt.test(pred)); } catch { return false; }
 }
-export const hasPredicate = (rt, kind) => Boolean(rt.logic?.predicates?.has?.(kind));
+export const hasPredicate = (rt, kind) => (rt.canTest ? rt.canTest(kind) : Boolean(rt.logic?.predicates?.has?.(kind)));
 
 // ---------------------------------------------------------------- items
 export function bag(rt, who = 'player') {
@@ -144,9 +144,24 @@ export const discovered = (rt, zone, visited) => count(rt, `discovered:${zone}`)
 export function battleView(rt) {
   const b = svc(rt, 'battle', 'view');
   if (b?.active) return { source: 'battle', ...b };
+  const cb = rt.has?.('gameplay.creature.battle') && rt.state.prim['gameplay.creature.battle']?.battle;
+  if (cb && !cb.over) return { source: 'options', ...fromCreatureBattle(rt, cb) };
   const t = svc(rt, 'turns', 'view');
   if (t?.active) return { source: 'turns', ...fromTurns(rt, t) };
   return null;
+}
+/**
+ * gameplay.creature.battle has no view service yet: read its documented store for the two active
+ * creatures, and build the command menu from the solver options that use the `battle` verb, so
+ * every legal answer is offered and sent exactly as the primitive defines it.
+ */
+function fromCreatureBattle(rt, b) {
+  const unit = (side, c, i, active) => { const max = svc(rt, 'creatures', 'stats', c)?.hp ?? c.maxHp ?? c.hp; const sp = rt.doc.content?.species?.find?.(x => x.id === c.species); return { id: `${side}:${c.uid ?? i}`, name: c.name || sp?.name || c.species, model: sp?.model || c.species, hp: c.hp, hpMax: max || 1, level: c.level, status: c.status ? [c.status] : [], active, down: c.hp <= 0 }; };
+  const me = b.player.party[b.player.active], foe = b.foe.party[b.foe.active];
+  const opts = rt.availableOptions().filter(o => o.actions?.battle);
+  const pretty = o => { const v = o.actions.battle; if (v.kind === 'move') { const m = me?.moves?.[v.index]; const def = rt.doc.content?.moves?.find?.(x => x.id === m?.id); return { label: def?.name || String(m?.id || o.label.replace(/^use /, '')).replace(/[_-]+/g, ' ').replace(/^./, x => x.toUpperCase()), pp: m?.pp, ppMax: def?.pp, type: def?.type }; } if (v.kind === 'item') return { label: rt.doc.content?.items?.find(x => x.id === v.item)?.name || o.label }; if (v.kind === 'switch') return { label: `Send ${b.player.party[v.index]?.name || o.label}` }; if (v.kind === 'run') return { label: 'Run' }; return { label: o.label }; };
+  return { active: true, turn: 'player', sides: [{ id: 'player', player: true, units: me ? [unit('player', me, b.player.active, true)] : [] }, { id: 'foe', units: foe ? [unit('foe', foe, b.foe.active, false)] : [] }],
+    menu: opts.map(o => ({ id: o.label, kind: o.actions.battle.kind === 'learn' ? 'move' : o.actions.battle.kind, enabled: true, action: o.actions, target: 'none', ...pretty(o) })) };
 }
 /** Map gameplay.turns' view onto the battle view shape. */
 function fromTurns(rt, t) {

@@ -87,7 +87,10 @@ export function createUiInput(host) {
 
   const top = () => layers[layers.length - 1] || null;
   const modal = () => layers.some(l => l.modal);
-  const sync = () => { view.modal = modal() ? top().id : null; host.root.classList.toggle('gv-modal-open', modal()); };
+  // view.modal mirrors both UI modal layers and the simulation's modal (rt.modal), so the input
+  // primitive, the UI and the simulation agree on who owns input.
+  const uiModal = () => [...layers].reverse().find(l => l.modal)?.id || null;
+  const sync = () => { view.modal = uiModal() || (rt.modal ? `sim:${rt.modal.owner}` : null); host.root.classList.toggle('gv-modal-open', Boolean(uiModal())); };
 
   function dispatch(verb, info = {}) {
     for (let i = layers.length - 1; i >= 0; i--) {
@@ -123,6 +126,7 @@ export function createUiInput(host) {
     get device() { return device; },
     get modal() { return modal(); },
     get top() { return top()?.id || null; },
+    sync,
     /** Open a layer: { id, modal, takesInput?, onVerb(verb, info) }. Returns a close function. */
     push(layer) {
       if (layers.includes(layer)) return () => this.pop(layer);

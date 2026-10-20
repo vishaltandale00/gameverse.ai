@@ -149,7 +149,7 @@ export function uiHost(rt) {
   host.input = createUiInput(host);
   root.classList.toggle('gv-reduced', Boolean(settings.reducedMotion));
   root.style.setProperty('--gv-hud-scale', String(settings.hudScale));
-  view.onFrame?.(() => { host.snapshotFirst(); host.input.poll(); });
+  view.onFrame?.(() => { host.snapshotFirst(); host.input.sync(); host.input.poll(); });
   HOSTS.set(view, host);
   return host;
 }

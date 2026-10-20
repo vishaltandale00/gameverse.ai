@@ -123,6 +123,8 @@ export default {
       if (cmd.kind === 'advance') {
         host.sound('confirm');
         if (verb === 'choose' && canAct(rt, 'choose')) rt.view.act({ choose: 'next' }); else machine.end();
+      } else if (cmd.kind === 'choose' && verb === 'options') {
+        host.sound('confirm'); const o = machine.line.options?.[cmd.index]; if (o) rt.view.act(o.actions); machine.end();
       } else if (cmd.kind === 'choose') {
         host.sound('confirm');
         rt.view.act({ [verb]: { index: cmd.index } }); // objects: rt.step drops falsy values such as 0
@@ -181,8 +183,21 @@ export default {
       [...choices.children].forEach((li, i) => { const b = li.firstChild; setClass(b, 'is-focus', i === machine.focus); li.setAttribute('aria-selected', String(i === machine.focus)); });
     }
 
+    // Fallback for any simulation modal (rt.openModal) that no UI panel presents: offer its options here.
+    let orphan = 0;
+    function modalPrompt() {
+      const m = rt.modal;
+      const presented = machine.open || (host.input.modal && host.input.top !== 'dialogue') || dialogueView(rt);
+      if (!m || presented) { orphan = 0; return; }
+      if (++orphan < 3) return;
+      const options = rt.availableOptions().filter(o => o.actions && Object.keys(o.actions).length);
+      if (!options.length) return;
+      const line = { key: `modal:${m.owner}:${rt.state.frame}`, who: null, title: m.kind ? m.kind.replace(/[._-]+/g, ' ').replace(/^./, c => c.toUpperCase()) : 'Choose', text: '', verb: 'options', options, choices: options.map((o, i) => ({ index: i, text: o.label })) };
+      if (machine.show(line)) paintLine(line);
+    }
     rt.view.onFrame(() => {
       const now = host.now(), dt = Math.min(0.1, now - lastT); lastT = now;
+      modalPrompt();
       const v = dialogueView(rt);
       if (v !== undefined) { viaService = true; if (v) show(v); else if (machine.open) end(); }
       const typed = machine.tick(dt);

@@ -115,3 +115,25 @@ test('dialogue: preflight rejects bad configs and accepts every game instance', 
   assert.ok(list.length >= 3);
   for (const { file, doc: d } of list) assert.deepEqual(ownErrors(preflight(d, registry, logic).errors), [], file);
 });
+
+test('dialogue: a simulation modal nobody presents is offered as choices; view.modal mirrors rt.modal', () => {
+  const ask = {
+    id: 'gameplay.fixture.ask', card: { intent: 'Fixture modal prompt.', provides: { actions: ['ask', 'answer'] } },
+    install(rt) {
+      rt.action('ask', () => rt.openModal('gameplay.fixture.ask', { actions: ['answer'], kind: 'fork_in_the_road' }));
+      rt.action('answer', v => { rt.store('fixture.ask').answer = v; rt.closeModal('gameplay.fixture.ask'); });
+      rt.options(r => (r.modal?.owner === 'gameplay.fixture.ask' ? [{ label: 'Go left', actions: { answer: 'left' } }, { label: 'Go right', actions: { answer: 'right' } }] : []));
+    },
+  };
+  const d = baseDoc({ systems: [{ use: 'gameplay.fixture.ask' }], graphics: [{ use: 'graphics.ui.dialogue', with: { cps: 0 } }] });
+  const m = mount(d, { primitives: [...BASE, dialogue, ask] });
+  m.frame(1, { actions: { ask: true } });
+  assert.equal(m.view.modal, 'sim:gameplay.fixture.ask', 'mirrored before any UI presents it');
+  m.frame(4);
+  assert.equal(m.text('.gv-dlg-name'), 'Fork in the road');
+  assert.deepEqual([...m.qa('.gv-choice')].map(c => c.textContent), ['1Go left', '2Go right']);
+  m.key('2'); m.frame(2);
+  assert.equal(m.rt.state.prim['fixture.ask'].answer, 'right');
+  m.frame(20);
+  assert.equal(m.rt.modal, null); assert.equal(m.view.modal, null);
+});

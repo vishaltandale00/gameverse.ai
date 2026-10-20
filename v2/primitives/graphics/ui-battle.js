@@ -33,6 +33,7 @@ export function targetsFor(view, item) {
 }
 /** The action to send for a chosen item. */
 export function battleAction(view, item, target) {
+  if (item.action) return item.action; // options-derived menus send the option's own actions
   if (view.source === 'turns') return { turn_act: target ? { action: item.id, target } : { action: item.id } };
   return { battle: { kind: item.kind || 'move', id: item.id, ...(target ? { target } : {}) } };
 }
@@ -62,6 +63,7 @@ export default {
     const layer = { id: 'battle', modal: true, onVerb: verb => press(verb) };
 
     rt.on('battle_message', e => say(e.text));
+    rt.on('battle_log', e => { if (e.text) say(e.text); });
     rt.on('turn_start', e => { if (view?.source === 'turns') say(e.side && view.sides.find(s => s.id === e.side)?.player ? 'Your turn.' : `${titleCase(e.side || e.who || 'Enemy')}'s turn.`); });
     rt.on('battle_end', e => say(e.outcome === 'won' || e.outcome === 'win' ? 'You won the battle!' : e.outcome === 'lost' ? 'You were defeated…' : 'The battle is over.'));
     rt.on('damaged', e => { const n = unitNodes.get(e.who); if (n) pulse(n, 'is-hit'); });
