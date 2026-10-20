@@ -50,7 +50,7 @@ export default {
     reads: [],
   },
   logic(logic) {
-    logic.effect('multiball', { run: (e, rt) => rt.emit('paddle_request', { kind: 'multiball', count: e.count ?? 2 }) });
+    logic.effect('paddle_multiball', { run: (e, rt) => rt.emit('paddle_request', { kind: 'multiball', count: e.count ?? 2 }) });
     logic.effect('paddle_mode', {
       check: (e, path, errors) => { if (!['catch', 'wide', 'slow'].includes(e.mode)) errors.push({ code: 'effect_invalid', path: `${path}.mode`, message: 'mode is catch|wide|slow' }); },
       run: (e, rt) => rt.emit('paddle_request', { kind: e.mode, sec: e.sec ?? 16 }),

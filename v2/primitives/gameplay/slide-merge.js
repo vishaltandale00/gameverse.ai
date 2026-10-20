@@ -60,6 +60,7 @@ export default {
       rockToken: { type: 'string', default: 'rock', effect: 'token of rocks' },
       moves: { type: 'integer', default: 0, min: 0, max: 100000, effect: 'move limit (0 = none)' },
       target: { type: 'integer', default: 2048, min: 4, max: 1 << 30, effect: 'tile that emits tile_reached (stage goals usually read merged.value)' },
+      onTarget: { type: 'effects', default: [], effect: 'run once when the target tile is first made (e.g. end_game won)' },
       slideFrames: { type: 'integer', default: 7, min: 0, max: 60, unit: 'frames', effect: 'slide animation; input during it is queued' },
       onStuck: { type: 'effects', default: [{ do: 'end_game', outcome: 'lost' }], effect: 'run when no move is left or the move limit is spent' },
     },
@@ -120,7 +121,7 @@ export default {
       rt.emit('slid', { board: name, dir });
       rt.emit('move', { board: name, kind: 'slide' });
       const max = Math.max(...next);
-      if (max >= config.target && !s.reached) { s.reached = true; rt.emitTyped('tile_reached', max, { board: name, value: max }); }
+      if (max >= config.target && !s.reached) { s.reached = true; rt.emitTyped('tile_reached', max, { board: name, value: max }); rt.run(config.onTarget, {}); if (rt.state.status !== 'playing') return true; }
       setVars(s, next);
       if (!canMove(next, b.W, b.H) || (config.moves && s.moves <= 0)) { s.phase = 'over'; rt.emit('board_stuck', { board: name, reason: config.moves && s.moves <= 0 ? 'moves' : 'no_moves' }); rt.run(config.onStuck, {}); }
       return true;

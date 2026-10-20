@@ -50,7 +50,7 @@ export default {
       check: (e, path, errors) => { if (!(e.r > 0)) errors.push({ code: 'effect_invalid', path: `${path}.r`, message: 'detonate needs r > 0' }); },
       run: (e, rt, c) => { const who = rt.resolve(e.who, c); const space = e.space ?? who?.space ?? rt.doc.spaces[0].id; const at = e.at ?? (who ? centerOf(rt.space(space), who) : [0, 0]); explode(rt, space, at, e.r, e.strength ?? 13, e.cause ?? 'effect'); },
     });
-    logic.effect('break', { run: (e, rt, c) => { const who = rt.resolve(e.who, c); if (who) rt.emit('destructible_request', { id: who.id, amount: e.amount ?? Infinity, cause: e.cause ?? 'effect' }); } });
+    logic.effect('shatter', { run: (e, rt, c) => { const who = rt.resolve(e.who, c); if (who) rt.emit('destructible_request', { id: who.id, amount: e.amount ?? Infinity, cause: e.cause ?? 'effect' }); } });
   },
   validate(config) {
     const errors = [];

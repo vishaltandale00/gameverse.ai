@@ -134,7 +134,7 @@ export default {
       const out = [], n = 9;
       for (let i = 0; i < n; i++) {
         const aim = config.aim[0] + (config.aim[1] - config.aim[0]) * i / (n - 1);
-        for (const power of config.mode === 'sling' ? [0.6, 0.8, 1] : [1]) out.push({ label: `fire aim ${aim.toFixed(2)} power ${power}`, actions: { aim: aim || 1e-9, power, fire: true } });
+        for (const power of config.mode === 'sling' ? [0.6, 0.8, 1] : [1]) out.push({ label: `fire aim ${aim.toFixed(2)} power ${power}`, actions: { aim, power, fire: true } });
       }
       return out;
     });

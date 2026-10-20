@@ -70,7 +70,7 @@ test('paddle: physics-space contacts steer the ball; catch holds it; multiball s
   const id = pst(rt).balls[0];
   rt.emit('contact', { a: id, b: 'player', impulse: 1, begin: true, normal: [0, 1], at: [6, 2] });
   assert.equal(rt.state.counts.paddle_hit, 1);
-  rt.run([{ do: 'multiball', count: 2 }]);
+  rt.run([{ do: 'paddle_multiball', count: 2 }]);
   assert.equal(pst(rt).balls.length, 3);
   rt.run([{ do: 'paddle_mode', mode: 'catch', sec: 5 }]);
   rt.emit('contact', { a: id, b: 'player', impulse: 1, begin: true });
@@ -138,7 +138,7 @@ test('destructible: impulse floor, projectile bonus, TNT chain and lit pegs', ()
   rt.emit('contact', { a: g.id, b: null, impulse: 1.9 });
   assert.ok(Math.abs(g.components.destructible.hp - (1.8 * Math.SQRT2 - 1)) < 1e-9);
   const t1 = rt.spawn('tnt_block', { space: 'f', at: [30, 0, 0] }), t2 = rt.spawn('tnt_block', { space: 'f', at: [31.5, 0, 0] });
-  rt.run([{ do: 'break', who: t1.id }]);
+  rt.run([{ do: 'shatter', who: t1.id }]);
   assert.equal(rt.state.counts['destroyed:tnt'], 2, 'the blast set off the second TNT');
   assert.equal(rt.state.counts.explosion, 2);
   assert.ok(!rt.entity(t2.id));

@@ -43,7 +43,7 @@ export default {
   logic(logic) {
     logic.effect('trainer_battle', { refs: e => [['trainer', e.trainer]], run: (e, rt) => rt.emit('encounter_request', { trainer: e.trainer }) });
     logic.effect('wild_battle', { refs: e => [['species', e.species]], run: (e, rt) => rt.emit('encounter_request', { species: e.species, level: e.level ?? 5 }) });
-    logic.effect('repel', { run: (e, rt) => { rt.state.vars['encounter.repel'] = Math.max(rt.state.vars['encounter.repel'] ?? 0, e.steps ?? 100); } });
+    logic.effect('repel_encounters', { run: (e, rt) => { rt.state.vars['encounter.repel'] = Math.max(rt.state.vars['encounter.repel'] ?? 0, e.steps ?? 100); } });
     logic.predicate('trainer_defeated', { refs: p => [['trainer', p.trainer_defeated]], test: (p, rt) => Boolean(rt.state.prim[ID]?.beaten?.[p.trainer_defeated]) });
   },
   validate(config) {

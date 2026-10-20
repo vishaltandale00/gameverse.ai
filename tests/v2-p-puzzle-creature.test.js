@@ -180,7 +180,7 @@ test('encounter: stepping through tall grass rolls the table after the grace ste
   assert.ok(BT(rt).battle);
   const lv = BT(rt).battle.foe.party[0].level;
   assert.ok(lv >= 2 && lv <= 4);
-  rt.run([{ do: 'repel', steps: 5 }]);
+  rt.run([{ do: 'repel_encounters', steps: 5 }]);
   rt.step({ actions: { battle: { kind: 'run' } } });
   walk(2); walk(1);
   assert.equal(rt.state.counts.encounter, 1, 'repel and grace hold');
