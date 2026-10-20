@@ -107,6 +107,20 @@ test('modeSchedule: scatter/chase tables flip modes and reverse target-tile agen
   assert.equal(rt.state.counts.ai_mode, 2, 'the last phase lasts forever');
 });
 
+test('modeSchedule tiers by level var, and Elroy speeds a chaser up when its predicate holds', () => {
+  const d = doc({ archetypes: [{ id: 'g', kind: 'enemy', components: { ai: { brain: [{ do: 'target-tile', personality: 'chaser', scatter: [23, 0, 0], elroy: [{ when: { var: 'pellets.left', lte: 20 }, speed: 1.5 }] }], speed: 4 } } }] });
+  d.systems[0].with.modeSchedule = { table: [[2, -1], [0.5, -1]], tierBy: { var: 'level', above: [1] } };
+  const { rt } = compile(d, { primitives: P });
+  rt.state.vars.level = 2; rt.state.vars['pellets.left'] = 100; run(rt, 40);
+  assert.equal(rt.state.vars['ai.mode'], 'chase', 'level 2 uses the faster second row');
+  const g = rt.spawn('g', { at: [10, 10, 0] }); run(rt, 10);
+  const step = () => { const x = g.at.slice(); rt.step(); return Math.hypot(g.at[0] - x[0], g.at[1] - x[1]); };
+  const normal = step();
+  rt.state.vars['pellets.left'] = 10;
+  const elroy = step();
+  assert.ok(Math.abs(elroy / normal - 1.5) < 1e-3, `Elroy ×1.5 (${normal} → ${elroy})`);
+});
+
 test('sight-challenge: a trainer spots the player on its facing line, walks up and runs its effects once', () => {
   const trainer = { id: 'trainer', kind: 'npc', components: { body: { facing: [-1, 0, 0] }, ai: { brain: [{ do: 'sight-challenge', range: 5, then: [{ do: 'set_flag', flag: 'battle' }] }], speed: 4 } } };
   const { rt } = compile(doc({ archetypes: [trainer], player: [2, 10, 0] }), { primitives: P });

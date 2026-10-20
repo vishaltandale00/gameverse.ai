@@ -184,7 +184,8 @@ export default {
       trackHeading(rt);
       const s = st(rt), now = rt.state.time;
       const agents = Object.values(rt.state.entities).filter(e => e.components.ai?.brain && e.id !== 'player' && !dead(e));
-      if (!s.lodAt || now >= s.lodAt || !s.active) { s.active = lod(rt, agents, config.maxActive); s.lodAt = round6(now + 0.5); }
+      // Distance LOD, refreshed twice a second or whenever the agent population changes.
+      if (!s.lodAt || now >= s.lodAt || !s.active || s.lodN !== agents.length) { s.active = lod(rt, agents, config.maxActive); s.lodAt = round6(now + 0.5); s.lodN = agents.length; }
       const active = new Set(s.active);
       for (const e of agents) {
         if (!active.has(e.id)) { if (!moverOwned(e)) { delete e.components.steer; if (e.components.moveTo?.by === 'ai') delete e.components.moveTo; } continue; }
