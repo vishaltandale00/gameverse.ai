@@ -38,18 +38,18 @@ export function buildVerified(design, { seed, registry = defaultRegistry(), atte
   return last;
 }
 
-export function createDesignPipeline({ client, model, effort, registry = defaultRegistry(), art = null, decisions = null }) {
+export function createDesignPipeline({ client, model, effort, registry = defaultRegistry(), art = null, decisions = null, names = 'any' }) {
   return async function pipeline(job, ctx) {
     const previous = job.base ? await ctx.store.version(job.gameId, job.base) : null;
     // Kit games revise inside their kit; new ideas are routed to the engine that plays their genre.
-    if (previous?.doc?.schema === KIT_GAME_SCHEMA) return runKitPipeline(job, ctx, { client, model, kitId: previous.doc.kit, previous, art, decisions });
+    if (previous?.doc?.schema === KIT_GAME_SCHEMA) return runKitPipeline(job, ctx, { client, model, kitId: previous.doc.kit, previous, art, decisions, names });
     let route = null;
     if (!previous) {
       const known = job.route && (await routeOptions()).some(o => o.id === job.route.engine || job.route.engine === 'none');
       if (!known) ctx.stage('routing', { model });
       route = known ? { ...job.route, ms: 0 } : await routeIdea({ client, model, decisions, prompt: job.prompt, answers: job.answers });
       ctx.stage('routed', { engine: route.engine, needs: route.needs, why: route.why, ms: route.ms });
-      if (route.engine !== 'arcade' && route.engine !== 'none') return runKitPipeline(job, ctx, { client, model, kitId: route.engine, previous: null, art, route, decisions });
+      if (route.engine !== 'arcade' && route.engine !== 'none') return runKitPipeline(job, ctx, { client, model, kitId: route.engine, previous: null, art, route, decisions, names });
     }
     ctx.stage(previous ? 'revising' : 'designing', { model });
     let lastDraft = 0;
@@ -58,7 +58,7 @@ export function createDesignPipeline({ client, model, effort, registry = default
     let design = JSON.parse(reply.text);
     // Original names only (one renaming retry when the title or cast reuses franchise names).
     const castNames = d => [d.title, ...Object.values(d.cast || {}).map(c => c?.name)].filter(Boolean);
-    if ((await usesFranchiseNames(decisions, castNames(design)))?.flagged) {
+    if (names === 'original' && (await usesFranchiseNames(decisions, castNames(design)))?.flagged) {
       const renamed = await client.complete({ model, effort, system: DESIGN_PROMPT, user: `${designRequest({ prompt: job.prompt, answers: job.answers, previousDesign: previous?.report?.design, change: job.change })}\n\nUse original names only: rename the title and every cast member so they evoke the idea without using any existing game, company or character name (your first answer used ${castNames(design).join(', ')}).`, schema: { name: 'game_design', schema: DESIGN_SCHEMA } });
       design = JSON.parse(renamed.text);
     }

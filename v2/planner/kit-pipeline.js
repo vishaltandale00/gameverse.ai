@@ -25,7 +25,7 @@ function contentRequest({ prompt, answers, previous, change }) {
   return `Game idea: ${prompt}${answers?.length ? `\n\nPlayer preferences:\n${answers.map(a => `- ${a.question}: ${a.answer}`).join('\n')}` : ''}`;
 }
 
-export async function runKitPipeline(job, ctx, { client, model, kitId, previous, art, route, decisions = null }) {
+export async function runKitPipeline(job, ctx, { client, model, kitId, previous, art, route, decisions = null, names = 'any' }) {
   const kit = await loadKit(kitId);
   const previousContent = previous?.doc?.schema === KIT_GAME_SCHEMA ? previous.doc.content : null;
   const available = modsFor(kit);
@@ -40,7 +40,7 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
     ...(available.length ? { mods: modsSchema(kit) } : {}),
     unsupported: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['request', 'why'], properties: { request: { type: 'string' }, why: { type: 'string' } } } },
   } };
-  const system = `${kit.content.prompt}\n\nAll names, characters and levels must be original (inspired by the idea's mechanics, never copying another game's names or content). When the player asks for an existing character, add an original look-alike: the same silhouette, palette, signature moves and personality, under a new name.\nThis engine can do only what the content schema can express. If the idea or change request asks for anything the schema cannot express (a new button or action, a weapon, a mode, a mechanic, a rule), list each such request in "unsupported" with a short why, and do not mention it in the title or logline. If everything fits, "unsupported" is empty. Mixing in a mechanic a mod provides is supported: use the mod rather than listing it.${modsPrompt(kit)}\nReply with JSON matching the schema.`;
+  const system = `${kit.content.prompt}\n\n${names === 'original' ? 'All names, characters and levels must be original (inspired by the idea\'s mechanics, never copying another game\'s names or content). When the player asks for an existing character, add an original look-alike: the same silhouette, palette, signature moves and personality, under a new name.' : 'Existing characters, names and settings may be used when the player asks for them (this overrides any instruction above to keep names original): give them their recognizable look, signature moves and personality. Levels and other content you invent are still your own.'}\nThis engine can do only what the content schema can express. If the idea or change request asks for anything the schema cannot express (a new button or action, a weapon, a mode, a mechanic, a rule), list each such request in "unsupported" with a short why, and do not mention it in the title or logline. If everything fits, "unsupported" is empty. Mixing in a mechanic a mod provides is supported: use the mod rather than listing it.${modsPrompt(kit)}\nReply with JSON matching the schema.`;
   // Generate, validate, verify. Validation errors and verification problems (a level the bot
   // can't clear, a target nobody can reach) go back to the model for repair, up to three tries.
   const seed = previous?.provenance?.seed ?? job.seed ?? seedFrom(job.prompt);
@@ -68,7 +68,7 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
       continue;
     }
     // Original names only: franchise names in the title or cast go back for renaming.
-    if (client && attempts < 3) {
+    if (names === 'original' && client && attempts < 3) {
       const brief = kit.cast(checked.content).brief || {};
       const names = [checked.content.title, ...Object.values(brief).map(b => b?.name)].filter(n => typeof n === 'string' && n);
       const franchise = await usesFranchiseNames(decisions, names);
@@ -91,7 +91,7 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
   mods = Object.fromEntries(available.map(m => [m.id, m.normalize(mods?.[m.id])]).filter(([id, cfg]) => available.find(m => m.id === id).enabled(cfg)));
   // On revisions, check that the change really happened; if not, say so rather than claim it.
   // A request naming an existing character ("add Goku") is done with an original look-alike; say so plainly.
-  const namesFranchise = previousContent && job.change ? (await usesFranchiseNames(decisions, [job.change]))?.flagged : false;
+  const namesFranchise = names === 'original' && previousContent && job.change ? (await usesFranchiseNames(decisions, [job.change]))?.flagged : false;
   const revisionCheck = previousContent ? await checkRevision(decisions, { change: job.change, engine: kit.name, before: { content: previousContent, mods: previous.doc.mods || {} }, after: { content, mods }, unsupported: unsupported || [], originalStandIns: namesFranchise }) : null;
   const renamedNote = namesFranchise && revisionCheck?.diff ? [{ capability: job.change, why: `Games use original names, so this was added as an original look-alike with its own name (${revisionCheck.summary.join(', ')}). Ask for a different name or look anytime.`, kind: 'renamed' }] : [];
   if (revisionCheck?.applied != null && revisionCheck.applied < NOT_APPLIED && !(unsupported || []).length)

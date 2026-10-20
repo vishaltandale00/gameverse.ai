@@ -33,7 +33,7 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
   // Art is drawn in code from a model-written art direction; image generation is opt-in (V2_ART=images).
   const art = env.V2_ART === 'off' ? null : env.V2_ART === 'images' && openaiKey ? createArtGenerator({ apiKey: openaiKey, model: env.V2_ART_MODEL || 'gpt-image-1-mini', quality: env.V2_ART_QUALITY || 'low' })
     : createProceduralArt({ client: openai, model: env.V2_ART_DIRECTOR_MODEL || specModel });
-  const pipeline = openai ? createDesignPipeline({ client: openai, model: specModel, art, decisions }) : createPipeline({ registry, logic, planner: active, catalogHash });
+  const pipeline = openai ? createDesignPipeline({ client: openai, model: specModel, art, decisions, names: env.V2_ORIGINAL_NAMES === 'on' ? 'original' : 'any' }) : createPipeline({ registry, logic, planner: active, catalogHash });
   const plannerName = openaiKey ? `openai:${specModel}` : active.version;
   const jobs = createJobs({ store, pipeline });
 
