@@ -8,5 +8,6 @@ import wanted from './wanted.js';
 import motion from './ai-motion.js';
 import formation from './ai-formation.js';
 import schedule from './ai-schedule.js';
+import versus from './ai-versus.js';
 
-export default [brain, attacks, schedule, motion, formation, level, abilities, tree, wanted];
+export default [brain, attacks, schedule, motion, formation, versus, level, abilities, tree, wanted];
