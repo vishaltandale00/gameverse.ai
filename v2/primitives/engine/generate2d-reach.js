@@ -67,14 +67,14 @@ export function reachSide(grid, m, starts, goals = new Map()) {
       // Column i holds the arc for s in [i - ½, i + ½] (column 0 from s = 0).
       for (let i = 0; ; i++) {
         const cx = x + dir * i, sa = Math.max(0, i - 0.5), sb = i + 0.5;
-        const ends = [height(sa), height(sb)]; if (sa < span / 2 && sb > span / 2) ends.push(m.h);
-        const lo = Math.min(...ends), hi = Math.max(...ends), descending = sb > span / 2;
+        const ha = height(sa), hb = height(sb), apex = sa < span / 2 && sb > span / 2;
+        const lo = Math.min(ha, hb), hi = apex ? m.h : Math.max(ha, hb), descending = sb > span / 2;
         if (y + hi < -1) break;
         let stop = false;
-        const cells = []; for (let dy = Math.floor(lo); dy <= Math.floor(hi); dy++) cells.push(dy);
-        if (descending) cells.reverse(); // feet sweep downward: the first foothold met is the landing
-        for (const [n, dy] of cells.entries()) {
-          const cy = y + dy;
+        const bot = Math.floor(lo), topc = Math.floor(hi);
+        // Feet sweep the column; descending, the first foothold met from above is the landing.
+        for (let n = 0, cnt = topc - bot + 1; n < cnt; n++) {
+          const cy = y + (descending ? topc - n : bot + n);
           // Blocked: a landing only if the feet came down onto it inside this column (not into a wall face).
           if (!passable(cx, cy)) { stop = true; if (descending && n > 0 && standable(cx, cy + 1)) add(cx, cy + 1); break; }
           touch(cx, cy);
@@ -85,8 +85,8 @@ export function reachSide(grid, m, starts, goals = new Map()) {
     }
   };
   for (const s of starts) { if (s.launch) { touch(s.x, s.y); jump(s.x, s.y); } else if (passable(s.x, s.y)) fall(s.x, s.y); }
-  while (queue.length) {
-    const i = queue.shift(), x = i % w, y = (i / w) | 0;
+  for (let qi = 0; qi < queue.length; qi++) {
+    const i = queue[qi], x = i % w, y = (i / w) | 0;
     for (const dx of [-1, 1]) if (passable(x + dx, y)) { if (standable(x + dx, y)) add(x + dx, y); else fall(x + dx, y); }
     const c = at(x, y);
     const vertical = m.fly || c === LADDER || (m.swim && c === WATER) || clingy(x, y);
@@ -105,7 +105,7 @@ export function reachTop(grid, m, starts, goals = new Map()) {
   const nodes = new Set(), hit = new Set(), q = [];
   const add = (x, y) => { const i = y * w + x; if (nodes.has(i) || !passable(x, y)) return; nodes.add(i); q.push(i); const g = goals.get(i); if (g !== undefined) hit.add(g); };
   for (const s of starts) add(s.x, s.y);
-  while (q.length) { const i = q.shift(), x = i % w, y = (i / w) | 0; add(x + 1, y); add(x - 1, y); add(x, y + 1); add(x, y - 1); }
+  for (let qi = 0; qi < q.length; qi++) { const i = q[qi], x = i % w, y = (i / w) | 0; add(x + 1, y); add(x - 1, y); add(x, y + 1); add(x, y - 1); }
   return { nodes, hit };
 }
 

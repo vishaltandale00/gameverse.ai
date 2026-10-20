@@ -173,6 +173,14 @@ export function spawnAt(rt, space, archetype, cell, components = {}, id) {
   return rt.spawn(archetype, { space: space.sid, at: entityAt(space, cell, size), components, id: free });
 }
 
+/** True when a predicate/effect kind exists and its owning primitive is installed in this document. */
+export function vocabulary(rt, type, kind) {
+  const owner = rt.logic.owners?.[type]?.get(kind); if (!owner) return false;
+  if (owner === 'kernel') return true;
+  const used = [...(rt.doc.systems || []), ...(rt.doc.spaces || []), ...(rt.doc.spaces || []).flatMap(s => s.generators || [])].map(x => x.use);
+  return used.includes(owner);
+}
+
 export const problem = (code, path, message, extra = {}) => ({ code, path, message, ...extra });
 export const rectsOverlap = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
 export const inRect = (r, x, y) => x >= r[0] && y >= r[1] && x < r[2] && y < r[3];

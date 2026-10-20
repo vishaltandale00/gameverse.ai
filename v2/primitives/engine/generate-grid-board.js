@@ -70,7 +70,7 @@ export default {
       if (!best || res.problems.length < best.problems.length) best = { ...res, attempts: attempt + 1, fallback: attempt === config.attempts };
       if (!res.problems.length) break;
     }
-    if (best.fallback && best.problems.length) best.problems.unshift(problem('board_fallback', 'kind', `no clean '${config.kind}' board in ${config.attempts} attempts; kept the best`));
+    if (best.problems.length) best.problems.unshift(problem('board_fallback', 'kind', `no clean '${config.kind}' board in ${config.attempts} attempts; kept the best`));
     const writer = cellWriter(rt, space);
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) writer.set([ox + x, oy + y], best.grid.get(x, y));
     writer.flush();

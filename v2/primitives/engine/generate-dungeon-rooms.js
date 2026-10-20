@@ -11,7 +11,7 @@
 // key). Failing sub-seeds retry; the fallback is a straight chain.
 // Works on any space with `position`: cells are carved when the space has
 // editCells; positions map onto the 'xy' or 'xz' plane.
-import { withDefaults, drawSeed, stream, Raster, spaceOf, zoneRect, cellWriter, planeAt, publish, spawnAt, placeOn, cellOfEntity, problem, inRect } from './generate2d-lib.js';
+import { withDefaults, drawSeed, stream, Raster, spaceOf, zoneRect, cellWriter, planeAt, publish, spawnAt, placeOn, cellOfEntity, vocabulary, problem, inRect } from './generate2d-lib.js';
 
 const ID = 'engine.generate.dungeon.rooms';
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -73,7 +73,8 @@ export default {
     if (config.boss) spawnAt(rt, space, config.boss, center(d.rooms[d.boss]), { boss: { dungeon: instance.key } });
     const st = () => rt.store(instance.key);
     // Locks: opened by the open_lock effect or (autoUnlock) when the player arrives holding the key.
-    const hasItem = (item) => rt.logic.predicates.has('item') ? rt.test({ item }) : Boolean(rt.state.flags[`has:${item}`]);
+    const items = () => vocabulary(rt, 'predicate', 'item') && vocabulary(rt, 'effect', 'give_item');
+    const hasItem = item => (items() ? rt.test({ item }) : Boolean(rt.state.flags[`has:${item}`]));
     const open = id => rt => {
       const s = st(), l = s.locks.find(x => x.id === id); if (!l || s.opened.includes(id)) return;
       s.opened.push(id);
@@ -88,7 +89,7 @@ export default {
       const p = rt.player(), s = st(); if (!p || p.space !== space.sid) return;
       if (config.autoPickup) for (const k of s.keys) if (!s.found.includes(k.item) && near(p, at(...k.at), 1)) {
         s.found.push(k.item);
-        if (rt.logic.effects.has('give_item')) rt.run([{ do: 'give_item', item: k.item }]); else rt.state.flags[`has:${k.item}`] = true;
+        if (items()) rt.run([{ do: 'give_item', item: k.item }]); else rt.state.flags[`has:${k.item}`] = true;
         const id = `${instance.key.replace(/[^a-z0-9]+/gi, '_')}_key_${k.lock}`.toLowerCase(); if (rt.entity(id)) rt.despawn(id);
         rt.emitTyped('key_found', k.item, { lock: k.lock });
       }
