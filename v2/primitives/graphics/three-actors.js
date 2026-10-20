@@ -81,7 +81,8 @@ export function syncActors(stage, spaceId, root, opts = {}) {
     actor.root.position.set(pose.at[0], pose.at[1] + (actor.spec.float || 0), pose.at[2]);
     actor.root.rotation.y = a.yaw;
     const d = stage.viewCenter().distanceTo(actor.root.position);
-    actor.root.visible = d < drawDistance && !(stage.firstPerson && e.id === 'player');
+    const firstPerson = (stage.cameras[stage.activeCamera] || stage.cameras[0])?.view === '1p';
+    actor.root.visible = d < drawDistance && !(firstPerson && e.id === 'player');
     actor.entity = e;
     if (!actor.root.visible) continue;
     // Animate near actors every frame, far ones at a reduced rate.

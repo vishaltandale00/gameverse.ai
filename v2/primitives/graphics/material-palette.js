@@ -75,7 +75,7 @@ export function createPalette(stage, config = {}) {
   }
   const make = (opts, kind) => {
     const base = { vertexColors: true, ...opts };
-    if (cfg.style === 'toon') return new THREE.MeshToonMaterial({ ...base, gradientMap: toon });
+    if (cfg.style === 'toon') { const { flatShading, ...rest } = base; void flatShading; return new THREE.MeshToonMaterial({ ...rest, gradientMap: toon }); }
     if (kind === 'metal') return new THREE.MeshStandardMaterial({ ...base, roughness: 0.38, metalness: 0.65 });
     if (kind === 'world') return new THREE.MeshLambertMaterial(base);
     return new THREE.MeshStandardMaterial({ ...base, roughness: 0.82, metalness: 0.02 });

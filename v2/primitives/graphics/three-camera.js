@@ -54,7 +54,7 @@ function wireLook(stage) {
     const i = (typeof orig === 'function' ? orig() : null) || {};
     return { ...i, axes: { ...(i.axes || {}), camera: [stage.viewYaw, stage.viewPitch] } };
   };
-  if (typeof orig === 'function') return; // engine.input.actions owns devices and pointer lock
+  if (typeof orig === 'function' || typeof document === 'undefined') return; // engine.input.actions owns devices and pointer lock
   // No input primitive: own pointer-lock mouse look so the camera is still usable.
   const canvas = stage.canvas;
   canvas.addEventListener('click', () => { if (!stage.isometric) canvas.requestPointerLock?.(); });

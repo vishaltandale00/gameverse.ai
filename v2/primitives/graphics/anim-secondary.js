@@ -36,7 +36,7 @@ export default {
     const chainsFor = actor => {
       if (actor.anim.springChains) return actor.anim.springChains;
       const B = actor.bones, out = [];
-      const add = (bones, opts) => { const list = bones.filter(b => B.has(b)); if (list.length) out.push({ bones: list, ...opts, state: {} }); };
+      const add = (bones, opts) => { const list = bones.filter(b => B.has(b)); if (list.length) out.push({ ...opts, bones: list, state: {} }); };
       for (const c of config.chains) add(c.bones, c);
       if (config.auto) {
         const taken = new Set(out.flatMap(c => c.bones));

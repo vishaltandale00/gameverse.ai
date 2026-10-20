@@ -35,7 +35,8 @@ export function yawOf(entity, fallback = 0) {
 
 function createStage(rt, preset = {}) {
   const view = rt.view, THREE = view.THREE;
-  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  // view.createRenderer lets headless-GL hosts and Node tests supply a renderer (same API subset).
+  const renderer = view.createRenderer?.(THREE) ?? new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.12;
@@ -44,7 +45,7 @@ function createStage(rt, preset = {}) {
   canvas.className = 'gv-three'; canvas.tabIndex = 0;
   Object.assign(canvas.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', display: 'block', outline: 'none' });
   view.container.prepend(canvas);
-  if (getComputedStyle(view.container).position === 'static') view.container.style.position = 'relative';
+  if (typeof getComputedStyle === 'function' && getComputedStyle(view.container).position === 'static') view.container.style.position = 'relative';
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#8fb4dc');
@@ -182,9 +183,9 @@ function createStage(rt, preset = {}) {
 
   const frame = alpha => {
     if (disposed) return;
-    if (!canvas.isConnected) { stage.dispose(); return; }
-    const t0 = performance.now();
-    stage.dt = last ? Math.min(0.1, (t0 - last) / 1000) : 1 / 60; last = t0;
+    if (canvas.isConnected === false) { stage.dispose(); return; }
+    const t0 = performance.now(), now = view.now?.() ?? t0; // view.now: display clock override (tests, recorders)
+    stage.dt = last ? Math.min(0.1, Math.max(0, now - last) / 1000) : 1 / 60; last = now;
     displayTime += stage.dt; stage.time = displayTime; stage.alpha = alpha;
     stage.resize();
     const player = rt.player();

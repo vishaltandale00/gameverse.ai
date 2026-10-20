@@ -136,7 +136,9 @@ export default {
       if (wid !== lastId) lastId = wid;
       // Ease between weather states over a few seconds.
       const k = 1 - Math.exp(-ctx.dt * 0.6);
-      for (const key of ['clouds', 'light', 'fog', 'amount']) weatherBlend[key] += ((target[key] ?? 0) - (weatherBlend[key] ?? 0)) * k;
+      const intensity = Number.isFinite(vars['weather.intensity']) ? vars['weather.intensity'] : 1;
+      const goal = { clouds: target.clouds, light: 1 - (1 - target.light) * intensity, fog: 1 + (target.fog - 1) * intensity, amount: target.amount * intensity };
+      for (const key of ['clouds', 'light', 'fog', 'amount']) weatherBlend[key] += ((goal[key] ?? 0) - (weatherBlend[key] ?? 0)) * k;
       weatherBlend.precip = target.precip ?? (weatherBlend.amount > 0.05 ? weatherBlend.precip : null); weatherBlend.tint = target.tint; weatherBlend.lightning = target.lightning;
       const s = skyAt(hour, { palette: config.palette, phases: timeCfg.phases, tiltDeg: config.sunTilt });
       const wl = weatherBlend.light, grey = [0.55, 0.58, 0.62];

@@ -108,7 +108,7 @@ export function springStep(state, rest, dt, { stiffness = 0.4, damping = 0.6, gr
   for (let i = 1; i < n; i++) {
     const p = state.pos[i], q = state.prev[i];
     const vel = scale(sub(p, q), keep);
-    const pull = scale(sub(rest[i], p), clamp(stiffness, 0, 1));
+    const pull = scale(sub(rest[i], p), clamp(stiffness, 0, 1) * 0.35); // per 60 Hz step: 1 = snappy, 0 = free
     const next = add(add(p, vel), add(pull, scale(gravity, dt * dt * (1 - stiffness))));
     state.prev[i] = p; state.pos[i] = next;
   }
@@ -124,6 +124,7 @@ export function springStep(state, rest, dt, { stiffness = 0.4, damping = 0.6, gr
 export function ragdollStep(body, dt, groundAt, { gravity = -9.8, iterations = 6, friction = 0.6, bounce = 0.1 } = {}) {
   const { pos, prev, links } = body, n = pos.length, r = body.radius ?? 0.06;
   let motion = 0;
+  const start = pos.map(p => p.slice());
   for (let i = 0; i < n; i++) {
     const p = pos[i], q = prev[i];
     const v = sub(p, q);
@@ -145,8 +146,8 @@ export function ragdollStep(body, dt, groundAt, { gravity = -9.8, iterations = 6
       }
     }
   }
-  for (let i = 0; i < n; i++) motion = Math.max(motion, dist(pos[i], prev[i]));
-  body.asleep = motion < 1e-4;
+  for (let i = 0; i < n; i++) motion = Math.max(motion, dist(pos[i], start[i]));
+  body.asleep = motion < 2e-4;
   return body;
 }
 
