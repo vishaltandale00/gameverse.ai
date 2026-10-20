@@ -10,6 +10,7 @@ import { playtest } from '../engine/playtest.js';
 import { systemPrompt, createMessage, repairMessage } from './prompt.js';
 import { parseJsonObject } from './models.js';
 import { hashOf } from '../server/store.js';
+import { partialSpec } from './partial.js';
 
 export const ARCADE_PIPELINE_VERSION = 'v2-arcade/0.1';
 const examplesDir = new URL('../examples/', import.meta.url);
@@ -24,18 +25,21 @@ export function checkArcade(spec, registry, { budgetMs = 1500 } = {}) {
   return { ok: !problems.length, playable: report.ok, spec: checked.spec, problems, report: { preflight: { ok: true, warnings: checked.warnings }, playtest: report } };
 }
 
-export function createArcadePipeline({ client, model, registry = defaultRegistry(), examples = loadArcadeExamples(), repairs = 2 }) {
+export function createArcadePipeline({ client, model, effort, registry = defaultRegistry(), examples = loadArcadeExamples(), repairs = 2 }) {
   const system = systemPrompt(registry, examples);
   return async function pipeline(job, ctx) {
     ctx.stage('designing', { model });
     const conversation = [createMessage(job.prompt, job.previous)];
     let draft, check, modelMs = 0, attempt = 0;
     for (;;) {
-      const reply = await client.complete({ model, system, user: conversation.join('\n\n') });
+      let lastDraft = 0;
+      const onDelta = text => { const now = performance.now(); if (now - lastDraft < 200) return; lastDraft = now; ctx.draft({ attempt, partial: partialSpec(text) }); };
+      const reply = await client.complete({ model, system, user: conversation.join('\n\n'), effort, onDelta });
+      ctx.draft({ attempt, partial: partialSpec(reply.text), complete: true });
       modelMs += reply.ms;
       try { draft = parseJsonObject(reply.text); }
       catch (error) { draft = null; check = { ok: false, problems: [{ code: 'model_output_not_json', message: error.message }] }; }
-      if (draft) { draft.spec = { seed: job.seed ?? 1, ...draft.spec }; check = checkArcade(draft.spec, registry); }
+      if (draft) { draft.spec = { seed: job.seed ?? 1, ...draft.spec }; ctx.stage('playtesting', { attempt }); check = checkArcade(draft.spec, registry); }
       ctx.stage(check.ok ? 'verified' : 'checking', { attempt, problems: check.problems?.length || 0, winnable: check.report?.playtest?.winnable ?? null, ms: modelMs });
       if (check.ok || attempt >= repairs) break;
       attempt++;

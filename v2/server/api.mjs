@@ -7,7 +7,7 @@ import { createStore, hashOf } from './store.js';
 import { createJobs, streamEvents } from './jobs.js';
 import { createPipeline, verify } from '../planner/pipeline.js';
 import { createOfflinePlanner } from '../planner/offline-planner.js';
-import { createArcadePipeline } from '../planner/arcade-pipeline.js';
+import { createDesignPipeline } from '../planner/design-pipeline.js';
 import { createOpenAIClient, loadOpenAIKey } from '../planner/openai.js';
 
 const slug = text => (text.toLowerCase().match(/[a-z0-9]+/g) || ['game']).slice(0, 5).join('-').slice(0, 40);
@@ -21,8 +21,9 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
   const store = createStore(root);
   // With an OpenAI key, ideas become model-generated, playtested 2D games.
   const openaiKey = loadOpenAIKey(env, fileURLToPath(new URL('../../', import.meta.url)));
-  const specModel = env.V2_OPENAI_SPEC_MODEL || 'gpt-6-luna';
-  const pipeline = openaiKey ? createArcadePipeline({ client: createOpenAIClient({ apiKey: openaiKey }), model: specModel }) : createPipeline({ registry, logic, planner: active, catalogHash });
+  const specModel = env.V2_OPENAI_DESIGN_MODEL || 'gpt-4.1-mini';
+  const openai = openaiKey ? createOpenAIClient({ apiKey: openaiKey }) : null;
+  const pipeline = openai ? createDesignPipeline({ client: openai, model: specModel }) : createPipeline({ registry, logic, planner: active, catalogHash });
   const plannerName = openaiKey ? `openai:${specModel}` : active.version;
   const jobs = createJobs({ store, pipeline });
 
@@ -34,8 +35,20 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
       if (!prompt || prompt.length > 4000) throw Object.assign(Error('Describe your game in 1–4000 characters.'), { status: 400 });
       const id = `${slug(prompt)}-${Date.now().toString(36)}`;
       await store.createGame({ id, prompt, parent: body.parent || null });
-      const job = jobs.submit({ gameId: id, prompt, seed: Number.isInteger(body.seed) ? body.seed : undefined, kind: 'create' });
+      const answers = Array.isArray(body.answers) ? body.answers.slice(0, 8).map(a => ({ question: String(a.question || '').slice(0, 200), answer: String(a.answer || '').slice(0, 200) })) : [];
+      const job = jobs.submit({ gameId: id, prompt, answers, seed: Number.isInteger(body.seed) ? body.seed : undefined, kind: 'create' });
       return { gameId: id, jobId: job.id };
+    }],
+    // Follow-up change: the model revises the game's design; a new version publishes and hot-loads.
+    ['POST', /^\/api\/v2\/games\/([a-z0-9-]+)\/revise$/, async (body, m) => {
+      const meta = await store.meta(m[1]);
+      if (!meta?.latest) throw Object.assign(Error('That game has no version to change yet.'), { status: 409 });
+      const change = String(body?.change || '').trim();
+      if (!change || change.length > 1000) throw Object.assign(Error('Describe the change in 1–1000 characters.'), { status: 400 });
+      if (!openai) throw Object.assign(Error('Changes need a model; set OPENAI_API_KEY.'), { status: 503 });
+      await store.updateMeta(m[1], { status: 'generating' });
+      const job = jobs.submit({ gameId: m[1], prompt: meta.prompt, change, base: meta.latest, kind: 'revise' });
+      return { gameId: m[1], jobId: job.id };
     }],
     ['GET', /^\/api\/v2\/games\/([a-z0-9-]+)$/, async (_, m) => {
       const meta = await store.meta(m[1]);

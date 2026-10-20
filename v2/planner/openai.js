@@ -21,13 +21,31 @@ export function loadOpenAIKey(env = process.env, root = process.cwd()) {
 
 export function createOpenAIClient({ apiKey, url = 'https://api.openai.com/v1/responses', timeoutMs = 90000, fetchImpl = fetch } = {}) {
   return {
-    async complete({ model, system, user, json = true }) {
+    /** onDelta(textSoFar) streams partial output (used for live build previews). */
+    async complete({ model, system, user, json = true, schema, effort, onDelta }) {
       const started = performance.now();
       const response = await fetchImpl(url, {
         method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, instructions: system, input: json ? `${user}\n\nReply with the JSON object only.` : user, ...(json ? { text: { format: { type: 'json_object' } } } : {}) }),
+        body: JSON.stringify({ model, instructions: system, input: json ? `${user}\n\nReply with the JSON object only.` : user,
+          ...(schema ? { text: { format: { type: 'json_schema', name: schema.name, schema: schema.schema, strict: true } } } : json ? { text: { format: { type: 'json_object' } } } : {}), ...(effort ? { reasoning: { effort } } : {}), ...(onDelta ? { stream: true } : {}) }),
         signal: AbortSignal.timeout(timeoutMs),
       });
+      if (onDelta && response.ok) {
+        const decoder = new TextDecoder(); let buffer = '', text = '', usage = null, served = model, firstMs = null;
+        for await (const chunk of response.body) {
+          buffer += decoder.decode(chunk, { stream: true });
+          for (let i; (i = buffer.indexOf('\n\n')) >= 0;) {
+            const data = buffer.slice(0, i).split('\n').find(l => l.startsWith('data: '))?.slice(6); buffer = buffer.slice(i + 2);
+            if (!data || data === '[DONE]') continue;
+            let event; try { event = JSON.parse(data); } catch { continue; }
+            if (event.type === 'response.output_text.delta') { firstMs ??= Math.round(performance.now() - started); text += event.delta; onDelta(text); }
+            else if (event.type === 'response.completed') { usage = event.response?.usage || null; served = event.response?.model || model; }
+            else if (event.type === 'response.failed' || event.type === 'error') throw Object.assign(Error(`OpenAI stream failed: ${event.response?.error?.message || event.message || 'unknown'}`), { status: 502 });
+          }
+        }
+        if (!text) throw Object.assign(Error('OpenAI response contained no text.'), { status: 502 });
+        return { text, ms: Math.round(performance.now() - started), firstMs, usage, model: served };
+      }
       if (!response.ok) {
         let detail = ''; try { detail = (await response.json())?.error?.message || ''; } catch {}
         throw Object.assign(Error(`OpenAI returned HTTP ${response.status}${detail ? ': ' + detail.slice(0, 200) : ''}`), { status: 502 });

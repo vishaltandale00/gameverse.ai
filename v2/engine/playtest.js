@@ -30,7 +30,16 @@ export function macrosFor(spec) {
 
 // Progress = beneficial events so far; used to favour promising cells.
 const PROGRESS_EVENTS = ['collect', 'stomp', 'hit', 'reach_goal', 'checkpoint'];
-function progress(state) { return PROGRESS_EVENTS.reduce((n, e) => n + (state.counts[e] || 0), 0); }
+// Progress also rewards getting closer to the nearest goal, so long levels pull the search forward.
+function progress(state) {
+  let p = PROGRESS_EVENTS.reduce((n, e) => n + (state.counts[e] || 0), 0);
+  const player = state.entities.find(e => e.tags.includes('player')), goals = state.entities.filter(e => e.tags.includes('goal'));
+  if (player && goals.length) {
+    const d = Math.min(...goals.map(g => Math.hypot(g.x - player.x, g.y - player.y)));
+    p += Math.max(0, (state.goalStart ??= d) - d) / 4;
+  }
+  return p;
+}
 
 function cellKey(game, state) {
   const p = state.entities.find(e => e.tags.includes('player'));
@@ -64,19 +73,37 @@ export function playtest(game, { budgetMs = 1500, maxFrames = 600000, idleSecond
 
   // 2. Search.
   const start = game.createState();
-  const archive = new Map([[cellKey(game, start), { state: start, path: [], frames: 0, visits: 0 }]]);
-  let win = null, lossCodes = {}, rounds = 0;
+  const archive = new Map([[cellKey(game, start), { state: start, path: [], frames: 0, visits: 0, score: progress(start) }]]);
+  // Bias movement toward the nearest goal 60% of the time.
+  const pickMacro = state => {
+    const pl = state.entities.find(e => e.tags.includes('player')), gs = state.entities.filter(e => e.tags.includes('goal'));
+    if (pl && gs.length && rand() < 0.6) {
+      const g = gs.reduce((a, b) => Math.hypot(a.x - pl.x, a.y - pl.y) <= Math.hypot(b.x - pl.x, b.y - pl.y) ? a : b);
+      const dx = Math.sign(Math.round(g.x - pl.x)), dy = Math.sign(Math.round(g.y - pl.y));
+      const toward = macros.map((m, i) => [m, i]).filter(([m]) => (dx && m.input.x === dx) || (!dx && dy && m.input.y === dy));
+      if (toward.length) return toward[Math.floor(rand() * toward.length)][1];
+    }
+    return Math.floor(rand() * macros.length);
+  };
+  let win = null, lossCodes = {}, rounds = 0, closest = null;
   outer: while (performance.now() - started < budgetMs && frames < maxFrames) {
     rounds++;
     const cells = [...archive.values()];
-    // Novel cells (few visits) and cells with more progress are favoured.
-    let total = 0; const weights = cells.map(c => (total += (1 + progress(c.state)) ** 2 / Math.sqrt(c.visits + 1)));
-    const pick = rand() * total, cell = cells[weights.findIndex(w => w >= pick)] || cells[0];
+    let cell;
+    if (rand() < 0.5) {
+      // Exploit: resume from one of the most advanced cells.
+      const best = [...cells].sort((a, b) => b.score - a.score).slice(0, 10);
+      cell = best[Math.floor(rand() * best.length)];
+    } else {
+      // Explore: novel cells (few visits) and cells with more progress are favoured.
+      let total = 0; const weights = cells.map(c => (total += (1 + c.score) ** 2 / Math.sqrt(c.visits + 1)));
+      const pick = rand() * total; cell = cells[weights.findIndex(w => w >= pick)] || cells[0];
+    }
     cell.visits++;
     const state = game.snapshot(cell.state); const path = cell.path.slice(); let elapsed = cell.frames;
     const steps = 1 + Math.floor(rand() * 4);
     for (let k = 0; k < steps; k++) {
-      const index = Math.floor(rand() * macros.length), length = 4 + Math.floor(rand() * 20);
+      const index = pickMacro(state), length = 4 + Math.floor(rand() * 32);
       try {
         for (let f = 0; f < length && state.status === 'playing'; f++) { game.step(state, macros[index].input); record(state); frames++; elapsed++; }
         if (state.status === 'playing') { game.step(state, NEUTRAL_INPUT); record(state); frames++; elapsed++; }
@@ -89,8 +116,10 @@ export function playtest(game, { budgetMs = 1500, maxFrames = 600000, idleSecond
       if (problems.length) { issues.push({ code: 'invariant_violation', severity: 'error', message: problems[0], repro: path }); break outer; }
       if (state.status === 'won') { if (!win || elapsed < win.frames) win = { frames: elapsed, path: path.slice() }; break outer; }
       if (state.status === 'lost') { const why = state.events.at(-1)?.name || 'lose_condition'; lossCodes[why] = (lossCodes[why] || 0) + 1; break; }
+      { const pl = state.entities.find(e => e.tags.includes('player')), gs = state.entities.filter(e => e.tags.includes('goal'));
+        if (pl && gs.length) { const d = Math.min(...gs.map(g => Math.hypot(g.x - pl.x, g.y - pl.y))); if (!closest || d < closest.d) closest = { d, x: +pl.x.toFixed(1), y: +pl.y.toFixed(1) }; } }
       const key = cellKey(game, state), old = archive.get(key);
-      if (!old || elapsed < old.frames) archive.set(key, { state: game.snapshot(state), path: path.slice(), frames: elapsed, visits: old?.visits || 0 });
+      if (!old || elapsed < old.frames) archive.set(key, { state: game.snapshot(state), path: path.slice(), frames: elapsed, visits: old?.visits || 0, score: progress(state) });
     }
   }
 
@@ -101,7 +130,7 @@ export function playtest(game, { budgetMs = 1500, maxFrames = 600000, idleSecond
   } else if (!issues.some(i => i.severity === 'error')) {
     issues.push({ code: 'goal_not_reached', severity: 'warning', message: `search did not reach the win condition within ${budgetMs} ms (${archive.size} places explored)` });
   }
-  const provided = new Set(game.spec.modules.flatMap(m => m.use === 'shooter' ? ['shoot'] : m.use === 'collect' ? ['collect'] : m.use === 'goal' ? ['reach_goal'] : m.use === 'patrol' ? ['stomp'] : []));
+  const provided = new Set(game.spec.modules.flatMap(m => m.use === 'shooter' ? ['shoot'] : m.use === 'collect' ? ['collect'] : m.use === 'goal' ? ['reach_goal'] : m.use === 'patrol' && m.with.stomp ? ['stomp'] : []));
   for (const event of provided) if (!fired[event]) issues.push({ code: 'mechanic_unused', severity: 'warning', message: `'${event}' never happened during search` });
 
   const wallMs = performance.now() - started;
@@ -113,5 +142,6 @@ export function playtest(game, { budgetMs = 1500, maxFrames = 600000, idleSecond
     explored: archive.size, rounds, framesSimulated: frames,
     wallMs: Math.round(wallMs), simulatedSeconds: +(frames * DT).toFixed(1), speedup: Math.round(frames * DT / (wallMs / 1000)),
     losses: lossCodes, eventsFired: fired, issues,
+    closestToGoal: closest ? { tiles: +closest.d.toFixed(1), at: [closest.x, closest.y] } : null,
   };
 }
