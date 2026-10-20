@@ -10,6 +10,8 @@ import { createProfileNameEntry } from './profile-name.js';
 import { createTakeoverShell } from './agent-shell.js';
 import { createPlanner, createDecisionsPolicy, createReflector, createSpeechAdapter } from './agent-client.js';
 import { installQualification, buildEvidenceBundle, QUALIFICATION_HARNESS_CONFIG } from './qualification.js';
+import { generatedCatalogEntries, isGenerated, isHostedRuntime } from './generated-games.js';
+import { createMakeGameDialog, createChangeForm } from './creator-studio.js';
 
 const $ = selector => document.querySelector(selector);
 const avatars = ['🦊', '🐸', '🤖', '👾'];
@@ -453,8 +455,24 @@ function setProfile(value) {
 async function refreshGames() {
   const response = await fetch('/games/catalog.json');
   if (!response.ok) throw Error('The local game catalog is unavailable. Start with npm run dev.');
-  games = configuredGames(application, await response.json());
+  const catalog = await response.json();
+  const generated = await generatedGames();
+  games = [...configuredGames(application, catalog), ...generated];
+  neighborhood?.setGeneratedGames?.(generated);
   await renderGames();
+}
+// Games made in the Creator's Lot (v2 service). Only the neighborhood base
+// hosts them; an unavailable service keeps the last known list.
+async function generatedGames() {
+  if (application?.base.kind !== 'neighborhood') return [];
+  try {
+    const response = await fetch('/api/v2/games');
+    if (!response.ok) throw Error(`HTTP ${response.status}`);
+    return generatedCatalogEntries((await response.json()).games);
+  } catch (error) {
+    console.debug('[generated] catalog unavailable', error.message);
+    return games.filter(isGenerated);
+  }
 }
 // Host catalog registration: an opener alone does not make a target supported,
 // so every ready game (and the overworld) is registered with its real version
@@ -476,9 +494,11 @@ function registerTakeoverTargets() {
 async function renderGames() {
   registerTakeoverTargets();
   $('#games').replaceChildren();
-  $('#collection-count').textContent = String(games.length).padStart(2, '0');
-  $('#games').classList.toggle('single-game', games.length === 1);
-  for (const game of games) {
+  // Made games live in the Creator's Lot, not the cartridge collection.
+  const collection = games.filter(game => !isGenerated(game));
+  $('#collection-count').textContent = String(collection.length).padStart(2, '0');
+  $('#games').classList.toggle('single-game', collection.length === 1);
+  for (const game of collection) {
     let head;
     if (profile && game.ready) head = await storage.get(progressKey(identityFor(game)));
     if (game.kind === 'custom-sports') {
@@ -495,6 +515,7 @@ async function renderGames() {
   }
 }
 function identityFor(game) {
+  if (isGenerated(game)) return { kind: game.kind, profileId: profile.id, gameId: game.id, adapter: game.adapter, snapshotFormat: game.snapshotFormat };
   if (game.kind === 'custom-sports') return { kind: game.kind, profileId: profile.id, gameId: game.id, version: game.version, artifactSha256: game.artifactSha256, adapter: game.adapter, snapshotFormat: game.snapshotFormat };
   return { profileId: profile.id, gameId: game.id, cartridgeSha256: game.receipt.sha256, wasmSha256: runtime.wasmSha256, loaderSha256: runtime.loaderSha256, adapter: runtime.adapter, snapshotFormat: runtime.snapshotFormat };
 }
@@ -539,16 +560,16 @@ async function startGame(game, mode = 'snapshot', origin = 'collection') {
   busy = true; notice('Loading your adventure…');
   let current, release;
   try {
-    validateGameBinding(application, game, game.kind === 'custom-sports' ? game : runtime);
+    validateGameBinding(application, game, isHostedRuntime(game) ? game : runtime);
     release = await storage.acquireSessionLock(`session:${profile.id}:${game.id}`);
     const identity = identityFor(game), key = progressKey(identity);
     current = { game, identity, key, release, origin, state: 'loading', head: await storage.get(key) || { revision: 0 } };
     session = current;
     $('#profile-button').disabled = true;
     $('#save-return').textContent = origin === 'neighborhood' ? 'Save & return to Gameverse' : 'Save & return to collection';
-    const custom = game.kind === 'custom-sports';
+    const custom = game.kind === 'custom-sports', generated = isGenerated(game);
     let rom;
-    if (!custom) {
+    if (!custom && !generated) {
       const romResponse = await fetch(game.artifactUrl);
       if (!romResponse.ok) throw Error('Built cartridge is unavailable. The confirmed progress is retained.');
       rom = new Uint8Array(await romResponse.arrayBuffer());
@@ -577,7 +598,12 @@ async function startGame(game, mode = 'snapshot', origin = 'collection') {
     configureGameView(current);
     current.view = document.createElement('div'); current.view.className = 'session-view';
     $('#screen').replaceChildren(current.view);
-    if (custom) {
+    if (generated) {
+      const { GeneratedGameAdapter } = await import(game.entryUrl);
+      current.adapter = new GeneratedGameAdapter(current.view, game, error => failSession(current, error), { onPause: openMenu, ownsB: () => voiceOwnsSportsB, preferredPadIndex: shellPadIndex,
+        onEvent: event => { if (session === current) changeForm.event(event); },
+        onUpdate: info => { if (session !== current) return; changeForm.updated(info); if (!info.error) refreshGames().catch(() => {}); } });
+    } else if (custom) {
       const { CustomSportsAdapter } = await import(game.entryUrl);
       current.adapter = new CustomSportsAdapter(current.view, game, error => failSession(current, error), { onPause: openMenu, ownsB: () => voiceOwnsSportsB, preferredPadIndex: shellPadIndex });
     } else {
@@ -586,9 +612,11 @@ async function startGame(game, mode = 'snapshot', origin = 'collection') {
     }
     const loadContext = { ...identity, buildRunId: game.receipt?.runId || null, mode, origin, baseConfig: { id: application.id, version: application.version, kind: application.base.kind }, expectedFrame: expectedFrame ?? null };
     await timed('load-and-restore', loadContext, async () => {
-      const loaded = await (custom ? current.adapter.load(state) : current.adapter.load(rom, state, battery));
+      const loaded = await (custom || generated ? current.adapter.load(state) : current.adapter.load(rom, state, battery));
       loadContext.restoredFrame = loaded.frame;
-      if (state && loaded.frame !== expectedFrame) throw Error('Restored frame does not match the confirmed checkpoint.');
+      // A made game whose save predates its current version starts fresh (reported below).
+      current.restartNote = loaded.restarted ? loaded.note : '';
+      if (state && !loaded.restarted && loaded.frame !== expectedFrame) throw Error('Restored frame does not match the confirmed checkpoint.');
     });
     if (session !== current || current.state !== 'loading') throw Error('Session stopped during loading. Retry from the collection.');
     clearInput();
@@ -598,7 +626,7 @@ async function startGame(game, mode = 'snapshot', origin = 'collection') {
         progressKey: key, displayed: true, origin });
       current.agentSessionId = registered.sessionId;
     }
-    $('#session-status').textContent = mode === 'battery' ? 'Using the last confirmed in-game save. Previous snapshots are retained.' : state ? 'Exact confirmed snapshot restored.' : `New session. Save & return to ${origin === 'neighborhood' ? 'Gameverse' : 'the collection'} to confirm a checkpoint.`;
+    $('#session-status').textContent = current.restartNote || (mode === 'battery' ? 'Using the last confirmed in-game save. Previous snapshots are retained.' : state ? 'Exact confirmed snapshot restored.' : `New session. Save & return to ${origin === 'neighborhood' ? 'Gameverse' : 'the collection'} to confirm a checkpoint.`);
     notice('');
   } catch (error) {
     if (current) { current.adapter?.dispose(); failSession(current, error); }
@@ -607,6 +635,16 @@ async function startGame(game, mode = 'snapshot', origin = 'collection') {
 }
 function configureGameView(current) {
   const { game, origin } = current, custom = game.kind === 'custom-sports';
+  document.body.classList.toggle('playing-generated', isGenerated(game));
+  $('#change-game').hidden = !isGenerated(game); changeForm.reset(game);
+  if (isGenerated(game)) {
+    $('#save-return').textContent = 'Save & return to Gameverse';
+    $('#playing-title').textContent = `${game.name} · v${game.version}`;
+    document.body.classList.remove('playing-sports'); $('#download-save').hidden = true;
+    $('#menu-button').setAttribute('aria-label', 'Gameverse menu — Start or Escape'); $('#menu-button kbd').textContent = 'Start';
+    $('#session-control-note').textContent = 'Made game: arrows / WASD / left stick move · A (Space, Z, J) jump or confirm · B (X, K) action · R restart · Start/Options pauses; R3 voice.';
+    return;
+  }
   $('#save-return').textContent = origin === 'neighborhood' ? 'Save & return to Gameverse' : 'Save & return to collection';
     $('#playing-title').textContent = game.subtitle ? `${game.name}: ${game.subtitle}` : game.name;
     document.body.classList.toggle('playing-sports', custom);
@@ -642,6 +680,7 @@ async function openMenu() {
     $('#session-title').textContent = 'Game paused.';
     $('#session-message').textContent = `Save & return to ${current.origin === 'neighborhood' ? 'Gameverse' : 'the collection'} to keep this exact moment. Closing the browser recovers only the last confirmed checkpoint.`;
     $('#resume-button').hidden = false; $('#save-return').hidden = false; $('#battery-fallback').hidden = true;
+    $('#change-game').hidden = !isGenerated(current.game); changeForm.reset(current.game);
     $('#force-return').textContent = 'Leave without saving…'; current.confirmForce = false;
     $('#session-dialog').showModal();
     $('#resume-button').focus();
@@ -673,13 +712,13 @@ async function leaveSession({ restoreOrigin = true, message = '' } = {}) {
       backgroundSessions.set(current.game.id, current);
       takeover.setDisplayed(current.agentSessionId, false);
       clearInput(); $('#session-dialog').close(); $('#player').hidden = true;
-      document.body.classList.remove('playing-subgame', 'playing-sports');
+      document.body.classList.remove('playing-subgame', 'playing-sports', 'playing-generated');
       if (restoreOrigin) restoreSessionOrigin(current.origin, message || 'The simulated user is still playing. Return to its venue to watch.');
       renderAgentPanel(); return;
     }
     if (current.agentSessionId) takeover.host.closeSession(current.agentSessionId, { reason: 'left the match' });
     current.adapter?.dispose(); await current.release();
-    clearInput(); $('#session-dialog').close(); $('#player').hidden = true; document.body.classList.remove('playing-subgame', 'playing-sports'); $('#screen').replaceChildren();
+    clearInput(); $('#session-dialog').close(); $('#player').hidden = true; document.body.classList.remove('playing-subgame', 'playing-sports', 'playing-generated'); $('#screen').replaceChildren();
     if (restoreOrigin) restoreSessionOrigin(current.origin, message);
     renderGames().catch(handleError);
   } finally { busy = wasBusy; }
@@ -743,7 +782,8 @@ async function exploreNeighborhood() {
   try {
     const { openNeighborhood } = await import('./neighborhood.js');
     const opened = await openNeighborhood($('#neighborhood'), showMenu, neighborhoodPose, enterGameFromNeighborhood,
-      { title: application.title, location: application.base.location, hasFireRed: application.subgames.some(game => game.id === 'firered'), gameIds: application.subgames.map(game => game.id) });
+      { title: application.title, location: application.base.location, hasFireRed: application.subgames.some(game => game.id === 'firered'), gameIds: application.subgames.map(game => game.id),
+        generated: games.filter(isGenerated), onMakeGame: () => makeGame.open() });
     if (launch === neighborhoodLaunch) {
       neighborhood = opened;
       if (opened.controller) {
@@ -771,7 +811,7 @@ function updateWorldMenu() {
 function openWorldMenu(message = '') {
   if (session || busy || worldProfilePending || $('#profile-dialog').open) return;
   clearInput(); neighborhood?.suspend(); updateWorldMenu();
-  $('#world-menu-message').textContent = message || 'Visit Alder Arcade, Juniper Pitch, or Foundry Field. Each venue keeps its own progress.';
+  $('#world-menu-message').textContent = message || 'Visit Alder Arcade, Juniper Pitch, Foundry Field or the Creator’s Lot. Each venue keeps its own progress.';
   if (!$('#world-menu').open) { $('#world-menu').returnValue = ''; $('#world-menu').showModal(); }
   ($('#world-resume').disabled ? $('#world-reload') : $('#world-resume')).focus();
 }
@@ -787,6 +827,19 @@ for (const button of document.querySelectorAll('[data-venue]')) button.onclick =
   const id = button.dataset.venue;
   $('#world-menu').close('venue');
   await enterGameFromNeighborhood(id);
+};
+// Creator's Lot: the kiosk (or the world menu) opens Make a game; closing it
+// returns to the street unless the new game is being entered.
+const makeGame = createMakeGameDialog({
+  onReady: () => refreshGames().catch(handleError),
+  onPlay: id => enterGameFromNeighborhood(id),
+  onClose: reason => { clearInput(); if (reason !== 'play' && neighborhoodOpen && !session && !$('dialog[open]')) neighborhood?.resume(); },
+});
+const changeForm = createChangeForm({ getGame: () => session?.game, onFocusResume: () => { if ($('#session-dialog').open) $('#resume-button').focus(); } });
+$('#change-game').onclick = () => changeForm.show();
+$('#world-make-game').onclick = () => {
+  if (busy || session || !neighborhood) return;
+  $('#world-menu').close('venue'); makeGame.open();
 };
 $('#world-character').onclick = () => {
   if (busy || session) return;
@@ -866,7 +919,7 @@ window.addEventListener('keydown', event => {
   }
   if (event.repeat && (event.code === 'Enter' || event.code === 'Space')) event.preventDefault();
   if (event.code === 'Escape' && session?.state === 'playing') { event.preventDefault(); openMenu(); return; }
-  if (session?.state !== 'playing' || session.game?.kind === 'custom-sports' || !KEY_BITS[event.code]) return;
+  if (session?.state !== 'playing' || isHostedRuntime(session.game) || !KEY_BITS[event.code]) return;
   event.preventDefault(); if (!event.repeat) keyboard.add(event.code);
 });
 window.addEventListener('keyup', event => keyboard.delete(event.code));
@@ -893,6 +946,8 @@ function focusDirection(direction) {
   if (Number.isFinite(ranked[0]?.score)) ranked[0].el.focus();
 }
 function pollInput(now) {
+  // Sports and made games run in-page: Start opens the host menu, no GBA masks.
+  const hostedSession = ['custom-sports', 'generated'].includes(session?.game?.kind);
   const padsForVoice = navigator.getGamepads?.() || [], voiceEnabled = !document.hidden && document.hasFocus() && !busy;
   const nameOwnsB = nameEntry.voice.poll(padsForVoice, voiceEnabled && $('#profile-dialog').open);
   const voiceOwnsB = voice.poll(padsForVoice, voiceEnabled) || nameOwnsB;
@@ -923,11 +978,11 @@ function pollInput(now) {
     if (session?.state === 'playing') {
       // Sports use Start/Options; Y belongs to their familiar gameplay layout.
       // FireRed keeps Start/Back in-game and Y (or both triggers) for the host.
-      const sports = session.game?.kind === 'custom-sports';
+      const sports = hostedSession;
       if (pressed(16) || (sports ? pressed(9) : pressed(3) || (buttons[6] && buttons[7]))) { openMenu(); padArmed = false; }
     } else {
       const dialog = $('dialog[open]:not(#voice-dialog)');
-      if (dialog && ((!voiceOwnsB && pressed(1)) || ((dialog.id === 'world-menu' || (dialog.id === 'session-dialog' && session?.game?.kind === 'custom-sports')) && pressed(9)))) {
+      if (dialog && ((!voiceOwnsB && pressed(1)) || ((dialog.id === 'world-menu' || (dialog.id === 'session-dialog' && hostedSession)) && pressed(9)))) {
         if (dialog.id === 'session-dialog') {
           if (!$('#resume-button').hidden && !$('#resume-button').disabled) $('#resume-button').click();
         } else if (dialog.id === 'world-menu') {
@@ -938,7 +993,7 @@ function pollInput(now) {
       else if ((mask & 240) && now - lastPadAction > 180) { focusDirection(mask & 64 ? 'up' : mask & 128 ? 'down' : mask & 32 ? 'left' : 'right'); lastPadAction = now; }
     }
   }
-  if (session?.state === 'playing' && session.game?.kind !== 'custom-sports') {
+  if (session?.state === 'playing' && !hostedSession) {
     const next = [...keyboard].reduce((mask, code) => mask | KEY_BITS[code], padArmed ? mask : 0);
     if (next !== inputMask) { inputMask = next; session.adapter.input(next); }
   }
