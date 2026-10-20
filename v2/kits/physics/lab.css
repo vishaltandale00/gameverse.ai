@@ -1,0 +1,7 @@
+:root { color-scheme: dark; --bg: #101219; --panel: #1b1e28; --ink: #e8eaf0; --dim: #8b90a0; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, sans-serif; padding: 12px 16px; }
+header { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 8px; }
+header button { background: var(--panel); color: var(--ink); border: 1px solid #343a4c; border-radius: 6px; padding: 3px 9px; cursor: pointer; }
+header button[aria-pressed="true"] { border-color: #ffcf4a; color: #ffcf4a; }
+canvas { display: block; width: min(100%, 1100px); aspect-ratio: 3 / 2; background: #000; border-radius: 10px; outline: none; }
+#status, .keys { color: var(--dim); margin: 6px 0; font-size: 13px; }
