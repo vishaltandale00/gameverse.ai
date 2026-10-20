@@ -13,7 +13,10 @@ export const PARTS = {
   ears: ['none', 'pointed', 'round', 'long', 'floppy', 'fins'],
   top: ['none', 'quills', 'spikes', 'tuft', 'mohawk', 'long-hair', 'antenna', 'leaf'],
   headwear: ['none', 'cap', 'helmet', 'crown', 'wizard-hat', 'hood', 'horns', 'bandana', 'goggles'],
-  snout: ['none', 'muzzle', 'beak', 'nose'],
+  snout: ['none', 'muzzle', 'beak', 'nose', 'big-nose'],
+  facial: ['none', 'mustache', 'beard', 'goatee'],
+  outfit: ['none', 'overalls', 'gi', 'jacket'],
+  arms: ['body', 'skin'],
   eyes: ['cartoon', 'dots', 'visor', 'angry', 'sleepy', 'cyclops'],
   tail: ['none', 'fluffy', 'thin', 'spiky', 'flame', 'fish'],
   feet: ['shoes', 'boots', 'paws', 'none'],
@@ -30,11 +33,12 @@ export function normalizeLook(look = {}) {
   const primary = hex(c.primary, '#3a7bd5');
   return {
     body: pick(look.body, BODIES, 'biped'),
-    colors: { primary, secondary: hex(c.secondary, '#f2d2a9'), accent: hex(c.accent, '#d63c3c'), eye: hex(c.eye, '#1f8a4c'), detail: hex(c.detail, '#ffffff') },
+    colors: { primary, secondary: hex(c.secondary, '#f2d2a9'), accent: hex(c.accent, '#d63c3c'), eye: hex(c.eye, '#1f8a4c'), detail: hex(c.detail, '#ffffff'), outfit: hex(c.outfit, hex(c.accent, '#2a52be')), hair: hex(c.hair, '#3a2418') },
     ears: pick(look.ears, PARTS.ears, 'none'), top: pick(look.top, PARTS.top, 'none'), headwear: pick(look.headwear, PARTS.headwear, 'none'),
     snout: pick(look.snout, PARTS.snout, 'none'), eyes: pick(look.eyes, PARTS.eyes, 'cartoon'), tail: pick(look.tail, PARTS.tail, 'none'),
     feet: pick(look.feet, PARTS.feet, 'shoes'), hands: pick(look.hands, PARTS.hands, 'gloves'), accessory: pick(look.accessory, PARTS.accessory, 'none'),
     held: pick(look.held, PARTS.held, 'none'),
+    facial: pick(look.facial, PARTS.facial, 'none'), outfit: pick(look.outfit, PARTS.outfit, 'none'), arms: pick(look.arms, PARTS.arms, 'body'),
     build: pick(look.build, ['chibi', 'normal', 'stocky', 'tall'], 'chibi'),
   };
 }
@@ -121,6 +125,10 @@ function snoutAndMouth(P, look, hx, hy, R, mode) {
     out.push(`<ellipse cx="${f(hx + R * 0.98)}" cy="${f(hy + R * 0.2)}" rx="${f(R * 0.16)}" ry="${f(R * 0.13)}" fill="#151520"/><circle cx="${f(hx + R * 0.94)}" cy="${f(hy + R * 0.15)}" r="${f(R * 0.05)}" fill="#fff" opacity=".8"/>`);
   } else if (look.snout === 'beak') {
     out.push(P.shape(`M${pt(hx + R * 0.62, hy - R * 0.02)}Q${pt(hx + R * 1.5, hy + R * 0.12)} ${pt(hx + R * 0.66, hy + R * 0.46)}Z`, c.accent));
+  } else if (look.snout === 'big-nose') {
+    // A big round cartoon nose, in skin tone.
+    out.push(P.ellipse(hx + R * 0.86, hy + R * 0.16, R * 0.26, R * 0.22, shade(c.secondary, 0.06)));
+    out.push(`<ellipse cx="${f(hx + R * 0.8)}" cy="${f(hy + R * 0.08)}" rx="${f(R * 0.08)}" ry="${f(R * 0.06)}" fill="#ffffff" opacity=".6"/>`);
   } else if (look.snout === 'nose') {
     out.push(`<ellipse cx="${f(hx + R * 0.86)}" cy="${f(hy + R * 0.15)}" rx="${f(R * 0.14)}" ry="${f(R * 0.12)}" fill="${shade(c.secondary, 0.25)}" stroke="${P.O}" stroke-width="${f(P.W * 0.6)}"/>`);
   }
@@ -130,6 +138,11 @@ function snoutAndMouth(P, look, hx, hy, R, mode) {
     else if (look.eyes === 'angry') out.push(`<path d="M${pt(mx - R * 0.22, my + R * 0.05)}L${pt(mx + R * 0.24, my - R * 0.02)}" stroke="${P.O}" stroke-width="${f(P.W * 0.8)}" stroke-linecap="round"/>`);
     else out.push(`<path d="M${pt(mx - R * 0.24, my - R * 0.04)}Q${pt(mx, my + R * 0.2)} ${pt(mx + R * 0.26, my - R * 0.1)}" fill="none" stroke="${P.O}" stroke-width="${f(P.W * 0.8)}" stroke-linecap="round"/>`);
   }
+  // Facial hair sits under the nose and over the mouth.
+  const hair = look.colors.hair;
+  if (look.facial === 'mustache') out.push(P.shape(`M${pt(hx + R * 0.32, hy + R * 0.34)}Q${pt(hx + R * 0.55, hy + R * 0.18)} ${pt(hx + R * 0.82, hy + R * 0.3)}Q${pt(hx + R * 1.08, hy + R * 0.22)} ${pt(hx + R * 1.18, hy + R * 0.4)}Q${pt(hx + R * 1.0, hy + R * 0.58)} ${pt(hx + R * 0.8, hy + R * 0.48)}Q${pt(hx + R * 0.56, hy + R * 0.62)} ${pt(hx + R * 0.32, hy + R * 0.34)}Z`, hair));
+  if (look.facial === 'beard') out.push(P.shape(`M${pt(hx - R * 0.3, hy + R * 0.2)}Q${pt(hx - R * 0.2, hy + R * 1.15)} ${pt(hx + R * 0.45, hy + R * 1.1)}Q${pt(hx + R * 0.95, hy + R * 0.95)} ${pt(hx + R * 0.92, hy + R * 0.42)}Q${pt(hx + R * 0.5, hy + R * 0.7)} ${pt(hx - R * 0.3, hy + R * 0.2)}Z`, hair));
+  if (look.facial === 'goatee') out.push(P.shape(`M${pt(hx + R * 0.4, hy + R * 0.62)}Q${pt(hx + R * 0.55, hy + R * 1.05)} ${pt(hx + R * 0.72, hy + R * 0.62)}Z`, hair));
   return out.join('');
 }
 
@@ -195,7 +208,7 @@ function headFront(P, look, hx, hy, R, wind) {
 }
 
 /** People (no animal ears, quills or muzzle) get skin-colored heads; creatures get fur with a face patch. */
-const isHuman = look => look.body === 'biped' && look.ears === 'none' && look.top !== 'quills' && (look.snout === 'none' || look.snout === 'nose');
+const isHuman = look => look.body === 'biped' && look.ears === 'none' && look.top !== 'quills' && (look.snout === 'none' || look.snout === 'nose' || look.snout === 'big-nose');
 
 function drawHead(P, look, hx, hy, R, mode, wind) {
   const c = look.colors, human = isHuman(look), skin = human ? c.secondary : c.primary;
@@ -291,17 +304,25 @@ function biped(look, poseName, opts) {
   const human = isHuman(look);
   const torsoColor = human ? c.primary : c.primary;
   const belly = human ? '' : `<path d="${smoothPath([[neck[0] + tw * 0.05, neck[1] + 4], [neck[0] + tw * 0.62, neck[1] + 4], [mid[0] + tw * 0.86, mid[1] + 1], [hip[0] + tw * 0.55, hip[1] + 2], [hip[0] - tw * 0.1, hip[1] + 1], [mid[0] - tw * 0.2, mid[1]]])}" fill="${c.secondary}"/>`;
+  // Outfits: overalls (bib, straps, buttons, matching legs), a gi (wrap and belt) or a jacket.
+  const legColor = look.outfit === 'overalls' || look.outfit === 'gi' ? c.outfit : c.primary;
+  const armColor = look.arms === 'skin' ? c.secondary : c.primary;
+  const outfit = look.outfit === 'overalls' ? P.shape(smoothPath([[mid[0] - tw * 0.62, mid[1] - 1], [mid[0] + tw * 0.7, mid[1] - 2], [hip[0] + tw * 0.86, hip[1] + 2], [hip[0], hip[1] + 5.5], [hip[0] - tw * 0.86, hip[1] + 2]]), c.outfit)
+      + `<path d="M${pt(mid[0] - tw * 0.45, mid[1])}L${pt(neck[0] - tw * 0.5, neck[1] + 2)}M${pt(mid[0] + tw * 0.5, mid[1] - 1)}L${pt(neck[0] + tw * 0.48, neck[1] + 1)}" stroke="${c.outfit}" stroke-width="${f(tw * 0.32)}" stroke-linecap="round"/>`
+      + [[-0.4, 0], [0.45, -1]].map(([dx, dy]) => `<circle cx="${f(mid[0] + tw * dx)}" cy="${f(mid[1] + dy + 1)}" r="${f(tw * 0.13)}" fill="#f5c542" stroke="${P.O}" stroke-width="${f(P.W * 0.5)}"/>`).join('')
+    : look.outfit === 'gi' ? `<path d="M${pt(neck[0] - tw * 0.4, neck[1] + 1)}L${pt(mid[0] + tw * 0.4, mid[1] + 3)}M${pt(neck[0] + tw * 0.45, neck[1])}L${pt(mid[0] - tw * 0.1, mid[1] + 2)}" stroke="${shade(c.primary, 0.3)}" stroke-width="${f(P.W * 1.2)}"/><path d="M${pt(hip[0] - tw * 0.9, hip[1] - 3)}Q${pt(hip[0], hip[1] + 1)} ${pt(hip[0] + tw * 0.9, hip[1] - 3)}" stroke="${c.outfit}" stroke-width="${f(tw * 0.4)}" fill="none"/>`
+    : look.outfit === 'jacket' ? `<path d="M${pt(neck[0] + tw * 0.1, neck[1] + 2)}L${pt(hip[0] + tw * 0.2, hip[1] + 3)}" stroke="${shade(c.primary, 0.35)}" stroke-width="${f(P.W)}"/><path d="M${pt(neck[0] - tw * 0.2, neck[1] + 1)}L${pt(neck[0] + tw * 0.15, neck[1] + 6)}L${pt(neck[0] + tw * 0.5, neck[1])}" fill="none" stroke="${light(c.primary, 0.3)}" stroke-width="${f(P.W)}"/>` : '';
   const stripes = look.accessory === 'stripes' ? `<path d="M${pt(hip[0] - 9, hip[1] - 9)}h18M${pt(hip[0] - 9, hip[1] - 4)}h18" stroke="${c.accent}" stroke-width="3" opacity=".9"/>` : '';
   const body = [
     accessoryBack(P, look, neck, hip, pose.wind),
-    P.limb(armF.slice(0, 3), build.limbW * 0.9, farColor), hand(P, { ...look, colors: { ...c } }, armF[2], 4.5),
-    P.limb(legF, build.limbW, farColor), foot(P, look, legF[2], shinAngle(legF), 0.95),
+    P.limb(armF.slice(0, 3), build.limbW * 0.9, shade(armColor, 0.12)), hand(P, { ...look, colors: { ...c } }, armF[2], 4.5),
+    P.limb(legF, build.limbW, shade(legColor, 0.12)), foot(P, look, legF[2], shinAngle(legF), 0.95),
     tail(P, look, [hip[0] - build.torso * 0.45, hip[1] - 2], pose.wind),
-    P.shape(torsoPath, torsoColor), belly, stripes,
-    P.limb(legN, build.limbW, c.primary), foot(P, look, legN[2], shinAngle(legN)),
+    P.shape(torsoPath, torsoColor), look.outfit === 'overalls' ? '' : belly, outfit, stripes,
+    P.limb(legN, build.limbW, legColor), foot(P, look, legN[2], shinAngle(legN)),
     accessoryFront(P, look, neck, hip, pose.wind),
     drawHead(P, look, head[0], head[1], build.R, pose.eyes, pose.wind),
-    P.limb(armN.slice(0, 3), build.limbW * 0.9, c.primary), held(P, look, armN[2], pose.armN[0] + pose.armN[1]), hand(P, look, armN[2], 4.8),
+    P.limb(armN.slice(0, 3), build.limbW * 0.9, armColor), held(P, look, armN[2], pose.armN[0] + pose.armN[1]), hand(P, look, armN[2], 4.8),
   ].join('');
   return { P, body };
 }

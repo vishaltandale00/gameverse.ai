@@ -18,9 +18,10 @@ const en = list => ({ type: 'string', enum: list });
 const obj = (properties) => ({ type: 'object', additionalProperties: false, required: Object.keys(properties), properties });
 const look = obj({
   body: en(BODIES), build: en(['chibi', 'normal', 'stocky', 'tall']),
-  colors: obj({ primary: color, secondary: color, accent: color, eye: color }),
+  colors: obj({ primary: color, secondary: color, accent: color, eye: color, outfit: color, hair: color }),
   ears: en(PARTS.ears), top: en(PARTS.top), headwear: en(PARTS.headwear), snout: en(PARTS.snout), eyes: en(PARTS.eyes),
   tail: en(PARTS.tail), feet: en(PARTS.feet), hands: en(PARTS.hands), accessory: en(PARTS.accessory), held: en(PARTS.held),
+  facial: en(PARTS.facial), outfit: en(PARTS.outfit), arms: en(PARTS.arms),
 });
 const prop = role => obj({ kind: en(PROPS[role]), color });
 
@@ -44,7 +45,8 @@ export const DIRECTION_PROMPT = `You are the art director for a 2D game. Code dr
 - tiles: material is the soil or wall body; surface is the walkable top layer; platform is floating blocks. Ground and platforms must contrast with each other and with the sky.
 - player and enemy: build each character from parts. body is the body plan (biped for people and upright animals, quadruped for four-legged animals, blob for slimes, flyer for birds and bats, robot for wheeled machines, ghost for spirits). primary is the main fur, skin or clothing color, secondary the belly, face or skin, accent shoes, hats and trim, eye the iris. Give the player bright, friendly colors and the enemy a contrasting, menacing palette (eyes "angry" or "visor").
 - pickup, hazard, goal: the closest kind and a color.
-- Characters, props and settings may be inspired by the idea but must be original designs: describe a "fast blue hedgehog", not a trademarked character.
+- When the idea names a known character, rebuild its look from parts so it is instantly recognizable: its silhouette, palette, outfit and signature features. A mustached plumber: build stocky, headwear cap, snout big-nose, facial mustache, outfit overalls (outfit color) over a shirt (primary), hands gloves, feet boots. A blue hedgehog: top quills, ears pointed, snout muzzle, arms skin (secondary peach), eye green, feet shoes red with the white strap, hands gloves, tail spiky. A martial-arts hero: top spikes (hair color), outfit gi, belt in outfit color. Never draw logos, letters or emblems.
+- outfit color is overalls, pants or belt; hair color is hair and facial hair.
 - changed: when revising an existing direction, list ONLY the targets the change request is about (e.g. "make the hero red" → ["player"]). Copy every other target exactly. When creating new, list all targets.`;
 
 export function directionRequest({ design, previous, change }) {

@@ -3,7 +3,9 @@ import { paintCharacter, POSE_NAMES } from '../art/characters.js';
 
 export const PRESETS = {
   hedgehog: { body: 'biped', colors: { primary: '#1f5fd6', secondary: '#f2c79a', accent: '#e0302f', eye: '#1f9a4c' }, ears: 'pointed', top: 'quills', snout: 'muzzle', tail: 'spiky', feet: 'shoes', hands: 'gloves' },
-  plumber: { body: 'biped', build: 'normal', colors: { primary: '#2a52be', secondary: '#f5c99b', accent: '#d8262c', eye: '#3a6fd8' }, headwear: 'cap', snout: 'nose', feet: 'boots', hands: 'gloves', accessory: 'belt' },
+  plumber: { body: 'biped', build: 'stocky', colors: { primary: '#e0302a', secondary: '#f5c99b', accent: '#e0302a', outfit: '#2a52be', hair: '#3a2418', eye: '#3a6fd8' }, headwear: 'cap', snout: 'big-nose', facial: 'mustache', outfit: 'overalls', feet: 'boots', hands: 'gloves' },
+  hedgehogHero: { body: 'biped', colors: { primary: '#1f5fd6', secondary: '#f2c79a', accent: '#e0302f', eye: '#1f9a4c' }, ears: 'pointed', top: 'quills', snout: 'muzzle', arms: 'skin', tail: 'spiky', feet: 'shoes', hands: 'gloves' },
+  martialArtist: { body: 'biped', build: 'normal', colors: { primary: '#f07a1a', secondary: '#f5c99b', accent: '#2a52be', outfit: '#2a52be', hair: '#1a1a22', eye: '#1a1a22' }, top: 'spikes', outfit: 'gi', feet: 'boots', hands: 'none' },
   knight: { body: 'biped', build: 'stocky', colors: { primary: '#8d99ae', secondary: '#f0c8a0', accent: '#b8323a', eye: '#3060c0' }, headwear: 'helmet', feet: 'boots', hands: 'gloves', held: 'sword', accessory: 'cape' },
   wizard: { body: 'biped', build: 'normal', colors: { primary: '#5b3fa8', secondary: '#f1d0b0', accent: '#3a2a80', eye: '#7a40d0' }, headwear: 'wizard-hat', top: 'long-hair', feet: 'boots', hands: 'gloves', held: 'staff' },
   fox: { body: 'quadruped', colors: { primary: '#e8742a', secondary: '#fff1df', accent: '#2a2a2a', eye: '#3a2a10' }, ears: 'pointed', snout: 'muzzle', tail: 'fluffy' },
