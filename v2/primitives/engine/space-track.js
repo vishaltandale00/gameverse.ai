@@ -5,7 +5,7 @@
 // the ground and the lane edges. A window around the leader gives `bounds`,
 // culls passed obstacles and reports `passed` (near-miss and combo scoring);
 // looped tracks wrap progress and count laps.
-import { zoneIndex, zoneTracker, zoneEditor, inSpace, bodyOf, clamp, mod, wrapDelta, BOUNDS_CAPS, obstacleOf, obstaclesIn } from './spaces2d-lib.js';
+import { zoneIndex, zoneTracker, zoneEditor, ownSpaces, inSpace, bodyOf, clamp, mod, wrapDelta, BOUNDS_CAPS, obstacleOf, obstaclesIn } from './spaces2d-lib.js';
 
 const EPS = 1e-6;
 const STICK = 0.5; // a rider stays on the body it stands on if that body rose at most this far since its last slide
@@ -37,10 +37,10 @@ export default {
     notes: 'slide blocked keys x/y/z are progress/lane/height. Solid bodies (body.solid) block and can be stood on, one-way ones (body.oneWay) only stood on; riders (body.standingOn) move with ballistic movers and with setPos(e, at, rt, {carry:true}); body.obstacle marks things the leader can pass (passed event, used for near-miss); body.cull despawns them once behind the window; body.ballistic bodies are integrated (oncoming trains: gravityScale 0, vel [-v,0,0]).',
   },
   capabilities(config) { const caps = ['position', 'distance', 'overlap', 'raycast', 'gravity', 'dynamics', 'bounds']; if (config.loop) caps.push('wrap'); return caps; },
-  validate(config, doc) {
+  validate(config, doc, ctx, inst) {
     const errors = [];
     if (config.loop && !(config.length > 0)) errors.push({ code: 'track_loop_length', path: 'with.length', message: 'a looped track needs a positive length' });
-    for (const [i, s] of (doc.spaces || []).entries()) if (s.use === 'engine.space.track' && Object.entries(s.with || {}).every(([k, v]) => JSON.stringify(config[k]) === JSON.stringify(v))) (s.zones || []).forEach((z, j) => {
+    for (const [s, i] of ownSpaces(doc, 'engine.space.track', config, inst)) (s.zones || []).forEach((z, j) => {
       const r = z.range, path = `spaces[${i}].zones[${j}]`;
       if (!Array.isArray(r) || r.length !== 2 || !(r[1] > r[0])) errors.push({ code: 'zone_range_invalid', path: `${path}.range`, message: `zone '${z.id}' needs range [p0, p1) with p1 > p0` });
       if (z.lanes && (z.lanes[0] < 0 || z.lanes[1] > config.lanes - 1 || z.lanes[1] < z.lanes[0])) errors.push({ code: 'zone_lanes_invalid', path: `${path}.lanes`, message: `lanes must lie within 0..${config.lanes - 1}` });

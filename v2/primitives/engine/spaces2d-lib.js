@@ -81,10 +81,11 @@ export function ownSpaces(doc, use, config, inst) {
 }
 
 // ---------- entity obstacles (KERNEL_API §2: body.solid / body.oneWay) ----------
-/** 'solid' | 'oneway' | null. components.blocker is honoured as a legacy alias for body.solid. */
+/** 'solid' | 'oneway' | null, from the frozen body.solid / body.oneWay fields only (components.blocker is not read:
+ *  mechanism toys such as bumpers set it and expect overlap, not collision). */
 export function obstacleOf(e) {
   const b = e.components?.body;
-  if (!(b?.solid ?? e.components?.blocker)) return null;
+  if (!b?.solid) return null;
   return b?.oneWay ? 'oneway' : 'solid';
 }
 /**
@@ -263,12 +264,16 @@ export const tidy = v => (Math.abs(v) < 1e-12 ? 0 : +v.toFixed(9));
 // {t, at, layer, from, to, by} to the edit log and emit cell_changed; bake() and
 // edits made while generators install form the unlogged baseline.
 const BASE = 0x30;
+// Rolling content hash of every cell write (s.vh): a version key for derived caches (navigation) that is
+// stored in state, so it survives snapshots and two different edit histories never share a key in practice.
+const mixHash = (h, x, y, layer, block) => { const t = `${x},${y},${layer},${block}`; h ^= 0x9e3779b9; for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619) >>> 0; return h >>> 0; };
 export function cellStore(rt, sid, { W, H, layers, wrapX = false, wrapY = false }) {
   let started = false;
   rt.on('game_start', () => { started = true; });
   rt.onRestore(() => { started = true; });
   // st() initialises (writers only); peek() never writes, so reads (options, renderers) leave state untouched.
-  const st = () => { const s = rt.state.spaces[sid]; s.palette ??= [null]; s.cells ??= Object.fromEntries(layers.map(l => [l, []])); s.log ??= []; return s; };
+  const st = () => { const s = rt.state.spaces[sid]; s.palette ??= [null]; s.cells ??= Object.fromEntries(layers.map(l => [l, []])); s.log ??= []; s.vh ??= 0; return s; };
+  let emptyRow = null;
   const EMPTY = { palette: [null], cells: {}, log: [] }, peek = () => { const s = rt.state.spaces[sid]; return s?.cells ? s : EMPTY; };
   const norm = (x, y) => [wrapX ? mod(x, W) : x, wrapY ? mod(y, H) : y];
   const inside = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
@@ -279,12 +284,15 @@ export function cellStore(rt, sid, { W, H, layers, wrapX = false, wrapY = false 
     let row = rows[y]; if (!row) { if (block == null) return; row = String.fromCharCode(BASE).repeat(W); }
     const ch = String.fromCharCode(BASE + (block == null ? 0 : index(s, block)));
     row = row.slice(0, x) + ch + row.slice(x + 1);
-    rows[y] = /^0+$/.test(row) ? null : row;
+    rows[y] = row === (emptyRow ??= String.fromCharCode(BASE).repeat(W)) ? null : row;
+    s.vh = mixHash(s.vh ?? 0, x, y, layer, block);
   };
   const store = {
     layers,
     /** Create the persisted layout now (call once the space is defined) so state shape never depends on reads. */
     init: () => { st(); },
+    /** Content version of every layer (changes on each cell write). */
+    version: () => rt.state.spaces[sid]?.vh ?? 0,
     get(at, layer = layers[0]) { const [x, y] = norm(Math.floor(at[0]), Math.floor(at[1])); return inside(x, y) ? read(peek(), layer, x, y) : null; },
     /** Returns false when unchanged or out of bounds. */
     set(at, block, rt, by = null, layer = layers[0]) {

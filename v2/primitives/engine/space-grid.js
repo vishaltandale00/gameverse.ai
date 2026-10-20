@@ -6,7 +6,7 @@
 // no-up tiles), speed and cost modifiers (tunnel slowdown, rough terrain),
 // cover and opacity (tactics). settle() is column gravity for falling and
 // match puzzles. Tactics, puzzle, maze and ARC-style games all live here.
-import { cellStore, zoneIndex, zoneTracker, addZoneTo, inSpace, key2, unkey, mod, astar, Heap, shapeHitsRect, BOUNDS_CAPS } from './spaces2d-lib.js';
+import { cellStore, zoneIndex, zoneTracker, zoneEditor, ownSpaces, obstacleOf, dynamicObstacle, inSpace, key2, unkey, mod, astar, Heap, shapeHitsRect, BOUNDS_CAPS } from './spaces2d-lib.js';
 
 const SQ = { up: [0, 1], down: [0, -1], left: [-1, 0], right: [1, 0], 'up-left': [-1, 1], 'up-right': [1, 1], 'down-left': [-1, -1], 'down-right': [1, -1] };
 // odd-r hex neighbours: [dc, dr] for even and odd rows; names assume +row is "north".
@@ -48,7 +48,7 @@ export default {
     if (config.wrap && config.wrap !== 'none') caps.push('wrap');
     return caps;
   },
-  validate(config, doc) {
+  validate(config, doc, ctx, inst) {
     const errors = [], [W, H] = config.size || [8, 8];
     if (config.topology === 'hex' && config.diagonals) errors.push({ code: 'grid_hex_diagonals', path: 'with.diagonals', message: 'hex cells already have six neighbours; diagonals applies to square/iso' });
     if (config.topology === 'hex' && (config.wrap === 'y' || config.wrap === 'both') && H % 2) errors.push({ code: 'grid_hex_wrap', path: 'with.wrap', message: 'hex boards wrap vertically only with an even number of rows' });
@@ -60,7 +60,7 @@ export default {
       if (r.speed !== undefined && !(r.speed > 0)) errors.push({ code: 'rule_invalid', path: `with.rules.${b}.speed`, message: 'speed must be > 0' });
       if (r.cover !== undefined && ![0, 1, 2].includes(r.cover)) errors.push({ code: 'rule_invalid', path: `with.rules.${b}.cover`, message: 'cover is 0, 1 or 2' });
     }
-    for (const [i, s] of (doc.spaces || []).entries()) if (s.use === 'engine.space.grid' && Object.entries(s.with || {}).every(([k, v]) => JSON.stringify(config[k]) === JSON.stringify(v))) (s.zones || []).forEach((z, j) => {
+    for (const [s, i] of ownSpaces(doc, 'engine.space.grid', config, inst)) (s.zones || []).forEach((z, j) => {
       const path = `spaces[${i}].zones[${j}]`, r = z.rect;
       if (r && (!Array.isArray(r) || r.length !== 4 || r[2] <= r[0] || r[3] <= r[1])) errors.push({ code: 'zone_rect_invalid', path: `${path}.rect`, message: `zone '${z.id}' rect must be [c0,r0,c1,r1) with c1>c0, r1>r0` });
       else if (r && (r[0] < 0 || r[1] < 0 || r[2] > W || r[3] > H)) errors.push({ code: 'zone_outside', path: `${path}.rect`, message: `zone '${z.id}' extends outside the ${W}×${H} board` });
@@ -106,10 +106,24 @@ export default {
     const classesOf = e => (e ? [e.id, e.archetype, e.components?.body?.layer, ...(e.components?.body?.tags || [])].filter(Boolean) : []);
     const applies = (r, cls) => (!r.appliesTo || r.appliesTo.some(c => cls.includes(c))) && !(r.except || []).some(c => cls.includes(c));
     /** Rules of every block in the cell, in layer order: [{block, rule}]. */
-    const rulesIn = c => config.layers.map(l => cells.get(c, l)).filter(b => b != null).map(b => {
-      const r = config.rules[b], d = def(b);
-      return { block: b, rule: r || {}, solid: r?.pass !== undefined ? r.pass === false : d ? d.solid === true : true, opaque: r?.opaque ?? (d ? d.opaque ?? d.solid === true : true) };
-    });
+    // Derived navigation data lives in rt.caches (never state), keyed by the board's content version and the
+    // document: per-cell rules, and per-walker adjacency and reachable sets built lazily. navStats() counts builds.
+    const navCache = () => {
+      const c = (rt.caches[`spaces2d.gridnav:${sid}`] ??= { doc: null, ver: null, rules: new Map(), graphs: new Map(), stats: { builds: 0, hits: 0 } }), v = cells.version();
+      if (c.doc !== rt.doc || c.ver !== v) { c.doc = rt.doc; c.ver = v; c.rules.clear(); c.graphs.clear(); }
+      return c;
+    };
+    const rulesIn = c => {
+      const memo = navCache().rules, k = cellKey(c); let out = memo.get(k);
+      if (!out) {
+        out = config.layers.map(l => cells.get(c, l)).filter(b => b != null).map(b => {
+          const r = config.rules[b], d = def(b);
+          return { block: b, rule: r || {}, solid: r?.pass !== undefined ? r.pass === false : d ? d.solid === true : true, opaque: r?.opaque ?? (d ? d.opaque ?? d.solid === true : true) };
+        });
+        memo.set(k, out);
+      }
+      return out;
+    };
     const passFor = (x, cls) => {
       const p = x.rule.pass;
       if (Array.isArray(p)) return p.some(c => cls.includes(c));
@@ -119,27 +133,45 @@ export default {
     /** Whether e (or a generic walker when e is null) may stand in cell c. */
     const enterable = (c, e) => { if (!inBounds(c)) return false; const cls = classesOf(e); return rulesIn(c).every(x => passFor(x, cls)); };
     /** Whether e may step from a to adjacent b: passability, one-way rules on both cells, exclusive occupancy. */
-    const stepOk = (a, b, e, { occupied = config.exclusive } = {}) => {
+    const stepOk = (a, b, e, { occupied = config.exclusive, obstacles = 'all' } = {}) => {
       if (!enterable(b, e)) return false;
       const d = dirBetween(a, b), cls = classesOf(e);
       if (d) { for (const x of rulesIn(a)) if (applies(x.rule, cls) && (x.rule.noExit || []).includes(d)) return false; for (const x of rulesIn(b)) if (applies(x.rule, cls) && (x.rule.noEnter || []).includes(d)) return false; }
       if (hex || !config.diagonals || a[0] === b[0] || a[1] === b[1]) { /* orthogonal */ } else if (!enterable(norm([b[0], a[1]]), e) || !enterable(norm([a[0], b[1]]), e)) return false;
       if (occupied && blockerAt(b, e)) return false;
+      if (solidAt(b, e, obstacles)) return false;
       return true;
     };
     const blockerAt = (c, e) => inSpace(rt, sid, o => o !== e && o.components.body?.blocking !== false && cellKey(cellOf(o.at)) === cellKey(c)).length > 0;
+    // Entity obstacles (body.solid): always block real moves; in navigation only static ones do unless
+    // obstacles: 'all' (doors and pushable crates are dynamic, assumed passable) or 'none'.
+    const solidAt = (c, e, mode = 'all') => mode !== 'none' && inSpace(rt, sid, o => o !== e && obstacleOf(o) === 'solid' && (mode === 'all' || !dynamicObstacle(o)) && cellKey(cellOf(o.at)) === cellKey(c)).length > 0;
     const speedAt = (c, e) => { const cls = classesOf(e); let s = 1; for (const x of rulesIn(cellOf(c))) if (applies(x.rule, cls) && x.rule.speed) s *= x.rule.speed; return s; };
     const costTo = (c, e) => { const cls = classesOf(e); let k = 1; for (const x of rulesIn(c)) if (applies(x.rule, cls)) { if (x.rule.cost !== undefined) k = Math.max(k, x.rule.cost); else if (x.rule.speed) k = Math.max(k, 1 / x.rule.speed); } return k; };
     const opaqueAt = c => !inBounds(c) || rulesIn(c).some(x => x.opaque);
     const coverOf = c => (config.cover && inBounds(c) ? Math.max(0, ...rulesIn(c).map(x => x.rule.cover ?? (x.solid ? 2 : 0))) : 0);
     const nbrs = c => dirNames().map(d => step(c, d)).filter(inBounds);
     const who = o => (o?.who == null ? null : typeof o.who === 'string' ? rt.entity(o.who) : o.who);
-    const graph = (e, o = {}) => k => { const c = unkey(k), out = []; for (const n of nbrs(c)) if (stepOk(c, n, e, { occupied: o.occupied ?? config.exclusive })) out.push([cellKey(n), costTo(n, e) * (!hex && n[0] !== c[0] && n[1] !== c[1] ? Math.SQRT2 : 1)]); return out; };
-    /** Dijkstra from start cells, bounded by maxCost: Map key → cost. */
+    // Adjacency for a walker: memoised per (walker classes, occupancy mode, positions of what blocks it).
+    const graphOf = (e, o = {}) => {
+      const occupied = o.occupied ?? config.exclusive, obstacles = o.obstacles ?? 'static';
+      const sig = inSpace(rt, sid, x => x !== e && ((occupied && x.components.body?.blocking !== false) || (obstacles !== 'none' && obstacleOf(x) === 'solid' && (obstacles === 'all' || !dynamicObstacle(x))))).map(x => `${x.id}@${cellKey(cellOf(x.at))}`).join(' ');
+      const key = JSON.stringify([classesOf(e).sort(), occupied, obstacles, sig]), c = navCache();
+      let g = c.graphs.get(key);
+      if (g) { c.stats.hits++; return g; }
+      const adj = new Map();
+      g = { adj, reach: new Map(), next: k => { let out = adj.get(k); if (!out) { const cc = unkey(k); out = []; for (const n of nbrs(cc)) if (stepOk(cc, n, e, { occupied, obstacles })) out.push([cellKey(n), costTo(n, e) * (!hex && n[0] !== cc[0] && n[1] !== cc[1] ? Math.SQRT2 : 1)]); adj.set(k, out); } return out; } };
+      c.stats.builds++; c.graphs.set(key, g); if (c.graphs.size > 32) c.graphs.delete(c.graphs.keys().next().value);
+      return g;
+    };
+    const graph = (e, o = {}) => graphOf(e, o).next;
+    /** Dijkstra from start cells, bounded by maxCost: Map key → cost (memoised per graph; treat as read-only). */
     const costs = (starts, e, o = {}) => {
-      const best = new Map(), open = new Heap(), next = graph(e, o), max = o.maxCost ?? Infinity;
+      const G = graphOf(e, o), mk = `${starts.join(';')}|${o.maxCost ?? ''}`, hit = G.reach.get(mk); if (hit) return hit;
+      const best = new Map(), open = new Heap(), next = G.next, max = o.maxCost ?? Infinity;
       for (const s of starts) { best.set(s, 0); open.push(s, 0); }
       while (open.size) { const k = open.pop(), g = best.get(k); for (const [m, c] of next(k)) { const ng = g + c; if (ng <= max + 1e-9 && ng < (best.get(m) ?? Infinity)) { best.set(m, ng); open.push(m, ng); } } }
+      G.reach.set(mk, best);
       return best;
     };
     const startsOf = from => { const z = typeof from === 'string' && zones().byId.get(from); if (z) return z.spawn ? [cellKey(cellOf(z.spawn))] : zoneCells(z).map(cellKey); return [cellKey(cellOf(from))]; };
@@ -219,12 +251,13 @@ export default {
         const e = who(o), starts = startsOf(from), z = typeof to === 'string' && zones().byId.get(to), occ = o.occupied ?? config.exclusive;
         const goals = new Set(z ? zoneCells(z).map(cellKey) : [cellKey(cellOf(to))]), g = z ? cellOf(z.spawn || zoneCells(z)[0]) : cellOf(to);
         // In exclusive boards the goal may be occupied (walking up to a target); other occupied cells are avoided.
-        const busy = graph(e, { occupied: occ }), free = graph(e, { occupied: false });
+        const busy = graph(e, { occupied: occ, obstacles: o.obstacles }), free = graph(e, { occupied: false, obstacles: o.obstacles });
         const next = k => { const out = busy(k); if (occ) for (const m of free(k)) if (goals.has(m[0]) && !out.some(x => x[0] === m[0])) out.push(m); return out; };
         const keys = astar(starts[0], k => goals.has(k), next, k => steps(unkey(k), g), o.maxNodes ?? 200000);
         return keys && keys.map(unkey);
       },
-      reachable(from, rt, o = {}) { return new Set(costs(startsOf(from), who(o), o).keys()); },
+      reachable(from, rt, o = {}) { const G = graphOf(who(o), o), mk = `set:${startsOf(from).join(';')}|${o.maxCost ?? ''}`; let s = G.reach.get(mk); if (!s) { s = new Set(costs(startsOf(from), who(o), o).keys()); G.reach.set(mk, s); } return s; },
+      navStats: () => { const c = navCache(); return { builds: c.stats.builds, hits: c.stats.hits, graphs: c.graphs.size, nodes: [...c.graphs.values()].reduce((n, g) => n + g.adj.size, 0) }; },
       canReach(a, b, c, d) { const o = c && c.state ? (d || {}) : (c || {}); const seen = api.reachable(a, rt, o), z = typeof b === 'string' && zones().byId.get(b); return z ? zoneCells(z).some(q => seen.has(cellKey(q))) : seen.has(cellKey(cellOf(b))); },
       // occupancy
       occupant: c => api.entitiesAt(c)[0] ?? null,
@@ -262,7 +295,7 @@ export default {
       cellsIn: (box, layer) => cells.cellsIn(box, layer ?? config.layers[0]),
       editLog: since => cells.log(since),
       bake: (list, rt, o = {}) => cells.bake(list, { layer: o.layer ?? config.layers[0], box: o.box }),
-      addZone: (zone, rt) => addZoneTo(rt, sid, zones, zone, z => (Array.isArray(z.rect) || Array.isArray(z.cells) ? null : 'needs rect or cells')),
+      ...zoneEditor(rt, sid, zones, z => (Array.isArray(z.rect) || Array.isArray(z.cells) ? null : 'needs rect or cells'), rt => { for (const e of inSpace(rt, sid)) tracker.track(e, rt); }),
       // settle: gravity for cell contents
       settle(rt, o = {}) {
         const moves = plan(o);

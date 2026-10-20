@@ -218,10 +218,11 @@ test('tilemap: solid entities block slide until opened (doors), raycasts see the
   door.components.body.solid = false; // the mechanism opens it
   r = api.slide(p, [3, 0], rt);
   assert.equal(r.blocked.x, false); assert.ok(p.at[0] > 4);
-  // Legacy alias: components.blocker without body.solid.
+  // components.blocker is not an obstacle flag (only the frozen body.solid is).
   delete door.components.body.solid; door.components.blocker = true;
   api.setPos(p, [1.5, 2.45], rt);
-  assert.equal(api.slide(p, [3, 0], rt).blocked.x, true, 'components.blocker blocks too');
+  assert.equal(api.slide(p, [3, 0], rt).blocked.x, false, 'components.blocker alone does not block');
+  door.components.body.solid = true;
   // A door closing on a body never traps it.
   api.setPos(p, [3.5, 2.45], rt);
   assert.equal(api.slide(p, [2, 0], rt).blocked.x, false);

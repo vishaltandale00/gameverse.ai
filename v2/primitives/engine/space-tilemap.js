@@ -7,7 +7,7 @@
 // step-ups. Gravity exists only in side mode. Navigation is ability-aware
 // (spaces2d-tilenav.js) and powers path, reachable and canReach.
 import { cellStore, zoneIndex, zoneTracker, addZoneTo, inSpace, bodyOf, key2, unkey, mod, clamp, rectHas, rectArea, rectCenter, rectDist, boxAround, rectsOverlap, shapeHitsRect, rayRect, edgesParam, checkEdges, wrapDelta, BOUNDS_CAPS, zoneEditor, ownSpaces, obstacleOf, dynamicObstacle, obstaclesIn } from './spaces2d-lib.js';
-import { makeNav } from './spaces2d-tilenav.js';
+import { makeNav, DEFAULT_ABILITIES } from './spaces2d-tilenav.js';
 
 const EPS = 1e-4;
 const STICK = 0.5; // a rider stays on the entity it stands on if that entity rose at most this far (tiles) since the last slide
@@ -38,7 +38,7 @@ export default {
     at: 'At = [x, y] in tiles, y up; the center of the body box (components.body.size, default [1,1]). Cell [i,j] covers [i,i+1)×[j,j+1).',
     zones: 'Zone = {id, name?, rect:[x0,y0,x1,y1) in tiles, spawn?:[x,y], tags?, rules?:{gravity?}}; nested zones are all entered, entity.zone is the smallest.',
     state: 'rt.state.spaces[id] = {palette, cells:{layer:[rowString|null]}, log:[{t,at,layer,from,to,by}], inside:{entity:[zones]}, out:{entity:edge}, zones?:[runtime zones]}',
-    notes: 'gravity is reported only in side mode; slide/grounded also work top-down (walls, ledges entered moving -y, water without swim). Bodies with components.body.ballistic are integrated by the space (gravity, bounce, friction). path/reachable abilities (tiles): jumpHeight=3, jumpDistance=4 (alias jumpGap), doubleJump, dash, climb, wallJump, swim, fly, dropThrough=true; avoid=[hazard]. reachable returns feet-cell keys "x,y".',
+    notes: 'gravity is reported only in side mode; slide/grounded also work top-down (walls, ledges entered moving -y, water without swim). Bodies with components.body.ballistic are integrated by the space (gravity, bounce, friction). path/reachable abilities (tiles): jumpHeight=3, jumpDistance=4 (alias jumpGap), doubleJump, dash, climb, wallJump, swim, fly, dropThrough=true; avoid=[hazard]. reachable returns feet-cell keys "x,y" (a shared Set: read-only). Entity obstacles: body.solid entities block slide like solid tiles and support from above; body.oneWay ones only support from above (drop-through applies). The supporting entity is recorded in body.standingOn; riders move with ballistic movers and setPos(e, at, rt, {carry:true}), and stay on a support that rose up to 0.5 tiles. A solid entity already overlapping the mover is ignored (a closing door never traps). raycast hits solid entities by default (mask.solids=false to skip). Navigation (path/reachable/canReach, opts.obstacles): "static" (default) treats solid entities that cannot move or open as cells and dynamic ones (components.mechanism, ballistic, kinematic, moving, body.dynamic) as passable, since whether a door opens is the plot/mechanism solver question; "all" includes dynamic ones where they stand; "none" ignores entities. Graphs are cached in rt.caches per map version (navStats()). Zones: addZone/removeZone/moveZone.',
   },
   capabilities(config) {
     const caps = ['position', 'distance', 'overlap', 'raycast', 'pathfind', 'reachable', 'editCells', 'surface', 'dynamics', 'bounds'];
@@ -97,10 +97,18 @@ export default {
       return best;
     };
     const kindAt = (x, y) => cellKind(x, y).kind;
+    // Tags of every layer at a cell, memoised per map version and document (rt.caches, never state).
+    const NO_TAGS = Object.freeze([]);
     const tagsAt = (x, y) => {
-      x = nx(Math.floor(x)); y = ny(Math.floor(y)); if (!inMap(x, y)) return [];
-      const out = [];
-      for (const l of config.layers) { const b = cells.get([x, y], l); if (b != null) { const d = def(b); for (const t of d?.tags || []) if (!out.includes(t)) out.push(t); } }
+      x = nx(Math.floor(x)); y = ny(Math.floor(y)); if (!inMap(x, y)) return NO_TAGS;
+      const c = (rt.caches[`spaces2d.tags:${sid}`] ??= { doc: null, ver: null, m: new Map() }), v = cells.version();
+      if (c.doc !== rt.doc || c.ver !== v) { c.doc = rt.doc; c.ver = v; c.m.clear(); }
+      const k = y * W + x; let out = c.m.get(k);
+      if (!out) {
+        out = [];
+        for (const l of config.layers) { const b = cells.get([x, y], l); if (b != null) { const d = def(b); for (const t of d?.tags || []) if (!out.includes(t)) out.push(t); } }
+        out = out.length ? Object.freeze(out) : NO_TAGS; c.m.set(k, out);
+      }
       return out;
     };
     const isLiquid = (x, y) => tagsAt(x, y).some(t => LIQUID_TAGS.includes(t));
@@ -293,22 +301,44 @@ export default {
       if (env.jumpGap !== undefined && env.jumpDistance === undefined) env.jumpDistance = env.jumpGap;
       return { abilities: env, width: o.width ?? (o.radius != null ? o.radius * 2 : 1), height: o.height ?? 1, avoid: o.avoid, diagonals: o.diagonals, maxNodes: o.maxNodes, obstacles: o.obstacles ?? 'static', who: o.who };
     };
-    // Entity obstacles in navigation (opts.obstacles): 'static' (default) adds solid entities that cannot move
+    // Entity obstacles in navigation (opts.obstacles): "static" (default) adds solid entities that cannot move
     // or open as solid cells and one-way ones as one-way tops; 'all' adds dynamic ones at their current
-    // position too; 'none' ignores entities. Dynamic obstacles (doors, lifts, movers) are passable by default.
+    // position too; "none" ignores entities. Dynamic obstacles (doors, lifts, movers) are passable by default.
+    //
+    // Graphs are cached in rt.caches (never state) per (map content version, document, nav options,
+    // obstacle signature) and built lazily: cell facts, jump arcs, edges and reachable sets are computed once
+    // and reused by every path/reachable/canReach until a cell edit or obstacle change. navStats() counts builds.
+    const NAV_MAX = 16;
+    const navCache = () => (rt.caches[`spaces2d.nav:${sid}`] ??= { doc: null, ver: null, graphs: new Map(), stats: { builds: 0, hits: 0 } });
     const navFor = o => {
-      if (o.obstacles === 'none') return makeNav(navQ, o);
-      const overlay = new Map(), self = o.who ? (typeof o.who === 'string' ? rt.entity(o.who) : o.who) : null;
-      for (const x of obstaclesIn(rt, sid, self)) {
-        if (o.obstacles !== 'all' && dynamicObstacle(x)) continue;
-        const r = boxOf(x), k = obstacleOf(x), c0 = Math.floor(r[0] + EPS), c1 = Math.floor(r[2] - EPS), r0 = Math.floor(r[1] + EPS), r1 = Math.floor(r[3] - EPS);
-        for (let c = c0; c <= c1; c++) for (let y = k === 'oneway' ? r1 : r0; y <= r1; y++) { const key = y * (W + 8) + c; if (KIND_RANK[k] > KIND_RANK[overlay.get(key) || 'none']) overlay.set(key, k); }
+      const c = navCache(), ver = cells.version();
+      if (c.doc !== rt.doc || c.ver !== ver) { c.doc = rt.doc; c.ver = ver; c.graphs.clear(); }
+      const self = o.who ? (typeof o.who === 'string' ? rt.entity(o.who) : o.who) : null;
+      const obs = o.obstacles === 'none' ? [] : obstaclesIn(rt, sid, self).filter(x => o.obstacles === 'all' || !dynamicObstacle(x)).map(x => ({ k: obstacleOf(x), r: boxOf(x), id: x.id }));
+      const ab = { ...DEFAULT_ABILITIES, ...o.abilities };
+      const key = JSON.stringify([Object.keys(ab).sort().map(k => [k, ab[k]]), Math.ceil(o.width - 1e-6), Math.ceil(o.height - 1e-6), [...(o.avoid ?? ['hazard'])].sort(), !!o.diagonals, o.maxNodes ?? 0, obs.map(x => [x.id, x.k, x.r.map(v => +v.toFixed(4))])]);
+      let g = c.graphs.get(key);
+      if (g) { c.stats.hits++; return g; }
+      let q = navQ;
+      if (obs.length) {
+        const overlay = new Map();
+        for (const { k, r } of obs) {
+          const c0 = Math.floor(r[0] + EPS), c1 = Math.floor(r[2] - EPS), r0 = Math.floor(r[1] + EPS), r1 = Math.floor(r[3] - EPS);
+          for (let cx = c0; cx <= c1; cx++) for (let y = k === 'oneway' ? r1 : r0; y <= r1; y++) { const kk = y * (W + 8) + cx; if (KIND_RANK[k] > KIND_RANK[overlay.get(kk) || 'none']) overlay.set(kk, k); }
+        }
+        q = { ...navQ, kindAt: (x, y) => { const base = kindAt(x, y), extra = overlay.get(y * (W + 8) + x); return extra && KIND_RANK[extra] > KIND_RANK[base] ? extra : base; } };
       }
-      if (!overlay.size) return makeNav(navQ, o);
-      return makeNav({ ...navQ, kindAt: (x, y) => { const base = kindAt(x, y), extra = overlay.get(y * (W + 8) + x); return extra && KIND_RANK[extra] > KIND_RANK[base] ? extra : base; } }, o);
+      g = makeNav(q, o); c.stats.builds++;
+      c.graphs.set(key, g); if (c.graphs.size > NAV_MAX) c.graphs.delete(c.graphs.keys().next().value);
+      return g;
     };
     const feetCell = (at, h = 1) => [Math.floor(at[0]), Math.floor(at[1] - h / 2 + 0.1)]; // tolerant of bodies a little shorter than h
-    const zoneNodes = (nav, z) => { const out = new Set(), r = z.rect; for (let x = Math.floor(r[0]); x < r[2]; x++) for (let y = Math.floor(r[1]); y < r[3]; y++) if (nav.isNode(x, y)) out.add(key2(x, y)); return out; };
+    // Nav nodes inside a zone, memoised on the (cached) nav object per zone shape.
+    const zoneNodes = (nav, z) => {
+      const mk = `${z.id}:${z.rect.join(',')}`, memo = (nav.zmem ??= new Map()); let out = memo.get(mk);
+      if (!out) { out = new Set(); const r = z.rect; for (let x = Math.floor(r[0]); x < r[2]; x++) for (let y = Math.floor(r[1]); y < r[3]; y++) if (nav.isNode(x, y)) out.add(key2(x, y)); memo.set(mk, out); }
+      return out;
+    };
     // `from` may be a zone id, a cell key or an At (body center, height from opts).
     const startKeys = (nav, from, h) => {
       const z = typeof from === 'string' && zones().byId.get(from);
@@ -320,7 +350,7 @@ export default {
     // ---------- placement ----------
     const spawnIn = (z, e) => {
       if (z.spawn) return z.spawn.slice();
-      const h = size(e)[1], nav = makeNav(navQ, { height: h, width: size(e)[0] }), c = rectCenter(z.rect);
+      const h = size(e)[1], nav = navFor(navOpts({ height: h, width: size(e)[0], who: e })), c = rectCenter(z.rect);
       let best = null, bd = Infinity;
       for (let x = Math.floor(z.rect[0]); x < z.rect[2]; x++) for (let y = Math.floor(z.rect[1]); y < z.rect[3]; y++) {
         if (!(side ? nav.standable(x, y) : nav.clear(x, y))) continue;
@@ -334,7 +364,9 @@ export default {
       bounds: () => ({ min: [0, 0], max: [W, H], wrap: [wrapX, wrapY] }),
       inBounds: (at, m = 0) => (wrapX || (at[0] >= -m && at[0] <= W + m)) && (wrapY || (at[1] >= -m && at[1] <= H + m)),
       get zones() { return zones().byId; },
-      collisionOf, tagsAt: at => tagsAt(at[0], at[1]),
+      collisionOf, tagsAt: at => [...tagsAt(at[0], at[1])],
+      /** Navigation cache counters: graph builds, cache hits, cached graphs and the nodes they have expanded. */
+      navStats: () => { const c = navCache(); return { builds: c.stats.builds, hits: c.stats.hits, graphs: c.graphs.size, nodes: [...c.graphs.values()].reduce((n, g) => n + g.stats.nodes, 0), reachHits: [...c.graphs.values()].reduce((n, g) => n + (g.stats.reachHits || 0), 0) }; },
       cellOf: e => key2(...feetCell(e.at, size(e)[1]).map((v, i) => (i ? ny(v) : nx(v)))),
       place(e, rt) {
         bodyOf(e);
@@ -380,7 +412,7 @@ export default {
         const z = typeof to === 'string' && zones().byId.get(to);
         const goals = z ? zoneNodes(nav, z) : new Set(startKeys(nav, to, h));
         if (!starts.length || !goals.size) return null;
-        const g = [...goals][0], keys = nav.path(starts[0], g, goals);
+        const g = [...goals][0], keys = nav.path(starts[0], g, goals, z ? `zone:${z.id}:${z.rect.join(',')}` : g);
         return keys && keys.map(k => { const [x, y] = unkey(k); return [x + 0.5, y + h / 2 + EPS]; });
       },
       reachable(from, rt, opts = {}) { const o = navOpts(opts), nav = navFor(o); return nav.reach(startKeys(nav, from, o.height)); },

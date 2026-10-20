@@ -129,6 +129,46 @@ test('physics2d: slide for controlled bodies, grounded, dynamics, wrap and kill 
   assert.ok(k.at[1] < 0);
 });
 
+test('physics2d: a solid door blocks bodies until opened (ghost); slide and raycast respect it', () => {
+  const rt = make({ gravity: [0, -9.8] }), api = rt.space('lab');
+  const door = rt.spawn('crate', { id: 'door', at: [10, 2], components: { mechanism: 'd1', body: { shape: { kind: 'box', w: 0.5, h: 4 }, solid: true } } });
+  const b = rt.spawn('ball', { id: 'b', at: [7, 0.3], components: { body: { ...ball(0.3), restitution: 0, vel: [6, 0] } } });
+  run(rt, 90);
+  assert.ok(b.at[0] < 9.75 - 0.29, `stopped by the door: ${b.at}`);
+  assert.equal(api.raycast([5, 1], [1, 0], 20, { entities: (e) => e.id === 'door' }).id, 'door');
+  const p = rt.player(); api.setPos(p, [12, 1], rt);
+  assert.equal(api.slide(p, [-4, 0], rt).blocked.x, true, 'slide stops at the door');
+  door.components.body.solid = false; api.setVelocity(b, [6, 0], rt);
+  run(rt, 90);
+  assert.ok(b.at[0] > 11, `rolls through the opened door: ${b.at}`);
+  assert.equal(api.raycast([5, 1], [1, 0], 20, { entities: e => e.id === 'door' }).hit, 'cell', 'an open door does not stop rays');
+  assert.equal(api.slide(p, [-4, 0], rt).blocked.x, false);
+});
+
+test('physics2d: one-way platforms hold bodies from above, let them through from below, and lift riders', () => {
+  const rt = make({ gravity: [0, -9.8] }), api = rt.space('lab');
+  const plat = rt.spawn('crate', { id: 'plat', at: [10, 4], components: { body: { shape: { kind: 'box', w: 4, h: 0.3 }, solid: true, oneWay: true } } });
+  const rider = rt.spawn('ball', { id: 'rider', at: [10, 7], components: { body: { ...ball(0.3), restitution: 0 } } });
+  const rocket = rt.spawn('ball', { id: 'rocket', at: [11, 1], components: { body: { ...ball(0.2), restitution: 0, vel: [0, 9] } } });
+  run(rt, 120);
+  assert.ok(Math.abs(rider.at[1] - 4.45) < 0.03, `rests on top: ${rider.at}`);
+  assert.ok(Math.abs(rocket.at[1] - 4.35) < 0.05, `came up through it and landed on top: ${rocket.at}`);
+  plat.components.body.vel = [0, 1]; run(rt, 60);
+  assert.ok(Math.abs(plat.at[1] - 5) < 1e-6 && rider.at[1] > 5.3, `rising platform lifts the rider: ${rider.at}`);
+  const p = rt.player(); api.setPos(p, [9, 3], rt);
+  assert.equal(api.slide(p, [0, 3], rt).blocked.y, false, 'kinematic slide passes up through it');
+  api.setPos(p, [9, 6.5], rt);
+  const r = api.slide(p, [0, -2], rt);
+  assert.ok(r.blocked.y && Math.abs(p.at[1] - 5.4) < 0.02, `and lands on it from above: ${p.at}`);
+});
+
+test('physics2d: removeZone and moveZone', () => {
+  const rt = make(), api = rt.space('lab');
+  api.moveZone('pad', { rect: [0, 8, 6, 12] }, rt);
+  assert.ok(rt.test({ zone: 'pad' }) && rt.state.events.some(e => e.name === 'enter_zone:pad'));
+  api.removeZone('pad', rt); assert.equal(rt.test({ zone: 'pad' }), false);
+});
+
 test('physics2d: deterministic replay and exact restore mid-simulation', () => {
   const go = () => { const rt = make(); for (let i = 0; i < 6; i++) rt.spawn(i % 2 ? 'crate' : 'ball', { at: [6 + i * 1.3, 3 + i] }); return rt; };
   const a = go(), b = go();

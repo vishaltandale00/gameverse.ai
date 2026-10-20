@@ -20,11 +20,16 @@ export function makeNav(q, opts = {}) {
   const w = Math.max(1, Math.ceil((opts.width ?? 1) - 1e-6)), h = Math.max(1, Math.ceil((opts.height ?? 1) - 1e-6));
   const avoid = new Set(opts.avoid ?? ['hazard']);
   const nx = x => (q.wrapX ? mod(x, q.W) : x), ny = y => (q.wrapY ? mod(y, q.H) : y);
-  // Per-cell facts are memoised for the life of this nav object (one query): kind and tag bits.
-  const KINDS = ['none', 'oneway', 'slope', 'solid'], AV = 4, LQ = 8, CL = 16, memo = new Map();
+  // Per-cell facts (kind and tag bits) are memoised for the life of this nav object, which the space caches
+  // per map version: a typed array over the map plus a small margin (a Map for very large maps).
+  const KINDS = ['none', 'oneway', 'slope', 'solid'], AV = 4, LQ = 8, CL = 16, PW = q.W + 8, PH = q.H + 4;
+  const dense = PW * PH <= 4e6, memoA = dense ? new Int16Array(PW * PH).fill(-1) : null, memoM = dense ? null : new Map();
+  const slot = (x, y) => (x >= -4 && x < q.W + 4 && y >= -2 && y < q.H + 2 ? (y + 2) * PW + x + 4 : -1);
+  const compute = (x, y) => { const t = q.tagsAt(x, y); return KINDS.indexOf(q.kindAt(x, y)) | (avoid.size && t.some(z => avoid.has(z)) ? AV << 2 : 0) | (t.includes('liquid') ? LQ << 2 : 0) | (t.includes('climbable') ? CL << 2 : 0); };
   const info = (x, y) => {
-    x = nx(x); y = ny(y); const k = (y + 2) * (q.W + 8) + x + 4; let v = memo.get(k); // collision-free for the off-map margin probes use
-    if (v === undefined) { const t = q.tagsAt(x, y); v = KINDS.indexOf(q.kindAt(x, y)) | (avoid.size && t.some(z => avoid.has(z)) ? AV << 2 : 0) | (t.includes('liquid') ? LQ << 2 : 0) | (t.includes('climbable') ? CL << 2 : 0); memo.set(k, v); }
+    x = nx(x); y = ny(y); const k = slot(x, y); if (k < 0) return compute(x, y);
+    let v = dense ? memoA[k] : memoM.get(k) ?? -1;
+    if (v < 0) { v = compute(x, y); if (dense) memoA[k] = v; else memoM.set(k, v); }
     return v;
   };
   const kind = (x, y) => KINDS[info(x, y) & 3];
@@ -42,8 +47,9 @@ export function makeNav(q, opts = {}) {
   const climbable = (x, y) => clear(x, y) && (ab.climb && (has(x, y, 'climbable') || [-1, w].some(d => kind(x + d, y) === 'solid' && has(x + d, y, 'climbable'))) || ab.wallJump && [-1, w].some(d => kind(x + d, y) === 'solid'));
   const swimmable = (x, y) => ab.swim && clear(x, y) && liquid(x, y);
   const amemo = new Map();
-  const anchored = (x, y) => { const k = (ny(y) + 2) * (q.W + 8) + nx(x) + 4; let v = amemo.get(k); if (v === undefined) { v = inMap(x, y) && (standable(x, y) || climbable(x, y) || swimmable(x, y)); amemo.set(k, v); } return v; };
+  const anchored = (x, y) => { const k = slot(nx(x), ny(y)); let v = amemo.get(k); if (v === undefined) { v = inMap(x, y) && (standable(x, y) || climbable(x, y) || swimmable(x, y)); if (k >= 0) amemo.set(k, v); } return v; };
   const nodeKey = (x, y) => key2(nx(x), ny(y));
+  const rmem = new Map(), pmem = new Map();
 
   /** Where a body released at (x, y) comes to rest (standable, climbable or swimmable), or null. */
   const fall = (x, y) => {
@@ -52,22 +58,17 @@ export function makeNav(q, opts = {}) {
   };
   // Jump reach (tiles). Double jump roughly doubles height and adds half the distance; dash adds tiles.
   const JH = ab.jumpHeight * (ab.doubleJump ? 2 : 1), JD = ab.jumpDistance * (ab.doubleJump ? 1.5 : 1) + (ab.dash || 0);
-  // Arc clearance: sample parabolas from feet (x0,y0) to (x1,y1), trying a low arc first and then
-  // higher apexes up to the jump height (clearing hazards or lips needs a taller arc).
+  // Arc clearance: parabolas from feet (x0,y0) to (x1,y1), a low arc first and then higher apexes up to
+  // the jump height (clearing hazards or lips needs a taller arc). The cells each arc sweeps depend only on
+  // (dx, dy, apex, body size), so they come from precomputed templates (arcTemplates).
+  const templates = arcTemplates(w, h, JH);
   const arcClear = (x0, y0, x1, y1) => {
-    const dx = x1 - x0, dy = y1 - y0, low = Math.max(0, dy) + 0.6;
-    for (const apex of [...new Set([low, (low + JH + 0.6) / 2, JH + 0.6])].filter(a => a >= low)) if (arcOk(x0, y0, dx, dy, apex)) return true;
-    return false;
-  };
-  const arcOk = (x0, y0, dx, dy, apex) => {
-    const k = Math.max(0.15, apex - dy / 2), x1 = x0 + dx;
-    const n = Math.max(4, Math.ceil(Math.abs(dx) * 3 + Math.abs(dy) * 2 + apex * 2));
-    for (let i = 1; i < n; i++) {
-      const s = i / n, fx = x0 + 0.5 + dx * s, fy = y0 + dy * s + 4 * k * s * (1 - s);
-      const c0 = Math.floor(fx - 0.4), c1 = Math.floor(fx + w - 1 + 0.4), r0 = Math.floor(fy + 0.02), r1 = Math.floor(fy + h - 0.06);
-      for (let c = c0; c <= c1; c++) for (let r = r0; r <= r1; r++) { if (!inMap(c, r)) return false; if (!open(c, r) && !((c === x1 || c === x0) && slopeNode(c, r))) return false; }
+    for (const cells of templates(x1 - x0, y1 - y0)) {
+      let ok = true;
+      for (let i = 0; i < cells.length && ok; i += 3) { const c = x0 + cells[i], r = y0 + cells[i + 1]; if (!inMap(c, r) || (!open(c, r) && !(cells[i + 2] && slopeNode(c, r)))) ok = false; }
+      if (ok) return true;
     }
-    return true;
+    return false;
   };
 
   function edgesSide(x, y) {
@@ -108,17 +109,57 @@ export function makeNav(q, opts = {}) {
     }
     return out;
   }
-  const edges = k => { const [x, y] = unkey(k); return q.mode === 'side' ? edgesSide(x, y) : edgesTop(x, y); };
+  // Edges are memoised per node: the cached graph is built lazily as searches visit it.
+  const emem = new Map(), stats = { nodes: 0 };
+  const edges = k => { let out = emem.get(k); if (!out) { const [x, y] = unkey(k); out = q.mode === 'side' ? edgesSide(x, y) : edgesTop(x, y); emem.set(k, out); stats.nodes++; } return out; };
   const isNode = (x, y) => (q.mode === 'side' ? (ab.fly ? clear(x, y) : anchored(x, y)) : clear(x, y));
   /** Snap a tile coordinate (feet cell) onto the nav graph: itself, or where it falls to. */
   const snap = ([x, y]) => { if (isNode(x, y)) return nodeKey(x, y); if (!clear(x, y) && isNode(x, y + 1)) return nodeKey(x, y + 1); if (q.mode === 'side' && !ab.fly) { const l = fall(x, y); return l ? nodeKey(l[0], l[1]) : null; } return null; };
   return {
-    snap, edges, isNode, standable, clear,
-    reach(starts, maxNodes = opts.maxNodes ?? 1000000) { return flood(starts.filter(Boolean), edges, maxNodes); },
-    path(from, goal, goalKeys) {
-      const set = goalKeys || new Set([goal]), [gx, gy] = goal ? unkey(goal) : [0, 0];
-      const hfn = goal ? k => { const [x, y] = unkey(k); return 0.5 * (Math.abs(x - gx) + Math.abs(y - gy)); } : () => 0;
-      return astar(from, k => set.has(k), edges, hfn, opts.maxNodes ?? 200000);
+    snap, edges, isNode, standable, clear, stats,
+    /** Reachable node keys from starts. Memoised per start set; the returned Set is shared: treat it as read-only. */
+    reach(starts, maxNodes = opts.maxNodes ?? 1000000) {
+      const key = starts.filter(Boolean).join(';'); let r = rmem.get(key);
+      if (!r) { r = flood(starts.filter(Boolean), edges, maxNodes); rmem.set(key, r); } else stats.reachHits = (stats.reachHits || 0) + 1;
+      return r;
     },
+    /** A* path of node keys, memoised per (from, memoKey). Unreachable goals are answered from the reach set. */
+    path(from, goal, goalKeys, memoKey) {
+      const mk = memoKey && `${from}>${memoKey}`;
+      if (mk && pmem.has(mk)) { stats.pathHits = (stats.pathHits || 0) + 1; return pmem.get(mk); }
+      const set = goalKeys || new Set([goal]), [gx, gy] = goal ? unkey(goal) : [0, 0], seen = this.reach([from]);
+      let out = null;
+      if ([...set].some(k => seen.has(k))) {
+        const hfn = goal ? k => { const [x, y] = unkey(k); return 0.5 * (Math.abs(x - gx) + Math.abs(y - gy)); } : () => 0;
+        out = astar(from, k => set.has(k), edges, hfn, opts.maxNodes ?? 200000);
+      }
+      if (mk) { pmem.set(mk, out); if (pmem.size > 4096) pmem.delete(pmem.keys().next().value); }
+      return out;
+    },
+  };
+}
+
+// Arc templates: for a body w×h tiles and jump height JH, the relative cells swept by each candidate apex of a
+// jump (dx, dy), as flat [dc, dr, endColumn] triples. Pure and shared by every nav object.
+const TEMPLATES = new Map();
+function arcTemplates(w, h, JH) {
+  const key = `${w},${h},${JH}`;
+  let table = TEMPLATES.get(key);
+  if (!table) { table = new Map(); TEMPLATES.set(key, table); if (TEMPLATES.size > 64) TEMPLATES.delete(TEMPLATES.keys().next().value); }
+  return (dx, dy) => {
+    const k = dx * 4096 + dy; let list = table.get(k);
+    if (list) return list;
+    const low = Math.max(0, dy) + 0.6;
+    list = [...new Set([low, (low + JH + 0.6) / 2, JH + 0.6])].filter(a => a >= low).map(apex => {
+      const kk = Math.max(0.15, apex - dy / 2), n = Math.max(4, Math.ceil(Math.abs(dx) * 3 + Math.abs(dy) * 2 + apex * 2)), seen = new Set(), out = [];
+      for (let i = 1; i < n; i++) {
+        const s = i / n, fx = 0.5 + dx * s, fy = dy * s + 4 * kk * s * (1 - s);
+        const c0 = Math.floor(fx - 0.4), c1 = Math.floor(fx + w - 1 + 0.4), r0 = Math.floor(fy + 0.02), r1 = Math.floor(fy + h - 0.06);
+        for (let c = c0; c <= c1; c++) for (let r = r0; r <= r1; r++) { const id = c * 8192 + r; if (!seen.has(id)) { seen.add(id); out.push(c, r, c === 0 || c === dx ? 1 : 0); } }
+      }
+      return Int32Array.from(out);
+    });
+    table.set(k, list);
+    return list;
   };
 }
