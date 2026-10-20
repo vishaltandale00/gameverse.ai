@@ -57,7 +57,7 @@ export function villageDoc() {
       { use: 'graphics.ui.minimap', with: { radius: 20, markers: [{ tag: 'npc', color: '#7ad8ff' }] } },
       { use: 'graphics.ui.map', with: { fog: true } },
       { use: 'graphics.ui.inventory', with: { panels: ['items', 'crafting', 'loadout'] } },
-      { use: 'graphics.ui.menu', with: { slots: 3 } },
+      { use: 'graphics.ui.menu', with: { slots: 3, autoPause: false } },
       { use: 'graphics.audio.synth', with: { music: [{ zone: 'village', mood: 'playful', layers: ['pad', 'pluck', 'bass', 'perc'] }, { zone: 'woods', mode: 'dorian', bpm: 84, layers: ['drone', 'bell', 'wind'] }, { when: { var: 'danger', gte: 1 }, mode: 'phrygian', bpm: 140, layers: ['bass', 'perc', 'strings'], priority: 5 }] } },
     ],
   };

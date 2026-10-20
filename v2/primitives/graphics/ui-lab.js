@@ -20,7 +20,7 @@ async function load(name) {
   game?.dispose(); controls.replaceChildren(); log.textContent = '';
   const res = name === 'manor' ? await fetch('/v2/games/quiet-manor.json').then(r => r.json()) : null;
   const doc = name === 'village' ? villageDoc() : name === 'manor' ? res : battleDoc(name);
-  if (name === 'manor') doc.graphics = withDefaultGraphics(doc, catalogue().registry);
+  if (name === 'manor') { doc.graphics = withDefaultGraphics(doc, catalogue().registry); const menu = doc.graphics.find(g => g.use === 'graphics.ui.menu'); if (menu) menu.with.autoPause = false; }
   game = mountGame(stage, { doc, version: 1 });
   window.__lab = { game, rt: game.rt };
   game.rt.on('*', e => { if (/^(dialogue_line|quest_|notify|item_gained|enter_zone$|battle_|choice_made|journal_added|boss_)/.test(e.name)) { log.textContent = `${game.rt.state.frame} ${e.name} ${JSON.stringify(e).slice(0, 90)}\n` + log.textContent.slice(0, 3000); } });
@@ -47,7 +47,7 @@ function villageControls() {
   button('Talk to Mara', () => game.rt.step({ actions: { talk: 'mara' } }));
   button('Bark on the radio', () => fx([{ do: 'bark', line: 'Storm front rolling in from the coast tonight.', channel: 'radio' }]));
   button('Notify', () => fx([{ do: 'notify', text: 'The bridge has been repaired', kind: 'info' }]));
-  button('Boss appears', () => { setVars({ 'boss.id': 'warden', 'boss.hp': 300, 'boss.hp.max': 300, 'boss.phase': 0, danger: 1 }); rt().emit('boss_start', { boss: 'warden', name: 'The Ash Warden' }); });
+  button('Boss appears', () => { setVars({ 'boss.id': 'warden', 'boss.hp': 300, 'boss.hp.max': 300, 'boss.phase': 0, danger: 1 }); rt().emit('boss_start', { boss: 'warden', title: 'The Ash Warden' }); });
   button('Hit boss (−60)', () => { const hp = Math.max(0, rt().state.vars['boss.hp'] - 60); setVars({ 'boss.hp': hp, 'boss.phase': hp < 150 ? 1 : 0 }); rt().emit('hit', { by: 'player', target: 'warden' }); if (!hp) setVars({ danger: 0 }); });
   button('Win the game', () => fx([{ do: 'end_game', outcome: 'won' }]));
 }
@@ -62,7 +62,7 @@ function battleDoc(kind) {
   doc.content.cards = [{ id: 'strike', name: 'Ember Strike', cost: 1, type: 'attack', text: 'Deal 6 damage.', target: 'enemy' }, { id: 'guard', name: 'Hearth Guard', cost: 1, type: 'skill', text: 'Gain 5 block.' }, { id: 'nova', name: 'Lantern Nova', cost: 3, type: 'power', text: 'Deal 4 damage to all enemies.' }, { id: 'tonic', name: 'Red Tonic', cost: 0, type: 'skill', text: 'Heal 3.' }];
   doc.systems = doc.systems.filter(s => s.use === 'gameplay.inventory');
   doc.plot = { characters: [] };
-  doc.graphics = [{ use: kind === 'cards' ? 'graphics.ui.cards' : 'graphics.ui.battle', with: {} }, { use: 'graphics.ui.menu', with: { title: false } }, { use: 'graphics.audio.synth', with: {} }];
+  doc.graphics = [{ use: kind === 'cards' ? 'graphics.ui.cards' : 'graphics.ui.battle', with: {} }, { use: 'graphics.ui.menu', with: { title: false, autoPause: false } }, { use: 'graphics.audio.synth', with: {} }];
   return doc;
 }
 

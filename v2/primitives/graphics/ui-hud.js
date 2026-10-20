@@ -187,7 +187,7 @@ export default {
     // ---------------------------------------------------------- events -> local presentation memory
     rt.on('interact_focus', e => { local.focus = { target: e.target, label: e.label, verb: e.verb, hold: e.hold }; });
     rt.on('interact_blur', () => { local.focus = null; });
-    rt.on('boss_start', e => { if (e.boss && e.name) local.bossNames[e.boss] = e.name; pulse(boss, 'is-intro'); });
+    rt.on('boss_start', e => { const t = e.title ?? e.name; if (e.boss && t) local.bossNames[e.boss] = t; pulse(boss, 'is-intro'); }); // display names travel as `title` (a `name` key would clobber the event name)
     const comboShow = (count, label) => { local.combo = { count, at: rt.state.time, label }; setText(combo.children[0], count); setText(combo.children[1], label); pulse(combo.children[0], 'is-pop'); };
     if (config.combo) {
       rt.on('combo', e => { if (e.by === 'player' || e.by === undefined) comboShow(e.count, 'combo'); });

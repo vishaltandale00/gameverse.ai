@@ -68,7 +68,7 @@ export default {
       refresh() { const next = mapModel(rt, { markers: config.markers, fog: config.fog, visited }); if (JSON.stringify(next.player) !== JSON.stringify(model?.player) || next.pins.length !== model?.pins.length) { model = next; paintInfo(); } else model = next; paint(); },
     });
     function zoomBy(k) { zoom = clamp(zoom * k, 0.5, 8); paint(); }
-    function size() { const w = canvas.parentNode?.clientWidth || 800, h = canvas.parentNode?.clientHeight || 500; return [w, h]; }
+    function size() { const r = canvas.parentNode?.getBoundingClientRect?.(); return [Math.max(1, Math.round(r?.width || 800)), Math.max(1, Math.round(r?.height || 500))]; }
     function transform() {
       const [w, h] = size(), dpr = Math.min(2, globalThis.devicePixelRatio || 1);
       const tf = fitTransform(model.bounds, w * dpr, h * dpr, 48 * dpr);
@@ -77,7 +77,7 @@ export default {
     function paint() {
       if (!ctx || !model) return;
       const tf = transform();
-      if (canvas.width !== Math.round(tf.w * tf.dpr)) { canvas.width = Math.round(tf.w * tf.dpr); canvas.height = Math.round(tf.h * tf.dpr); }
+      if (canvas.width !== Math.round(tf.w * tf.dpr) || canvas.height !== Math.round(tf.h * tf.dpr)) { canvas.width = Math.round(tf.w * tf.dpr); canvas.height = Math.round(tf.h * tf.dpr); }
       ctx.setTransform?.(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawMap(ctx, model, tf, { dpr: tf.dpr, selected, time: host.now(), userPins: pins, showUnknown: false });
     }
