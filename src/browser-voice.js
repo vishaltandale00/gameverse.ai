@@ -1,3 +1,4 @@
+import {voiceFailureMessage} from './voice-errors.js';
 import {VOICE_PROTOCOL,VOICE_LEASE_MS} from './browser-voice-protocol.js';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const plain=value=>JSON.parse(JSON.stringify(value));
@@ -10,7 +11,7 @@ export class BrowserVoice {
     const close=shell.host.closeSession.bind(shell.host);shell.host.closeSession=(id,...args)=>{if(this.binding?.target.sessionId===id)this.revoke('session closed');return close(id,...args);};
     this.watchdog=setInterval(()=>{if(this.binding&&(!this.isVisible()||!this.isPlayable(this.binding.target.sessionId)||this.now()-this.lastSuccess>VOICE_LEASE_MS))this.revoke('remote voice connection expired');},250);this.watchdog.unref?.();
   }
-  async post(path,value,signal){const r=await this.fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value),signal:signal||AbortSignal.timeout(5000)});const data=await r.json();if(!r.ok)throw Error(data.error?.code||'remote_voice_unavailable');return data;}
+  async post(path,value,signal){const r=await this.fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value),signal:signal||AbortSignal.timeout(5000)});const data=await r.json();if(!r.ok)throw Error(voiceFailureMessage(data.error?.code));return data;}
   valid(binding){return this.binding===binding&&!binding.revoked&&this.isVisible()&&this.isPlayable(binding.target.sessionId)&&this.now()-this.lastSuccess<=VOICE_LEASE_MS;}
   async prepare({context,config}){if(config.execution!=='daytona')return;this.enabled=true;if(!config.available)throw Error(config.reason||'Remote voice is unavailable.');
     if(context?.gameId!=='soccer')throw Error('Open a soccer match before requesting a takeover.');

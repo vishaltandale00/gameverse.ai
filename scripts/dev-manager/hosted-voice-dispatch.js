@@ -12,7 +12,7 @@ export class HostedVoiceDispatch {
     if(t.cancel_requested)t.phase='cleaning';
     const root='/home/daytona/gv-hosted-'+t.id;
     if(t.phase==='queued'){
-      if(!Object.values(this.core.state.voice.requests).some(r=>r.task_id===t.id))return;
+      if(!Object.values(this.core.state.voice.requests).some(r=>r.task_id===t.id&&r.phase==='audio'))return;
       if(!await this.admission.claimHosted(t.owner,t.id,this.core.policy.platform_active))return;
       t.admitted=true;t.phase='creating';t.timings.dispatch_at=this.now();this.save();return;
     }

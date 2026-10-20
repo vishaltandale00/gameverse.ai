@@ -9,7 +9,7 @@ Regular admitted API-key accounts run their game in the browser. Gameverse's clo
 - The trusted browser host owns live session identity, control grants, actual tool acknowledgment and immediate Stop/neutral handback. `VoiceAgent` runs in the fixed Daytona worker; the existing browser `SimulatedUser` scheduler uses brokered Decisions/reflection calls. Human play never needs a worker.
 - `HostedVoiceState` is named only by the authenticated account principal. `DevManagerState` and its shared developer registry are separate. Public users cannot inspect/manage another developer's work or use personal subscription credentials.
 - `HostedVoiceCore` admits voice roots only in H3. Construction/child-job adapters and candidate activation remain H4. The same accepted parent-budget semantics must be extended deliberately when children are introduced, rather than giving each child a new allowance.
-- Settings/configuration/discovery create no job. A deliberate recorded voice submission with a valid current binding is the first dispatch trigger. Audio persistence completes before a worker can consume the request.
+- Settings/configuration/discovery create no job. A deliberate recorded voice submission with a valid current binding is the first dispatch trigger. Audio requests reserve their finite per-root allowance before R2 I/O, including pending/uncertain uploads. Audio persistence completes before a worker can consume the request; uncommitted uploads cannot dispatch a worker or be claimed. Duplicate uploads reuse the same reservation.
 
 ## Identity and protocol
 
