@@ -5,6 +5,7 @@ import { SAMPLES } from '../v2/kits/puzzle/sample.js';
 import { validate, SCHEMA } from '../v2/kits/puzzle/content.js';
 import { LOCK_DELAY, MOVE_RESETS, GARBAGE } from '../v2/kits/puzzle/falling.js';
 import { VIRUS, popScore } from '../v2/kits/puzzle/chain.js';
+import { seedFrom } from '../v2/kernel/rng.js';
 import { computeClear, comboClear, findRuns, hasMove, reshuffle, SP, spOf, col, gem } from '../v2/kits/puzzle/swap.js';
 import { slideGrid } from '../v2/kits/puzzle/slide.js';
 
@@ -259,13 +260,29 @@ test('slide: tiles merge once per move, spawn only after a real move, and target
 test('the bots verify every sample within budget', () => {
   const r = kit.verify(kit.content.sample, { seed: 1, budgetMs: 2000 });
   assert.equal(r.ok, true, JSON.stringify(r.problems));
-  assert.ok(r.report.bot.pieces >= 150 && r.report.bot.lines > 0);
+  assert.ok(r.report.bot.levels[0].pieces >= 150 && r.report.bot.levels[0].lines > 0);
   assert.ok(r.report.proven.length && Number.isFinite(r.report.ms));
   for (const key of ['chain', 'virus', 'swap', 'slide']) {
-    const v = kit.verify(SAMPLES[key], { seed: 1, budgetMs: 500 });
+    const v = kit.verify(SAMPLES[key], { seed: 1, budgetMs: 300 });
     assert.equal(v.ok, true, `${key}: ${JSON.stringify(v.problems)}`);
   }
   const hard = kit.verify({ ...SAMPLES.swap, levels: [{ ...SAMPLES.swap.levels[0], target: 12000, moves: 10 }] }, { seed: 1, budgetMs: 500 });
   assert.equal(hard.ok, false);
   assert.equal(hard.problems[0].code, 'goal_unreached');
+});
+
+test('falling verification passes fair content on every seed and blames the level at fault', () => {
+  const F = SAMPLES.falling, lv = o => ({ ...F.levels[0], ...o });
+  const fair = { ...F, title: 'Cat Stack', levels: [lv({ target: 5 }), lv({ target: 8, speed: 12, obstacles: 2 })] };
+  for (let k = 0; k < 20; k++) {
+    const r = kit.verify(fair, { seed: seedFrom(`tetris but the pieces are cats ${k}`), budgetMs: 2000 });
+    assert.equal(r.ok, true, `seed ${k}: ${JSON.stringify(r.problems)}`);
+    assert.equal(r.report.bot.levels[0].speed, 1);
+    assert.ok(r.report.bot.levels[0].pieces >= 150, 'level 1 is survived at its own speed');
+  }
+  const impossible = kit.verify({ ...fair, levels: [fair.levels[0], lv({ target: 150, timeSec: 30, speed: 3 })] }, { seed: 5, budgetMs: 2000 });
+  assert.equal(impossible.ok, false);
+  assert.equal(impossible.problems.length, 1);
+  const [p] = impossible.problems;
+  assert.equal(p.path, 'levels[1]'); assert.match(p.message, /level 2/); assert.match(p.hint, /timeSec|target/);
 });
