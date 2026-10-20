@@ -2,6 +2,8 @@
 // zones, portal, physics.*...). Everything here is space-agnostic: positions
 // are whatever the entity's space uses (`At`), and every spatial question is
 // asked through the space's capability methods, never by assuming a geometry.
+import { bodyBox } from '../../kernel/testing.js';
+import { Logic } from '../../kernel/logic.js';
 
 export const FPS = 60;
 /** Seconds to whole frames (never negative). */
@@ -75,18 +77,13 @@ export function facingSign(e) {
 }
 
 /**
- * Axis-aligned bounds of a body. Spaces may implement `bounds(e) -> {min, max}`
- * (kernel request: v2/kernel/requests/runtime.md); otherwise `origin` says where
- * `e.at` sits on the box: 'center' (2D spaces, default), 'min' (test space) or
- * 'base' (bottom centre, 3D characters).
+ * Axis-aligned box of a body, honoring the space's anchor (KERNEL_API §3:
+ * 'center' for continuous spaces, 'min' for the test space, 'cell'/'slot'
+ * otherwise). Delegates to the kernel's bodyBox.
  */
-export function bounds(api, e, origin = 'center') {
-  if (api?.bounds) return api.bounds(e);
-  const p = v3(e.at), s = v3(e.components?.body?.size || [1, 1, 1]);
-  if (origin === 'min') return { min: p, max: p.map((v, i) => v + s[i]) };
-  if (origin === 'base') return { min: [p[0] - s[0] / 2, p[1], p[2] - s[2] / 2], max: [p[0] + s[0] / 2, p[1] + s[1], p[2] + s[2] / 2] };
-  return { min: p.map((v, i) => v - s[i] / 2), max: p.map((v, i) => v + s[i] / 2) };
-}
+export const boxOf = (api, e) => bodyBox(e, api);
+/** The overlap shape covering a body's box (min corner + size, not centred). */
+export const boxShape = (api, e) => { const b = bodyBox(e, api); return { kind: 'aabb', at: b.min, size: b.max.map((v, i) => v - b.min[i]), centered: false }; };
 
 /** Validate a list of effects / a predicate stored in a param of type json (or nested data). */
 export function checkFx(list, path, errors, ctx) {
@@ -102,9 +99,12 @@ export function uniqueIds(list, path, code, errors) {
   return seen;
 }
 
-/** True when an effect/predicate kind is registered (probe through ctx without leaking errors). */
-export function hasEffect(ctx, kind) { const errs = []; ctx.checkEffect({ do: kind }, '$', errs); return !errs.some(e => e.code === 'effect_unknown'); }
-export function hasPredicate(ctx, kind) { const errs = []; ctx.checkPredicate({ [kind]: true }, '$', errs); return !errs.some(e => e.code === 'predicate_unknown'); }
+// Vocabulary registered by the primitives of a preflight's registry (built once per registry).
+const vocab = new WeakMap();
+const logicOf = registry => { let l = vocab.get(registry); if (!l) { l = new Logic(); for (const id of registry.ids()) registry.get(id).logic?.(l); vocab.set(registry, l); } return l; };
+/** True when an effect / predicate kind is registered by some primitive in this preflight's catalogue. */
+export const hasEffect = (ctx, kind) => logicOf(ctx.registry).effects.has(kind);
+export const hasPredicate = (ctx, kind) => logicOf(ctx.registry).predicates.has(kind);
 
 /** Per-step context that a primitive can run effect lists with, carrying `self`. */
 export const ctxOf = (self, extra = {}) => ({ self: self ?? undefined, ...extra });

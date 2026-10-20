@@ -8,7 +8,7 @@
 // Coulomb friction on contact), impulse resolution between bodies (moving
 // characters and other solid non-rigid bodies push as infinite mass), and
 // sleeping for bodies at rest.
-import { isVec, v3, bounds, round, sweep } from './runtime-lib.js';
+import { isVec, v3, boxOf, boxShape, round, sweep } from './runtime-lib.js';
 
 const ID = 'engine.physics.rigid';
 const SLOP = 0.004, PERCENT = 0.8, AXES = ['x', 'y', 'z'];
@@ -29,7 +29,6 @@ export default {
       friction: { type: 'number', default: 0.5, min: 0, max: 2, effect: 'default Coulomb friction' },
       bounceSpeed: { type: 'number', default: 0.5, min: 0, unit: 'm/s', effect: 'slower impacts do not bounce' },
       impactSpeed: { type: 'number', default: 2, min: 0, unit: 'm/s', effect: 'impacts at least this fast emit impact' },
-      origin: { type: 'string', options: ['center', 'min', 'base'], default: 'center', effect: 'where entity.at sits on its box, for spaces without bounds()' },
     },
     provides: { events: ['impact', 'impact:*', 'woke', 'slept'], services: ['rigid'] },
     requires: { capabilities: ['overlap', 'gravity'] },
@@ -64,12 +63,19 @@ export default {
     rt.provide('rigid', api);
     const impact = (e, other, speed) => { if (speed >= config.impactSpeed) rt.emitTyped('impact', other ? other.archetype : 'world', { who: e.id, other: other?.id ?? null, speed: round(speed, 100) }); };
     rt.system('physics', rt => {
+      // Spaces with their own dynamics integrate rigid bodies themselves: hand them the body's material
+      // (kinematic 2D spaces integrate only bodies marked ballistic; physics2d ignores the flag).
+      for (const e of Object.values(rt.state.entities)) {
+        if (!isRigid(e) || !delegated(e)) continue;
+        const b = body(e), r = e.components.rigid, m = mat(e);
+        if (b.ballistic === undefined) Object.assign(b, { ballistic: !r.static, mass: b.mass ?? r.mass ?? 1, bounce: b.bounce ?? m.e, friction: b.friction ?? m.mu });
+      }
       const list = Object.values(rt.state.entities).filter(e => isRigid(e) && !delegated(e)).sort((a, b) => (a.id < b.id ? -1 : 1));
       // Sleeping bodies touched by something moving wake up.
       for (const e of list) {
         if (!e.components.rigid.sleeping) continue;
-        const sp = rt.space(e.space), b = bounds(sp, e, config.origin);
-        const pad = b.min.map(() => 0.02), shape = { kind: 'aabb', at: b.min.map((v, i) => v - pad[i]), size: b.max.map((v, i) => v - b.min[i] + 2 * pad[i]), centered: false };
+        const sp = rt.space(e.space), b = boxOf(sp, e);
+        const shape = { kind: 'aabb', at: b.min.map(v => v - 0.02), size: b.max.map((v, i) => v - b.min[i] + 0.04), centered: false };
         if (sp.overlap(shape, o => o.id !== e.id && (o.components.rigid ? !o.components.rigid.sleeping && (o.components.rigid.speed ?? 0) > config.sleepSpeed : Math.hypot(...(o.components.body?.vel || [0])) > config.sleepSpeed)).length) wake(e);
       }
       const awake = list.filter(e => !e.components.rigid.sleeping && !e.components.rigid.static).slice(0, config.maxBodies);
@@ -92,11 +98,11 @@ export default {
         // Body-body: candidates from the space's overlap, resolved with impulses along the least-penetration axis.
         const seen = new Set();
         for (const a of awake) {
-          const sp = rt.space(a.space), ba = bounds(sp, a, config.origin);
-          const ids = sp.overlap({ kind: 'aabb', at: ba.min, size: ba.max.map((v, i) => v - ba.min[i]), centered: false }, o => o.id !== a.id && o.components.body && !o.components.ghost && !o.components.body.sensor && o.components.body.solid !== false);
+          const sp = rt.space(a.space), ba = boxOf(sp, a);
+          const ids = sp.overlap(boxShape(sp, a), o => o.id !== a.id && o.components.body && !o.components.ghost && !o.components.body.sensor && o.components.body.solid !== false);
           for (const id of ids) {
             const key = a.id < id ? `${a.id}|${id}` : `${id}|${a.id}`; if (seen.has(key)) continue; seen.add(key);
-            const o = rt.entity(id), bo = bounds(sp, o, config.origin);
+            const o = rt.entity(id), bo = boxOf(sp, o);
             let axis = -1, pen = Infinity;
             for (let i = 0; i < a.at.length && i < 3; i++) { const p = Math.min(ba.max[i], bo.max[i]) - Math.max(ba.min[i], bo.min[i]); if (p > 0 && p < pen) { pen = p; axis = i; } }
             if (axis < 0) continue;

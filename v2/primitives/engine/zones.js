@@ -40,7 +40,7 @@ export default {
     },
     provides: { events: ['discovered', 'discovered:*', 'enter_zone', 'enter_zone:*', 'leave_zone', 'zone_opened', 'zone_opened:*', 'zone_closed', 'zone_closed:*'], vars: ['zone.current', 'zone.previous', 'zones.discovered', 'zone.rule.*', 'zone.dynamic'] },
     requires: { capabilities: ['position'] },
-    defines: [{ kind: 'region', in: 'dynamic' }],
+    defines: [{ kind: 'zone', in: 'dynamic' }, { kind: 'region', in: 'dynamic' }],
   },
   logic(logic) {
     logic.predicate('discovered', { refs: p => [['zone', p.discovered]], test: (p, rt) => Boolean(rt.store(ID).discovered?.[p.discovered]) });

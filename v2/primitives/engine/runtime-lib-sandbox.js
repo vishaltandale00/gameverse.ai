@@ -61,11 +61,22 @@ const HARNESS = `(function (FORBIDDEN, LIMITS) {
   const make = function () { __BODY__ };
   // mulberry32 over a seed that round-trips through the host's state.
   const rngFrom = seed0 => { const box = { s: seed0 >>> 0 }; const rng = () => { box.s = (box.s + 0x6D2B79F5) >>> 0; let t = box.s; t = imul(t ^ (t >>> 15), t | 1); t ^= t + imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; return { rng, box }; };
-  // No hidden state between calls: existing globals become read-only (host slots excepted) and no new ones can be added.
-  for (const name of Object.getOwnPropertyNames(G)) { if (name === '__gv' || name === '__m' || name === '__arg') continue; try { const d = ownDesc(G, name); if (d.configurable || d.writable) define(G, name, { writable: false, configurable: false }); } catch {} }
-  try { Object.preventExtensions(G); } catch {}
+  // No hidden state between calls: existing globals become read-only and their objects frozen (host slots
+  // excepted); globals a call adds are deleted after it, and a call that adds one it cannot delete fails.
+  const HOST = new Set(['__gv', '__m', '__arg']);
+  for (const name of Object.getOwnPropertyNames(G)) {
+    if (HOST.has(name)) continue;
+    try { const d = ownDesc(G, name); if ('value' in d) { if (d.configurable || d.writable) define(G, name, { value: d.value, writable: false, enumerable: d.enumerable, configurable: false }); const v = d.value; if (v && (typeof v === 'object' || typeof v === 'function')) { freeze(v); if (v.prototype) freeze(v.prototype); } } } catch {}
+  }
+  const baseline = new Set(Object.getOwnPropertyNames(G));
+  const sweep = () => { for (const name of Object.getOwnPropertyNames(G)) if (!baseline.has(name) && !HOST.has(name)) { if (!delete G[name]) throw Error('scripts cannot define globals (' + name + ')'); } };
+  let broken = null;
   const load = () => { const m = make.call(undefined); if (!m || typeof m !== 'object' || typeof m.step !== 'function') throw Error('the default export must be an object with step(state, world, input, rng)'); return m; };
   return function call(method, argJson) {
+    try { return run(method, argJson); } finally { try { sweep(); } catch (e) { broken = String(e.message); } }
+  };
+  function run(method, argJson) {
+    if (broken) return fail(Error(broken));
     try {
       const arg = parse(argJson), m = load(), r = rngFrom(arg.seed);
       if (method === 'meta') return stringify({ ok: true, init: typeof m.init === 'function', label: typeof m.label === 'string' ? m.label.slice(0, 40) : '' });
@@ -79,7 +90,7 @@ const HARNESS = `(function (FORBIDDEN, LIMITS) {
       if (!out || typeof out !== 'object' || !('state' in out)) throw Error('step must return { state, effects }');
       return stringify({ state: parse(json(out.state, LIMITS.stateBytes, 'state')), effects: parse(json(out.effects === undefined ? [] : out.effects, LIMITS.effectsBytes, 'effects')), seed: r.box.s });
     } catch (e) { return fail(e); }
-  };
+  }
 })`;
 
 export function harnessSource(body) {

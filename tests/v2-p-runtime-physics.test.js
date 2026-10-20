@@ -56,7 +56,7 @@ test('engine.physics.character: skips entities owned by another controller; move
 });
 
 test('engine.physics.body: layer matrix, collide/separate events and push-apart', () => {
-  const sys = [{ use: 'engine.physics.body', with: { origin: 'min', separate: true, matrix: [{ a: 'enemy', b: 'enemy', collide: false }] } }];
+  const sys = [{ use: 'engine.physics.body', with: { separate: true, matrix: [{ a: 'enemy', b: 'enemy', collide: false }] } }];
   const archetypes = [{ id: 'slime', components: { body: { size: [1, 1, 1], layer: 'enemy' } } }, { id: 'coin', components: { body: { size: [0.5, 0.5, 1], layer: 'pickup', sensor: true } } }];
   const { rt } = make(sys, { gravity: 0, archetypes, player: { archetype: 'hero', at: [2, 1, 0] } });
   rt.spawn('slime', { at: [10, 1, 0] }); rt.spawn('slime', { at: [10.5, 1, 0] });
@@ -75,7 +75,7 @@ test('engine.physics.body: layer matrix, collide/separate events and push-apart'
 });
 
 test('engine.physics.rigid: bodies fall, bounce, rest by friction, sleep, wake on impulse and stack', () => {
-  const sys = [{ use: 'engine.physics.rigid', with: { origin: 'min', restitution: 0.5, sleepSec: 0.5 } }];
+  const sys = [{ use: 'engine.physics.rigid', with: { restitution: 0.5, sleepSec: 0.5 } }];
   const archetypes = [{ id: 'crate', components: { body: { size: [1, 1, 1] }, rigid: { mass: 2 } } }];
   const { rt } = make(sys, { archetypes, player: null });
   const a = rt.spawn('crate', { at: [5, 6, 0] }), b = rt.spawn('crate', { at: [5, 9, 0] });
@@ -106,7 +106,7 @@ test('engine.physics.rigid delegates to a space that reports dynamics', () => {
 });
 
 test('physics primitives replay deterministically across snapshot/restore', () => {
-  const sys = [character, { use: 'engine.physics.body', with: { origin: 'min' } }, { use: 'engine.physics.rigid', with: { origin: 'min' } }];
+  const sys = [character, { use: 'engine.physics.body' }, { use: 'engine.physics.rigid' }];
   const archetypes = [{ id: 'crate', components: { body: { size: [1, 1, 1] }, rigid: { mass: 1 } } }];
   const go = rt => { for (let i = 0; i < 4; i++) rt.spawn('crate', { at: [4 + i * 1.2, 3 + i, 0] }); return rt; };
   const a = go(make(sys, { archetypes }).rt), b = go(make(sys, { archetypes }).rt);

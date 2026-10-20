@@ -40,7 +40,7 @@ export default {
     logic.effect('set_difficulty', { check: (e, path, errors) => { if (typeof e.difficulty !== 'string') errors.push({ code: 'assist_effect_invalid', path, message: 'set_difficulty needs a difficulty' }); }, run: (e, rt) => rt.service('assist').difficulty(e.difficulty) });
   },
   validate(config) {
-    const errors = [], opts = config.options;
+    const errors = [], opts = config.options, presets = presetsOf(config);
     for (const [k, v] of Object.entries(opts)) if (!['number', 'boolean'].includes(typeof v)) errors.push({ code: 'assist_option_type', path: `options.${k}`, message: 'an option is a number or a boolean' });
     for (const [p, set] of Object.entries(presets)) for (const [k, v] of Object.entries(set || {})) {
       if (!(k in opts)) errors.push({ code: 'assist_option_unknown', path: `presets.${p}.${k}`, message: `unknown option '${k}'` });

@@ -6,7 +6,7 @@
 // pushed apart along the axis of least penetration through the space's
 // slide (so walls still win). The `bodies` service answers layer questions
 // for other primitives (projectiles, pickups, hazards).
-import { isVec, bounds } from './runtime-lib.js';
+import { isVec, boxOf, boxShape } from './runtime-lib.js';
 
 const ID = 'engine.physics.body';
 
@@ -21,7 +21,6 @@ export default {
       friction: { type: 'number', default: 0.5, min: 0, max: 2, effect: 'default surface friction for bodies (read by rigid bodies)' },
       restitution: { type: 'number', default: 0, min: 0, max: 1, effect: 'default bounciness for bodies (read by rigid bodies)' },
       separate: { type: 'boolean', default: false, effect: 'push overlapping solid bodies apart' },
-      origin: { type: 'string', options: ['center', 'min', 'base'], default: 'center', effect: 'where entity.at sits on its box, for spaces without bounds()' },
       maxBodies: { type: 'integer', default: 400, min: 1, max: 20000, effect: 'bodies checked per step (in id order)' },
     },
     provides: { events: ['collide', 'collide:*', 'separate'], services: ['bodies'] },
@@ -53,7 +52,6 @@ export default {
       material: e => ({ friction: e.components.body?.friction ?? config.friction, restitution: e.components.body?.restitution ?? config.restitution }),
     };
     rt.provide('bodies', api);
-    const shapeOf = (sp, e) => { const b = bounds(sp, e, config.origin); return { kind: 'aabb', at: b.min, size: b.max.map((v, i) => v - b.min[i]), centered: false }; };
     rt.system('physics', rt => {
       const s = st(), now = new Set();
       const list = Object.values(rt.state.entities).filter(isBody).sort((a, b) => (a.id < b.id ? -1 : 1)).slice(0, config.maxBodies);
@@ -61,7 +59,7 @@ export default {
       for (const e of list) {
         const sp = rt.space(e.space); if (!sp.overlap) continue;
         const la = layerOf(e);
-        const shape = shapeOf(sp, e);
+        const shape = boxShape(sp, e);
         for (const id of sp.overlap(shape, o => o.id !== e.id && ids.has(o.id))) {
           if (id < e.id && now.has(pairKey(id, e.id))) continue;
           const o = rt.entity(id), lb = layerOf(o);
@@ -84,7 +82,7 @@ export default {
         if (!ea || !eb || ea.space !== eb.space) continue;
         const A = ea.components.body, Bb = eb.components.body;
         if (A.sensor || Bb.sensor || A.solid === false || Bb.solid === false) continue;
-        const sp = rt.space(ea.space), ba = bounds(sp, ea, config.origin), bb = bounds(sp, eb, config.origin);
+        const sp = rt.space(ea.space), ba = boxOf(sp, ea), bb = boxOf(sp, eb);
         let axis = -1, pen = Infinity;
         for (let i = 0; i < Math.min(ea.at.length, 3); i++) { const p = Math.min(ba.max[i], bb.max[i]) - Math.max(ba.min[i], bb.min[i]); if (p > 0 && p < pen) { pen = p; axis = i; } }
         if (axis < 0) continue;
