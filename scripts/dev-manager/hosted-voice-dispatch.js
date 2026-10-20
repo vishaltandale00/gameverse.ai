@@ -52,8 +52,8 @@ export class HostedVoiceDispatch {
     }
     if(t.phase==='cleaning'){
       if(s&&!t.retained){
-        const bytes=await this.daytona.download(s,root+'/result.json',24576);
-        if(bytes&&!t.result_rejected)await this.retain(t,bytes);else if(t.result_rejected)await this.retainSource(t);
+        const bytes=t.result_rejected?null:await this.daytona.download(s,root+'/result.json',24576);
+        if(t.result_rejected)await this.retainSource(t);else if(bytes)await this.retain(t,bytes);
         else {t.cleanup_wait_at??=this.now();this.save();if(t.execute_sent&&this.now()-t.cleanup_wait_at<3000)return;await this.retainSource(t);}
       }
       if(s){
@@ -83,7 +83,7 @@ export class HostedVoiceDispatch {
   async advance(){for(const t of Object.values(this.core.state.tasks)){
     if(t.cleanup_confirmed){if(t.admitted)await this.admission.releaseHosted(t.owner,t.id);continue;}
     try{await this.step(t);}catch(error){t.reason=/^[a-z0-9_]{1,80}$/.test(error.message)?error.message:'voice_dispatch_unavailable';
-      if(!/^daytona_(http|upload|download)/.test(t.reason)&&!['provisioning_unconfirmed','sandbox_identity_mismatch'].includes(t.reason)){t.cancel_requested=true;t.failed=true;t.phase='cleaning';if(t.reason==='voice_result_mismatch')t.result_rejected=true;}
+      if(!/^daytona_(http|upload|download)/.test(t.reason)&&!['provisioning_unconfirmed','sandbox_identity_mismatch'].includes(t.reason)){t.cancel_requested=true;t.failed=true;t.phase='cleaning';if(['voice_result_mismatch','daytona_file_too_large'].includes(t.reason))t.result_rejected=true;}
       this.save();}
   }}
 }

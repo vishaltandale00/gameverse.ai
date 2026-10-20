@@ -2,7 +2,7 @@ import {voicePackage} from '../../scripts/dev-manager/voice-package.mjs';import 
 import test from 'node:test';import assert from 'node:assert/strict';import {mkdtemp,rm,mkdir,writeFile} from 'node:fs/promises';import {tmpdir} from 'node:os';import {join} from 'node:path';
 import {fakeDaytona} from './manual/hosted-daytona-fixture.mjs';
 process.env.CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV='false';process.env.WRANGLER_SEND_METRICS='false';const {unstable_dev}=await import('wrangler');
-const policy={wall_ms:120000,model_calls:10,account_active:1,platform_active:2,daily_jobs:3};
+const policy={wall_ms:120000,model_calls:10,account_active:1,platform_active:2,daily_jobs:1};
 test('ordinary account API key dispatches in the cloud without manager; encrypted custody, source fences, isolation, rotation and restart',{timeout:60000},async t=>{
  const dir=await mkdtemp(join(tmpdir(),'gv-hosted-state-')),daytona=await fakeDaytona();let worker;
  const assets=join(dir,'assets');await mkdir(join(assets,'runtime'),{recursive:true});await writeFile(join(assets,'index.html'),'Hosted voice contract fixture');const source=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),pkg=await voicePackage(source),fixtureRelease={schema:'gameverse.hosted-voice-release/1',source_commit:source,files:Object.fromEntries(pkg.files),games:[{gameId:'soccer',version:'1.0.0',artifactSha256:'d'.repeat(64)}]};fixtureRelease.sha256=await digest(releaseContent(fixtureRelease));await writeFile(join(assets,'runtime/voice-worker.json'),JSON.stringify(fixtureRelease));
@@ -42,4 +42,14 @@ test('ordinary account API key dispatches in the cloud without manager; encrypte
  assert.equal((await call({op:'work'})).active,false);
  assert.equal((await req(endpoint,{body:{op:'provider',id:'late',kind:'plan',payload:{}},headers:{Authorization:'Bearer '+token}})).status,409);
  const cleanupUntil=Date.now()+7500;while(Date.now()<cleanupUntil){state=await read('/test/hosted/inspect',{cookie:n});if(state.tasks[id].cleanup_confirmed)break;await new Promise(r=>setTimeout(r,150));}assert.equal(state.tasks[id].cleanup_confirmed,true);assert.equal(state.tasks[id].phase,'cancelled');assert.equal(daytona.stats.deletes,1);assert(state.tasks[id].artifacts.some(a=>a.kind==='source'));const artifact=state.tasks[id].artifacts.find(a=>a.kind==='source'),download='/api/voice/requests/'+id+'/artifacts/'+artifact.sha256;assert.equal((await req(download,{cookie:n})).status,200);assert.equal((await req(download,{cookie:b})).status,404);assert.equal((await read('/api/voice/requests/'+id,{cookie:n})).worker.cleanup_confirmed,true);
+ // Archive into real account-private SQLite, restart workerd, and retain status,
+ // artifacts and old-epoch fencing without keeping history in the heartbeat blob.
+ assert.equal((await read('/test/hosted/archive-completed',{cookie:n})).tasks,0);
+ state=await read('/test/hosted/inspect',{cookie:n});assert.equal(Object.keys(state.voice.requests).length,0);assert.equal(Object.keys(state.voice.sessions).length,0);
+ await worker.stop();worker=null;await start();n=await login('n');b=await login('b');
+ assert.equal((await read('/api/voice/requests/'+id,{cookie:n})).worker.cleanup_confirmed,true);
+ assert.equal((await req('/api/voice/requests/'+id,{cookie:b})).status,404);assert.equal((await req(download,{cookie:n})).status,200);assert.equal((await req(download,{cookie:b})).status,404);
+ assert.equal((await req('/api/browser-voice/bind',{cookie:n,body:binding})).status,409);
+ const fresh={...binding,id:crypto.randomUUID(),epoch:crypto.randomUUID()};await read('/api/browser-voice/bind',{cookie:n,body:fresh});assert.equal(daytona.stats.creates,1,'new binding alone does not provision');const exhausted=await req('/api/voice/transcriptions',{cookie:n,raw:audio,headers:{...headers,'X-Request-ID':crypto.randomUUID(),'X-Gameverse-Voice-Session':fresh.id}});assert.equal(exhausted.status,429);assert.equal((await exhausted.json()).error.code,'hosted_voice_daily_limit','archival and restart do not reset the rolling quota');
+
 });

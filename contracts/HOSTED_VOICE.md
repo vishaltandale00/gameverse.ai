@@ -46,3 +46,9 @@ The browser's five-second lease and finite job wall time do not promise backgrou
 Vishal owns account/host/adapters/control authority/transport/recovery. Shishir owns gameplay/construction algorithms, cadence, scenarios and loop configuration. No second policy loop is introduced.
 
 Use focused existing Node/workerd/vault tests plus a separately triggered bounded Chromium journey. Distinguish synthetic providers/Daytona transport, real worker processes, real separate sandboxes and real inference. Preserve source/config/environment identities and failed/cancelled outcomes. No passing synthetic journey implies deployment, general signup, supported subscription Codex, real ASR quality or checkpoint-based B′/B″ activation.
+
+## Live state and retained history
+
+Hosted account history is not a lifetime admission budget. Once cleanup is confirmed and the job deadline plus a 30-second in-flight-result grace period has passed, requests, tool acknowledgments, model/provider results and task receipts move from live indexes into account-private SQLite history. Revoked or lease-expired bindings without a live task become durable revoked tombstones. Historical status and R2 artifacts remain owner-readable after restart; archived IDs cannot start new work or restore an old epoch. Rolling daily admission counts both live and archived tasks through an indexed timestamp query. Empty abandoned bindings are reclaimed on the next configuration/bind operation. Developer manager job history keeps its separate bounded development registry policy.
+
+Oversized worker receipts are terminally rejected just like malformed JSON. Once rejected, cleanup does not download that receipt again; trusted source retention and confirmed deletion still precede capacity release.
