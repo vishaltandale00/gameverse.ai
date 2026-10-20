@@ -26,6 +26,7 @@ export default {
   card: {
     intent: 'Mounts: ride creatures with walk/trot/gallop gaits and a stamina meter, build bond while riding (untamed mounts buck until bonded), jump while mounted, and call your mount to you from within range. Any entity with a `mount` component can be ridden.',
     views: ['3p', 'td', 'iso', 'side'],
+    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
     params: {
       walk: num(0.5, 20, 3, 'units/s', 'walk gait speed'), trot: num(0.5, 40, 7, 'units/s', 'trot gait speed'), gallop: num(0.5, 80, 14, 'units/s', 'gallop gait speed (sprint)'),
       accel: num(0.5, 200, 10, 'units/s²', 'how quickly gaits change speed'),

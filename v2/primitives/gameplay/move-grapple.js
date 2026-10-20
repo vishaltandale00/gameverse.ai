@@ -19,6 +19,7 @@ export default {
   card: {
     intent: 'Grapple hook: fire along the aim to hook a surface within range, then swing on the rope like a pendulum (reel in and out) or get pulled straight to the anchor. Release to fly off with your momentum. Anchors can be limited to tagged cells.',
     views: ['side', '3p', '1p'],
+    actionSpace: { move: { type: 'vector', min: -1, max: 1 }, aim: { type: 'vector', min: -1, max: 1 } },
     params: {
       range: { type: 'number', min: 1, max: 200, default: 12, unit: 'units', effect: 'maximum hook distance' },
       ropeLen: { type: 'number', min: 1, max: 200, default: 10, unit: 'units', effect: 'longest rope while swinging' },

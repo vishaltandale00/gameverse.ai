@@ -85,7 +85,7 @@ test('walk: 3D steering follows body.look yaw (forward = [sin, 0, cos])', () => 
   run(rt, 30, { axes: { move: [0, 1] } });
   const p = rt.player();
   assert.ok(p.at[0] > 10 && Math.abs(p.at[2] - 8) < 1e-6, `yaw 90° forward is +x (${p.at})`);
-  assert.ok(Math.abs(p.components.body.facing - Math.PI / 2) < 1e-6);
+  assert.deepEqual(p.components.body.facing, [1, 0, 0], 'frozen 3D facing is a unit vector');
 });
 
 test('walk: NPC with components.move follows a kernel move_to through space.path and emits arrived', () => {

@@ -4,7 +4,7 @@
 // while the head is under, after which drowning deals damage through
 // combat.health's `damage` effect. A jump at the surface climbs out.
 import {
-  round6, bodyOf, intent, installOverlay, integrate, submersion, pool, canSpend, hasAbility, verbs, ensureShared, steerPlane, hurt,
+  round6, bodyOf, intent, installOverlay, integrate, submersion, pool, canSpend, hasAbility, verbs, ensureShared, steerPlane, hurt, boxOf, probe, zoneTags,
   COMMON_PARAMS, controls,
 } from './move-lib-core.js';
 
@@ -20,6 +20,7 @@ export default {
   card: {
     intent: 'Swim, float and dive in liquid: buoyancy brings you to the surface, dive and ascend verbs move you underwater, breath runs down while the head is submerged and drowning damage follows, and jumping at the surface climbs out.',
     views: ['1p', '3p', 'side', 'td', 'iso'],
+    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
     params: {
       speed: { type: 'number', min: 0.2, max: 20, default: 3, unit: 'units/s', effect: 'swim speed' },
       sprint: { type: 'number', min: 0, max: 30, default: 0, unit: 'units/s', effect: 'fast swim speed with the sprint verb (0 = none)' },
@@ -58,6 +59,13 @@ export default {
         if (e.id === 'player') rt.state.vars['move.breath'] = round6(s.breath);
       }
     }, ID);
+    const wadeIn = (e, api, fr) => {
+      const it = intent(rt, e, api, fr, { free3d: true }), l = Math.hypot(...it.dir);
+      if (l < 0.3) return false;
+      const b = boxOf(api, e), p = b.min.map((m, i) => m + b.size[i] / 2);
+      for (const i of fr.plane) p[i] += (it.dir[i] / l) * (b.size[i] / 2 + 0.2);
+      return probe(rt, api, p).tags.some(t => c.liquids.includes(t)) || zoneTags(rt, e, p).some(t => c.liquids.includes(t));
+    };
     installOverlay(rt, c, instance, {
       id: ID, mode: 'swim', pri: 30,
       wants(e, api, fr, s) {
@@ -67,12 +75,12 @@ export default {
         if (!s.wet && e.id === 'player' && rt.state.vars['move.breath'] !== undefined) rt.state.vars['move.breath'] = c.breath;
         if (c.ability && !hasAbility(rt, e, c.ability)) return false;
         if (s.exitUntil && rt.state.time < s.exitUntil) return false;
-        if (w.frac < c.enter && !(s.on && w.frac > 0)) { s.endReason = 'out'; return false; }
+        if (w.frac < c.enter && !(s.on && w.frac > 0) && !(fr.up === null && wadeIn(e, api, fr))) { s.endReason = 'out'; return false; }
         const stam = c.staminaCost > 0 ? pool(rt, e, c.pool) : null;
         if (stam && !canSpend(stam, c.staminaCost * rt.dt)) { s.endReason = 'exhausted'; return false; }
         return true;
       },
-      start(e) { rt.emit('swim_start', { who: e.id }); },
+      start(e) { const b = bodyOf(e); b.vel = b.vel.map(v => round6(v * 0.3)); rt.emit('swim_start', { who: e.id }); }, // the splash soaks up momentum
       end(e, api, s, reason) { rt.emit('swim_end', { who: e.id, reason }); },
       step(e, api, fr, s) {
         const b = bodyOf(e), it = intent(rt, e, api, fr, { free3d: true }), ctl = controls(rt, e), dt = rt.dt, V = fr.vert;
@@ -87,7 +95,7 @@ export default {
           const diveIn = ctl ? (ctl.down('dive') || ctl.down('crouch') || ctl.down('descend') ? -1 : 0) + (ctl.down('ascend') || ctl.down('jump') ? 1 : 0) + (fr.plane.length === 1 ? ctl.move[1] : 0) : it.vert;
           let target;
           if (diveIn < -0.2 && c.dive) target = -speed;
-          else if (diveIn > 0.2) target = speed;
+          else if (diveIn > 0.2) target = s.head ? speed : 0; // ascend to the surface, then tread water
           else target = s.head ? c.buoyancy : (s.frac > 0.67 ? c.buoyancy * 0.25 : 0);
           const cur = b.vel[V] * up;
           b.vel[V] = up * (cur + Math.max(-c.accel * dt, Math.min(c.accel * dt, target - cur)));

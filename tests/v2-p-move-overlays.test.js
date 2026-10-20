@@ -129,13 +129,13 @@ test('dodge: distance, i-frame window, stamina cost, backstep, cooldown', () => 
   run(rt, 5, {});
   const p = rt.player(), x0 = p.at[0];
   rt.step({ actions: { dodge: true }, axes: { move: [1, 0] } });
-  const inv = []; for (let i = 0; i < 35; i++) { rt.step({}); inv.push(p.components.body.invulnerable); }
+  const inv = []; for (let i = 0; i < 35; i++) { rt.step({}); inv.push(p.components.body.iframes); }
   assert.ok(Math.abs(p.at[0] - x0 - 4) < 0.3, `rolled ${p.at[0] - x0}`);
   assert.equal(inv[0], false); assert.equal(inv[5], true); assert.equal(inv[20], false);
   assert.equal(p.components.move.pools.stamina.value, 70);
   run(rt, 20, {});
   const x1 = p.at[0];
-  rt.step({ actions: { dodge: true } }); run(rt, 40, {});
+  rt.step({ actions: { dodge: true } }); run(rt, 60, {});
   assert.ok(p.at[0] < x1 - 2 && p.at[0] > x1 - 2.8, `backstep 0.6 × 4 opposite facing (${p.at[0] - x1})`);
   rt.step({ actions: { dodge: true } }); run(rt, 60, {}); rt.step({ actions: { dodge: true } });
   assert.equal(rt.state.counts.dodge_failed, 1, 'stamina too low for a fourth dodge');

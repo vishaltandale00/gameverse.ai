@@ -21,11 +21,12 @@ export default {
   card: {
     intent: 'Climb ladders and climbable walls: push into or grab a surface to climb up, down and sideways at a set speed, drain stamina while climbing, jump off, slip when exhausted, and mantle over the top. Surfaces are ladders, any steep wall, or cells/zones carrying climb tags.',
     views: ['1p', '3p', 'side', 'iso'],
+    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
     params: {
       speed: { type: 'number', min: 0.1, max: 20, default: 1.4, unit: 'units/s', effect: 'climbing speed' },
       surfaces: { type: 'string', options: ['ladders', 'any', 'tagged'], default: 'ladders', effect: 'ladders: ladder cells only; any: every steep solid wall; tagged: walls whose cell or zone carries a climb tag' },
       tags: { type: 'list', of: { type: 'string' }, default: ['climbable', 'ladder', 'vine'], effect: 'cell/zone tags that are climbable when surfaces=tagged' },
-      ladderTags: { type: 'list', of: { type: 'string' }, default: ['ladder', 'vine'], effect: 'non-solid cells you climb inside (ladders, vines)' },
+      ladderTags: { type: 'list', of: { type: 'string' }, default: ['ladder', 'vine', 'climbable'], effect: 'non-solid cells you climb inside (ladders, vines, climbable tiles)' },
       staminaCost: { type: 'number', min: 0, max: 200, default: 0, unit: '/s', effect: 'stamina per second while moving on a wall (a third of that while hanging still)' },
       pool: { type: 'string', default: 'stamina', effect: 'gameplay.resource pool (res.<pool>); an internal pool when absent' },
       jumpCost: { type: 'number', min: 0, max: 100, default: 0, effect: 'stamina for a jump off the wall' },

@@ -5,11 +5,11 @@
 //   twinstick  8-way movement plus independent aim (axes.aim / axes.look) with auto-aim at the nearest target
 //   inertial   Asteroids: rotate 4.6 rad/s, thrust 300 units/s², drag 0.55/s, max 1.5 × speed, wraparound
 // Hyperspace (Asteroids) jumps to a random spot in bounds with rt.random().
-// Facing is body.facing (radians, 0 = +x) and body.dir. Aim is components.move.ship.aim (radians),
+// Heading is components.move.ship.ang (radians, 0 = +x) and body.dir; body.facing is ±1 (frozen 2D field). Aim is components.move.ship.aim (radians),
 // which combat.projectile can read for twin-stick fire.
 import {
   clamp, round6, mv, bodyOf, state, spaceApi, frameOf, intent, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey,
-  controls, verbs, ensureShared, motor, settle, v3, COMMON_PARAMS, MACRO_PARAMS,
+  controls, verbs, ensureShared, motor, settle, v3, setFacing, COMMON_PARAMS, MACRO_PARAMS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.ship';
@@ -23,6 +23,7 @@ export default {
   card: {
     intent: 'Ship controls for shmups and arena shooters: rail (side to side), eight-way, twin-stick (separate aim with auto-aim) or inertial Asteroids flight (rotate, thrust, drag, wraparound), with a slow focus mode and hyperspace jumps, clamped to or wrapping around the play bounds.',
     views: ['td', 'side'],
+    actionSpace: { move: { type: 'vector', min: -1, max: 1 }, aim: { type: 'vector', min: -1, max: 1 } },
     params: {
       mode: { type: 'string', options: ['rail', 'eightway', 'twinstick', 'inertial'], default: 'eightway', effect: 'control scheme' },
       speed: num(1, 2000, 190, 'units/s', 'top speed (kit: 140-240 px/s)'),
@@ -116,8 +117,8 @@ export default {
           if (!c.collide) api.setPos(e, pos.slice(0, e.at.length).map(round6), rt);
         }
         s.aim ??= s.ang;
-        b.facing = s.ang; const dir = [0, 0, 0]; dir[A] = round6(Math.cos(s.ang)); dir[B] = round6(Math.sin(s.ang)); b.dir = dir.slice(0, Math.max(2, fr.dims));
-        b.state = 'ship'; b.invulnerable = rt.state.time < (mv(e).invulnerableUntil ?? -1);
+        const dir = [0, 0, 0]; dir[A] = round6(Math.cos(s.ang)); dir[B] = round6(Math.sin(s.ang)); setFacing(e, fr, dir);
+        b.state = 'ship'; b.iframes = rt.state.time < (mv(e).invulnerableUntil ?? -1);
         settle(e, fr);
       }
     }, ID);

@@ -56,22 +56,32 @@ export function platformerConfig(config) {
   return c;
 }
 
-/** Reach for the spatial verifier, given unlocked abilities. ctx.gravity: space gravity magnitude (default 60 tiles/s²). */
+/**
+ * Reach for the spatial verifier and tilemap navigation, given unlocked abilities
+ * (ctx.gravity: space gravity magnitude, default 60 tiles/s²). Field meanings follow
+ * engine.space.tilemap navigation: jumpHeight and jumpGap are one ground jump,
+ * doubleJump adds air jumps, dash adds that many tiles, climb = climbable tiles,
+ * wallJump = any wall is climbable. reachHeight/reachGap combine everything for
+ * spaces that only read one number.
+ */
 function envelope(config, abilities = new Set(), ctx = {}) {
   const c = platformerConfig(config), has = a => c.abilities[a] || abilities.has(a);
   const g = (c.gravity || ctx.gravity || 60) * c.gravityScale;
   const h = v => (v * v) / (2 * g), t = v => (2 * v) / g;
-  let jumpHeight = h(c.jump), air = t(c.jump);
-  if (has('doubleJump') && c.doubleJumps > 0) { jumpHeight += c.doubleJumps * h(c.jump * c.doubleJumpScale); air += c.doubleJumps * t(c.jump * c.doubleJumpScale); }
-  if (c.autoBounce.velocity > 0) { jumpHeight = Math.max(jumpHeight, h(Math.max(c.autoBounce.velocity, c.autoBounce.spring))); air = Math.max(air, t(c.autoBounce.velocity)); }
-  const flying = c.flap.velocity > 0 || (has('thrust') && c.thrust.accel > 0);
-  const dash = has('dash') ? c.dash.speed * c.dash.sec : 0;
-  const speed = Math.max(c.run, c.autoRun);
-  let jumpGap = speed * air + dash;
+  const lift = Math.max(c.jump, c.autoBounce.velocity);
+  const jumpHeight = h(lift), speed = Math.max(c.run, c.autoRun);
+  let air = t(lift), jumpGap = speed * air;
   if (has('glide')) jumpGap += speed * (jumpHeight / Math.max(0.1, c.glide.fall));
+  const doubleJump = has('doubleJump') && c.doubleJumps > 0;
+  let reachHeight = jumpHeight;
+  if (doubleJump) { reachHeight += c.doubleJumps * h(c.jump * c.doubleJumpScale); air += c.doubleJumps * t(c.jump * c.doubleJumpScale); }
+  if (c.autoBounce.spring > 0) reachHeight = Math.max(reachHeight, h(c.autoBounce.spring));
+  const dash = has('dash') ? c.dash.speed * c.dash.sec : 0;
+  const flying = c.flap.velocity > 0 || (has('thrust') && c.thrust.accel > 0);
   return {
-    mode: 'continuous', run: speed, jumpHeight: round6(jumpHeight), jumpGap: round6(jumpGap), dash: round6(dash),
-    climb: has('wallClimb') || has('wallJump'), wallJump: has('wallJump'), swim: has('swim'), fly: flying, glideRatio: has('glide') ? round6(speed / c.glide.fall) : 0,
+    mode: 'continuous', run: speed, jumpHeight: round6(jumpHeight), jumpGap: round6(jumpGap), doubleJump, dash: round6(dash),
+    reachHeight: round6(reachHeight), reachGap: round6(speed * air + dash),
+    climb: has('wallClimb'), wallJump: has('wallJump'), swim: has('swim'), fly: flying, glideRatio: has('glide') ? round6(speed / c.glide.fall) : 0,
   };
 }
 
@@ -81,6 +91,7 @@ export default {
   card: {
     intent: 'Side-view platforming for the player or NPCs: run, variable jump with jump cut, coyote time and buffer, plus ability-gated double jump, dash with i-frames, wall slide/jump/climb, glide, swim, crouch and ledge grab. Presets cover runners, Flappy-style flap, Doodle-style auto-bounce, jetpack thrust and precision platformers. Abilities turn on through unlock_ability grants.',
     views: ['side'],
+    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
     params: {
       preset: { type: 'string', options: Object.keys(PLATFORMER_PRESETS), default: 'custom', effect: 'base tuning; explicit params override it' },
       feel: { type: 'string', options: Object.keys(FEEL), default: 'snappy', effect: 'runner feel: scales gravity and jump (floaty 0.82/1.04, heavy 1.18/0.97)' },
@@ -165,7 +176,7 @@ export function stepPlatformer(rt, e, c) {
   s.dashCd = Math.max(0, round6((s.dashCd || 0) - dt));
   s.lock = Math.max(0, round6((s.lock || 0) - dt));
   s.ledgeCd = Math.max(0, round6((s.ledgeCd || 0) - dt));
-  const iUntil = mv(e).invulnerableUntil ?? -1; b.invulnerable = now < iUntil;
+  const iUntil = mv(e).invulnerableUntil ?? -1; b.iframes = now < iUntil;
   // ---- ledge hang (fighting kit: hang up to hangSec, climb after climbSec, drop away with a cooldown)
   if (s.hang) {
     const H = s.hang; H.t = round6(H.t + dt);
@@ -190,7 +201,7 @@ export function stepPlatformer(rt, e, c) {
     const l = Math.hypot(d[0], d[1]);
     s.dash = { t: c.dash.sec, d: [d[0] / l, d[1] / l] }; s.dashCd = c.dash.cooldown;
     if (!grounded) s.airDash = true;
-    mv(e).invulnerableUntil = now + c.dash.iframes; b.invulnerable = c.dash.iframes > 0;
+    mv(e).invulnerableUntil = now + c.dash.iframes; b.iframes = c.dash.iframes > 0;
     rt.emit('dashed', { who: e.id, dir: s.dash.d });
   }
   let mode = 'run';

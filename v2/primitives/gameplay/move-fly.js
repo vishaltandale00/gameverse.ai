@@ -14,7 +14,8 @@ const num = (min, max, d, unit, effect) => ({ type: 'number', min, max, default:
 function envelope(config, abilities = new Set()) {
   const ok = config.toggle === 'always' || !config.ability || abilities.has(config.ability);
   const range = config.fuel > 0 ? config.speed * config.fuel : Infinity;
-  return { mode: 'continuous', fly: ok, run: config.speed, flyRange: ok ? (Number.isFinite(range) ? round6(range) : 1e9) : 0, jumpHeight: ok ? 1e9 : 0, jumpGap: ok ? (Number.isFinite(range) ? round6(range) : 1e9) : 0 };
+  // fly:true is what spaces read; no huge jump numbers (navigation iterates over jump reach).
+  return { mode: 'continuous', fly: ok, run: config.speed, flyRange: ok && Number.isFinite(range) ? round6(range) : 0 };
 }
 
 export default {
@@ -22,6 +23,7 @@ export default {
   card: {
     intent: 'Flight: free 3D/side flight with ascend and descend, or jetpack thrust against gravity, always on or toggled by a verb or a double jump, optionally burning fuel. Use it for creative-mode flying, wings, jetpacks, flying NPCs and drones.',
     views: ['1p', '3p', 'side', 'td', 'iso'],
+    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
     params: {
       style: { type: 'string', options: ['free', 'thrust'], default: 'free', effect: 'free: no gravity while flying; thrust: hold jump/ascend to push against gravity' },
       toggle: { type: 'string', options: ['verb', 'double_jump', 'always'], default: 'verb', effect: 'how flight starts: the fly verb, a double tap of jump in the air, or always flying' },

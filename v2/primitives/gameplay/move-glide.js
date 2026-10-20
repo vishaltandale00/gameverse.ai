@@ -15,6 +15,7 @@ export default {
   card: {
     intent: 'Glide while falling: hold glide (or jump) in the air to cap your fall speed and sail forward, spending stamina; updraft cells or zones lift you. Gate it behind an ability to make it a progression unlock.',
     views: ['3p', '1p', 'side', 'iso'],
+    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
     params: {
       fallSpeed: { type: 'number', min: 0.5, max: 6, default: 2.8, unit: 'units/s', effect: 'maximum sink speed while gliding' },
       speed: { type: 'number', min: 0.5, max: 40, default: 7, unit: 'units/s', effect: 'horizontal glide speed' },

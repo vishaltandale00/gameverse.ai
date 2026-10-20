@@ -6,8 +6,8 @@
 //   NPC intent, in priority: components.input (the player's input shape), components.steer
 //   {dir, speed?, run?, jump?, face?}, components.moveTo (kernel move_to; path-followed,
 //   then cleared with `arrived`/`arrived:<zone>` or `move_failed`).
-// - components.body: vel [x,y,z], grounded, facing (3D yaw from +z toward +x; 2D atan2 angle),
-//   dir (unit vector), look [yaw,pitch], state, lift (virtual hop height), invulnerable,
+// - components.body: vel [x,y,z], grounded, facing (frozen: +1/-1 in 2D, unit vector in 3D),
+//   dir (unit vector), look [yaw,pitch] (yaw from +z toward +x), state, lift (virtual hop height), iframes,
 //   controller = 'move' (engine.physics.character then skips the entity).
 // - Modes: base controllers (walk, platformer, grid, ship, lanes, fly toggle=always) claim
 //   priority 0. Overlays take over while active: glide 20, fly 25, swim 30, climb 40,

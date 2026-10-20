@@ -1,8 +1,8 @@
 // Dodge roll / dash / backstep with invulnerability frames, stamina cost and
 // recovery, for any entity in any continuous space (3D, side, top-down).
 // I-frames are published as components.move.invulnerableFrom/Until (state
-// time) and body.invulnerable (true inside the window). Combat primitives
-// should ignore hits while body.invulnerable is true.
+// time) and body.iframes (true inside the window). Combat primitives
+// should ignore hits while body.iframes is true.
 import { round6, mv, bodyOf, intent, installOverlay, integrate, pool, canSpend, hasAbility, verbs, len, norm, COMMON_PARAMS, project } from './move-lib-core.js';
 
 const ID = 'gameplay.move.dodge';
@@ -14,6 +14,7 @@ export default {
   card: {
     intent: 'Dodge: a roll, dash or backstep that covers a set distance over a set time with an invulnerability window, costs stamina, and leaves a short recovery. Direction comes from the stick, the facing, or always backwards.',
     views: ['3p', 'side', 'td', 'iso', '1p'],
+    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
     params: {
       distance: { type: 'number', min: 0.2, max: 30, default: 3, unit: 'units', effect: 'distance covered' },
       sec: { type: 'number', min: 0.05, max: 2, default: 0.45, unit: 's', effect: 'duration of the move' },
@@ -47,7 +48,7 @@ export default {
     rt.system('late', rt => {
       for (const e of Object.values(rt.state.entities)) {
         const m = e.components.move; if (m?.invulnerableUntil == null || !e.components.body) continue;
-        const t = rt.state.time; e.components.body.invulnerable = t >= (m.invulnerableFrom ?? -1) && t < m.invulnerableUntil;
+        const t = rt.state.time; e.components.body.iframes = t >= (m.invulnerableFrom ?? -1) && t < m.invulnerableUntil;
       }
     }, ID);
     installOverlay(rt, c, instance, {

@@ -72,11 +72,11 @@ test('platformer: dash covers speed × sec without gravity and grants i-frames; 
   rt.step({ actions: { jump: true } }); run(rt, 6, {});
   const x0 = p.at[0], y0 = p.at[1];
   rt.step({ actions: { dash: true }, held: { right: true } });
-  assert.equal(p.components.body.invulnerable, true);
+  assert.equal(p.components.body.iframes, true);
   run(rt, 11, { held: { right: true } });
   assert.ok(Math.abs(p.at[0] - x0 - 6) < 0.6, `dash distance ${p.at[0] - x0}`);
   assert.ok(Math.abs(p.at[1] - y0) < 0.3, 'no gravity during a horizontal dash');
-  assert.equal(p.components.body.invulnerable, false);
+  assert.equal(p.components.body.iframes, false);
   rt.step({ actions: { dash: true }, held: { right: true } });
   assert.equal(rt.state.counts.dashed, 1, 'air dash only once');
 });
@@ -188,8 +188,10 @@ test('platformer: envelope reflects abilities', () => {
   const card = move.find(p => p.id === 'gameplay.move.platformer').card;
   const base = card.envelope({}, new Set(), { gravity: 60 }), dj = card.envelope({}, new Set(['doubleJump', 'dash', 'glide', 'wallJump']), { gravity: 60 });
   assert.ok(Math.abs(base.jumpHeight - 22 * 22 / 120) < 1e-6);
-  assert.ok(dj.jumpHeight > base.jumpHeight && dj.jumpGap > base.jumpGap && dj.dash > 0 && dj.wallJump === true && dj.climb === true);
-  assert.equal(base.climb, false);
+  // Tilemap-navigation semantics: single-jump numbers plus doubleJump/dash; reach* combine them.
+  assert.equal(dj.jumpHeight, base.jumpHeight);
+  assert.ok(dj.doubleJump === true && dj.reachHeight > base.reachHeight && dj.jumpGap > base.jumpGap && dj.dash > 0 && dj.wallJump === true);
+  assert.equal(base.climb, false); assert.equal(base.doubleJump, false);
 });
 
 test('platformer: deterministic replay with options', () => {

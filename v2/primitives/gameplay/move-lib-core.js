@@ -8,10 +8,11 @@
 //   marks an NPC as "driven by gameplay.move.*" and holds per-mode state:
 //   { base?, mode, since, req, held[], path, abilities?, <mode>: {...} }.
 // - Kinematics live in `components.body`: vel [x,y,z] (always 3 long; 2D
-//   spaces use [x,y,0]), grounded, facing (yaw in 3D, atan2 angle in 2D),
-//   dir (unit facing vector), look [yaw,pitch] when steering by look, state
+//   spaces use [x,y,0]), grounded, facing (frozen: +1/-1 in 2D, unit vector in 3D),
+//   dir (unit facing vector in every space), look [yaw,pitch] when steering by look, state
 //   (walk|run|sprint|crouch|air|swim|dive|climb|glide|fly|dash|dodge|wall|
-//   ledge|grapple|ride|ship|lanes|grid), controller = 'move'. That stops
+//   ledge|grapple|ride|ship|lanes|grid), iframes (true inside a dodge/dash
+//   invulnerability window; times in components.move.invulnerableFrom/Until), controller = 'move'. That stops
 //   engine.physics.character from integrating them a second time.
 // - 3D yaw is measured from +z toward +x: forward = [sin yaw, 0, cos yaw],
 //   right = [-cos yaw, 0, sin yaw]. Move axes [x,y] are relative to
@@ -89,7 +90,7 @@ export function boxOf(api, e) {
   const dims = dimsOf(e), at = e.at.slice(0, dims);
   const size = (e.components.body?.size || []).slice(0, dims);
   while (size.length < dims) size.push(1);
-  const anchor = api?.anchor ?? (api?.kind === 'test' ? 'min' : dims === 3 ? 'feet' : 'min');
+  const anchor = api?.anchor ?? (api?.kind === 'test' ? 'min' : 'center');
   let min;
   if (anchor === 'center' || anchor === 'cell') min = at.map((v, i) => v - size[i] / 2);
   else if (anchor === 'feet') min = at.map((v, i) => (i === 1 ? v : v - size[i] / 2));
@@ -119,7 +120,9 @@ export function isSolidBlock(rt, block) {
 export function probe(rt, api, p) {
   if (typeof api?.getCell === 'function') {
     const block = api.getCell(p);
-    return { solid: isSolidBlock(rt, block), block: block ?? null, tags: blockTags(rt, block) };
+    const solid = typeof api.collisionOf === 'function' ? api.collisionOf(block) === 'solid' : isSolidBlock(rt, block);
+    const tags = typeof api.tagsAt === 'function' ? [...(block != null ? [String(block)] : []), ...(api.tagsAt(p) || [])] : blockTags(rt, block);
+    return { solid, block: block ?? null, tags };
   }
   if (typeof api?.raycast === 'function') {
     const dir = p.map(() => 0); dir[1] = -1;
@@ -346,15 +349,16 @@ export function zoneAnchor(rt, e, zoneId) {
   if (!dims) return zoneId;
   const fill = p => { const out = e.at.slice(); p.forEach((v, i) => { if (v != null && i < dims) out[i] = v; }); return out; };
   if (Array.isArray(z.at)) return fill(z.at);
+  if (Array.isArray(z.spawn)) return fill(z.spawn);
   const api = spaceApi(rt, e);
   if (Array.isArray(z.rect)) {
     const [x0, y0, x1, y1] = z.rect, c = [(x0 + x1) / 2, (y0 + y1) / 2];
     // Prefer a free cell inside the rect, nearest its centre.
-    let best = fill([Math.floor(c[0]), Math.floor(c[1])]);
+    let best = fill(api?.anchor === 'center' ? c : [Math.floor(c[0]), Math.floor(c[1])]);
     if (typeof api?.getCell === 'function') {
       let bd = Infinity;
       for (let x = Math.floor(x0); x < x1 && x < x0 + 64; x++) for (let y = Math.floor(y0); y < y1 && y < y0 + 64; y++) {
-        const p = fill([x, y]); if (isSolidBlock(rt, api.getCell(p))) continue;
+        const p = fill([x + (api.anchor === 'center' ? 0.5 : 0), y + (api.anchor === 'center' ? 0.5 : 0)]); if (probe(rt, api, p).solid) continue;
         const d = (x + 0.5 - c[0]) ** 2 + (y + 0.5 - c[1]) ** 2; if (d < bd) { bd = d; best = p; }
       }
     }
@@ -384,7 +388,7 @@ function follow(rt, e, api, fr, opts) {
   const dist = opts.free3d ? len(sub(v3(e.at), v3(target))) : planeDist(fr, e.at, target);
   if (dimsOf(e) && dist <= tol) return done(true);
   if (!P.pts) {
-    const p = typeof api?.path === 'function' ? api.path(e.at, target, { abilities: opts.envelope }) : [target];
+    const p = pathFor(rt, e, api, mt, target, opts.envelope);
     if (!p || !p.length) return done(false);
     P.pts = structuredClone(p); P.i = 0;
   }
@@ -404,6 +408,17 @@ function follow(rt, e, api, fr, opts) {
   return out;
 }
 
+/** Path from e to a moveTo target: zone ids first (spaces that path to zones), then the anchor point. */
+export function pathFor(rt, e, api, mt, target, envelope) {
+  if (typeof api?.path !== 'function') return target == null ? null : [target];
+  const size = e.components.body?.size || [];
+  const opts = { envelope, abilities: envelope, width: size[0], height: size[1], who: e.id };
+  // Spaces that index their zones (api.zones: Map) path straight to a zone id.
+  const known = mt?.zone && mt.at == null && (typeof api.zones?.has === 'function' ? api.zones.has(mt.zone) : false);
+  if (known) { const p = api.path(e.at, mt.zone, opts); if (Array.isArray(p) && p.length) return p; }
+  return target == null ? null : api.path(e.at, target, opts);
+}
+
 /** Discrete next step toward moveTo on navigate spaces (grid cells, graph zones). Returns the neighbour or null. */
 export function discreteNext(rt, e, api) {
   const mt = e.components.moveTo, m = mv(e);
@@ -415,7 +430,7 @@ export function discreteNext(rt, e, api) {
   if (!m.path || m.path.key !== key || !m.path.pts) {
     let pts = null;
     const inGoal = goal == null && mt.zone ? c => Boolean(api.inZone?.({ ...e, at: c }, mt.zone, rt)) : null;
-    if (typeof api.path === 'function' && dimsOf(e) && goal != null) pts = api.path(e.at, goal);
+    if (typeof api.path === 'function' && dimsOf(e) && (goal != null || api.zones?.has?.(mt.zone))) pts = pathFor(rt, e, api, mt, goal);
     else if (typeof api.neighbors === 'function' && (goal != null || inGoal)) pts = bfs(rt, e, api, goal, inGoal);
     if (!pts || pts.length < 2) { if (quiet) return null; delete e.components.moveTo; m.path = null; rt.emit('move_failed', { who: e.id, zone: mt.zone ?? null, reason: 'no_path' }); return null; }
     m.path = { key, pts: structuredClone(pts), i: 1 };
@@ -557,7 +572,9 @@ export function setFacing(e, fr, dirVec) {
   if (len(d) < 1e-6) return;
   const u = norm(d);
   b.dir = u.slice(0, Math.max(2, fr.dims)).map(round6);
-  b.facing = round6(fr.dims === 3 ? Math.atan2(u[0], u[2]) : Math.atan2(u[1], u[0]));
+  if (fr.dims === 3) b.facing = u.map(round6);
+  else if (Math.abs(u[0]) > 1e-6) b.facing = u[0] > 0 ? 1 : -1;
+  else b.facing ??= 1;
 }
 export function settle(e, fr) { const b = bodyOf(e); b.vel = b.vel.map(round6); b.controller = 'move'; }
 

@@ -9,7 +9,7 @@
 // space.slide; without gravity the jump height is virtual (body.lift).
 import {
   round6, mv, bodyOf, state, spaceApi, frameOf, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey, controls, verbs,
-  ensureShared, motor, settle, boxHits, canProbe, v3, COMMON_PARAMS, MACRO_PARAMS,
+  ensureShared, motor, settle, boxHits, canProbe, v3, setFacing, COMMON_PARAMS, MACRO_PARAMS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.lanes';
@@ -27,6 +27,7 @@ export default {
   card: {
     intent: 'Endless-runner lanes: auto-run forward with a speed ramp, switch lanes, jump low barriers, slide under high ones, dive from the air into a slide, and stumble on trips with a chaser that catches you on a second stumble.',
     views: ['3p', 'td'],
+    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
     params: {
       lanes: { type: 'integer', min: 2, max: 9, default: 3, effect: 'number of lanes' },
       laneWidth: num(0.2, 20, 1, 'units', 'distance between lane centres'),
@@ -126,8 +127,8 @@ export default {
         b.lift = U === null ? round6(s.y) : 0;
         b.height = s.slideT > 0 ? LANES.slideH : LANES.stand;
         b.grounded = !s.air; b.state = s.slideT > 0 ? 'slide' : s.air ? 'air' : s.tripT > 0 ? 'stumble' : 'lanes';
-        b.invulnerable = now < (s.invulnUntil ?? -1);
-        const dir = [0, 0, 0]; dir[F] = fs; b.dir = dir.slice(0, Math.max(2, dims)); b.facing = dims === 3 ? Math.atan2(dir[0], dir[2]) : Math.atan2(dir[1], dir[0]);
+        b.iframes = now < (s.invulnUntil ?? -1);
+        const dir = [0, 0, 0]; dir[F] = fs; setFacing(e, fr, dir);
         if (e.id === 'player') { rt.state.vars['move.speed'] = round6(v); rt.state.vars['move.distance'] = s.dist; }
         settle(e, fr);
       }

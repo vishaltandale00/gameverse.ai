@@ -20,7 +20,7 @@
 // (fright mode, eating pauses).
 import {
   clamp, round6, mv, bodyOf, state, spaceApi, frameOf, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey, controls, verbs,
-  ensureShared, isSolidBlock, blockTags, setFacing, settle, discreteNext, zoneAnchor, dimsOf, COMMON_PARAMS, MACRO_PARAMS,
+  ensureShared, probe, setFacing, settle, discreteNext, zoneAnchor, dimsOf, COMMON_PARAMS, MACRO_PARAMS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.grid';
@@ -41,6 +41,7 @@ export default {
   card: {
     intent: 'Grid-locked movement. lane mode: Pac-Man style continuous movement along cell lanes, with buffered turns, a cornering window, instant reversal and stopping at walls. step mode: one-cell hops with walk/run timing, turn-in-place, queued hops and one-way ledges (Pokémon overworld, Crossy Road). Cell tags add ledges, one-way cells, class-only doors and speed zones.',
     views: ['td', 'board', 'iso'],
+    actionSpace: { move: { type: 'vector', min: -1, max: 1 } },
     params: {
       mode: { type: 'string', options: ['lane', 'step'], default: 'step', effect: 'lane: continuous along lanes; step: discrete hops' },
       speed: { type: 'number', min: 0.5, max: 60, default: round6(BASE_SPEED * 0.8), unit: 'cells/s', effect: 'lane speed (classic level 1: 0.8 × 9.47)' },
@@ -93,23 +94,23 @@ function grid(rt, e, api, c) {
   const toWorld = cell => { const p = e.at.slice(); p[A] = cell[0] + off; p[B] = cell[1] + off; return p; };
   const lanePos = () => [e.at[A] - off, e.at[B] - off];
   const dv = d => [D[d][0], D[d][1] * ys];
-  const tagsAt = cell => (typeof api.getCell === 'function' ? blockTags(rt, api.getCell(toWorld(cell))) : []);
+  const tagsAtWorld = w => (typeof api.getCell === 'function' ? probe(rt, api, w).tags : []);
+  const probeSolid = w => probe(rt, api, w).solid;
+  const tagsAt = cell => tagsAtWorld(toWorld(cell));
   const classes = e.components.move?.classes || [];
   const open = (from, d) => {
     const v = dv(d), to = [from[0] + v[0], from[1] + v[1]], w = toWorld(to);
     if (typeof api.inBounds === 'function' && !api.inBounds(w) && !c.wrap && typeof api.wrapPos !== 'function') return false;
-    if (typeof api.getCell === 'function') {
-      const block = api.getCell(w), tags = blockTags(rt, block);
-      if (isSolidBlock(rt, block) && !tags.some(t => t.startsWith('ledge:'))) return false;
-      if (tags.includes(`no:${NAMES[d]}`)) return false;
-      const only = tags.filter(t => t.startsWith('only:')).map(t => t.slice(5));
-      if (only.length && !only.some(k => classes.includes(k))) return false;
-      return true;
-    }
+    const tags = tagsAtWorld(w);
+    if (tags.includes(`no:${NAMES[d]}`)) return false;
+    const only = tags.filter(t => t.startsWith('only:')).map(t => t.slice(5));
+    if (only.length && !only.some(k => classes.includes(k))) return false;
+    if (tags.some(t => t.startsWith('ledge:'))) return true;
     if (typeof api.canMove === 'function') return api.canMove({ ...e, at: toWorld(from) }, w, rt);
+    if (typeof api.getCell === 'function') return !probeSolid(w);
     return true;
   };
-  return { fr, A, B, off, toWorld, lanePos, dv, open, tagsAt };
+  return { fr, A, B, off, toWorld, lanePos, dv, open, tagsAt, api };
 }
 
 /** Wanted direction index from input, steer or moveTo; -1 for none. */
@@ -134,7 +135,7 @@ function wanted(rt, e, api, c, G, cell) {
 
 function laneSpeed(e, c, G) {
   const cell = G.lanePos().map(Math.round), tags = G.tagsAt(cell);
-  let k = e.components.move?.grid?.speedScale ?? 1;
+  let k = (e.components.move?.grid?.speedScale ?? 1) * (typeof G.api.speedAt === 'function' ? G.api.speedAt(G.toWorld(cell), e) ?? 1 : 1);
   for (const [tag, mult] of Object.entries(c.cellSpeed || {})) if (tags.includes(tag)) k *= mult;
   return c.speed * k;
 }
