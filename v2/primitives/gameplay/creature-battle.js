@@ -93,7 +93,8 @@ export function engine(ctx) {
     if ((b.difficulty === 'easy' || t.ai === 'easy') && rand() < 0.5) return { kind: 'move', index: wildMove(me, rand) };
     return { kind: 'move', index: bestMove(content, side, b.player) };
   }
-  function end(b, outcome, emit, text) { b.over = true; b.outcome = outcome; emit({ type: 'end', outcome, money: b.money, ...(text ? { text } : {}) }); }
+  const END_TEXT = { win: 'You won the battle!', lose: 'You lost the battle.', run: 'You fled the battle.', capture: 'The battle is over.' };
+  function end(b, outcome, emit, text) { b.over = true; b.outcome = outcome; emit({ type: 'end', outcome, money: b.money, text: text || (outcome === 'win' && b.money ? `You won! Got ${b.money} for winning!` : END_TEXT[outcome]) }); }
   function expFor(kind, foe) { const base = Math.floor((speciesOf(content, foe.species).expYield ?? 64) * foe.level / 7); return kind === 'wild' ? base : Math.floor(base * 1.5); }
   function awardExp(b, foe, emit) {
     const total = expFor(b.kind, foe), takers = b.player.party.filter(c => c.hp > 0 && b.participants.includes(c.uid));
@@ -142,7 +143,7 @@ export function engine(ctx) {
       if (b.kind !== 'wild') { emit({ type: 'text', text: 'The trainer blocked it! Don\'t be a thief!' }); return; }
       const foe = active(b.foe), bonus = ctx.capture?.bonusOf(item.id) ?? (item.value || 1);
       const { shakes, success } = ctx.capture ? ctx.capture.attempt(foe, bonus) : { shakes: 0, success: false };
-      for (let i = 0; i < Math.min(3, shakes); i++) emit({ type: 'shake', n: i + 1 });
+      for (let i = 0; i < Math.min(3, shakes); i++) emit({ type: 'shake', n: i + 1, text: `Shake ${i + 1}...` });
       emit({ type: 'capture', item: item.id, shakes, success, species: foe.species, text: success ? `Gotcha! ${foe.name} was caught!` : ['Oh no! It broke free!', 'Aww! It appeared to be caught!', 'Aargh! Almost had it!', 'Shoot! It was so close, too!'][Math.min(3, shakes)] });
       if (success) { b.captured = foe; end(b, 'capture', emit); }
       return;
@@ -257,7 +258,7 @@ export function engine(ctx) {
       if (r.eff === 0) { emit({ type: 'effective', side: them, mult: 0, text: `It doesn't affect ${nameOf(b, foeSide)}...` }); return; }
       const dmg = Math.min(target.hp, r.damage);
       target.hp -= dmg; total += dmg; landed++;
-      emit({ type: 'damage', side: them, amount: dmg, hp: target.hp, maxHp: max, crit: r.crit, eff: r.eff, moveType: move.type });
+      emit({ type: 'damage', side: them, amount: dmg, hp: target.hp, maxHp: max, crit: r.crit, eff: r.eff, moveType: move.type, text: `${nameOf(b, foeSide)} took ${dmg} damage.` });
       if (r.crit) emit({ type: 'crit', side: them, text: 'A critical hit!' });
     }
     if (eff > 1) emit({ type: 'effective', side: them, mult: eff, text: 'It\'s super effective!' });
@@ -335,6 +336,7 @@ export default {
       events: ['battle_start', 'battle_start:*', 'battle_log', 'turn_start', 'turn_end', 'battle_end', 'battle_end:*', 'creature_fainted:*', 'creature_defeated', 'creature_defeated:*', 'creature_level_up', 'creature_learned:*', 'creature_evolved:*', 'caught', 'caught:*', 'trainer_defeated', 'trainer_defeated:*', 'battle_invalid'],
       vars: ['battle.active', 'battle.turn'],
       actions: ['battle'],
+      services: ['battle'],
     },
     requires: { primitives: ['gameplay.creature.party'], services: ['creatures'] },
     reads: ['content.species', 'content.moves', 'content.types', 'content.items'],
@@ -428,24 +430,46 @@ export default {
       }
       if (b.over && !b.learnQueue.length) finish();
     });
-    // Solver options: every legal answer to what the battle needs now.
-    rt.options(rt => {
-      const b = st().battle; if (!b) return [];
+    /** Every answer to what the battle needs now, including disabled moves (no PP). */
+    function menu(b) {
       const eng = E(), need = eng.needsInput(b); if (!need) return [];
       const party = b.player.party, me = party[b.player.active], out = [];
-      const opt = (label, v) => out.push({ label, actions: { battle: v } });
-      if (need.kind === 'learn') { opt('keep moves', { kind: 'learn', forget: null }); const c = party.find(x => x.uid === need.uid); (c?.moves || []).forEach((m, i) => opt(`forget #${i} ${m.id}`, { kind: 'learn', forget: i })); return out; }
-      if (need.kind === 'switch') { party.forEach((c, i) => { if (c.hp > 0) opt(`send #${i} ${c.name}`, { kind: 'switch', index: i }); }); return out; }
-      const usable = me.moves.map((m, i) => m.pp > 0 ? i : -1).filter(i => i >= 0);
-      if (usable.length) usable.forEach(i => opt(`use ${me.moves[i].id}`, { kind: 'move', index: i })); else opt('struggle', { kind: 'move', index: 0 });
-      party.forEach((c, i) => { if (c.hp > 0 && i !== b.player.active) opt(`switch to #${i} ${c.name}`, { kind: 'switch', index: i }); });
+      const add = (id, label, kind, v, extra = {}) => out.push({ id, label, kind, enabled: true, ...extra, action: { battle: v } });
+      if (need.kind === 'learn') { add('learn:keep', 'keep moves', 'learn', { kind: 'learn', forget: null }); const c = party.find(x => x.uid === need.uid); (c?.moves || []).forEach((m, i) => add(`learn:${i}`, `forget #${i} ${m.id}`, 'learn', { kind: 'learn', forget: i })); return out; }
+      if (need.kind === 'switch') { party.forEach((c, i) => { if (c.hp > 0) add(`switch:${i}`, `send #${i} ${c.name}`, 'switch', { kind: 'switch', index: i }); }); return out; }
+      if (me.moves.some(m => m.pp > 0)) me.moves.forEach((m, i) => { const mv = moveOf(content(), m.id); add(`move:${i}`, `use ${m.id}`, 'move', { kind: 'move', index: i }, { enabled: m.pp > 0, pp: m.pp, ppMax: m.max, type: mv?.type ?? null, name: mv?.name ?? m.id }); });
+      else add('move:struggle', 'struggle', 'move', { kind: 'move', index: 0 }, { type: null });
+      party.forEach((c, i) => { if (c.hp > 0 && i !== b.player.active) add(`switch:${i}`, `switch to #${i} ${c.name}`, 'switch', { kind: 'switch', index: i }); });
       for (const it of (content().items || []).filter(i => i.creature)) {
         if (hasInv() && !rt.test({ item: it.id, gte: 1 }, {})) continue;
-        if (it.creature.kind === 'ball') { if (b.kind === 'wild') opt(`throw ${it.id}`, { kind: 'item', item: it.id }); continue; }
-        party.forEach((c, i) => { const max = statsOf(content(), c).hp; if ((it.creature.kind === 'heal' && c.hp > 0 && c.hp < max) || (it.creature.kind === 'revive' && c.hp <= 0) || (it.creature.kind === 'status' && c.hp > 0 && c.status)) opt(`${it.id} on #${i} ${c.name}`, { kind: 'item', item: it.id, target: i }); });
+        if (it.creature.kind === 'ball') { if (b.kind === 'wild') add(`item:${it.id}`, `throw ${it.id}`, 'item', { kind: 'item', item: it.id }); continue; }
+        party.forEach((c, i) => { const max = statsOf(content(), c).hp; if ((it.creature.kind === 'heal' && c.hp > 0 && c.hp < max) || (it.creature.kind === 'revive' && c.hp <= 0) || (it.creature.kind === 'status' && c.hp > 0 && c.status)) add(`item:${it.id}:${i}`, `${it.id} on #${i} ${c.name}`, 'item', { kind: 'item', item: it.id, target: i }); });
       }
-      if (b.kind === 'wild') opt('run', { kind: 'run' });
+      if (b.kind === 'wild') add('run', 'run', 'run', { kind: 'run' });
       return out;
+    }
+    const unitsOf = (b, side) => side.party.map((c, i) => {
+      const statuses = [c.status, i === side.active && side.vol.confusion > 0 ? 'confusion' : null].filter(Boolean);
+      return { id: c.uid, name: c.name, species: c.species, model: speciesOf(content(), c.species)?.model ?? c.species, hp: c.hp, hpMax: statsOf(content(), c).hp, level: c.level, status: statuses, active: i === side.active, down: c.hp <= 0, stages: i === side.active ? { ...side.stages } : {} };
+    });
+    // Pure-read view for battle UIs (graphics.ui.battle): never mutates state.
+    rt.provide('battle', {
+      view() {
+        const b = st().battle; if (!b) return null;
+        const need = E().needsInput(b);
+        return {
+          active: true, kind: b.kind, turn: need ? 'player' : 'foe', number: b.turn + 1, need: need?.kind ?? null,
+          trainer: b.foe.trainer ? { id: b.foe.trainer.id, name: b.foe.trainer.name } : null,
+          sides: [{ id: 'player', player: true, units: unitsOf(b, b.player) }, { id: 'foe', player: false, units: unitsOf(b, b.foe) }],
+          menu: menu(b),
+          log: (st().log || []).slice(-12),
+        };
+      },
+    });
+    // Solver options: every enabled answer to what the battle needs now.
+    rt.options(rt => {
+      const b = st().battle; if (!b) return [];
+      return menu(b).filter(m => m.enabled).map(m => ({ label: m.label, actions: m.action }));
     });
   },
 };
