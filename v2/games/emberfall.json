@@ -1714,7 +1714,7 @@
    "generators": [
     {
      "use": "engine.generate.dungeon.rooms",
-     "with": {"rooms":34,"branching":0.35,"keys":["karth_furnace_key"],"loot":"loot_chest_rare","boss":"barrow_wight"}
+     "with": {"rooms":34,"branching":0.35,"keys":["karth_furnace_key"],"loot":"loot_chest_rare","boss":"barrow_wight","zone":"hollow_barrow","plane":"xz","floor":0,"roomSize":[8,16],"corridor":2}
     },
     {
      "use": "engine.generate.structures",

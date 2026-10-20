@@ -79,6 +79,8 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
     /** Register fn(rt) -> [{ label, actions: { name: value }, steps? }] of meaningful player choices now.
      *  Used by solvers and playtesters; continuous spaces offer macro options (travel to a zone). */
     options(fn) { optionProviders.push(fn); },
+    /** Options from every provider except `skip` (lets a provider defer to others without recursing). */
+    optionsExcept(skip) { return optionProviders.filter(fn => fn !== skip).flatMap(fn => fn(rt) || []); },
     availableOptions() {
       const all = optionProviders.flatMap(fn => fn(rt) || []), m = state.modal;
       return m ? all.filter(o => o.modal === m.owner || Object.keys(o.actions || {}).some(a => m.actions.includes(a))) : all;

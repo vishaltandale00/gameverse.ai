@@ -65,7 +65,7 @@ Base kinds (`character item zone quest model archetype space beat ending recipe 
 
 | Component | Fields |
 | --- | --- |
-| `body` | `size` (box extents), `vel`, `facing` (+1 or -1 in 2D, a vector in 3D), `grounded`, `layer` |
+| `body` | `size` (box extents), `vel`, `facing` (+1 or -1 in 2D, a vector in 3D), `grounded`, `layer`, `solid` (true: other bodies' `slide` treats this entity as an obstacle, e.g. closed doors, crates, trains), `oneWay` (solid from above only) |
 | `health` | `hp`, `max`, `invulnerable` (seconds left, 0 when vulnerable), `dead` |
 | `status` | `{statusId: secondsLeft}`, with `Infinity` not allowed: use a large number |
 | `collectible` | `counter`, `value` |
