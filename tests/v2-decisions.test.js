@@ -46,8 +46,10 @@ test('auto switches to OpenAI only when d1 is unreachable, and stays switched', 
 
 test('the router uses a confident decision and names unbuilt genres as gaps', async () => {
   const decide = probabilities => ({ provider: 'fake', decide: async () => ({ provider: 'fake', answers: { engine: { type: 'choice', choice: Object.keys(probabilities)[0], probabilities } } }) });
+  const rhythm = await routeIdea({ decisions: decide({ rhythm: 0.9, arcade: 0.1 }), prompt: 'guitar hero' });
+  assert.deepEqual([rhythm.engine, rhythm.needs, rhythm.source], ['none', 'rhythm', 'fake'], 'an unbuilt genre is named as the gap');
   const fighting = await routeIdea({ decisions: decide({ fighting: 0.9, arcade: 0.1 }), prompt: 'street fighter' });
-  assert.deepEqual([fighting.engine, fighting.needs, fighting.source], ['none', 'fighting', 'fake']);
+  assert.deepEqual([fighting.engine, fighting.needs], ['fighting', 'none'], 'a built kit is routed to');
   const arcade = await routeIdea({ decisions: decide({ arcade: 0.8, maze: 0.2 }), prompt: 'a platformer' });
   assert.deepEqual([arcade.engine, arcade.needs], ['arcade', 'none']);
   const unsure = await routeIdea({ decisions: decide({ cards: 0.3, arcade: 0.25 }), prompt: 'slay the spire' });
