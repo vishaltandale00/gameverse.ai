@@ -48,7 +48,7 @@ export default {
   logic(logic) {
     logic.predicate('doing', { test: (p, rt, c) => { const e = rt.resolve(p.who ?? p.character, c); const s = e?.components.schedule; return Boolean(s && s.doing === p.doing && (p.arrived === false || s.state === 'there')); } });
     logic.effect('set_schedule', { refs: e => [['character', e.character]], check: (e, path, errs, ctx) => validateSchedule(e.schedule ?? [], `${path}.schedule`, errs, ctx),
-      run: (e, rt) => { (st(rt).overrides ??= {})[e.character] = e.schedule ?? null; const ent = rt.entity(e.character); if (ent?.components.schedule) ent.components.schedule.slot = -2; rt.emit('schedule_changed', { who: e.character }); } });
+      run: (e, rt) => { (st(rt).overrides ??= {})[e.character] = e.schedule ?? null; const ent = rt.entity(e.character); if (ent?.components.schedule && !Array.isArray(ent.components.schedule)) { ent.components.schedule.slot = -2; if (e.schedule) ent.components.schedule.routine = structuredClone(e.schedule); } rt.emit('schedule_changed', { who: e.character }); } });
   },
   validate(config, doc, ctx) {
     const errors = [];
@@ -83,19 +83,37 @@ function offscreen(rt, config, e) {
   return p.space !== e.space || distBetween(rt, e, p) > config.viewDistance;
 }
 
+/**
+ * Entities with routines: any entity whose `schedule` component holds one (plot.character
+ * seeds it as the routine list; this primitive keeps it under `routine`), plus document
+ * characters whose entity exists. set_schedule overrides win.
+ */
+function routines(rt) {
+  const ov = st(rt).overrides || {}, out = new Map();
+  for (const e of Object.values(rt.state.entities)) {
+    const c = e.components.schedule; if (!c) continue;
+    if (Array.isArray(c)) e.components.schedule = { routine: c, slot: -2 };
+    else if (!Array.isArray(c.routine)) continue;
+    out.set(e.id, e.components.schedule.routine);
+  }
+  for (const ch of rt.doc.plot?.characters || []) if (Array.isArray(ch.schedule) && rt.entity(ch.id) && !out.has(ch.id)) out.set(ch.id, ch.schedule);
+  for (const [id, r] of Object.entries(ov)) if (rt.entity(id)) out.set(id, r);
+  return out;
+}
+
 function tick(rt, config) {
-  const h = hourOf(rt, config), ov = st(rt).overrides || {};
-  for (const ch of rt.doc.plot?.characters || []) {
-    const routine = ch.id in ov ? ov[ch.id] : ch.schedule;
-    const e = rt.entity(ch.id); if (!e || dead(e) || !Array.isArray(routine) || !routine.length) continue;
+  const h = hourOf(rt, config);
+  for (const [id, routine] of routines(rt)) {
+    const e = rt.entity(id); if (!e || dead(e) || !Array.isArray(routine) || !routine.length) continue;
     const c = e.components, i = slotAt(routine, h);
     if (!c.schedule || c.schedule.slot !== i) {
       const prev = c.schedule;
-      if (prev && prev.slot >= 0) rt.emitTyped('departed', ch.id, { who: ch.id, doing: prev.doing ?? null });
-      if (i < 0) { c.schedule = { slot: -1, doing: null, at: null, zone: null, state: 'free' }; continue; }
+      if (prev && prev.slot >= 0) rt.emitTyped('departed', id, { who: id, doing: prev.doing ?? null });
+      const keep = Array.isArray(prev?.routine) ? { routine: prev.routine } : {};
+      if (i < 0) { c.schedule = { ...keep, slot: -1, doing: null, at: null, zone: null, state: 'free' }; continue; }
       const s = routine[i], sp = s.space ?? e.space, api = rt.spaces().includes(sp) ? rt.space(sp) : null;
       const at = s.at !== undefined ? toPoint(api, s.at) : (continuous(e) ? zonePoint(rt, sp, s.zone) : s.zone);
-      c.schedule = { slot: i, doing: s.doing ?? null, at: at ?? null, zone: s.zone ?? null, space: sp, state: 'travel', since: round6(rt.state.time) };
+      c.schedule = { ...keep, slot: i, doing: s.doing ?? null, at: at ?? null, zone: s.zone ?? null, space: sp, state: 'travel', since: round6(rt.state.time) };
       if (config.travel === 'teleportOffscreen' && offscreen(rt, config, e)) place(rt, e, c.schedule);
     }
     const s = c.schedule;

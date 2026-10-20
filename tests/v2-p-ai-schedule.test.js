@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { compile, run, testSpace } from '../v2/kernel/testing.js';
-import { catalogue } from '../v2/primitives/index.js';
+import { catalogue, PRIMITIVES } from '../v2/primitives/index.js';
 import { preflight } from '../v2/kernel/document.js';
 import AI from '../v2/primitives/gameplay/ai.index.js';
 import { slotAt } from '../v2/primitives/gameplay/ai-schedule.js';
@@ -58,6 +58,18 @@ test('with a brain, the work behavior walks the routine; teleportOffscreen trave
   const t = compile(doc({ schedule: { travel: 'teleportOffscreen' }, viewDistance: 3 }), { primitives: P }).rt;
   hour(t, 13); t.spawn('npc', { id: 'baker', at: [10, 10, 0] }); run(t, 1);
   assert.ok(t.test({ zone: 'market', who: 'baker' }), 'placed in its zone immediately');
+});
+
+test('drives characters spawned by plot.character (routine seeded into components.schedule)', () => {
+  const d = doc({ brain: true });
+  d.systems.unshift({ use: 'plot.character' });
+  d.plot.characters[0].archetype = 'npc'; d.plot.characters[0].at = [2, 2, 0];
+  const { rt } = compile(d, { primitives: [...PRIMITIVES, testSpace] });
+  hour(rt, 9); run(rt, 200);
+  const b = rt.entity('baker');
+  assert.ok(Array.isArray(b.components.schedule.routine), 'routine kept on the component');
+  assert.equal(b.components.schedule.doing, 'bake'); assert.equal(b.components.schedule.state, 'there');
+  assert.ok(Math.abs(b.at[0] - 10) < 0.3);
 });
 
 test('fallback clock and deterministic replay', () => {
