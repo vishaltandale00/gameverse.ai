@@ -19,6 +19,9 @@ export class Logic {
   constructor() {
     this.predicates = new Map();
     this.effects = new Map();
+    this.owners = { predicate: new Map(), effect: new Map() };
+    this.duplicates = [];
+    this.owner = 'kernel';
     this.predicate('all', { check: (p, path, errors, ctx) => listCheck(p.all, `${path}.all`, errors, ctx), test: (p, rt, c) => p.all.every(q => this.test(q, rt, c)) });
     this.predicate('any', { check: (p, path, errors, ctx) => listCheck(p.any, `${path}.any`, errors, ctx), test: (p, rt, c) => p.any.some(q => this.test(q, rt, c)) });
     this.predicate('not', { check: (p, path, errors, ctx) => ctx.checkPredicate(p.not, `${path}.not`, errors), test: (p, rt, c) => !this.test(p.not, rt, c) });
@@ -50,9 +53,14 @@ export class Logic {
     this.effect('end_game', { refs: e => e.ending ? [['ending', e.ending]] : [], run: (e, rt) => { rt.state.status = e.outcome || 'won'; rt.state.ending = e.ending || null; rt.emit('game_end', { ending: e.ending || null, outcome: rt.state.status }); } });
   }
   /** Register a predicate kind: { check?(p, path, errors, ctx), refs?(p) -> [[kind, id]], test(p, rt) }. */
-  predicate(kind, def) { this.predicates.set(kind, def); }
+  predicate(kind, def) { this.claim('predicate', kind); this.predicates.set(kind, def); }
+  claim(type, kind) {
+    const owner = this.owner ?? 'kernel', first = this.owners[type].get(kind);
+    if (first !== undefined && first !== owner) this.duplicates.push({ type, kind, first, second: owner });
+    this.owners[type].set(kind, owner);
+  }
   /** Register an effect kind: { check?(e, path, errors, ctx), refs?(e), run(e, rt) }. */
-  effect(kind, def) { this.effects.set(kind, def); }
+  effect(kind, def) { this.claim('effect', kind); this.effects.set(kind, def); }
   kindOf(p) { return p && typeof p === 'object' ? Object.keys(p).find(k => this.predicates.has(k)) : undefined; }
   /** context: { self?, ...} carried from the caller (ai rule owner, interactable, beat). */
   test(p, rt, context = {}) { const kind = this.kindOf(p); if (!kind) throw Error(`unknown predicate ${JSON.stringify(p)}`); return this.predicates.get(kind).test(p, rt, context); }
