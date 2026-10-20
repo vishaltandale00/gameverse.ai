@@ -68,7 +68,7 @@ export default {
       },
     });
     const num = (k, path, e, errors) => { if (e[k] !== undefined && !Number.isFinite(e[k])) errors.push({ code: 'time_effect_invalid', path, message: `${k} must be a number` }); };
-    logic.effect('set_time', { check: (e, path, errors) => { num('hour', path, e, errors); num('day', path, e, errors); if (e.hour === undefined && e.day === undefined) errors.push({ code: 'time_effect_invalid', path, message: 'set_time needs hour and/or day' }); }, run: (e, rt) => rt.service('clock').set(e) });
+    logic.effect('set_time', { check: (e, path, errors) => { num('hour', path, e, errors); num('day', path, e, errors); if (e.hour === undefined && e.day === undefined) errors.push({ code: 'time_effect_invalid', path, message: 'set_time needs hour and/or day' }); }, run: (e, rt) => rt.service('clock').set(e) }); // {hour, day?, back?}
     logic.effect('skip_time', { check: (e, path, errors) => { num('hours', path, e, errors); num('minutes', path, e, errors); if (!(e.hours > 0 || e.minutes > 0)) errors.push({ code: 'time_effect_invalid', path, message: 'skip_time needs hours or minutes > 0' }); }, run: (e, rt) => rt.service('clock').skip((e.hours || 0) * 60 + (e.minutes || 0)) });
     logic.effect('set_time_scale', { check: (e, path, errors) => { if (!(e.scale >= 0)) errors.push({ code: 'time_effect_invalid', path, message: 'scale must be >= 0' }); }, run: (e, rt) => { rt.store(ID).scale = e.scale; } });
     logic.effect('start_timer', {
@@ -137,11 +137,14 @@ export default {
     const clock = {
       get: () => calendar(st().minutes),
       minutes: () => st().minutes,
-      set({ hour, day }) {
+      /** Set the clock. With only an hour it moves forward to the next such hour (sleeping until 6 means tomorrow's 6);
+       *  with a day it goes to that day; back: true jumps backwards without crossing events. */
+      set({ hour, day, back = false }) {
         const s = st(), c = calendar(s.minutes);
         const dayIndex = day !== undefined ? day - config.startDay : c.dayIndex;
-        const target = dayIndex * DAY_MIN + (hour ?? c.hour) * 60;
-        // Setting the clock forward crosses days like skipping; setting it back just jumps.
+        let target = dayIndex * DAY_MIN + (hour ?? c.hour) * 60;
+        if (day === undefined && !back && target < s.minutes) target += DAY_MIN;
+        // Forward crosses days like skipping; backwards just jumps.
         if (target >= s.minutes) advance(s, target - s.minutes); else { s.minutes = target; const a = publish(s); if (a.phase !== s.phase) { const from = s.phase; s.phase = a.phase; rt.emitTyped('phase', a.phase, { from }); rt.emit(a.phase, { from }); } }
       },
       skip(minutes) { const s = st(); advance(s, minutes); rt.emit('time_skipped', { minutes, hours: round(minutes / 60) }); },

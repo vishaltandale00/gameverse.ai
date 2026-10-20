@@ -48,6 +48,14 @@ test('engine.time: clock, phases, days, seasons and vars advance deterministical
   assert.equal(rt.state.vars['time.day'], 3);
   assert.equal(rt.state.vars['time.year'], 2);
   assert.equal(rt.state.counts.new_year, 1);
+  rt.run([{ do: 'set_time', hour: 6 }]);
+  assert.equal(rt.state.vars['time.day'], 3, 'a later hour is today');
+  rt.run([{ do: 'set_time', hour: 5 }]);
+  assert.equal(rt.state.vars['time.day'], 4, 'an earlier hour means the next day');
+  assert.equal(rt.state.vars['time.hour'], 5);
+  rt.run([{ do: 'set_time', hour: 2, back: true }]);
+  assert.equal(rt.state.vars['time.day'], 4);
+  assert.equal(rt.state.vars['time.phase'], 'night');
 });
 
 test('engine.time: timers run effects, repeat, cancel, and stop while pauseWhen holds', () => {
