@@ -210,7 +210,9 @@ export const OBJECTIVES = {
 };
 
 function countHeld(rt, item, who) {
-  // Read through the `item` predicate so any inventory primitive works: binary search on gte.
+  // Prefer the inventory service's pure count; otherwise read through the `item` predicate (binary search on gte).
+  const inv = rt.hasService('inventory') ? rt.service('inventory') : null;
+  if (typeof inv?.count === 'function') return inv.count(who ?? 'player', item) || 0;
   if (!rt.logic.predicates.has('item')) return 0;
   if (!rt.test({ item, gte: 1, who })) return 0;
   let lo = 1, hi = 2;

@@ -33,3 +33,15 @@ test('services, typed events and cross-space moves', () => {
   assert.equal(rt.player().space, 'inside');
   assert.ok(rt.test({ zone: 'room' }));
 });
+
+test('graph exits honor plot gates that lock them', () => {
+  const doc = base('engine.space.graph', [{ id: 'hall', exits: [{ to: 'vault' }] }, { id: 'vault', exits: [{ to: 'hall' }] }]);
+  doc.systems = [{ use: 'plot.gate' }];
+  doc.plot = { gates: [{ id: 'vault_door', requires: { flag: 'has_code' }, hint: 'Find the code.', locks: ['exit:hall>vault'] }] };
+  const { rt } = compile(doc, { primitives: PRIMITIVES });
+  rt.player().at = 'hall';
+  assert.equal(rt.space('world').move(rt.player(), 'vault', rt), false, 'locked by the gate');
+  assert.ok(!rt.space('world').reachable('hall', rt).has('vault'));
+  rt.run([{ do: 'set_flag', flag: 'has_code' }]);
+  assert.equal(rt.space('world').move(rt.player(), 'vault', rt), true, 'opens once the requirement holds');
+});

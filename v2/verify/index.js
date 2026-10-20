@@ -115,4 +115,6 @@ export { strategies, register as registerStrategy, select as selectStrategies } 
 export { runArc, arcScore, levelScore, AGENTS as ARC_AGENTS } from './arc.js';
 export { objective } from './objective.js';
 export { abstraction } from './abstraction.js';
+export { travel, travelOptions, withTravel, jumpVerb } from './macros.js';
+export { navOptions, navFrom, abilityIds, currentAbilities } from './movement.js';
 export { stateHash } from './util.js';
