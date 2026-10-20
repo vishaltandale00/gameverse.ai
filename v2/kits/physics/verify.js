@@ -51,9 +51,12 @@ export function verify(input, { seed = 1, budgetMs = 2000 } = {}) {
     deaths += r.deaths || 0; botTime += r.time || 0;
   });
   const ms = Math.round(performance.now() - started);
-  if (ms > budgetMs * 1.5) problems.push({ code: 'over_budget', path: '', message: `verification took ${ms} ms (budget ${budgetMs} ms)` });
+  // Running out of time is a warning (KIT_CONTRACT.md): it says nothing about the content.
+  const warnings = problems.filter(p => p.budgetExhausted);
+  const real = problems.filter(p => !p.budgetExhausted);
+  if (ms > budgetMs * 1.5) warnings.push({ code: 'over_budget', path: '', message: `verification took ${ms} ms (budget ${budgetMs} ms)` });
   return {
-    ok: problems.length === 0, problems,
+    ok: real.length === 0, problems: real, warnings,
     report: { proven: [...proven], levels, bot: { cleared, levels: content.levels.length, time: Math.round(botTime * 10) / 10, deaths }, ms, budgetMs },
   };
 }

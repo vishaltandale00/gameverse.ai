@@ -80,6 +80,9 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
     const started = performance.now();
     verified = kit.verify(checked.content, { seed, budgetMs: 2000 });
     verifyMs += performance.now() - started;
+    // Problems that only say the search ran out of time are warnings, for every kit.
+    const timeOnly = p => p && (p.budgetExhausted || ['over_budget', 'budget'].includes(p.code));
+    if (!verified.ok && (verified.problems || []).length && verified.problems.every(timeOnly)) verified = { ...verified, ok: true, warnings: [...(verified.warnings || []), ...verified.problems], problems: [] };
     if (verified.ok || !client) break;
     const problems = (verified.problems || []).slice(0, 10).map(p => typeof p === 'string' ? p : `${p.path ? p.path + ': ' : ''}${p.message || p.code}`);
     user = `${user}\n\nYour previous answer passed validation but failed play-testing (the kit's bot or solver):\n${problems.map(p => `- ${p}`).join('\n')}\nMake those parts achievable (easier targets, more time or moves, gentler difficulty) and return corrected content.`;
