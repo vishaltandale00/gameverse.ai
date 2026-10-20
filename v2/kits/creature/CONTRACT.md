@@ -290,3 +290,42 @@ until it arrives:
   water, wall, roof, door, flower, ledge, fence, sign, heal and mart roofs, counter);
 - battle backdrops;
 - title art.
+
+## Implementation notes (v0.1)
+
+Decisions made where this contract was open or the host differs:
+- **Input.** The host gives `{ x, y, a, b }` with no Start button. A confirms and talks. B goes back,
+  and holding it runs. A quick tap of B while standing still (released within 14 frames, no step
+  taken) opens the start menu: Party, Bag, Dex, Save and Close. There is no Map or Options entry yet.
+- **Generated content is a journey.** The model writes the compact shape in `generate/schema.js`:
+  the cast, types, moves and species, a home town, one chapter per gym, and a finale. A chapter has
+  1–3 routes or caves, then a town with a gym. `generate/from-model.js` expands it into the §1 content:
+  linear connects, a badge gate on the way out of each gym town, and services.
+  `generate/balance.js` and `generate/tune.js` then set levels on the curve, fix stats, learnsets and
+  the chart, and simulation-tune the leaders. A generated game stores the journey, so a revision edits
+  exactly what the model wrote. Hand-written full content, like the sample, works too.
+- **Real options for common requests.** These live in `content.settings`:
+  - `routeLength` (24–160 tiles; areas can override it with `length`);
+  - `encounterRate` (percent; areas can override it);
+  - `difficulty` (easy/normal/hard): trainer AI and a ±2 level offset;
+  - `levelStep`: `L(g) = 5 + levelStep·g`.
+
+  Gym count is the number of chapters, world size is the routes per chapter plus route length, and
+  species count is the species list.
+- **Default beats.** The game starts in the mentor's lab with the intro and the starter choice. The
+  mentor also hands over 5 of the cheapest ball and 2 of the cheapest heal, so the first route can be
+  caught on. The rival takes the starter whose type beats yours. In the first rival battle the
+  rival's creature only knows its level-1 moves, as in the classics. Losing a story battle (rival or
+  scripted) blacks out and the story moves on; losing to a world trainer means a rematch.
+- **Story rules fire once each** (`state.fired`), even without a flag effect.
+- **Rival battles use the counter-starter** at level 5 with 0 badges, otherwise `L(badges+1) − 3`.
+  Fillers come from encounter species up to the current stage.
+- **Evolution after battle** applies to creatures that leveled up in it. Pressing B in the scene
+  cancels it.
+- **Movement.** A step takes 8 frames walking and 4 running. Tapping a new direction turns in place
+  (4 frames) before walking.
+- **The verifier's balance sim** uses a curve-level party: the starter line at `L(g)−1` plus the two
+  best catches so far at `L(g)−3`. The party leads with its best matchup and carries `2+2g` heals, and
+  it must win at least 70% of 200 runs per gym for every starter. Level-matched wild battles must be
+  won at least 95% of the time. The scripted playthrough uses the real inputs and runs once per
+  starter while the budget lasts.

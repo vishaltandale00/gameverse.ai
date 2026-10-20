@@ -7,6 +7,7 @@ const LOADERS = {
   puzzle: () => import('./puzzle/index.js'),
   physics: () => import('./physics/index.js'),
   runner: () => import('./runner/index.js'),
+  creature: () => import('./creature/index.js'),
 };
 export const KIT_IDS = Object.keys(LOADERS);
 const cache = new Map();

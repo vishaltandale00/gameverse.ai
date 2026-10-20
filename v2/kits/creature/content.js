@@ -18,8 +18,25 @@ export const STARTER_LEVEL = 5;
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
-/** Target level for gym g's ace (g counts from 1): L(g) = 5 + 7g. */
-export const levelCurve = g => 5 + 7 * g;
+// Tunable world settings (real options for "bigger", "harder", "more encounters"; see KIT_CONTRACT.md).
+export const DIFFICULTIES = ['easy', 'normal', 'hard'];
+export const DEFAULT_SETTINGS = { levelStep: 7, difficulty: 'normal', encounterRate: 10, routeLength: 50 };
+const clampInt = (v, lo, hi, d) => (Number.isFinite(Number(v)) ? Math.max(lo, Math.min(hi, Math.round(Number(v)))) : d);
+/** Settings with defaults filled and ranges clamped. */
+export function settingsOf(content) {
+  const s = content?.settings || {};
+  return {
+    levelStep: clampInt(s.levelStep, 3, 12, DEFAULT_SETTINGS.levelStep),
+    difficulty: DIFFICULTIES.includes(s.difficulty) ? s.difficulty : DEFAULT_SETTINGS.difficulty,
+    encounterRate: clampInt(s.encounterRate, 1, 40, DEFAULT_SETTINGS.encounterRate),
+    routeLength: clampInt(s.routeLength, 24, 160, DEFAULT_SETTINGS.routeLength),
+  };
+}
+/** Level offset trainers, leaders and the champion get from the difficulty. */
+export const difficultyOffset = content => ({ easy: -2, normal: 0, hard: 2 })[settingsOf(content).difficulty];
+
+/** Target level for gym g's ace (g counts from 1): L(g) = 5 + step·g, step 7 by default (12, 19, 26, …). */
+export const levelCurve = (g, content) => 5 + settingsOf(content).levelStep * g;
 
 /** Id → object maps for every content collection. */
 export function indexContent(content) {
@@ -45,9 +62,13 @@ export function normalize(input) {
     s.learnset = [...(s.learnset || [])].sort((a, b) => a.level - b.level);
     s.growth ??= 'medium';
   }
+  content.settings = settingsOf(content);
   for (const a of content.areas || []) {
     a.connects ??= [];
-    if (a.kind === 'route' || a.kind === 'cave') a.encounterRate ??= 0.1;
+    if (a.kind === 'route' || a.kind === 'cave') {
+      a.encounterRate = Number.isFinite(a.encounterRate) && a.encounterRate > 0 ? Math.min(0.4, a.encounterRate) : content.settings.encounterRate / 100;
+      a.length = clampInt(a.length, 24, 160, content.settings.routeLength);
+    }
   }
   content.chart ??= {};
   content.story ??= [];
@@ -306,16 +327,16 @@ export function validate(input) {
 
   // Level curve (§5): leader aces L(g) ±3; trainers in an area at stage s target L(s+1) − 4 ±3.
   gyms.forEach((g, i) => {
-    const target = levelCurve(i + 1), got = ace(g.leader.party);
+    const target = levelCurve(i + 1, content) + difficultyOffset(content), got = ace(g.leader.party);
     if (Math.abs(got - target) > 3) fail('level_curve', `areas.${g.id}.leader.party`, `leader ace is level ${got}; gym ${i + 1} targets ${target} ±3`);
   });
   for (const a of content.areas) for (const [j, t] of (a.trainers || []).entries()) {
     if (!stages.has(a.id)) continue;
-    const target = levelCurve(stages.get(a.id) + 1) - 4, got = ace(t.party);
+    const target = levelCurve(stages.get(a.id) + 1, content) - 4 + difficultyOffset(content), got = ace(t.party);
     if (Math.abs(got - target) > 3) fail('level_curve', `areas.${a.id}.trainers[${j}].party`, `trainer ace is level ${got}; this stage targets ${target} ±3`);
   }
   if (content.champion?.party) {
-    const target = levelCurve(gyms.length) + 6, got = ace(content.champion.party);
+    const target = levelCurve(gyms.length, content) + 6 + difficultyOffset(content), got = ace(content.champion.party);
     if (Math.abs(got - target) > 3) fail('level_curve', 'champion.party', `champion ace is level ${got}; target ${target} ±3`);
   }
   return { ok: !errors.length, errors, warnings, content };
