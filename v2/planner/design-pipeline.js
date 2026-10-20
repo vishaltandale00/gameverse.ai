@@ -37,7 +37,7 @@ export function buildVerified(design, { seed, registry = defaultRegistry(), atte
   return last;
 }
 
-export function createDesignPipeline({ client, model, effort, registry = defaultRegistry(), art = null, d1 = null }) {
+export function createDesignPipeline({ client, model, effort, registry = defaultRegistry(), art = null, decisions = null }) {
   return async function pipeline(job, ctx) {
     const previous = job.base ? await ctx.store.version(job.gameId, job.base) : null;
     // Kit games revise inside their kit; new ideas are routed to the engine that plays their genre.
@@ -46,7 +46,7 @@ export function createDesignPipeline({ client, model, effort, registry = default
     if (!previous) {
       const known = job.route && (await routeOptions()).some(o => o.id === job.route.engine || job.route.engine === 'none');
       if (!known) ctx.stage('routing', { model });
-      route = known ? { ...job.route, ms: 0 } : await routeIdea({ client, model, d1, prompt: job.prompt, answers: job.answers });
+      route = known ? { ...job.route, ms: 0 } : await routeIdea({ client, model, decisions, prompt: job.prompt, answers: job.answers });
       ctx.stage('routed', { engine: route.engine, needs: route.needs, why: route.why, ms: route.ms });
       if (route.engine !== 'arcade' && route.engine !== 'none') return runKitPipeline(job, ctx, { client, model, kitId: route.engine, previous: null, art, route });
     }
