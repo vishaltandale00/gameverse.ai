@@ -7,7 +7,7 @@
 // by every behavior. Behaviors only write movement intents (KERNEL_API §2,
 // ai-lib.js); nothing is ever teleported.
 import {
-  v3, add, sub, mul, len, norm, dot, r6, round6, spaceOf, can, continuous, upAt, planar, distBetween, distTo, facingOf, sees,
+  objectParam, v3, add, sub, mul, len, norm, dot, r6, round6, spaceOf, can, continuous, upAt, planar, distBetween, distTo, facingOf, sees,
   centerOf, clearLine, moverOwned, attacking, headingOf, randomPoint, firstHop, selfRelative, ensureLocomotion, cleanupOnDespawn, zonePoint, dead, between,
 } from './ai-lib.js';
 
@@ -103,7 +103,7 @@ export default {
     params: {
       tick: n(0.2, { min: 0.016, max: 5, unit: 's', effect: 'how often each agent re-thinks (perception + behavior choice)' }),
       maxActive: { type: 'integer', default: 120, min: 1, max: 5000, effect: 'distance LOD: only the N agents nearest the player think and move' },
-      perception: { type: 'object', default: {}, fields: { sight: n(20, { min: 0 }), fov: n(150, { min: 0, max: 360 }), hearing: n(10, { min: 0 }), memory: n(8, { min: 0 }) }, effect: 'defaults for agents whose ai component omits perception' },
+      perception: objectParam({ type: 'object', fields: { sight: n(20, { min: 0 }), fov: n(150, { min: 0, max: 360 }), hearing: n(10, { min: 0 }), memory: n(8, { min: 0 }) }, effect: 'defaults for agents whose ai component omits perception' }),
       leash: n(40, { min: 0, effect: 'agents give up a target once this far from home (0 = never)' }),
       alertRadius: n(0, { min: 0, effect: 'default group alert radius (ai.alert / ai.pack.alert override)' }),
       speed: n(2, { min: 0, effect: 'default walk speed, space units/s' }),

@@ -5,7 +5,7 @@
 // resolved through the space's overlap/raycast capabilities. Bullet `emitter`
 // patterns (aimed, spread, ring, spiral, burst, flower) are ported from the
 // shmup kit with live-bullet caps per mode and difficulty multipliers.
-import { v3, add, sub, mul, len, norm, dot, r6, round6, spaceOf, can, continuous, centerOf, distBetween, facingOf, headingOf, clearLine, selfRelative, weighted, applyHit, dead, cleanupOnDespawn, ensureLocomotion, upAt, planar, between, TAU } from './ai-lib.js';
+import { objectParam, v3, add, sub, mul, len, norm, dot, r6, round6, spaceOf, can, continuous, centerOf, distBetween, facingOf, headingOf, clearLine, selfRelative, weighted, applyHit, dead, cleanupOnDespawn, ensureLocomotion, upAt, planar, between, TAU } from './ai-lib.js';
 import { hostile } from './ai-brain.js';
 import { PATTERNS, DIFF, MODE_CAPS, volley, fireShot, liveShots, ensureShots } from './ai-lib-bullets.js';
 
@@ -57,7 +57,7 @@ export default {
       difficultyVar: { type: 'string', effect: 'var holding easy|normal|hard (overrides difficulty when set)' },
       bulletCap: { type: 'integer', default: 140, min: 1, max: 2000, effect: 'max live hostile bullets' },
       capBy: { type: 'object', fields: { var: { type: 'string', required: true }, caps: { type: 'object', open: true, default: MODE_CAPS } }, effect: 'per-mode caps: the cap is caps[var value] (fixed 24, vertical 140, twinstick 80, asteroids 16)' },
-      bullet: { type: 'object', default: {}, fields: { speed: n({ default: 8 }), radius: n({ default: 0.25 }), life: n({ default: 6 }), damage: n({ default: 1 }) }, effect: 'emitter bullet defaults (space units)' },
+      bullet: objectParam({ type: 'object', fields: { speed: n({ default: 8 }), radius: n({ default: 0.25 }), life: n({ default: 6 }), damage: n({ default: 1 }) }, effect: 'emitter bullet defaults (space units)' }),
       shapes: { type: 'object', open: true, default: {}, effect: 'extra shape names → {kind: cone|sphere|box|ray|projectile|summon|self, at?: self|target, r?, angle?, width?, tick?, count?, spread?}' },
       maxSummons: { type: 'integer', default: 4, min: 0, max: 64, effect: 'live summons per summoner' },
       interruptOn: { type: 'list', of: { type: 'string' }, default: ['staggered'], effect: 'events {who} that cancel the victim\'s attack' },

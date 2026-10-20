@@ -13,6 +13,16 @@
 // discrete spaces. AI never jump-cuts an entity to its goal.
 
 export const TAU = Math.PI * 2;
+
+/**
+ * An object param whose default is built from its fields' defaults. The kernel
+ * returns an omitted object param's `default` as-is (nested field defaults are
+ * not applied), so `default: {}` would leave every field undefined.
+ */
+export function objectParam(schema) {
+  const build = sc => (sc.type === 'object' && sc.fields ? Object.fromEntries(Object.entries(sc.fields).map(([k, f]) => [k, f.default !== undefined ? structuredClone(f.default) : f.type === 'object' && f.fields && !f.required ? build(f) : undefined]).filter(([, v]) => v !== undefined)) : undefined);
+  return { ...schema, default: build(schema) };
+}
 export const v3 = a => (Array.isArray(a) ? [a[0] ?? 0, a[1] ?? 0, a[2] ?? 0] : [0, 0, 0]);
 export const add = (a, b) => v3(a).map((v, i) => v + (b[i] ?? 0));
 export const sub = (a, b) => v3(a).map((v, i) => v - (b[i] ?? 0));
@@ -186,8 +196,13 @@ export function seek(rt, e, goal, opts = {}) {
     nav.goal = goalKey; nav.at = rt.state.time;
     nav.path = p ? p.map(v3) : null; nav.i = 0;
     if (!p) return 'blocked';
-    // Skip waypoints that are behind (the first is usually the current cell).
-    while (nav.path.length > 1 && nav.i < nav.path.length - 1 && len(sub(nav.path[nav.i], e.at)) <= arrive + 0.5) nav.i++;
+    // Paths run cell to cell; finish on the exact goal.
+    if (len(sub(nav.path[nav.path.length - 1], target)) > 1e-6) nav.path.push(target);
+    // Skip waypoints already passed: the first is usually the cell the agent stands in.
+    while (nav.i < nav.path.length - 1) {
+      const a = nav.path[nav.i], b = nav.path[nav.i + 1];
+      if (len(sub(a, e.at)) <= arrive || dot(sub(b, a), sub(e.at, a)) > 0) nav.i++; else break;
+    }
   } else if (stale) { nav.goal = goalKey; nav.at = rt.state.time; nav.path = [target]; nav.i = 0; }
   let budget = speed * rt.dt;
   for (let guard = 0; guard < 4 && budget > 1e-9 && nav.path; guard++) {
