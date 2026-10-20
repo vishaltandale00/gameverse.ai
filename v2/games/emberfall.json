@@ -200,7 +200,6 @@
     "archetype": "horse_ash",
     "model": "horse_ash",
     "home": "hearth_vale",
-    "faction": "player",
     "tags": ["mount"]
    }
   ],
@@ -1196,7 +1195,7 @@
       "choices": [
        {"text":"Tell me about the Crown.","next":"n2"},
        {"text":"What was Auric Vael like?","next":"n3"},
-       {"text":"I found these scrolls.","next":"n4","if":{"item":"neris_scroll","gte":3}}
+       {"text":"I found these scrolls.","next":"n4","if":{"item":"neris_scroll","gte":3}},{"text":"Goodbye.","end":true}
       ]
      },
      "n2": {

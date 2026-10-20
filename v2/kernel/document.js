@@ -68,6 +68,8 @@ export function preflight(doc, registry, logic) {
   const refs = { flag: { read: new Map(), write: new Map() }, var: { read: new Map(), write: new Map() }, event: { read: new Map(), write: new Map() } };
   const ctx = {
     doc, registry, indexes,
+    /** Validators push non-fatal findings here: ctx.warn({code, path, message, hint}). */
+    warn: w => warnings.push(w),
     checkPredicate: (p, path, errs) => logic.checkPredicate(p, path, errs, ctx),
     checkEffect: (e, path, errs) => logic.checkEffect(e, path, errs, ctx),
     noteRef(kind, id, path, mode) {

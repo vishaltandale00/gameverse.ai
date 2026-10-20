@@ -1,8 +1,10 @@
 // Story as data: acts of beats. A beat fires once when its `when` predicate
 // holds and every beat in `after` has fired; it runs its effects. Acts are
 // sequential unless `parallel` is set. The verifier can solve this graph.
+// A beat named by a plot.gate lock (`beat:<id>`) waits until that gate opens.
 export default {
   id: 'plot.storyboard',
+  solverKey, progress,
   card: {
     intent: 'Runs the story: acts made of beats that fire when their trigger predicate holds (after prerequisite beats) and apply effects such as dialogue, items, flags, quests and endings.',
     views: ['any'],
@@ -12,6 +14,19 @@ export default {
   },
   logic(logic) {
     logic.predicate('beat', { refs: p => [['beat', p.beat]], test: (p, rt) => Boolean(rt.store('plot.storyboard').fired?.[p.beat]) });
+    // act: active = the act the story is in (sequential) or any act with an unfired beat; done = all non-optional beats fired.
+    logic.predicate('act', {
+      check: (p, path, errors, ctx) => {
+        if (!(ctx.doc.plot?.storyboard?.acts || []).some(a => a.id === p.act)) errors.push({ code: 'ref_unknown', path, message: `unknown act '${p.act}'` });
+        if (p.state !== undefined && !['active', 'done'].includes(p.state)) errors.push({ code: 'predicate_invalid', path: `${path}.state`, message: 'state must be active|done' });
+      },
+      test: (p, rt) => {
+        const s = rt.store('plot.storyboard'), acts = rt.doc.plot?.storyboard?.acts || [], i = acts.findIndex(a => a.id === p.act);
+        if (i < 0) return false;
+        const done = Boolean(s.done?.[p.act]);
+        return (p.state ?? 'done') === 'done' ? done : !done && (s.act ?? 0) >= i;
+      },
+    });
     logic.effect('say', {
       refs: e => [['character', e.character]],
       run: (e, rt) => rt.emit('say', { character: e.character, text: e.text }),
@@ -35,6 +50,7 @@ export default {
       // Fetch state every step: restore() replaces it.
       const s = rt.store('plot.storyboard');
       s.fired ??= {}; s.act ??= 0; s.done ??= {};
+      const gates = rt.hasService('gates') ? rt.service('gates') : null;
       // Bounded fixpoint: beats unlocked by this frame's beats can fire in the same frame.
       for (let pass = 0; pass < 8; pass++) {
         let progressed = false;
@@ -42,6 +58,7 @@ export default {
           if (config.sequentialActs && ai > s.act) return;
           for (const b of act.beats || []) {
             if (s.fired[b.id] || !(b.after || []).every(d => s.fired[d]) || (b.when && !rt.test(b.when))) continue;
+            if (gates?.locked(`beat:${b.id}`)) continue;
             s.fired[b.id] = rt.state.frame + 1; progressed = true;
             rt.emit('beat', { beat: b.id, act: act.id });
             rt.run(b.do || [], { beat: b.id });
@@ -58,3 +75,7 @@ export default {
     });
   },
 };
+
+/** Solver key: which beats fired and which acts are done (not the frames they fired on). */
+export function solverKey(rt) { const s = rt.store('plot.storyboard'); return [Object.keys(s.fired || {}).sort(), s.act ?? 0]; }
+export function progress(rt) { return Object.keys(rt.store('plot.storyboard').fired || {}).length; }
