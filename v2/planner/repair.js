@@ -138,7 +138,7 @@ function safePreflight(doc, registry, logic) {
  * repairDocument(doc, { registry, logic, rounds }) -> { doc, ok, checked, errors, fixes, removed, rounds }
  * Never mutates its input. `removed` lists primitive instances dropped (reported as gaps by the caller).
  */
-export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpace = null, isolate = false } = {}) {
+export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpace = null, isolate = false, exclude = new Set() } = {}) {
   const doc = structuredClone(input);
   const fixes = [], removed = [];
   if (!doc || typeof doc !== 'object' || Array.isArray(doc)) return { doc: input, ok: false, checked: null, errors: [{ code: 'schema', path: '$', message: 'document must be an object' }], fixes, removed, version: REPAIR_VERSION };
@@ -164,7 +164,7 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
     fixes.push({ code: 'ref_unknown', path: at, action: `added ${kind} '${id}'` });
   };
   const addSystem = (id, why) => {
-    if (!id || !registry.has(id)) return false;
+    if (!id || !registry.has(id) || exclude.has(id)) return false;
     if (isSpace(id)) return false;
     if (isGenerator(id)) { (doc.spaces?.[0] && (doc.spaces[0].generators ??= []).push({ use: id })); }
     else if (isGraphics(id)) (doc.graphics ??= []).push({ use: id });
@@ -331,30 +331,40 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
   }
   checked = safePreflight(doc, registry, logic);
   // Last resort (procedural skeletons): an error no generic fix handles comes from some primitive's own
-  // validate(); find the systems[] instance whose removal clears it, remove it, and report it as a gap.
+  // validate(); find the instance (system, generator or graphic) whose removal clears it, remove it, and report it as a gap.
   if (!checked.ok && isolate) {
     for (let pass = 0; pass < 6 && !checked.ok; pass++) {
       const before = checked.errors.length;
       // An instance and everything that requires it go together (removing a dependency alone just re-adds it).
-      const withDependents = i => {
-        const out = new Set([i]);
-        for (let grew = true; grew;) { grew = false; (doc.systems || []).forEach((s, j) => { if (out.has(j)) return; const req = requirementsOf(registry, s.use).primitives; if ([...out].some(k => req.some(r => doc.systems[k].use === r || doc.systems[k].use.startsWith(r + '.')))) { out.add(j); grew = true; } }); }
-        return [...out];
+      // Candidates: every instance but the spaces themselves (systems, generators, graphics), keyed by path.
+      const cands = instances(doc).filter(x => !(x.keys.length === 2 && x.keys[0] === 'spaces'));
+      const keyOf = x => JSON.stringify(x.keys);
+      const dependents = x => {
+        const out = new Map([[keyOf(x), x]]);
+        for (let grew = true; grew;) { grew = false; for (const c of cands) { if (out.has(keyOf(c))) continue; const req = requirementsOf(registry, c.inst.use).primitives; if ([...out.values()].some(o => req.some(r => o.inst.use === r || o.inst.use.startsWith(r + '.')))) { out.set(keyOf(c), c); grew = true; } } }
+        return [...out.values()];
       };
-      const without = idx => ({ ...doc, systems: doc.systems.filter((_, j) => !idx.includes(j)) });
-      const located = checked.errors.map(e => locate(doc, registry, parsePath(e.path))).find(l => l?.keys[0] === 'systems');
-      let drop = located ? withDependents(located.keys[1]) : null;
+      const without = list => { const d = structuredClone(doc); const sorted = list.map(x => x.keys).sort((a, b) => { for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] !== b[i]) return typeof a[i] === 'number' ? b[i] - a[i] : String(b[i]).localeCompare(String(a[i])); return b.length - a.length; }); for (const k of sorted) deleteAt(d, k); return d; };
+      const located = checked.errors.map(e => locate(doc, registry, parsePath(e.path))).find(l => l && !(l.keys.length === 2 && l.keys[0] === 'spaces'));
+      let drop = located ? dependents(cands.find(c => keyOf(c) === JSON.stringify(located.keys)) || located) : null;
+      // A validator that crashes: find every instance whose validator throws on its own (all other candidates removed).
+      if (!drop && checked.errors.some(e => e.code === 'preflight_threw')) {
+        const crashers = cands.filter(c => safePreflight(without(cands.filter(o => o !== c)), registry, logic).errors.some(e => e.code === 'preflight_threw'));
+        if (crashers.length && crashers.length < cands.length) drop = [...new Map(crashers.flatMap(dependents).map(x => [keyOf(x), x])).values()];
+      }
       if (!drop) {
         let bestCount = before;
-        (doc.systems || []).forEach((_, i) => { const idx = withDependents(i); const n = safePreflight(without(idx), registry, logic).errors.length; if (n < bestCount || (n === bestCount && drop && idx.length < drop.length && n < before)) { drop = idx; bestCount = n; } });
+        // Score each removal after the ordinary repair (which may itself fix what the removal exposes), never re-adding it.
+        for (const c of cands) { const list = dependents(c); const trial = repairDocument(without(list), { registry, logic, rounds: 3, fallbackSpace, exclude: new Set([...exclude, ...list.map(x => x.inst.use)]) }); const n = trial.errors.length; if (n < bestCount) { drop = list; bestCount = n; } if (!n) break; }
       }
       if (!drop) break;
-      for (const i of drop) {
-        removed.push({ use: doc.systems[i].use, why: `could not be configured automatically: ${checked.errors.slice(0, 2).map(e => `${e.code} ${e.path}`).join('; ')}` });
-        fixes.push({ code: 'isolate', path: `systems[${i}]`, action: `removed ${doc.systems[i].use}` });
+      for (const x of drop) {
+        removed.push({ use: x.inst.use, why: `could not be configured automatically: ${checked.errors.slice(0, 2).map(e => `${e.code} ${e.path}`).join('; ')}` });
+        fixes.push({ code: 'isolate', path: x.keys.join('.'), action: `removed ${x.inst.use}` });
       }
-      doc.systems = doc.systems.filter((_, j) => !drop.includes(j));
-      const again = repairDocument(doc, { registry, logic, rounds, fallbackSpace });
+      Object.assign(doc, without(drop));
+      for (const x of drop) exclude.add(x.inst.use); // isolated instances are never re-added by the next repair
+      const again = repairDocument(doc, { registry, logic, rounds, fallbackSpace, exclude });
       Object.assign(doc, again.doc); fixes.push(...again.fixes); removed.push(...again.removed);
       checked = again.checked || safePreflight(doc, registry, logic);
     }
