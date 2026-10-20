@@ -3,6 +3,7 @@
 const LOADERS = {
   maze: () => import('./maze/index.js'),
   shmup: () => import('./shmup/index.js'),
+  runner: () => import('./runner/index.js'),
 };
 export const KIT_IDS = Object.keys(LOADERS);
 const cache = new Map();

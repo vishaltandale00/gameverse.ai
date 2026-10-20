@@ -1,0 +1,8 @@
+:root { color-scheme: dark; }
+body { margin: 0; background: #0d1020; color: #e8ecff; font: 14px/1.4 system-ui, sans-serif; }
+header { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; padding: 10px 16px; background: #161a30; }
+h1 { font-size: 16px; margin: 0 12px 0 0; }
+main { padding: 12px 16px; }
+canvas { display: block; width: 100%; max-width: 1100px; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; outline: none; }
+pre { max-width: 1100px; white-space: pre-wrap; color: #9aa3c0; font-size: 12px; }
+select, input, button { font: inherit; }
