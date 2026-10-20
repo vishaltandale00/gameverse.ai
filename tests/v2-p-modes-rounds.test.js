@@ -37,6 +37,20 @@ test('rounds: intro, FIGHT call, KO, perfect, best of 3 and match result', () =>
   assert.equal(rt.state.counts.perfect, 1, 'second win was not perfect');
 });
 
+test('rounds: with fewer than two fighters the match waits instead of throwing, and starts once an opponent exists', () => {
+  // Default fighters is just ['player']: an outline that omits the opponent must not crash the world (regression: "reading 'player'").
+  const { rt } = compile(doc({ player: { archetype: 'hero', at: [5, 1, 0] }, archetypes: [{ id: 'rival', components: { health: { max: 100 } } }], systems: [{ use: 'gameplay.combat.health' }, { use: 'gameplay.rounds' }] }), { primitives: P });
+  for (let i = 0; i < 5; i++) rt.step();
+  assert.ok(!rt.state.counts.match_start, 'no match yet');
+  assert.ok(!rt.test({ round: true }), 'still waiting');
+  assert.equal(rt.state.vars['round.wins.player'], undefined);
+  const { rt: two } = compile(versus({ fighters: ['player', 'rival'] }), { primitives: P });
+  for (let i = 0; i < 3; i++) two.step();
+  assert.ok(!two.state.counts.match_start, 'the rival is declared as an archetype but not spawned');
+  two.spawn('rival', { id: 'cpu' }); two.step();
+  assert.equal(two.state.counts.match_start, 1, 'starts when the second fighter exists');
+});
+
 test('rounds: time over goes to health; double KO is a draw round; draws extend the match', () => {
   const rt = start({ roundSec: 2, introSec: 0.5, fightCallSec: 0.2 });
   toFight(rt);

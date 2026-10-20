@@ -73,10 +73,12 @@ export default {
     const set = (s, phase) => { s.phase = phase; s.pt = 0; rt.state.vars['round.live'] = phase === 'fight' ? 1 : 0; rt.state.flags.round_live = phase === 'fight'; };
     const vars = s => {
       const v = rt.state.vars; v.round = s.round ?? 0; v['round.timer'] = s.timer === null ? 0 : Math.max(0, Math.ceil((s.timer ?? 0) / 60));
-      for (const id of s.fighters || []) { v[`round.wins.${id}`] = s.wins[id] ?? 0; if (config.stocks) v[`round.stocks.${id}`] = s.stocks[id] ?? 0; }
+      for (const id of s.wins ? s.fighters || [] : []) { v[`round.wins.${id}`] = s.wins[id] ?? 0; if (config.stocks) v[`round.stocks.${id}`] = s.stocks?.[id] ?? 0; }
     };
     function startMatch(s) {
-      s.fighters = find(); if (s.fighters.length < 2) return false;
+      // A match needs two fighters; with fewer, nothing is recorded (a half-started match left wins/stocks undefined for vars()).
+      const found = find(); if (found.length < 2) return false;
+      s.fighters = found;
       s.wins = Object.fromEntries(s.fighters.map(id => [id, 0])); s.stocks = Object.fromEntries(s.fighters.map(id => [id, config.stocks]));
       s.round = 0; s.rounds = []; s.result = null; s.winner = null; s.respawn = {};
       rt.emit('match_start', { fighters: s.fighters.slice(), bestOf: config.bestOf, stocks: config.stocks });
