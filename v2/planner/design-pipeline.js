@@ -8,7 +8,7 @@ import { checkArcade } from './arcade-pipeline.js';
 import { partialSpec } from './partial.js';
 import { hashOf } from '../server/store.js';
 import { seedFrom } from '../engine/rng.js';
-import { routeIdea, PLANNED } from './router.js';
+import { routeIdea, routeOptions, PLANNED } from './router.js';
 import { runKitPipeline, KIT_GAME_SCHEMA } from './kit-pipeline.js';
 
 export const DESIGN_PIPELINE_VERSION = 'v2-design/0.1';
@@ -37,15 +37,16 @@ export function buildVerified(design, { seed, registry = defaultRegistry(), atte
   return last;
 }
 
-export function createDesignPipeline({ client, model, effort, registry = defaultRegistry(), art = null }) {
+export function createDesignPipeline({ client, model, effort, registry = defaultRegistry(), art = null, d1 = null }) {
   return async function pipeline(job, ctx) {
     const previous = job.base ? await ctx.store.version(job.gameId, job.base) : null;
     // Kit games revise inside their kit; new ideas are routed to the engine that plays their genre.
     if (previous?.doc?.schema === KIT_GAME_SCHEMA) return runKitPipeline(job, ctx, { client, model, kitId: previous.doc.kit, previous, art });
     let route = null;
     if (!previous) {
-      ctx.stage('routing', { model });
-      route = await routeIdea({ client, model, prompt: job.prompt, answers: job.answers });
+      const known = job.route && (await routeOptions()).some(o => o.id === job.route.engine || job.route.engine === 'none');
+      if (!known) ctx.stage('routing', { model });
+      route = known ? { ...job.route, ms: 0 } : await routeIdea({ client, model, d1, prompt: job.prompt, answers: job.answers });
       ctx.stage('routed', { engine: route.engine, needs: route.needs, why: route.why, ms: route.ms });
       if (route.engine !== 'arcade' && route.engine !== 'none') return runKitPipeline(job, ctx, { client, model, kitId: route.engine, previous: null, art, route });
     }

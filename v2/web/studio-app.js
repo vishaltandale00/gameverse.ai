@@ -45,13 +45,14 @@ $('#clear').addEventListener('click', async () => {
 });
 
 // ---------- create: idea -> questions -> build ----------
-let pendingPrompt = '';
+let pendingPrompt = '', pendingRoute = null;
 $('#create').addEventListener('submit', async e => {
   e.preventDefault();
   pendingPrompt = $('#prompt').value.trim(); if (!pendingPrompt) return;
   $('#make').disabled = true; $('#make').textContent = 'Thinking…';
   try {
-    const { questions } = await api('/api/v2/questions', { prompt: pendingPrompt });
+    const { questions, route } = await api('/api/v2/questions', { prompt: pendingPrompt });
+    pendingRoute = route || null;
     if (!questions.length) return startBuild([]);
     $('#questions').hidden = false;
     $('#questions').innerHTML = `<p>A few choices shape the game. The first options are picked for you.</p>
@@ -66,7 +67,7 @@ $('#create').addEventListener('submit', async e => {
 async function startBuild(answers) {
   $('#questions').hidden = true;
   try {
-    const { gameId } = await api('/api/v2/games', { prompt: pendingPrompt, answers });
+    const { gameId } = await api('/api/v2/games', { prompt: pendingPrompt, answers, route: pendingRoute });
     const b = build(gameId); b.log.unshift({ label: 'Requested', ms: 0 }); // events may already have arrived
     $('#prompt').value = ''; location.hash = gameId;
   } catch (error) { toast(error.message); }

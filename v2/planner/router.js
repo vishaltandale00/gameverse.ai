@@ -7,12 +7,24 @@ import { availableKits } from '../kits/registry.js';
 export const ARCADE = { id: 'arcade', summary: 'Side-scrolling platformer or top-down action: run, jump, stomp, shoot, collect, reach the goal.', examples: ['Super Mario Bros', 'Sonic', 'Celeste', 'Mega Man', 'Zelda-like top-down action'] };
 // Kits on the roadmap but not built yet, so the router can name the gap precisely.
 export const PLANNED = {
-  shmup: 'Shoot \'em up (Space Invaders, Galaga, Geometry Wars)', puzzle: 'Block and match puzzle (Tetris, Bejeweled, Candy Crush)', physics: 'Physics toy (Breakout, Peggle, Angry Birds, Pinball)',
-  runner: 'Endless runner (Temple Run, Flappy Bird, Doodle Jump)', fighting: 'Fighting (Street Fighter, Mortal Kombat, Smash Bros)', brawler: 'Beat \'em up and run-and-gun (Streets of Rage, Metal Slug)',
-  metroidvania: 'Metroidvania (Hollow Knight, Metroid, Castlevania)', creature: 'Creature collector RPG (Pokémon)', rpg: 'Party RPG and JRPG (Final Fantasy, Undertale)',
-  roguelike: 'Roguelike and action RPG (Spelunky, Isaac, Hades, Diablo)', tactics: 'Tactics, tower defense, light strategy (XCOM, Plants vs. Zombies, StarCraft-lite)', cards: 'Cards and deckbuilders (Slay the Spire, Hearthstone)',
-  sandbox: 'Sandbox and life sim (Terraria, Stardew Valley, Animal Crossing)', racing: 'Racing (Mario Kart, Out Run)', rhythm: 'Rhythm (Guitar Hero, DDR)', sports: 'Sports (Wii Sports, NBA Jam, Rocket League 2D)',
-  puzzleadventure: 'Puzzle adventure (Braid, Portal 2D, Baba Is You)', action3d: '3D action (Halo, GTA, Minecraft, Mario 64)',
+  shmup: 'Shoot \'em up: pilot a ship and shoot waves of enemies and bullet patterns (Space Invaders, Galaga, Asteroids, Geometry Wars).',
+  puzzle: 'Block and match puzzle: falling blocks, line clears, match-3 swaps, sliding tiles (Tetris, Bejeweled, Candy Crush, 2048).',
+  physics: 'Physics toy: launch, bounce or fling things with real physics; slingshot projectiles into toppling structures, paddles and balls, pegs, pinball (Angry Birds, Breakout, Peggle, Pinball).',
+  runner: 'Endless runner and one-touch: auto-running or flapping, dodge obstacles, chase distance and score (Temple Run, Subway Surfers, Flappy Bird, Doodle Jump).',
+  fighting: 'Fighting: one-on-one duels with health bars, combos and special moves, rounds (Street Fighter, Mortal Kombat, Tekken, Smash Bros).',
+  brawler: 'Beat \'em up and run-and-gun: walk through stages punching crowds of thugs or shooting soldiers (Streets of Rage, Final Fight, Metal Slug, Contra).',
+  metroidvania: 'Metroidvania: one big connected map, new abilities open old areas, melee combat, bosses (Hollow Knight, Metroid, Castlevania).',
+  creature: 'Creature collector RPG: catch creatures, train a party, turn-based typed battles, gyms (Pokémon).',
+  rpg: 'Party RPG and JRPG: towns, dungeons, turn-based party battles, story (Final Fantasy, Dragon Quest, Undertale).',
+  roguelike: 'Roguelike and action RPG: procedural floors, loot and item synergies, permadeath runs (Spelunky, Binding of Isaac, Hades, Diablo).',
+  tactics: 'Tactics, tower defense and light strategy: grid turns with cover, towers against waves, gather-and-build (XCOM, Fire Emblem, Plants vs. Zombies, StarCraft-lite).',
+  cards: 'Cards and deckbuilders: build a deck, play hands against enemies or opponents (Slay the Spire, Hearthstone, Solitaire).',
+  sandbox: 'Sandbox and life sim: mine, build, craft, farm, befriend villagers on your own schedule (Terraria, Stardew Valley, Animal Crossing).',
+  racing: 'Racing: drive or kart around tracks against rivals, drifting and items (Mario Kart, Out Run, F-Zero).',
+  rhythm: 'Rhythm: hit notes in time with music (Guitar Hero, DDR, Osu!).',
+  sports: 'Sports: ball games and matches (Wii Sports, NBA Jam, Rocket League, FIFA).',
+  puzzleadventure: 'Puzzle adventure: rules-as-puzzles, time rewind, push blocks, point-and-click (Braid, Portal, Baba Is You, Monkey Island).',
+  action3d: '3D action and open worlds: drive and fight across a 3D city or world, first- or third-person (GTA, Halo, Minecraft, Zelda: Breath of the Wild, Mario 64).',
 };
 
 export async function routeOptions() {
@@ -50,10 +62,37 @@ export function routeOffline(prompt, options) {
   return { engine: 'arcade', needs: 'none', why: 'default engine' };
 }
 
-export async function routeIdea({ client, model, prompt, answers }) {
-  const started = performance.now();
+/** The genres d1 chooses between: every engine, built or planned, described by its mechanics. */
+async function d1Criteria() {
   const options = await routeOptions();
-  if (!client) return { ...routeOffline(prompt, options), ms: 0, source: 'offline' };
+  const built = Object.fromEntries(options.map(o => [o.id, o.id === 'arcade'
+    ? 'Linear level-based action: a side-scrolling platformer (run, jump, stomp enemies, reach the flag) or simple top-down action, with no fighting-game duels, no turn-based battles, no creature catching and no open map exploration.'
+    : `${o.summary} Reference games: ${o.examples.join(', ')}.`]));
+  return { options, criteria: { ...PLANNED, ...built } };
+}
+const D1_INSTRUCTIONS = "Which genre engine plays the core gameplay loop this idea asks for? Judge by the mechanics of the game being referenced, never by the characters named: characters from one franchise dropped into another game keep that other game's genre (Mario in Mortal Kombat is a fighting game; Mario in Pokémon is a creature collector).";
+export const D1_CONFIDENT = 0.5;
+
+/**
+ * Route an idea. d1 decides in ~0.1 s; below D1_CONFIDENT the OpenAI router decides (a cascade).
+ * Returns { engine, needs, why, ms, source, probability? }.
+ */
+export async function routeIdea({ client, model, d1 = null, prompt, answers }) {
+  const started = performance.now();
+  if (d1) {
+    try {
+      const { options, criteria } = await d1Criteria();
+      const { answers: a } = await d1.decide({ state: `A player asked for this game: "${prompt}"${answers?.length ? ` (preferences: ${answers.map(x => `${x.question} ${x.answer}`).join('; ')})` : ''}`, questions: { engine: { type: 'choice', instructions: D1_INSTRUCTIONS, criteria } } });
+      const choice = a.engine.choice, probability = a.engine.probabilities?.[choice] ?? 0;
+      if (probability >= D1_CONFIDENT) {
+        const built = options.some(o => o.id === choice);
+        const top = Object.entries(a.engine.probabilities).sort((x, y) => y[1] - x[1]).slice(0, 3).map(([k, p]) => `${k} ${p.toFixed(2)}`).join(', ');
+        return { engine: built ? choice : 'none', needs: built ? 'none' : choice, why: `d1: ${top}`, probability, ms: Math.round(performance.now() - started), source: 'd1' };
+      }
+    } catch { /* fall through to the model router */ }
+  }
+  const options = await routeOptions();
+  if (!client) return { ...routeOffline(prompt, options), ms: Math.round(performance.now() - started), source: 'offline' };
   try {
     const user = `Idea: ${prompt}${answers?.length ? `\nPreferences: ${answers.map(a => `${a.question}: ${a.answer}`).join('; ')}` : ''}`;
     const reply = await client.complete({ model, system: routePrompt(options), user, schema: { name: 'route', schema: routeSchema(options) } });
