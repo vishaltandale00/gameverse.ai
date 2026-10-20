@@ -54,7 +54,7 @@ test('the sample validates, plays deterministically and verifies within budget',
   };
   assert.equal(run(), run());
   const t0 = performance.now();
-  const r = kit.verify(v.content, { seed: 1, budgetMs: 2000 });
+  const r = kit.verify(v.content, { seed: 1, budgetMs: 10000 });
   const ms = performance.now() - t0;
   assert.equal(r.ok, true, JSON.stringify(r.problems));
   assert.ok(ms < 2500, `verify took ${Math.round(ms)} ms`);

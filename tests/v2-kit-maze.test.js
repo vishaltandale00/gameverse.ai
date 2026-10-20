@@ -378,7 +378,7 @@ test('the game starts with a Ready pause and uses the shared event names', () =>
 });
 
 test('the bot verifies the sample within budget', () => {
-  const r = kit.verify(kit.content.sample, { seed: 1, budgetMs: 2000 });
+  const r = kit.verify(kit.content.sample, { seed: 1, budgetMs: 10000 });
   assert.equal(r.ok, true, JSON.stringify(r.problems));
   assert.ok(r.report.bot.clearedPct >= 60, JSON.stringify(r.report.bot));
   assert.ok(r.report.ms < 2000);

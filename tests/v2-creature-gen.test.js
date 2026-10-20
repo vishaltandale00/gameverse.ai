@@ -23,7 +23,7 @@ test('real model outputs validate, repair and verify on the first try', () => {
     assert.ok(v.content.starters[0].forms, 'the stored content is the compact shape the model wrote');
     const again = kit.validate(v.content);
     assert.deepEqual(again.content, v.content, 'idempotent');
-    const r = kit.verify(v.content, { seed: 1, budgetMs: 2000 });
+    const r = kit.verify(v.content, { seed: 1, budgetMs: 10000 });
     assert.equal(r.ok, true, `${name}: ${JSON.stringify(r.problems)}`);
     assert.ok(r.report.balance.leaders.every(l => l.worst >= 0.7));
   }

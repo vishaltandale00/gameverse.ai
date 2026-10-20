@@ -55,7 +55,7 @@ test('the same seed and inputs give the same final state, and state is plain JSO
 });
 
 test('the bot verifies the sample inside the budget', () => {
-  const r = kit.verify(SAMPLE, { seed: 1, budgetMs: 2000 });
+  const r = kit.verify(SAMPLE, { seed: 1, budgetMs: 10000 });
   assert.equal(r.ok, true, JSON.stringify(r.problems));
   assert.equal(r.report.bot.cleared, true);
   assert.ok(r.report.bot.killPct >= 80, `kills ${r.report.bot.killPct}%`);

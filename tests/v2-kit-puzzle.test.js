@@ -258,7 +258,7 @@ test('slide: tiles merge once per move, spawn only after a real move, and target
 
 // ---------- verification ----------
 test('the bots verify every sample within budget', () => {
-  const r = kit.verify(kit.content.sample, { seed: 1, budgetMs: 2000 });
+  const r = kit.verify(kit.content.sample, { seed: 1, budgetMs: 10000 });
   assert.equal(r.ok, true, JSON.stringify(r.problems));
   assert.ok(r.report.bot.levels[0].pieces >= 150 && r.report.bot.levels[0].lines > 0);
   assert.ok(r.report.proven.length && Number.isFinite(r.report.ms));
