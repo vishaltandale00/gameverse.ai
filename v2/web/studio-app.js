@@ -10,6 +10,8 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 const mount = (el, record) => record.doc?.schema === 'gameverse.v2.game-spec/0.1' ? mountArcade(el, record) : record.doc?.schema === 'gameverse.v2.kit-game/0.1' ? mountKit(el, record) : mountGame(el, record);
 const STAGES = { designing: 'Designing the game', revising: 'Revising the design', building: 'Building the level', playtesting: 'Playtesting', playtested: 'Playtested', painting: 'Painting the art', painted: 'Painting the art', paint_failed: 'Painting the art', animating: 'Animating', animated: 'Animating', animate_failed: 'Animating', outline: 'Outlining', verified: 'Checked', complete: 'Done' };
 const QUICK = ['Make it faster', 'Make it harder', 'More enemies', 'Make jumping floatier', 'Make it night time', 'Add a time limit'];
+// Genre kits get changes every genre understands; a kit can list its own as `quick` in the version report.
+const KIT_QUICK = ['Make it faster', 'Make it harder', 'More enemies', 'Add more levels', 'Make it night time', 'Make it easier'];
 
 let games = [], selected = null, player = null, selecting = 0, shownVersion = null, tickTimer = 0;
 const builds = new Map(); // gameId -> { started, stage, detail, partial, art: [], log: [] }
@@ -118,7 +120,7 @@ function playView(meta, record) {
     ${(record?.report?.gaps || []).filter(g => / kit$/.test(g.capability)).map(g => `<p class="notice">Needs the ${esc(g.capability)}, which isn't built yet. ${esc(g.why)}</p>`).join('')}
     <div class="board" id="game"></div>
     <form class="change" id="change"><input type="text" id="change-text" placeholder="Change this game, e.g. “add more platforms and make the guards faster”" aria-label="Change this game"><button class="primary" type="submit">Change it</button></form>
-    <div class="quick">${QUICK.map(q => `<button type="button" data-quick="${esc(q)}">${esc(q)}</button>`).join('')}</div>`;
+    <div class="quick">${(record?.doc?.schema === 'gameverse.v2.kit-game/0.1' ? record.report?.quick || KIT_QUICK : QUICK).map(q => `<button type="button" data-quick="${esc(q)}">${esc(q)}</button>`).join('')}</div>`;
   player = mount($('#game'), record); shownVersion = record.version;
   $('#change').onsubmit = e => { e.preventDefault(); requestChange($('#change-text').value); };
   $('.quick').onclick = e => { const q = e.target.closest('[data-quick]')?.dataset.quick; if (q) requestChange(q); };
