@@ -14,7 +14,7 @@ const settleOn = rt => run(rt, 5, {});
 
 // A stand-in for gameplay.progression.abilities (another workstream): `ability` predicate + unlock_ability.
 const abilitiesStub = {
-  id: 'gameplay.progression.abilities', card: { intent: 'test stub', params: { abilities: { type: 'json', default: [] }, start: { type: 'json', default: [] } } },
+  id: 'gameplay.progression.abilities', card: { ambient: true, intent: 'test stub', params: { abilities: { type: 'json', default: [] }, start: { type: 'json', default: [] } } },
   logic(l) {
     l.predicate('ability', { test: (p, rt) => Boolean(rt.store('abilities').on?.[p.ability]) });
     l.effect('unlock_ability', { run: (e, rt) => { (rt.store('abilities').on ??= {})[e.ability] = true; } });

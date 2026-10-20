@@ -38,6 +38,12 @@ export const norm = a => { const l = len(a); return l > 1e-9 ? a.map(v => v / l)
 export const round6 = v => Math.round(v * 1e6) / 1e6;
 const AXES = ['x', 'y', 'z'];
 
+// ---------------------------------------------------------------- vocabulary of other primitives
+
+/** Another primitive's effect/predicate is usable only when its owner is installed (KERNEL_API §5). */
+export const canRun = (rt, kind) => (typeof rt.canRun === 'function' ? rt.canRun(kind) : rt.logic.effects.has(kind));
+export const canTest = (rt, kind) => (typeof rt.canTest === 'function' ? rt.canTest(kind) : rt.logic.predicates.has(kind));
+
 // ---------------------------------------------------------------- components
 
 export const mv = e => (e.components.move ??= {});
@@ -273,15 +279,17 @@ export function controls(rt, e) {
   if (!src) return null;
   const cache = frameCache(rt).ctl;
   if (cache.has(e.id)) return cache.get(e.id);
-  const actions = src.actions || {}, held = src.held || {}, prev = new Set(mv(e).held || []);
+  const modal = e.id === 'player' ? rt.state.modal : null, allow = v => !modal || modal.actions.includes(v);
+  const pick = o => Object.fromEntries(Object.entries(o || {}).filter(([k]) => allow(k)));
+  const actions = pick(src.actions), held = pick(src.held), prev = new Set(mv(e).held || []);
   const down = v => Boolean(actions[v] || held[v]);
   const pressed = v => Boolean(actions[v]) && !prev.has(v);
   const released = v => prev.has(v) && !down(v);
-  let move = src.axes?.move ?? (Array.isArray(actions.move) ? actions.move : null);
+  let move = allow('move') ? src.axes?.move ?? (Array.isArray(actions.move) ? actions.move : null) : [0, 0];
   if (!move) move = [(down('right') ? 1 : 0) - (down('left') ? 1 : 0), (down('up') ? 1 : 0) - (down('down') ? 1 : 0)];
   let [x, y] = [Number(move[0]) || 0, Number(move[1]) || 0];
   const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; }
-  const c = { move: [x, y], look: src.axes?.look ?? null, camera: src.axes?.camera ?? null, heading: src.axes?.heading ?? null, aim: src.axes?.aim ?? null, down, pressed, released, actions, held, value: v => actions[v] };
+  const c = { move: [x, y], look: allow('look') ? src.axes?.look ?? null : null, camera: src.axes?.camera ?? null, heading: src.axes?.heading ?? null, aim: allow('aim') ? src.axes?.aim ?? null : null, down, pressed, released, actions, held, value: v => actions[v] };
   cache.set(e.id, c);
   return c;
 }
@@ -501,6 +509,7 @@ function bfs(rt, e, api, goal, test = null) {
 /** Claim the entity for `mode` this frame (call in the 'input' phase). Highest priority wins. */
 export function claim(rt, e, mode, pri, owner) {
   const m = mv(e), f = rt.state.frame;
+  bodyOf(e).controller = 'move';
   if (!m.req || m.req.f !== f || pri > m.req.pri) m.req = { f, mode, pri, owner };
 }
 /** Resolve (once per frame, in 'movement') and return the mode that owns e now. */
@@ -564,7 +573,7 @@ export function hasAbility(rt, e, name) {
   if (rt.state.flags[`ability.${name}`]) return true;
   const ids = grantsIndex(rt).get(name) || [];
   const all = ids.includes(name) ? ids : [name, ...ids];
-  if (rt.logic.predicates.has('ability')) {
+  if (canTest(rt, 'ability')) {
     for (const id of all) { try { if (rt.test({ ability: id, ...(e.id === 'player' ? {} : { who: e.id }) })) return true; } catch { /* malformed predicate in another workstream */ } }
     return false;
   }
@@ -588,7 +597,7 @@ export function pool(rt, e, id, { max = 100, regen = 0 } = {}) {
     return {
       external: true, get value() { return v[key]; }, get max() { return v[`${key}.max`] ?? max; },
       get locked() { return Boolean(v[`${key}.locked`]); },
-      spend(a) { if (a <= 0) return true; if (rt.logic.effects.has('spend')) rt.run([{ do: 'spend', resource: id, amount: a }]); else v[key] = Math.max(0, v[key] - a); return true; },
+      spend(a) { if (a <= 0) return true; if (canRun(rt, 'spend')) rt.run([{ do: 'spend', resource: id, amount: a }]); else v[key] = Math.max(0, v[key] - a); return true; },
       regen() {},
     };
   }
@@ -607,7 +616,7 @@ export const canSpend = (p, amount) => !p || (!p.locked && p.value >= Math.max(a
 
 /** Apply damage through combat.health's `damage` effect when present; otherwise emit only. */
 export function hurt(rt, e, amount, type, reason) {
-  if (rt.logic.effects.has('damage')) rt.run([{ do: 'damage', who: e.id, amount, type }], { self: e.id });
+  if (canRun(rt, 'damage')) rt.run([{ do: 'damage', who: e.id, amount, type }], { self: e.id });
   rt.emit('move_hurt', { who: e.id, amount, type, reason });
 }
 

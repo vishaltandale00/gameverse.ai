@@ -11,7 +11,7 @@ import { preflight } from '../v2/kernel/document.js';
 const wallAt = (x, y0, y1) => { const out = []; for (let y = y0; y <= y1; y++) out.push([x, y, 0]); return out; };
 const sys = (...list) => [{ use: 'gameplay.move.walk', with: {} }, ...list.map(([use, w]) => ({ use, with: w || {} }))];
 const side = (systems, o = {}) => doc({ size: [30, 20, 1], gravity: 30, solid: floor(0, 29, o.extra || []), zones: o.zones || [], at: o.at || [2, 1, 0], systems });
-const damageStub = { id: 'gameplay.test.damage', card: { intent: 'test damage' }, logic(l) { l.effect('damage', { run: (e, rt) => { rt.state.vars.hurt = (rt.state.vars.hurt || 0) + e.amount; } }); } };
+const damageStub = { id: 'gameplay.test.damage', card: { ambient: true, intent: 'test damage' }, logic(l) { l.effect('damage', { run: (e, rt) => { rt.state.vars.hurt = (rt.state.vars.hurt || 0) + e.amount; } }); } };
 const codes = (d, extra = []) => { const r = new Registry([testSpace, ...move, ...extra]); return preflight(d, r, buildLogic(r, Logic)).errors.map(e => e.code); };
 
 test('climb: pushing into a wall climbs, stamina drains, mantles over the top with ledgeGrab', () => {
