@@ -90,10 +90,10 @@ export function createRenderer(game, { art = {} } = {}) {
     const p = state.p;
     if (mode === 'lanes') {
       const depth = p.z + 6, at = (x, z) => v.proj(x, 0.9, z);
-      render.view = { X: x => (at((p.x + x) * LW, depth)?.[0] ?? w / 2) + sx, Y: y => (at(p.x * LW, p.z + Math.max(0.2, y))?.[1] ?? h / 2) + sy, s: unit * 0.9, hud: { x: w / 2, y: h - 28 } };
-    } else if (mode === 'climb') render.view = { X: x => v.X(x) + sx, Y: y => v.Y(y) + sy, s: v.U, clip: { x: v.ox, y: 0, w: v.FW, h }, hud: { x: w / 2, y: h - 28 } };
-    else if (mode === 'hop') render.view = { X: x => v.X(x) + sx, Y: r => v.Y(r) + sy, s: v.U, hud: { x: w / 2, y: h - 28 } };
-    else render.view = { X: x => v.X(p.x + x) + sx, Y: y => v.Y(y) + sy, s: v.U, hud: { x: w / 2, y: h - 28 } };
+      render.view = { X: x => (at((p.x + x) * LW, depth)?.[0] ?? w / 2) + sx, Y: y => (at(p.x * LW, p.z + Math.max(0.2, y))?.[1] ?? h / 2) + sy, s: unit * 0.9, hud: { x: w / 2, y: h - 28, w: w * 0.46 } };
+    } else if (mode === 'climb') render.view = { X: x => v.X(x) + sx, Y: y => v.Y(y) + sy, s: v.U, clip: { x: v.ox, y: 0, w: v.FW, h }, hud: { x: w / 2, y: h - 28, w: w * 0.46 } };
+    else if (mode === 'hop') render.view = { X: x => v.X(x) + sx, Y: r => v.Y(r) + sy, s: v.U, hud: { x: w / 2, y: h - 28, w: w * 0.46 } };
+    else render.view = { X: x => v.X(p.x + x) + sx, Y: y => v.Y(y) + sy, s: v.U, hud: { x: w / 2, y: h - 28, w: w * 0.46 } };
   };
   render.fx = () => fx;
   return render;

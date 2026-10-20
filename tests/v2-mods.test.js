@@ -18,7 +18,7 @@ function lineUp(game, s, distance = 3) {
 const run = (game, s, frames, input = {}) => { const events = []; for (let i = 0; i < frames; i++) { game.step(s, i === 0 ? input : { ...input, a: false, b: false }); events.push(...s.events); } return events; };
 
 test('mods are offered by capability, with a strict schema fragment', () => {
-  assert.deepEqual(modsFor(maze).map(m => m.id), ['weapon']);
+  assert.deepEqual(modsFor(maze).map(m => m.id), ['weapon', 'falling', 'waves', 'boss', 'timer', 'shield', 'zones']);
   strict(modsSchema(maze));
   assert.deepEqual(activeMods(maze, {}), [], 'nothing is on unless content asks');
   assert.deepEqual(activeMods(maze, { weapon: { kind: 'projectile' } }).map(a => a.button), ['a']);

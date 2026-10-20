@@ -7,7 +7,7 @@
 // state in place and returns it, so `state = step(state, input)` and
 // `step(state, input)` both work.
 import { random, seedFrom } from '../../kernel/rng.js';
-import { buildMaze, isOpen, wrapX, sizeOf, W, H } from './maze.js';
+import { buildMaze, isOpen, wrapX, sizeOf, W, H, WALL, OPEN } from './maze.js';
 
 export const DX = [0, -1, 0, 1], DY = [-1, 0, 1, 0]; // up, left, down, right (also the classic tie order)
 export const UP = 0, LEFT = 1, DOWN = 2, RIGHT = 3, NONE = -1;
@@ -127,6 +127,8 @@ export function createGame(content, { seed = 1 } = {}) {
 
   function resetActors(s) {
     const maze = mazeFor(s.level);
+    // Hunters a mod spawned survive a death: they regroup in their house and leave again.
+    const kept = (s.hunters || []).filter(h => h.spawned && h.state !== 'gone');
     s.player = { x: maze.start.x, y: maze.start.y, dir: LEFT, want: NONE, moving: true, face: -1, eatT: 0, travel: 0 };
     s.hunters = rosterFor(s.level).map((h, i) => {
       const slot = maze.houses[h.home].slots[Math.min(h.slot, 5)];
@@ -136,6 +138,11 @@ export function createGame(content, { seed = 1 } = {}) {
         state: h.slot === 0 ? 'active' : 'house', fright: false, dots: s.hunters?.[i]?.dots ?? 0,
       };
     });
+    for (const h of kept) {
+      const house = maze.houses[h.home];
+      Object.assign(h, { index: s.hunters.length, x: house.center.x, y: house.center.y, dir: UP, state: 'leaving', fright: false, stunT: 0 });
+      s.hunters.push(h);
+    }
     s.mode = 'scatter'; s.modeIdx = 0; s.modeT = 0;
     s.frightT = 0; s.frightTotal = 0; s.chain = 0; s.pauseT = 0; s.sinceEat = 0; s.bonus = null;
   }
@@ -149,7 +156,7 @@ export function createGame(content, { seed = 1 } = {}) {
     // Classic: at 70 and 170 pellets; bigger mazes keep the same fractions of the level.
     s.bonusAt = maze.size === 'classic' ? [Math.min(70, Math.floor(s.pelletsTotal * 0.3)), Math.min(170, Math.floor(s.pelletsTotal * 0.7))] : [Math.round(s.pelletsTotal * 0.29), Math.round(s.pelletsTotal * 0.7)];
     s.globalDots = null;
-    s.hunters = null;
+    s.hunters = null; s.terrain = null; s.clearHeld = false;
     resetActors(s);
     for (const h of s.hunters) h.dots = 0;
   }
@@ -210,11 +217,16 @@ export function createGame(content, { seed = 1 } = {}) {
       s.bonus = { t: L.bonusFrames, name: L.bonus.name, points: L.bonus.points, x: maze.bonusAt.x, y: maze.bonusAt.y };
       emit(s, 'bonus_spawn', { prize: L.bonus.name, points: L.bonus.points });
     }
-    if (s.pelletsLeft === 0) {
-      s.phase = 'clear'; s.phaseT = 0; s.frightT = 0; s.bonus = null;
-      for (const h of s.hunters) h.fright = false;
-      emit(s, 'level_clear', { level: L.number });
-    }
+    if (s.pelletsLeft === 0) maybeClear(s, L);
+  }
+  /** A spawned enemy marked required (a mod's boss) holds the level clear until it is beaten. */
+  const holding = s => s.hunters.some(h => h.required && h.state !== 'gone');
+  function maybeClear(s, L) {
+    if (s.pelletsLeft > 0 || s.phase !== 'play') return;
+    if (holding(s)) { if (!s.clearHeld) { s.clearHeld = true; emit(s, 'clear_held', {}); } return; }
+    s.phase = 'clear'; s.phaseT = 0; s.frightT = 0; s.bonus = null;
+    for (const h of s.hunters) h.fright = false;
+    emit(s, 'level_clear', { level: L.number });
   }
   function startFright(s, L) {
     s.chain = 0;
@@ -319,6 +331,7 @@ export function createGame(content, { seed = 1 } = {}) {
     if (h.state === 'house') return L.speed.house;
     if (h.state === 'leaving') return L.speed.leaving;
     if (h.fright) return L.speed.fright;
+    if (h.big) return L.speed.ghost * 0.8;
     const t = tileOf(h, maze.w);
     if (maze.tunnels.includes(t.y) && (t.x <= 4 || t.x >= maze.w - 5)) return L.speed.tunnel;
     if (h.personality === 'chaser') {
@@ -329,6 +342,8 @@ export function createGame(content, { seed = 1 } = {}) {
   }
   function moveHunters(s, L, maze) {
     for (const h of s.hunters) {
+      if (h.bumpT > 0) h.bumpT--;
+      if (h.hitT > 0) h.hitT--;
       if (h.stunT > 0) { h.stunT--; continue; } // stunned (by a mod): frozen in place
       const d = hunterSpeed(s, h, maze, L) * STEP;
       if (h.state === 'active' || h.state === 'eyes') gridMove(s, h, d, maze, L);
@@ -363,17 +378,21 @@ export function createGame(content, { seed = 1 } = {}) {
     const p = s.player;
     for (const h of s.hunters) {
       if (!(h.state === 'active' || (h.state === 'leaving' && h.y < maze.houses[h.home ?? 0].y0)) || h.stunT > 0) continue;
-      if (wrapDist(p, h, maze.w) >= 0.6) continue;
+      if (wrapDist(p, h, maze.w) >= (h.big ? 1.0 : 0.6)) continue;
       if (h.fright) {
-        const points = 200 * 2 ** Math.min(s.chain, 3);
+        const points = 200 * 2 ** Math.min(s.chain, 3) * (h.big ? 5 : 1);
         s.chain++;
         addScore(s, points);
         emit(s, 'defeated', { hunter: h.name, index: h.index, points, chain: s.chain, x: h.x, y: h.y });
         // Caught at the door on the way out: the eyes slip straight back in.
         h.state = h.state === 'leaving' ? 'entering' : 'eyes'; h.fright = false;
+        if (h.spawned && --h.hp <= 0) h.state = 'gone';
         s.pauseT = EAT_PAUSE;
+      } else if (s.invulnT > 0) {
+        // A mod's shield: the hunter bounces off instead of catching the hero.
+        if (!(h.bumpT > 0)) { h.bumpT = 24; if (h.state === 'active') h.dir = rev(h.dir); emit(s, 'shielded', { by: h.name, x: p.x, y: p.y }); }
       } else {
-        s.phase = 'dying'; s.phaseT = 0; s.killer = h.name; s.bonus = null; s.frightT = 0;
+        s.phase = 'dying'; s.phaseT = 0; s.killer = h.name; s.killReason = null; s.bonus = null; s.frightT = 0;
         for (const q of s.hunters) q.fright = false;
         emit(s, 'hurt', { by: h.name, index: h.index, x: p.x, y: p.y });
         return;
@@ -382,7 +401,9 @@ export function createGame(content, { seed = 1 } = {}) {
   }
   function play(s) {
     if (s.pauseT > 0) { s.pauseT--; return; }
-    const L = levelInfo(s.level), maze = mazeFor(s.level);
+    const L = levelInfo(s.level), maze = mazeOf(s);
+    if (s.invulnT > 0) s.invulnT--;
+    if (s.hunters.some(h => h.state === 'gone')) { s.hunters = s.hunters.filter(h => h.state !== 'gone'); s.hunters.forEach((h, i) => { h.index = i; }); }
     movePlayer(s, L, maze);
     eat(s, L, maze);
     if (s.phase !== 'play') return;
@@ -391,6 +412,98 @@ export function createGame(content, { seed = 1 } = {}) {
     timers(s, L, maze);
     moveHunters(s, L, maze);
     collide(s, maze);
+    if (s.phase === 'play' && s.pelletsLeft === 0) maybeClear(s, L);
+  }
+
+  // ---------- world operations for mods (v2/kits/EXTENDING.md) ----------
+  /**
+   * The current level's maze with mod terrain applied. s.terrain = { level, key, cells: { index: OPEN|WALL } }
+   * holds the changes as plain JSON; the derived maze is cached by its key, so states stay cheap to clone.
+   */
+  const live = new Map();
+  let lastKey = null, lastLevel = -1, lastMaze = null;
+  function mazeOf(s) {
+    const t = s.terrain;
+    if (!t || t.level !== s.level || !t.key) return mazeFor(s.level);
+    if (t.key === lastKey && s.level === lastLevel) return lastMaze;   // terrain reads come in bursts (flood fills)
+    const base = mazeFor(s.level), k = `${s.level}#${t.key}`;
+    let m = live.get(k);
+    if (!m) {
+      const cells = base.cells.slice();
+      for (const [i, v] of Object.entries(t.cells)) cells[i] = v;
+      m = { ...base, cells, terrainKey: t.key };
+      live.set(k, m);
+      if (live.size > 32) live.delete(live.keys().next().value);
+    }
+    lastKey = t.key; lastLevel = s.level; lastMaze = m;
+    return m;
+  }
+  /** Make tile (x, y) a wall or a corridor. Refuses the border, houses, doors and tiles anyone stands near. Walls crush pellets under them. */
+  function setTile(s, x, y, on) {
+    const base = mazeFor(s.level), w = base.w;
+    x = Math.round(x); y = Math.round(y);
+    if (x <= 0 || y <= 0 || x >= w - 1 || y >= base.h - 1) return false;
+    const i = y * w + x, orig = base.cells[i];
+    if (orig !== OPEN && orig !== WALL) return false;
+    const want = on ? WALL : OPEN;
+    if (mazeOf(s).cells[i] === want) return true;
+    if (on && (wrapDist(s.player, { x, y }, w) < 1.2 || s.hunters.some(h => h.state !== 'gone' && wrapDist(h, { x, y }, w) < 1.2))) return false;
+    if (!s.terrain || s.terrain.level !== s.level) s.terrain = { level: s.level, key: '', cells: {} };
+    const cells = s.terrain.cells;
+    if (want === orig) delete cells[i]; else cells[i] = want;
+    s.terrain.key = Object.keys(cells).map(Number).sort((a, b) => a - b).map(k => `${k}:${cells[k]}`).join(',');
+    if (on && s.pellets[i]) { s.pellets[i] = 0; s.pelletsLeft--; emit(s, 'crush', { x, y }); }
+    emit(s, 'terrain', { x, y, on: !!on });
+    return true;
+  }
+  /** The open tile nearest (x, y), searching outward a few rings, not too close to `avoid`. */
+  function nearestOpen(maze, x, y, avoid) {
+    const cx = Math.round(x), cy = Math.round(y);
+    for (let r = 0; r <= 8; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+      const tx = cx + dx, ty = cy + dy;
+      if (tx < 0 || ty < 0 || tx >= maze.w || ty >= maze.h || !isOpen(maze, tx, ty)) continue;
+      if (avoid && wrapDist(avoid, { x: tx, y: ty }, maze.w) < 3) continue;
+      return { x: tx, y: ty };
+    }
+    return null;
+  }
+  /**
+   * A mod's extra hunter. Without a position it is released from a house like the others. kind
+   * 'boss' is one big, slower hunter. hp counts standard hits; here one eat or shot is worth four.
+   */
+  function spawnHunter(s, { x, y, kind = 'hunter', hp, required = false, name, color } = {}) {
+    if (s.phase !== 'play' && s.phase !== 'ready') return null;
+    const big = kind === 'boss';
+    if (s.hunters.filter(h => h.spawned).length >= 12 || (big && s.hunters.some(h => h.big))) return null;
+    const maze = mazeOf(s), seq = (s.spawnSeq = (s.spawnSeq || 0) + 1);
+    const personality = big ? 'chaser' : CORNER_ORDER[seq % 4], home = seq % maze.houses.length, house = maze.houses[home];
+    let pos = { x: house.center.x, y: house.center.y }, state = 'leaving';
+    if (Number.isFinite(x) && Number.isFinite(y)) { const t = nearestOpen(maze, x, y, s.player); if (!t) return null; pos = t; state = 'active'; }
+    const src = content.hunters[seq % content.hunters.length], lives = Math.max(1, Math.ceil((Number(hp) || 1) / 4));
+    const h = {
+      index: s.hunters.length, id: 100 + seq, name: typeof name === 'string' && name ? name.slice(0, 24) : big ? `Giant ${content.hunters[0].name}` : src.name, personality,
+      color: /^#[0-9a-f]{6}$/i.test(color || '') ? color : src.color, corner: scatterCorners(maze, house)[personality], home,
+      x: pos.x, y: pos.y, dir: state === 'leaving' ? UP : LEFT, state, fright: false, dots: 0, stunT: 0,
+      spawned: true, kind, big, hp: lives, maxHp: lives, required: !!required, hitT: 0, bumpT: 0,
+    };
+    s.hunters.push(h);
+    emit(s, 'spawn', { id: h.id, kind, x: h.x, y: h.y });
+    return h.id;
+  }
+  /** Lose a life as if caught; a shield (invulnT) turns it away. */
+  function hurtPlayer(s, by = 'trouble') {
+    if (s.phase !== 'play' || s.status !== 'playing') return false;
+    if (s.invulnT > 0) { emit(s, 'shielded', { by, x: s.player.x, y: s.player.y }); return false; }
+    s.phase = 'dying'; s.phaseT = 0; s.killer = by; s.killReason = by; s.bonus = null; s.frightT = 0;
+    for (const q of s.hunters) q.fright = false;
+    emit(s, 'hurt', { by, x: s.player.x, y: s.player.y });
+    return true;
+  }
+  function endGame(s, { won = false, reason = '' } = {}) {
+    if (s.status !== 'playing') return;
+    s.status = won ? 'won' : 'lost'; s.reason = reason || (won ? 'Finished' : 'Game over');
+    emit(s, won ? 'won' : 'lost', { reason: s.reason, score: s.score });
   }
 
   function step(s, input = {}) {
@@ -407,7 +520,7 @@ export function createGame(content, { seed = 1 } = {}) {
     else if (s.phase === 'dying') {
       if (++s.phaseT >= DYING) {
         s.lives--;
-        if (s.lives <= 0) { s.status = 'lost'; s.reason = `Caught by ${s.killer}`; emit(s, 'lost', { reason: s.reason }); return s; }
+        if (s.lives <= 0) { s.status = 'lost'; s.reason = s.killReason || `Caught by ${s.killer}`; emit(s, 'lost', { reason: s.reason }); return s; }
         resetActors(s); s.globalDots = 0; s.phase = 'ready'; s.phaseT = READY;
       }
     } else if (s.phase === 'clear') {
@@ -422,5 +535,5 @@ export function createGame(content, { seed = 1 } = {}) {
 
   const first = sizeOf(sizeAt(0));
   // width/height are level 1's; every level's own dimensions are on mazeFor(i).w/h.
-  return { content, seed, width: first.w, height: first.h, levelCount: levels.length, createState, step, mazeFor, levelInfo, targetFor, addScore, rosterFor };
+  return { content, seed, width: first.w, height: first.h, levelCount: levels.length, createState, step, mazeFor, mazeOf, levelInfo, targetFor, addScore, rosterFor, setTile, spawnHunter, hurtPlayer, endGame };
 }

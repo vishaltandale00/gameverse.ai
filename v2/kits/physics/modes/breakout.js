@@ -48,6 +48,7 @@ export function build(S, level) {
     S.m.boss = { id: b.id, hp: cfg.boss, max: cfg.boss, t: 0, fire: 2.5, flash: 0, y: b.y };
   }
   countBricks(S);
+  S.m.rows = cfg.rows.length;
   serve(S);
 }
 
@@ -196,6 +197,11 @@ export function step(S, level, inp, press) {
     } else if (other.tag === 'wall') emit(S, 'wall', { x: c.x, y: c.y });
   }
   if (m.boss?.dead) m.boss = null;
+  // A mod's guard (shield) bounces balls back up from the bottom instead of losing them.
+  if (m.guard > 0) {
+    m.guard = Math.max(0, m.guard - dt);
+    for (const id of m.balls) { const b = by.get(id); if (b && !b.data.held && b.y > m.h - 0.5 && b.vy > 0) { b.vy = -Math.abs(b.vy); b.y = m.h - 0.5; emit(S, 'shielded', { x: b.x, y: b.y }); } }
+  }
   // Keep every free ball at the ramped speed and never too flat.
   let lowest = 0;
   for (const id of m.balls) {
@@ -235,7 +241,11 @@ export function step(S, level, inp, press) {
   // Boss shots.
   for (const s of m.shots) {
     s.x += s.vx * dt; s.y += s.vy * dt;
-    if (Math.abs(s.x - p.x) < m.pw / 2 + 0.25 && Math.abs(s.y - p.y) < 0.4) { s.dead = true; emit(S, 'hurt', { x: s.x, y: s.y, by: 'shot' }); loseBall(S, `Hit by the ${m.hazard}`); return; }
+    if (Math.abs(s.x - p.x) < m.pw / 2 + 0.25 && Math.abs(s.y - p.y) < 0.4) {
+      s.dead = true;
+      if (m.guard > 0) { emit(S, 'shielded', { x: s.x, y: s.y }); continue; }
+      emit(S, 'hurt', { x: s.x, y: s.y, by: 'shot' }); loseBall(S, `Hit by the ${m.hazard}`); return;
+    }
     if (s.y > m.h + 1) s.dead = true;
   }
   m.shots = m.shots.filter(s => !s.dead);
@@ -246,10 +256,59 @@ export function step(S, level, inp, press) {
   }
   if (!m.balls.length) { loseBall(S, 'The ball got past the paddle'); return; }
   countBricks(S);
-  if (m.bricksLeft === 0 && !m.boss) clearLevel(S);
+  if (m.bricksLeft === 0 && (!m.boss || m.boss.bonus)) clearLevel(S);
 }
 
-function loseBall(S, reason) {
+// ---------- world operations for mods (v2/kits/EXTENDING.md) ----------
+/** The brick grid mods see: columns × rows of BRICK_W × BRICK_H cells from TOP, ending well above the paddle. */
+export function grid(S) {
+  const m = S.m;
+  return { w: m.w, h: Math.max(4, Math.floor((m.h - 1.4 - 3 - TOP) / BRICK_H)), cell: { x0: 0, y0: TOP, w: BRICK_W, h: BRICK_H } };
+}
+const brickAt = (S, col, row) => S.world.bodies.some(b => !b.dead && b.tag === 'brick' && b.data.col === col && Math.abs(b.y - (TOP + row * BRICK_H + BRICK_H / 2)) < BRICK_H / 2);
+function cellFree(S, col, row) {
+  const m = S.m, x = col * BRICK_W + BRICK_W / 2, y = TOP + row * BRICK_H + BRICK_H / 2;
+  if (col < 0 || col >= m.w || row < 0 || row >= grid(S).h || brickAt(S, col, row)) return false;
+  const by = bodyIndex(S.world);
+  if (m.balls.some(id => { const b = by.get(id); return b && Math.abs(b.x - x) < 0.75 && Math.abs(b.y - y) < 0.5; })) return false;
+  const boss = m.boss && by.get(m.boss.id);
+  return !(boss && Math.abs(boss.x - x) < 2.4 && Math.abs(boss.y - y) < 1.5);
+}
+/**
+ * A new brick in the grid cell holding world x, y (or a random free cell among the brick rows).
+ * hp counts standard hits, which bricks take one ball hit each for. Returns the body id or null.
+ */
+export function spawnBrick(S, { x, y, hp } = {}) {
+  const m = S.m, rows = Math.min(grid(S).h, (m.rows || 0) + 3);
+  let col, row;
+  if (Number.isFinite(x) && Number.isFinite(y)) { col = Math.floor(x / BRICK_W); row = Math.floor((y - TOP) / BRICK_H); }
+  else {
+    const free = [];
+    for (let r = 0; r < rows; r++) for (let c = 0; c < m.w; c++) if (cellFree(S, c, r)) free.push([c, r]);
+    if (!free.length) return null;
+    [col, row] = free[Math.floor(random(S) * free.length)];
+  }
+  if (!cellFree(S, col, row)) return null;
+  const h = Math.max(1, Math.min(5, Math.round(Number(hp) || 1))), kind = h > 1 ? String(h) : 'n';
+  const b = addBody(S.world, { shape: 'box', type: 'static', w: BRICK_W - 0.04, h: BRICK_H - 0.04, x: col * BRICK_W + BRICK_W / 2, y: TOP + row * BRICK_H + BRICK_H / 2, e: 1, mu: 0, tag: 'brick', data: { kind, hp: h, max: h, row, col, spawned: true } });
+  countBricks(S);
+  emit(S, 'spawn', { id: b.id, kind: 'brick', x: b.x, y: b.y });
+  return b.id;
+}
+/** A mod's boss: the kit's own boss body, drifting and firing below the bricks. bonus: it no longer holds the clear. */
+export function spawnBoss(S, { hp, required = true } = {}) {
+  const m = S.m;
+  if (m.boss) return null;
+  let low = TOP;
+  for (const b of S.world.bodies) if (!b.dead && b.tag === 'brick') low = Math.max(low, b.y + BRICK_H / 2);
+  const y = Math.min(low + 1.5, m.h - 1.4 - 4.5), max = Math.max(1, Math.min(60, Math.round(Number(hp) || 8)));
+  const b = addBody(S.world, { shape: 'box', type: 'kinematic', w: 3.6, h: 2.2, x: m.w / 2, y, e: 1, mu: 0, tag: 'boss', data: { hp: max, max } });
+  m.boss = { id: b.id, hp: max, max, t: 0, fire: 2.5, flash: 0, y, bonus: !required, spawned: true };
+  emit(S, 'spawn', { id: b.id, kind: 'boss', x: b.x, y: b.y });
+  return b.id;
+}
+
+export function loseBall(S, reason) {
   const m = S.m;
   for (const id of m.balls) { const b = findBody(S.world, id); if (b) removeBody(S.world, b); }
   m.balls = []; m.capsules = []; m.lasers = []; m.shots = [];

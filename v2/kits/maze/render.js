@@ -281,9 +281,12 @@ export function createRenderer(game, { art, minimap = true } = {}) {
   const fx = {
     t: 0, particles: createParticles(600), popups: [], trauma: 0, r: rand(97), loops: new Map(), layers: new Map(),
     score: 0, scorePop: 0, lifePop: 0, faces: [], deathBurst: false, lastPhase: null,
-    cam: null, camLevel: -1, camHx: null, camera: false, minimaps: new Map(),
+    cam: null, camLevel: -1, camHx: null, camera: false, minimaps: new Map(), byKey: new Map(), mk: 0,
   };
-  const loopsFor = level => { if (!fx.loops.has(level)) fx.loops.set(level, wallLoops(game.mazeFor(level))); return fx.loops.get(level); };
+  // Caches are keyed by maze: the level, plus the terrain key when mods have changed the walls.
+  const trim = (map, n) => { while (map.size > n) map.delete(map.keys().next().value); };
+  const mazeBy = key => fx.byKey.get(key) || game.mazeFor(Number.isFinite(key) ? key : parseInt(key, 10) || 0);
+  const loopsFor = key => { if (!fx.loops.has(key)) { fx.loops.set(key, wallLoops(mazeBy(key))); trim(fx.loops, 12); } return fx.loops.get(key); };
   /**
    * The wall layer, cached per level, tile size and flash state as square chunks of C tiles:
    * a fitted maze is one chunk; a scrolling one paints and keeps only the chunks it shows
@@ -298,7 +301,7 @@ export function createRenderer(game, { art, minimap = true } = {}) {
     if (!c) return null;
     const g = c.getContext('2d');
     g.scale(dpr, dpr);
-    paintMaze(g, game.mazeFor(level), loopsFor(level), s, -cx * C * s, -cy * C * s, colors, flash, { x0: cx * C, y0: cy * C, x1: (cx + 1) * C, y1: (cy + 1) * C });
+    paintMaze(g, mazeBy(level), loopsFor(level), s, -cx * C * s, -cy * C * s, colors, flash, { x0: cx * C, y0: cy * C, x1: (cx + 1) * C, y1: (cy + 1) * C });
     fx.layers.set(key, c);
     while (fx.layers.size > MAX_CHUNKS) fx.layers.delete(fx.layers.keys().next().value);
     return c;
@@ -306,7 +309,7 @@ export function createRenderer(game, { art, minimap = true } = {}) {
   /** One pixel per tile: corridors lit, walls dark. */
   function minimapImage(level) {
     if (fx.minimaps.has(level)) return fx.minimaps.get(level);
-    const maze = game.mazeFor(level), c = surface(maze.w, maze.h);
+    const maze = mazeBy(level), c = surface(maze.w, maze.h);
     if (c) {
       const g = c.getContext('2d'), [r, gg, b] = hexToRgb(colors.wall);
       try {
@@ -320,7 +323,7 @@ export function createRenderer(game, { art, minimap = true } = {}) {
         g.putImageData(d, 0, 0);
       } catch { /* no pixel access: the minimap shows dots only */ }
     }
-    fx.minimaps.set(level, c);
+    fx.minimaps.set(level, c); trim(fx.minimaps, 8);
     return c;
   }
 
@@ -403,6 +406,8 @@ export function createRenderer(game, { art, minimap = true } = {}) {
     for (const off of wraps(h.x)) {
       const xx = x + off * s;
       ctx.save(); ctx.translate(xx, y + bob);
+      if (h.big) ctx.scale(1.75, 1.75); // a mod's boss hunter
+      if (h.hitT > 0 && Math.floor(h.hitT / 3) % 2 === 0) ctx.globalAlpha = 0.45;
       if (eyesOnly) eyes(ctx, r, h.dir);
       else if (img) {
         const color = h.fright ? (flashing ? FRIGHT_FLASH : FRIGHT_BLUE) : h.stunT > 0 ? '#cfeaff' : h.color;
@@ -490,7 +495,7 @@ export function createRenderer(game, { art, minimap = true } = {}) {
     ctx.save();
     ctx.globalAlpha = 0.9;
     ctx.fillStyle = 'rgba(4,6,14,.72)'; ctx.beginPath(); roundRect(ctx, x0 - 4, y0 - 4, mw + 8, mh + 8, 6); ctx.fill();
-    const img = minimapImage(state.level);
+    const img = minimapImage(fx.mk);
     if (img) { ctx.imageSmoothingEnabled = false; ctx.drawImage(img, x0, y0, mw, mh); }
     const dot = (x, y, r, color) => { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x0 + (x + 0.5) * m, y0 + (y + 0.5) * m, r, 0, TAU); ctx.fill(); };
     if (Math.floor(fx.t * 3) % 2 === 0) for (const i of maze.power) if (state.pellets[i] === 2) dot(i % maze.w, Math.floor(i / maze.w), Math.max(1.5, m * 0.9), colors.power);
@@ -506,7 +511,10 @@ export function createRenderer(game, { art, minimap = true } = {}) {
     const dt = frame.paused ? 0 : clamp(frame.dt ?? 1 / 60, 0, 0.1);
     const reduced = !!frame.reducedMotion;
     fx.t += dt;
-    const maze = game.mazeFor(state.level), MW = maze.w, MH = maze.h;
+    const maze = game.mazeOf ? game.mazeOf(state) : game.mazeFor(state.level), MW = maze.w, MH = maze.h;
+    const mk = maze.terrainKey ? `${state.level}#${maze.terrainKey}` : state.level;
+    if (!fx.byKey.has(mk)) { fx.byKey.set(mk, maze); trim(fx.byKey, 16); }
+    fx.mk = mk;
     cur.w = MW;
     const cw = frame.cssWidth ?? ctx.canvas?.width ?? 448, ch = frame.cssHeight ?? ctx.canvas?.height ?? 576;
     const hudRows = HUD_TOP + HUD_BOTTOM;
@@ -553,12 +561,12 @@ export function createRenderer(game, { art, minimap = true } = {}) {
     const edgeX = cx => Math.round((ox + (cx * C - cam.x) * s + sx) * dpr) / dpr - sx, edgeY = cy => Math.round((my + (cy * C - cam.y) * s + sy) * dpr) / dpr - sy;
     let painted = true;
     for (let cy = Math.floor(ty0 / C); cy * C < ty1 && painted; cy++) for (let cx = Math.floor(tx0 / C); cx * C < tx1; cx++) {
-      const c = chunk(state.level, s, dpr, flash, C, cx, cy);
+      const c = chunk(mk, s, dpr, flash, C, cx, cy);
       if (!c) { painted = false; break; }
       const x0 = edgeX(cx), y0 = edgeY(cy);
       ctx.drawImage(c, 0, 0, C * s * dpr, C * s * dpr, x0, y0, edgeX(cx + 1) - x0, edgeY(cy + 1) - y0);
     }
-    if (!painted) paintMaze(ctx, maze, loopsFor(state.level), s, ox - cam.x * s, my - cam.y * s, colors, flash, camera ? { x0: tx0, y0: ty0, x1: tx1, y1: ty1 } : null);
+    if (!painted) paintMaze(ctx, maze, loopsFor(mk), s, ox - cam.x * s, my - cam.y * s, colors, flash, camera ? { x0: tx0, y0: ty0, x1: tx1, y1: ty1 } : null);
     // Pellets in view: one path, a gentle shimmer travelling across the maze.
     const pel = state.pellets;
     ctx.fillStyle = colors.pellet; ctx.beginPath();
@@ -593,7 +601,7 @@ export function createRenderer(game, { art, minimap = true } = {}) {
     }
     // Hunters, then the hero on top.
     const hideHunters = (state.phase === 'dying' && state.phaseT >= 36) || state.phase === 'clear';
-    if (!hideHunters) for (const h of state.hunters) drawHunter(ctx, state, h, X, Y, s, reduced);
+    if (!hideHunters) for (const h of state.hunters) if (h.state !== 'gone') drawHunter(ctx, state, h, X, Y, s, reduced);
     if (state.pauseT > 0) { /* the hero hides while the score for an eaten hunter shows */ } else drawHero(ctx, state, X, Y, s, reduced);
     drawParticles(ctx, X, Y, s);
     for (const p of fx.popups) {
@@ -613,7 +621,7 @@ export function createRenderer(game, { art, minimap = true } = {}) {
     if (camera && (frame.minimap ?? minimap)) drawMinimap(ctx, state, maze, view, cam, s);
     drawHud(ctx, state, ox, oy, s, my + vh, vw);
     // World-to-screen mapping for mods drawn on top (v2/kits/mods/compose.js), camera included.
-    render.view = { X: x => X(x) + sx, Y: y => Y(y) + sy, s, clip: { ...view }, hud: { x: ox + vw / 2, y: my + vh + s * 1.15 }, camera: camera ? { x: cam.x, y: cam.y, w: vw / s, h: vh / s } : null };
+    render.view = { X: x => X(x) + sx, Y: y => Y(y) + sy, s, clip: { ...view }, hud: { x: ox + vw / 2, y: my + vh + s * 1.15, w: vw * 0.62 }, camera: camera ? { x: cam.x, y: cam.y, w: vw / s, h: vh / s } : null };
   }
   render.fx = fx;
   return render;

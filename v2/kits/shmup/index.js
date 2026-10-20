@@ -4,6 +4,7 @@ import { SCHEMA, PROMPT, SAMPLE, validate } from './content.js';
 import { createGame } from './game.js';
 import { createRenderer } from './render.js';
 import { verify } from './verify.js';
+import { world } from './world.js';
 
 function cast(content) {
   const firstBoss = content.bosses?.[0];
@@ -34,6 +35,8 @@ export default {
   createGame,
   createRenderer,
   verify,
+  // What cross-genre mods (v2/kits/mods) can see and do in this world; see world.js.
+  world,
   controls: [{ input: 'move', label: 'Move (asteroids: rotate, thrust, hyperspace)' }, { input: 'a', label: 'Fire' }, { input: 'b', label: 'Bomb' }],
   goal: content => `Survive ${content.stages.length} stage${content.stages.length === 1 ? '' : 's'}${content.endless ? ' and keep looping' : ''}: shoot everything, grab power-ups, and bomb out of trouble.`,
   stats: state => [['Stage', `${state.stage + 1}${state.loop ? ` (loop ${state.loop + 1})` : ''}`], ['Kills', String(state.stats.kills)], ['Best chain', String(state.bestChain)]],

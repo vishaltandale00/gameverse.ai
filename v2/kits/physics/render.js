@@ -642,7 +642,7 @@ export function createRenderer(game, { art = {} } = {}) {
       render.view = { X: x => w / 2 + (x - camX) * s + sx, Y: y => h * 0.84 + y * s + sy, s, clip: { x: 0, y: 0, w, h }, hud: { x: w / 2, y: 64 } };
     } else {
       const s = view.scale, [fw, fh] = view.size;
-      render.view = { X: x => view.ox + x * s + sx, Y: y => view.oy + y * s + sy, s, clip: view.clipTop != null ? { x: view.ox, y: view.clipTop, w: fw * s, h: view.clipH } : { x: view.ox, y: view.oy, w: fw * s, h: fh * s }, hud: { x: view.ox + fw * s / 2, y: Math.min(h - 12, view.oy + fh * s + 10) } };
+      render.view = { X: x => view.ox + x * s + sx, Y: y => view.oy + y * s + sy, s, clip: view.clipTop != null ? { x: view.ox, y: view.clipTop, w: fw * s, h: view.clipH } : { x: view.ox, y: view.oy, w: fw * s, h: fh * s }, hud: { x: view.ox + fw * s / 2, y: Math.min(h - 12, view.oy + fh * s + 10), w: Math.max(fw * s, w * 0.6) } };
     }
   }
   return render;
