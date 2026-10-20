@@ -1,58 +1,102 @@
-// Narrative presentation for any game: current scene, story log, inventory
-// and the player's available options as buttons. The default renderer for
-// graph spaces, and a fallback/overlay for others.
-const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// graphics.ui.story: narrative presentation for any game: the current scene
+// (zone name and description), a running story log of dialogue, beats, acts
+// and events, what the player carries, and the player's available options as
+// focusable choices (keyboard, gamepad, pointer and number keys). The default
+// renderer for graph and none spaces, and a readable overlay elsewhere.
+// Endings are left to graphics.ui.menu's results screen when it is present.
+import { THEMES, resolveTheme } from './ui-theme.js';
+import { uiHost, fill, setText, setClass, pulse, later, charName, itemName, zoneName, docZone, titleCase } from './ui-lib.js';
+import { portraitColor } from './ui-portrait.js';
+import { moveFocus } from './ui-input.js';
+import * as S from './ui-sources.js';
+
+/** Button label for an option: graph moves read as "Go to <zone>". */
+export function optionLabel(doc, o) {
+  const to = o.actions?.go;
+  if (to && docZone(doc, to)) return `Go to ${zoneName(doc, to)}`;
+  return o.label;
+}
 
 export default {
   id: 'graphics.ui.story',
   card: {
-    intent: 'Shows the current scene, a running story log of dialogue and events, the inventory, and the available choices as buttons; renders endings.',
+    intent: 'Shows the current scene, a running story log of dialogue and events, the inventory, and the available choices as focusable buttons (keyboard, gamepad, pointer, number keys); renders endings when no results screen exists.',
     views: ['text', 'overlay'],
     params: {
       log: { type: 'integer', default: 40, min: 5, max: 400, unit: 'lines', effect: 'story lines kept on screen' },
-      style: { type: 'string', default: 'book', options: ['book', 'terminal', 'comic'], effect: 'typography and framing' },
+      style: { type: 'string', default: 'book', options: ['book', 'terminal', 'comic', ...THEMES.filter(t => !['book', 'terminal', 'comic'].includes(t)), 'auto'], effect: 'typography and framing' },
     },
     reads: ['plot.characters', 'plot.endings', 'content.items'],
   },
   install(rt, config) {
-    const view = rt.view; if (!view?.container) return;
-    const doc = () => rt.doc;
-    const name = id => doc().plot?.characters?.find(c => c.id === id)?.name || id;
-    const item = id => doc().content?.items?.find(i => i.id === id)?.name || id;
-    const root = document.createElement('section');
-    root.className = `gv-story gv-story-${config.style}`;
-    root.innerHTML = `<header class="gv-scene"><p class="gv-kicker"></p><h2></h2><p class="gv-desc"></p></header>
-      <ol class="gv-log" aria-live="polite"></ol><div class="gv-choices" role="group" aria-label="Choices"></div>
-      <footer class="gv-bag"><span>Carrying</span><ul></ul></footer><div class="gv-ending" hidden></div>`;
-    view.container.append(root);
-    const q = s => root.querySelector(s), lines = [];
-    const push = (kind, html) => { lines.push(`<li class="gv-${kind}">${html}</li>`); if (lines.length > config.log) lines.shift(); q('.gv-log').innerHTML = lines.join(''); q('.gv-log').scrollTop = 1e9; };
-    rt.on('say', e => push('say', `<b>${esc(name(e.character))}</b> ${esc(e.text)}`));
-    rt.on('item_gained', e => e.who === 'player' && push('note', `You take the <b>${esc(item(e.item))}</b>.`));
+    const host = uiHost(rt); if (!host) return;
+    const el = host.el, doc = () => rt.doc;
+    const kicker = el('p.gv-kicker'), title = el('h2'), desc = el('p.gv-desc');
+    const scene = el('header.gv-scene', {}, kicker, title, desc);
+    const log = el('ol.gv-log', { aria: { live: 'polite' } });
+    const choices = el('div.gv-choices', { role: 'group', aria: { label: 'Choices' } });
+    const bagList = el('ul');
+    const bag = el('footer.gv-bag', {}, el('span', { text: 'Carrying' }), bagList);
+    const ending = el('div.gv-story-ending.gv-hide');
+    const theme = resolveTheme(rt.doc, config.style);
+    const root = el('section.gv-story', { attrs: { 'data-theme': theme } }, scene, log, choices, bag, ending);
+    host.layer('world').append(root);
+    let options = [], focus = 0, lastKey = '', lastBag = {}, lastZone = null;
+    const buttons = [];
+    // Non-modal: it takes UI keys, but open hotkeys (pause, inventory) still win.
+    host.input.push({ id: 'story', modal: false, takesInput: true, onVerb: verb => {
+      if (rt.state.status !== 'playing' || !buttons.length) return false;
+      if (['up', 'down', 'left', 'right'].includes(verb)) { const i = moveFocus(focus, verb, buttons.length, 1); if (i !== focus) { focus = i; paintFocus(); host.sound('move'); } return true; }
+      if (verb === 'confirm') { choose(focus); return true; }
+      const d = /^digit(\d)$/.exec(verb); if (d && buttons[Number(d[1]) - 1]) { choose(Number(d[1]) - 1); return true; }
+      return false;
+    } });
+    function choose(i) { const o = options[i]; if (!o) return; host.sound('confirm'); pulse(buttons[i], 'is-pop'); rt.view.act(o.actions); }
+    function paintFocus() { buttons.forEach((b, k) => setClass(b, 'is-focus', k === focus)); }
+    const lines = [];
+    function push(kind, ...content) {
+      const li = el(`li.gv-${kind}`, {}, ...content);
+      lines.push(li); log.append(li);
+      while (lines.length > config.log) lines.shift().remove();
+      log.scrollTop = 1e9;
+    }
+    const sayLine = (who, text) => { const color = who ? portraitColor(doc(), who) : null; push('say', ...(who ? [el('b', { text: charName(doc(), who), style: color ? { '--who': color } : {} })] : []), text); };
+    rt.on('say', e => sayLine(e.character, e.text));
+    rt.on('dialogue_line', e => sayLine(e.who, e.text));
+    rt.on('bark', e => push('note', e.character ? `${charName(doc(), e.character)}: ${e.text ?? e.line}` : String(e.text ?? e.line ?? '')));
+    rt.on('item_gained', e => (e.who || 'player') === 'player' && push('note', 'You take the ', el('b', { text: itemName(doc(), e.item) }), '.'));
+    rt.on('item_lost', e => (e.who || 'player') === 'player' && push('note', 'You hand over the ', el('b', { text: itemName(doc(), e.item) }), '.'));
     rt.on('blocked', () => push('note', 'That way is closed to you, for now.'));
-    rt.on('beat', e => { const b = doc().plot?.storyboard?.acts?.flatMap(a => a.beats || []).find(x => x.id === e.beat); if (b?.title) push('beat', esc(b.title)); });
-    rt.on('act_start', e => { const a = doc().plot?.storyboard?.acts?.find(x => x.id === e.act); push('act', esc(a?.title || e.act)); });
+    rt.on('gate_blocked', e => push('note', e.hint || 'Something bars the way.'));
+    rt.on('beat', e => { const b = doc().plot?.storyboard?.acts?.flatMap(a => a.beats || []).find(x => x.id === e.beat); if (b?.title) push('beat', b.title); });
+    rt.on('act_start', e => { const a = doc().plot?.storyboard?.acts?.find(x => x.id === e.act); push('act', a?.title || titleCase(e.act)); });
+    rt.on('quest_started', e => push('note', 'New task: ', el('b', { text: doc().plot?.quests?.find(q => q.id === e.quest)?.title || titleCase(e.quest) })));
+    rt.on('journal_added', e => push('note', 'Noted: ', el('b', { text: e.title || titleCase(e.entry) })));
     rt.on('content_added', e => push('note', `The world grows: ${e.zones} new places, ${e.beats} new story beats.`));
-    let last = '';
-    view.onFrame(() => {
+    rt.on('game_end', e => {
+      const end = doc().plot?.endings?.find(x => x.id === (e.ending ?? rt.state.ending));
+      push('act', end?.title || (rt.state.status === 'won' ? 'The end' : 'Game over'));
+      if (end?.epilogue || end?.text) push('say', end.epilogue || end.text);
+      if (!(doc().graphics || []).some(g => g.use === 'graphics.ui.menu')) { fill(ending, el('div.gv-results.gv-panel', {}, el('h2.gv-display', { text: end?.title || (rt.state.status === 'won' ? 'The end' : 'Game over') }), el('p.gv-epilogue', { text: end?.epilogue || end?.text || '' }))); later(() => ending.classList.remove('gv-hide'), 600); }
+    });
+
+    rt.view.onFrame(() => {
       const p = rt.player(), space = p?.space ? rt.space(p.space) : null;
-      const zone = space?.zones?.get?.(p.at);
-      const options = rt.state.status === 'playing' ? rt.availableOptions() : [];
-      const bag = Object.entries(rt.state.prim['gameplay.inventory']?.player || {});
-      const key = JSON.stringify([p?.at, options.map(o => o.label), bag, rt.state.status]);
-      if (key === last) return; last = key;
-      q('.gv-kicker').textContent = doc().title || '';
-      q('h2').textContent = zone?.name || p?.at || '';
-      q('.gv-desc').textContent = zone?.description || '';
-      const label = o => { const to = o.actions?.go; const z = to && space?.zones?.get?.(to); return z ? `Go to ${z.name}` : o.label; };
-      q('.gv-choices').innerHTML = options.map((o, i) => `<button data-i="${i}">${esc(label(o))}</button>`).join('');
-      q('.gv-choices').onclick = e => { const b = e.target.closest('button'); if (b) view.act(options[Number(b.dataset.i)].actions); };
-      q('.gv-bag ul').innerHTML = bag.map(([id, n]) => `<li>${esc(item(id))}${n > 1 ? ` ×${n}` : ''}</li>`).join('') || '<li class="gv-empty">nothing</li>';
-      if (rt.state.status !== 'playing') {
-        const ending = doc().plot?.endings?.find(x => x.id === rt.state.ending);
-        q('.gv-ending').hidden = false;
-        q('.gv-ending').innerHTML = `<h3>${esc(ending?.title || (rt.state.status === 'won' ? 'The end' : 'Game over'))}</h3><p>${esc(ending?.text || '')}</p>`;
-      }
+      const zoneId = typeof p?.at === 'string' ? p.at : p?.zone ?? null;
+      const zone = zoneId ? (space?.zones?.get?.(zoneId) || docZone(doc(), zoneId)) : null;
+      options = rt.state.status === 'playing' && !host.input.modal ? rt.availableOptions() : [];
+      const items = Object.entries(S.bag(rt)).filter(([, n]) => n > 0);
+      const key = JSON.stringify([zoneId, options.map(o => o.label), items, rt.state.status]);
+      if (key === lastKey) return; lastKey = key;
+      setText(kicker, doc().title || '');
+      setText(title, zone?.name || zoneName(doc(), zoneId) || '');
+      setText(desc, zone?.description || '');
+      if (zoneId !== lastZone) { pulse(scene, 'is-new'); lastZone = zoneId; }
+      buttons.length = 0;
+      fill(choices, ...options.map((o, i) => { const b = el('button.gv-btn', { attrs: { type: 'button' }, style: { 'animation-delay': `${i * 30}ms` }, on: { click: () => { focus = i; paintFocus(); choose(i); }, pointerenter: () => { focus = i; paintFocus(); } } }, el('span.gv-num', { text: i + 1 }), el('span', { text: optionLabel(doc(), o) })); buttons.push(b); return b; }));
+      focus = Math.min(focus, Math.max(0, buttons.length - 1)); paintFocus();
+      fill(bagList, ...(items.length ? items.map(([id, n]) => el(`li${(lastBag[id] || 0) < n ? '.is-new' : ''}`, { text: `${itemName(doc(), id)}${n > 1 ? ` ×${n}` : ''}` })) : [el('li.gv-empty', { text: 'nothing' })]));
+      lastBag = Object.fromEntries(items);
     });
   },
 };
