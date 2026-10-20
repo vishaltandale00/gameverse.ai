@@ -91,7 +91,7 @@ export function preflight(doc, registry, logic) {
   }
 
   // Data sections must be read by some primitive.
-  const reads = new Set([...used].flatMap(id => registry.get(id).card.reads || []));
+  const reads = new Set(['content.archetypes', ...[...used].flatMap(id => registry.get(id).card.reads || [])]); // the kernel spawns archetypes
   const sections = [...Object.keys(doc.plot || {}).filter(k => k !== 'premise').map(k => `plot.${k}`), ...Object.keys(doc.content || {}).map(k => `content.${k}`)];
   for (const s of sections) if (![...reads].some(r => s === r || s.startsWith(r + '.'))) warnings.push({ code: 'data_unused', path: s, message: `no primitive reads ${s}`, hint: 'add the primitive that uses it, or remove it' });
 

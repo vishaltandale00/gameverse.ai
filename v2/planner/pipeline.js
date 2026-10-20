@@ -26,7 +26,7 @@ export function verify(doc, registry, logic, { solveBudgetMs = 1500 } = {}) {
 }
 
 export function createPipeline({ registry, logic, planner, catalogHash, detailConcurrency = 3, solveBudgetMs = 1500 }) {
-  const provenance = (job, extra = {}) => ({ pipeline: PIPELINE_VERSION, planner: planner.version, models: planner.models || null, catalogHash, seed: job.seed, prompt: job.prompt, ...extra });
+  const provenance = (job, extra = {}, doc = null) => ({ pipeline: PIPELINE_VERSION, planner: planner.version, models: planner.models || null, catalogHash, seed: doc?.seed ?? job.seed ?? null, prompt: job.prompt, ...extra });
 
   async function draft(job, ctx, produce, repairLabel) {
     let result = await produce();
@@ -50,7 +50,7 @@ export function createPipeline({ registry, logic, planner, catalogHash, detailCo
     if (!checked.ok) throw Object.assign(Error('could not produce a valid game'), { report: checked.report });
     ctx.stage('verified', { completable: checked.report.solve?.completable ?? null, ms: checked.report.ms });
     let current = checked.doc;
-    await ctx.publish({ doc: current, report: checked.report, stage: 'first_playable', provenance: provenance(job, { outlineHash: hashOf(current) }) });
+    await ctx.publish({ doc: current, report: checked.report, stage: 'first_playable', provenance: provenance(job, { outlineHash: hashOf(current) }, current) });
 
     // Stage 2: detail tasks in parallel; patches merge and publish in completion order.
     const tasks = [...(outline.details || [])];
@@ -66,7 +66,7 @@ export function createPipeline({ registry, logic, planner, catalogHash, detailCo
         const v = verify(merged, registry, logic, { solveBudgetMs });
         if (!v.ok) { ctx.stage('detail_rejected', { task: task.id, errors: v.report.preflight.errors.slice(0, 5) }); continue; }
         current = v.doc; published++;
-        await ctx.publish({ doc: current, report: { ...v.report, added }, stage: `detail:${task.id}`, provenance: provenance(job, { task: task.id }) });
+        await ctx.publish({ doc: current, report: { ...v.report, added }, stage: `detail:${task.id}`, provenance: provenance(job, { task: task.id }, current) });
       }
     }
     await Promise.all(Array.from({ length: Math.min(detailConcurrency, tasks.length) }, worker));
