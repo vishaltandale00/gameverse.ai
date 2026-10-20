@@ -206,3 +206,25 @@ for (const type of ['job_done', 'job_failed']) events.addEventListener(type, ev 
 
 addEventListener('hashchange', () => select(location.hash.slice(1)));
 select(location.hash.slice(1));
+
+// Theater view: collapse the side panels and give the game the window. Remembered per browser.
+{
+  const toggle = document.createElement('button');
+  toggle.type = 'button'; toggle.className = 'theater-toggle';
+  const set = on => {
+    document.body.classList.toggle('theater', on);
+    toggle.innerHTML = `${on ? 'Exit theater' : 'Theater'} <kbd>T</kbd>`;
+    toggle.setAttribute('aria-pressed', String(on));
+    try { localStorage.setItem('gv-theater', on ? '1' : '0'); } catch {}
+    dispatchEvent(new Event('resize')); // let the player re-fit its canvas
+  };
+  toggle.addEventListener('click', () => set(!document.body.classList.contains('theater')));
+  addEventListener('keydown', e => {
+    if (e.key !== 't' && e.key !== 'T') return;
+    if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, textarea, select, [contenteditable]')) return;
+    set(!document.body.classList.contains('theater'));
+  });
+  document.body.append(toggle);
+  let saved = false; try { saved = localStorage.getItem('gv-theater') === '1'; } catch {}
+  set(saved);
+}

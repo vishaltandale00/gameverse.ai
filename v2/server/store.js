@@ -39,13 +39,13 @@ export function createStore(root) {
     },
     /** Save a binary asset for a game; returns its URL path. */
     async saveAsset(id, name, bytes) {
-      if (!/^[a-z0-9-]+\.webp$/i.test(name)) throw Error('invalid asset name');
+      if (!/^[a-z0-9-]+\.(webp|svg)$/i.test(name)) throw Error('invalid asset name');
       await mkdir(join(gameDir(id), 'assets'), { recursive: true });
       await writeFile(join(gameDir(id), 'assets', name), bytes);
       return `/api/v2/games/${id}/assets/${name}`;
     },
     async asset(id, name) {
-      if (!/^[a-z0-9-]+$/.test(id) || !/^[a-z0-9-]+\.webp$/i.test(name)) return null;
+      if (!/^[a-z0-9-]+$/.test(id) || !/^[a-z0-9-]+\.(webp|svg)$/i.test(name)) return null;
       try { return await readFile(join(gameDir(id), 'assets', name)); } catch (error) { if (error.code === 'ENOENT') return null; throw error; }
     },
     async versions(id) {

@@ -9,6 +9,7 @@ import { createPipeline, verify } from '../planner/pipeline.js';
 import { createOfflinePlanner } from '../planner/offline-planner.js';
 import { createDesignPipeline } from '../planner/design-pipeline.js';
 import { createArtGenerator } from '../planner/art.js';
+import { createProceduralArt } from '../planner/art-procedural.js';
 import { askQuestions } from '../planner/questions.js';
 import { createOpenAIClient, loadOpenAIKey } from '../planner/openai.js';
 
@@ -25,7 +26,9 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
   const openaiKey = loadOpenAIKey(env, fileURLToPath(new URL('../../', import.meta.url)));
   const specModel = env.V2_OPENAI_DESIGN_MODEL || 'gpt-4.1-mini';
   const openai = openaiKey ? createOpenAIClient({ apiKey: openaiKey }) : null;
-  const art = openaiKey && env.V2_ART !== 'off' ? createArtGenerator({ apiKey: openaiKey, model: env.V2_ART_MODEL || 'gpt-image-1-mini', quality: env.V2_ART_QUALITY || 'low' }) : null;
+  // Art is drawn in code from a model-written art direction; image generation is opt-in (V2_ART=images).
+  const art = env.V2_ART === 'off' ? null : env.V2_ART === 'images' && openaiKey ? createArtGenerator({ apiKey: openaiKey, model: env.V2_ART_MODEL || 'gpt-image-1-mini', quality: env.V2_ART_QUALITY || 'low' })
+    : createProceduralArt({ client: openai, model: env.V2_ART_DIRECTOR_MODEL || specModel });
   const pipeline = openai ? createDesignPipeline({ client: openai, model: specModel, art }) : createPipeline({ registry, logic, planner: active, catalogHash });
   const plannerName = openaiKey ? `openai:${specModel}` : active.version;
   const jobs = createJobs({ store, pipeline });
@@ -79,11 +82,13 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
   return {
     store, jobs, registry, logic, planner: active,
     async handle(req, res, path, readJson) {
-      const asset = path.match(/^\/api\/v2\/games\/([a-z0-9-]+)\/assets\/([a-z0-9-]+\.webp)$/i);
+      const asset = path.match(/^\/api\/v2\/games\/([a-z0-9-]+)\/assets\/([a-z0-9-]+\.(webp|svg))$/i);
       if (asset && req.method === 'GET') {
         const bytes = await store.asset(asset[1], asset[2]);
         if (!bytes) { res.writeHead(404).end(); return true; }
-        res.writeHead(200, { 'Content-Type': 'image/webp', 'Cache-Control': 'public, max-age=31536000, immutable' }).end(bytes); return true;
+        // Painted SVGs are served inert: no scripts, no external loads.
+        const svg = asset[3].toLowerCase() === 'svg';
+        res.writeHead(200, { 'Content-Type': svg ? 'image/svg+xml' : 'image/webp', 'Cache-Control': 'public, max-age=31536000, immutable', ...(svg ? { 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'" } : {}) }).end(bytes); return true;
       }
       if (path === '/api/v2/events') {
         const game = new URL(req.url, 'http://x').searchParams.get('game');

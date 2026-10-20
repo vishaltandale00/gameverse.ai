@@ -120,13 +120,17 @@ export function stepAnim(prev, e, { dt = 1 / 60, grounded = true, invuln = false
   a.lean = lerp(prev.lean, leanTarget, Math.min(1, dt * 12));
   a.flash = Math.max(0, prev.flash - dt);
   a.pose = invuln ? 'hurt' : side && !grounded ? 'jump' : speed > 0.5 ? (Math.floor(a.run) % 2 ? 'runB' : 'runA') : 'idle';
+  // Finer frame for rigs that paint more poses: a four-frame run, rise vs fall, a two-frame idle.
+  a.frame = a.pose === 'runA' || a.pose === 'runB' ? RUN_FRAMES[Math.floor(a.run * 2) % 4]
+    : a.pose === 'jump' ? ((e.vy || 0) > 1.5 ? 'fall' : 'jump') : a.pose;
   a.grounded = grounded; a.vy = e.vy || 0;
   return a;
 }
 
 /** Vertical body offset in tiles: idle breathing, or a step bob while running. */
-export function bodyBob(a, { reduced = false } = {}) {
+export function bodyBob(a, { reduced = false, planted = false } = {}) {
   if (reduced) return 0;
+  if (planted && a.frame?.startsWith('run')) return 0; // rigged run frames carry their own stride bob
   if (a.pose === 'runA' || a.pose === 'runB') return Math.abs(Math.sin(a.run * Math.PI)) * 0.07;
   if (a.pose === 'idle') return (Math.sin(a.t * 2.6) + 1) * 0.012;
   return 0;
@@ -134,7 +138,9 @@ export function bodyBob(a, { reduced = false } = {}) {
 /** Idle breathing as a y-scale multiplier. */
 export const breathe = (a, reduced = false) => a.pose === 'idle' && !reduced ? 1 + Math.sin(a.t * 2.6) * 0.025 : 1;
 
-const FALLBACK = { idle: ['idle', 'runA'], runA: ['runA', 'idle'], runB: ['runB', 'runA', 'idle'], jump: ['jump', 'runB', 'runA', 'idle'], hurt: ['hurt', 'jump', 'idle', 'runA'] };
+const RUN_FRAMES = ['runA', 'runB', 'runC', 'runD'];
+const FALLBACK = { idle: ['idle', 'runA'], idleB: ['idleB', 'idle', 'runA'], runA: ['runA', 'idle'], runB: ['runB', 'runA', 'idle'], runC: ['runC', 'runA', 'idle'], runD: ['runD', 'runB', 'runA', 'idle'],
+  jump: ['jump', 'runB', 'runA', 'idle'], fall: ['fall', 'jump', 'runB', 'idle'], hurt: ['hurt', 'jump', 'idle', 'runA'] };
 /** The best available pose frame URL for a pose, or null. */
 export function pickFrame(frames, pose) {
   if (!frames) return null;

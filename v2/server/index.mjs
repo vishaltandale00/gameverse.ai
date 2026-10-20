@@ -6,8 +6,8 @@ import { preflight } from '../engine/spec.js';
 import { createGameService } from './api.mjs';
 
 const V2 = new URL('../', import.meta.url);
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
-export const STATIC = /^\/v2\/(engine|modules|web|presets|examples|kernel|verify|games|primitives\/(engine|plot|graphics|gameplay)|primitives)\/[a-z0-9][a-z0-9.-]*\.(js|css|json)$/;
+const MIME = { '.html': 'text/html', '.svg': 'image/svg+xml', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
+export const STATIC = /^\/v2\/(art|engine|modules|web|presets|examples|kernel|verify|games|primitives\/(engine|plot|graphics|gameplay)|primitives)\/[a-z0-9][a-z0-9.-]*\.(js|css|json|html)$/;
 let service = null;
 export const gameService = () => (service ??= createGameService());
 const registry = defaultRegistry();

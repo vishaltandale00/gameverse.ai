@@ -45,16 +45,24 @@ export function createDesignPipeline({ client, model, effort, registry = default
     const design = JSON.parse(reply.text);
     const seed = previous?.provenance?.seed ?? job.seed ?? seedFrom(job.prompt);
     ctx.stage('building', { ms: reply.ms });
+    // Procedural art: the art direction call runs while the level builds, so the first playable already has its art.
+    const directing = art?.procedural ? art.direct({ design, previous, change: job.change || null }) : null;
     const built = buildVerified(design, { seed, registry });
     ctx.draft({ partial: { title: built.spec.title, pitch: built.spec.pitch, background: built.spec.background, rows: built.spec.level.rows, legend: built.spec.level.legend, entities: built.spec.entities }, complete: true });
     ctx.stage('playtested', { winnable: built.check.report?.playtest?.winnable ?? false, attempt: built.attempt });
     if (!built.check.spec) throw Object.assign(Error(`The game failed checks: ${built.check.problems.map(p => p.code).join(', ')}`), { status: 422 });
     await ctx.store.updateMeta(job.gameId, { title: built.spec.title, kind: 'arcade2d' });
+    let painted = null;
+    if (directing) {
+      ctx.stage('painting', { generator: 'procedural' });
+      painted = await art.paint({ job, ctx, spec: built.spec, directed: await directing, previous });
+      ctx.stage('painted', { ms: painted.report.paintMs, assets: painted.report.assets, reused: painted.report.reused, changed: painted.report.changed });
+    }
     const record = await ctx.publish({
-      doc: built.spec, stage: previous ? `revision: ${job.change}` : 'playable',
-      report: { ...built.check.report, kind: 'arcade2d', design, summary: design.summary, gaps: design.gaps || [], verified: built.check.ok, relaxed: built.relaxed || [], layoutAttempts: built.attempt + 1, modelMs: reply.ms, firstTokenMs: reply.firstMs, change: job.change || null },
+      doc: painted ? { ...built.spec, art: painted.art } : built.spec, stage: previous ? `revision: ${job.change}` : 'playable',
+      report: { ...built.check.report, kind: 'arcade2d', design, ...(painted ? { art: painted.report } : {}), summary: design.summary, gaps: design.gaps || [], verified: built.check.ok, relaxed: built.relaxed || [], layoutAttempts: built.attempt + 1, modelMs: reply.ms, firstTokenMs: reply.firstMs, change: job.change || null },
       provenance: { pipeline: DESIGN_PIPELINE_VERSION, model: reply.model, seed, prompt: job.prompt, answers: job.answers || [], change: job.change || null, base: job.base || null, designHash: hashOf(design), specHash: hashOf(built.spec) },
     });
-    if (art) await art(job, ctx, { design, spec: built.spec, record });
+    if (art && !art.procedural) await art(job, ctx, { design, spec: built.spec, record });
   };
 }

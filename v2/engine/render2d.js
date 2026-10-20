@@ -263,7 +263,7 @@ export function createRenderer(game, { fx } = {}) {
       ctx.drawImage(bg, clamp(px, w - bw, 0), clamp(py, h - bh, 0), bw, bh);
     }
     if (theme === 'stars') drawAmbient(ctx, ambient, w, h, dt, camDx, camDy, false, reduced);
-    if (side) { // tinted far layers: generated ridgelines at two depths
+    if (side && !art.procedural) { // tinted far layers: generated ridgelines at two depths (painted scenery has its own)
       // With painted scenery, the ridges take the art's own average color so they sit in it as distant hills.
       const layers = bg ? [[0.16, 0.66, 0.12, colorOf(bg, 0.86), colorOf(bg, 0.7), 0.85], [0.34, 0.78, 0.09, colorOf(bg, 0.66), colorOf(bg, 0.5), 0.9]]
         : [[0.16, 0.6, 0.13, palette.far, palette.skyBottom, 0.9], [0.34, 0.74, 0.1, palette.mid, palette.skyBottom, 0.95]];
@@ -380,12 +380,12 @@ export function createRenderer(game, { fx } = {}) {
         ctx.restore(); continue;
       }
       const a = v.anims.get(e.id);
-      const src = spriteOf(e.kind, a?.pose || 'idle');
+      const src = spriteOf(e.kind, a?.frame || a?.pose || 'idle');
       const size = Math.max(pw, ph) * (src?.sprite ? 1.35 : 1.25) * (e.tags.includes('goal') ? 1.5 : 1);
       let scx = 1, scy = 1, rot = 0, dy = 0, alpha = 1, white = 0;
       const phase = e.id * 1.7;
       if (isPlayer && a) {
-        scx = a.sx; scy = a.sy * breathe(a, reduced); dy = -bodyBob(a, { reduced }) * tile; rot = side ? a.lean : 0;
+        scx = a.sx; scy = a.sy * breathe(a, reduced); dy = -bodyBob(a, { reduced, planted: !!art.procedural && !!art.frames?.[e.kind] }) * tile; rot = side ? a.lean : 0;
         if (invuln) {
           if (a.flash > 0) { rot = -(e.face || 1) * 0.22; white = reduced ? 0 : 1; }
           alpha = reduced ? 0.6 : Math.floor(v.time * 16) % 2 ? 0.3 : 1;
