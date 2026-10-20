@@ -1,8 +1,8 @@
 // Test support for the flat graphics primitives (not a test file itself):
-// a minimal DOM + recording 2D canvas, a fake browser view, and small fake 2D
-// spaces implementing the read-only renderer contract agreed with spaces2d
-// (kind, size, config, layers, getCell/cellsIn, collisionOf, bounds, anchor).
-// The fakes are never registered in the catalogue.
+// a minimal DOM + recording 2D canvas, a fake browser view, documents on the
+// real 2D spaces (spaces2d), and two test-only helpers that fill cells and
+// walk the player (stand-ins for generators and movement primitives; never
+// registered in the catalogue).
 import { compile } from '../v2/kernel/testing.js';
 import spaces2d from '../v2/primitives/engine/spaces2d.index.js';
 

@@ -59,7 +59,7 @@ export default {
       minView: { type: 'list', default: [16, 9], of: { type: 'number', min: 4, max: 200 }, min: 2, max: 2, unit: 'tiles', effect: 'fewest tiles kept in view across and down (small screens zoom out)' },
       chunk: { type: 'integer', default: 16, min: 8, max: 64, unit: 'tiles', effect: 'cached chunk size' },
       chunkBudget: { type: 'integer', default: 2, min: 1, max: 16, effect: 'chunks rasterized per frame (visible nearest first)' },
-      backDim: { type: 'number', default: 0.45, min: 0, max: 1, effect: 'how much back layers darken behind the action' },
+      backDim: { type: 'number', default: 0.38, min: 0, max: 1, effect: 'how much back layers darken behind the action' },
       fgFade: { type: 'boolean', default: true, effect: 'foreground layers turn translucent where they cover the player' },
       occlusion: { type: 'number', default: 0.5, min: 0, max: 1, effect: 'soft shadow strength under overhangs and beside walls' },
     },

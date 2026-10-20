@@ -34,12 +34,20 @@ export default {
     ensureJuice(rt);
     const apiOf = () => { try { return rt.space(space); } catch { return null; } };
     const viewOf = api => (config.view !== 'auto' ? config.view : (api?.config?.gravity ?? 0) === 0 ? 'top' : 'side');
-    const tiles = new Map();
-    const tile = (theme, mask) => {
-      const k = `${theme.pattern}|${theme.palette.a}|${mask}`; if (tiles.has(k)) return tiles.get(k);
-      const T = H.cfg.tileset?.tileSize || 16, buf = new Uint8ClampedArray(T * T * 4); paintTile(buf, T, 0, 0, T, theme, 0, 0, mask, {});
-      const c = surface(T, T), g = ctx2d(c); if (g) { const img = typeof ImageData !== 'undefined' ? new ImageData(buf, T, T) : g.createImageData?.(T, T); if (img && img.data !== buf) img.data.set?.(buf); if (img) g.putImageData?.(img, 0, 0); }
-      tiles.set(k, g ? c : null); return g ? c : null;
+    const solids = new Map();
+    // A solid rect rasterized once: one cell per arena unit, autotiled against the rect's own edges.
+    const solidImage = (r, theme) => {
+      const k = `${r.join(',')}|${theme.pattern}|${theme.palette.a}`; if (solids.has(k)) return solids.get(k);
+      const T = H.cfg.tileset?.tileSize || 16, cols = Math.max(1, Math.round(r[2] - r[0])), rows = Math.max(1, Math.round(r[3] - r[1]));
+      if (cols * rows > 6000) { solids.set(k, null); return null; }
+      const W = cols * T, Hh = rows * T, buf = new Uint8ClampedArray(W * Hh * 4);
+      for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+        const mask = blobMask((dx, dy) => i + dx >= 0 && i + dx < cols && j + dy >= 0 && j + dy < rows);
+        paintTile(buf, W, i * T, (rows - 1 - j) * T, T, theme, Math.round(r[0]) + i, -(Math.round(r[1]) + j), mask, {});
+      }
+      const c = surface(W, Hh), g = ctx2d(c);
+      if (g) { const img = typeof ImageData !== 'undefined' ? new ImageData(buf, W, Hh) : g.createImageData?.(W, Hh); if (img && img.data !== buf) img.data.set?.(buf); if (img) g.putImageData?.(img, 0, 0); }
+      solids.set(k, g ? c : null); return g ? c : null;
     };
     const fighters = F => F.entities.filter(x => !x.ghost && (x.e.components?.versus || lookOf(H, x.e, 'side').type === 'fighter'));
     S.renderer = {
@@ -68,16 +76,11 @@ export default {
       const api = apiOf(); if (!api) return;
       const g = F.ctx, z = F.unit, view = viewOf(api), [W, Hh] = api.size || [16, 9];
       const ts = H.cfg.tileset, theme = ts?.themes?.length ? normalizeTheme(ts.themes.find(t => t.id === config.theme) || ts.themes[0]) : themeFromBlock({ id: 'arena', color: view === 'top' ? '#4a5a7a' : '#6a6070', tile: 'stone' });
-      // Solids: unit tiles with edges at the rect borders.
+      // Solids: each rect painted once as autotiled cells in world coordinates (no repeating tiles).
       for (const r of api.config?.solids || []) {
-        const [x0, y0, x1, y1] = r, cols = Math.max(1, Math.round(x1 - x0)), rows = Math.max(1, Math.round(y1 - y0)), cw = (x1 - x0) / cols, ch = (y1 - y0) / rows;
-        if (cols * rows > 4000) { const a = F.toScreen([x0, y1]), b = F.toScreen([x1, y0]); g.fillStyle = theme.palette.a; g.fillRect(a[0], a[1], b[0] - a[0], b[1] - a[1]); continue; }
-        for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
-          const mask = blobMask((dx, dy) => i + dx >= 0 && i + dx < cols && j + dy >= 0 && j + dy < rows);
-          const t = tile(theme, mask), p = F.toScreen([x0 + i * cw, y0 + (j + 1) * ch]);
-          if (t) g.drawImage(t, Math.floor(p[0]), Math.floor(p[1]), Math.ceil(cw * z) + 1, Math.ceil(ch * z) + 1);
-          else { g.fillStyle = theme.palette.a; g.fillRect(p[0], p[1], cw * z, ch * z); }
-        }
+        const [x0, y0, x1, y1] = r, img = solidImage(r, theme), a = F.toScreen([x0, y1]), b = F.toScreen([x1, y0]);
+        if (img) { g.imageSmoothingEnabled = false; g.drawImage(img, Math.floor(a[0]), Math.floor(a[1]), Math.ceil(b[0] - a[0]) + 1, Math.ceil(b[1] - a[1]) + 1); }
+        else { g.fillStyle = theme.palette.a; g.fillRect(a[0], a[1], b[0] - a[0], b[1] - a[1]); }
       }
       for (const p of api.config?.platforms || []) {
         const a = F.toScreen([p.x0, p.y]), b = F.toScreen([p.x1, p.y]), th = Math.max(4, z * 0.22);
