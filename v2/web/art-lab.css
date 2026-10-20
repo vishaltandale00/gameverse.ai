@@ -1,0 +1,12 @@
+  :root { color-scheme: dark; --bg: #14161c; --panel: #1d2029; --ink: #e8eaf0; --dim: #8b90a0; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, sans-serif; padding: 16px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); margin: 24px 0 8px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  figure { margin: 0; background: var(--panel); border-radius: 8px; padding: 8px; text-align: center; }
+  figcaption { color: var(--dim); font-size: 11px; margin-top: 4px; }
+  figure img { display: block; width: var(--s, 200px); height: var(--s, 200px); }
+  .pixel img { image-rendering: pixelated; }
+  .wide img { width: 480px; height: auto; }
+  .tiles img { width: 256px; height: 256px; }
+  .strip { height: 96px; width: 100%; max-width: 960px; display: block; border-radius: 8px; }
+  select { background: var(--panel); color: var(--ink); border: 1px solid #333; border-radius: 6px; padding: 4px 8px; }

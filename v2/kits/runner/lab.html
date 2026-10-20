@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Runner kit lab</title>
+  <link rel="stylesheet" href="./lab.css">
+</head>
+<body>
+  <header>
+    <h1>Runner kit lab</h1>
+    <label>Mode <select id="mode"></select></label>
+    <label>Seed <input id="seed" type="number" value="1" min="1"></label>
+    <label><input id="attract" type="checkbox"> Attract</label>
+    <label><input id="bot" type="checkbox"> Bot plays</label>
+    <label><input id="reduced" type="checkbox"> Reduced motion</label>
+    <label><input id="blaster" type="checkbox"> Blaster mod (X)</label>
+    <button id="restart" type="button">Restart (R)</button>
+  </header>
+  <main>
+    <canvas id="game" tabindex="0"></canvas>
+    <pre id="info"></pre>
+  </main>
+  <script type="module" src="./lab.js"></script>
+</body>
+</html>

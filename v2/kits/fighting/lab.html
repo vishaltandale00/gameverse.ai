@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fighting kit lab</title>
+  <link rel="stylesheet" href="./lab.css">
+</head>
+<body>
+  <header>
+    <h1>Fighting kit lab</h1>
+    <div class="tools">
+      <label>Mode <select id="mode"><option value="traditional">Traditional</option><option value="platform">Platform</option></select></label>
+      <label><input type="checkbox" id="boxes"> Hitboxes</label>
+      <label><input type="checkbox" id="attract"> Attract</label>
+      <label><input type="checkbox" id="reduced"> Reduced motion</label>
+      <button id="quick">Quick fight</button>
+      <button id="cvc">CPU vs CPU</button>
+      <button id="restart">Restart</button>
+    </div>
+  </header>
+  <main><canvas id="view" tabindex="0"></canvas></main>
+  <p id="status" class="status">Arrows/WASD move · Space/Z punch · X/K kick · A+B throw · R restart</p>
+  <script type="module" src="./lab.js"></script>
+</body>
+</html>

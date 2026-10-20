@@ -1,7 +1,7 @@
 import * as THREE from '/runtime/three/three.module.js';
 import { createNeighborhoodWorld, BLOCKS } from './neighborhood-world.js';
 import { NeighborhoodController } from './neighborhood-controller.js';
-import { FIRE_RED_ENTRANCE, GAME_ENTRANCES, nearestEntrance } from './neighborhood-math.js';
+import { FIRE_RED_ENTRANCE, GAME_ENTRANCES, nearestEntrance, CREATOR_KIOSK, CREATOR_LOT, creatorVenues } from './neighborhood-math.js';
 
 const VERSION = 'alder-neighborhood-certified-safety-3';
 
@@ -24,19 +24,32 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterGa
   query('.neighborhood-heading h1').replaceChildren(document.createTextNode(configuration.title || 'Gameverse'), locationLabel);
   query('.neighborhood-destination').hidden = configuration.hasFireRed === false;
   const venues = GAME_ENTRANCES.filter(venue => !configuration.gameIds || configuration.gameIds.includes(venue.gameId));
+  // The Creator's Lot (kiosk + one venue per generated game) is enabled by the host.
+  const creatorLot = typeof configuration.onMakeGame === 'function';
+  let generatedVenues = creatorLot ? creatorVenues(configuration.generated || []) : [];
+  const extraEntrances = () => creatorLot ? [CREATOR_KIOSK, ...generatedVenues] : [];
   const map = document.createElement('div'); map.className = 'neighborhood-venue-map';
-  map.innerHTML = `<span class="neighborhood-kicker">VENUE MAP · NORTH UP</span>
-    <svg viewBox="-85 -60 170 120" role="img" aria-label="Alder District venue map: Arcade west, Soccer northeast, Football southeast. The white arrow is you and your camera direction.">
-      <rect x="-85" y="-60" width="170" height="120" fill="#46564b" />
-      ${BLOCKS.map(block => `<rect x="${block.x - block.width / 2}" y="${block.z - block.depth / 2}" width="${block.width}" height="${block.depth}" rx="2" fill="#25382e" />`).join('')}
-      <path d="M-85 0H85 M0-60V60" stroke="#a0ab9570" stroke-width=".5" stroke-dasharray="3 3" />
+  const escapeSvg = text => String(text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let mapPlayer, lastMapUpdate = -Infinity;
+  function renderMap() {
+    const maxX = creatorLot ? CREATOR_LOT.maxX + 1 : 85, width = maxX + 85;
+    map.classList.toggle('with-creator-lot', creatorLot);
+    map.innerHTML = `<span class="neighborhood-kicker">VENUE MAP · NORTH UP</span>
+    <svg viewBox="-85 -60 ${width} 120" role="img" aria-label="Alder District venue map: Arcade west, Soccer northeast, Football southeast${creatorLot ? `, Creator’s Lot east with ${generatedVenues.length} made game${generatedVenues.length === 1 ? '' : 's'}` : ''}. The white arrow is you and your camera direction.">
+      <rect x="-85" y="-60" width="${width}" height="120" fill="#46564b" />
+      ${BLOCKS.filter(block => creatorLot || !block.creator).map(block => `<rect x="${block.x - block.width / 2}" y="${block.z - block.depth / 2}" width="${block.width}" height="${block.depth}" rx="2" fill="${block.creator ? '#3a3350' : '#25382e'}" />`).join('')}
+      <path d="M-85 0H${maxX} M0-60V60" stroke="#a0ab9570" stroke-width=".5" stroke-dasharray="3 3" />
       ${venues.map(venue => `<g fill="${venue.color || '#e6cf91'}"><circle cx="${venue.x}" cy="${venue.z}" r="2.5" stroke="#0e2019" stroke-width="1" />
         <text x="${venue.x}" y="${venue.z + (venue.z > 0 ? 10 : -7)}" text-anchor="middle" font-size="7">${venue.gameId === 'firered' ? 'ARCADE' : venue.gameId.toUpperCase()}</text></g>`).join('')}
+      ${creatorLot ? `<g fill="${CREATOR_KIOSK.color}"><rect x="${CREATOR_KIOSK.x - 2.5}" y="${CREATOR_KIOSK.z - 2.5}" width="5" height="5" stroke="#0e2019" stroke-width="1" />
+        <text x="${CREATOR_LOT.x}" y="${CREATOR_LOT.minZ + 7}" text-anchor="middle" font-size="7">CREATOR’S LOT</text></g>
+      ${generatedVenues.map(venue => `<g fill="${venue.color}"><circle cx="${venue.x}" cy="${venue.z}" r="2.2" stroke="#0e2019" stroke-width=".8" /><title>${escapeSvg(venue.title)}</title></g>`).join('')}` : ''}
       <g class="neighborhood-map-player" fill="#fff" stroke="#14251b" stroke-width=".8"><path d="M0-5 3.5 3 0 1.5-3.5 3Z" /></g>
-    </svg><span class="neighborhood-map-help">Follow the streets to a marker · A / E to enter</span>`;
+    </svg><span class="neighborhood-map-help">${creatorLot ? 'Follow the streets to a marker · east to the Creator’s Lot · A / E to enter' : 'Follow the streets to a marker · A / E to enter'}</span>`;
+    mapPlayer = map.querySelector('.neighborhood-map-player'); lastMapUpdate = -Infinity;
+  }
+  renderMap();
   map.hidden = !venues.length; container.append(map);
-  const mapPlayer = map.querySelector('.neighborhood-map-player');
-  let lastMapUpdate = -Infinity;
   function pause(value) {
     if (disposed || failed || suspended || !controller) return;
     paused = value; controller.setPaused(value); overlay.hidden = !value; resumeButton.hidden = !value;
@@ -53,17 +66,19 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterGa
   function resume(note = '') {
     if (disposed) return;
     suspended = false; entering = false; query('.neighborhood-enter').disabled = false;
-    query('.neighborhood-enter').textContent = `Enter ${entrance()?.title || 'game'} · E / A`;
+    query('.neighborhood-enter').textContent = enterLabel(entrance());
     query('.neighborhood-entry-message').textContent = note;
     if (failed) { overlay.hidden = false; returnButton.focus(); }
     else pause(false);
   }
-  function entrance() { return controller ? nearestEntrance(controller.position, configuration.gameIds) : null; }
+  function entrance() { return controller ? nearestEntrance(controller.position, configuration.gameIds, extraEntrances()) : null; }
+  const enterLabel = venue => venue?.kind === 'kiosk' ? 'Make a game · E / A' : `Enter ${venue?.title || 'game'} · E / A`;
   function entranceDistance() { return entrance()?.distance ?? Infinity; }
   async function enterGame() {
     if (!onEnterGame || !entrance() || entering || paused || suspended || failed || disposed || entranceDistance() > entrance().radius) return;
     entering = true; query('.neighborhood-enter').disabled = true; query('.neighborhood-enter').textContent = `Opening ${entrance().title}…`;
     query('.neighborhood-entry-message').textContent = ''; suspend();
+    if (entrance().kind === 'kiosk') { configuration.onMakeGame(); return; }
     try { await onEnterGame(entrance().gameId); }
     catch (error) { resume(error.message || 'FireRed could not open. Try again.'); }
   }
@@ -113,6 +128,7 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterGa
     if (disposed) return { dispose };
     const camera = new THREE.PerspectiveCamera(55, 1, 0.08, 600);
     world = createNeighborhoodWorld(renderer, { hasFireRed: configuration.hasFireRed !== false });
+    if (creatorLot) world.setCreatorVenues(generatedVenues);
     controller = new NeighborhoodController(canvas, camera, world, pause, initialPose, enterGame);
     function resize() {
       const { width, height } = container.getBoundingClientRect();
@@ -125,7 +141,7 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterGa
     }
     observer = new ResizeObserver(resize); observer.observe(container); resize();
     // The host registers the real controller/world as an overworld surface.
-    if (failed) return { dispose, suspend, resume, observe: diagnostics.read, holdExecution, get controller() { return controller; }, get world() { return world; } };
+    if (failed) return { dispose, suspend, resume, observe: diagnostics.read, holdExecution, setGeneratedGames, get controller() { return controller; }, get world() { return world; } };
     renderer.render(world.scene, camera); renderedFrames++; firstRenderMs = performance.now() - started;
     overlay.hidden = true; canvas.focus({ preventScroll: true }); lastTime = performance.now();
     function animate(now) {
@@ -149,7 +165,7 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterGa
         mapPlayer.setAttribute('transform', `translate(${x} ${z}) rotate(${-controller.yaw * 180 / Math.PI})`);
         lastMapUpdate = now;
       }
-      query('.neighborhood-location strong').textContent = z > 18 && x < -10 ? 'ALDER GARDEN' : Math.abs(x) < 10 ? 'JUNIPER AVENUE' : 'ALDER STREET';
+      query('.neighborhood-location strong').textContent = creatorLot && x > CREATOR_LOT.minX ? 'CREATOR’S LOT' : z > 18 && x < -10 ? 'ALDER GARDEN' : Math.abs(x) < 10 ? 'JUNIPER AVENUE' : 'ALDER STREET';
       const destination = entrance(), distance = entranceDistance();
       query('.neighborhood-distance').textContent = distance <= (destination?.radius || 0) ? 'You are at the entrance' : `${Math.round(distance)} m · follow the venue sign`;
       query('.neighborhood-destination strong').textContent = destination?.title || 'Explore the district';
@@ -159,7 +175,10 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterGa
       if (destination) {
         query('.neighborhood-entry .neighborhood-kicker').textContent = destination.name;
         query('.neighborhood-entry strong').textContent = destination.title;
-        query('.neighborhood-enter').textContent = `Enter ${destination.title} · E / A`;
+        query('.neighborhood-enter').textContent = enterLabel(destination);
+        query('.neighborhood-entry p').textContent = destination.kind === 'kiosk' ? 'Describe a game idea. It becomes playable here in about a minute.'
+          : destination.kind === 'generated' ? `Made in Gameverse · v${destination.version}. Change it from the game menu while you play.`
+          : 'Continue your adventure. Your place in the city will wait.';
       }
       const gamepad = controller.observe().gamepad;
       query('.neighborhood-key-hints').hidden = Boolean(gamepad?.connected);
@@ -182,5 +201,12 @@ export async function openNeighborhood(container, onMenu, initialPose, onEnterGa
     message.textContent = `${error.message} Menu gives you recovery and character options.`;
     returnButton.focus();
   }
-  return { dispose, suspend, resume, observe: diagnostics.read, holdExecution, get controller() { return controller; }, get world() { return world; } };
+  // Host catalog updates: venues appear, change or leave without a reload.
+  function setGeneratedGames(games = []) {
+    if (!creatorLot || disposed) return;
+    generatedVenues = creatorVenues(games);
+    world?.setCreatorVenues(generatedVenues);
+    renderMap();
+  }
+  return { dispose, suspend, resume, observe: diagnostics.read, holdExecution, setGeneratedGames, get controller() { return controller; }, get world() { return world; } };
 }

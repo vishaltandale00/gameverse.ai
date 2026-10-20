@@ -1,0 +1,28 @@
+{
+  "schema": "gameverse.v2.game/0.2",
+  "id": "quiet-manor",
+  "title": "The Quiet Manor",
+  "logline": "A butler, a missing master and a locked library.",
+  "seed": 1,
+  "spaces": [{ "id": "manor", "use": "engine.space.graph", "zones": [
+    { "id": "hall", "name": "Hall", "description": "Portraits watch from every wall.", "exits": [{ "to": "garden" }, { "to": "library", "gate": { "item": "brass_key" } }] },
+    { "id": "garden", "name": "Garden", "description": "Wet gravel and a toppled urn.", "exits": [{ "to": "hall" }] },
+    { "id": "library", "name": "Library", "description": "Dust, and one clean desk.", "exits": [{ "to": "hall" }] }
+  ] }],
+  "systems": [{ "use": "gameplay.inventory" }, { "use": "plot.storyboard" }],
+  "plot": {
+    "premise": "You arrive at a manor whose master has vanished.",
+    "characters": [{ "id": "butler", "name": "Hobbs", "role": "witness" }],
+    "storyboard": { "acts": [
+      { "id": "arrival", "title": "Arrival", "beats": [{ "id": "greeting", "do": [{ "do": "say", "character": "butler", "text": "The master is missing. The library has been locked since Tuesday." }] }] },
+      { "id": "search", "title": "The Search", "beats": [
+        { "id": "find_key", "when": { "zone": "garden" }, "do": [{ "do": "give_item", "item": "brass_key" }, { "do": "say", "character": "butler", "text": "That key... it was the master's." }] },
+        { "id": "find_letter", "after": ["find_key"], "when": { "zone": "library" }, "do": [{ "do": "give_item", "item": "letter" }] },
+        { "id": "solve", "when": { "item": "letter" }, "do": [{ "do": "end_game", "ending": "truth" }] }
+      ] }
+    ] },
+    "endings": [{ "id": "truth", "title": "The truth", "text": "The letter explains everything." }]
+  },
+  "content": { "items": [{ "id": "brass_key", "name": "Brass key" }, { "id": "letter", "name": "Letter" }], "archetypes": [{ "id": "detective", "components": { "name": "You" } }] },
+  "player": { "archetype": "detective", "space": "manor", "at": "hall" }
+}

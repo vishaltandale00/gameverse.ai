@@ -1,0 +1,3249 @@
+{
+ "schema": "gameverse.v2.game/0.2",
+ "id": "hollow-lantern",
+ "title": "Hollow Lantern",
+ "seed": 4107,
+ "logline": "A hollow lamplighter descends the drowned kingdom of Ashmere to relight the Great Lantern before the Gloam swallows the last warm room.",
+ "views": {"primary":"side","alternates":[]},
+ "plot": {
+  "premise": "The Great Lantern of Ashmere went dark. Four wardens each hold a cinder of its flame. Wick, a vessel of candle-ash made by the lamp-smith Marrow, must win or earn all four, then choose what the flame is for: to burn one life, to be shared among many, to be given to the dark, or to be ruled by it.",
+  "factions": [
+   {"id":"cinderfolk","name":"The Cinderfolk","ranks":[{"at":0,"title":"Stranger"},{"at":20,"title":"Friend"},{"at":50,"title":"Lamp-bearer"}]},
+   {"id":"gloam","name":"The Gloam","hostileBelow":100}
+  ],
+  "characters": [
+   {
+    "id": "wick",
+    "name": "Wick",
+    "role": "player",
+    "archetype": "wick",
+    "model": "wick",
+    "bio": "A hollow vessel with a lantern for a heart, made by Marrow from the Keeper's last candle-ash."
+   },
+   {
+    "id": "marrow",
+    "name": "Marrow",
+    "role": "mentor, lamp-smith, last Cinderwell elder",
+    "archetype": "marrow",
+    "model": "marrow",
+    "home": "cinderwell",
+    "faction": "cinderfolk",
+    "dialogue": [{"when":{"flag":"all_cinders_returned"},"id":"marrow_truth"},{"when":{"flag":"thistle_down"},"id":"marrow_return"},{"id":"marrow_intro"}],
+    "tags": ["quest-giver","secret-keeper"]
+   },
+   {
+    "id": "pip",
+    "name": "Pip",
+    "role": "cartographer moth, map seller",
+    "archetype": "pip",
+    "model": "pip",
+    "home": "cinderwell",
+    "faction": "cinderfolk",
+    "dialogue": [{"when":{"quest":"q_maps","state":"complete"},"id":"pip_after"},{"id":"pip_intro"}],
+    "tags": ["merchant","quest-giver"]
+   },
+   {
+    "id": "vell",
+    "name": "Sister Vell",
+    "role": "charm-smith",
+    "archetype": "vell",
+    "model": "vell",
+    "home": "cinderwell",
+    "faction": "cinderfolk",
+    "dialogue": [{"id":"vell_shop"}],
+    "tags": ["merchant","quest-giver"]
+   },
+   {
+    "id": "dorrin",
+    "name": "Dorrin",
+    "role": "snail trader of ash and ore",
+    "archetype": "dorrin",
+    "model": "dorrin",
+    "home": "cinderwell",
+    "faction": "cinderfolk",
+    "dialogue": [{"id":"dorrin_shop"}],
+    "tags": ["merchant","quest-giver"]
+   },
+   {
+    "id": "brindle",
+    "name": "Brindle",
+    "role": "lost child of the well",
+    "archetype": "brindle",
+    "model": "brindle",
+    "home": "cinderwell",
+    "faction": "cinderfolk",
+    "dialogue": [{"when":{"item":"lost_lamp"},"id":"brindle_found"},{"id":"brindle_lost"}],
+    "tags": ["quest-giver"]
+   },
+   {
+    "id": "quill",
+    "name": "Quill",
+    "role": "beetle archivist of the Dim Galleries",
+    "archetype": "quill",
+    "model": "quill",
+    "home": "dim_galleries",
+    "dialogue": [{"id":"quill_archive"}],
+    "tags": ["lore"]
+   },
+   {
+    "id": "ashveil",
+    "name": "Lady Ashveil",
+    "role": "wandering ghost of the Barrow court",
+    "archetype": "ashveil",
+    "model": "ashveil",
+    "home": "ashen_barrows",
+    "dialogue": [{"when":{"item":"ashveil_locket"},"id":"ashveil_locket"},{"id":"ashveil_waltz"}],
+    "tags": ["quest-giver","lore"]
+   },
+   {
+    "id": "mother_thistle",
+    "name": "Mother Thistle",
+    "role": "warden of Mossgrave",
+    "archetype": "mother_thistle",
+    "model": "mother_thistle",
+    "home": "mossgrave",
+    "dialogue": [{"id":"thistle_prefight"}]
+   },
+   {
+    "id": "bellkeeper",
+    "name": "The Bellkeeper",
+    "role": "warden of the Cisterns",
+    "archetype": "bellkeeper",
+    "model": "bellkeeper",
+    "home": "glasswater",
+    "dialogue": [{"id":"bellkeeper_prefight"}]
+   },
+   {
+    "id": "orrin",
+    "name": "Forgemother Orrin",
+    "role": "warden of Rustbell",
+    "archetype": "forgemother_orrin",
+    "model": "forgemother",
+    "home": "rustbell",
+    "dialogue": [{"id":"orrin_prefight"}]
+   },
+   {
+    "id": "cantor",
+    "name": "The Drowned Cantor",
+    "role": "warden of the Choir",
+    "archetype": "drowned_cantor",
+    "model": "drowned_cantor",
+    "home": "sunken_choir",
+    "dialogue": [{"id":"cantor_prefight"}]
+   },
+   {
+    "id": "regent",
+    "name": "The Ashen Regent",
+    "role": "warden of the Barrows",
+    "archetype": "ashen_regent",
+    "model": "ashen_regent",
+    "home": "ashen_barrows",
+    "dialogue": [{"id":"regent_prefight"}]
+   },
+   {
+    "id": "sovereign",
+    "name": "The Gloam Sovereign",
+    "role": "the dark beneath the lantern",
+    "archetype": "gloam_sovereign",
+    "model": "gloam_sovereign",
+    "home": "hollow_heart",
+    "dialogue": [{"id":"sovereign_final"}]
+   }
+  ],
+  "storyboard": {
+   "acts": [
+    {
+     "id": "act1",
+     "title": "The Last Warm Room",
+     "summary": "Wick wakes in Cinderwell, takes a lamp from Marrow and descends into Mossgrave to face the first warden.",
+     "beats": [
+      {"id":"b_wake","title":"Wake in the well","do":[{"do":"play_cutscene","cutscene":"cs_wake"},{"do":"set_flag","flag":"awoke"}]},
+      {
+       "id": "b_marrow",
+       "title": "Marrow gives a task",
+       "when": {"flag":"met_marrow"},
+       "do": [{"do":"add_entry","entry":"e_ashmere"},{"do":"notify","text":"Quest: Embers in the Dark","kind":"quest"}],
+       "after": ["b_wake"]
+      },
+      {
+       "id": "b_lamp",
+       "title": "The hand lamp",
+       "when": {"item":"hand_lamp"},
+       "do": [
+        {"do":"unlock_ability","ability":"lantern_light"},
+        {"do":"set_flag","flag":"has_lamp"},
+        {"do":"notify","text":"The lamp follows you into the dark.","kind":"info"}
+       ],
+       "after": ["b_marrow"]
+      },
+      {
+       "id": "b_descent",
+       "title": "First descent",
+       "when": {"zone":"mossgrave"},
+       "do": [{"do":"play_cutscene","cutscene":"cs_descent"},{"do":"start_quest","quest":"q_thistle"}],
+       "after": ["b_lamp"]
+      },
+      {
+       "id": "b_first_blood",
+       "title": "First gloam-touched foe",
+       "when": {"count":"defeated","gte":1},
+       "do": [{"do":"notify","text":"Defeated foes drop ash. Strike downward on enemies to pogo.","kind":"info"},{"do":"add_entry","entry":"e_ash"}],
+       "after": ["b_descent"]
+      },
+      {
+       "id": "b_first_bench",
+       "title": "Rest by the root bench",
+       "when": {"used":"bench_moss_1","gte":1},
+       "do": [{"do":"set_checkpoint","zone":"mossgrave"},{"do":"notify","text":"Benches restore masks and respawn the dark.","kind":"info"}],
+       "after": ["b_descent"]
+      },
+      {
+       "id": "b_thistle_wakes",
+       "title": "Mother Thistle wakes",
+       "when": {"boss":"thistle","state":"active"},
+       "do": [{"do":"shake","amount":0.6},{"do":"play_sound","cue":"thistle_roar"}],
+       "after": ["b_first_bench"]
+      },
+      {
+       "id": "b_thistle_down",
+       "title": "Thistle quieted",
+       "when": {"boss":"thistle","state":"defeated"},
+       "do": [
+        {"do":"give_item","item":"cinder_green"},
+        {"do":"unlock_ability","ability":"briar_grip"},
+        {"do":"set_flag","flag":"thistle_down"},
+        {"do":"add_entry","entry":"e_thistle"},
+        {"do":"notify","text":"Briar Grip: cling to and climb walls.","kind":"quest"}
+       ],
+       "after": ["b_thistle_wakes"]
+      },
+      {
+       "id": "b_seal",
+       "title": "Marrow opens the Rust Seal",
+       "when": {"all":[{"flag":"thistle_down"},{"zone":"cinderwell"}]},
+       "do": [{"do":"say","character":"marrow","text":"The stair below the well has been sealed since the Keeper left. Go."}],
+       "after": ["b_thistle_down"]
+      }
+     ]
+    },
+    {
+     "id": "act2",
+     "title": "Water and Bells",
+     "summary": "The Cisterns and the Foundry teach dash and double jump. Wardens guard their cinders with grief and fury.",
+     "beats": [
+      {
+       "id": "b_cisterns",
+       "title": "Into the Cisterns",
+       "when": {"zone":"glasswater"},
+       "do": [{"do":"start_quest","quest":"q_tide"},{"do":"add_entry","entry":"e_cisterns"}]
+      },
+      {"id":"b_pip_meets","title":"Pip flutters by","when":{"zone":"cinderwell"},"do":[{"do":"add_entry","entry":"e_pip"}],"optional":true},
+      {
+       "id": "b_valve",
+       "title": "Valve turned",
+       "when": {"used":"cistern_valve","gte":1},
+       "do": [{"do":"unlock","gate":"valve_open"},{"do":"shake","amount":0.3}],
+       "after": ["b_cisterns"]
+      },
+      {
+       "id": "b_bellkeeper_wakes",
+       "title": "Bellkeeper tolls",
+       "when": {"boss":"bellkeeper","state":"active"},
+       "do": [{"do":"play_sound","cue":"toll"}],
+       "after": ["b_valve"]
+      },
+      {
+       "id": "b_bellkeeper_down",
+       "title": "The hour ends",
+       "when": {"boss":"bellkeeper","state":"defeated"},
+       "do": [
+        {"do":"unlock_ability","ability":"ember_step"},
+        {"do":"set_flag","flag":"bellkeeper_down"},
+        {"do":"add_entry","entry":"e_bellkeeper"},
+        {"do":"notify","text":"Ember Step: dash through gaps and danger.","kind":"quest"}
+       ],
+       "after": ["b_bellkeeper_wakes"]
+      },
+      {
+       "id": "b_foundry",
+       "title": "Across the gap",
+       "when": {"zone":"rustbell"},
+       "do": [{"do":"start_quest","quest":"q_forge"},{"do":"play_cutscene","cutscene":"cs_foundry"}],
+       "after": ["b_bellkeeper_down"]
+      },
+      {
+       "id": "b_bellows_lit",
+       "title": "The forge wakes",
+       "when": {"used":"forge_bellows","gte":3},
+       "do": [{"do":"unlock","gate":"forge_door"},{"do":"set_flag","flag":"bellows_lit"}],
+       "after": ["b_foundry"]
+      },
+      {
+       "id": "b_orrin_wakes",
+       "title": "Orrin rises from the slag",
+       "when": {"boss":"orrin","state":"active"},
+       "do": [{"do":"shake","amount":0.8}],
+       "after": ["b_bellows_lit"]
+      },
+      {
+       "id": "b_orrin_down",
+       "title": "The red cinder",
+       "when": {"boss":"orrin","state":"defeated"},
+       "do": [
+        {"do":"give_item","item":"cinder_red"},
+        {"do":"give_item","item":"ash_sigil"},
+        {"do":"unlock_ability","ability":"moth_wings"},
+        {"do":"set_flag","flag":"orrin_down"},
+        {"do":"add_entry","entry":"e_orrin"},
+        {"do":"notify","text":"Moth Wings: a second jump in the air.","kind":"quest"}
+       ],
+       "after": ["b_orrin_wakes"]
+      }
+     ]
+    },
+    {
+     "id": "act3",
+     "title": "Songs Below",
+     "summary": "Wick follows two cinders down: the Drowned Cantor in the Choir and the Ashen Regent in the Barrows. The world opens, and so does its grief.",
+     "beats": [
+      {
+       "id": "b_choir",
+       "title": "The Sunken Choir",
+       "when": {"zone":"sunken_choir"},
+       "do": [{"do":"start_quest","quest":"q_choir"},{"do":"add_entry","entry":"e_choir"}]
+      },
+      {
+       "id": "b_chimes",
+       "title": "The organ answers",
+       "when": {"used":"chime","gte":3},
+       "do": [{"do":"unlock","gate":"cantor_door"},{"do":"set_flag","flag":"chimes_rung"}],
+       "after": ["b_choir"]
+      },
+      {
+       "id": "b_cantor_wakes",
+       "title": "The Cantor lifts his hand",
+       "when": {"boss":"cantor","state":"active"},
+       "do": [{"do":"play_sound","cue":"hymn_low"}],
+       "after": ["b_chimes"]
+      },
+      {
+       "id": "b_cantor_down",
+       "title": "The blue cinder",
+       "when": {"boss":"cantor","state":"defeated"},
+       "do": [
+        {"do":"give_item","item":"cinder_blue"},
+        {"do":"set_flag","flag":"cantor_down"},
+        {"do":"add_entry","entry":"e_cantor"},
+        {"do":"notify","text":"Blue Cinder recovered.","kind":"quest"}
+       ],
+       "after": ["b_cantor_wakes"]
+      },
+      {"id":"b_thornwild","title":"The Thornwild","when":{"zone":"thornwild"},"do":[{"do":"add_entry","entry":"e_thornwild"}]},
+      {
+       "id": "b_barrows",
+       "title": "The Ashen Barrows",
+       "when": {"zone":"ashen_barrows"},
+       "do": [{"do":"start_quest","quest":"q_barrows"},{"do":"add_entry","entry":"e_barrows"}]
+      },
+      {
+       "id": "b_regent_wakes",
+       "title": "The Regent stands",
+       "when": {"boss":"regent","state":"active"},
+       "do": [{"do":"shake","amount":0.5}],
+       "after": ["b_barrows"]
+      },
+      {
+       "id": "b_regent_down",
+       "title": "The ash cinder",
+       "when": {"any":[{"boss":"regent","state":"defeated"},{"flag":"regent_spared"}]},
+       "do": [{"do":"give_item","item":"cinder_ash"},{"do":"set_flag","flag":"regent_down"},{"do":"add_entry","entry":"e_regent"}],
+       "after": ["b_regent_wakes"]
+      },
+      {
+       "id": "b_spire",
+       "title": "The Lantern Spire",
+       "when": {"zone":"lantern_spire"},
+       "do": [{"do":"add_entry","entry":"e_spire"},{"do":"play_cutscene","cutscene":"cs_vista"}],
+       "optional": true
+      },
+      {"id":"b_galleries","title":"The Dim Galleries","when":{"zone":"dim_galleries"},"do":[{"do":"add_entry","entry":"e_galleries"}],"optional":true}
+     ]
+    },
+    {
+     "id": "act4",
+     "title": "The Hollow Heart",
+     "summary": "Four cinders, one lie, and a choice: borrow the flame, share it, surrender it, or take the crown.",
+     "beats": [
+      {
+       "id": "b_all_cinders",
+       "title": "Four cinders",
+       "when": {"all":[{"item":"cinder_green"},{"item":"cinder_red"},{"item":"cinder_blue"},{"item":"cinder_ash"}]},
+       "do": [
+        {"do":"unlock","gate":"heart_door"},
+        {"do":"set_flag","flag":"all_cinders_returned"},
+        {"do":"notify","text":"All four cinders are yours. Return to Marrow.","kind":"quest"},
+        {"do":"start_quest","quest":"q_relight"}
+       ]
+      },
+      {
+       "id": "b_marrow_truth",
+       "title": "Marrow confesses",
+       "when": {"all":[{"zone":"cinderwell"},{"flag":"marrow_confessed"}]},
+       "do": [{"do":"add_entry","entry":"e_marrow"},{"do":"play_cutscene","cutscene":"cs_confession"}],
+       "after": ["b_all_cinders"]
+      },
+      {
+       "id": "b_descend",
+       "title": "The final descent",
+       "when": {"zone":"hollow_heart"},
+       "do": [{"do":"play_cutscene","cutscene":"cs_final_descent"}],
+       "after": ["b_marrow_truth"]
+      },
+      {
+       "id": "b_sovereign_speaks",
+       "title": "The Sovereign speaks",
+       "when": {"all":[{"zone":"hollow_heart"},{"not":{"flag":"final_resolved"}}]},
+       "do": [{"do":"start_dialogue","dialogue":"sovereign_final","with":"sovereign"}],
+       "after": ["b_descend"]
+      },
+      {
+       "id": "b_sovereign_wakes",
+       "title": "The Gloam rises",
+       "when": {"boss":"sovereign","state":"active"},
+       "do": [{"do":"shake","amount":1},{"do":"play_sound","cue":"void_drone_rise"}],
+       "after": ["b_sovereign_speaks"]
+      },
+      {
+       "id": "b_sovereign_down",
+       "title": "The Gloam gives way",
+       "when": {"boss":"sovereign","state":"defeated"},
+       "do": [{"do":"set_flag","flag":"final_resolved"},{"do":"set_flag","flag":"sovereign_down"}],
+       "after": ["b_sovereign_wakes"]
+      },
+      {
+       "id": "b_kindle",
+       "title": "The Lantern",
+       "when": {"all":[{"flag":"final_resolved"},{"any":[{"flag":"choice_share"},{"flag":"choice_borrowed"}]}]},
+       "do": [{"do":"play_cutscene","cutscene":"cs_kindle"}],
+       "after": ["b_descend"]
+      },
+      {
+       "id": "b_epilogue",
+       "title": "Ashmere wakes or sleeps",
+       "when": {"flag":"final_resolved"},
+       "do": [{"do":"emit","event":"epilogue"}],
+       "after": ["b_descend"]
+      }
+     ]
+    }
+   ]
+  },
+  "quests": [
+   {
+    "id": "q_embers",
+    "title": "Embers in the Dark",
+    "kind": "main",
+    "giver": "marrow",
+    "zone": "cinderwell",
+    "summary": "Marrow has a lamp and a task: descend to Mossgrave.",
+    "objectives": [
+     {"id":"o_talk","kind":"talk","character":"marrow","text":"Speak to Marrow at the well."},
+     {"id":"o_lamp","kind":"collect","item":"hand_lamp","count":1,"text":"Take the hand lamp."},
+     {"id":"o_moss","kind":"reach","zone":"mossgrave","text":"Descend into Mossgrave."}
+    ],
+    "autoStart": true,
+    "rewards": {"xp":0,"items":[{"item":"c_wicklight","count":1}]}
+   },
+   {
+    "id": "q_thistle",
+    "title": "The Green Cinder",
+    "kind": "main",
+    "giver": "marrow",
+    "zone": "mossgrave",
+    "summary": "Reach the bottom of Mossgrave and quiet Mother Thistle.",
+    "objectives": [
+     {"id":"o_bench","kind":"use","interactable":"bench_moss_1","text":"Rest at the bench in the roots."},
+     {"id":"o_boss","kind":"defeat","archetype":"mother_thistle","count":1,"text":"Defeat Mother Thistle."},
+     {"id":"o_return","kind":"deliver","item":"cinder_green","count":1,"to":"marrow","consume":false,"text":"Bring the cinder to Marrow."}
+    ],
+    "prereq": ["q_embers"],
+    "rewards": {"items":[{"item":"notch_pin","count":1}]}
+   },
+   {
+    "id": "q_tide",
+    "title": "The Hour Is Struck",
+    "kind": "main",
+    "giver": "marrow",
+    "zone": "glasswater",
+    "summary": "Open the cistern valve and quiet the Bellkeeper.",
+    "objectives": [
+     {"id":"o_valve","kind":"use","interactable":"cistern_valve","text":"Turn the Cistern valve."},
+     {"id":"o_climb","kind":"reach","zone":"glasswater","text":"Cross the flooded nave."},
+     {"id":"o_boss","kind":"defeat","archetype":"bellkeeper","count":1,"text":"Silence the Bellkeeper."}
+    ],
+    "prereq": ["q_thistle"],
+    "onComplete": [{"do":"start_quest","quest":"q_forge"}],
+    "rewards": {"xp":0}
+   },
+   {
+    "id": "q_forge",
+    "title": "What the Bellows Know",
+    "kind": "main",
+    "giver": "marrow",
+    "zone": "rustbell",
+    "summary": "Cross the Rustbell gap and light all three bellows to wake the forge.",
+    "objectives": [
+     {"id":"o_gap","kind":"reach","zone":"rustbell","text":"Dash across the Rustbell gap."},
+     {"id":"o_bellows","kind":"use","interactable":"forge_bellows","count":3,"text":"Light the three bellows."},
+     {"id":"o_boss","kind":"defeat","archetype":"forgemother_orrin","count":1,"text":"Defeat Forgemother Orrin."}
+    ],
+    "prereq": ["q_tide"],
+    "onComplete": [{"do":"start_quest","quest":"q_choir"},{"do":"start_quest","quest":"q_barrows"}]
+   },
+   {
+    "id": "q_choir",
+    "title": "The Song Beneath",
+    "kind": "main",
+    "giver": "marrow",
+    "zone": "sunken_choir",
+    "summary": "Ring the three chimes of the drowned organ and face the Cantor.",
+    "objectives": [
+     {"id":"o_descend","kind":"reach","zone":"sunken_choir","text":"Descend to the Sunken Choir."},
+     {"id":"o_chimes","kind":"use","interactable":"chime","count":3,"text":"Ring all three chimes."},
+     {"id":"o_boss","kind":"defeat","archetype":"drowned_cantor","count":1,"text":"Silence the Drowned Cantor."}
+    ],
+    "prereq": ["q_forge"]
+   },
+   {
+    "id": "q_barrows",
+    "title": "The Ash Cinder",
+    "kind": "main",
+    "giver": "marrow",
+    "zone": "ashen_barrows",
+    "summary": "Take the Barrow Sigil from the foundry stacks and win or earn the Regent's cinder.",
+    "objectives": [
+     {"id":"o_sigil","kind":"collect","item":"ash_sigil","count":1,"text":"Recover the Barrow Sigil from Orrin's hoard."},
+     {"id":"o_descend","kind":"reach","zone":"ashen_barrows","text":"Enter the Ashen Barrows."},
+     {"id":"o_cinder","kind":"collect","item":"cinder_ash","count":1,"text":"Take the Ash Cinder, by blade or by word."}
+    ],
+    "prereq": ["q_forge"]
+   },
+   {
+    "id": "q_relight",
+    "title": "The Hollow Heart",
+    "kind": "main",
+    "giver": "marrow",
+    "zone": "hollow_heart",
+    "summary": "Four cinders, one lantern, and the dark that waits beneath it.",
+    "objectives": [
+     {
+      "id": "o_all",
+      "kind": "until",
+      "when": {"all":[{"item":"cinder_green"},{"item":"cinder_red"},{"item":"cinder_blue"},{"item":"cinder_ash"}]},
+      "text": "Hold all four cinders."
+     },
+     {"id":"o_return","kind":"talk","character":"marrow","dialogue":"marrow_truth","text":"Return to Marrow with the cinders."},
+     {"id":"o_heart","kind":"reach","zone":"hollow_heart","text":"Descend to the Hollow Heart."},
+     {"id":"o_speak","kind":"talk","character":"sovereign","text":"Answer the Gloam Sovereign."}
+    ],
+    "prereq": ["q_choir","q_barrows"],
+    "gate": {"all":[{"item":"cinder_blue"},{"item":"cinder_ash"}]},
+    "rewards": {"xp":0}
+   },
+   {
+    "id": "q_maps",
+    "title": "Torn Corners",
+    "kind": "side",
+    "giver": "pip",
+    "zone": "cinderwell",
+    "summary": "Four fragments of the great map are scattered across Ashmere.",
+    "objectives": [
+     {"id":"o_frag","kind":"collect","item":"map_fragment","count":4,"text":"Find four map fragments."},
+     {"id":"o_give","kind":"deliver","item":"map_fragment","count":4,"to":"pip","text":"Give them to Pip."}
+    ],
+    "rewards": {"items":[{"item":"cartographer_lens","count":1}],"money":150}
+   },
+   {
+    "id": "q_lost_lamp",
+    "title": "Brindle's Lamp",
+    "kind": "side",
+    "giver": "brindle",
+    "zone": "thornwild",
+    "summary": "A child's tin lamp lies somewhere in the Thornwild.",
+    "objectives": [
+     {"id":"o_find","kind":"collect","item":"lost_lamp","count":1,"text":"Find Brindle's lamp in the Thornwild."},
+     {"id":"o_return","kind":"talk","character":"brindle","text":"Return it to Brindle."}
+    ],
+    "rewards": {"items":[{"item":"c_ember_magnet","count":1}]}
+   },
+   {
+    "id": "q_pages",
+    "title": "The Rubbings",
+    "kind": "side",
+    "giver": "quill",
+    "zone": "dim_galleries",
+    "summary": "Quill needs eight wall rubbings to complete the Lantern's history.",
+    "objectives": [
+     {"id":"o_tablets","kind":"collect","item":"lore_tablet","count":8,"text":"Collect eight lore tablets."},
+     {"id":"o_give","kind":"talk","character":"quill","text":"Show Quill the rubbings."}
+    ],
+    "gate": {"item":"archive_key"},
+    "rewards": {"items":[{"item":"c_gloam_ward","count":1}]}
+   },
+   {
+    "id": "q_debt",
+    "title": "Dorrin's Ledger",
+    "kind": "side",
+    "giver": "dorrin",
+    "zone": "cinderwell",
+    "summary": "Six ember ore settle an old debt.",
+    "objectives": [{"id":"o_ore","kind":"deliver","item":"ember_ore","count":6,"to":"dorrin","text":"Deliver six ember ore."}],
+    "rewards": {"money":200,"items":[{"item":"c_long_nail","count":1}]}
+   },
+   {
+    "id": "q_charmsmith",
+    "title": "Cistern Glass",
+    "kind": "side",
+    "giver": "vell",
+    "zone": "glasswater",
+    "summary": "Sister Vell wants three shards of cistern glass.",
+    "objectives": [{"id":"o_shards","kind":"collect","item":"glass_shard","count":3,"text":"Gather three cistern shards."}],
+    "rewards": {"items":[{"item":"c_pogo_spark","count":1},{"item":"notch_pin","count":1}]}
+   },
+   {
+    "id": "q_last_waltz",
+    "title": "The Last Waltz",
+    "kind": "side",
+    "giver": "ashveil",
+    "zone": "ashen_barrows",
+    "summary": "Recover Lady Ashveil's locket from behind a false wall.",
+    "objectives": [
+     {"id":"o_wall","kind":"use","interactable":"wall_barrow_secret","text":"Break the false wall in the lower crypt."},
+     {"id":"o_locket","kind":"collect","item":"ashveil_locket","count":1,"text":"Recover the silver locket."},
+     {"id":"o_return","kind":"talk","character":"ashveil","text":"Return the locket."}
+    ],
+    "rewards": {"items":[{"item":"c_moth_thread","count":1}]}
+   },
+   {
+    "id": "q_trial",
+    "title": "Trial of Ash",
+    "kind": "challenge",
+    "zone": "ashen_barrows",
+    "summary": "Three waves in the Barrow colosseum.",
+    "objectives": [
+     {"id":"o_enter","kind":"use","interactable":"arena_ash","text":"Step onto the colosseum sand."},
+     {"id":"o_waves","kind":"defeat","archetype":"ash_knight","count":6,"text":"Defeat six ash knights."}
+    ],
+    "rewards": {"money":300,"items":[{"item":"c_brittle_oath","count":1}]},
+    "repeatable": false
+   },
+   {
+    "id": "q_moths",
+    "title": "Cage of Wings",
+    "kind": "side",
+    "zone": "lantern_spire",
+    "summary": "Five lumamoths are caged along the Spire. Free them.",
+    "objectives": [{"id":"o_free","kind":"use","interactable":"moth_cage","count":5,"text":"Free five caged lumamoths."}],
+    "gate": {"ability":"moth_wings"},
+    "rewards": {"items":[{"item":"c_swift_flame","count":1},{"item":"notch_pin","count":1}]},
+    "onComplete": [{"do":"set_flag","flag":"moths_freed"}]
+   },
+   {
+    "id": "q_hush",
+    "title": "The Hush",
+    "kind": "challenge",
+    "zone": "dim_galleries",
+    "summary": "An old guardian keeps the vault of the Dim Galleries.",
+    "objectives": [{"id":"o_defeat","kind":"defeat","archetype":"hush_knight","count":1,"text":"Defeat the Hush Knight."}],
+    "gate": {"item":"archive_key"},
+    "rewards": {"items":[{"item":"c_hush_veil","count":1}],"money":400}
+   }
+  ],
+  "gates": [
+   {
+    "id": "rust_seal",
+    "requires": {"flag":"thistle_down"},
+    "hint": "Marrow can break the seal once Mother Thistle is quieted.",
+    "locks": ["exit:cinderwell>glasswater"]
+   },
+   {
+    "id": "valve_open",
+    "requires": {"used":"cistern_valve","gte":1},
+    "hint": "Turn the cistern valve to drain the lower nave.",
+    "locks": ["interactable:gw_drain"]
+   },
+   {"id":"forge_door","requires":{"flag":"bellows_lit"},"hint":"Light all three bellows.","locks":["portal:forge_door"]},
+   {"id":"cantor_door","requires":{"flag":"chimes_rung"},"hint":"The organ must be sounded.","locks":["portal:cantor_door"]},
+   {"id":"barrow_gate","requires":{"item":"ash_sigil"},"hint":"A sigil from Orrin opens the Barrows.","locks":["exit:rustbell>ashen_barrows"]},
+   {"id":"spire_gate","requires":{"ability":"moth_wings"},"hint":"The Spire needs a second jump.","locks":["exit:rustbell>lantern_spire"]},
+   {
+    "id": "heart_door",
+    "requires": {"all":[{"item":"cinder_green"},{"item":"cinder_red"},{"item":"cinder_blue"},{"item":"cinder_ash"}]},
+    "hint": "Four cinders open the way to the Hollow Heart.",
+    "locks": ["exit:sunken_choir>hollow_heart"]
+   },
+   {"id":"galleries_key","requires":{"item":"archive_key"},"hint":"Brass key in the Thornwild den.","locks":["exit:thornwild>dim_galleries"]}
+  ],
+  "dialogue": {
+   "marrow_intro": {
+    "speaker": "marrow",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "marrow",
+      "say": "Up already. Good. The well is the last room in Ashmere that still keeps a fire, and it is a small fire, little one.",
+      "next": "n2"
+     },
+     "n2": {
+      "who": "marrow",
+      "say": "I made you in the dark and the cold from ash and a stub of the Keeper's candle. You are a wick. Wicks are for burning. Try not to hurry.",
+      "choices": [{"text":"What happened to the Great Lantern?","next":"n3"},{"text":"Where do I start?","next":"n4"},{"text":"Why me?","next":"n5"}]
+     },
+     "n3": {
+      "who": "marrow",
+      "say": "It went out. All at once, like a held breath. Since then the Gloam climbs a floor every winter. Below, the old wardens keep each a cinder of the flame. Gather four and the Lantern can be lit again.",
+      "next": "n2b"
+     },
+     "n2b": {"who":"marrow","say":"Anything else?","choices":[{"text":"Where do I start?","next":"n4"},{"text":"Why me?","next":"n5"}]},
+     "n4": {
+      "who": "marrow",
+      "say": "West. Mossgrave. Take this lamp, it will follow you where light will not. Mother Thistle sleeps at the bottom; she was gentle once.",
+      "do": [
+       {"do":"give_item","item":"hand_lamp"},
+       {"do":"set_flag","flag":"met_marrow"},
+       {"do":"start_quest","quest":"q_embers"},
+       {"do":"add_entry","entry":"e_gloam"}
+      ],
+      "end": true
+     },
+     "n5": {
+      "who": "marrow",
+      "say": "Because you are the only thing I could make that does not fear the dark. I will say more when you come back with a cinder.",
+      "do": [{"do":"set_flag","flag":"asked_why_me"},{"do":"add_entry","entry":"e_wick_origin"}],
+      "next": "n2b"
+     }
+    }
+   },
+   "marrow_return": {
+    "speaker": "marrow",
+    "start": "n1",
+    "nodes": {
+     "n1": {"who":"marrow","say":"You smell of moss and old smoke. The Green Cinder, hold it up. Yes. Still warm.","if":{"item":"cinder_green"},"next":"n2"},
+     "n2": {
+      "who": "marrow",
+      "say": "Take the Rust Seal off the lower stair; I opened it with my own hands. The Cisterns are below, and they are wet.",
+      "do": [
+       {"do":"unlock","gate":"rust_seal"},
+       {"do":"complete_quest","quest":"q_thistle"},
+       {"do":"start_quest","quest":"q_tide"},
+       {"do":"add_affinity","character":"marrow","delta":5}
+      ],
+      "choices": [
+       {"text":"Marrow, did Thistle speak to you before she was a warden?","next":"n3","if":{"flag":"thistle_spoke"}},
+       {"text":"I will go.","next":"n4"}
+      ]
+     },
+     "n3": {
+      "who": "marrow",
+      "say": "She tended the lamps on the Keeper's stair. We are all made of what we kept.",
+      "do": [{"do":"add_affinity","character":"marrow","delta":3}],
+      "next": "n4"
+     },
+     "n4": {"who":"marrow","say":"Bring back what you find. All of it.","end":true}
+    }
+   },
+   "marrow_truth": {
+    "speaker": "marrow",
+    "start": "n1",
+    "nodes": {
+     "n1": {"who":"marrow","say":"Four cinders. You do not know what you carry. Sit.","do":[{"do":"set_flag","flag":"marrow_confessed"}],"next":"n2"},
+     "n2": {
+      "who": "marrow",
+      "say": "The Keeper did not vanish. She walked into the Lantern to keep it lit one more winter. When her flame was spent, the Gloam rose. I am the lamp-smith who made the glass she walked into.",
+      "do": [{"do":"add_entry","entry":"e_keeper"}],
+      "next": "n3"
+     },
+     "n3": {
+      "who": "marrow",
+      "say": "A flame needs a wick. I built you for that, and I am sorry. But the Keeper left a second way in the Barrow court records; a lantern kindled by many hands needs no single wick.",
+      "choices": [
+       {"text":"Then we find the second way.","next":"n4","do":[{"do":"set_flag","flag":"knows_second_way"}]},
+       {"text":"I will be the wick. It is what I am for.","next":"n5","do":[{"do":"set_flag","flag":"resolved_wick"}]},
+       {"text":"You made me to die?","next":"n6"}
+      ]
+     },
+     "n4": {
+      "who": "marrow",
+      "say": "Ask every voice in Ashmere to give you a light. Not a coin; a light. The ones you have helped will know what I mean.",
+      "end": true
+     },
+     "n5": {
+      "who": "marrow",
+      "say": "Then I will light the stair for you. I only wish I had been braver.",
+      "do": [{"do":"add_affinity","character":"marrow","delta":5}],
+      "end": true
+     },
+     "n6": {"who":"marrow","say":"I made you to live. You were meant to choose.","do":[{"do":"add_affinity","character":"marrow","delta":-2}],"next":"n3"}
+    }
+   },
+   "pip_intro": {
+    "speaker": "pip",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "pip",
+      "say": "Flutter, flutter, a customer! I chart what is gone and sell what is there. Maps, little wick, maps!",
+      "choices": [
+       {"text":"What do you sell?","next":"n2"},
+       {"text":"I want to help with your map.","next":"n3","if":{"quest":"q_maps","state":"available"}},
+       {"text":"Goodbye.","next":"n4"}
+      ]
+     },
+     "n2": {
+      "who": "pip",
+      "say": "Room outlines for the ones you have walked, a compass pin, a sketch of the next bench. I am out of ink for the far east.",
+      "do": [{"do":"open_shop","shop":"shop_pip"}],
+      "end": true
+     },
+     "n3": {
+      "who": "pip",
+      "say": "Four fragments of the great map were torn when the Gloam rose. Find them, and I will mend the whole of Ashmere for you.",
+      "do": [{"do":"start_quest","quest":"q_maps"}],
+      "end": true
+     },
+     "n4": {"who":"pip","say":"Mind the drafts!","end":true}
+    }
+   },
+   "pip_after": {
+    "speaker": "pip",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "pip",
+      "say": "The whole of Ashmere, mended! Stand still, I will draw you in the corner.",
+      "do": [{"do":"open_shop","shop":"shop_pip"}],
+      "end": true
+     }
+    }
+   },
+   "vell_shop": {
+    "speaker": "vell",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "vell",
+      "say": "Charms are not luck. They are promises to the fire. How many can you keep?",
+      "choices": [
+       {"text":"Show me charms.","next":"n2"},
+       {"text":"Can you make me a notch?","next":"n3","if":{"item":"glass_shard","gte":3}},
+       {"text":"Do you need anything?","next":"n4","if":{"quest":"q_charmsmith","state":"available"}},
+       {"text":"Never mind.","next":"n5"}
+      ]
+     },
+     "n2": {"who":"vell","say":"Choose carefully. Each charm takes room in your hollow.","do":[{"do":"open_shop","shop":"shop_vell"}],"end":true},
+     "n3": {"who":"vell","say":"Three shards for a pin. Wear it.","do":[{"do":"craft","recipe":"r_notch_pin"}],"end":true},
+     "n4": {
+      "who": "vell",
+      "say": "Cistern glass. Three pieces. I cut notches in my own bones from it once.",
+      "do": [{"do":"start_quest","quest":"q_charmsmith"}],
+      "end": true
+     },
+     "n5": {"who":"vell","say":"The fire will keep.","end":true}
+    }
+   },
+   "dorrin_shop": {
+    "speaker": "dorrin",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "dorrin",
+      "say": "Slow and steady, that is trade. I buy ore, I sell what you cannot carry, I forget nothing I am owed.",
+      "choices": [
+       {"text":"Open the shop.","next":"n2"},
+       {"text":"You are owed something?","next":"n3","if":{"quest":"q_debt","state":"available"}},
+       {"text":"Goodbye.","next":"n4"}
+      ]
+     },
+     "n2": {"who":"dorrin","say":"Look all you like.","do":[{"do":"open_shop","shop":"shop_dorrin"}],"end":true},
+     "n3": {
+      "who": "dorrin",
+      "say": "Six ember ore to a forge foreman who went to Rustbell and never returned. Bring me the six and I will call the debt yours to collect.",
+      "do": [{"do":"start_quest","quest":"q_debt"}],
+      "end": true
+     },
+     "n4": {"who":"dorrin","say":"Slowly now.","end":true}
+    }
+   },
+   "brindle_lost": {
+    "speaker": "brindle",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "brindle",
+      "say": "I dropped my lamp in the Thornwild. I wasn't supposed to go. Marrow says the Thornwild eats lanterns.",
+      "choices": [
+       {"text":"I will bring it back.","next":"n2","do":[{"do":"start_quest","quest":"q_lost_lamp"}]},
+       {"text":"That is a dangerous place for a child.","next":"n3"}
+      ]
+     },
+     "n2": {"who":"brindle","say":"It has my name on it. B-R-I-N. I didn't finish.","end":true},
+     "n3": {"who":"brindle","say":"I know. That is why I need someone else to go.","next":"n1"}
+    }
+   },
+   "brindle_found": {
+    "speaker": "brindle",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "brindle",
+      "say": "My lamp! It still has a little light inside. Can I share it with you? For luck?",
+      "do": [
+       {"do":"take_item","item":"lost_lamp"},
+       {"do":"complete_quest","quest":"q_lost_lamp"},
+       {"do":"set_flag","flag":"brindle_light"},
+       {"do":"add_affinity","character":"brindle","delta":10}
+      ],
+      "end": true
+     }
+    }
+   },
+   "quill_archive": {
+    "speaker": "quill",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "quill",
+      "say": "Hush. Hush. Oh. A reader. No one has read here since the Keeper turned the pages for me.",
+      "choices": [
+       {"text":"What is kept here?","next":"n2"},
+       {"text":"I found these tablets.","next":"n3","if":{"quest":"q_pages","state":"active"}},
+       {"text":"Do you know about the Gloam?","next":"n4"}
+      ]
+     },
+     "n2": {
+      "who": "quill",
+      "say": "Every wall inscription in Ashmere, as rubbings. The Lantern was lit by three hands the first time. Three. Not one.",
+      "do": [{"do":"set_flag","flag":"quill_three_hands"},{"do":"start_quest","quest":"q_pages"}],
+      "next": "n1"
+     },
+     "n3": {
+      "who": "quill",
+      "say": "Brilliant. Each tablet fills a gap. The pattern becomes... oh. The Sovereign is not a monster. It is the dark the Lantern was built to hold.",
+      "do": [{"do":"add_entry","entry":"e_sovereign_truth"}],
+      "end": true
+     },
+     "n4": {
+      "who": "quill",
+      "say": "Older than the Lantern. Ask it what it wants. Do not ask while swinging.",
+      "do": [{"do":"add_entry","entry":"e_gloam_wants"}],
+      "end": true
+     }
+    }
+   },
+   "ashveil_waltz": {
+    "speaker": "ashveil",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "ashveil",
+      "say": "Do you dance? No. How refreshing; the court was full of those who did. I have lost my locket in the crypts, and my partner.",
+      "choices": [{"text":"I will find it.","next":"n2","do":[{"do":"start_quest","quest":"q_last_waltz"}]},{"text":"Who was your partner?","next":"n3"}]
+     },
+     "n2": {"who":"ashveil","say":"Behind a false wall in the lower crypt, if the Regent's men did not clear it. Thank you, little flame.","end":true},
+     "n3": {
+      "who": "ashveil",
+      "say": "The man now called the Regent. He swore an oath to me and then to the crown, and the crown was heavier.",
+      "do": [{"do":"set_flag","flag":"knows_regent_past"},{"do":"add_entry","entry":"e_regent"}],
+      "next": "n1"
+     }
+    }
+   },
+   "ashveil_locket": {
+    "speaker": "ashveil",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "ashveil",
+      "say": "My locket. Two portraits, one scratched. He scratched his own out, you see. The Regent never wanted to be remembered as himself.",
+      "next": "n2"
+     },
+     "n2": {
+      "who": "ashveil",
+      "say": "When you meet him, show him this. Or do not. Either way I can rest.",
+      "do": [
+       {"do":"complete_quest","quest":"q_last_waltz"},
+       {"do":"set_flag","flag":"ashveil_rested"},
+       {"do":"add_affinity","character":"ashveil","delta":10}
+      ],
+      "end": true
+     }
+    }
+   },
+   "thistle_prefight": {
+    "speaker": "mother_thistle",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "mother_thistle",
+      "say": "I tended the stair and then the stair tended me. Go back, little wick. I cannot stop growing.",
+      "do": [{"do":"set_flag","flag":"thistle_spoke"},{"do":"start_boss","boss":"thistle"}],
+      "end": true
+     }
+    }
+   },
+   "bellkeeper_prefight": {
+    "speaker": "bellkeeper",
+    "start": "n1",
+    "nodes": {"n1":{"who":"bellkeeper","say":"TOLL. TOLL. Who calls the hour?","do":[{"do":"start_boss","boss":"bellkeeper"}],"end":true}}
+   },
+   "orrin_prefight": {
+    "speaker": "orrin",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "orrin",
+      "say": "Another taker of warmth. I forged the flame's first vessel; I will not surrender its cinder to a thing I did not make.",
+      "do": [{"do":"start_boss","boss":"orrin"}],
+      "end": true
+     }
+    }
+   },
+   "cantor_prefight": {
+    "speaker": "cantor",
+    "start": "n1",
+    "nodes": {"n1":{"who":"cantor","say":"We sang the dark away. We sang until our throats were water.","do":[{"do":"start_boss","boss":"cantor"}],"end":true}}
+   },
+   "regent_prefight": {
+    "speaker": "regent",
+    "start": "n1",
+    "nodes": {
+     "n1": {
+      "who": "regent",
+      "say": "A wick. Come to take the last of my crown?",
+      "choices": [{"text":"Lady Ashveil asks for you.","next":"n2","if":{"item":"ashveil_locket"}},{"text":"I come for the Ash Cinder.","next":"n3"}]
+     },
+     "n2": {
+      "who": "regent",
+      "say": "Ah. She kept it. Show me. Show... Then I have no more reason to hold this crown. Take the Cinder, and take this: the crown of Gloam is not mine to hold, nor yours.",
+      "do": [
+       {"do":"give_item","item":"cinder_ash"},
+       {"do":"set_flag","flag":"regent_spared"},
+       {"do":"complete_quest","quest":"q_barrows"},
+       {"do":"add_entry","entry":"e_regent"}
+      ],
+      "end": true
+     },
+     "n3": {"who":"regent","say":"Then earn it.","do":[{"do":"start_boss","boss":"regent"}],"end":true}
+    }
+   },
+   "sovereign_final": {
+    "speaker": "sovereign",
+    "start": "n1",
+    "nodes": {
+     "n1": {"who":"sovereign","say":"Little wick. You carry four small suns into a room that has outlasted every sun.","next":"n2"},
+     "n2": {
+      "who": "sovereign",
+      "say": "I am not your enemy. I am the quiet the Lantern was built to push back. I will give you rest, for the cinders.",
+      "choices": [
+       {"text":"Rekindle the Lantern with the cinders. I will be the wick.","next":"n_wick","if":{"flag":"resolved_wick"}},
+       {"text":"Rekindle it with every light I have been given.","next":"n_share","if":{"flag":"knows_second_way"}},
+       {"text":"Take the cinders. Give Ashmere rest.","next":"n_rest"},
+       {"text":"I will wear the crown and keep the dark in order.","next":"n_crown","if":{"item":"crown_of_gloam"}},
+       {"text":"Silence. I came to fight.","next":"n_fight"}
+      ]
+     },
+     "n_wick": {"who":"sovereign","say":"Then burn.","do":[{"do":"set_flag","flag":"choice_borrowed"},{"do":"start_boss","boss":"sovereign"}],"end":true},
+     "n_share": {
+      "who": "sovereign",
+      "say": "Many hands. Interesting. Prove it.",
+      "do": [{"do":"set_flag","flag":"choice_share"},{"do":"start_boss","boss":"sovereign"}],
+      "end": true
+     },
+     "n_rest": {"who":"sovereign","say":"Rest, then.","do":[{"do":"set_flag","flag":"choice_gutter"},{"do":"set_flag","flag":"final_resolved"}],"end":true},
+     "n_crown": {
+      "who": "sovereign",
+      "say": "It is yours. It was always the only seat left.",
+      "do": [{"do":"set_flag","flag":"choice_crown"},{"do":"set_flag","flag":"final_resolved"}],
+      "end": true
+     },
+     "n_fight": {
+      "who": "sovereign",
+      "say": "Then you will teach me what a wick is.",
+      "do": [{"do":"set_flag","flag":"choice_borrowed"},{"do":"start_boss","boss":"sovereign"}],
+      "end": true
+     }
+    }
+   }
+  },
+  "entries": [
+   {"id":"e_ashmere","title":"Ashmere","text":"A kingdom built downward, one lit floor at a time. The Great Lantern warmed all of it.","tag":"world"},
+   {"id":"e_gloam","title":"The Gloam","text":"A quiet that thickens into something that hungers. It climbs a floor each winter.","tag":"world"},
+   {
+    "id": "e_ash",
+    "title": "Ash",
+    "text": "The ash of fallen foes carries the lantern's old warmth. Marrow says it is the only coin the Gloam respects.",
+    "tag": "world"
+   },
+   {
+    "id": "e_thistle",
+    "title": "Mother Thistle",
+    "text": "Once the lamp-keeper of the Keeper's Stair, rooted by the Gloam and made to grow.",
+    "tag": "warden"
+   },
+   {
+    "id": "e_cisterns",
+    "title": "Glasswater",
+    "text": "The Cisterns were built to cool the Lantern's glass. Now they hold the Bellkeeper's grief.",
+    "tag": "world"
+   },
+   {"id":"e_pip","title":"Pip","text":"A cartographer moth who maps what is gone and sells what is left.","tag":"people"},
+   {
+    "id": "e_bellkeeper",
+    "title": "The Bellkeeper",
+    "text": "Rang the hour for the whole kingdom. When the Lantern died, he could not stop.",
+    "tag": "warden"
+   },
+   {"id":"e_orrin","title":"Forgemother Orrin","text":"Forged the Lantern's first vessel. She resents the new wick.","tag":"warden"},
+   {"id":"e_choir","title":"The Choir","text":"A hundred singers drowned in the same hymn. The organ still plays.","tag":"world"},
+   {"id":"e_cantor","title":"The Drowned Cantor","text":"He sang until the cistern rose. His cinder is a held note.","tag":"warden"},
+   {
+    "id": "e_thornwild",
+    "title": "The Thornwild",
+    "text": "Where the Gloam taught the garden to climb. Brindle's lamp is somewhere in the roots.",
+    "tag": "world"
+   },
+   {"id":"e_barrows","title":"The Barrows","text":"The Ashen Court's burial halls. They still hold court.","tag":"world"},
+   {"id":"e_regent","title":"The Ashen Regent","text":"He swore an oath to Lady Ashveil and then to the crown. The crown was heavier.","tag":"warden"},
+   {"id":"e_spire","title":"The Lantern Spire","text":"The old tower that once carried the Lantern's light to the sky.","tag":"world"},
+   {"id":"e_galleries","title":"The Dim Galleries","text":"An archive that remembers the first lighting: three hands, not one.","tag":"world"},
+   {"id":"e_marrow","title":"Marrow's Confession","text":"The lamp-smith made the glass the Keeper walked into.","tag":"people"},
+   {
+    "id": "e_sovereign_truth",
+    "title": "What the Sovereign Is",
+    "text": "Not a monster; the quiet the Lantern was built to hold back. It is lonely.",
+    "tag": "lore"
+   },
+   {"id":"e_gloam_wants","title":"What the Gloam Wants","text":"To be spoken to, not struck.","tag":"lore"},
+   {"id":"e_wick_origin","title":"The Wick","text":"Made of candle-ash. Meant to burn, or to choose.","tag":"lore"},
+   {"id":"e_keeper","title":"The Keeper","text":"Aurelle walked into the Lantern to keep it lit one winter longer.","tag":"lore"}
+  ],
+  "cutscenes": {
+   "cs_wake": {
+    "skippable": true,
+    "steps": [
+     {"camera":{"pos":[410,470],"look":[410,480],"fov":1,"ease":"in","sec":3}},
+     {"say":{"character":"marrow","text":"Up. Up. The fire is thin tonight."}},
+     {"wait":1},
+     {"fx":[{"do":"shake","amount":0.1}]}
+    ]
+   },
+   "cs_descent": {
+    "skippable": true,
+    "steps": [{"camera":{"pos":[280,480],"look":[230,400],"sec":4}},{"fx":[{"do":"notify","text":"Mossgrave Descent","kind":"info"}]}]
+   },
+   "cs_foundry": {
+    "skippable": true,
+    "steps": [
+     {"camera":{"pos":[640,470],"look":[670,400],"sec":5}},
+     {"say":{"character":"orrin","text":"Another visitor to my hearth. The bellows have waited a long time."}}
+    ]
+   },
+   "cs_vista": {
+    "skippable": true,
+    "steps": [
+     {"camera":{"pos":[760,500],"look":[410,515],"fov":0.6,"sec":6}},
+     {"fx":[{"do":"notify","text":"From the Spire you can see the dead Lantern far below.","kind":"info"}]}
+    ]
+   },
+   "cs_confession": {"skippable":false,"steps":[{"camera":{"pos":[410,500],"look":[410,500],"sec":2}},{"wait":2}]},
+   "cs_final_descent": {
+    "skippable": true,
+    "steps": [
+     {"camera":{"pos":[430,170],"look":[425,70],"fov":0.5,"sec":6}},
+     {"say":{"character":"sovereign","text":"Come closer. I have been alone a very long time."}}
+    ]
+   },
+   "cs_kindle": {"skippable":false,"steps":[{"camera":{"pos":[425,70],"look":[425,60],"sec":6}},{"fx":[{"do":"play_sound","cue":"lantern_catch"}]},{"wait":3}]}
+  },
+  "barks": [
+   {"channel":"ambient","when":{"zone":"cinderwell"},"say":"The well fire pops softly.","cooldown":90},
+   {"channel":"ambient","when":{"zone":"glasswater"},"say":"Somewhere far above, a bell tolls once.","cooldown":120},
+   {"channel":"ambient","when":{"zone":"sunken_choir"},"say":"A held note trembles through the water.","cooldown":120},
+   {
+    "channel": "character",
+    "character": "marrow",
+    "when": {"all":[{"zone":"cinderwell"},{"ability":"briar_grip"}]},
+    "say": "Careful on the stair. The Seal is old.",
+    "once": true
+   },
+   {"channel":"character","character":"pip","when":{"zone":"cinderwell"},"say":"Flutter, flutter. Another corner found?","cooldown":180},
+   {"channel":"tutorial","when":{"zone":"mossgrave"},"say":"Hold jump longer to rise higher.","once":true}
+  ],
+  "endings": [
+   {
+    "id": "kindled",
+    "title": "Kindled Together",
+    "outcome": "won",
+    "when": {
+     "all": [
+      {"flag":"choice_share"},
+      {"flag":"sovereign_down"},
+      {"quest":"q_lost_lamp","state":"complete"},
+      {"quest":"q_last_waltz","state":"complete"},
+      {"quest":"q_maps","state":"complete"},
+      {"entries":"lore","gte":3}
+     ]
+    },
+    "cutscene": "cs_kindle",
+    "epilogue": "Wick carries the Lantern's flame upward, handing it from palm to palm: Brindle, Pip, Vell, Ashveil, Marrow, the wardens' memories. The Lantern burns with many wicks. Ashmere warms, floor by floor, and Wick walks out into the morning that follows."
+   },
+   {
+    "id": "borrowed_flame",
+    "title": "Borrowed Flame",
+    "outcome": "won",
+    "when": {"all":[{"flag":"choice_borrowed"},{"flag":"sovereign_down"}]},
+    "cutscene": "cs_kindle",
+    "epilogue": "Wick steps into the Lantern glass as the Keeper did. The flame catches, holds, and warms Ashmere for a generation. In the well, a small fire waits for the next wick."
+   },
+   {
+    "id": "the_long_rest",
+    "title": "The Long Rest",
+    "outcome": "lost",
+    "when": {"flag":"choice_gutter"},
+    "epilogue": "Wick sets the cinders into the Sovereign's open hands. The Gloam is gentle. Ashmere sleeps, and the sleeping never ends, and no one minds."
+   },
+   {
+    "id": "hollow_crown",
+    "title": "The Hollow Crown",
+    "outcome": "neutral",
+    "when": {"all":[{"flag":"choice_crown"},{"item":"crown_of_gloam"}]},
+    "epilogue": "Wick wears the crown of Gloam and keeps the dark in order. The floors are quiet and the doors stay shut. Marrow never says a word again."
+   }
+  ]
+ },
+ "spaces": [
+  {
+   "id": "ashmere",
+   "use": "engine.space.tilemap",
+   "with": {"tile":16,"size":[800,520],"mode":"side","gravity":-60,"layers":["bg","solid","fg"]},
+   "generators": [
+    {
+     "use": "engine.generate.tilemap.rooms",
+     "with": {
+      "requiresAbilities": [],
+      "movement": {"jumpHeight": 3, "jumpDistance": 4},
+      "abilities": {"ember_step": {"dash": 3}, "briar_grip": {"climb": true}, "moth_wings": {"doubleJump": true}},
+      "palette": {"wall": "stone", "ground": "stone", "platform": "one_way", "rung": "one_way", "hazard": "spikes", "water": "water", "door": "breakable_wall"},
+      "oneWayPlatforms": true,
+      "themes": {"moss": {"wall": "moss_stone", "ground": "moss_stone"}, "wet": {"wall": "wet_stone", "ground": "wet_stone"}, "rust": {"wall": "rust_plate", "ground": "rust_plate"}, "thorn": {"wall": "thorn_wood", "ground": "moss_stone"}, "ash": {"wall": "ash_stone", "ground": "bone_ash"}, "dark": {"wall": "glass_brick"}, "void": {"wall": "ash_stone"}},
+      "rooms": [
+       {
+        "id": "cw_square",
+        "zone": "cinderwell",
+        "rect": [380,480,440,520],
+        "style": "village",
+        "theme": "ember",
+        "features": [
+         {"kind":"bench","id":"bench_cinderwell"},
+         {"kind":"npc","ref":"marrow"},
+         {"kind":"npc","ref":"vell"},
+         {"kind":"npc","ref":"dorrin"},
+         {"kind":"well","id":"the_well"},
+         {"kind":"great_lantern","id":"great_lantern_site"}
+        ],
+        "exits": [
+         {"side":"l","to":"mossgrave"},
+         {"side":"r","to":"rustbell","gate":{"ability":"ember_step"}},
+         {"side":"b","to":"glasswater","gate":{"gate":"rust_seal"}}
+        ]
+       },
+       {
+        "id": "cw_cellar",
+        "zone": "cinderwell",
+        "rect": [340,480,380,520],
+        "style": "hall",
+        "theme": "ember",
+        "platforms": 2,
+        "features": [{"kind":"npc","ref":"pip"},{"kind":"chest","table":"chest_common"}],
+        "exits": [{"side":"l","to":"mossgrave"},{"side":"r"}]
+       },
+       {
+        "id": "cw_lift",
+        "zone": "cinderwell",
+        "rect": [440,440,460,520],
+        "style": "shaft",
+        "theme": "ember",
+        "features": [{"kind":"lift","id":"lift_well"}],
+        "exits": [{"side":"b","to":"glasswater","gate":{"gate":"rust_seal"}}]
+       },
+       {
+        "id": "cw_underwell",
+        "zone": "cinderwell",
+        "rect": [380,440,440,480],
+        "style": "cave",
+        "theme": "ember",
+        "platforms": 3,
+        "gaps": 1,
+        "features": [{"kind":"npc","ref":"brindle"},{"kind":"pickup","item":"ember_ore","count":3}],
+        "exits": [{"side":"t"},{"side":"r"}]
+       },
+       {
+        "id": "mg_entry",
+        "zone": "mossgrave",
+        "rect": [260,460,330,520],
+        "style": "cave",
+        "theme": "moss",
+        "platforms": 3,
+        "gaps": 1,
+        "hazards": ["thorn_bramble"],
+        "features": [{"kind":"spawn","ref":"mossling","count":3},{"kind":"tutorial","text":"jump_attack_pogo"}],
+        "exits": [{"side":"r","to":"cinderwell"},{"side":"b"}]
+       },
+       {
+        "id": "mg_roots",
+        "zone": "mossgrave",
+        "rect": [180,440,260,520],
+        "style": "corridor",
+        "theme": "moss",
+        "platforms": 2,
+        "features": [{"kind":"bench","id":"bench_moss_1"},{"kind":"lore_tablet","id":"tablet_moss_1"}],
+        "exits": [{"side":"r"},{"side":"b","to":"thornwild","gate":{"ability":"briar_grip"}}]
+       },
+       {
+        "id": "mg_hollow",
+        "zone": "mossgrave",
+        "rect": [190, 392, 270, 440],
+        "style": "cave",
+        "theme": "moss",
+        "platforms": 4,
+        "gaps": 2,
+        "hazards": ["thorn_bramble","spikes"],
+        "features": [{"kind":"spawn","ref":"thorn_crawler","count":2},{"kind":"spawn","ref":"spore_bloom","count":2},{"kind":"chest","table":"chest_common"}],
+        "exits": [{"side":"t"},{"side":"r"},{"side":"b"}]
+       },
+       {
+        "id": "mg_thicket",
+        "zone": "mossgrave",
+        "rect": [270, 392, 330, 460],
+        "style": "shaft",
+        "theme": "moss",
+        "platforms": 5,
+        "features": [{"kind":"breakable","id":"wall_moss_secret","hides":"pickup:notch_pin"},{"kind":"lore_tablet","id":"tablet_moss_2"}],
+        "exits": [{"side":"t"},{"side":"b"}]
+       },
+       {
+        "id": "mg_thistle_arena",
+        "zone": "mossgrave",
+        "rect": [200,360,300,392],
+        "style": "arena",
+        "theme": "moss",
+        "features": [
+         {"kind":"boss_door","id":"door_thistle","boss":"thistle"},
+         {"kind":"boss_spawn","ref":"mother_thistle"},
+         {"kind":"ability_altar","ability":"briar_grip"},
+         {"kind":"bench","id":"bench_thistle"}
+        ],
+        "exits": [{"side":"t"},{"side":"b","to":"thornwild","gate":{"ability":"briar_grip"}}]
+       },
+       {
+        "id": "gw_gate",
+        "zone": "glasswater",
+        "rect": [400,400,480,440],
+        "style": "hall",
+        "theme": "wet",
+        "platforms": 3,
+        "features": [{"kind":"valve","id":"cistern_valve"},{"kind":"bench","id":"bench_glass_1"}],
+        "exits": [{"side":"t","to":"cinderwell","gate":{"gate":"rust_seal"}},{"side":"l"}]
+       },
+       {
+        "id": "gw_flooded_nave",
+        "zone": "glasswater",
+        "rect": [330, 360, 400, 440],
+        "style": "flooded",
+        "theme": "wet",
+        "platforms": 4,
+        "gaps": 2,
+        "hazards": ["spikes"],
+        "features": [{"kind":"spawn","ref":"cistern_leech","count":3},{"kind":"spawn","ref":"drip_wraith","count":2},{"kind":"pickup","item":"glass_shard"}],
+        "exits": [{"side":"r"},{"side":"b"}]
+       },
+       {
+        "id": "gw_climb",
+        "zone": "glasswater",
+        "rect": [480,330,520,440],
+        "style": "shaft",
+        "theme": "wet",
+        "platforms": 2,
+        "features": [{"kind":"climb_walls","abilities":["briar_grip"]},{"kind":"pickup","item":"glass_shard"},{"kind":"lore_tablet","id":"tablet_glass_1"}],
+        "requiresAbilities": ["briar_grip"],
+        "exits": [{"side":"l"},{"side":"b"}]
+       },
+       {
+        "id": "gw_pump_hall",
+        "zone": "glasswater",
+        "rect": [340, 310, 440, 360],
+        "style": "hall",
+        "theme": "wet",
+        "platforms": 5,
+        "gaps": 2,
+        "hazards": ["water"],
+        "features": [
+         {"kind":"pump","id":"pump_a"},
+         {"kind":"pickup","item":"map_fragment"},
+         {"kind":"spawn","ref":"drip_wraith","count":2},
+         {"kind":"chest","table":"chest_common"}
+        ],
+        "exits": [{"side":"t"},{"side":"b","to":"sunken_choir","gate":{"all":[{"ability":"ember_step"},{"ability":"briar_grip"}]}}]
+       },
+       {
+        "id": "gw_bell_arena",
+        "zone": "glasswater",
+        "rect": [440, 300, 520, 330],
+        "style": "arena",
+        "theme": "wet",
+        "features": [
+         {"kind":"boss_door","id":"door_bell","boss":"bellkeeper"},
+         {"kind":"boss_spawn","ref":"bellkeeper"},
+         {"kind":"ability_altar","ability":"ember_step"}
+        ],
+        "exits": [{"side":"l"}]
+       },
+       {
+        "id": "rb_gate",
+        "zone": "rustbell",
+        "rect": [520,440,600,520],
+        "style": "hall",
+        "theme": "rust",
+        "platforms": 3,
+        "gaps": 1,
+        "features": [{"kind":"dash_gap","width":9},{"kind":"bench","id":"bench_rust_1"}],
+        "requiresAbilities": ["ember_step"],
+        "exits": [{"side":"l","to":"cinderwell","gate":{"ability":"ember_step"}},{"side":"r"},{"side":"b"}]
+       },
+       {
+        "id": "rb_bellows",
+        "zone": "rustbell",
+        "rect": [600,440,720,520],
+        "style": "hall",
+        "theme": "rust",
+        "platforms": 6,
+        "gaps": 2,
+        "hazards": ["acid"],
+        "features": [
+         {"kind":"bellows","id":"forge_bellows_1"},
+         {"kind":"bellows","id":"forge_bellows_2"},
+         {"kind":"bellows","id":"forge_bellows_3"},
+         {"kind":"spawn","ref":"rust_automaton","count":2},
+         {"kind":"spawn","ref":"forge_imp","count":3}
+        ],
+        "requiresAbilities": ["ember_step"],
+        "exits": [{"side":"l"},{"side":"b"},{"side":"r","to":"lantern_spire","gate":{"ability":"moth_wings"}}]
+       },
+       {
+        "id": "rb_stacks",
+        "zone": "rustbell",
+        "rect": [520,380,620,440],
+        "style": "shaft",
+        "theme": "rust",
+        "platforms": 6,
+        "hazards": ["acid","spikes"],
+        "features": [
+         {"kind":"spawn","ref":"cinder_bat","count":4},
+         {"kind":"pickup","item":"ember_ore","count":4},
+         {"kind":"breakable","id":"wall_rust_secret","hides":"chest:chest_common"},
+         {"kind":"pickup","item":"map_fragment"}
+        ],
+        "requiresAbilities": ["ember_step"],
+        "exits": [{"side":"t"},{"side":"r"},{"side":"b","to":"ashen_barrows","gate":{"item":"ash_sigil"}}]
+       },
+       {
+        "id": "rb_foundry_floor",
+        "zone": "rustbell",
+        "rect": [620,380,720,440],
+        "style": "arena",
+        "theme": "rust",
+        "features": [
+         {"kind":"boss_door","id":"door_forge","boss":"orrin"},
+         {"kind":"boss_spawn","ref":"forgemother_orrin"},
+         {"kind":"ability_altar","ability":"moth_wings"},
+         {"kind":"bench","id":"bench_forge"}
+        ],
+        "exits": [{"side":"l"},{"side":"t"}]
+       },
+       {
+        "id": "sc_descent",
+        "zone": "sunken_choir",
+        "rect": [440,240,520,300],
+        "style": "flooded",
+        "theme": "wet",
+        "platforms": 4,
+        "gaps": 3,
+        "hazards": ["water","spikes"],
+        "features": [{"kind":"bench","id":"bench_choir_1"},{"kind":"spawn","ref":"choir_wisp","count":3}],
+        "requiresAbilities": ["ember_step","briar_grip"],
+        "exits": [{"side":"t"},{"side":"l"}]
+       },
+       {
+        "id": "sc_organ",
+        "zone": "sunken_choir",
+        "rect": [350,230,440,300],
+        "style": "hall",
+        "theme": "wet",
+        "platforms": 5,
+        "features": [
+         {"kind":"chime","id":"chime_1"},
+         {"kind":"chime","id":"chime_2"},
+         {"kind":"chime","id":"chime_3"},
+         {"kind":"lore_tablet","id":"tablet_choir_1"},
+         {"kind":"pickup","item":"map_fragment"}
+        ],
+        "exits": [{"side":"t","to":"glasswater","gate":{"all":[{"ability":"ember_step"},{"ability":"briar_grip"}]}},{"side":"r"},{"side":"b"}]
+       },
+       {
+        "id": "sc_cantor_arena",
+        "zone": "sunken_choir",
+        "rect": [330,180,480,230],
+        "style": "arena",
+        "theme": "wet",
+        "features": [
+         {"kind":"boss_door","id":"door_cantor","boss":"cantor"},
+         {"kind":"boss_spawn","ref":"drowned_cantor"},
+         {"kind":"bench","id":"bench_cantor"},
+         {"kind":"chest","table":"chest_common"}
+        ],
+        "exits": [{"side":"t"},{"side":"b","to":"hollow_heart","gate":{"gate":"heart_door"}}]
+       },
+       {
+        "id": "tw_canopy",
+        "zone": "thornwild",
+        "rect": [200,300,330,360],
+        "style": "cave",
+        "theme": "thorn",
+        "platforms": 5,
+        "gaps": 3,
+        "hazards": ["thorn_bramble"],
+        "features": [
+         {"kind":"climb_walls","abilities":["briar_grip"]},
+         {"kind":"spawn","ref":"thorn_stalker","count":2},
+         {"kind":"lore_tablet","id":"tablet_thorn_1"}
+        ],
+        "requiresAbilities": ["briar_grip"],
+        "exits": [{"side":"r","to":"glasswater"},{"side":"t"}]
+       },
+       {
+        "id": "tw_roots",
+        "zone": "thornwild",
+        "rect": [80,260,200,360],
+        "style": "shaft",
+        "theme": "thorn",
+        "platforms": 7,
+        "hazards": ["thorn_bramble"],
+        "features": [{"kind":"climb_walls","abilities":["briar_grip"]},{"kind":"pickup","item":"lost_lamp"},{"kind":"bench","id":"bench_thorn_1"}],
+        "requiresAbilities": ["briar_grip"],
+        "exits": [{"side":"r"},{"side":"b"}]
+       },
+       {
+        "id": "tw_den",
+        "zone": "thornwild",
+        "rect": [80,200,330,260],
+        "style": "cave",
+        "theme": "thorn",
+        "platforms": 4,
+        "gaps": 2,
+        "hazards": ["spikes","thorn_bramble"],
+        "features": [
+         {"kind":"spawn","ref":"thorn_crawler","count":3},
+         {"kind":"pickup","item":"archive_key"},
+         {"kind":"chest","table":"chest_common"},
+         {"kind":"lore_tablet","id":"tablet_thorn_2"}
+        ],
+        "exits": [{"side":"t"},{"side":"b","to":"dim_galleries","gate":{"item":"archive_key"}}]
+       },
+       {
+        "id": "ab_gatehall",
+        "zone": "ashen_barrows",
+        "rect": [520,320,620,380],
+        "style": "hall",
+        "theme": "ash",
+        "platforms": 3,
+        "features": [{"kind":"bench","id":"bench_barrow_1"},{"kind":"spawn","ref":"barrow_ghoul","count":3},{"kind":"lore_tablet","id":"tablet_barrow_1"}],
+        "exits": [{"side":"t","to":"rustbell","gate":{"item":"ash_sigil"}},{"side":"r"},{"side":"b"}]
+       },
+       {
+        "id": "ab_colosseum",
+        "zone": "ashen_barrows",
+        "rect": [620,300,720,380],
+        "style": "arena",
+        "theme": "ash",
+        "features": [{"kind":"wave_arena","id":"arena_ash","waves":3},{"kind":"chest","table":"chest_common"}],
+        "exits": [{"side":"l"},{"side":"b"}]
+       },
+       {
+        "id": "ab_crypts",
+        "zone": "ashen_barrows",
+        "rect": [520, 240, 620, 320],
+        "style": "cave",
+        "theme": "ash",
+        "platforms": 6,
+        "gaps": 3,
+        "hazards": ["spikes"],
+        "features": [
+         {"kind":"spawn","ref":"ash_knight","count":2},
+         {"kind":"pickup","item":"ashveil_locket","hidden":true},
+         {"kind":"breakable","id":"wall_barrow_secret","hides":"pickup:ashveil_locket"},
+         {"kind":"lore_tablet","id":"tablet_barrow_2"},
+         {"kind":"pickup","item":"map_fragment"}
+        ],
+        "requiresAbilities": ["moth_wings"],
+        "exits": [{"side":"t"},{"side":"r"}]
+       },
+       {
+        "id": "ab_regent_hall",
+        "zone": "ashen_barrows",
+        "rect": [640,200,720,300],
+        "style": "arena",
+        "theme": "ash",
+        "features": [
+         {"kind":"boss_door","id":"door_regent","boss":"regent"},
+         {"kind":"boss_spawn","ref":"ashen_regent"},
+         {"kind":"bench","id":"bench_regent"},
+         {"kind":"pickup","item":"crown_of_gloam","hidden":true,"requires":{"flag":"regent_spared"}}
+        ],
+        "exits": [{"side":"t"}]
+       },
+       {
+        "id": "ls_climb",
+        "zone": "lantern_spire",
+        "rect": [720,300,800,420],
+        "style": "shaft",
+        "theme": "sky",
+        "platforms": 12,
+        "hazards": ["spikes"],
+        "features": [
+         {"kind":"moving_platform","count":4},
+         {"kind":"caged_moth","id":"moth_1"},
+         {"kind":"caged_moth","id":"moth_2"},
+         {"kind":"caged_moth","id":"moth_3"}
+        ],
+        "requiresAbilities": ["moth_wings"],
+        "exits": [{"side":"l","to":"rustbell"},{"side":"t"}]
+       },
+       {
+        "id": "ls_crown",
+        "zone": "lantern_spire",
+        "rect": [720,420,800,520],
+        "style": "shaft",
+        "theme": "sky",
+        "platforms": 10,
+        "features": [
+         {"kind":"caged_moth","id":"moth_4"},
+         {"kind":"caged_moth","id":"moth_5"},
+         {"kind":"bench","id":"bench_spire"},
+         {"kind":"chest","table":"chest_common"},
+         {"kind":"pickup","item":"notch_pin"},
+         {"kind":"view_point","id":"vista_lantern"}
+        ],
+        "requiresAbilities": ["moth_wings","ember_step"],
+        "exits": [{"side":"b"}]
+       },
+       {
+        "id": "dg_foyer",
+        "zone": "dim_galleries",
+        "rect": [200,100,330,200],
+        "style": "hall",
+        "theme": "dark",
+        "platforms": 3,
+        "features": [{"kind":"npc","ref":"quill"},{"kind":"bench","id":"bench_gallery"},{"kind":"lore_tablet","id":"tablet_gallery_1"}],
+        "exits": [{"side":"t","to":"thornwild","gate":{"item":"archive_key"}},{"side":"l"}]
+       },
+       {
+        "id": "dg_stacks",
+        "zone": "dim_galleries",
+        "rect": [100,100,200,200],
+        "style": "hall",
+        "theme": "dark",
+        "platforms": 6,
+        "hazards": ["spikes"],
+        "features": [{"kind":"lore_tablet","id":"tablet_gallery_2"},{"kind":"lore_tablet","id":"tablet_gallery_3"},{"kind":"spawn","ref":"choir_wisp","count":2}],
+        "exits": [{"side":"r"},{"side":"b"}]
+       },
+       {
+        "id": "dg_hush_vault",
+        "zone": "dim_galleries",
+        "rect": [100,40,330,100],
+        "style": "arena",
+        "theme": "dark",
+        "features": [{"kind":"boss_spawn","ref":"hush_knight","optional":true},{"kind":"pickup","item":"c_hush_veil"}],
+        "exits": [{"side":"t"}]
+       },
+       {
+        "id": "hh_stair",
+        "zone": "hollow_heart",
+        "rect": [380,120,520,180],
+        "style": "shaft",
+        "theme": "void",
+        "platforms": 8,
+        "hazards": ["dark_haze"],
+        "features": [{"kind":"spawn","ref":"gloam_shade","count":4}],
+        "exits": [{"side":"t","to":"sunken_choir"}]
+       },
+       {
+        "id": "hh_throne",
+        "zone": "hollow_heart",
+        "rect": [330,40,520,120],
+        "style": "arena",
+        "theme": "void",
+        "features": [
+         {"kind":"boss_door","id":"door_sovereign","boss":"sovereign"},
+         {"kind":"boss_spawn","ref":"gloam_sovereign"},
+         {"kind":"great_lantern","id":"lantern_heart"}
+        ],
+        "exits": [{"side":"t"}]
+       }
+      ]
+     }
+    },
+    {
+     "use": "engine.generate.structures",
+     "with": {
+      "place": [
+       {"id":"well_house","kind":"hut","zone":"cinderwell","at":[410,500],"style":"ember","tags":["spawn"]},
+       {"id":"great_lantern_site","kind":"shrine","zone":"cinderwell","at":[410,515],"style":"ember","tags":["finale"]},
+       {"id":"foundry_works","kind":"ruin","zone":"rustbell","count":[3,4],"style":"rust"},
+       {"id":"barrow_tombs","kind":"ruin","zone":"ashen_barrows","count":[4,6],"style":"ash"}
+      ]
+     }
+    },
+    {
+     "use": "engine.generate.scatter",
+     "with": {
+      "props": [
+       {"block":"moss_stone","per100m2":4,"zones":["mossgrave"],"clump":0.7,"minSpacing":1.5},
+       {"block":"thorn_bramble","per100m2":2,"zones":["thornwild","mossgrave"],"clump":0.6,"minSpacing":2},
+       {"model":"pickup","per100m2":3,"zones":["mossgrave","glasswater","rustbell","ashen_barrows"],"clump":0.2,"minSpacing":3}
+      ]
+     }
+    }
+   ],
+   "zones": [
+    {"id":"cinderwell","name":"Cinderwell","rect":[340,440,460,520],"tags":["hub","safe"],"rules":{"safe":true,"music":"hearth","light":0.9}},
+    {"id":"mossgrave","name":"Mossgrave Descent","rect":[180,360,330,520],"tags":["cave","moss"],"rules":{"music":"dripping","light":0.45}},
+    {"id":"glasswater","name":"Glasswater Cisterns","rect":[330,300,520,440],"tags":["flooded","brick"],"rules":{"music":"bells_far","light":0.35}},
+    {"id":"rustbell","name":"Rustbell Foundry","rect":[520,380,720,520],"tags":["industrial","hot"],"rules":{"music":"anvils","light":0.5}},
+    {"id":"sunken_choir","name":"The Sunken Choir","rect":[330,180,520,300],"tags":["flooded","sacred"],"rules":{"music":"hymn","light":0.25}},
+    {"id":"thornwild","name":"The Thornwild","rect":[80,200,330,360],"tags":["overgrown","vertical"],"rules":{"music":"wind","light":0.4}},
+    {"id":"ashen_barrows","name":"Ashen Barrows","rect":[520,200,720,380],"tags":["tomb","ash"],"rules":{"music":"dirge","light":0.3}},
+    {
+     "id": "lantern_spire",
+     "name": "Lantern Spire",
+     "rect": [720,300,800,520],
+     "tags": ["vertical","sky"],
+     "rules": {"music":"wind_high","light":0.7,"optional":true}
+    },
+    {
+     "id": "dim_galleries",
+     "name": "The Dim Galleries",
+     "rect": [100,40,330,200],
+     "tags": ["archive","secret"],
+     "rules": {"music":"silence","light":0.2,"optional":true}
+    },
+    {"id":"hollow_heart","name":"The Hollow Heart","rect":[330,40,520,180],"tags":["final","void"],"rules":{"music":"void_drone","light":0.15}}
+   ]
+  }
+ ],
+ "systems": [
+  {"use":"engine.blocks","with":{"tiers":["hand"]}},
+  {"use":"engine.zones","with":{"discoverRadius":0}},
+  {
+   "use": "engine.input.actions",
+   "with": {
+    "verbs": [
+     "move",
+     "jump",
+     "dash",
+     "attack",
+     "heal",
+     "interact",
+     "map",
+     "menu",
+     "inventory",
+     "cast"
+    ],
+    "bindings": {
+     "side": {
+      "move": [
+       "arrows",
+       "wasd"
+      ],
+      "jump": [
+       "z",
+       "space"
+      ],
+      "dash": [
+       "x",
+       "shift"
+      ],
+      "attack": [
+       "c",
+       "j"
+      ],
+      "heal": [
+       "v",
+       "k"
+      ],
+      "interact": [
+       "up",
+       "e"
+      ],
+      "map": [
+       "tab"
+      ],
+      "inventory": [
+       "i"
+      ]
+     }
+    },
+    "shareKeys": [
+     [
+      "move",
+      "interact"
+     ]
+    ]
+   }
+  },
+  {"use":"engine.physics.character","with":{"radius":0.4,"height":1.3,"stepHeight":0.25,"slopeLimit":45}},
+  {
+   "use": "engine.physics.body",
+   "with": {
+    "layers": ["player","enemy","prop","projectile","hazard"],
+    "matrix": [{"a":"player","b":"enemy","collide":true},{"a":"player","b":"hazard","collide":true},{"a":"enemy","b":"enemy","collide":false}]
+   }
+  },
+  {"use":"engine.save","with":{"auto":true,"intervalSec":90,"slots":3}},
+  {
+   "use": "engine.portal",
+   "with": {
+    "portals": [
+     {
+      "id": "lift_well",
+      "from": {"zone":"cinderwell","at":[452,450],"size":[2,3]},
+      "to": {"zone":"glasswater","at":[440,436]},
+      "transition": "elevator",
+      "gate": "rust_seal",
+      "prompt": "Lift"
+     },
+     {
+      "id": "forge_door",
+      "from": {"zone":"rustbell","at":[620,402],"size":[2,4]},
+      "to": {"zone":"rustbell","at":[630,404]},
+      "gate": "forge_door",
+      "prompt": "Forge door",
+      "transition": "cut"
+     },
+     {
+      "id": "cantor_door",
+      "from": {"zone":"sunken_choir","at":[400,232],"size":[2,4]},
+      "to": {"zone":"sunken_choir","at":[405,210]},
+      "gate": "cantor_door",
+      "prompt": "Choir gate",
+      "transition": "cut"
+     },
+     {
+      "id": "fast_travel",
+      "from": {"zone":"cinderwell","at":[0,0],"size":[0,0]},
+      "to": {"zone":"cinderwell","at":[410,500]},
+      "prompt": "Warp bench",
+      "transition": "fade",
+      "key": "cartographer_lens"
+     }
+    ]
+   }
+  },
+  {
+   "use": "engine.spawner",
+   "with": {
+    "globalCap": 90,
+    "rules": [
+     {
+      "id": "s_mg",
+      "archetype": "mossling",
+      "zone": "mossgrave",
+      "count": [4,6],
+      "respawnSec": 0,
+      "maxAlive": 6,
+      "when": {"not":{"boss":"thistle","state":"active"}}
+     },
+     {"id":"s_mg2","archetype":"thorn_crawler","zone":"mossgrave","count":[2,3],"maxAlive":3},
+     {"id":"s_mg3","archetype":"spore_bloom","zone":"mossgrave","count":[2,2],"maxAlive":2},
+     {"id":"s_gw","archetype":"cistern_leech","zone":"glasswater","count":[3,5],"maxAlive":5},
+     {"id":"s_gw2","archetype":"drip_wraith","zone":"glasswater","count":[2,4],"maxAlive":4},
+     {"id":"s_rb","archetype":"rust_automaton","zone":"rustbell","count":[2,3],"maxAlive":3},
+     {"id":"s_rb2","archetype":"forge_imp","zone":"rustbell","count":[3,5],"maxAlive":5},
+     {"id":"s_rb3","archetype":"cinder_bat","zone":"rustbell","count":[3,5],"maxAlive":5},
+     {"id":"s_sc","archetype":"choir_wisp","zone":"sunken_choir","count":[3,5],"maxAlive":5},
+     {"id":"s_tw","archetype":"thorn_stalker","zone":"thornwild","count":[2,3],"maxAlive":3},
+     {"id":"s_tw2","archetype":"thorn_crawler","zone":"thornwild","count":[3,4],"maxAlive":4},
+     {"id":"s_ab","archetype":"barrow_ghoul","zone":"ashen_barrows","count":[3,5],"maxAlive":5},
+     {"id":"s_ab2","archetype":"ash_knight","zone":"ashen_barrows","count":[2,3],"maxAlive":3},
+     {"id":"s_hh","archetype":"gloam_shade","zone":"hollow_heart","count":[3,5],"maxAlive":5,"when":{"flag":"awoke"}},
+     {"id":"s_dg","archetype":"choir_wisp","zone":"dim_galleries","count":[2,3],"maxAlive":3}
+    ]
+   }
+  },
+  {"use":"plot.character","with":{"spawnAtStart":true,"nameplates":false}},
+  {"use":"plot.storyboard","with":{"sequentialActs":false}},
+  {"use":"plot.dialogue","with":{"lineSpeed":45,"repeatSeen":true}},
+  {"use":"plot.quest","with":{"maxActive":14,"trackOne":true}},
+  {"use":"plot.gate"},
+  {"use":"plot.cutscene","with":{"letterbox":true,"skippable":true}},
+  {"use":"plot.relationship","with":{"repRange":[-10,100]}},
+  {"use":"plot.journal"},
+  {"use":"plot.barks","with":{"channels":["ambient","character","tutorial"]}},
+  {"use":"plot.ending","with":{"epilogue":true}},
+  {"use":"gameplay.inventory","with":{"slots":80,"start":[{"item":"wick_blade","count":1},{"item":"flame_sip","count":1}]}},
+  {"use":"gameplay.item.use"},
+  {
+   "use": "gameplay.equipment",
+   "with": {
+    "slots": [{"id":"weapon","accepts":["weapon"],"max":1},{"id":"charm","accepts":["charm"],"max":12}],
+    "budget": {"pool":"notches","total":5},
+    "durability": false,
+    "statMods": true
+   }
+  },
+  {
+   "use": "gameplay.crafting",
+   "with": {"stations":[{"id":"vell_anvil","name":"Vell's Anvil","tags":["smith"],"zone":"cinderwell"}],"handCraft":false,"discover":"learned"}
+  },
+  {"use":"gameplay.loot"},
+  {
+   "use": "gameplay.economy",
+   "with": {
+    "currencies": [{"id":"ash","name":"Ash","var":"money.ash"}],
+    "sellRatio": 0.35,
+    "shops": [
+     {
+      "id": "shop_dorrin",
+      "owner": "dorrin",
+      "stock": [
+       {"item":"ember_ore","count":20,"price":14},
+       {"item":"c_wicklight","count":1,"price":120},
+       {"item":"c_ember_magnet","count":1,"price":150},
+       {"item":"c_choir_lung","count":1,"price":180}
+      ],
+      "restock": "never",
+      "buys": ["material"],
+      "markup": 1
+     },
+     {
+      "id": "shop_vell",
+      "owner": "vell",
+      "stock": [
+       {"item":"c_heartwick","count":1,"price":320},
+       {"item":"c_swift_flame","count":1,"price":380},
+       {"item":"c_pogo_spark","count":1,"price":250},
+       {"item":"c_moth_thread","count":1,"price":300},
+       {"item":"c_cinder_heart","count":1,"price":520},
+       {"item":"notch_pin","count":1,"price":500}
+      ],
+      "restock": "never",
+      "buys": ["charm"],
+      "markup": 1
+     },
+     {"id":"shop_pip","owner":"pip","stock":[{"item":"cartographer_lens","count":1,"price":250}],"restock":"never","buys":[],"markup":1}
+    ]
+   }
+  },
+  {
+   "use": "gameplay.resource",
+   "with": {
+    "pools": [
+     {"id":"flame","max":99,"regen":0,"startFull":false,"drainTags":["heal","cast"]},
+     {"id":"grip","max":100,"regen":40,"regenDelay":0.4,"startFull":true,"exhaustLock":true,"drainTags":["wall_climb"]}
+    ]
+   }
+  },
+  {"use":"gameplay.combat.health","with":{"types":["phys","fire","poison","void"],"iframes":1.1,"friendlyFire":false,"knockback":6,"corpse":false}},
+  {"use":"gameplay.combat.melee","with":{"comboWindowMs":0,"pogo":true,"hitStopMs":70,"parry":{"window":0,"stagger":0,"riposte":1},"poise":true}},
+  {"use":"gameplay.combat.status"},
+  {"use":"gameplay.ai.brain","with":{"tick":0.1,"maxActive":40,"perception":{"sight":9,"fov":200,"hearing":4,"memory":4}}},
+  {"use":"gameplay.ai.attacks","with":{"telegraph":true,"globalCooldown":0.25}},
+  {
+   "use": "gameplay.combat.boss",
+   "with": {
+    "retryReset": true,
+    "bosses": [
+     {
+      "id": "thistle",
+      "archetype": "mother_thistle",
+      "arena": "mossgrave",
+      "gate": true,
+      "phases": [
+       {"at":1,"pattern":["root_slam","vine_sweep"],"speed":1},
+       {"at":0.55,"pattern":["root_slam","spore_burst","vine_sweep","seed_rain"],"speed":1.2},
+       {"at":0.2,"pattern":["seed_rain","spore_burst","root_slam"],"speed":1.45,"fx":[{"do":"shake","amount":0.4}]}
+      ],
+      "onStart": [{"do":"set_flag","flag":"boss_active_mother_thistle"},{"do":"play_sound","cue":"boss_theme_green"}],
+      "onDefeat": [{"do":"drop_loot","table":"drop_ash_boss"},{"do":"clear_flag","flag":"boss_active_mother_thistle"}]
+     },
+     {
+      "id": "bellkeeper",
+      "archetype": "bellkeeper",
+      "arena": "glasswater",
+      "gate": true,
+      "phases": [{"at":1,"pattern":["bell_drop","chain_swing"],"speed":1},{"at":0.5,"pattern":["bell_drop","toll","chain_swing","flood_surge"],"speed":1.25}],
+      "onStart": [{"do":"set_flag","flag":"boss_active_bellkeeper"}],
+      "onDefeat": [{"do":"clear_flag","flag":"boss_active_bellkeeper"}]
+     },
+     {
+      "id": "orrin",
+      "archetype": "forgemother_orrin",
+      "arena": "rustbell",
+      "gate": true,
+      "phases": [
+       {"at":1,"pattern":["hammer_fall","slag_arc"],"speed":1},
+       {"at":0.6,"pattern":["hammer_fall","slag_arc","bellows_gust"],"speed":1.15},
+       {"at":0.25,"pattern":["hammer_fall","anvil_toss","bellows_gust","slag_arc"],"speed":1.35}
+      ],
+      "onStart": [{"do":"set_flag","flag":"boss_active_forgemother_orrin"}],
+      "onDefeat": [{"do":"clear_flag","flag":"boss_active_forgemother_orrin"}]
+     },
+     {
+      "id": "cantor",
+      "archetype": "drowned_cantor",
+      "arena": "sunken_choir",
+      "gate": true,
+      "phases": [{"at":1,"pattern":["verse_wave","descant"],"speed":1},{"at":0.5,"pattern":["verse_wave","descant","hush","choir_summon"],"speed":1.2}],
+      "onStart": [{"do":"set_flag","flag":"boss_active_drowned_cantor"}],
+      "onDefeat": [{"do":"clear_flag","flag":"boss_active_drowned_cantor"}]
+     },
+     {
+      "id": "regent",
+      "archetype": "ashen_regent",
+      "arena": "ashen_barrows",
+      "gate": true,
+      "phases": [
+       {"at":1,"pattern":["oath_cleave","vow_dash"],"speed":1},
+       {"at":0.65,"pattern":["oath_cleave","vow_dash","ember_pillars","raise_knights"],"speed":1.15},
+       {"at":0.25,"pattern":["oath_cleave","royal_decree","ember_pillars"],"speed":1.4}
+      ],
+      "onStart": [{"do":"set_flag","flag":"boss_active_ashen_regent"}],
+      "onDefeat": [{"do":"clear_flag","flag":"boss_active_ashen_regent"}]
+     },
+     {
+      "id": "sovereign",
+      "archetype": "gloam_sovereign",
+      "arena": "hollow_heart",
+      "gate": true,
+      "phases": [
+       {"at":1,"pattern":["void_hand","snuff"],"speed":1},
+       {"at":0.66,"pattern":["void_hand","mirror_wick","snuff"],"speed":1.15},
+       {"at":0.33,"pattern":["void_hand","collapse","snuff","mirror_wick"],"speed":1.35}
+      ],
+      "onStart": [{"do":"set_flag","flag":"boss_active_gloam_sovereign"}],
+      "onDefeat": [{"do":"clear_flag","flag":"boss_active_gloam_sovereign"}]
+     }
+    ]
+   }
+  },
+  {
+   "use": "gameplay.move.platformer",
+   "with": {
+    "run": 9,
+    "accel": 70,
+    "jump": 22,
+    "jumpCut": 0.45,
+    "gravityScale": 1.05,
+    "fallMax": 32,
+    "coyoteMs": 90,
+    "bufferMs": 110,
+    "doubleJumps": 1,
+    "abilities": {"doubleJump":false,"dash":false,"wallSlide":false,"wallJump":false,"wallClimb":false,"glide":false,"swim":true,"crouch":true},
+    "dash": {"speed":30,"sec":0.18,"cooldown":0.55,"airOnce":true,"iframes":0.12},
+    "wallSlide": 3.5,
+    "wallClimbStamina": 22,
+    "climbPool": "grip"
+   }
+  },
+  {
+   "use": "gameplay.progression.abilities",
+   "with": {
+    "abilities": [
+     {"id":"lantern_light","name":"Lantern Light","desc":"The lamp follows you.","grants":["light"]},
+     {"id":"briar_grip","name":"Briar Grip","desc":"Cling to walls and climb thorned stone.","grants":["wallSlide","wallJump","wallClimb"]},
+     {"id":"ember_step","name":"Ember Step","desc":"A burning dash through gaps and danger.","grants":["dash"]},
+     {"id":"moth_wings","name":"Moth Wings","desc":"A second jump in the air.","grants":["doubleJump"]},
+     {
+      "id": "lantern_flare",
+      "name": "Lantern Flare",
+      "desc": "A pulse of light that reveals hidden things.",
+      "requires": {"item":"c_wicklight"},
+      "grants": ["reveal"]
+     }
+    ],
+    "start": []
+   }
+  },
+  {"use":"gameplay.interact","with":{"range":2.2,"facingOnly":false,"prompts":true}},
+  {"use":"gameplay.checkpoint","with":{"restoreAll":true,"respawnEnemies":true,"fastTravelBetween":true}},
+  {"use":"gameplay.death","with":{"respawn":"checkpoint","penalty":{"dropCurrency":1,"corpse":true,"keepItems":true,"loseXp":0},"retrieveSec":0}},
+  {
+   "use": "gameplay.collectible",
+   "with": {"magnet":3,"counters":[{"id":"tablets","var":"lore_tablets","total":12},{"id":"moths","var":"moths_freed","total":5,"zone":"lantern_spire"}]}
+  },
+  {
+   "use": "gameplay.hazard",
+   "with": {
+    "types": [
+     {"id":"spikes","damage":1,"respawn":"nearest-safe"},
+     {"id":"thorn_bramble","damage":1,"respawn":"nearest-safe"},
+     {"id":"acid","damage":2,"respawn":"nearest-safe"},
+     {"id":"dark_haze","damage":0,"dps":0,"status":"gloam_drain","respawn":"checkpoint"}
+    ],
+    "fallDamage": {"minHeight":99,"perMeter":0}
+   }
+  },
+  {
+   "use": "gameplay.mechanism",
+   "with": {
+    "mechanisms": [
+     {"id":"cistern_valve","kind":"lever","at":[430,405],"size":[1,2],"signal":"valve","persist":true},
+     {"id":"forge_bellows","kind":"lever","at":[650,450],"size":[2,2],"signal":"bellows","sec":8,"persist":false},
+     {"id":"chime","kind":"plate","at":[380,240],"size":[2,1],"signal":"chime","persist":true},
+     {"id":"moth_cage","kind":"breakable","at":[760,350],"size":[1,1],"hits":1,"persist":true},
+     {"id":"wall_moss_secret","kind":"breakable","at":[290,420],"size":[2,3],"hits":3,"persist":true},
+     {"id":"wall_rust_secret","kind":"breakable","at":[540,395],"size":[2,3],"hits":3,"persist":true},
+     {"id":"wall_barrow_secret","kind":"breakable","at":[560,258],"size":[2,3],"hits":3,"persist":true},
+     {"id":"arena_ash","kind":"plate","at":[670,312],"size":[6,1],"signal":"arena","persist":false},
+     {"id":"door_thistle","kind":"door","at":[240,390],"size":[1,4],"opens":["arena"],"gate":{"not":{"boss":"thistle","state":"active"}}},
+     {"id":"door_bell","kind":"door","at":[480,330],"size":[1,4],"gate":{"not":{"boss":"bellkeeper","state":"active"}}},
+     {"id":"door_forge","kind":"door","at":[640,400],"size":[1,4],"gate":"forge_door"},
+     {"id":"door_cantor","kind":"door","at":[400,230],"size":[1,4],"gate":"cantor_door"},
+     {"id":"door_regent","kind":"door","at":[660,300],"size":[1,4],"gate":{"not":{"boss":"regent","state":"active"}}},
+     {"id":"door_sovereign","kind":"door","at":[420,118],"size":[1,4],"gate":{"not":{"boss":"sovereign","state":"active"}}}
+    ]
+   }
+  }
+ ],
+ "content": {
+  "items": [
+   {
+    "id": "wick_blade",
+    "name": "Wick Blade",
+    "kind": "weapon",
+    "stack": 1,
+    "weapon": {"damage":5,"reach":1.7,"arc":100,"speed":1,"stamina":0,"combo":1,"type":"phys"},
+    "desc": "A sliver of lamp-iron on a hollow handle."
+   },
+   {"id":"hand_lamp","name":"Hand Lamp","kind":"key","stack":1,"desc":"Marrow's first lamp. Its flame follows you."},
+   {
+    "id": "flame_sip",
+    "name": "Flame Sip",
+    "kind": "misc",
+    "stack": 1,
+    "use": {"fx":[{"do":"spend","resource":"flame","amount":33},{"do":"heal","who":"player","amount":1}],"cooldown":0.9,"consume":false},
+    "desc": "Draw the lantern flame inward to mend."
+   },
+   {"id":"cinder_green","name":"Green Cinder","kind":"quest","stack":1,"desc":"Warm and damp, like a seed that remembers.","tags":["cinder"]},
+   {"id":"cinder_red","name":"Red Cinder","kind":"quest","stack":1,"desc":"It beats in time with the bellows.","tags":["cinder"]},
+   {"id":"cinder_blue","name":"Blue Cinder","kind":"quest","stack":1,"desc":"A note held forever.","tags":["cinder"]},
+   {"id":"cinder_ash","name":"Ash Cinder","kind":"quest","stack":1,"desc":"A vow that outlived its oath.","tags":["cinder"]},
+   {"id":"ash_sigil","name":"Barrow Sigil","kind":"key","stack":1,"desc":"Opens the Barrow gate."},
+   {"id":"archive_key","name":"Archive Key","kind":"key","stack":1,"desc":"Brass, shaped like a closed book."},
+   {"id":"bell_key","name":"Bell Key","kind":"key","stack":1,"desc":"Tolls when dropped."},
+   {"id":"map_fragment","name":"Map Fragment","kind":"quest","stack":8,"desc":"A torn corner of Ashmere in Pip's hand."},
+   {"id":"lost_lamp","name":"Brindle's Lamp","kind":"quest","stack":1,"desc":"A tin lamp with a child's name scratched in."},
+   {"id":"ember_ore","name":"Ember Ore","kind":"material","stack":99,"value":12,"desc":"Warm to the touch."},
+   {"id":"glass_shard","name":"Cistern Shard","kind":"material","stack":9,"value":20,"desc":"Cuts light into colors."},
+   {"id":"ashveil_locket","name":"Silver Locket","kind":"quest","stack":1,"desc":"Holds two portraits, one scratched out."},
+   {"id":"lore_tablet","name":"Lore Tablet","kind":"quest","stack":20,"desc":"A rubbing of a wall inscription."},
+   {"id":"crown_of_gloam","name":"Crown of Gloam","kind":"key","stack":1,"desc":"Cold, weightless, listening.","tags":["secret"]},
+   {"id":"cartographer_lens","name":"Cartographer's Lens","kind":"misc","stack":1,"desc":"Shows unexplored rooms on the map."},
+   {
+    "id": "notch_pin",
+    "name": "Notch Pin",
+    "kind": "misc",
+    "stack": 3,
+    "desc": "Adds a charm notch when used.",
+    "use": {"fx":[{"do":"add_var","var":"budget.notches","value":1}],"consume":true}
+   },
+   {"id":"ash_pouch","name":"Ash Pouch","kind":"currency","stack":9999,"value":1},
+   {
+    "id": "c_wicklight",
+    "name": "Wicklight",
+    "kind": "charm",
+    "stack": 1,
+    "desc": "The lantern burns brighter and farther.",
+    "charm": {"cost":1,"mods":{"stat.light_radius":3}}
+   },
+   {"id":"c_swift_flame","name":"Swift Flame","kind":"charm","stack":1,"desc":"Strike faster.","charm":{"cost":2,"mods":{"stat.attack_speed":0.25}}},
+   {"id":"c_heartwick","name":"Heartwick","kind":"charm","stack":1,"desc":"One more mask.","charm":{"cost":2,"mods":{"hp.max":1}}},
+   {"id":"c_ember_magnet","name":"Ember Magnet","kind":"charm","stack":1,"desc":"Ash drifts toward you.","charm":{"cost":1,"mods":{"stat.magnet":4}}},
+   {"id":"c_long_nail","name":"Long Blade","kind":"charm","stack":1,"desc":"More reach.","charm":{"cost":2,"mods":{"stat.reach":0.5}}},
+   {
+    "id": "c_pogo_spark",
+    "name": "Pogo Spark",
+    "kind": "charm",
+    "stack": 1,
+    "desc": "Downward strikes bounce higher and refund the dash.",
+    "charm": {"cost":1,"mods":{"stat.pogo_bounce":0.3}}
+   },
+   {
+    "id": "c_brittle_oath",
+    "name": "Brittle Oath",
+    "kind": "charm",
+    "stack": 1,
+    "desc": "Strike harder; wounds cut deeper.",
+    "charm": {"cost":3,"mods":{"stat.damage":2,"stat.damage_taken":1}}
+   },
+   {
+    "id": "c_moth_thread",
+    "name": "Moth Thread",
+    "kind": "charm",
+    "stack": 1,
+    "desc": "Dash again sooner.",
+    "charm": {"cost":2,"mods":{"stat.dash_cooldown":-0.3}}
+   },
+   {
+    "id": "c_cinder_heart",
+    "name": "Cinder Heart",
+    "kind": "charm",
+    "stack": 1,
+    "desc": "Heal is faster and also pushes enemies back.",
+    "charm": {"cost":3,"mods":{},"fx":[{"do":"apply_status","who":"player","status":"heal_burst","sec":1}]}
+   },
+   {
+    "id": "c_gloam_ward",
+    "name": "Gloam Ward",
+    "kind": "charm",
+    "stack": 1,
+    "desc": "Gloam haze does not drain the flame.",
+    "charm": {"cost":2,"mods":{"stat.haze_resist":1}}
+   },
+   {
+    "id": "c_choir_lung",
+    "name": "Choir Lung",
+    "kind": "charm",
+    "stack": 1,
+    "desc": "Hold breath longer in cistern water.",
+    "charm": {"cost":1,"mods":{"stat.swim":1}}
+   },
+   {
+    "id": "c_hush_veil",
+    "name": "Hush Veil",
+    "kind": "charm",
+    "stack": 1,
+    "desc": "Enemies notice you later. Found only in the Galleries.",
+    "charm": {"cost":2,"mods":{"stat.noise":-0.5}}
+   }
+  ],
+  "recipes": [
+   {"id":"r_notch_pin","station":"vell_anvil","inputs":[{"item":"glass_shard","count":3}],"output":{"item":"notch_pin","count":1},"learned":true},
+   {"id":"r_wick_polish","station":"vell_anvil","inputs":[{"item":"ember_ore","count":4}],"output":{"item":"c_wicklight","count":1},"learned":false}
+  ],
+  "blocks": [
+   {"id":"stone","name":"Cave stone","color":"#4a4658","solid":true,"hardness":9,"tile":"rock"},
+   {"id":"moss_stone","name":"Moss stone","color":"#3f6a44","solid":true,"hardness":9,"tile":"moss"},
+   {"id":"wet_stone","name":"Cistern brick","color":"#3a5a7a","solid":true,"hardness":9,"tile":"brick"},
+   {"id":"glass_brick","name":"Glass brick","color":"#8ac8e0","solid":true,"hardness":9,"transparent":true,"tile":"crystal"},
+   {"id":"rust_plate","name":"Rust plate","color":"#8a4a2a","solid":true,"hardness":9,"tile":"metal"},
+   {"id":"ash_stone","name":"Barrow ash stone","color":"#6a6a74","solid":true,"hardness":9,"tile":"ash"},
+   {"id":"thorn_wood","name":"Thornwood","color":"#5a4a2a","solid":true,"hardness":9,"tags":["climbable"],"tile":"wood"},
+   {"id":"bone_ash","name":"Bone ash","color":"#cfc8b4","solid":true,"hardness":9,"tile":"soil"},
+   {"id":"breakable_wall","name":"Cracked wall","color":"#5a5668","solid":true,"hardness":1,"tags":["breakable","secret"],"tile":"rock","drops":[]},
+   {"id":"spikes","name":"Iron spikes","color":"#b0b4b8","solid":false,"hardness":9,"tags":["hazard"],"tile":"metal"},
+   {"id":"thorn_bramble","name":"Bramble","color":"#7a3a4a","solid":false,"hardness":9,"tags":["hazard"],"tile":"wood"},
+   {"id":"acid","name":"Forge slag","color":"#e8702a","solid":false,"hardness":9,"tags":["hazard","liquid"],"tile":"metal"},
+   {"id":"water","name":"Cistern water","color":"#2a5a9a","solid":false,"hardness":9,"tags":["liquid"],"transparent":true,"tile":"crystal"},
+   {"id":"one_way","name":"Plank ledge","color":"#8a6a3a","solid":false,"hardness":9,"tags":["one_way"],"tile":"wood"},
+   {"id":"dark_haze","name":"Gloam haze","color":"#150c24","solid":false,"hardness":9,"tags":["gloam"],"transparent":true,"tile":"ash"}
+  ],
+  "tables": [
+   {"id":"drop_ash_small","rolls":[1,1],"entries":[{"item":"ash_pouch","weight":10,"count":[2,6]},{"item":"ember_ore","weight":1}]},
+   {"id":"drop_ash_mid","rolls":[1,2],"entries":[{"item":"ash_pouch","weight":10,"count":[8,18]},{"item":"ember_ore","weight":2,"count":[1,2]}]},
+   {"id":"drop_ash_boss","rolls":[2,3],"entries":[{"item":"ash_pouch","weight":10,"count":[60,120]},{"item":"ember_ore","weight":3,"count":[2,4]}]},
+   {
+    "id": "chest_common",
+    "rolls": [1,2],
+    "entries": [{"item":"ash_pouch","weight":8,"count":[20,50]},{"item":"glass_shard","weight":2},{"item":"ember_ore","weight":3,"count":[2,3]}]
+   }
+  ],
+  "statuses": [
+   {"id":"heal_burst","duration":1,"mods":{"stat.knockback_out":8}},
+   {"id":"gloam_drain","duration":3,"tick":{"dps":0,"type":"void"},"mods":{"res.flame":-4}},
+   {"id":"bellrung","duration":2,"mods":{"stat.stun":1}},
+   {"id":"scorch","duration":4,"tick":{"dps":0.25,"type":"fire"}}
+  ],
+  "archetypes": [
+   {
+    "id": "wick",
+    "kind": "player",
+    "components": {
+     "model": "wick",
+     "health": {"max":5,"regen":0},
+     "resources": {"flame":{"max":99,"start":0},"grip":{"max":100,"start":100}},
+     "melee": {"weapon":"wick_blade"},
+     "light": {"radius":6,"color":"#ffb347"},
+     "equipment": {"slots":["weapon","charm"]},
+     "faction": "player"
+    }
+   },
+   {
+    "id": "mossling",
+    "kind": "enemy",
+    "components": {
+     "model": "mossling",
+     "health": {"max":8},
+     "touch": {"damage":1},
+     "ai": {
+      "brain": [{"do":"chase","when":{"near":"player","within":7}},{"do":"patrol","range":6}],
+      "perception": {"sight":7,"fov":200,"hearing":4,"memory":4},
+      "speed": 2.5
+     },
+     "loot": "drop_ash_small",
+     "faction": "gloam"
+    }
+   },
+   {
+    "id": "thorn_crawler",
+    "kind": "enemy",
+    "components": {
+     "model": "thorn_crawler",
+     "health": {"max":10},
+     "touch": {"damage":1},
+     "ai": {"brain":[{"do":"patrol","range":10}],"speed":2.5,"climbs":true,"perception":{"sight":4,"fov":90,"memory":2}},
+     "loot": "drop_ash_small",
+     "faction": "gloam"
+    }
+   },
+   {
+    "id": "spore_bloom",
+    "kind": "enemy",
+    "components": {
+     "model": "spore_bloom",
+     "health": {"max":12},
+     "touch": {"damage":0},
+     "ai": {"brain":[{"do":"guard"}],"perception":{"sight":8,"fov":360,"memory":1}},
+     "loot": "drop_ash_small",
+     "attacks": [
+      {
+       "id": "spore_cloud",
+       "range": 8,
+       "windup": 0.6,
+       "active": 0.5,
+       "recover": 1.8,
+       "damage": 1,
+       "type": "poison",
+       "shape": "circle",
+       "status": "gloam_drain",
+       "weight": 1
+      }
+     ],
+     "faction": "gloam"
+    }
+   },
+   {
+    "id": "drip_wraith",
+    "kind": "enemy",
+    "components": {
+     "model": "drip_wraith",
+     "health": {"max":9},
+     "touch": {"damage":1},
+     "ai": {"brain":[{"do":"flyer","when":{"near":"player","within":10}},{"do":"wander"}],"perception":{"sight":10,"fov":360,"memory":3},"speed":4},
+     "loot": "drop_ash_small",
+     "faction": "gloam",
+     "gravity": 0
+    }
+   },
+   {
+    "id": "cistern_leech",
+    "kind": "enemy",
+    "components": {
+     "model": "cistern_leech",
+     "health": {"max":14},
+     "touch": {"damage":1},
+     "ai": {"brain":[{"do":"chase","when":{"near":"player","within":6}},{"do":"wander"}],"medium":"water","speed":5},
+     "loot": "drop_ash_small",
+     "faction": "gloam"
+    }
+   },
+   {
+    "id": "rust_automaton",
+    "kind": "enemy",
+    "components": {
+     "model": "rust_automaton",
+     "health": {"max":22},
+     "touch": {"damage":2},
+     "ai": {
+      "brain": [{"do":"chase","when":{"near":"player","within":8}},{"do":"patrol","range":6}],
+      "perception": {"sight":8,"fov":200,"hearing":4,"memory":4},
+      "speed": 2.2
+     },
+     "loot": "drop_ash_mid",
+     "attacks": [{"id":"piston_punch","range":2.5,"windup":0.5,"active":0.2,"recover":0.7,"damage":2,"shape":"box","move":"lunge","weight":3}],
+     "faction": "gloam"
+    }
+   },
+   {
+    "id": "cinder_bat",
+    "kind": "enemy",
+    "components": {
+     "model": "cinder_bat",
+     "health": {"max":6},
+     "touch": {"damage":1},
+     "ai": {"brain":[{"do":"flyer","when":{"near":"player","within":12}},{"do":"sit"}],"perception":{"sight":12,"fov":360,"memory":2},"speed":6},
+     "loot": "drop_ash_small",
+     "faction": "gloam"
+    }
+   },
+   {
+    "id": "forge_imp",
+    "kind": "enemy",
+    "components": {
+     "model": "forge_imp",
+     "health": {"max":10},
+     "touch": {"damage":1},
+     "ai": {
+      "brain": [{"do":"chase","when":{"near":"player","within":10}},{"do":"patrol","range":6}],
+      "perception": {"sight":10,"fov":200,"hearing":4,"memory":4},
+      "speed": 5
+     },
+     "loot": "drop_ash_small",
+     "attacks": [
+      {
+       "id": "slag_spit",
+       "range": 9,
+       "windup": 0.4,
+       "active": 0.1,
+       "recover": 1.2,
+       "damage": 1,
+       "type": "fire",
+       "shape": "projectile",
+       "projectile": {"speed":9,"gravity":12},
+       "weight": 2
+      }
+     ],
+     "faction": "gloam"
+    }
+   },
+   {
+    "id": "choir_wisp",
+    "kind": "enemy",
+    "components": {
+     "model": "choir_wisp",
+     "health": {"max":12},
+     "touch": {"damage":1},
+     "ai": {"brain":[{"do":"circle","when":{"near":"player","within":10}},{"do":"wander"}],"perception":{"sight":10,"fov":360,"memory":3},"speed":3},
+     "loot": "drop_ash_small",
+     "attacks": [{"id":"wail","range":10,"windup":0.8,"active":0.4,"recover":2,"damage":1,"type":"void","shape":"ring","weight":1}],
+     "faction": "gloam"
+    }
+   },
+   {
+    "id": "thorn_stalker",
+    "kind": "enemy",
+    "components": {
+     "model": "thorn_stalker",
+     "health": {"max":26},
+     "touch": {"damage":2},
+     "ai": {
+      "brain": [{"do":"ambush","when":{"near":"player","within":6}},{"do":"patrol","range":8}],
+      "perception": {"sight":6,"fov":120,"memory":5},
+      "speed": 3.2
+     },
+     "loot": "drop_ash_mid",
+     "attacks": [
+      {"id":"thorn_lash","range":4,"windup":0.6,"active":0.3,"recover":0.9,"damage":2,"shape":"arc","weight":2},
+      {"id":"pounce","range":6,"windup":0.8,"active":0.3,"recover":1.2,"damage":2,"move":"leap","weight":1}
+     ],
+     "faction": "gloam"
+    }
+   },
+   {
+    "id": "ash_knight",
+    "kind": "enemy",
+    "components": {
+     "model": "ash_knight",
+     "health": {"max":30},
+     "touch": {"damage":2},
+     "ai": {
+      "brain": [{"do":"chase","when":{"near":"player","within":9}},{"do":"patrol","range":6}],
+      "perception": {"sight":9,"fov":200,"hearing":4,"memory":4},
+      "speed": 2.8
+     },
+     "loot": "drop_ash_mid",
+     "attacks": [
+      {"id":"slash","range":2.8,"windup":0.4,"active":0.2,"recover":0.6,"damage":2,"shape":"arc","weight":3},
+      {"id":"overhead","range":2.6,"windup":0.8,"active":0.2,"recover":1,"damage":3,"shape":"arc","weight":1}
+     ],
+     "faction": "gloam"
+    }
+   },
+   {
+    "id": "barrow_ghoul",
+    "kind": "enemy",
+    "components": {
+     "model": "barrow_ghoul",
+     "health": {"max":16},
+     "touch": {"damage":1},
+     "ai": {
+      "brain": [{"do":"chase","when":{"near":"player","within":8}},{"do":"patrol","range":6}],
+      "perception": {"sight":8,"fov":200,"hearing":4,"memory":4},
+      "speed": 3
+     },
+     "loot": "drop_ash_small",
+     "faction": "gloam",
+     "revive": {"sec":8,"once":true}
+    }
+   },
+   {
+    "id": "hush_knight",
+    "kind": "enemy",
+    "components": {
+     "model": "hush_knight",
+     "health": {"max":60},
+     "touch": {"damage":2},
+     "ai": {"brain":[{"do":"chase","when":{"near":"player","within":14}},{"do":"guard"}],"perception":{"sight":14,"fov":360,"memory":10},"speed":5},
+     "loot": "drop_ash_boss",
+     "attacks": [
+      {"id":"needle_thrust","range":5,"windup":0.3,"active":0.15,"recover":0.5,"damage":2,"move":"dash","shape":"line","weight":3},
+      {"id":"veil_step","range":8,"windup":0.5,"active":0.1,"recover":0.4,"damage":0,"move":"teleport_behind","weight":2},
+      {"id":"cross_slash","range":3,"windup":0.4,"active":0.3,"recover":0.8,"damage":3,"shape":"x","weight":2}
+     ],
+     "faction": "gloam"
+    }
+   },
+   {
+    "id": "gloam_shade",
+    "kind": "enemy",
+    "components": {
+     "model": "gloam_shade",
+     "health": {"max":15},
+     "touch": {"damage":1},
+     "ai": {"brain":[{"do":"chase","when":{"near":"player","within":12}}],"perception":{"sight":12,"fov":360,"memory":6},"speed":4},
+     "holdsPlayerCurrency": true,
+     "faction": "gloam"
+    }
+   },
+   {
+    "id": "mother_thistle",
+    "kind": "boss",
+    "components": {
+     "model": "mother_thistle",
+     "health": {"max":90},
+     "ai": {"brain":[{"do":"ambush","when":{"flag":"boss_active_mother_thistle"}},{"do":"circle"}],"perception":{"sight":40,"fov":360,"memory":30}},
+     "attacks": [
+      {"id":"root_slam","range":14,"windup":0.9,"active":0.4,"recover":1.1,"damage":1,"shape":"line_ground","weight":3},
+      {
+       "id": "spore_burst",
+       "range": 12,
+       "windup": 1.1,
+       "active": 0.6,
+       "recover": 1.5,
+       "damage": 1,
+       "type": "poison",
+       "shape": "circle",
+       "status": "gloam_drain",
+       "weight": 2
+      },
+      {"id":"vine_sweep","range":10,"windup":0.8,"active":0.5,"recover":1.2,"damage":2,"shape":"arc_low","weight":2},
+      {"id":"seed_rain","range":20,"windup":0.8,"active":2,"recover":1.2,"damage":1,"shape":"projectile_rain","phase":2,"weight":2}
+     ],
+     "faction": "gloam",
+     "loot": "drop_ash_boss",
+     "poise": 30
+    }
+   },
+   {
+    "id": "bellkeeper",
+    "kind": "boss",
+    "components": {
+     "model": "bellkeeper",
+     "health": {"max":120},
+     "ai": {"brain":[{"do":"ambush","when":{"flag":"boss_active_bellkeeper"}},{"do":"circle"}],"perception":{"sight":40,"fov":360,"memory":30}},
+     "attacks": [
+      {"id":"bell_drop","range":12,"windup":1,"active":0.3,"recover":1.5,"damage":2,"shape":"slam","weight":3},
+      {"id":"toll","range":16,"windup":0.9,"active":0.5,"recover":1.2,"damage":1,"shape":"ring","status":"bellrung","weight":2},
+      {"id":"chain_swing","range":10,"windup":0.7,"active":0.8,"recover":1,"damage":2,"shape":"arc","weight":2},
+      {"id":"flood_surge","range":30,"windup":1.2,"active":3,"recover":2,"damage":1,"shape":"wave","phase":2,"weight":1}
+     ],
+     "faction": "gloam",
+     "loot": "drop_ash_boss",
+     "poise": 30
+    }
+   },
+   {
+    "id": "forgemother_orrin",
+    "kind": "boss",
+    "components": {
+     "model": "forgemother",
+     "health": {"max":160},
+     "ai": {"brain":[{"do":"ambush","when":{"flag":"boss_active_forgemother_orrin"}},{"do":"circle"}],"perception":{"sight":40,"fov":360,"memory":30}},
+     "attacks": [
+      {"id":"hammer_fall","range":12,"windup":0.8,"active":0.3,"recover":1.1,"damage":2,"shape":"slam","weight":3},
+      {
+       "id": "slag_arc",
+       "range": 18,
+       "windup": 0.9,
+       "active": 0.4,
+       "recover": 1,
+       "damage": 1,
+       "type": "fire",
+       "shape": "projectile",
+       "projectile": {"speed":8,"gravity":10,"count":3},
+       "weight": 2
+      },
+      {"id":"bellows_gust","range":20,"windup":1.2,"active":1.5,"recover":1.5,"damage":1,"shape":"push","phase":2,"weight":1},
+      {"id":"anvil_toss","range":22,"windup":1,"active":0.6,"recover":1.3,"damage":3,"shape":"projectile","phase":3,"weight":1}
+     ],
+     "faction": "gloam",
+     "loot": "drop_ash_boss",
+     "poise": 30
+    }
+   },
+   {
+    "id": "drowned_cantor",
+    "kind": "boss",
+    "components": {
+     "model": "drowned_cantor",
+     "health": {"max":140},
+     "ai": {"brain":[{"do":"ambush","when":{"flag":"boss_active_drowned_cantor"}},{"do":"circle"}],"perception":{"sight":40,"fov":360,"memory":30}},
+     "attacks": [
+      {"id":"verse_wave","range":22,"windup":1,"active":1,"recover":1.3,"damage":1,"type":"void","shape":"wave","weight":3},
+      {"id":"descant","range":18,"windup":0.6,"active":0.2,"recover":0.8,"damage":2,"shape":"rising_notes","weight":2},
+      {"id":"hush","range":12,"windup":1.4,"active":0.5,"recover":1.5,"damage":0,"shape":"silence_zone","status":"gloam_drain","weight":1},
+      {"id":"choir_summon","range":0,"windup":1.2,"active":0.1,"recover":2,"damage":0,"summon":"choir_wisp","phase":2,"weight":1}
+     ],
+     "faction": "gloam",
+     "loot": "drop_ash_boss",
+     "poise": 30
+    }
+   },
+   {
+    "id": "ashen_regent",
+    "kind": "boss",
+    "components": {
+     "model": "ashen_regent",
+     "health": {"max":180},
+     "ai": {"brain":[{"do":"ambush","when":{"flag":"boss_active_ashen_regent"}},{"do":"circle"}],"perception":{"sight":40,"fov":360,"memory":30}},
+     "attacks": [
+      {"id":"oath_cleave","range":5,"windup":0.6,"active":0.3,"recover":0.9,"damage":2,"shape":"arc","weight":3},
+      {"id":"vow_dash","range":14,"windup":0.7,"active":0.4,"recover":1,"damage":2,"move":"dash","weight":2},
+      {"id":"ember_pillars","range":16,"windup":1,"active":1,"recover":1.4,"damage":2,"type":"fire","shape":"columns","weight":2},
+      {"id":"raise_knights","range":0,"windup":1.4,"active":0.1,"recover":2,"damage":0,"summon":"ash_knight","phase":2,"weight":1},
+      {"id":"royal_decree","range":24,"windup":1.6,"active":0.4,"recover":2,"damage":3,"shape":"screen_flash","phase":3,"weight":1}
+     ],
+     "faction": "gloam",
+     "loot": "drop_ash_boss",
+     "poise": 30
+    }
+   },
+   {
+    "id": "gloam_sovereign",
+    "kind": "boss",
+    "components": {
+     "model": "gloam_sovereign",
+     "health": {"max":260},
+     "ai": {"brain":[{"do":"ambush","when":{"flag":"boss_active_gloam_sovereign"}},{"do":"circle"}],"perception":{"sight":40,"fov":360,"memory":30}},
+     "attacks": [
+      {"id":"void_hand","range":20,"windup":0.9,"active":0.5,"recover":1,"damage":2,"shape":"line","weight":3},
+      {"id":"snuff","range":30,"windup":1.4,"active":0.4,"recover":1.4,"damage":0,"shape":"darkness","status":"gloam_drain","weight":2},
+      {"id":"mirror_wick","range":0,"windup":1,"active":0.1,"recover":1.5,"damage":0,"summon":"gloam_shade","weight":1},
+      {"id":"collapse","range":28,"windup":1.2,"active":1.5,"recover":2,"damage":2,"shape":"ceiling_fall","phase":3,"weight":2}
+     ],
+     "faction": "gloam",
+     "loot": "drop_ash_boss",
+     "poise": 60
+    }
+   },
+   {
+    "id": "marrow",
+    "kind": "npc",
+    "components": {"model":"marrow","health":{"max":20},"interact":{"prompt":"Talk","range":2.2},"faction":"cinderfolk","ai":{"brain":[{"do":"work"}]}}
+   },
+   {
+    "id": "pip",
+    "kind": "npc",
+    "components": {"model":"pip","health":{"max":20},"interact":{"prompt":"Talk","range":2.2},"faction":"cinderfolk","ai":{"brain":[{"do":"sit"}]}}
+   },
+   {
+    "id": "vell",
+    "kind": "npc",
+    "components": {"model":"vell","health":{"max":20},"interact":{"prompt":"Talk","range":2.2},"faction":"cinderfolk","ai":{"brain":[{"do":"work"}]}}
+   },
+   {
+    "id": "dorrin",
+    "kind": "npc",
+    "components": {"model":"dorrin","health":{"max":20},"interact":{"prompt":"Talk","range":2.2},"faction":"cinderfolk","ai":{"brain":[{"do":"sit"}]}}
+   },
+   {
+    "id": "brindle",
+    "kind": "npc",
+    "components": {"model":"brindle","health":{"max":20},"interact":{"prompt":"Talk","range":2.2},"faction":"cinderfolk","ai":{"brain":[{"do":"sit"}]}}
+   },
+   {
+    "id": "quill",
+    "kind": "npc",
+    "components": {"model":"quill","health":{"max":20},"interact":{"prompt":"Talk","range":2.2},"faction":"cinderfolk","ai":{"brain":[{"do":"sit"}]}}
+   },
+   {
+    "id": "ashveil",
+    "kind": "npc",
+    "components": {"model":"ashveil","health":{"max":20},"interact":{"prompt":"Talk","range":2.2},"faction":"cinderfolk","ai":{"brain":[{"do":"sit"}]}}
+   },
+   {"id":"bench","kind":"prop","components":{"model":"bench","interact":{"prompt":"Rest","range":1.6},"checkpoint":true}},
+   {"id":"caged_moth","kind":"prop","components":{"model":"caged_moth","interact":{"prompt":"Free","range":1.4},"mechanism":"moth_cage"}},
+   {"id":"lore_tablet","kind":"prop","components":{"model":"tablet","interact":{"prompt":"Read","range":1.4},"collectible":"tablets"}},
+   {"id":"map_fragment","kind":"pickup","components":{"model":"pickup","item":"map_fragment"}},
+   {"id":"ash_pickup","kind":"pickup","components":{"model":"pickup","item":"ash_pouch","magnet":3}},
+   {"id":"great_lantern","kind":"prop","components":{"model":"lantern_great","interact":{"prompt":"Kindle","range":3}}}
+  ],
+  "models": {
+   "wick": {
+    "kind": "pixel",
+    "size": [16,22],
+    "palette": {"o":"#1b1626","b":"#e8dcc8","w":"#fff6d8","f":"#ffb347","r":"#c2452d","k":"#2d2640"},
+    "parts": [
+     {"name":"body","rect":[4,3,8,12],"c":"b"},
+     {"name":"hood","rect":[3,12,10,8],"c":"k"},
+     {"name":"eyes","rect":[5,14,6,2],"c":"w"},
+     {"name":"lantern","rect":[12,6,3,5],"c":"f"},
+     {"name":"legs","rect":[5,0,6,4],"c":"o"}
+    ],
+    "anims": {
+     "idle": {"frames":4,"fps":6,"loop":true},
+     "run": {"frames":6,"fps":12,"loop":true},
+     "jump": {"frames":2,"fps":1,"loop":false},
+     "fall": {"frames":2,"fps":1,"loop":false},
+     "hurt": {"frames":2,"fps":10,"loop":false},
+     "die": {"frames":6,"fps":10,"loop":false},
+     "dash": {"frames":3,"fps":18,"loop":false},
+     "wall": {"frames":2,"fps":6,"loop":true},
+     "attack": {"frames":4,"fps":20,"loop":false},
+     "heal": {"frames":6,"fps":8,"loop":false}
+    },
+    "pivot": [8,0],
+    "glow": {"color":"#ffb347","radius":5}
+   },
+   "marrow": {
+    "kind": "pixel",
+    "size": [18,24],
+    "palette": {"o":"#2b1e18","s":"#8a6a4a","c":"#a05a2c","g":"#d7d2c4"},
+    "parts": [
+     {"name":"body","rect":[4,2,10,14],"c":"c"},
+     {"name":"head","rect":[5,16,8,7],"c":"s"},
+     {"name":"beard","rect":[5,12,8,5],"c":"g"},
+     {"name":"hammer","rect":[14,6,3,10],"c":"o"}
+    ],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true},"work":{"frames":4,"fps":5,"loop":true}},
+    "pivot": [9,0]
+   },
+   "pip": {
+    "kind": "pixel",
+    "size": [14,14],
+    "palette": {"m":"#c8b8e8","w":"#f4efff","e":"#2a2140","p":"#7b5ea8"},
+    "parts": [
+     {"name":"body","rect":[4,3,6,7],"c":"m"},
+     {"name":"wingL","rect":[0,5,4,7],"c":"w"},
+     {"name":"wingR","rect":[10,5,4,7],"c":"w"},
+     {"name":"eyes","rect":[5,8,4,2],"c":"e"},
+     {"name":"scroll","rect":[6,0,3,4],"c":"p"}
+    ],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true},"flutter":{"frames":4,"fps":14,"loop":true}},
+    "pivot": [7,0]
+   },
+   "vell": {
+    "kind": "pixel",
+    "size": [16,22],
+    "palette": {"r":"#6b2a3a","s":"#d9b99b","m":"#9aa0b4","k":"#1f1a26"},
+    "parts": [
+     {"name":"body","rect":[3,2,10,13],"c":"r"},
+     {"name":"head","rect":[5,15,6,6],"c":"s"},
+     {"name":"veil","rect":[4,18,8,3],"c":"k"},
+     {"name":"tongs","rect":[12,4,3,9],"c":"m"}
+    ],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true}},
+    "pivot": [8,0]
+   },
+   "dorrin": {
+    "kind": "pixel",
+    "size": [20,16],
+    "palette": {"s":"#c9a46b","t":"#7a5a2c","e":"#2b2018","c":"#d84f4f"},
+    "parts": [
+     {"name":"shell","rect":[3,4,12,11],"c":"t"},
+     {"name":"body","rect":[0,0,14,5],"c":"s"},
+     {"name":"eyes","rect":[14,7,3,7],"c":"s"},
+     {"name":"pack","rect":[6,12,6,4],"c":"c"}
+    ],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true}},
+    "pivot": [10,0]
+   },
+   "brindle": {
+    "kind": "pixel",
+    "size": [12,16],
+    "palette": {"s":"#e6c9a8","c":"#4a7a5a","h":"#7a4a2a"},
+    "parts": [{"name":"body","rect":[3,1,6,8],"c":"c"},{"name":"head","rect":[3,9,6,6],"c":"s"},{"name":"hair","rect":[3,13,6,3],"c":"h"}],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true}},
+    "pivot": [6,0]
+   },
+   "quill": {
+    "kind": "pixel",
+    "size": [22,14],
+    "palette": {"b":"#2c3a4a","s":"#6fa3c8","p":"#e8e0c8"},
+    "parts": [{"name":"shell","rect":[2,3,16,9],"c":"b"},{"name":"legs","rect":[3,0,14,3],"c":"s"},{"name":"books","rect":[8,12,6,2],"c":"p"}],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true}},
+    "pivot": [11,0]
+   },
+   "ashveil": {
+    "kind": "pixel",
+    "size": [16,26],
+    "palette": {"g":"#8a8ea8","w":"#e8e4f4","d":"#3a3250","r":"#b84b6b"},
+    "parts": [
+     {"name":"gown","rect":[2,0,12,16],"c":"g"},
+     {"name":"bodice","rect":[4,14,8,6],"c":"d"},
+     {"name":"head","rect":[5,20,6,6],"c":"w"},
+     {"name":"rose","rect":[10,17,3,3],"c":"r"}
+    ],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true}},
+    "pivot": [8,0]
+   },
+   "bench": {
+    "kind": "pixel",
+    "size": [20,10],
+    "palette": {"w":"#6a5238","f":"#ffb347"},
+    "parts": [{"name":"seat","rect":[0,3,20,3],"c":"w"},{"name":"legs","rect":[2,0,3,4],"c":"w"},{"name":"flame","rect":[8,6,4,4],"c":"f"}],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true},"burn":{"frames":4,"fps":8,"loop":true}},
+    "pivot": [10,0]
+   },
+   "mossling": {
+    "kind": "pixel",
+    "size": [14,12],
+    "palette": {"g":"#4f7a3a","d":"#2c4a28","e":"#ffd34f"},
+    "parts": [{"name":"body","rect":[1,0,12,9],"c":"g"},{"name":"moss","rect":[2,8,10,4],"c":"d"},{"name":"eyes","rect":[4,5,6,2],"c":"e"}],
+    "anims": {
+     "idle": {"frames":4,"fps":6,"loop":true},
+     "run": {"frames":6,"fps":12,"loop":true},
+     "jump": {"frames":2,"fps":1,"loop":false},
+     "fall": {"frames":2,"fps":1,"loop":false},
+     "hurt": {"frames":2,"fps":10,"loop":false},
+     "die": {"frames":6,"fps":10,"loop":false}
+    },
+    "pivot": [7,0]
+   },
+   "thorn_crawler": {
+    "kind": "pixel",
+    "size": [20,10],
+    "palette": {"t":"#7a5a3a","s":"#c8d4a0","e":"#e8503c"},
+    "parts": [{"name":"body","rect":[0,1,20,6],"c":"t"},{"name":"spines","rect":[2,6,16,4],"c":"s"},{"name":"eye","rect":[17,4,2,2],"c":"e"}],
+    "anims": {
+     "idle": {"frames":4,"fps":6,"loop":true},
+     "run": {"frames":6,"fps":12,"loop":true},
+     "jump": {"frames":2,"fps":1,"loop":false},
+     "fall": {"frames":2,"fps":1,"loop":false},
+     "hurt": {"frames":2,"fps":10,"loop":false},
+     "die": {"frames":6,"fps":10,"loop":false}
+    },
+    "pivot": [10,0]
+   },
+   "spore_bloom": {
+    "kind": "pixel",
+    "size": [14,18],
+    "palette": {"s":"#b6d86a","c":"#e87ad8","g":"#3a6a3a"},
+    "parts": [{"name":"stalk","rect":[6,0,3,10],"c":"g"},{"name":"cap","rect":[1,10,12,7],"c":"c"},{"name":"spots","rect":[4,13,6,2],"c":"s"}],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true}},
+    "pivot": [7,0]
+   },
+   "drip_wraith": {
+    "kind": "pixel",
+    "size": [14,16],
+    "palette": {"b":"#5a8ac8","w":"#cfe6ff","e":"#10203a"},
+    "parts": [{"name":"body","rect":[2,2,10,12],"c":"b"},{"name":"tail","rect":[5,0,4,4],"c":"w"},{"name":"eyes","rect":[4,9,6,2],"c":"e"}],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true}},
+    "pivot": [7,0]
+   },
+   "cistern_leech": {
+    "kind": "pixel",
+    "size": [18,8],
+    "palette": {"l":"#3a2a4a","m":"#e04f6f"},
+    "parts": [{"name":"body","rect":[0,0,18,7],"c":"l"},{"name":"mouth","rect":[15,2,3,3],"c":"m"}],
+    "anims": {
+     "idle": {"frames":4,"fps":6,"loop":true},
+     "run": {"frames":6,"fps":12,"loop":true},
+     "jump": {"frames":2,"fps":1,"loop":false},
+     "fall": {"frames":2,"fps":1,"loop":false},
+     "hurt": {"frames":2,"fps":10,"loop":false},
+     "die": {"frames":6,"fps":10,"loop":false}
+    },
+    "pivot": [9,0]
+   },
+   "rust_automaton": {
+    "kind": "pixel",
+    "size": [18,24],
+    "palette": {"r":"#8a4a2a","m":"#b0b4b8","e":"#ff7a2a"},
+    "parts": [
+     {"name":"torso","rect":[3,6,12,12],"c":"r"},
+     {"name":"head","rect":[5,18,8,6],"c":"m"},
+     {"name":"eye","rect":[7,20,4,2],"c":"e"},
+     {"name":"legs","rect":[4,0,10,7],"c":"m"}
+    ],
+    "anims": {
+     "idle": {"frames":4,"fps":6,"loop":true},
+     "run": {"frames":6,"fps":12,"loop":true},
+     "jump": {"frames":2,"fps":1,"loop":false},
+     "fall": {"frames":2,"fps":1,"loop":false},
+     "hurt": {"frames":2,"fps":10,"loop":false},
+     "die": {"frames":6,"fps":10,"loop":false}
+    },
+    "pivot": [9,0]
+   },
+   "cinder_bat": {
+    "kind": "pixel",
+    "size": [16,10],
+    "palette": {"b":"#3a2a30","e":"#ff8a3a"},
+    "parts": [{"name":"body","rect":[5,2,6,6],"c":"b"},{"name":"wings","rect":[0,4,16,3],"c":"b"},{"name":"eyes","rect":[6,5,4,1],"c":"e"}],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true},"fly":{"frames":4,"fps":14,"loop":true}},
+    "pivot": [8,0]
+   },
+   "forge_imp": {
+    "kind": "pixel",
+    "size": [12,14],
+    "palette": {"r":"#c8402a","y":"#ffd24a","k":"#2a1a14"},
+    "parts": [{"name":"body","rect":[2,1,8,9],"c":"r"},{"name":"horns","rect":[2,10,8,4],"c":"k"},{"name":"spark","rect":[9,5,3,3],"c":"y"}],
+    "anims": {
+     "idle": {"frames":4,"fps":6,"loop":true},
+     "run": {"frames":6,"fps":12,"loop":true},
+     "jump": {"frames":2,"fps":1,"loop":false},
+     "fall": {"frames":2,"fps":1,"loop":false},
+     "hurt": {"frames":2,"fps":10,"loop":false},
+     "die": {"frames":6,"fps":10,"loop":false}
+    },
+    "pivot": [6,0]
+   },
+   "choir_wisp": {
+    "kind": "pixel",
+    "size": [12,14],
+    "palette": {"w":"#b8d8ff","c":"#6a8aff","m":"#ffffff"},
+    "parts": [{"name":"body","rect":[2,2,8,10],"c":"w"},{"name":"mouth","rect":[4,5,4,4],"c":"c"}],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true}},
+    "pivot": [6,0]
+   },
+   "thorn_stalker": {
+    "kind": "pixel",
+    "size": [18,24],
+    "palette": {"b":"#4a3a2a","t":"#7ab04a","e":"#e8e0a0"},
+    "parts": [{"name":"body","rect":[4,4,10,16],"c":"b"},{"name":"thorns","rect":[2,8,14,10],"c":"t"},{"name":"eyes","rect":[6,18,6,2],"c":"e"}],
+    "anims": {
+     "idle": {"frames":4,"fps":6,"loop":true},
+     "run": {"frames":6,"fps":12,"loop":true},
+     "jump": {"frames":2,"fps":1,"loop":false},
+     "fall": {"frames":2,"fps":1,"loop":false},
+     "hurt": {"frames":2,"fps":10,"loop":false},
+     "die": {"frames":6,"fps":10,"loop":false}
+    },
+    "pivot": [9,0]
+   },
+   "ash_knight": {
+    "kind": "pixel",
+    "size": [18,26],
+    "palette": {"a":"#9a9aa8","d":"#3a3a48","e":"#ff6a3a"},
+    "parts": [
+     {"name":"armor","rect":[3,4,12,16],"c":"a"},
+     {"name":"helm","rect":[5,20,8,6],"c":"d"},
+     {"name":"eyes","rect":[6,22,6,1],"c":"e"},
+     {"name":"blade","rect":[14,6,3,16],"c":"a"}
+    ],
+    "anims": {
+     "idle": {"frames":4,"fps":6,"loop":true},
+     "run": {"frames":6,"fps":12,"loop":true},
+     "jump": {"frames":2,"fps":1,"loop":false},
+     "fall": {"frames":2,"fps":1,"loop":false},
+     "hurt": {"frames":2,"fps":10,"loop":false},
+     "die": {"frames":6,"fps":10,"loop":false},
+     "slash": {"frames":5,"fps":14,"loop":false}
+    },
+    "pivot": [9,0]
+   },
+   "barrow_ghoul": {
+    "kind": "pixel",
+    "size": [16,18],
+    "palette": {"g":"#7a8a6a","b":"#d8d0b0"},
+    "parts": [{"name":"body","rect":[3,2,10,12],"c":"g"},{"name":"ribs","rect":[4,6,8,4],"c":"b"},{"name":"head","rect":[4,13,8,5],"c":"b"}],
+    "anims": {
+     "idle": {"frames":4,"fps":6,"loop":true},
+     "run": {"frames":6,"fps":12,"loop":true},
+     "jump": {"frames":2,"fps":1,"loop":false},
+     "fall": {"frames":2,"fps":1,"loop":false},
+     "hurt": {"frames":2,"fps":10,"loop":false},
+     "die": {"frames":6,"fps":10,"loop":false}
+    },
+    "pivot": [8,0]
+   },
+   "hush_knight": {
+    "kind": "pixel",
+    "size": [20,28],
+    "palette": {"w":"#e8e8f0","g":"#7a7a96","e":"#8ad0ff"},
+    "parts": [
+     {"name":"cloak","rect":[3,0,14,20],"c":"g"},
+     {"name":"mask","rect":[6,20,8,8],"c":"w"},
+     {"name":"eyes","rect":[7,23,6,2],"c":"e"},
+     {"name":"needle","rect":[16,8,2,16],"c":"w"}
+    ],
+    "anims": {
+     "idle": {"frames":4,"fps":6,"loop":true},
+     "run": {"frames":6,"fps":12,"loop":true},
+     "jump": {"frames":2,"fps":1,"loop":false},
+     "fall": {"frames":2,"fps":1,"loop":false},
+     "hurt": {"frames":2,"fps":10,"loop":false},
+     "die": {"frames":6,"fps":10,"loop":false}
+    },
+    "pivot": [10,0]
+   },
+   "gloam_shade": {
+    "kind": "pixel",
+    "size": [16,22],
+    "palette": {"g":"#0e0a18","e":"#b04bff"},
+    "parts": [{"name":"body","rect":[3,2,10,18],"c":"g"},{"name":"eyes","rect":[5,14,6,2],"c":"e"}],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true}},
+    "pivot": [8,0]
+   },
+   "mother_thistle": {
+    "kind": "pixel",
+    "size": [64,56],
+    "palette": {"g":"#3f6a34","t":"#9a5a8a","y":"#e8d860","b":"#2a3a24"},
+    "parts": [
+     {"name":"trunk","rect":[18,0,28,36],"c":"b"},
+     {"name":"crown","rect":[8,30,48,24],"c":"g"},
+     {"name":"flowers","rect":[14,44,36,8],"c":"t"},
+     {"name":"eye","rect":[28,26,8,6],"c":"y"},
+     {"name":"vines","rect":[0,4,12,30],"c":"g"}
+    ],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true},"slam":{"frames":6,"fps":10,"loop":false},"spore":{"frames":5,"fps":10,"loop":false}},
+    "pivot": [32,0]
+   },
+   "bellkeeper": {
+    "kind": "pixel",
+    "size": [48,52],
+    "palette": {"b":"#b8905a","d":"#4a3a24","t":"#6fa8c8","e":"#ffeaa0"},
+    "parts": [
+     {"name":"bell","rect":[8,8,32,36],"c":"b"},
+     {"name":"rim","rect":[4,4,40,6],"c":"d"},
+     {"name":"clapper","rect":[20,0,8,10],"c":"d"},
+     {"name":"eyes","rect":[14,28,20,5],"c":"e"},
+     {"name":"chains","rect":[22,44,4,8],"c":"t"}
+    ],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true}},
+    "pivot": [24,0]
+   },
+   "forgemother": {
+    "kind": "pixel",
+    "size": [56,60],
+    "palette": {"r":"#8a3a22","m":"#8c9096","f":"#ff9a2a","k":"#1e1612"},
+    "parts": [
+     {"name":"body","rect":[12,8,32,34],"c":"r"},
+     {"name":"head","rect":[20,42,16,14],"c":"m"},
+     {"name":"maw","rect":[23,44,10,6],"c":"f"},
+     {"name":"arms","rect":[0,14,56,12],"c":"m"},
+     {"name":"anvil","rect":[4,0,48,8],"c":"k"}
+    ],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true}},
+    "pivot": [28,0]
+   },
+   "drowned_cantor": {
+    "kind": "pixel",
+    "size": [40,56],
+    "palette": {"b":"#2a4a7a","w":"#cfe0ff","m":"#8ac8ff","k":"#101830"},
+    "parts": [
+     {"name":"robe","rect":[6,0,28,36],"c":"b"},
+     {"name":"head","rect":[14,36,12,14],"c":"w"},
+     {"name":"mouth","rect":[17,40,6,6],"c":"k"},
+     {"name":"staff","rect":[34,0,3,52],"c":"m"}
+    ],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true}},
+    "pivot": [20,0]
+   },
+   "ashen_regent": {
+    "kind": "pixel",
+    "size": [40,52],
+    "palette": {"a":"#6a6a78","c":"#d8b04a","e":"#ff5a2a","k":"#1a1a22"},
+    "parts": [
+     {"name":"armor","rect":[6,4,28,30],"c":"a"},
+     {"name":"crown","rect":[12,38,16,8],"c":"c"},
+     {"name":"face","rect":[14,30,12,9],"c":"k"},
+     {"name":"eyes","rect":[16,33,8,2],"c":"e"},
+     {"name":"greatsword","rect":[34,0,4,48],"c":"a"}
+    ],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true}},
+    "pivot": [20,0]
+   },
+   "gloam_sovereign": {
+    "kind": "pixel",
+    "size": [72,80],
+    "palette": {"k":"#07040c","v":"#7a2ad8","w":"#e8dcff","e":"#ffffff"},
+    "parts": [
+     {"name":"mass","rect":[8,0,56,56],"c":"k"},
+     {"name":"veil","rect":[0,40,72,30],"c":"v"},
+     {"name":"face","rect":[24,50,24,20],"c":"w"},
+     {"name":"eyes","rect":[28,58,16,3],"c":"e"}
+    ],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true},"rise":{"frames":8,"fps":8,"loop":false}},
+    "pivot": [36,0]
+   },
+   "lantern_great": {
+    "kind": "pixel",
+    "size": [48,96],
+    "palette": {"g":"#3a3040","f":"#ffb347","w":"#fff0c0"},
+    "parts": [{"name":"frame","rect":[8,0,32,96],"c":"g"},{"name":"glass","rect":[14,20,20,60],"c":"w"},{"name":"flame","rect":[20,38,8,24],"c":"f"}],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true},"dark":{"frames":1,"fps":1,"loop":true},"lit":{"frames":6,"fps":8,"loop":true}},
+    "pivot": [24,0]
+   },
+   "caged_moth": {
+    "kind": "pixel",
+    "size": [10,10],
+    "palette": {"c":"#8a8a90","m":"#c8f0ff"},
+    "parts": [{"name":"cage","rect":[0,0,10,10],"c":"c"},{"name":"moth","rect":[3,3,4,4],"c":"m"}],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true}},
+    "pivot": [5,0]
+   },
+   "tablet": {
+    "kind": "pixel",
+    "size": [8,10],
+    "palette": {"s":"#a8a094","r":"#4a4438"},
+    "parts": [{"name":"stone","rect":[0,0,8,10],"c":"s"},{"name":"runes","rect":[2,2,4,6],"c":"r"}],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true}},
+    "pivot": [4,0]
+   },
+   "pickup": {
+    "kind": "pixel",
+    "size": [8,8],
+    "palette": {"a":"#e8c870"},
+    "parts": [{"name":"gem","rect":[1,1,6,6],"c":"a"}],
+    "anims": {"idle":{"frames":4,"fps":6,"loop":true},"spin":{"frames":4,"fps":8,"loop":true}},
+    "pivot": [4,0]
+   }
+  }
+ },
+ "graphics": [
+  {"use":"graphics.render.tilemap","with":{"pixelSnap":true,"scale":4,"layerOrder":["bg","solid","fg"]}},
+  {
+   "use": "graphics.tileset.pixel",
+   "with": {
+    "tileSize": 16,
+    "autotile": "blob47",
+    "themes": [
+     {"id":"ember","palette":{"a":"#4a3a30","b":"#ffb347","c":"#2a2018"},"pattern":"brick","edge":"warm"},
+     {"id":"moss","palette":{"a":"#2c4a30","b":"#6aaa5a","c":"#1a2a1c"},"pattern":"moss","edge":"soft"},
+     {"id":"wet","palette":{"a":"#26405a","b":"#7ac0e0","c":"#142030"},"pattern":"brick","edge":"sharp"},
+     {"id":"rust","palette":{"a":"#5a2e1c","b":"#ff8a3a","c":"#2a140c"},"pattern":"metal","edge":"sharp"},
+     {"id":"thorn","palette":{"a":"#4a3a24","b":"#b86a8a","c":"#241c10"},"pattern":"wood","edge":"soft"},
+     {"id":"ash","palette":{"a":"#4a4a56","b":"#c8c0b0","c":"#22222a"},"pattern":"ash","edge":"sharp"},
+     {"id":"sky","palette":{"a":"#4a5a7a","b":"#f0e8c8","c":"#222c44"},"pattern":"crystal","edge":"sharp"},
+     {"id":"dark","palette":{"a":"#1e1a2a","b":"#8a8aa8","c":"#0e0a16"},"pattern":"rock","edge":"soft"},
+     {"id":"void","palette":{"a":"#0a0612","b":"#7a2ad8","c":"#030208"},"pattern":"ash","edge":"glow"}
+    ]
+   }
+  },
+  {"use":"graphics.sprite.pixel","with":{"outline":"#0e0a14","shadow":false}},
+  {
+   "use": "graphics.anim.sprite",
+   "with": {
+    "map": {"idle":"idle","run":"run","jump":"jump","fall":"fall","dash":"dash","wallslide":"wall","attack":"attack","hurt":"hurt","die":"die"},
+    "squash": true,
+    "trail": ["dash"]
+   }
+  },
+  {
+   "use": "graphics.background.parallax",
+   "with": {
+    "layers": [
+     {"zone":"cinderwell","depth":0.2,"pattern":"rafters","color":"#1c1410","drift":0},
+     {"zone":"cinderwell","depth":0.5,"pattern":"lanterns","color":"#4a3020","drift":0.02},
+     {"zone":"mossgrave","depth":0.3,"pattern":"roots","color":"#162418","drift":0.01},
+     {"zone":"mossgrave","depth":0.6,"pattern":"spores","color":"#2c5a34","drift":0.04},
+     {"zone":"glasswater","depth":0.3,"pattern":"arches","color":"#102030","drift":0},
+     {"zone":"glasswater","depth":0.7,"pattern":"caustics","color":"#2a6a90","drift":0.05},
+     {"zone":"rustbell","depth":0.3,"pattern":"pipes","color":"#201210","drift":0},
+     {"zone":"rustbell","depth":0.6,"pattern":"sparks","color":"#8a3a1c","drift":0.06},
+     {"zone":"sunken_choir","depth":0.4,"pattern":"pipes_organ","color":"#101a30","drift":0.01},
+     {"zone":"thornwild","depth":0.4,"pattern":"thorns","color":"#241810","drift":0.02},
+     {"zone":"ashen_barrows","depth":0.4,"pattern":"columns","color":"#1c1c24","drift":0},
+     {"zone":"lantern_spire","depth":0.2,"pattern":"sky","color":"#6a7ab0","drift":0.03,"fogColor":"#d8d0e8"},
+     {"zone":"dim_galleries","depth":0.4,"pattern":"shelves","color":"#12101a","drift":0},
+     {"zone":"hollow_heart","depth":0.5,"pattern":"void","color":"#07040c","drift":0.02}
+    ]
+   }
+  },
+  {"use":"graphics.camera.side","with":{"zoom":1,"lookAhead":2.5,"smoothing":0.12,"roomLock":true,"deadzone":[1,2]}},
+  {
+   "use": "graphics.lighting.2d",
+   "with": {
+    "ambient": 0.12,
+    "lights": [
+     {"follow":"wick","radius":6,"color":"#ffb347","flicker":0.05,"shadow":true},
+     {"follow":"bench","radius":4,"color":"#ffcf7a","flicker":0.1,"shadow":false},
+     {"follow":"great_lantern","radius":14,"color":"#fff0c0","flicker":0.02,"shadow":true}
+    ],
+    "darkZones": ["mossgrave","glasswater","sunken_choir","ashen_barrows","dim_galleries","hollow_heart"]
+   }
+  },
+  {
+   "use": "graphics.particles",
+   "with": {
+    "budget": 2500,
+    "presets": [
+     {"id":"ash","shape":"ember","color":"#ffb347","count":8,"life":1.2,"speed":2,"gravity":-0.6},
+     {"id":"spores","shape":"glow","color":"#c8f0a0","count":6,"life":3,"speed":0.5,"gravity":-0.1},
+     {"id":"drip","shape":"splash","color":"#8ac8e0","count":3,"life":0.4,"speed":3,"gravity":9},
+     {"id":"hit","shape":"spark","color":"#ffffff","count":10,"life":0.25,"speed":8,"gravity":0},
+     {"id":"dust","shape":"dust","color":"#9a8a7a","count":5,"life":0.5,"speed":2,"gravity":2},
+     {"id":"gloam","shape":"smoke","color":"#2a1a40","count":10,"life":3,"speed":0.8,"gravity":-0.2}
+    ],
+    "bind": [
+     {"event":"hit","preset":"hit","at":"target"},
+     {"event":"landed","preset":"dust","at":"feet"},
+     {"event":"dashed","preset":"ash","at":"self"},
+     {"event":"defeated","preset":"ash","at":"target"}
+    ]
+   }
+  },
+  {"use":"graphics.post","with":{"bloom":0.8,"tonemap":"filmic","quantize":48,"vignette":0.35,"grain":0.05,"scanlines":false}},
+  {"use":"graphics.fx.feedback","with":{"hitStop":70,"shake":0.4,"damageFlash":true,"slowmoOn":["boss_defeated:*"]}},
+  {
+   "use": "graphics.audio.synth",
+   "with": {
+    "cues": [
+     {"event":"jumped","voice":"blip","pitch":440,"gain":0.3},
+     {"event":"dashed","voice":"sweep","pitch":220,"gain":0.4},
+     {"event":"hit","voice":"noise","pitch":300,"gain":0.5},
+     {"event":"item_gained","voice":"chord","pitch":660,"gain":0.3},
+     {"event":"checkpoint_set","voice":"pad","pitch":330,"gain":0.5}
+    ],
+    "music": [
+     {"zone":"cinderwell","mode":"dorian","bpm":60,"layers":["pad","pluck"]},
+     {"zone":"mossgrave","mode":"aeolian","bpm":70,"layers":["pad","drip"]},
+     {"zone":"glasswater","mode":"lydian","bpm":56,"layers":["pad","bell"]},
+     {"zone":"rustbell","mode":"phrygian","bpm":100,"layers":["anvil","drone"]},
+     {"zone":"sunken_choir","mode":"dorian","bpm":48,"layers":["choir","organ"]},
+     {"zone":"hollow_heart","mode":"locrian","bpm":40,"layers":["drone"]},
+     {"when":{"boss":"thistle","state":"active"},"mode":"aeolian","bpm":120,"layers":["perc","drone"]}
+    ]
+   }
+  },
+  {
+   "use": "graphics.ui.hud",
+   "with": {
+    "meters": [{"pool":"flame","color":"#ffb347","pos":"top-left"}],
+    "counters": [{"var":"hp","icon":"mask","pos":"top-left"},{"var":"money.ash","icon":"ash","pos":"top-right"}],
+    "prompt": true,
+    "bossBar": true,
+    "status": true,
+    "crosshair": "none"
+   }
+  },
+  {"use":"graphics.ui.dialogue","with":{"portrait":true,"style":"parchment"}},
+  {"use":"graphics.ui.map","with":{"fog":true,"fastTravel":true,"layers":["rooms","benches","pins","quests"]}},
+  {"use":"graphics.ui.journal","with":{"tabs":["quests","lore","bestiary","characters"]}},
+  {"use":"graphics.ui.inventory","with":{"panels":["items","loadout","shop"],"sort":true}},
+  {"use":"graphics.ui.menu","with":{"slots":3}}
+ ],
+ "player": {"archetype":"wick","space":"ashmere","at":[410,500],"abilities":[],"inventory":[{"item":"wick_blade","count":1},{"item":"flame_sip","count":1}]}
+}

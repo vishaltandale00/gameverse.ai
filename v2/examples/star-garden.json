@@ -1,0 +1,39 @@
+{
+  "schema": "gameverse.v2.game-spec/0.1",
+  "id": "star-garden",
+  "title": "Star Garden",
+  "pitch": "Gather every star in the garden before the clock runs out, dodging the thorn bushes.",
+  "seed": 3,
+  "background": "#14301f",
+  "level": {
+    "rows": [
+      "########################",
+      "#......*.........*.....#",
+      "#..^^.......##.....^...#",
+      "#.....*.....##...*.....#",
+      "#.*.....^^.......####..#",
+      "#.......^^...*.........#",
+      "#..####.........^^..*..#",
+      "#....*....P............#",
+      "#.^.....######...*..^..#",
+      "#...*..............*...#",
+      "########################"
+    ],
+    "legend": { "#": "hedge", "P": "gardener", "*": "star", "^": "thorns" }
+  },
+  "entities": {
+    "hedge": { "solid": true, "color": "#2f5d3a" },
+    "gardener": { "tags": ["player"], "glyph": "🧑‍🌾", "w": 0.8, "h": 0.8 },
+    "star": { "tags": ["collectible"], "glyph": "⭐", "w": 0.6, "h": 0.6 },
+    "thorns": { "tags": ["hazard"], "glyph": "🌵", "w": 0.8, "h": 0.8 }
+  },
+  "modules": [
+    { "use": "topdown", "with": { "speed": 7 } },
+    { "use": "collect" },
+    { "use": "hazard" },
+    { "use": "health", "with": { "hp": 3, "knockback": 0 } },
+    { "use": "timer", "with": { "seconds": 45 } }
+  ],
+  "win": { "var": "remaining", "lte": 0 },
+  "lose": { "any": [{ "var": "hp", "lte": 0 }, { "count": "time_up", "gte": 1 }] }
+}

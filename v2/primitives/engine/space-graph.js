@@ -1,0 +1,78 @@
+// Locations and connections as a graph: adventure, narrative, board and
+// management games, world maps, or the "macro" layer above other spaces.
+// Zones are nodes; exits are edges, optionally gated by a predicate.
+export default {
+  id: 'engine.space.graph',
+  card: {
+    intent: 'A world of named locations connected by exits; entities are at one location at a time. Exits can be gated by predicates (keys, flags, abilities).',
+    views: ['text', 'map', 'scene-cards'],
+    params: {},
+    provides: { capabilities: ['position', 'distance', 'navigate', 'reachable'], events: ['enter_zone', 'leave_zone', 'blocked'] },
+    reads: [],
+  },
+  validate(config, doc, ctx) {
+    const errors = [];
+    doc.spaces.filter(s => s.use === 'engine.space.graph').forEach((s, i) => (s.zones || []).forEach((z, j) => (z.exits || []).forEach((x, k) => {
+      const path = `spaces[${doc.spaces.indexOf(s)}].zones[${j}].exits[${k}]`;
+      if (!(s.zones || []).some(o => o.id === x.to)) errors.push({ code: 'ref_unknown', path: `${path}.to`, message: `exit to unknown zone '${x.to}' in space '${s.id}'` });
+      if (x.gate) ctx.checkPredicate(x.gate, `${path}.gate`, errors);
+    })));
+    return errors;
+  },
+  install(rt, config, instance) {
+    // Index zones lazily per document version so hot-loaded zones and exits appear.
+    let indexed = null, zonesMap = new Map();
+    const zones = () => {
+      if (indexed !== rt.doc) { indexed = rt.doc; zonesMap = new Map((rt.doc.spaces.find(s => s.id === instance.id)?.zones || []).map(z => [z.id, z])); }
+      return zonesMap;
+    };
+    const exitsFrom = id => zones().get(id)?.exits || [];
+    const api = {
+      kind: 'graph', anchor: 'slot', get zones() { return zones(); },
+      place(entity) { if (entity.at == null) entity.at = [...zones().keys()][0] ?? null; },
+      remove() {},
+      pos: entity => entity.at,
+      setPos(entity, at, rt) { api.move(entity, at, rt, { force: true }); },
+      entitiesAt: at => Object.values(rt.state.entities).filter(e => e.space === instance.id && e.at === at).map(e => e.id),
+      inZone: (entity, zone) => entity.at === zone,
+      zoneAt: at => (zones().has(at) ? at : null),
+      teleport(entity, { zone, at }, rt) { const to = zone ?? at; if (to != null) api.move(entity, to, rt, { force: true }); },
+      /** Hop distance from entity to the nearest matching entity id, archetype or zone; null if none. */
+      nearest(entity, target, rt) {
+        if (zones().has(target)) { const d = api.distance(entity.at, target); return Number.isFinite(d) ? d : null; }
+        let best = null;
+        for (const e of Object.values(rt.state.entities)) if (e !== entity && e.space === instance.id && (e.id === target || e.archetype === target)) { const d = api.distance(entity.at, e.at); if (Number.isFinite(d) && (best === null || d < best)) best = d; }
+        return best;
+      },
+      neighbors: id => exitsFrom(id).map(x => x.to),
+      // Exit gates: the exit's own predicate, plus any plot gate that locks 'exit:from>to' (plot.gate's service).
+      canMove(entity, to, rt, notify = false) {
+        const x = exitsFrom(entity.at).find(e => e.to === to);
+        if (!x || (x.gate && !rt.test(x.gate))) return false;
+        return !rt.hasService('gates') || rt.service('gates').exit(entity.at, to, { who: entity.id, notify });
+      },
+      move(entity, to, rt, { force = false } = {}) {
+        if (!zones().has(to)) return false;
+        if (!force && !api.canMove(entity, to, rt, true)) { rt.emit('blocked', { who: entity.id, from: entity.at, to }); return false; }
+        const from = entity.at; entity.at = to;
+        rt.emit('leave_zone', { who: entity.id, zone: from }); rt.emit('enter_zone', { who: entity.id, zone: to });
+        return true;
+      },
+      distance(a, b) { // hop count ignoring gates
+        const seen = new Map([[a, 0]]), queue = [a];
+        while (queue.length) { const n = queue.shift(); if (n === b) return seen.get(n); for (const m of api.neighbors(n)) if (!seen.has(m)) { seen.set(m, seen.get(n) + 1); queue.push(m); } }
+        return Infinity;
+      },
+      /** Zones reachable from `from` given gates as they evaluate in the current state. */
+      reachable(from, rt, opts = {}) {
+        const seen = new Set([from]), queue = [from];
+        while (queue.length) { const at = queue.shift(); for (const x of exitsFrom(at)) if (!seen.has(x.to) && (!x.gate || rt.test(x.gate)) && (!rt.hasService('gates') || rt.service('gates').exit(at, x.to, { notify: false }))) { seen.add(x.to); queue.push(x.to); } }
+        return seen;
+      },
+      canReach: (a, b, rt, opts = {}) => api.reachable(a, rt, opts).has(b),
+    };
+    rt.defineSpace(instance.id, api);
+    rt.action('go', (to, rt) => { const p = rt.player(); if (p?.space === instance.id) api.move(p, to, rt); });
+    rt.options(rt => { const p = rt.player(); return p?.space === instance.id ? api.neighbors(p.at).map(to => ({ label: `go ${to}`, actions: { go: to } })) : []; });
+  },
+};
