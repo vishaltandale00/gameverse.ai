@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import kit, { cast } from '../v2/kits/maze/index.js';
 import { buildMaze, checkMaze, isOpen, W, H, STYLE_NAMES, EXIT } from '../v2/kits/maze/maze.js';
 import { DX, DY, UP, LEFT, RIGHT, NONE, CORNERS, FRIGHT_SECONDS, BASE_SPEED, READY_FIRST, DYING, CLEAR, BONUS_TIME } from '../v2/kits/maze/game.js';
-import { wallLoops } from '../v2/kits/maze/render.js';
+import { wallLoops, cameraStep } from '../v2/kits/maze/render.js';
+import { SIZES, SIZE_NAMES, powerCountFor, wrapX } from '../v2/kits/maze/maze.js';
+import { composeGame } from '../v2/kits/mods/compose.js';
 import { paintGameArt } from '../v2/art/paint.js';
 import { fallbackDirection } from '../v2/art/direction.js';
 
@@ -406,4 +408,152 @@ test('cast feeds paintGameArt and the renderer draws every phase without art or 
     for (const phase of ['dying', 'clear']) { s.phase = phase; for (let t = 0; t < 120; t += 7) { s.phaseT = t; render(stub, s, { cssWidth: 300, cssHeight: 900, dt: 1 / 60 }); } }
   }
   assert.ok(calls.n > 1000);
+});
+
+// ---------- map sizes and the scrolling camera ----------
+const sized = (size, patch = {}) => { const c = structuredClone(content); for (const lv of c.levels) lv.maze.size = size; return kit.validate({ ...c, ...patch }).content; };
+const stubCtx = () => new Proxy({}, { get: (t, k) => k in t ? t[k] : k === 'canvas' ? { width: 375, height: 640 } : k === 'getTransform' ? () => ({ a: 2 }) : k === 'measureText' ? () => ({ width: 40 }) : typeof k === 'string' && k.startsWith('create') ? () => ({ addColorStop() {} }) : () => {}, set: (t, k, v) => { t[k] = v; return true; } });
+
+test('the classic size still builds exactly the original mazes', () => {
+  const fp = m => m.cells.reduce((h, c, i) => (Math.imul(h ^ (c + i * 7), 16777619) >>> 0), 2166136261);
+  // Fingerprints of the generator before sizes existed: published games keep their mazes.
+  assert.equal(fp(buildMaze({ style: 'classic', density: 0.6, tunnels: 2, powerPellets: 4 }, 1)), 2038070033);
+  assert.equal(fp(buildMaze({ style: 'compact', density: 0.6, tunnels: 2, powerPellets: 4 }, 2)), 1799707197);
+  assert.equal(fp(buildMaze({ size: 'classic', style: 'sprawling', density: 0.6, tunnels: 2, powerPellets: 4 }, 3)), 3031276409);
+});
+
+test('every size keeps every maze invariant, with more houses and power pellets as the area grows', () => {
+  const houses = { classic: 1, large: 2, huge: 3, vast: 5 };
+  for (const size of SIZE_NAMES) {
+    const runs = size === 'vast' ? 6 : 15;
+    for (let seed = 0; seed < runs; seed++) {
+      const params = { size, style: STYLE_NAMES[seed % 3], density: 0.3 + (seed % 8) / 10, tunnels: 1 + (seed % 2), powerPellets: 2 + 2 * (seed % 3) };
+      const maze = buildMaze(params, seed);
+      assert.deepEqual(checkMaze(maze, params), [], `${size} seed ${seed}`);
+      assert.equal(maze.w, SIZES[size].w); assert.equal(maze.h, SIZES[size].h);
+      assert.equal(maze.houses.length, houses[size]);
+      assert.equal(maze.power.length, powerCountFor(params));
+      assert.ok(maze.start.x === maze.w / 2 - 0.5 && isOpen(maze, maze.w / 2, maze.start.y));
+    }
+  }
+  assert.ok(powerCountFor({ size: 'vast', powerPellets: 4 }) > powerCountFor({ size: 'huge', powerPellets: 4 }));
+  assert.ok(powerCountFor({ size: 'large', powerPellets: 4 }) > 4);
+  // A broken big maze is caught too.
+  const big = buildMaze({ size: 'huge', style: 'classic', density: 0.6, tunnels: 1, powerPellets: 4 }, 5);
+  const cells = [...big.cells]; cells[cells.findIndex((c, i) => c === 1 && i % big.w === 7)] = 0;
+  assert.ok(checkMaze({ ...big, cells }).some(p => p.code === 'maze_mirror'));
+});
+
+test('bigger mazes scale hunters (up to 8), spread them over the houses and keep classic tile speeds', () => {
+  const counts = Object.fromEntries(SIZE_NAMES.map(size => [size, kit.createGame(sized(size), { seed: 1 }).rosterFor(0).length]));
+  assert.deepEqual(counts, { classic: 4, large: 6, huge: 8, vast: 8 });
+  const game = kit.createGame(sized('vast'), { seed: 2 }), s = game.createState(), maze = game.mazeFor(0);
+  assert.equal(s.pellets.length, maze.w * maze.h);
+  assert.equal(new Set(s.hunters.map(h => h.home)).size, maze.houses.length, 'every house has hunters');
+  assert.equal(new Set(s.hunters.map(h => h.name)).size, s.hunters.length, 'copies are numbered');
+  for (const h of s.hunters) {
+    const q = maze.houses[h.home];
+    if (h.state === 'active') assert.deepEqual([h.x, h.y], [q.exit.x, q.exit.y]);
+    else assert.ok(Math.abs(h.y - q.center.y) < 1e-9 && h.x > q.x0 && h.x < q.x1);
+  }
+  assert.equal(game.levelInfo(0).speed.pac, kit.createGame(content, { seed: 2 }).levelInfo(0).speed.pac);
+  assert.ok(game.levelInfo(0).frightFrames > kit.createGame(content).levelInfo(0).frightFrames, 'fright stretches a little');
+  // Eaten hunters go home to their own house and come back out.
+  s.phase = 'play'; s.hunters = [s.hunters.find(h => h.home === 1)];
+  const h = s.hunters[0], q = maze.houses[1];
+  Object.assign(h, { state: 'eyes', x: q.exit.x - 0.5, y: q.exit.y, dir: LEFT });
+  s.player.moving = false; s.player.x = 1; s.player.y = 1;
+  const seen = new Set();
+  for (let i = 0; i < 1200 && !(seen.has('leaving') && h.state === 'active'); i++) { game.step(s, {}); seen.add(h.state); }
+  assert.ok(seen.has('entering') && h.state === 'active', [...seen].join());
+  assert.equal(h.y, q.exit.y);
+  // Validation: 8 hunters need a huge or vast level; unknown sizes are errors; old content defaults to classic.
+  const eight = [...content.hunters, ...content.hunters].map((x, i) => ({ ...x, name: `H${i}` }));
+  assert.equal(kit.validate({ ...structuredClone(kit.content.sample), hunters: eight }).ok, false);
+  assert.equal(kit.validate({ ...structuredClone(sized('huge')), hunters: eight }).ok, true);
+  const bad = structuredClone(kit.content.sample); bad.levels[0].maze.size = 'galactic';
+  assert.ok(kit.validate(bad).errors.some(e => e.code === 'maze_size' && e.path === 'levels[0].maze.size'));
+  const old = structuredClone(kit.content.sample); delete old.levels[0].maze.size;
+  assert.equal(kit.validate(old).content.levels[0].maze.size, 'classic');
+});
+
+test('the camera follows the hero with a dead zone and clamps at the edges', () => {
+  const box = { vw: 30, vh: 34, w: 92, h: 95 };
+  assert.deepEqual(cameraStep(null, { ...box, hx: 1, hy: 1 }), { x: 0, y: 0, tx: 0, ty: 0 }, 'clamped at the top-left');
+  const end = cameraStep(null, { ...box, hx: 91, hy: 94 });
+  assert.deepEqual([end.x, end.y], [92 - 30, 95 - 34], 'clamped at the bottom-right');
+  assert.equal(cameraStep(null, { vw: 40, vh: 40, w: 28, h: 31, hx: 5, hy: 5 }).x, (28 - 40) / 2, 'a covered axis is centred');
+  // Inside the dead zone the camera holds still.
+  let cam = cameraStep(null, { ...box, hx: 46, hy: 47 });
+  const still = cameraStep(cam, { ...box, hx: 48, hy: 47 });
+  assert.equal(still.x, cam.x);
+  // Walking right: the camera eases after, never backwards, keeps the hero in the middle band, and stops at the edge.
+  let hx = 46, last = cam.x;
+  for (let i = 0; i < 900; i++) {
+    hx = Math.min(91.5, hx + 0.13);
+    cam = cameraStep(cam, { ...box, hx, hy: 47 });
+    assert.ok(cam.x >= last - 1e-9); last = cam.x;
+    if (hx < 80) assert.ok(hx - cam.x > box.vw * 0.25 && hx - cam.x < box.vw * 0.75, `hero at ${hx - cam.x} in view`);
+  }
+  assert.ok(Math.abs(cam.x - (92 - 30)) < 0.01, 'settled against the right edge');
+  // The renderer switches to the camera only when tiles would be unreadable, and mods get the camera in render.view.
+  const vast = kit.createGame(sized('vast'), { seed: 3 }), vs = vast.createState(), r = kit.createRenderer(vast, { art: {} });
+  r(stubCtx(), vs, { cssWidth: 375, cssHeight: 640, dt: 1 / 60 });
+  assert.ok(r.view.camera, 'a vast maze on a phone scrolls');
+  assert.ok(r.view.s >= 14, 'at a readable tile size');
+  const px = r.view.X(vs.player.x), py = r.view.Y(vs.player.y), c = r.view.clip;
+  assert.ok(px > c.x && px < c.x + c.w && py > c.y && py < c.y + c.h, 'the hero is in view');
+  assert.ok(Math.abs(r.view.X(vs.player.x + 1) - px - r.view.s) < 1e-9);
+  const classic = kit.createGame(content), cr = kit.createRenderer(classic, { art: {} });
+  cr(stubCtx(), classic.createState(), { cssWidth: 448, cssHeight: 576, dt: 1 / 60 });
+  assert.equal(cr.view.camera, null, 'a classic maze that fits does not scroll');
+  // Render a stretch of a vast game on the stub, minimap included.
+  for (let i = 0; i < 240; i++) { vast.step(vs, { x: i % 90 < 45 ? -1 : 0, y: i % 90 < 45 ? 0 : 1 }); r(stubCtx(), vs, { cssWidth: 375, cssHeight: 640, dt: 1 / 60, events: vs.events }); }
+});
+
+test('the world adapter (for mods) works at a non-classic size', () => {
+  const game = composeGame(kit, sized('large'), { seed: 4, mods: { weapon: { kind: 'projectile', ammoFrom: 'unlimited', effect: 'defeat' } } });
+  const s = game.createState(); s.phase = 'play';
+  const maze = game.mazeFor(0), world = kit.world.adapter(game);
+  assert.deepEqual(world.size(s), { w: 44, h: 47 });
+  for (let i = 0; i < maze.cells.length; i += 13) assert.equal(world.blocked(s, i % 44, Math.floor(i / 44)), maze.cells[i] !== 1);
+  const t = maze.tunnels[0];
+  assert.deepEqual(world.wrap(s, -0.6, t), [43.4, t]);
+  assert.equal(world.blocked(s, -1, t), false, 'the tunnel wraps across x = 0');
+  assert.equal(world.enemies(s).length, 6);
+  // A bolt fired along a corridor right of x = 28 (beyond the classic width) hits a hunter there.
+  let run = null;
+  for (let y = 1; y < 46 && !run; y++) for (let x = 29; x < 38 && !run; x++) if ([0, 1, 2, 3, 4, 5].every(k => isOpen(maze, x + k, y))) run = { x, y };
+  assert.ok(run, 'a corridor beyond the classic width');
+  for (const h of s.hunters) Object.assign(h, { state: 'house' });
+  Object.assign(s.player, { x: run.x, y: run.y, dir: RIGHT, moving: false, want: NONE, face: 1 });
+  const events = [], h = s.hunters[0];
+  // Pin the target four tiles ahead until the bolt arrives.
+  for (let i = 0; i < 30 && h.state === 'active' || i === 0; i++) { Object.assign(h, { x: run.x + 4, y: run.y, dir: LEFT, state: 'active', fright: false, stunT: 0 }); game.step(s, { a: i === 0 }); events.push(...s.events); }
+  assert.ok(events.some(e => e.name === 'defeated' && e.by === 'shot'), 'the bolt hit');
+  assert.equal(wrapX(-1, 44), 43);
+});
+
+test('verify proves large and vast (open-world) maps within budget', () => {
+  const large = kit.verify(sized('large'), { seed: 1 });
+  assert.equal(large.ok, true, JSON.stringify(large.problems));
+  assert.equal(large.report.levels[0].size, 'large');
+  assert.ok(large.report.bot.clearedPct >= 60);
+  // Open world: one long vast level.
+  const world = structuredClone(sized('vast')); world.levels = world.levels.slice(0, 1);
+  const vast = kit.verify(world, { seed: 2 });
+  assert.equal(vast.ok, true, JSON.stringify(vast.problems));
+  assert.equal(vast.report.levels[0].width, 92);
+  assert.ok(vast.report.bot.clearedPct >= 60, JSON.stringify(vast.report.bot));
+  assert.ok(vast.report.ms < 2000, `${vast.report.ms} ms`);
+});
+
+test('the prompt and schema separate size from style and protect levels on revision', () => {
+  const desc = kit.content.schema.properties.levels.items.properties.maze.properties;
+  assert.deepEqual(desc.size.enum, SIZE_NAMES);
+  assert.match(desc.size.description, /Bigger map/i);
+  assert.match(desc.style.description, /never changes the map size/);
+  assert.match(kit.content.prompt, /open world/i);
+  assert.match(kit.content.prompt, /vast/);
+  assert.match(kit.content.prompt, /never drop/);
 });

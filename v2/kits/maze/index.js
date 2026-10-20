@@ -4,7 +4,7 @@ import { createGame } from './game.js';
 import { createRenderer } from './render.js';
 import { verify } from './verify.js';
 import { DX, DY } from './game.js';
-import { isOpen, wrapX, W } from './maze.js';
+import { isOpen, wrapX } from './maze.js';
 
 /** Names for the art director and the entity kinds paintGameArt paints. */
 export function cast(content) {
@@ -30,7 +30,7 @@ export function cast(content) {
 export default {
   id: 'maze',
   name: 'Maze chase',
-  version: '0.1.0',
+  version: '0.2.0', // 0.2: map sizes with a scrolling camera; classic-size mazes are unchanged
   summary: 'Grid maze, pellets, power-ups that turn the hunters into the hunted, ghost AI with personalities.',
   examples: ['Pac-Man', 'Ms. Pac-Man'],
   content: { schema, prompt, sample },
@@ -50,8 +50,10 @@ export default {
         lives: s => s.lives,
         player: s => { const p = s.player, d = p.dir >= 0 ? p.dir : p.face > 0 ? 3 : 1; return { x: p.x, y: p.y, facing: { x: DX[d], y: DY[d] } }; },
         enemies: s => s.hunters.map(h => ({ id: h.index, name: h.name, x: h.x, y: h.y, radius: 0.45, hittable: (h.state === 'active' || h.state === 'leaving') && !h.fright && !(h.stunT > 0) })),
-        blocked: (s, x, y) => !isOpen(game.mazeFor(s.level), wrapX(Math.round(x)), Math.round(y)),
-        wrap: (s, x, y) => [x < -0.5 ? x + W : x >= W - 0.5 ? x - W : x, y],
+        // Every level has its own dimensions (maze.w × maze.h), so terrain and wrapping read the current maze.
+        blocked: (s, x, y) => { const maze = game.mazeFor(s.level); return !isOpen(maze, wrapX(Math.round(x), maze.w), Math.round(y)); },
+        wrap: (s, x, y) => { const w = game.mazeFor(s.level).w; return [x < -0.5 ? x + w : x >= w - 0.5 ? x - w : x, y]; },
+        size: s => { const maze = game.mazeFor(s.level); return { w: maze.w, h: maze.h }; },
         // Defeated hunters go home as eyes, like being eaten while frightened.
         defeat: (s, id) => { const h = s.hunters[id]; h.state = h.state === 'leaving' ? 'entering' : 'eyes'; h.fright = false; h.stunT = 0; game.addScore(s, 200); return 200; },
         stun: (s, id, frames) => { s.hunters[id].stunT = frames; },

@@ -4,7 +4,7 @@
 // level-clear flash and the HUD. All visual state lives in render.fx; the game
 // state is only read.
 import { createParticles, addParticles, stepParticles, sparkleBurst, sparkBurst, confettiBurst, rand, hexToRgb, rgbToHsl, hslToHex } from '../../engine/juice.js';
-import { W, H, WALL, HOUSE_RECT, DOOR_TILES } from './maze.js';
+import { WALL } from './maze.js';
 
 const TAU = Math.PI * 2;
 const HUD_TOP = 3, HUD_BOTTOM = 2.2;
@@ -98,6 +98,7 @@ function tinted(img, color) {
  * drawn separately, so they count as open here.
  */
 export function wallLoops(maze, inset = 0.5) {
+  const W = maze.w, H = maze.h;
   const wall = (i, j) => {
     if (i < -1 || i > W || j < -1 || j > H) return false;
     if (i < 0 || i >= W || j < 0 || j >= H) return !maze.tunnels.includes(j);
@@ -117,7 +118,7 @@ export function wallLoops(maze, inset = 0.5) {
     if (e0.used) continue;
     const pts = [];
     let e = e0;
-    for (let guard = 0; guard < 20000; guard++) {
+    for (let guard = 0; guard < 1e6; guard++) {
       e.used = true;
       const ex = e.x + e.dx, ey = e.y + e.dy, next = (starts.get(`${ex},${ey}`) || []).filter(n => !n.used || n === e0);
       // Prefer a right turn (keeps hugging the same wall where two touch at a corner), then straight, then left.
@@ -127,7 +128,11 @@ export function wallLoops(maze, inset = 0.5) {
       if (pick === e0) break;
       e = pick;
     }
-    if (pts.length >= 4) loops.push(pts.map(p => ({ x: p.x + inset * (-p.inY - p.outY), y: p.y + inset * (p.inX + p.outX) })));
+    if (pts.length < 4) continue;
+    const loop = pts.map(p => ({ x: p.x + inset * (-p.inY - p.outY), y: p.y + inset * (p.inX + p.outX) }));
+    // Bounds, so a region of a big maze draws only the loops near it.
+    loop.box = loop.reduce((b, p) => [Math.min(b[0], p.x), Math.min(b[1], p.y), Math.max(b[2], p.x), Math.max(b[3], p.y)], [Infinity, Infinity, -Infinity, -Infinity]);
+    loops.push(loop);
   }
   return loops;
 }
@@ -146,31 +151,58 @@ function roundRect(g, x, y, w, h, r) {
   g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
 }
 
-/** Draw the static maze (floor, walls, house) at tile size s with its top-left at (ox, oy). */
-function paintMaze(g, loops, s, ox, oy, colors, flash) {
-  const wall = flash ? '#ffffff' : colors.wall;
+/**
+ * Draw the static maze (floor, walls, houses) at tile size s with tile (0, 0) at (ox, oy).
+ * region (tiles { x0, y0, x1, y1 }) limits the work to the loops and houses near it, for big mazes.
+ */
+function paintMaze(g, maze, loops, s, ox, oy, colors, flash, region = null) {
+  const W = maze.w, H = maze.h, wall = flash ? '#ffffff' : colors.wall;
+  const near = b => !region || (b[2] >= region.x0 - 2 && b[0] <= region.x1 + 2 && b[3] >= region.y0 - 2 && b[1] <= region.y1 + 2);
   g.save();
   g.beginPath(); g.rect(ox, oy, W * s, H * s); g.clip();
+  if (region) { g.beginPath(); g.rect(ox + region.x0 * s, oy + region.y0 * s, (region.x1 - region.x0) * s, (region.y1 - region.y0) * s); g.clip(); }
   g.fillStyle = colors.floor; g.fillRect(ox, oy, W * s, H * s);
   if (g.createRadialGradient) {
-    const glow = g.createRadialGradient(ox + W * s / 2, oy + H * s / 2, s, ox + W * s / 2, oy + H * s / 2, H * s * 0.7);
+    const glow = g.createRadialGradient(ox + W * s / 2, oy + H * s / 2, s, ox + W * s / 2, oy + H * s / 2, Math.max(W, H) * s * 0.7);
     glow.addColorStop(0, rgba(colors.wall, 0.07)); glow.addColorStop(1, 'rgba(0,0,0,0)');
     g.fillStyle = glow; g.fillRect(ox, oy, W * s, H * s);
   }
   g.beginPath();
-  for (const loop of loops) roundedLoop(g, loop, s, ox, oy, 0.42);
+  for (const loop of loops) if (!loop.box || near(loop.box)) roundedLoop(g, loop, s, ox, oy, 0.42);
   g.fillStyle = rgba(wall, flash ? 0.28 : 0.1); g.fill('evenodd');
   g.lineJoin = 'round'; g.lineCap = 'round';
   g.shadowColor = wall; g.shadowBlur = s * 0.55; g.strokeStyle = wall; g.lineWidth = Math.max(1.5, s * 0.3); g.stroke();
   g.shadowBlur = 0; g.strokeStyle = flash ? mixHex(colors.wall, '#ffffff', 0.5) : colors.core; g.lineWidth = Math.max(0.6, s * 0.11); g.stroke();
-  // The house: a double line with a gap for the door.
-  const hx = ox + HOUSE_RECT.x0 * s, hy = oy + HOUSE_RECT.y0 * s, hw = (HOUSE_RECT.x1 - HOUSE_RECT.x0 + 1) * s, hh = (HOUSE_RECT.y1 - HOUSE_RECT.y0 + 1) * s;
-  g.beginPath(); roundRect(g, hx + s * 0.22, hy + s * 0.22, hw - s * 0.44, hh - s * 0.44, s * 0.3); roundRect(g, hx + s * 0.72, hy + s * 0.72, hw - s * 1.44, hh - s * 1.44, s * 0.15);
-  g.shadowColor = wall; g.shadowBlur = s * 0.4; g.strokeStyle = wall; g.lineWidth = Math.max(1, s * 0.13); g.stroke(); g.shadowBlur = 0;
-  const dx = ox + DOOR_TILES[0][0] * s, dy = oy + DOOR_TILES[0][1] * s;
-  g.fillStyle = colors.floor; g.fillRect(dx - s * 0.05, dy, s * 2.1, s * 0.95);
-  g.fillStyle = colors.door; g.shadowColor = colors.door; g.shadowBlur = s * 0.3; g.fillRect(dx, dy + s * 0.38, s * 2, s * 0.22); g.shadowBlur = 0;
+  // Each house: a double line with a gap for the door.
+  for (const q of maze.houses || []) {
+    if (!near([q.x0, q.y0, q.x1 + 1, q.y1 + 1])) continue;
+    const hx = ox + q.x0 * s, hy = oy + q.y0 * s, hw = (q.x1 - q.x0 + 1) * s, hh = (q.y1 - q.y0 + 1) * s;
+    g.beginPath(); roundRect(g, hx + s * 0.22, hy + s * 0.22, hw - s * 0.44, hh - s * 0.44, s * 0.3); roundRect(g, hx + s * 0.72, hy + s * 0.72, hw - s * 1.44, hh - s * 1.44, s * 0.15);
+    g.shadowColor = wall; g.shadowBlur = s * 0.4; g.strokeStyle = wall; g.lineWidth = Math.max(1, s * 0.13); g.stroke(); g.shadowBlur = 0;
+    const dx = ox + q.door[0][0] * s, dy = oy + q.door[0][1] * s;
+    g.fillStyle = colors.floor; g.fillRect(dx - s * 0.05, dy, s * 2.1, s * 0.95);
+    g.fillStyle = colors.door; g.shadowColor = colors.door; g.shadowBlur = s * 0.3; g.fillRect(dx, dy + s * 0.38, s * 2, s * 0.22); g.shadowBlur = 0;
+  }
   g.restore();
+}
+
+/** Below this tile size (CSS px) a whole maze isn't readable, so the view scrolls with a camera instead. */
+export const READABLE_TILE = 13, CAMERA_TILE = 14;
+/**
+ * The scrolling camera: the view's top-left corner in tiles. It follows the hero (hx, hy, in
+ * tile-edge units) with a dead zone in the middle of the view, eases toward it, and clamps to the
+ * maze; an axis the view already covers is centred. snap jumps straight there.
+ */
+export function cameraStep(cam, { hx, hy, vw, vh, w, h, dt = 1 / 60, snap = false, deadZone = 0.16 }) {
+  const fit = (c, v, size) => (size <= v ? (size - v) / 2 : Math.max(0, Math.min(size - v, c)));
+  if (!cam || snap) { const x = fit(hx - vw / 2, vw, w), y = fit(hy - vh / 2, vh, h); return { x, y, tx: x, ty: y }; }
+  let tx = cam.tx, ty = cam.ty;
+  const dzx = vw * deadZone, dzy = vh * deadZone;
+  if (hx > tx + vw / 2 + dzx) tx = hx - dzx - vw / 2; else if (hx < tx + vw / 2 - dzx) tx = hx + dzx - vw / 2;
+  if (hy > ty + vh / 2 + dzy) ty = hy - dzy - vh / 2; else if (hy < ty + vh / 2 - dzy) ty = hy + dzy - vh / 2;
+  tx = fit(tx, vw, w); ty = fit(ty, vh, h);
+  const k = 1 - Math.exp(-dt * 9);
+  return { x: fit(cam.x + (tx - cam.x) * k, vw, w), y: fit(cam.y + (ty - cam.y) * k, vh, h), tx, ty };
 }
 
 // ---------- characters drawn in code (fallbacks) ----------
@@ -224,7 +256,10 @@ function starPath(g, r) {
   g.closePath();
 }
 
-export function createRenderer(game, { art } = {}) {
+/**
+ * options.minimap: show the corner map while the camera scrolls (default true; frame.minimap overrides).
+ */
+export function createRenderer(game, { art, minimap = true } = {}) {
   art = art || {};
   const direction = art.direction || {};
   const colors = {
@@ -246,18 +281,46 @@ export function createRenderer(game, { art } = {}) {
   const fx = {
     t: 0, particles: createParticles(600), popups: [], trauma: 0, r: rand(97), loops: new Map(), layers: new Map(),
     score: 0, scorePop: 0, lifePop: 0, faces: [], deathBurst: false, lastPhase: null,
+    cam: null, camLevel: -1, camHx: null, camera: false, minimaps: new Map(),
   };
   const loopsFor = level => { if (!fx.loops.has(level)) fx.loops.set(level, wallLoops(game.mazeFor(level))); return fx.loops.get(level); };
-  function layer(level, s, dpr, flash) {
-    const key = `${level}|${Math.round(s * dpr * 100)}|${flash ? 1 : 0}`;
-    if (fx.layers.has(key)) return fx.layers.get(key);
-    const c = surface(Math.ceil(W * s * dpr), Math.ceil(H * s * dpr));
+  /**
+   * The wall layer, cached per level, tile size and flash state as square chunks of C tiles:
+   * a fitted maze is one chunk; a scrolling one paints and keeps only the chunks it shows
+   * (least recently used dropped first), so a vast maze never needs one giant canvas.
+   */
+  const MAX_CHUNKS = 24;
+  function chunk(level, s, dpr, flash, C, cx, cy) {
+    const key = `${level}|${Math.round(s * dpr * 100)}|${flash ? 1 : 0}|${C}|${cx},${cy}`;
+    let c = fx.layers.get(key);
+    if (c) { fx.layers.delete(key); fx.layers.set(key, c); return c; }
+    c = surface(Math.ceil(C * s * dpr), Math.ceil(C * s * dpr));
     if (!c) return null;
     const g = c.getContext('2d');
     g.scale(dpr, dpr);
-    paintMaze(g, loopsFor(level), s, 0, 0, colors, flash);
-    if (fx.layers.size > 8) fx.layers.clear();
+    paintMaze(g, game.mazeFor(level), loopsFor(level), s, -cx * C * s, -cy * C * s, colors, flash, { x0: cx * C, y0: cy * C, x1: (cx + 1) * C, y1: (cy + 1) * C });
     fx.layers.set(key, c);
+    while (fx.layers.size > MAX_CHUNKS) fx.layers.delete(fx.layers.keys().next().value);
+    return c;
+  }
+  /** One pixel per tile: corridors lit, walls dark. */
+  function minimapImage(level) {
+    if (fx.minimaps.has(level)) return fx.minimaps.get(level);
+    const maze = game.mazeFor(level), c = surface(maze.w, maze.h);
+    if (c) {
+      const g = c.getContext('2d'), [r, gg, b] = hexToRgb(colors.wall);
+      try {
+        const d = g.createImageData(maze.w, maze.h);
+        for (let i = 0; i < maze.cells.length; i++) {
+          const v = maze.cells[i], o = i * 4;
+          if (v === WALL) continue;
+          const k = v === 1 ? 1 : 0.45;
+          d.data[o] = r * k; d.data[o + 1] = gg * k; d.data[o + 2] = b * k; d.data[o + 3] = v === 1 ? 210 : 150;
+        }
+        g.putImageData(d, 0, 0);
+      } catch { /* no pixel access: the minimap shows dots only */ }
+    }
+    fx.minimaps.set(level, c);
     return c;
   }
 
@@ -357,7 +420,9 @@ export function createRenderer(game, { art } = {}) {
       ctx.restore();
     }
   }
-  const wraps = x => (x < 0.6 ? [0, W] : x > W - 1.6 ? [0, -W] : [0]);
+  // Things near a tunnel mouth also draw on the other side (cur.w is the current maze's width).
+  const cur = { w: 28 };
+  const wraps = x => (x < 0.6 ? [0, cur.w] : x > cur.w - 1.6 ? [0, -cur.w] : [0]);
 
   function drawParticles(ctx, X, Y, s) {
     for (const p of fx.particles.list) {
@@ -396,17 +461,17 @@ export function createRenderer(game, { art } = {}) {
     } else { ctx.save(); ctx.translate(x, y); fruit(ctx, s * 0.6, color); ctx.restore(); }
   }
 
-  function drawHud(ctx, state, ox, oy, s, mazeBottom) {
+  function drawHud(ctx, state, ox, oy, s, mazeBottom, width) {
     const score = state.score, high = Math.max(state.high || 0, score);
     if (score !== fx.score) { if (score > fx.score) fx.scorePop = 1; fx.score = score; }
-    const pop = 1 + fx.scorePop * 0.12, cx = ox + (W * s) / 2;
+    const pop = 1 + fx.scorePop * 0.12, cx = ox + width / 2;
     text(ctx, 'SCORE', ox + s * 1, oy + s * 1, s * 0.72, colors.label, { align: 'left' });
     text(ctx, String(score), ox + s * 1, oy + s * 2.15, s * 1.15 * pop, '#ffffff', { align: 'left' });
     text(ctx, 'HIGH SCORE', cx, oy + s * 1, s * 0.72, colors.label);
     text(ctx, String(high), cx, oy + s * 2.15, s * 1.15, high > (state.high || 0) && score > 0 ? '#ffe14a' : '#ffffff');
     const total = content.endless ? '' : ` / ${game.levelCount}`;
-    text(ctx, 'LEVEL', ox + W * s - s, oy + s * 1, s * 0.72, colors.label, { align: 'right' });
-    text(ctx, `${state.level + 1}${total}`, ox + W * s - s, oy + s * 2.15, s * 1.15, '#ffffff', { align: 'right' });
+    text(ctx, 'LEVEL', ox + width - s, oy + s * 1, s * 0.72, colors.label, { align: 'right' });
+    text(ctx, `${state.level + 1}${total}`, ox + width - s, oy + s * 2.15, s * 1.15, '#ffffff', { align: 'right' });
     // Reserve lives and the level's bonus prizes.
     const by = mazeBottom + s * 1.15, reserve = Math.max(0, state.lives - 1);
     for (let i = 0; i < Math.min(reserve, 6); i++) {
@@ -414,16 +479,53 @@ export function createRenderer(game, { art } = {}) {
       ctx.save(); ctx.translate(ox + s * (1.6 + i * 1.8), by); ctx.scale(k, k); lifeIcon(ctx, 0, 0, s); ctx.restore();
     }
     const first = Math.max(0, state.level - 6);
-    for (let i = state.level, n = 0; i >= first; i--, n++) bonusIcon(ctx, ox + W * s - s * (1.6 + n * 1.8), by, s, Math.min(i, content.bonus.length - 1));
+    for (let i = state.level, n = 0; i >= first; i--, n++) bonusIcon(ctx, ox + width - s * (1.6 + n * 1.8), by, s, Math.min(i, content.bonus.length - 1));
+  }
+
+  /** The corner map while scrolling: corridors, remaining power pellets, hunters, the hero and the view. */
+  function drawMinimap(ctx, state, maze, view, cam, s) {
+    const size = Math.min(view.w, view.h) * 0.3, m = size / Math.max(maze.w, maze.h);
+    const mw = maze.w * m, mh = maze.h * m, pad = Math.max(6, s * 0.4);
+    const x0 = view.x + view.w - mw - pad, y0 = view.y + pad;
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = 'rgba(4,6,14,.72)'; ctx.beginPath(); roundRect(ctx, x0 - 4, y0 - 4, mw + 8, mh + 8, 6); ctx.fill();
+    const img = minimapImage(state.level);
+    if (img) { ctx.imageSmoothingEnabled = false; ctx.drawImage(img, x0, y0, mw, mh); }
+    const dot = (x, y, r, color) => { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x0 + (x + 0.5) * m, y0 + (y + 0.5) * m, r, 0, TAU); ctx.fill(); };
+    if (Math.floor(fx.t * 3) % 2 === 0) for (const i of maze.power) if (state.pellets[i] === 2) dot(i % maze.w, Math.floor(i / maze.w), Math.max(1.5, m * 0.9), colors.power);
+    for (const h of state.hunters) if (h.state === 'active' || h.state === 'leaving') dot(h.x, h.y, Math.max(1.8, m * 1.1), h.fright ? FRIGHT_BLUE : h.color);
+    const p = state.player, ring = 1 + (Math.sin(fx.t * 6) + 1) * 0.5;
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x0 + (p.x + 0.5) * m, y0 + (p.y + 0.5) * m, Math.max(3, m * 1.6) * ring, 0, TAU); ctx.stroke();
+    dot(p.x, p.y, Math.max(2.2, m * 1.3), colors.hero);
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.strokeRect(x0 + Math.max(0, cam.x) * m, y0 + Math.max(0, cam.y) * m, Math.min(maze.w, view.w / s) * m, Math.min(maze.h, view.h / s) * m);
+    ctx.restore();
   }
 
   function render(ctx, state, frame = {}) {
     const dt = frame.paused ? 0 : clamp(frame.dt ?? 1 / 60, 0, 0.1);
     const reduced = !!frame.reducedMotion;
     fx.t += dt;
+    const maze = game.mazeFor(state.level), MW = maze.w, MH = maze.h;
+    cur.w = MW;
     const cw = frame.cssWidth ?? ctx.canvas?.width ?? 448, ch = frame.cssHeight ?? ctx.canvas?.height ?? 576;
-    const s = Math.max(1, Math.min(cw / W, ch / (H + HUD_TOP + HUD_BOTTOM)));
-    const ox = Math.round((cw - W * s) / 2), oy = Math.round((ch - (H + HUD_TOP + HUD_BOTTOM) * s) / 2), my = oy + HUD_TOP * s;
+    const hudRows = HUD_TOP + HUD_BOTTOM;
+    // Fit the whole maze when its tiles stay readable; otherwise scroll a classic-sized window with a camera.
+    const fitS = Math.min(cw / MW, ch / (MH + hudRows));
+    const camera = fitS < READABLE_TILE;
+    const s = camera ? Math.max(CAMERA_TILE, Math.min(cw / 36, ch / (40 + hudRows))) : Math.max(1, fitS);
+    const vw = Math.min(cw, MW * s), vh = Math.max(s * 4, Math.min(ch - hudRows * s, MH * s));
+    const ox = Math.round((cw - vw) / 2), oy = Math.round((ch - (vh + hudRows * s)) / 2), my = oy + HUD_TOP * s;
+    const view = { x: ox, y: my, w: vw, h: vh };
+    if (camera) {
+      const hx = state.player.x + 0.5, hy = state.player.y + 0.5;
+      // Jump (no easing) on a new level or a trip through a tunnel; ease otherwise, even back to the start after a death.
+      const snap = !fx.camera || fx.camLevel !== state.level || (fx.camHx != null && Math.abs(hx - fx.camHx) > MW / 2);
+      fx.cam = cameraStep(snap ? null : fx.cam, { hx, hy, vw: vw / s, vh: vh / s, w: MW, h: MH, dt });
+      fx.camHx = hx; fx.camLevel = state.level;
+    } else fx.cam = { x: 0, y: 0, tx: 0, ty: 0 };
+    fx.camera = camera;
+    const cam = fx.cam;
     if (fx.lastPhase !== state.phase && state.phase === 'ready') fx.deathBurst = false;
     fx.lastPhase = state.phase;
     onEvents(frame.events ?? state.events ?? [], state);
@@ -436,30 +538,41 @@ export function createRenderer(game, { art } = {}) {
     const shake = reduced ? 0 : fx.trauma * fx.trauma * s * 0.6;
     const sx = shake * Math.sin(fx.t * 53.1) * 0.8, sy = shake * Math.cos(fx.t * 61.7) * 0.8;
     ctx.translate(sx, sy);
-    const X = x => ox + (x + 0.5) * s, Y = y => my + (y + 0.5) * s;
-
-    // Maze: cached per level, size and flash state.
-    const flash = state.phase === 'clear' && state.phaseT > 24 && Math.floor((state.phaseT - 24) / 12) % 2 === 0;
-    const dpr = Math.max(1, ctx.getTransform?.().a || 1);
-    const cache = layer(state.level, s, dpr, flash);
-    if (cache) ctx.drawImage(cache, ox, my, W * s, H * s);
-    else paintMaze(ctx, loopsFor(state.level), s, ox, my, colors, flash);
+    const X = x => ox + (x + 0.5 - cam.x) * s, Y = y => my + (y + 0.5 - cam.y) * s;
+    // The tiles in view (with a margin), so big mazes only draw what shows.
+    const tx0 = Math.max(0, Math.floor(cam.x) - 1), ty0 = Math.max(0, Math.floor(cam.y) - 1);
+    const tx1 = Math.min(MW, Math.ceil(cam.x + vw / s) + 1), ty1 = Math.min(MH, Math.ceil(cam.y + vh / s) + 1);
 
     ctx.save();
-    ctx.beginPath(); ctx.rect(ox, my, W * s, H * s); ctx.clip();
-    // Pellets: one path, a gentle shimmer travelling across the maze.
+    ctx.beginPath(); ctx.rect(ox, my, vw, vh); ctx.clip();
+    // Walls: cached chunks (one for a fitted maze).
+    const flash = state.phase === 'clear' && state.phaseT > 24 && Math.floor((state.phaseT - 24) / 12) % 2 === 0;
+    const dpr = Math.max(1, ctx.getTransform?.().a || 1);
+    const C = camera ? 16 : Math.max(MW, MH);
+    // Chunk edges snap to device pixels, computed per edge, so neighbours meet without seams.
+    const edgeX = cx => Math.round((ox + (cx * C - cam.x) * s + sx) * dpr) / dpr - sx, edgeY = cy => Math.round((my + (cy * C - cam.y) * s + sy) * dpr) / dpr - sy;
+    let painted = true;
+    for (let cy = Math.floor(ty0 / C); cy * C < ty1 && painted; cy++) for (let cx = Math.floor(tx0 / C); cx * C < tx1; cx++) {
+      const c = chunk(state.level, s, dpr, flash, C, cx, cy);
+      if (!c) { painted = false; break; }
+      const x0 = edgeX(cx), y0 = edgeY(cy);
+      ctx.drawImage(c, 0, 0, C * s * dpr, C * s * dpr, x0, y0, edgeX(cx + 1) - x0, edgeY(cy + 1) - y0);
+    }
+    if (!painted) paintMaze(ctx, maze, loopsFor(state.level), s, ox - cam.x * s, my - cam.y * s, colors, flash, camera ? { x0: tx0, y0: ty0, x1: tx1, y1: ty1 } : null);
+    // Pellets in view: one path, a gentle shimmer travelling across the maze.
     const pel = state.pellets;
     ctx.fillStyle = colors.pellet; ctx.beginPath();
-    for (let i = 0; i < pel.length; i++) {
-      if (pel[i] !== 1) continue;
-      const x = i % W, y = (i / W) | 0, k = reduced ? 1 : 1 + 0.2 * Math.sin(fx.t * 4 - (x + y) * 0.55), rr = s * 0.12 * k;
+    for (let y = ty0; y < ty1; y++) for (let x = tx0; x < tx1; x++) {
+      if (pel[y * MW + x] !== 1) continue;
+      const k = reduced ? 1 : 1 + 0.2 * Math.sin(fx.t * 4 - (x + y) * 0.55), rr = s * 0.12 * k;
       ctx.moveTo(X(x) + rr, Y(y)); ctx.arc(X(x), Y(y), rr, 0, TAU);
     }
     ctx.fill();
     const blink = state.phase !== 'play' || Math.floor(fx.t * 3.5) % 2 === 0;
-    for (let i = 0; i < pel.length; i++) {
-      if (pel[i] !== 2) continue;
-      const x = X(i % W), y = Y((i / W) | 0), rr = s * (0.36 + (reduced ? 0 : 0.04 * Math.sin(fx.t * 6)));
+    for (const i of maze.power) {
+      const px = i % MW, py = Math.floor(i / MW);
+      if (pel[i] !== 2 || px < tx0 || px >= tx1 || py < ty0 || py >= ty1) continue;
+      const x = X(px), y = Y(py), rr = s * (0.36 + (reduced ? 0 : 0.04 * Math.sin(fx.t * 6)));
       ctx.globalAlpha = blink ? 1 : 0.35;
       if (ctx.createRadialGradient) {
         const g = ctx.createRadialGradient(x, y, rr * 0.4, x, y, rr * 2.2);
@@ -492,14 +605,15 @@ export function createRenderer(game, { art } = {}) {
     if (state.phase === 'ready') {
       const pulse = reduced ? 1 : 0.8 + 0.2 * Math.sin(fx.t * 6);
       ctx.globalAlpha = pulse;
-      text(ctx, 'READY!', X(13.5), Y(17), s * 1.1, '#ffe14a', { glow: s * 0.5 });
+      text(ctx, 'READY!', X(maze.bonusAt.x), Y(maze.bonusAt.y), s * 1.1, '#ffe14a', { glow: s * 0.5 });
       ctx.globalAlpha = 1;
     }
     ctx.restore();
     ctx.restore();
-    drawHud(ctx, state, ox, oy, s, my + H * s);
-    // World-to-screen mapping for mods drawn on top (v2/kits/mods/compose.js).
-    render.view = { X: x => X(x) + sx, Y: y => Y(y) + sy, s, clip: { x: ox, y: my, w: W * s, h: H * s }, hud: { x: ox + (W * s) / 2, y: my + H * s + s * 1.15 } };
+    if (camera && (frame.minimap ?? minimap)) drawMinimap(ctx, state, maze, view, cam, s);
+    drawHud(ctx, state, ox, oy, s, my + vh, vw);
+    // World-to-screen mapping for mods drawn on top (v2/kits/mods/compose.js), camera included.
+    render.view = { X: x => X(x) + sx, Y: y => Y(y) + sy, s, clip: { ...view }, hud: { x: ox + vw / 2, y: my + vh + s * 1.15 }, camera: camera ? { x: cam.x, y: cam.y, w: vw / s, h: vh / s } : null };
   }
   render.fx = fx;
   return render;
