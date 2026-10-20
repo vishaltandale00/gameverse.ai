@@ -41,7 +41,7 @@ export default {
       style: { type: 'string', default: 'auto', options: ['auto', ...THEMES] },
       maxHand: { type: 'integer', default: 12, min: 1, max: 20, effect: 'cards laid out before the fan compresses' },
     },
-    reads: ['content.cards'],
+    reads: ['content.cards', 'content.models'],
   },
   install(rt, config) {
     const host = uiHost(rt); if (!host) return;

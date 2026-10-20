@@ -85,7 +85,7 @@ const card = {
     } }, effect: 'select screens' },
     vs: { type: 'boolean', default: true, effect: 'VS intro on match_start' },
   },
-  reads: ['plot.endings'],
+  reads: ['plot.endings', 'content.models'],
 };
 
 export default {

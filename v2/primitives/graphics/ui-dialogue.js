@@ -87,7 +87,7 @@ export default {
       position: { type: 'string', default: 'bottom', options: ['bottom', 'top'], effect: 'where the box sits' },
       maxSubtitles: { type: 'integer', default: 3, min: 1, max: 6, effect: 'subtitle lines visible at once' },
     },
-    reads: ['plot.characters', 'plot.dialogue'],
+    reads: ['plot.characters', 'plot.dialogue', 'content.models'],
   },
   install(rt, config) {
     const host = uiHost(rt); if (!host) return;

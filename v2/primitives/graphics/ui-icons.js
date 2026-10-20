@@ -62,6 +62,7 @@ const ALIAS = {
   frozen: 'snow', ice: 'snow', chill: 'snow', slow: 'hourglass', stun: 'star', stunned: 'star', poisoned: 'poison', bleed: 'drop', shock: 'bolt', regen: 'heart', armor: 'shield',
   weapon: 'sword', tool: 'pick', material: 'cube', block: 'cube', potion: 'potion', key: 'key', quest: 'scroll', currency: 'coin', ammo: 'arrow', prop: 'cube', misc: 'bag', charm: 'charm',
   food: 'food', gem: 'gem', shrine: 'star', enemy: 'skull', police: 'shield', garage: 'car', npc: 'person', player: 'arrow', bench: 'home', checkpoint: 'flag', boss: 'skull',
+  herb: 'leaf', plant: 'leaf', flower: 'leaf', wood: 'axe', log: 'axe', ore: 'gem', crystal: 'gem', fish: 'drop', meat: 'food', bread: 'food', apple: 'food', torch: 'flame', oil: 'drop', letter: 'scroll', note: 'scroll', map_item: 'map', lamp: 'lantern', candle: 'flame',
   wanted: 'star', time: 'clock', day: 'sun', night: 'moon', score: 'star', settings: 'gear', save: 'book', journal: 'book', inventory: 'bag', map: 'map',
 };
 /** Icon for an item: explicit icon, tool/weapon kind, item kind, else a lettered medallion. */
@@ -74,8 +75,10 @@ export function itemIcon(item, blockColor) {
   if (item.weapon) return { name: /bow/.test(item.id) ? 'bow' : /hammer|maul/.test(item.id) ? 'hammer' : /axe/.test(item.id) ? 'axe' : /gun|pistol|rifle/.test(item.id) ? 'gun' : 'sword', color: item.color };
   if (item.armor) return { name: 'shield', color: item.color };
   if (item.charm) return { name: 'charm', color: item.color || hueColor(item.id, 60, 62) };
-  const byName = Object.keys(P).find(k => new RegExp(`\\b${k}`).test(`${item.id} ${item.name || ''}`.toLowerCase()));
-  return { name: ALIAS[item.kind] || byName || item.kind || item.id, color: item.color };
+  const words = `${item.id} ${item.name || ''} ${(item.tags || []).join(' ')}`.toLowerCase();
+  const byName = [...Object.keys(P), ...Object.keys(ALIAS)].find(k => new RegExp(`(^|[^a-z])${k}|${k}($|[^a-z])`).test(words));
+  const generic = ['material', 'misc', 'prop', 'quest'].includes(item.kind);
+  return { name: (generic && byName) || ALIAS[item.kind] || byName || item.kind || item.id, color: item.color };
 }
 export const iconNames = () => Object.keys(P);
 export const resolveIcon = name => (P[name] ? name : P[ALIAS[name]] ? ALIAS[name] : null);

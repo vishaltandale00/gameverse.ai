@@ -87,7 +87,7 @@ export default {
       pause: { type: 'boolean', default: true, effect: 'hold the simulation while the journal is open' },
       key: { type: 'string', default: 'journal', options: ['journal', 'map', 'inventory', 'none'], effect: 'which UI hotkey opens it' },
     },
-    reads: ['plot.quests', 'plot.entries', 'plot.characters'],
+    reads: ['plot.quests', 'plot.entries', 'plot.characters', 'content.models'],
   },
   validate(config) {
     const seen = new Set(), errors = [];

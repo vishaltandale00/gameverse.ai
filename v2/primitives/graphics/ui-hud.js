@@ -248,10 +248,10 @@ export default {
     });
 
     // Damage numbers, when a renderer offers screen projection.
-    const project2 = at => S.svc(rt, 'camera', 'project', at);
+    const project2 = (id, at) => S.svc(rt, 'camera', 'projectEntity', id) || S.svc(rt, 'camera', 'project', at);
     if (config.damageNumbers) for (const [ev, cls] of [['damaged', ''], ['healed', 'is-heal']]) rt.on(ev, e => {
       const who = rt.entity(e.who); if (!who || !Array.isArray(who.at)) return;
-      const p = project2(who.at); if (!p) return;
+      const p = project2(who.id, who.at); if (!p) return;
       const f = host.el(`div.gv-floater${cls ? '.' + cls : ''}`, { text: `${ev === 'healed' ? '+' : ''}${fmtInt(e.amount)}`, style: { left: `${p[0]}px`, top: `${p[1]}px`, color: ev === 'damaged' && e.who === 'player' ? 'var(--gv-bad)' : null } });
       floaters.append(f); later(() => f.remove(), 950);
     });

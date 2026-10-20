@@ -48,7 +48,7 @@ export default {
       cps: { type: 'number', default: 60, min: 0, max: 400, unit: 'chars/s', effect: 'battle message typewriter speed' },
       showLevels: { type: 'boolean', default: true },
     },
-    reads: ['content.archetypes'],
+    reads: ['content.archetypes', 'content.models'],
   },
   install(rt, config) {
     const host = uiHost(rt); if (!host) return;
