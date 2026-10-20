@@ -109,7 +109,7 @@ export async function runKitPipeline(job, ctx, { client, model, kitId, previous,
   const namesFranchise = names === 'original' && previousContent && job.change ? (await usesFranchiseNames(decisions, [job.change]))?.flagged : false;
   const revisionCheck = previousContent ? await checkRevision(decisions, { change: job.change, engine: kit.name, before: { content: previousContent, mods: previous.doc.mods || {}, art: previous.doc.art?.direction || null }, after: { content, mods, art: painted?.art?.direction || previous.doc.art?.direction || null }, unsupported: unsupported || [], originalStandIns: namesFranchise }) : null;
   const renamedNote = namesFranchise && revisionCheck?.diff ? [{ capability: job.change, why: `Games use original names, so this was added as an original look-alike with its own name (${revisionCheck.summary.join(', ')}). Ask for a different name or look anytime.`, kind: 'renamed' }] : [];
-  if (revisionCheck?.applied != null && revisionCheck.applied < NOT_APPLIED && !(unsupported || []).length)
+  if (revisionCheck?.notApplied && !(unsupported || []).length)
     unsupported = [{ request: job.change, why: revisionCheck.why }];
   await ctx.store.updateMeta(job.gameId, { title: doc.title, kind: `kit:${kit.id}` });
   return ctx.publish({

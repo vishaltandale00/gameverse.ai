@@ -5,12 +5,16 @@
 // player sees a plain summary of what did change.
 
 /** Paths whose values differ between two JSON values, e.g. "levels[2].maze.style: classic → sprawling". */
-const keyOf = x => x && typeof x === 'object' && !Array.isArray(x) ? (typeof x.id === 'string' && x.id) || (typeof x.name === 'string' && x.name) || null : null;
+const keyOf = x => x && typeof x === 'object' && !Array.isArray(x) ? (typeof x.id === 'string' && x.id) || (typeof x.name === 'string' && x.name) || (typeof x.kind === 'string' && x.kind) || null : null;
 /** Lists of named things (fighters, levels with ids) are compared by identity, not position. */
-const identityList = (a, b) => Array.isArray(a) && Array.isArray(b) && a.length && b.length && a.every(keyOf) && b.every(keyOf);
+// An empty list on either side still diffs by identity ("features: [] → street, traffic" reads as added).
+const identityList = (a, b) => Array.isArray(a) && Array.isArray(b) && (a.length || b.length) && a.every(keyOf) && b.every(keyOf);
 
 export function contentDiff(a, b, path = '', out = []) {
   if (out.length >= 40 || JSON.stringify(a) === JSON.stringify(b)) return out;
+  // A list that didn't exist before is an empty one (new fields like stage features).
+  if (a === undefined && Array.isArray(b)) a = [];
+  if (b === undefined && Array.isArray(a)) b = [];
   if (identityList(a, b)) {
     const before = new Map(a.map(x => [keyOf(x), x])), after = new Map(b.map(x => [keyOf(x), x]));
     const added = [...after.keys()].filter(k => !before.has(k)), removed = [...before.keys()].filter(k => !after.has(k));
@@ -34,7 +38,7 @@ export function changeSummary(diff, limit = 4) {
   const groups = new Map();
   for (const line of diff) {
     const m = line.match(/^(?:content\.)?([^:]+): (added|removed) (.+)$/);
-    if (m) { groups.set(`${m[2]} ${m[3]}`, 1); continue; }
+    if (m) { const where = m[1].replace(/\[([^\]]+)\]/g, ' $1').replace(/^(stages|levels|fighters|chapters)\b/, '$1').trim(); groups.set(`${m[2]} ${m[3]}${/\s/.test(where) ? ` (${where.split(' ').slice(1).join(' ')})` : ''}`, 1); continue; }
     const field = line.split(':')[0].replace(/\[[^\]]+\]/g, '').replace(/^content\./, '').replace(/^mods\./, 'mods: ').replace(/^art\./, 'art: ');
     const words = field.split('.').slice(-2).join(' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
     groups.set(words, (groups.get(words) || 0) + 1);
@@ -45,6 +49,8 @@ export function changeSummary(diff, limit = 4) {
 // Below this, the change is treated as not done. 0.8 is deliberately strict: on real revisions d1
 // put a faked "bigger map" at 0.65 and a real "make it faster" at 0.94 (OpenAI Decisions: 0.06, 0.95).
 export const NOT_APPLIED = 0.8;
+// Per provider: OpenAI Decisions separates at 0.5 (faked 0.00-0.06, real 0.74-0.95 on the same cases).
+export const notAppliedBar = provider => provider === 'openai' ? 0.5 : NOT_APPLIED;
 const INSTRUCTIONS = "Do these changes actually carry out the player's request, as the player would see it in the game? Answer no if the changes are only cosmetic, unrelated, or a stand-in for something the engine cannot really do (for example renaming something or switching a style when the request asks for a different size, a new mechanic or a new mode).";
 
 /** { applied, why, summary, diff, provider } or null when there's nothing to check. */
@@ -59,7 +65,7 @@ export async function checkRevision(decisions, { change, engine, before, after, 
     });
     const applied = answers.applied?.noul ?? null;
     const why = diff.length ? `The engine may not be able to do that yet: the changes it made (${summary.join(', ')}) don't really do it.` : 'The engine may not be able to do that yet: nothing changed.';
-    return { applied, why, summary, diff: diff.length, provider };
+    return { applied, notApplied: applied != null && applied < notAppliedBar(provider), why, summary, diff: diff.length, provider };
   } catch { return { applied: null, summary, diff: diff.length, provider: null }; }
 }
 
