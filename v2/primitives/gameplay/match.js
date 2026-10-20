@@ -16,7 +16,7 @@
 // gravity through setCell; refill from the top is optional.
 // Triggers: the `swap` verb, and/or `piece_locked` from gameplay.falling.pieces on
 // the same board name; while resolving it emits board_busy, then board_idle.
-import { boardParam, validateBoard, boardOf, provideBoard, award, colorOf, hasTag, tagsOf, token, linkOf, linkDelta, unlink, settleGrid, rint } from './puzzle-lib-board.js';
+import { boardParam, validateBoard, boardOf, provideBoard, award, colorOf, hasTag, tagsOf, token, linkOf, linkDelta, unlink, settleBoard, rint } from './puzzle-lib-board.js';
 
 const ID = 'gameplay.match';
 const CHAIN_POWER = [0, 0, 8, 16, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448, 480, 512];
@@ -326,8 +326,9 @@ export default {
 
     const fixed = t => hasTag(t, 'fixed');
     function settleAndRefill(s) {
-      const b = B(), before = b.read(), grid = before.slice();
-      const moves = config.gravity ? settleGrid(grid, b.W, b.H, { fixed, blocked: i => s.hole[i] }) : [];
+      const b = B();
+      const moved = config.gravity ? settleBoard(rt, b, { fixed, blocked: s.hole.some(Boolean) ? i => s.hole[i] : null, by: ID }) : [];
+      const before = b.read(), grid = before.slice();
       let filled = 0;
       if (config.refill) {
         const m = model(config, grid, s.hole);
@@ -340,7 +341,7 @@ export default {
         }
       }
       b.write(grid, before, ID);
-      return moves.length || grid.some((t, i) => t !== before[i]);
+      return moved.length || grid.some((t, i) => t !== before[i]);
     }
     function detect(s, m) {
       if (config.rule === 'group') return m.findPops();

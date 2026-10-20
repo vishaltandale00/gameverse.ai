@@ -49,7 +49,7 @@ export function boardOf(rt, board, spaceId) {
   };
   const inside = (c, r) => c >= 0 && r >= 0 && c < W && r < H;
   const B = {
-    W, H, api, name: board.name, spaceId, toSpace, fromSpace, inside,
+    W, H, api, name: board.name, spaceId, toSpace, fromSpace, inside, fall, axes: board.axes,
     get: (c, r) => inside(c, r) ? (api.getCell(toSpace(c, r)) ?? null) : null,
     set: (c, r, token, by) => inside(c, r) && api.setCell(toSpace(c, r), token ?? null, rt, by),
     /** Read the whole board into a row-major array (index r*W + c). */
@@ -109,22 +109,23 @@ export function settleGrid(grid, W, H, { fixed = t => hasTag(t, 'fixed'), blocke
 }
 
 /**
- * Settle a board: uses the space's `settle` capability when it has one and no
- * linked cells are present, else column gravity through setCell. The space
- * settle contract (kernel request puzzle.md): settle(box, down, rt, {fixed, by})
- * -> [{from, to}] in space cells.
+ * Settle a board. When the space has the `settle` capability (engine.space.grid:
+ * settle(rt, {dir, layer, by})) and it can do exactly this job (the board is the
+ * whole space, falls vertically, and holds no tag-fixed or linked cells, which the
+ * space's own rules cannot see), the space settles; otherwise column gravity runs
+ * here through setCell. Returns [{from, to}] board-index moves.
  */
-export function settleBoard(rt, B, { fixed, blocked, by } = {}) {
+export function settleBoard(rt, B, { fixed = t => hasTag(t, 'fixed'), blocked = null, by } = {}) {
   const before = B.read();
-  if (typeof B.api.settle === 'function' && !before.some(t => linkOf(t)) && !blocked) {
-    const lo = B.toSpace(0, B.H - 1), hi = B.toSpace(B.W - 1, 0);
-    const box = [lo.map((v, i) => Math.min(v, hi[i])), lo.map((v, i) => Math.max(v, hi[i]))];
-    const down = B.toSpace(0, 1).map((v, i) => v - B.toSpace(0, 0)[i]);
-    const out = B.api.settle(box, down, rt, { fixed, by }) || [];
-    return out.map(m => { const a = B.fromSpace(m.from), b = B.fromSpace(m.to); return { from: a[1] * B.W + a[0], to: b[1] * B.W + b[0] }; });
+  const api = B.api, size = api.size || [];
+  const whole = size[0] === B.W && size[1] === B.H && B.toSpace(0, 0).every((v, i) => i > 1 || v === (i === 0 ? 0 : B.fall < 0 ? B.H - 1 : 0));
+  if (typeof api.settle === 'function' && api.kind === 'grid' && whole && B.axes[0] === 0 && B.axes[1] === 1 && !blocked && !before.some(t => linkOf(t) || fixed(t))) {
+    const ysign = api.config?.yAxis === 'down' ? -1 : 1;
+    const moves = api.settle(rt, { dir: B.fall === -ysign ? 'down' : 'up', layer: api.layers?.[0], by }) || [];
+    return moves.map(m => { const a = B.fromSpace(m.from), b = B.fromSpace(m.to); return { from: a[1] * B.W + a[0], to: b[1] * B.W + b[0] }; });
   }
   const grid = before.slice();
-  const moves = settleGrid(grid, B.W, B.H, { fixed, blocked });
+  const moves = settleGrid(grid, B.W, B.H, { fixed, blocked: blocked || (() => false) });
   B.write(grid, before, by);
   return moves;
 }

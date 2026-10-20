@@ -9,17 +9,16 @@
 // emits the same `contact` events, so destructibles behave the same everywhere.
 
 /** Anchor convention of entity positions: physics spaces use centres; cell spaces box corners. */
-// 'cell' (grid spaces: integer cell = box min corner) behaves like 'min'; spaces without the field anchor at the min corner (test space).
-const anchorOf = (api, fallback) => { const a = api.anchor ?? fallback ?? 'min'; return a === 'cell' ? 'min' : a; };
+import { bodyBox } from '../../kernel/testing.js';
+
 export const sizeOf = e => { const s = e.components.body?.size || [1, 1]; return [s[0] ?? 1, s[1] ?? 1]; };
-export function centerOf(api, e, anchor) {
-  const at = api.pos ? api.pos(e) : e.at, s = sizeOf(e);
-  return anchorOf(api, anchor) === 'min' ? [at[0] + s[0] / 2, at[1] + s[1] / 2] : [at[0], at[1]];
-}
-/** Position an entity's centre (keeping any 3rd coordinate). */
-export function placeCenter(rt, api, e, c, anchor) {
+const anchored = (api, e) => ({ ...e, at: api.pos ? api.pos(e) : e.at, components: { ...e.components, body: { ...(e.components.body || {}), size: sizeOf(e) } } });
+/** Centre of an entity's body box, honoring api.anchor through the kernel's bodyBox. */
+export function centerOf(api, e) { const b = bodyBox(anchored(api, e), api); return [(b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2]; }
+/** Position an entity so its body box is centred on c (keeping any 3rd coordinate). */
+export function placeCenter(rt, api, e, c) {
   const s = sizeOf(e), at = (api.pos ? api.pos(e) : e.at) || [0, 0];
-  const p = anchorOf(api, anchor) === 'min' ? [c[0] - s[0] / 2, c[1] - s[1] / 2] : [c[0], c[1]];
+  const p = api.anchor === 'center' ? [c[0], c[1]] : [c[0] - s[0] / 2, c[1] - s[1] / 2];
   api.setPos(e, at.length > 2 ? [p[0], p[1], ...at.slice(2)] : p, rt);
 }
 export const velOf = (api, e) => (api.velocity ? api.velocity(e) : null) || e.components.body?.vel || [0, 0];
@@ -62,8 +61,7 @@ export function stepSelf(rt, api, e, { dt = rt.dt, gravity = true, restitution =
     v[1 - i] *= 1 - friction;
   }
   if (api.overlap) {
-    const box = { kind: 'aabb', at: (api.pos ? api.pos(e) : e.at), size: [s[0], s[1], 1] };
-    if (anchorOf(api) !== 'min') box.at = [c[0] - s[0] / 2, c[1] - s[1] / 2, 0];
+    const box = { kind: 'aabb', at: [c[0] - s[0] / 2, c[1] - s[1] / 2, 0], size: [s[0], s[1], 1] };
     const touching = api.overlap(box, o => o.id !== e.id && filter(o));
     const memo = contactMemo || {};
     for (const id of touching) {
