@@ -5,5 +5,6 @@ import dialogue from './ui-dialogue.js';
 import journal from './ui-journal.js';
 import inventory from './ui-inventory.js';
 import menu from './ui-menu.js';
+import audioSynth from './audio-synth.js';
 
-export default [hud, dialogue, journal, inventory, menu];
+export default [hud, dialogue, journal, inventory, menu, audioSynth];
