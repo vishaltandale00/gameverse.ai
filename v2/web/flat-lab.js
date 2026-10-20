@@ -309,6 +309,8 @@ async function open(name) {
   const scene = await SCENES[name]();
   document.getElementById('hint').textContent = scene.hint;
   for (const b of document.querySelectorAll('#scenes button')) b.setAttribute('aria-pressed', String(b.dataset.scene === name));
+  // ?defaults: drop the scene's graphics so the host defaults (ui-defaults.js) pick renderer, camera, UI and audio.
+  if (new URLSearchParams(location.search).has('defaults')) scene.record.graphics = [];
   try {
     game = mountGame(view, { version: 1, doc: scene.record });
     scene.setup(game.rt);

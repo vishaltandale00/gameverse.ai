@@ -97,42 +97,41 @@ export function defaultHud(doc) {
   };
 }
 
-/** Graphics instances to add for a document (empty when it already lists UI and audio). */
+/** Graphics instances to add for a document. Each category (world renderer, story, menu, HUD, dialogue,
+ * journal, map, minimap, inventory, battle, cards, audio) is defaulted on its own: listing one UI primitive
+ * keeps that one and still fills in the others the document's systems call for. */
 export function defaultGraphics(doc, registry) {
   const listed = new Set((doc.graphics || []).map(g => g.use));
   const out = defaultWorldGraphics(doc, registry); // drawn beneath the UI, so mounted first
   const add = (use, w) => { if (has(registry, use) && !listed.has(use)) out.push({ use, with: w }); };
-  const anyUi = [...listed].some(u => u.startsWith('graphics.ui.'));
-  if (!anyUi) {
-    const textual = isTextual(doc), acts = actionsProvided(doc, registry);
-    const zones = (doc.spaces || []).flatMap(s => s.zones || []);
-    const players = (doc.content?.archetypes || []).filter(a => a.kind === 'player');
-    if (textual) add('graphics.ui.story', { style: 'auto' });
-    add('graphics.ui.menu', { select: players.length > 1 && acts.has('select_character') ? [{ id: 'character', kind: 'character', action: 'select_character' }] : [] });
-    if (!textual) add('graphics.ui.hud', defaultHud(doc));
-    if (!textual && ['plot.dialogue', 'plot.barks', 'plot.storyboard', 'plot.cutscene', 'plot.events.random'].some(id => uses(doc, id))) add('graphics.ui.dialogue', {});
-    if (uses(doc, 'plot.quest') || uses(doc, 'plot.journal')) {
-      const tags = new Set((doc.plot?.entries || []).map(e => e.tag || 'lore'));
-      const tabs = [uses(doc, 'plot.quest') && 'quests', [...tags].some(t => !/note|bestiary/.test(t)) && 'lore', tags.has('bestiary') || (uses(doc, 'gameplay.combat') && (doc.content?.archetypes || []).some(a => a.kind === 'enemy' || a.kind === 'boss')) ? 'bestiary' : null, uses(doc, 'plot.character') && 'characters', [...tags].some(t => /note/.test(t)) && 'notes'].filter(Boolean);
-      add('graphics.ui.journal', { tabs: tabs.length ? tabs : ['quests'] });
-    }
-    if (!textual && zones.length >= 3) add('graphics.ui.map', { fog: uses(doc, 'engine.zones') || zones.length > 6, fastTravel: acts.has('fast_travel') });
-    const v = doc.views?.primary;
-    if (!textual && zones.length >= 2 && ['3p', '1p', 'td', 'iso'].includes(v)) add('graphics.ui.minimap', { rotate: v === '3p' || v === '1p' });
-    if (!textual && uses(doc, 'gameplay.inventory')) {
-      const eq = sysOf(doc, 'gameplay.equipment')?.with;
-      const panels = ['items',
-        eq?.slots?.some(s => !(s.accepts || []).includes('charm')) && 'equipment',
-        (eq?.budget || eq?.slots?.some(s => (s.accepts || []).includes('charm'))) && 'loadout',
-        uses(doc, 'gameplay.crafting') && 'crafting',
-        uses(doc, 'gameplay.container') && 'container',
-        uses(doc, 'gameplay.economy') && 'shop',
-        (uses(doc, 'gameplay.progression.abilities') || uses(doc, 'gameplay.progression.tree')) && 'skills'].filter(Boolean);
-      add('graphics.ui.inventory', { panels });
-    }
-    if (uses(doc, 'gameplay.creature.battle') || uses(doc, 'gameplay.turns')) add('graphics.ui.battle', {});
-    if (uses(doc, 'gameplay.cards')) add('graphics.ui.cards', {});
+  const textual = isTextual(doc), acts = actionsProvided(doc, registry);
+  const zones = (doc.spaces || []).flatMap(s => s.zones || []);
+  const players = (doc.content?.archetypes || []).filter(a => a.kind === 'player');
+  if (textual) add('graphics.ui.story', { style: 'auto' });
+  add('graphics.ui.menu', { select: players.length > 1 && acts.has('select_character') ? [{ id: 'character', kind: 'character', action: 'select_character' }] : [] });
+  if (!textual) add('graphics.ui.hud', defaultHud(doc));
+  if (!textual && ['plot.dialogue', 'plot.barks', 'plot.storyboard', 'plot.cutscene', 'plot.events.random'].some(id => uses(doc, id))) add('graphics.ui.dialogue', {});
+  if (uses(doc, 'plot.quest') || uses(doc, 'plot.journal')) {
+    const tags = new Set((doc.plot?.entries || []).map(e => e.tag || 'lore'));
+    const tabs = [uses(doc, 'plot.quest') && 'quests', [...tags].some(t => !/note|bestiary/.test(t)) && 'lore', tags.has('bestiary') || (uses(doc, 'gameplay.combat') && (doc.content?.archetypes || []).some(a => a.kind === 'enemy' || a.kind === 'boss')) ? 'bestiary' : null, uses(doc, 'plot.character') && 'characters', [...tags].some(t => /note/.test(t)) && 'notes'].filter(Boolean);
+    add('graphics.ui.journal', { tabs: tabs.length ? tabs : ['quests'] });
   }
+  if (!textual && zones.length >= 3) add('graphics.ui.map', { fog: uses(doc, 'engine.zones') || zones.length > 6, fastTravel: acts.has('fast_travel') });
+  const v = doc.views?.primary;
+  if (!textual && zones.length >= 2 && ['3p', '1p', 'td', 'iso'].includes(v)) add('graphics.ui.minimap', { rotate: v === '3p' || v === '1p' });
+  if (!textual && uses(doc, 'gameplay.inventory')) {
+    const eq = sysOf(doc, 'gameplay.equipment')?.with;
+    const panels = ['items',
+      eq?.slots?.some(s => !(s.accepts || []).includes('charm')) && 'equipment',
+      (eq?.budget || eq?.slots?.some(s => (s.accepts || []).includes('charm'))) && 'loadout',
+      uses(doc, 'gameplay.crafting') && 'crafting',
+      uses(doc, 'gameplay.container') && 'container',
+      uses(doc, 'gameplay.economy') && 'shop',
+      (uses(doc, 'gameplay.progression.abilities') || uses(doc, 'gameplay.progression.tree')) && 'skills'].filter(Boolean);
+    add('graphics.ui.inventory', { panels });
+  }
+  if (uses(doc, 'gameplay.creature.battle') || uses(doc, 'gameplay.turns')) add('graphics.ui.battle', {});
+  if (uses(doc, 'gameplay.cards')) add('graphics.ui.cards', {});
   if (![...listed].some(u => u.startsWith('graphics.audio.'))) add('graphics.audio.synth', {});
   return out;
 }

@@ -61,3 +61,15 @@ test('world defaults: example games with graphics emptied get a renderer for eve
     for (const s of d.spaces) if (rendererFor(s, registry)) assert.ok(g.some(x => x.space === s.id && /^graphics\.render\./.test(x.use)), `${f}: ${s.id}`);
   }
 });
+
+test('ui defaults: each category is defaulted on its own', () => {
+  const hl = JSON.parse(fs.readFileSync(new URL('../v2/games/hollow-lantern.json', import.meta.url), 'utf8'));
+  const only = keep => ({ ...hl, graphics: hl.graphics.filter(g => !/^graphics\.(ui|audio)\./.test(g.use) || g.use === keep) });
+  const g = defaultGraphics(only('graphics.ui.dialogue'), registry).map(x => x.use);
+  assert.ok(g.includes('graphics.ui.hud') && g.includes('graphics.ui.menu') && g.includes('graphics.ui.inventory'), 'a listed dialogue box no longer suppresses HUD, menu and inventory');
+  assert.ok(!g.includes('graphics.ui.dialogue'), 'the listed one is kept, not doubled');
+  const h = defaultGraphics(only('graphics.ui.hud'), registry).map(x => x.use);
+  assert.ok(h.includes('graphics.ui.menu') && h.includes('graphics.ui.dialogue') && !h.includes('graphics.ui.hud'));
+  const t = defaultGraphics({ ...minimal('engine.space.tilemap', 'side'), graphics: [{ use: 'graphics.ui.menu', with: {} }] }, registry).map(x => x.use);
+  assert.ok(t.includes('graphics.ui.hud') && t.includes('graphics.render.tilemap') && !t.includes('graphics.ui.menu'));
+});
