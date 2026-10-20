@@ -19,7 +19,7 @@ async function provider(env,registry,task,input){
     const connections=task.executor==='hosted-api-key'?env.AGENT_CONNECTIONS.getByName(task.owner):null;
     const grant={...task.connection,task_id:task.id,parent_id:task.id,service:kind,expires_at:task.deadline};
     const apiKey=connections?await connections.apiKeyCredential(grant):env.OPENAI_API_KEY;
-    if(kind==='transcribe'){row=await registry.voice('request',task.owner,payload.request_id);assert(row.task_id===task.id&&!row.cancelled,'voice_request_cancelled');const object=await env.ARTIFACTS.get(`voice/${task.executor==='hosted-api-key'?task.owner+'/':''}${task.id}/${row.sha256}`);assert(object,'voice_audio_not_found');audio=await object.arrayBuffer();assert(audio.byteLength===row.bytes&&await digest(audio)===row.sha256,'voice_audio_mismatch');}
+    if(kind==='transcribe'){row=await registry.voice('request',task.owner,payload.request_id);assert(row.task_id===task.id&&row.phase!=='uploading'&&!row.cancelled,'voice_request_cancelled');const object=await env.ARTIFACTS.get(`voice/${task.executor==='hosted-api-key'?task.owner+'/':''}${task.id}/${row.sha256}`);assert(object,'voice_audio_not_found');audio=await object.arrayBuffer();assert(audio.byteLength===row.bytes&&await digest(audio)===row.sha256,'voice_audio_mismatch');}
     if(task.executor==='hosted-api-key')assert(task.synthetic===(env.APP_ENV==='test'&&typeof env.VOICE_TEST_PROVIDER==='function'),'voice_provider_mode_mismatch');
     if(env.APP_ENV==='test'&&typeof env.VOICE_TEST_PROVIDER==='function')result=await env.VOICE_TEST_PROVIDER({kind,payload,task});
     else {
