@@ -13,8 +13,19 @@ const isKernel = record => record?.doc?.schema === KERNEL;
 const promotedReady = loadPromoted();
 // Legacy records keep their own players; every new game mounts on the kernel player.
 // (loaded on demand, so the default flow never loads the retired engines).
-const mount = async (el, record) => record.doc?.schema === 'gameverse.v2.game-spec/0.1' ? (await import('/v2/web/arcade-player.js')).mountArcade(el, record)
+const mountAny = async (el, record) => record.doc?.schema === 'gameverse.v2.game-spec/0.1' ? (await import('/v2/web/arcade-player.js')).mountArcade(el, record)
   : record.doc?.schema === 'gameverse.v2.kit-game/0.1' ? (await import('/v2/web/kit-player.js')).mountKit(el, record) : mountGame(el, record);
+// A game that will not load says why, on its screen and in a toast, instead of a silent blank board.
+const mount = async (el, record) => {
+  try { return await mountAny(el, record); }
+  catch (error) {
+    console.error(error, error.errors);
+    const why = (error.errors || []).slice(0, 4).map(e => `${e.path}: ${e.message}`).join("\n");
+    el.replaceChildren(Object.assign(document.createElement("pre"), { className: "load-error", textContent: `${error.message}${why ? "\n" + why : ""}` }));
+    toast(error.message);
+    return { dispose() {}, extend() {} };
+  }
+};
 const STAGES = { decomposing: 'Reading the idea', decomposed: 'Idea decomposed', selected: 'Primitives chosen', outlining: 'Outlining the game', outlined: 'Outline checked', first_playable: 'First playable', detail: 'Detailing zones', detail_rejected: 'Detail rejected', gap: 'Building a new primitive', revising: 'Working on the change', tweaked: 'Tweaked', revised: 'Revised', experimenting: 'Writing an experiment', experimented: 'Experiment checked', verified: 'Verified', complete: 'Done' };
 // The first build, as the four phases the frame's progress bar shows: stage -> phases finished.
 const PHASES = ['Reading the idea', 'Choosing primitives', 'Outlining', 'First playable'];

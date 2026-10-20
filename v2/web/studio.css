@@ -336,3 +336,5 @@ body.theater.has-game .hint .on { display: inline; }
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; transition-delay: 0s !important; }
   .board .scan { display: none; }
 }
+
+.load-error { position: absolute; inset: 0; margin: 0; padding: 20px; overflow: auto; white-space: pre-wrap; font: 13px/1.5 ui-monospace, monospace; color: #ffb4a8; background: #1a0f12; }

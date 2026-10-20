@@ -49,8 +49,17 @@ export function mountGame(container, record, { onState, primitives = null, now =
   let cat = catalogueFor(record.doc, primitives);
   // Every game gets input, UI, audio and renderers: the document's own plus defaults chosen from its systems, spaces and view.
   const withGraphics = (d, registry) => { const doc = structuredClone(d); doc.systems = withDefaultInput(doc, registry, { touch: TOUCH }); doc.graphics = withDefaultGraphics(doc, registry); return doc; };
-  const doc = withGraphics(record.doc, cat.registry);
-  const checked = preflight(doc, cat.registry, cat.logic);
+  let doc = withGraphics(record.doc, cat.registry);
+  let checked = preflight(doc, cat.registry, cat.logic);
+  // Presentation never blocks play: drop graphics instances that fail checks and fall back to the defaults.
+  const badGraphics = new Set((checked.errors || []).map(e => /^graphics\[(\d+)\]/.exec(e.path || '')?.[1]).filter(Boolean).map(Number));
+  if (!checked.ok && badGraphics.size && checked.errors.every(e => /^graphics\[\d+\]/.test(e.path || ''))) {
+    const listed = record.doc.graphics || [];
+    const keep = listed.filter((g, i) => !badGraphics.has(i) || i >= listed.length);
+    console.warn('Dropped graphics that failed checks:', checked.errors);
+    doc = withGraphics({ ...record.doc, graphics: keep }, cat.registry);
+    checked = preflight(doc, cat.registry, cat.logic);
+  }
   if (!checked.ok) throw Object.assign(Error('This version failed checks in the browser.'), { errors: checked.errors });
   container.replaceChildren();
   container.classList.add('gv-view'); // position: relative; renderers layer children, UI uses .gv-overlay

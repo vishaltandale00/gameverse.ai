@@ -11,6 +11,8 @@ const NONE = new Set();
 /** Validate value against schema; push errors; return the value with defaults applied. */
 export function checkParam(schema, value, path, errors, ctx) {
   const fail = (code, message, hint) => errors.push({ code, path, message, ...(hint ? { hint } : {}) });
+  // An explicit null on an optional param means "not set" (models and cards both write it): use the default.
+  if (value === null && !schema.required) value = undefined;
   if (value === undefined) {
     if (schema.required) fail('param_missing', `required ${schema.type}`, schema.effect);
     if (schema.default === undefined) return undefined;
