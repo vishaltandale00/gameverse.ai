@@ -8,5 +8,7 @@ import menu from './ui-menu.js';
 import audioSynth from './audio-synth.js';
 import minimap from './ui-minimap.js';
 import map from './ui-map.js';
+import battle from './ui-battle.js';
+import cards from './ui-cards.js';
 
-export default [hud, dialogue, journal, inventory, menu, minimap, map, audioSynth];
+export default [hud, dialogue, journal, inventory, menu, minimap, map, battle, cards, audioSynth];
